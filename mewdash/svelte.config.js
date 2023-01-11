@@ -12,9 +12,8 @@ export default {
             postcss: true,
         }),
     ],
-
     kit: {
-        adapter: adapter({out: "out"}),
+        adapter: adapter({out: "out"})
     },
 };
 

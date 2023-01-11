@@ -30,7 +30,8 @@
     <nav class="navbar navbar-dark navbar-expand-md bg-dark py-3" style="background: rgb(45,44,56);">
         <div class="container"><a class="navbar-brand d-flex align-items-center" href="/"><span
                 class="bs-icon-md bs-icon-circle bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon"
-                style="background: rgb(120, 101, 0);"><img alt="Mewdeko Avatar" class="rounded-circle img-fluid" height="47"
+                style="background: rgb(120, 101, 0);"><img alt="Mewdeko Avatar" class="rounded-circle img-fluid"
+                                                           height="47"
                                                            src="https://cdn.mewdeko.tech/Mewdeko.png"
                                                            width="43"></span><span>Mewdeko</span></a>
             <button class="navbar-toggler" data-bs-target="#navcol-5" data-bs-toggle="collapse"><span
@@ -41,7 +42,8 @@
                     <li class="nav-item"><a class="nav-link" href="/staff">Staff</a></li>
                     <li class="nav-item"><a class="nav-link" href="resources">Resources</a></li>
                 </ul>
-                <a class="btn btn-primary ms-md-2" href="https://discord.com/oauth2/authorize?client_id=752236274261426212&amp;scope=bot&amp;permissions=66186303&amp;scope=bot"
+                <a class="btn btn-primary ms-md-2"
+                   href="https://discord.com/oauth2/authorize?client_id=752236274261426212&amp;scope=bot&amp;permissions=66186303&amp;scope=bot"
                    role="button"
                    style="border-style: none;border-color: var(--bs-card-cap-bg);border-top-color: rgb(255,255,255);background: rgb(147,128,24);"
                    target="_blank">Invite Me</a>
