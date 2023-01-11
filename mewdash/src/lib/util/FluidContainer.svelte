@@ -46,7 +46,7 @@
     {/if}
     {#if $$slots["element-10"]}
         <div class="w-full md:w-1/2 lg:w-1/3 px-4 py-8 flex justify-center">
- "/>
+            <slot name="element-10"/>
         </div>
     {/if}
     {#if $$slots["element-11"]}
