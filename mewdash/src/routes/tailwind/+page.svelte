@@ -21,8 +21,8 @@
 
     <FluidContainer>
         <div class="w-64 h-96 bg-red-100 text-center" slot="element-1">Element 1</div>
-        <div class="w-64 h-96 bg-red-200  text-center" slot="element-2">Element 2</div>
-        <div class="w-64 h-96 bg-red-300  text-center" slot="element-3">Element 3</div>
+        <div class="w-64 h-40 bg-red-200  text-center" slot="element-2">Element 2</div>
+        <div class="w-64 h-[700px] bg-red-300  text-center" slot="element-3">Element 3</div>
         <div class="w-64 h-96 bg-red-400  text-center" slot="element-4">Element 4</div>
         <div class="w-64 h-96 bg-red-500  text-center" slot="element-5">Element 5</div>
     </FluidContainer>
