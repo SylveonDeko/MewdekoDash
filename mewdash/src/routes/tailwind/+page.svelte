@@ -11,12 +11,13 @@
 </script>
 <Navbar items="{navbarItems}"/>
 <header class="p-12  flex justify-center bg-slate-200">
-    <h1 class="font-bold text-center text-3xl ">The most free and customizable bot you'll&nbsp;find. Open Source too.
+    <h1 class="font-bold text-center text-3xl ">
+        The most free and customizable bot you'll&nbsp;find.<br>Open Source too.
     </h1>
 </header>
 <section class="bg-gray-900">
     <div class="pt-12 px-3">
-        <h2 class="p-9 font-bold text-center text-2xl  text-white">Here's what Mewdeko can do for you</h2>
+        <h2 class="p-9 font-bold text-center text-2xl  text-white">Here's what Mewdeko can do for&nbsp;you</h2>
     </div>
 
     <FluidContainer>
