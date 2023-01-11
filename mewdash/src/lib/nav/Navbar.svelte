@@ -37,6 +37,7 @@
     import {page} from '$app/stores';
     import {slide} from 'svelte/transition';
 
+
     function isCurrentPage(href: string) {
         return $page.url.pathname.trim() === href.trim();
     }
