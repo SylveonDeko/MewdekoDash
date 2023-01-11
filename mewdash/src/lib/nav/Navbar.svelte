@@ -12,8 +12,17 @@
                       d="M4 7h22M4 15h22M4 23h22"/>
             </svg>
         </button>
-        <div class="{!showMenu ?  'hidden' : ''} w-full md:block md:w-auto" id="navbar-default">
-            <ul class="flex flex-col p-4 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+        {#if showMenu}
+            <div class="w-full md:hidden" transition:slide={{ duration: 500 }}>
+                <ul class="flex flex-col p-4 mt-4 border border-gray-100 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                    {#each items as item}
+                        <Link href="{item.href}" title="{item.title}" current="{isCurrentPage(item.href)}"/>
+                    {/each}
+                </ul>
+            </div>
+        {/if}
+        <div class="hidden md:block w-auto" >
+            <ul class="flex flex-row p-4 border border-gray-100 rounded-lg space-x-8 text-sm font-medium border-0 bg-white dark:bg-gray-900 dark:border-gray-700">
                 {#each items as item}
                     <Link href="{item.href}" title="{item.title}" current="{isCurrentPage(item.href)}"/>
                 {/each}
@@ -23,8 +32,10 @@
 </nav>
 
 <script lang="ts">
+    //{!showMenu ?  'hidden' : ''}
     import Link from '$lib/nav/NavLink.svelte'
     import {page} from '$app/stores';
+    import {slide} from 'svelte/transition';
 
     function isCurrentPage(href: string) {
         return $page.url.pathname.trim() === href.trim();
