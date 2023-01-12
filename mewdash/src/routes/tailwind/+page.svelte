@@ -86,8 +86,8 @@
                     slot="element-1"
                     platform="Top.gg"
                     text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
+                            There is so many different types of things to do it’s amazing!
+                            5&nbsp;star to the bot and them who created the bot!&nbsp;:3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
@@ -97,7 +97,7 @@
             <CommentElement
                     slot="element-2"
                     platform="Top.gg"
-                    text="Out of all bots to exist, I understand this one the most lmao- so yeah!<br>
+                    text="Out of all bots to exist, I understand this one the most lmao&nbsp;-&nbsp;so yeah!<br>
                             I love the bot and hope nothing but the best for future reference"
                     user='{{
                         name:"[Heath] Her Strawberry BobaTea™",
@@ -108,7 +108,7 @@
             <CommentElement
                     slot="element-3"
                     platform="Top.gg"
-                    text="这个 Discord Bot 很棒 +100 Social Credit"
+                    text="这个 Discord Bot 很棒<br>+100 Social Credit"
                     user='{{
                         name:"aknatn",
                         href:"https://top.gg/user/212055598057304064",
