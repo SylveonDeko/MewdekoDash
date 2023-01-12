@@ -1,24 +1,16 @@
 <script lang="ts">
-    import Navbar from "$lib/nav/Navbar.svelte";
     import FluidContainer from "$lib/util/FluidContainer.svelte";
     import Interactable from "$lib/util/InteractableElement.svelte";
-
-    const navbarItems: { title: string, href: string }[] = [
-        {href: "/tailwind", title: "Home"},
-        {href: "/contacts", title: "Contact Us"},
-        {href: "/staff", title: "Staff"},
-        {href: "/resources", title: "Resources"}
-    ]
+    import CommentElement from "$lib/CommentElement.svelte";
 </script>
-<Navbar items="{navbarItems}"/>
 <header class="p-12  flex justify-center bg-slate-200">
-    <h1 class="font-bold text-center text-3xl ">
+    <h1 class="font-extrabold text-center text-3xl ">
         The most free and customizable bot you'll&nbsp;find.<br>Open Source too.
     </h1>
 </header>
-<section class="bg-gray-900">
-    <div class="pt-12 px-3">
-        <h2 class="p-9 font-bold text-center text-2xl  text-white">Here's what Mewdeko can do for&nbsp;you</h2>
+<section title="medekos features" class="bg-gray-900">
+    <div class="pt-12 pb-6 px-3">
+        <h2 class="p-9 font-extrabold text-center text-2xl  text-white">Here's what Mewdeko can do for&nbsp;you</h2>
     </div>
     <FluidContainer>
         <Interactable
@@ -74,4 +66,70 @@
                 title="... And much more!"
         />
     </FluidContainer>
+</section>
+<section title="mewdekos testimonials" class="bg-slate-200">
+    <div class="py-12 px-4 mx-20">
+        <div class="px-4">
+            <div class="mb-12">
+                <p class="text-center h-min mb-2 text-emerald-400 font-extrabold">
+                    Testimonials
+                </p>
+                <h2 class="text-center h-min mb-2 text-3xl font-extrabold">
+                    What People Say About Mewdeko
+                </h2>
+                <p class="text-center h-min mb-4 font-medium">
+                    We've been around for 2 years, there's bound to be some good reviews.
+                </p>
+            </div>
+            <FluidContainer small="true">
+                <CommentElement
+                        slot="element-1"
+                        user='{{
+                        name:"XNekø",
+                        href:"https://top.gg/user/212055598057304064",
+                        avatar:{
+                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
+                            alt:"TopGG XNeko Avatar"
+                        }
+                    }}'
+                        text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
+                        platform="Top.gg"
+                />
+                <CommentElement
+                        slot="element-2"
+                        user='{{
+                        name:"XNekø",
+                        href:"https://top.gg/user/212055598057304064",
+                        avatar:{
+                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
+                            alt:"TopGG XNeko Avatar"
+                        }
+                    }}'
+                        text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
+                        platform="Top.gg"
+                />
+                <CommentElement
+                        slot="element-3"
+                        user='{{
+                        name:"XNekø",
+                        href:"https://top.gg/user/212055598057304064",
+                        avatar:{
+                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
+                            alt:"TopGG XNeko Avatar"
+                        }
+                    }}'
+                        text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
+                        platform="Top.gg"
+                />
+            </FluidContainer>
+        </div>
+    </div>
+
+
 </section>

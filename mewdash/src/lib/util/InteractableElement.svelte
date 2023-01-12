@@ -4,7 +4,7 @@
     export let cta: { href: string, text: string };
 </script>
 
-<section class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 mx-8 py-6">
+<section class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
     {#if title}
         <h2 class="pt-2 px-6 text-center text-2xl font-bold">{title}</h2>
     {/if}
@@ -12,7 +12,7 @@
         <p class="pt-2 px-6 text-center text-md font-bold">{@html description}</p>
     {/if}
     {#if $$slots.default}
-        <div class="pt-6 px-10 flex justify-center">
+        <div class="pt-10 px-10 flex justify-center">
             <div class="w-full h-max rounded-xl overflow-hidden">
                 <slot/>
             </div>

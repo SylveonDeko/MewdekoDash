@@ -1,63 +1,68 @@
-<div class="flex flex-wrap justify-between">
+<script lang="ts">
+    import Elem from "$lib/util/FluidElement.svelte"
+
+    export let small: boolean;
+</script>
+<div class="flex flex-wrap justify-center">
     {#if $$slots["element-1"]}
-        <div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-1"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-2"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-2"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-3"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-3"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-4"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-4"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-5"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-5"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-6"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-6"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-7"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-7"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-8"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-8"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-9"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-9"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-10"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-10"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-11"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-11"/>
-        </div>
+        </Elem>
     {/if}
     {#if $$slots["element-12"]}
-        <div class="w-full md:w-1/2 lg:w-1/3  xl:w-1/4 px-4 py-8 flex justify-center">
+        <Elem small="{small}">
             <slot name="element-12"/>
-        </div>
+        </Elem>
     {/if}
 </div>
 
