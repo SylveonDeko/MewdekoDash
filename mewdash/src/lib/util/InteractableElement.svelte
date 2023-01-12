@@ -21,7 +21,7 @@
     {#if cta}
         <div class="pt-4 flex justify-center">
             <a class="w-max h-max py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-full"
-               href="{cta.href}" target="_blank">{cta.text} </a>
+               href="{cta.href}" target="_blank" rel="noreferrer">{cta.text} </a>
         </div>
     {/if}
 </div>
