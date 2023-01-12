@@ -10,7 +10,7 @@
     </h1>
 </header>
 <section class="bg-gray-900 flex justify-center" title="medekos features">
-    <div class="pt-12 pb-24 max-w-[110rem]">
+    <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[110rem]">
         <h2 class="pt-9 pb-16 px-3 font-extrabold text-center text-2xl sm:text-2xl lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
@@ -81,7 +81,7 @@
                 We've been around for 2 years, there's bound to be some good reviews.
             </p>
         </div>
-        <FluidContainer breakpoints='{["sm", "lg", "xl"]}'>
+        <FluidContainer breakpoints='{["sm", "lg"]}'>
             <CommentElement
                     slot="element-1"
                     platform="Top.gg"
