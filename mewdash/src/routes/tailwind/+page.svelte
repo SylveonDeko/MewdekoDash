@@ -83,48 +83,36 @@
         </div>
         <FluidContainer breakpoints='{["sm", "lg", "xl"]}'>
             <CommentElement
-                    platform="Top.gg"
                     slot="element-1"
+                    platform="Top.gg"
                     text="This is the most useful bot that XNekø has used!
                             There is so many<br>different types of things to do it’s amazing!
                             5 star to the bot and them<br>who created the bot! :3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
-                        avatar:{
-                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
-                            alt:"TopGG XNeko Avatar"
-                        }
+                        avatar:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75"
                     }}'
             />
             <CommentElement
-                    platform="Top.gg"
                     slot="element-2"
-                    text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
+                    platform="Top.gg"
+                    text="Out of all bots to exist, I understand this one the most lmao- so yeah!<br>
+                            I love the bot and hope nothing but the best for future reference"
                     user='{{
-                        name:"XNekø",
+                        name:"[Heath] Her Strawberry BobaTea™",
                         href:"https://top.gg/user/212055598057304064",
-                        avatar:{
-                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
-                            alt:"TopGG XNeko Avatar"
-                        }
+                        avatar:"img/cdn/DiscordDefault.png"
                     }}'
             />
             <CommentElement
-                    platform="Top.gg"
                     slot="element-3"
-                    text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
+                    platform="Top.gg"
+                    text="这个 Discord Bot 很棒 +100 Social Credit"
                     user='{{
-                        name:"XNekø",
+                        name:"aknatn",
                         href:"https://top.gg/user/212055598057304064",
-                        avatar:{
-                            src:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75",
-                            alt:"TopGG XNeko Avatar"
-                        }
+                        avatar:"img/cdn/DiscordDefault.png"
                     }}'
             />
         </FluidContainer>
