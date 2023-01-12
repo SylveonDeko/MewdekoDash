@@ -32,7 +32,6 @@
 </nav>
 
 <script lang="ts">
-    //{!showMenu ?  'hidden' : ''}
     import Link from '$lib/nav/NavLink.svelte'
     import {page} from '$app/stores';
     import {slide} from 'svelte/transition';
