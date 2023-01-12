@@ -1,5 +1,5 @@
 <script lang="ts">
-    const sizes = ["1/2", "1/3", "1/4", "1/5", "1/6"]
+    const sizes = ["1/2", "1/3", "1/4", "1/5"]
 
     export let breakpoints = ["md", "lg", "xl"];
     export let maxBreaks: number = sizes.length;

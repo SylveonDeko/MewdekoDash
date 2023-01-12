@@ -4,12 +4,12 @@
     export let cta: { href: string, text: string } | null = null;
 </script>
 
-<section class="w-full h-max max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
+<section class="w-full h-max m-6 pt-6 pb-8 max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl bg-mewd-light-grey ">
     {#if title}
-        <h2 class="pt-2 px-6 text-center text-[22px] font-bold">{title}</h2>
+        <h2 class="pt-2 px-6 text-center font-bold text-mewd-text text-[22px]">{title}</h2>
     {/if}
     {#if description}
-        <p class="pt-2 px-6 text-center text-md font-bold">{@html description}</p>
+        <p class="pt-2 px-6 text-center font-bold text-mewd-text-grey text-md ">{@html description}</p>
     {/if}
     {#if $$slots.default}
         <div class="pt-10 px-10 flex justify-center">
@@ -20,7 +20,7 @@
     {/if}
     {#if cta}
         <div class="pt-4 flex justify-center">
-            <a class="w-max h-max py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-full"
+            <a class="w-max h-max py-2 px-4 bg-mewd-yellow text-mewd-text font-bold rounded-full"
                href="{cta.href}" target="_blank" rel="noreferrer">{cta.text} </a>
         </div>
     {/if}

@@ -26,14 +26,14 @@
     <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
 </svelte:head>
 
-<header class="py-12 px-4 sm:px-12 flex justify-center bg-slate-200">
-    <h1 class="max-w-[70rem] pt-10 font-extrabold text-center text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
+<header class="py-12 px-4 sm:px-12 flex justify-center bg-mewd-light-grey">
+    <h1 class="max-w-[70rem] pt-10 text-center font-extrabold text-mewd-text text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
-<section class="bg-gray-900 flex justify-center" title="medekos features">
+<section class="flex justify-center bg-mewd-dark-grey" title="medekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
-        <h2 class="pt-9 pb-16 px-3 font-extrabold text-center text-2xl sm:text-2xl lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
+        <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' }}"
@@ -90,16 +90,16 @@
         </FluidContainer>
     </div>
 </section>
-<section class="bg-slate-200 flex justify-center min-h-screen" title="mewdekos testimonials">
-    <div class="pt-32 pb-12 lg:mx-14 max-w-[82rem] px-3">
+<section class="flex justify-center min-h-screen bg-mewd-light-grey" title="mewdekos testimonials">
+    <div class="pt-32 pb-12 lg:mx-14 max-w-[45rem] lg:max-w-[82rem] px-3">
         <div class="mb-16 px-2">
-            <p class="text-center h-min mb-2 text-emerald-400 font-extrabold">
+            <p class=" h-min mb-2 text-center font-extrabold text-mewd-green">
                 Testimonials
             </p>
-            <h2 class="text-center h-min mb-2 text-[26px] md:text-[30px] lg:text-[32px] font-black">
+            <h2 class="h-min mb-2 text-center font-black text-mewd-text text-[26px] md:text-[30px] lg:text-[32px]">
                 What People Say About Mewdeko
             </h2>
-            <p class="text-center text-md h-min font-medium">
+            <p class="h-min text-center font-medium text-mewd-text-grey text-md ">
                 We've been around for 2 years, there's bound to be some good reviews.
             </p>
         </div>
@@ -119,7 +119,7 @@
             <CommentElement
                     slot="element-2"
                     platform="Top.gg"
-                    text="Out of all bots to exist, I understand this one the most lmao&nbsp;-&nbsp;so yeah!<br>
+                    text="Out of all bots to exist, I&nbsp;understand this one the most lmao&nbsp;-&nbsp;so yeah!<br>
                             I love the bot and hope nothing but the best for future reference"
                     user='{{
                         name:"[Heath] Her Strawberry BobaTea™",
