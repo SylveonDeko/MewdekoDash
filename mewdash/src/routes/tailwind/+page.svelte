@@ -5,14 +5,14 @@
 </script>
 
 <header class="p-12  flex justify-center bg-slate-200">
-    <h1 class="font-extrabold text-center text-3xl ">
-        The most free and customizable bot you'll&nbsp;find.<br>Open Source too.
+    <h1 class="font-extrabold text-center text-3xl  lg:text-[40px]">
+        The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
-<section class="bg-gray-900" title="medekos features">
-    <div class="pt-12 pb-24">
-        <h2 class="pt-9 pb-16 px-3  font-extrabold text-center text-2xl  text-white">Here's what Mewdeko can do for&nbsp;you</h2>
-        <FluidContainer  breakpoints='{["sm", "md"]}'>
+<section class="bg-gray-900 flex justify-center" title="medekos features">
+    <div class="pt-12 pb-24 max-w-[110rem]">
+        <h2 class="pt-9 pb-16 px-3  font-extrabold text-center text-2xl  lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
+        <FluidContainer breakpoints='{["sm", "md"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' }}"
                     description="With Auto Ban words, antispam, antiraid
@@ -69,15 +69,15 @@
     </div>
 </section>
 <section class="bg-slate-200 flex justify-center" title="mewdekos testimonials">
-    <div class="pt-32 pb-12 px-4 lg:px-2">
-        <div class="mb-12 px-2">
+    <div class="pt-32 pb-12 lg:mx-14 max-w-[82rem] px-3">
+        <div class="mb-16 px-2">
             <p class="text-center h-min mb-2 text-emerald-400 font-extrabold">
                 Testimonials
             </p>
-            <h2 class="text-center h-min mb-2 text-[30px] font-black">
+            <h2 class="text-center h-min mb-2 text-[26px] md:text-[30px] lg:text-[32px] font-black">
                 What People Say About Mewdeko
             </h2>
-            <p class="text-center text-md h-min mb-4 font-medium">
+            <p class="text-center text-md h-min font-medium">
                 We've been around for 2 years, there's bound to be some good reviews.
             </p>
         </div>
@@ -108,7 +108,7 @@
             <CommentElement
                     slot="element-3"
                     platform="Top.gg"
-                    text="这个 Discord Bot 很棒<br>+100 Social Credit"
+                    text="这个&nbsp;Discord&nbsp;Bot&nbsp;很棒 +100&nbsp;Social&nbsp;Credit"
                     user='{{
                         name:"aknatn",
                         href:"https://top.gg/user/212055598057304064",

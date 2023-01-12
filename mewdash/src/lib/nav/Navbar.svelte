@@ -25,7 +25,7 @@
             </div>
         {/if}
         <div class="hidden md:block w-auto" id="desktop-navbar">
-            <ul class="flex flex-row p-4 border border-gray-100 rounded-lg space-x-8 text-sm font-medium border-0 bg-white dark:bg-gray-900 dark:border-gray-700">
+            <ul class="flex flex-row p-4 border border-gray-100 rounded-lg space-x-8 text-[16px] font-medium border-0 bg-white dark:bg-gray-900 dark:border-gray-700">
                 {#each items as item}
                     <Link href="{item.href}" title="{item.title}" current="{isCurrentPage(item.href)}"/>
                 {/each}

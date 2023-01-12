@@ -6,7 +6,7 @@
 
 <section class="w-full h-max max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
     {#if title}
-        <h2 class="pt-2 px-6 text-center text-2xl font-bold">{title}</h2>
+        <h2 class="pt-2 px-6 text-center text-[22px] font-bold">{title}</h2>
     {/if}
     {#if description}
         <p class="pt-2 px-6 text-center text-md font-bold">{@html description}</p>
