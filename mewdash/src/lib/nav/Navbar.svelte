@@ -1,5 +1,5 @@
 <nav class="py-4 bg-gray-900">
-    <div class="container flex flex-wrap items-center justify-between mx-auto px-3">
+    <div class="container flex flex-wrap items-center justify-between mx-auto px-6">
         <a class="flex items-center mr-4 py-[0.3rem]" href="/">
             <img alt="Mewdeko Avatar" class="h-12 mr-3" src="img/cdn/Mewdeko.png"/>
             <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">Mewdeko</span>

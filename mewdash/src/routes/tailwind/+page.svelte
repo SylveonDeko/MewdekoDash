@@ -4,8 +4,8 @@
     import CommentElement from "$lib/CommentElement.svelte";
 </script>
 
-<header class="py-12 px-4 sm:px-12 flex justify-center bg-slate-200 max-w-[100%]">
-    <h1 class="font-extrabold text-center text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
+<header class="py-12 px-4 sm:px-12 flex justify-center bg-slate-200">
+    <h1 class="max-w-[70rem] font-extrabold text-center text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
