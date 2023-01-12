@@ -68,7 +68,7 @@
         </FluidContainer>
     </div>
 </section>
-<section class="bg-slate-200 flex justify-center" title="mewdekos testimonials">
+<section class="bg-slate-200 flex justify-center min-h-screen" title="mewdekos testimonials">
     <div class="pt-32 pb-12 lg:mx-14 max-w-[82rem] px-3">
         <div class="mb-16 px-2">
             <p class="text-center h-min mb-2 text-emerald-400 font-extrabold">
