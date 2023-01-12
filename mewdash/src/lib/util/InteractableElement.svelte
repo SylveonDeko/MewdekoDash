@@ -1,7 +1,7 @@
 <script lang="ts">
     export let title: string;
     export let description: string;
-    export let cta: { href: string, text: string };
+    export let cta: { href: string, text: string } | null = null;
 </script>
 
 <section class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
