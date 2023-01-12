@@ -9,7 +9,7 @@
         The most free and customizable bot you'll&nbsp;find.<br>Open Source too.
     </h1>
 </header>
-<section title="medekos features" class="bg-gray-900">
+<section class="bg-gray-900" title="medekos features">
     <div class="pt-12 pb-24">
         <h2 class="pt-9 pb-16 px-3  font-extrabold text-center text-2xl  text-white">Here's what Mewdeko can do for&nbsp;you</h2>
         <FluidContainer>
@@ -68,7 +68,7 @@
         </FluidContainer>
     </div>
 </section>
-<section title="mewdekos testimonials" class="bg-slate-200 flex justify-center">
+<section class="bg-slate-200 flex justify-center" title="mewdekos testimonials">
     <div class="pt-32 pb-12 px-4 lg:px-2">
         <div class="mb-12 px-2">
             <p class="text-center h-min mb-2 text-emerald-400 font-extrabold">
@@ -83,7 +83,11 @@
         </div>
         <FluidContainer breakpoints='{["sm", "lg", "xl"]}'>
             <CommentElement
+                    platform="Top.gg"
                     slot="element-1"
+                    text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
@@ -92,13 +96,13 @@
                             alt:"TopGG XNeko Avatar"
                         }
                     }}'
-                    text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
-                    platform="Top.gg"
             />
             <CommentElement
+                    platform="Top.gg"
                     slot="element-2"
+                    text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
@@ -107,13 +111,13 @@
                             alt:"TopGG XNeko Avatar"
                         }
                     }}'
-                    text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
-                    platform="Top.gg"
             />
             <CommentElement
+                    platform="Top.gg"
                     slot="element-3"
+                    text="This is the most useful bot that XNekø has used!
+                            There is so many<br>different types of things to do it’s amazing!
+                            5 star to the bot and them<br>who created the bot! :3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
@@ -122,10 +126,6 @@
                             alt:"TopGG XNeko Avatar"
                         }
                     }}'
-                    text="This is the most useful bot that XNekø has used!
-                            There is so many<br>different types of things to do it’s amazing!
-                            5 star to the bot and them<br>who created the bot! :3"
-                    platform="Top.gg"
             />
         </FluidContainer>
     </div>

@@ -4,7 +4,7 @@
     export let cta: { href: string, text: string } | null = null;
 </script>
 
-<section class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
+<section class="w-full h-max max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl bg-slate-200 m-6 pt-6 pb-8">
     {#if title}
         <h2 class="pt-2 px-6 text-center text-2xl font-bold">{title}</h2>
     {/if}

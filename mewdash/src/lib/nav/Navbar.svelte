@@ -5,8 +5,10 @@
             <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">Mewdeko</span>
         </a>
         <!--suppress HtmlWrongAttributeValue -->
-        <button class="inline-flex items-center px-3 py-1 rounded-3xl border border-px border-md-light-transparent focus:border-transparent md:hidden  focus:outline-none focus:ring-4 focus:ring-gray-200  dark:focus:ring-gray-400"
-                on:click={toggleNavbar} aria-controls="mobile-navbar" aria-expanded="{showMenu?'true':'false'}">
+        <button aria-controls="mobile-navbar"
+                aria-expanded="{showMenu?'true':'false'}"
+                on:click={toggleNavbar}
+                class="inline-flex items-center px-3 py-1 rounded-3xl border border-px border-md-light-transparent focus:border-transparent md:hidden  focus:outline-none focus:ring-4 focus:ring-gray-200  dark:focus:ring-gray-400" >
             <span class="sr-only">open nav-menu</span>
             <svg class="h-8 stroke-md-transparent" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4 7h22M4 15h22M4 23h22" stroke-linecap="round" stroke-miterlimit="10"
@@ -22,7 +24,7 @@
                 </ul>
             </div>
         {/if}
-        <div id="desktop-navbar" class="hidden md:block w-auto">
+        <div class="hidden md:block w-auto" id="desktop-navbar">
             <ul class="flex flex-row p-4 border border-gray-100 rounded-lg space-x-8 text-sm font-medium border-0 bg-white dark:bg-gray-900 dark:border-gray-700">
                 {#each items as item}
                     <Link href="{item.href}" title="{item.title}" current="{isCurrentPage(item.href)}"/>

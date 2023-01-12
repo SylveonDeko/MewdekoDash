@@ -8,7 +8,7 @@
                      height="50" width="50">
             {/if}
             <div>
-                <a href="{user?.href}" class="underline font-extrabold hover:text-gray-700">{user?.name}</a>
+                <a class="underline font-extrabold hover:text-gray-700" href="{user?.href}">{user?.name}</a>
                 <p>{platform}</p>
             </div>
         </div>
