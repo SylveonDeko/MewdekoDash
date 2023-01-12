@@ -14,7 +14,7 @@
             </svg>
         </button>
         {#if showMenu}
-            <div id="mobile-navbar" class="w-full md:hidden" transition:slide={{ duration: 500 }}>
+            <div id="mobile-navbar" class="w-full md:hidden" transition:slide={{ duration: 300 }}>
                 <ul class="flex flex-col p-4 mt-4 border border-gray-100 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                     {#each items as item}
                         <Link href="{item.href}" title="{item.title}" current="{isCurrentPage(item.href)}"/>
