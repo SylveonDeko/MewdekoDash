@@ -4,7 +4,7 @@
     export let cta: { href: string, text: string };
 </script>
 
-<div class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 mx-8 py-6">
+<section class="w-full h-max grid grid-cols-1 justify-center rounded-2xl bg-slate-200 mx-8 py-6">
     {#if title}
         <h2 class="pt-2 px-6 text-center text-2xl font-bold">{title}</h2>
     {/if}
@@ -24,4 +24,4 @@
                href="{cta.href}" target="_blank" rel="noreferrer">{cta.text} </a>
         </div>
     {/if}
-</div>
+</section>
