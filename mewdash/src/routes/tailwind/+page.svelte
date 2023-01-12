@@ -4,15 +4,15 @@
     import CommentElement from "$lib/CommentElement.svelte";
 </script>
 
-<header class="p-12  flex justify-center bg-slate-200">
-    <h1 class="font-extrabold text-center text-3xl  lg:text-[40px]">
+<header class="py-12 px-4 sm:px-12 flex justify-center bg-slate-200 max-w-[100%]">
+    <h1 class="font-extrabold text-center text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
 <section class="bg-gray-900 flex justify-center" title="medekos features">
     <div class="pt-12 pb-24 max-w-[110rem]">
-        <h2 class="pt-9 pb-16 px-3  font-extrabold text-center text-2xl  lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
-        <FluidContainer breakpoints='{["sm", "md"]}'>
+        <h2 class="pt-9 pb-16 px-3 font-extrabold text-center text-2xl sm:text-2xl lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
+        <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' }}"
                     description="With Auto Ban words, antispam, antiraid
