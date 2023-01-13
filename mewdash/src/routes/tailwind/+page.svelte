@@ -27,7 +27,7 @@
 </svelte:head>
 
 <header class="py-12 px-4 sm:px-12 flex justify-center bg-mewd-light-grey">
-    <h1 class="max-w-[70rem] pt-10 text-center font-extrabold text-mewd-text text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
+    <h1 class="pt-10 text-center font-extrabold text-mewd-text sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
