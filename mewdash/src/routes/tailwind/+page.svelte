@@ -58,7 +58,7 @@
                         title: 'Anti Raid',
                         src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
                     }
-                ]}"/>
+                ]}" name="features"/>
             </Interactable>
             <Interactable
                     cta="{{text:'Support Server',href:'https://discord.gg/mewdeko' }}"
@@ -68,7 +68,20 @@
                     slot="element-2"
                     title="Helpful/Friendly Staff"
             >
-                <div class="h-[30rem] bg-rose-300 w-full text-center">Image 2</div>
+                <Carousel images="{[
+                    {
+                        title: 'Hosting A Bot',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059100950142394439/image.png'
+                    },
+                    {
+                        title: 'Help Command',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059101488833634344/image.png'
+                    },
+                    {
+                        title: 'Walking The Dog',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059102004334567424/image.png'
+                    }
+                ]}" name="staff-response"/>
             </Interactable>
             <Interactable
                     cta="{{text:'Source Code',href:'https://github.com/SylveonDeko/Mewdeko' }}"
@@ -77,7 +90,7 @@
                     slot="element-3"
                     title="Open Source"
             >
-                <div class="h-[22rem] bg-rose-500 w-full text-center">Image 3</div>
+                <img src="img/clipboard-image.png" title="Github Repo" alt="Github Repo" class="w-full overflow-hidden rounded-xl"/>
             </Interactable>
             <Interactable
                     description="You can create custom text and slash commands using
@@ -86,7 +99,20 @@
                     slot="element-4"
                     title="Custom Responses"
             >
-                <div class="h-[29rem] bg-rose-700 w-full text-center">Image 4</div>
+                <Carousel images="{[
+                    {
+                        title: 'Creating Custom Response',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059150708651343873/image.png'
+                    },
+                    {
+                        title: 'Editing Custom Response',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059151273007517786/image.png'
+                    },
+                    {
+                        title: 'Custom Command In Action',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059151508651900938/image.png'
+                    }
+                ]}" name="custom-responses"/>
             </Interactable>
             <Interactable
                     description="After spending hours on end making sure this works properly,
@@ -95,7 +121,20 @@
                     slot="element-5"
                     title="Customizable"
             >
-                <div class="h-[37rem] bg-rose-900 w-full text-center">Image 5</div>
+                <Carousel images="{[
+                    {
+                        title: 'Suggestion Commands',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181130579980318/image.png?width=666&height=701'
+                    },
+                    {
+                        title: 'Starboard Commands',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181297857200128/image.png'
+                    },
+                    {
+                        title: 'Afk Commands',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181417793323028/image.png'
+                    }
+                ]}" name="customizable"/>
             </Interactable>
             <Interactable
                     description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"

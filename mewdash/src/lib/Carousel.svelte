@@ -11,7 +11,7 @@
     let scrolledFromLeft
     $: pictureWidth = carousel?.scrollWidth / images?.length
     $: currentId = !carousel || !scrolledFromLeft || !pictureWidth ? 0 : Math.round(scrolledFromLeft / pictureWidth)
-    $: scrollRigthPossible = currentId < images?.length -1
+    $: scrollRigthPossible = currentId < images?.length - 1
     $: scrollLeftPossible = currentId > 0
 
     function scrollTo({target}) {
@@ -59,7 +59,7 @@
             <div class="flex gap-2 place-content-center pb-4 ">
                 {#each images as _ , index}
                     <!--suppress JSUnresolvedVariable -->
-                    <button class="w-[32px] h-[6px] rounded-md hover:bg-mewd-offwhite {index === currentId ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
+                    <button class="w-[32px] h-[6px] rounded-md hover:bg-mewd-white {index === currentId ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
                             href="#{getItemId(index)}"
                             on:click={scrollTo}>
                     </button>
