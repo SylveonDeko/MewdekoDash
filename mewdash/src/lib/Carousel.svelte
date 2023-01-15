@@ -1,15 +1,19 @@
 <script lang="ts">
     function scrollIntoView({target}) {
-        const id = target.getAttribute('href');
-        if (!id) return;
+        const link = target.getAttribute('href')
+        if (!link) return
 
-        const el = document.querySelector(id);
-        if (!el) return;
+        const scrollToElement = document.querySelector(link)
 
-        el.scrollIntoView({
+        if (!scrollToElement) return
+
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+        scrollToElement.scrollIntoView({
             block: 'nearest',
-            inline: 'center'
-        });
+            inline: 'center',
+            behavior: mediaQuery.matches ? 'auto' : 'smooth',
+        })
     }
 
     type ImageType = {
@@ -39,7 +43,7 @@
         <div class="flex gap-2 place-content-center pb-4">
             {#each images as _ , index}
                 <!--suppress JSUnresolvedVariable -->
-                <button class="w-[32px] h-[4px] {getItemId(index) === current ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
+                <button class="w-[32px] h-[6px] rounded-md {getItemId(index) === current ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
                         href="#{getItemId(index)}"
                         on:click|preventDefault={scrollIntoView}>
                 </button>
