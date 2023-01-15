@@ -2,7 +2,7 @@
     <div class="container flex flex-wrap items-center justify-between mx-auto px-6">
         <a class="flex items-center mr-4 py-[0.3rem]" href="/">
             <img alt="Mewdeko Avatar" class="h-12 mr-3" height="48" width="48" src="img/cdn/Mewdeko.png"/>
-            <span class="self-center text-xl font-semibold whitespace-nowrap text-mewd-text">Mewdeko</span>
+            <span class="self-center text-xl font-semibold whitespace-nowrap text-mewd-white">Mewdeko</span>
         </a>
         <!--suppress HtmlWrongAttributeValue -->
         <button aria-controls="mobile-navbar"

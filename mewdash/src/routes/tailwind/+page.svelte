@@ -2,6 +2,7 @@
     import FluidContainer from "$lib/util/FluidContainer.svelte";
     import Interactable from "$lib/util/InteractableElement.svelte";
     import CommentElement from "$lib/CommentElement.svelte";
+    import Carousel from "$lib/Carousel.svelte";
 </script>
 
 <svelte:head>
@@ -33,7 +34,8 @@
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="medekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
-        <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">Here's what Mewdeko can do for&nbsp;you</h2>
+        <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
+            Here's what Mewdeko can do for&nbsp;you</h2>
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' }}"
@@ -43,7 +45,20 @@
                     slot="element-1"
                     title="Moderation"
             >
-                <div class="h-[22rem] bg-rose-100 w-full text-center">Image 1</div>
+                <Carousel images="{[
+                    {
+                        title: 'Auto Ban Words',
+                        src: 'https://media.discordapp.net/attachments/1004047472223588398/1059098637302501416/image.png'
+                    },
+                    {
+                        title: 'Commands',
+                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059099724357054474/image.png'
+                    },
+                    {
+                        title: 'Anti Raid',
+                        src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
+                    }
+                ]}"/>
             </Interactable>
             <Interactable
                     cta="{{text:'Support Server',href:'https://discord.gg/mewdeko' }}"

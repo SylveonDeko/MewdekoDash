@@ -6,12 +6,12 @@ export default {
             colors: {
                 "mewd-transparent": "rgba(255, 255, 255, 0.55)",
                 "mewd-light-transparent": "rgba(255, 255, 255, 0.1)",
+                "mewd-white": "#ffffff",
+                "mewd-offwhite":"#b0bdd3",
                 "mewd-dark-grey": "#27262e",
                 "mewd-light-grey": "#2d2c38",
                 "mewd-yellow": "#938018",
-                "mewd-green": "#19f5aa",
-                "mewd-text": "#ffffff",
-                "mewd-text-grey": "#b0bdd3"
+                "mewd-green": "#19f5aa"
             }
         },
     },
