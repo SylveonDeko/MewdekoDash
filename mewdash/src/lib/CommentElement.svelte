@@ -8,7 +8,15 @@
                      height="50" width="50">
             </div>
             <div>
-                <a class="underline font-extrabold text-mewd-offwhite hover:text-mewd-white" href="{user?.href}">{user?.name}</a>
+                {#if user?.href == null}
+                    <p class="font-extrabold text-mewd-offwhite">
+                        {user?.name}
+                    </p>
+                {:else}
+                    <a class="font-extrabold text-mewd-offwhite underline hover:text-mewd-white" href="{user.href}">
+                        {user?.name}
+                    </a>
+                {/if}
                 <p class="text-mewd-offwhite">{platform}</p>
             </div>
         </div>
@@ -16,6 +24,6 @@
 </div>
 <script lang="ts">
     export let text: string;
-    export let user: { name: string, href: string, avatar: { src: string, alt: string } };
+    export let user: { name: string, href?: string | null, avatar: { src: string, alt: string } };
     export let platform: string;
 </script>

@@ -177,7 +177,7 @@
                             I love the bot and hope nothing but the best for future reference"
                     user='{{
                         name:"[Heath] Her Strawberry BobaTea™",
-                        href:"https://top.gg/user/212055598057304064",
+                        href:"https://top.gg/user/2363846306423308288",
                         avatar:"img/cdn/DiscordDefault.png"
                     }}'
             />
@@ -187,7 +187,6 @@
                     text="这个&nbsp;Discord&nbsp;Bot&nbsp;很棒 +100&nbsp;Social&nbsp;Credit"
                     user='{{
                         name:"aknatn",
-                        href:"https://top.gg/user/212055598057304064",
                         avatar:"img/cdn/DiscordDefault.png"
                     }}'
             />
