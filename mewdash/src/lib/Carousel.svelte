@@ -5,30 +5,18 @@
     }
     export let images: ImageType[]
     export let name: string = 'carousel'
-    export const getItemId = (index: number) => `${name}-item-${index}`
+
+    const getItemId = (index: number) => `${name}-item-${index}`
 
     let carousel: HTMLElement
-    let scrolledFromLeft
-    $: pictureWidth = carousel?.scrollWidth / images?.length
-    $: currentId = !carousel || !scrolledFromLeft || !pictureWidth ? 0 : Math.round(scrolledFromLeft / pictureWidth)
-    $: scrollRigthPossible = currentId < images?.length - 1
-    $: scrollLeftPossible = currentId > 0
+    let scrolledFromLeft: number
+    $: currentId = !carousel || !scrolledFromLeft ? 0 : Math.round(scrolledFromLeft / (carousel?.scrollWidth / images?.length))
 
     function scrollTo({target}) {
         const link = target.getAttribute('href')
         if (!link) return
 
         scrollToId(link.slice(1))
-    }
-
-    function scrollRight() {
-        if (!scrollRigthPossible) return
-        scrollToId(getItemId(currentId + 1))
-    }
-
-    function scrollLeft() {
-        if (!scrollLeftPossible) return
-        scrollToId(getItemId(currentId - 1))
     }
 
     function scrollToId(id: string) {
@@ -46,7 +34,7 @@
 <div class="relative">
     <ul class="flex overflow-x-auto gap-6 snap-x snap-mandatory no-scroller"
         bind:this={carousel}
-        on:scroll={()=>scrolledFromLeft=carousel.scrollLeft}>
+        on:scroll={() => scrolledFromLeft = carousel.scrollLeft}>
         {#each images as {title, src}, index}
             <li id="{getItemId(index)}" class="w-full shrink-0 snap-center flex flex-col justify-center">
                 <img {src} {title} alt="{title}" class="w-full overflow-hidden rounded-xl"/>
@@ -66,8 +54,10 @@
                 {/each}
             </div>
         </div>
-        {#if scrollLeftPossible}
-            <button title="navigate one left" class="absolute w-min top-[45%] -left-6" on:click={scrollLeft}>
+        {#if currentId > 0}
+            <!--suppress JSUnresolvedVariable -->
+            <button title="navigate one left" class="absolute w-min top-[45%] -left-6"
+                    on:click={() => scrollToId(getItemId(currentId - 1))}>
                 <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="4 1 12 15"
                      xmlns="http://www.w3.org/2000/svg" fill-opacity="0">
                     <path d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"
@@ -76,8 +66,10 @@
                 </svg>
             </button>
         {/if}
-        {#if scrollRigthPossible}
-            <button title="navigate one right" class="absolute w-min top-[45%] -right-8" on:click={scrollRight}>
+        {#if currentId < images?.length - 1}
+            <!--suppress JSUnresolvedVariable -->
+            <button title="navigate one right" class="absolute w-min top-[45%] -right-8"
+                    on:click={() => scrollToId(getItemId(currentId + 1))}>
                 <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="4 1 12 15"
                      xmlns="http://www.w3.org/2000/svg" fill-opacity="0">
                     <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
