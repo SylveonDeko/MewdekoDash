@@ -9,5 +9,8 @@
         {href: "/resources", title: "Resources"}
     ]
 </script>
+
 <Navbar items="{navbarItems}"/>
-<slot/>
+<main>
+    <slot/>
+</main>
