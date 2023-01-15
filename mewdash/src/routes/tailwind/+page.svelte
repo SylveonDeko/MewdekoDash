@@ -28,7 +28,7 @@
 </svelte:head>
 
 <header class="py-12 px-4 sm:px-12 flex justify-center bg-mewd-light-grey">
-    <h1 class="pt-10 text-center font-extrabold text-mewd-text sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
+    <h1 class="pt-10 text-center font-extrabold text-mewd-white sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
 </header>
@@ -111,10 +111,10 @@
             <p class=" h-min mb-2 text-center font-extrabold text-mewd-green">
                 Testimonials
             </p>
-            <h2 class="h-min mb-2 text-center font-black text-mewd-text text-[26px] md:text-[30px] lg:text-[32px]">
+            <h2 class="h-min mb-2 text-center font-black text-mewd-white text-[26px] md:text-[30px] lg:text-[32px]">
                 What People Say About Mewdeko
             </h2>
-            <p class="h-min text-center font-medium text-mewd-text-grey text-md ">
+            <p class="h-min text-center font-medium text-mewd-offwhite text-md ">
                 We've been around for 2 years, there's bound to be some good reviews.
             </p>
         </div>
