@@ -5,7 +5,7 @@
         title: string,
         src: string
     }
-    export let images: ImageType[]
+    export let images: ImageType[] = []
 
     //Bound to the carousel list
     let carousel: HTMLElement
@@ -17,11 +17,14 @@
     //The scrolled width divided by the width of a single image (maximum width/image count) is the index of the currently centered image
     $: currentIndex = !carousel || !carouselScroll ? 0 : Math.round(carouselScroll / (carousel?.scrollWidth / images?.length))
 
-    //Scrolls the carousel to the image at the given index, smoothly if reduced motion is not enabled
+    //Scrolls the carousel to the image at the given index
     function scrollToIndex(index: number) {
+        //Check if index is in bounds
+        if (index < 0 || index >= images.length) return
+        //Determine the element to scroll to
         const scrollToElement = carouselImages[index]
         if (!scrollToElement) return
-
+        //Scroll to the element, smooth if reduced motion is not enabled
         scrollToElement.scrollIntoView({
             block: 'nearest',
             inline: 'center',
@@ -64,7 +67,7 @@
                 </svg>
             </button>
         {/if}
-        {#if currentIndex < images?.length - 1}
+        {#if currentIndex < images.length - 1}
             <!--suppress JSUnresolvedVariable -->
             <button title="navigate one right" class="absolute w-min top-[45%] -right-8"
                     on:click={() => scrollToIndex(currentIndex + 1)}>
