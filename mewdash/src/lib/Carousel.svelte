@@ -29,7 +29,7 @@
         })
     }
 </script>
-<div class="relative">
+<div class="relative mb-4">
     <ul class="flex overflow-x-auto gap-6 snap-x snap-mandatory no-scroller"
         bind:this={carousel}
         on:scroll={() => carouselScroll = carousel.scrollLeft}>
@@ -42,7 +42,7 @@
     </ul>
     <!--suppress JSUnresolvedVariable -->
     <nav title="carousel nav">
-        <div title="absolute navigation" class="w-full bottom-4 left-0 absolute flex flex-col justify-end">
+        <div title="absolute navigation" class="w-full -bottom-4 left-0 absolute flex flex-col justify-end">
             <div class="flex gap-2 place-content-center">
                 {#each images as _ , index}
                     <!--suppress JSUnresolvedVariable -->
