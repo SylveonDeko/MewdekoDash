@@ -58,7 +58,7 @@
                         title: 'Anti Raid',
                         src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
                     }
-                ]}" name="features"/>
+                ]}"/>
             </Interactable>
             <Interactable
                     cta="{{text:'Support Server',href:'https://discord.gg/mewdeko' }}"
@@ -81,7 +81,7 @@
                         title: 'Walking The Dog',
                         src: 'https://media.discordapp.net/attachments/970494924938166352/1059102004334567424/image.png'
                     }
-                ]}" name="staff-response"/>
+                ]}"/>
             </Interactable>
             <Interactable
                     cta="{{text:'Source Code',href:'https://github.com/SylveonDeko/Mewdeko' }}"
@@ -112,7 +112,7 @@
                         title: 'Custom Command In Action',
                         src: 'https://media.discordapp.net/attachments/970494924938166352/1059151508651900938/image.png'
                     }
-                ]}" name="custom-responses"/>
+                ]}"/>
             </Interactable>
             <Interactable
                     description="After spending hours on end making sure this works properly,
@@ -134,7 +134,7 @@
                         title: 'Afk Commands',
                         src: 'https://media.discordapp.net/attachments/970494924938166352/1059181417793323028/image.png'
                     }
-                ]}" name="customizable"/>
+                ]}"/>
             </Interactable>
             <Interactable
                     description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"

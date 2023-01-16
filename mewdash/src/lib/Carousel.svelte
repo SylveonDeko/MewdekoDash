@@ -6,14 +6,6 @@
         src: string
     }
     export let images: ImageType[]
-    export let name: string = 'carousel'
-
-    //Carousel unique prefix (as long as name is unique)
-    const idPrefix = `${name}-item-`
-    //Adds the prefix to and index -> unique element identifier
-    const getIdForIndex = (index: number) => idPrefix + index
-    //Removes the prefix from an id -> index
-    const getIndexFromId = (id: string) => parseInt(id.replace(idPrefix, ''))
 
     //Bound to the carousel list
     let carousel: HTMLElement
@@ -24,13 +16,6 @@
 
     //The scrolled width divided by the width of a single image (maximum width/image count) is the index of the currently centered image
     $: currentIndex = !carousel || !carouselScroll ? 0 : Math.round(carouselScroll / (carousel?.scrollWidth / images?.length))
-
-    //Used to scroll the carousel by a href element (needs to prevent default)
-    function scrollTo({target}) {
-        const link = target.getAttribute('href')
-        if (!link) return
-        scrollToIndex(getIndexFromId(link.slice(1)))
-    }
 
     //Scrolls the carousel to the image at the given index, smoothly if reduced motion is not enabled
     function scrollToIndex(index: number) {
@@ -49,21 +34,20 @@
         bind:this={carousel}
         on:scroll={() => carouselScroll = carousel.scrollLeft}>
         {#each images as {title, src}, index}
-            <li id="{getIdForIndex(index)}" bind:this="{carouselImages[index]}"
+            <li bind:this="{carouselImages[index]}"
                 class="w-full shrink-0 snap-center flex flex-col justify-center">
                 <img {src} {title} alt="{title}" class="w-full overflow-hidden rounded-xl"/>
             </li>
         {/each}
     </ul>
     <!--suppress JSUnresolvedVariable -->
-    <nav title="{name} nav">
+    <nav title="carousel nav">
         <div title="absolute navigation" class="w-full bottom-0 left-0 absolute flex flex-col justify-end">
             <div class="flex gap-2 place-content-center pb-4 ">
                 {#each images as _ , index}
                     <!--suppress JSUnresolvedVariable -->
                     <button class="w-[32px] h-[6px] rounded-md hover:bg-mewd-white {index === currentIndex ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
-                            href="#{getIdForIndex(index)}"
-                            on:click={scrollTo}>
+                            on:click={() => scrollToIndex(index)}>
                     </button>
                 {/each}
             </div>
