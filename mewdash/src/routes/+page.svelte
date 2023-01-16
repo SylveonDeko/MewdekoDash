@@ -3,7 +3,8 @@
     import Interactable from "$lib/util/InteractableElement.svelte";
     import CommentElement from "$lib/CommentElement.svelte";
     import Carousel from "$lib/Carousel.svelte";
-    import PageData = App.PageData;
+    import type {PageData} from "./$types";
+
     export let data: PageData;
 </script>
 
@@ -39,8 +40,8 @@
         {#if !data.servercount}
             <h2 class="text-center text-mewd-white text-2xl font-bold">Here's what Mewdeko can do for you</h2>
         {:else}
-             <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
-            Mewdeko is in {data.servercount} servers, may the features below grant it one more.</h2>
+            <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
+                Mewdeko is in {data.servercount} servers, may the features below grant it one more.</h2>
         {/if}
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
@@ -96,7 +97,8 @@
                     slot="element-3"
                     title="Open Source"
             >
-                <img src="img/clipboard-image.png" title="Github Repo" alt="Github Repo" class="w-full overflow-hidden rounded-xl"/>
+                <img src="img/clipboard-image.png" title="Github Repo" alt="Github Repo"
+                     class="w-full overflow-hidden rounded-xl"/>
             </Interactable>
             <Interactable
                     description="You can create custom text and slash commands using
@@ -147,7 +149,8 @@
                     slot="element-6"
                     title="... And much more!"
             >
-                <img src="https://media.discordapp.net/attachments/991151715313254520/1064271068266762390/image.png" title="Modules List" alt="Modules List" class="w-full overflow-hidden rounded-xl"/>
+                <img src="https://media.discordapp.net/attachments/991151715313254520/1064271068266762390/image.png"
+                     title="Modules List" alt="Modules List" class="w-full overflow-hidden rounded-xl"/>
             </Interactable>
         </FluidContainer>
     </div>
