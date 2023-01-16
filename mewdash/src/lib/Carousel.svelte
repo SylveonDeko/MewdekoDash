@@ -42,8 +42,8 @@
     </ul>
     <!--suppress JSUnresolvedVariable -->
     <nav title="carousel nav">
-        <div title="absolute navigation" class="w-full bottom-0 left-0 absolute flex flex-col justify-end">
-            <div class="flex gap-2 place-content-center pb-4 ">
+        <div title="absolute navigation" class="w-full bottom-4 left-0 absolute flex flex-col justify-end">
+            <div class="flex gap-2 place-content-center">
                 {#each images as _ , index}
                     <!--suppress JSUnresolvedVariable -->
                     <button class="w-[32px] h-[6px] rounded-md hover:bg-mewd-white {index === currentIndex ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
