@@ -57,9 +57,9 @@
         </div>
         {#if currentIndex > 0}
             <!--suppress JSUnresolvedVariable -->
-            <button title="navigate one left" class="absolute w-min top-[45%] -left-6"
+            <button title="navigate one left" class="absolute w-min top-[45%] -left-7"
                     on:click={() => scrollToIndex(currentIndex - 1)}>
-                <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="4 1 12 15"
+                <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="3 1 10 15"
                      xmlns="http://www.w3.org/2000/svg" fill-opacity="0">
                     <path d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"
                           stroke-linecap="round" stroke-miterlimit="10"
@@ -69,9 +69,9 @@
         {/if}
         {#if currentIndex < images.length - 1}
             <!--suppress JSUnresolvedVariable -->
-            <button title="navigate one right" class="absolute w-min top-[45%] -right-8"
+            <button title="navigate one right" class="absolute w-min top-[45%] -right-7"
                     on:click={() => scrollToIndex(currentIndex + 1)}>
-                <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="4 1 12 15"
+                <svg class="h-8 stroke-mewd-transparent hover:stroke-mewd-white" viewBox="3 1 10 15"
                      xmlns="http://www.w3.org/2000/svg" fill-opacity="0">
                     <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
                           stroke-linecap="round" stroke-miterlimit="10"
