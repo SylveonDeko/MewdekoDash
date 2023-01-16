@@ -37,11 +37,11 @@
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="mewdekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
-        {#if !data.servercount}
+        {#if !data.server_count}
             <h2 class="text-center text-mewd-white text-2xl font-bold">Here's what Mewdeko can do for you</h2>
         {:else}
             <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
-                Mewdeko is in {data.servercount} servers, may the features below grant it one more.</h2>
+                Mewdeko is in {data.server_count} servers, may the features below grant it one more.</h2>
         {/if}
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
