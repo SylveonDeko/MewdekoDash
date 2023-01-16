@@ -1,7 +1,7 @@
 <script lang="ts">
     export let title: string;
     export let description: string;
-    export let cta: { href: string, text: string } | null = null;
+    export let cta: { href: string, text: string, target:string | "_blank" } | null = null;
 </script>
 
 <section class="w-full h-max m-6 pt-6 pb-8 max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl bg-mewd-light-grey ">
@@ -21,7 +21,7 @@
     {#if cta}
         <div class="pt-4 flex justify-center">
             <a class="w-max h-max py-2 px-4 bg-mewd-yellow text-mewd-white font-bold rounded-full"
-               href="{cta.href}" target="_blank" rel="noreferrer">{cta.text} </a>
+               href="{cta.href}" target={cta.target} rel="noreferrer">{cta.text} </a>
         </div>
     {/if}
 </section>
