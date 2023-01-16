@@ -1,6 +1,3 @@
-<svelte:head>
-    +page.svelte
-</svelte:head>
 <section class="flex justify-center min-h-screen bg-mewd-light-grey" title="mewdekos testimonials">
     <div class="pt-32 pb-12 lg:mx-14 max-w-[45rem] lg:max-w-[82rem] px-3">
         <div class="mb-16 px-2">
