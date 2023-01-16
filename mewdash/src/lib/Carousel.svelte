@@ -49,7 +49,8 @@
             <div class="flex gap-2 place-content-center">
                 {#each images as _ , index}
                     <!--suppress JSUnresolvedVariable -->
-                    <button title="scroll image {index} into view" class="w-[32px] h-[6px] rounded-md hover:bg-mewd-white {index === currentIndex ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
+                    <button title="scroll image {index} into view"
+                            class="w-[32px] h-[6px] rounded-md hover:bg-mewd-white {index === currentIndex ? 'bg-mewd-white' : ' bg-mewd-transparent'}"
                             on:click={() => scrollToIndex(index)}>
                     </button>
                 {/each}

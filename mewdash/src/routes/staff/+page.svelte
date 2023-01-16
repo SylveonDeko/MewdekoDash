@@ -1,32 +1,22 @@
-<sveltekit:head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport">
-    <title>Team - Mewdeko</title>
-    <meta content="#938018" name="theme-color">
-    <meta content="The only completely free bot that's both open source and completely customizable."
-          name="description">
-    <meta content="Invite Mewdeko! The only completely free bot that's both open source and completely customizable."
-          property="og:description">
-    <meta content="website" property="og:type">
-    <meta content="Mewdeko - The most customizable discord bot." name="twitter:title">
-    <meta content="summary_large_image" name="twitter:card">
-    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" name="twitter:image">
-    <meta content="Invite Mewdeko! The only completely free bot that's both open source and completely customizable."
-          name="twitter:description">
-    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" property="og:image">
-    <meta content="Mewdeko - The most customizable discord bot." property="og:title">
-    <link href="img/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" type="image/png">
-    <link href="img/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
-    <link href="img/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
-    <link href="img/apple-touch-icon.png" rel="icon" sizes="180x180" type="image/png">
-    <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
-    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Inter:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800&amp;display=swap"
-          rel="stylesheet">
-    <link href="css/Navbar-Right-Links-Dark-icons.css" rel="stylesheet">
-</sveltekit:head>
-
-<sveltekit:body>
+<svelte:head>
+    +page.svelte
+</svelte:head>
+<section class="flex justify-center min-h-screen bg-mewd-light-grey" title="mewdekos testimonials">
+    <div class="pt-32 pb-12 lg:mx-14 max-w-[45rem] lg:max-w-[82rem] px-3">
+        <div class="mb-16 px-2">
+            <p class=" h-min mb-2 text-center font-extrabold text-mewd-green">
+                Our Staff
+            </p>
+            <h2 class="h-min mb-2 text-center font-black text-mewd-white text-[26px] md:text-[30px] lg:text-[32px]">
+                Major People
+            </h2>
+            <p class="h-min text-center font-medium text-mewd-offwhite text-md ">
+                The team of Mewdeko, strong I would say.
+            </p>
+        </div>
+    </div>
+</section>
+<!--sveltekit:body>
     <nav class="navbar navbar-dark navbar-expand-md bg-dark py-3" style="background: rgb(45,44,56);">
         <div class="container"><a class="navbar-brand d-flex align-items-center" href="/"><span
                 class="bs-icon-md bs-icon-circle bs-icon-primary d-flex justify-content-center align-items-center me-2 bs-icon"
@@ -97,4 +87,4 @@
     <script src="js/bs-init.js"></script>
     <script src="js/bold-and-dark.js"></script>
     <script src="js/untitled.js"></script>
-</sveltekit:body>
+</sveltekit:body-->
