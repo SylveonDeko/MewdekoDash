@@ -9,6 +9,7 @@
         {href: "/resources", title: "Resources"}
     ]
 </script>
+
 <svelte:head>
     <meta content="#938018" name="theme-color">
     <meta content="The only completely free bot that's both open source and completely customizable."
@@ -29,6 +30,7 @@
     <link href="img/apple-touch-icon.png" rel="icon" sizes="180x180" type="image/png">
     <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
 </svelte:head>
+
 <Navbar items="{navbarItems}"/>
 <main>
     <slot/>
