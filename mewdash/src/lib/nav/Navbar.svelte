@@ -1,7 +1,7 @@
 <nav class="py-4 bg-mewd-dark-grey">
     <div class="container flex flex-wrap items-center justify-between mx-auto px-6">
         <a title="mewdeko-banner" class="flex items-center mr-4 py-[0.3rem]" href="/">
-            <img alt="Mewdekos Avatar" class="h-12 mr-3" height="48" width="48" src="img/cdn/Mewdeko.png"/>
+            <img alt="Mewdekos Avatar" class="h-12 mr-3" height="48" width="48" src="https://cdn.mewdeko.tech/Mewdeko.png"/>
             <span aria-hidden="true"
                   class="self-center text-xl font-semibold whitespace-nowrap text-mewd-white">Mewdeko</span>
         </a>

@@ -8,10 +8,14 @@
     export let data: PageData;
 </script>
 
-<header class="py-12 px-4 sm:px-12 flex justify-center bg-mewd-light-grey">
-    <h1 class="pt-10 text-center font-extrabold text-mewd-white sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
+<header class="py-12 px-4 sm:px-12 flex flex-col items-center bg-mewd-light-grey">
+    <h1
+      class="pt-10 text-center font-extrabold text-mewd-white sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
+    <a class="text-2xl font-bold w-max h-max py-2 px-4 bg-mewd-yellow text-mewd-white rounded-full mt-12"
+       href="https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot"
+       target="_blank" rel="noreferrer">Invite Me!</a>
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="mewdekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
@@ -167,7 +171,7 @@
                     user='{{
                         name:"[Heath] Her Strawberry BobaTea™",
                         href:"https://top.gg/user/2363846306423308288",
-                        avatar:"img/cdn/DiscordDefault.png"
+                        avatar:"https://cdn.mewdeko.tech/DiscordDefault.png"
                     }}'
             />
             <CommentElement
@@ -176,7 +180,7 @@
                     text="这个&nbsp;Discord&nbsp;Bot&nbsp;很棒 +100&nbsp;Social&nbsp;Credit"
                     user='{{
                         name:"aknatn",
-                        avatar:"img/cdn/DiscordDefault.png"
+                        avatar:"https://cdn.mewdeko.tech/DiscordDefault.png"
                     }}'
             />
         </FluidContainer>
