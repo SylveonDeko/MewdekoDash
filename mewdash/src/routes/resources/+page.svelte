@@ -1,4 +1,4 @@
-<div class="h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center text-center" style="color:white">
+<div class="min-h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center text-center" style="color:white">
   <p class="text-2xl"><a href="https://eb.mewdeko.tech" target="_blank"><br><br>Embed
     Builder<br></a></p>
   <p class="text-2xl"><br><a href="https://blog.mewdeko.tech/placeholders"

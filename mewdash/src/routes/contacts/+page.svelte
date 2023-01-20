@@ -4,7 +4,7 @@
     import ItemLink from "$lib/ItemLink.svelte"
 </script>
 
-<div class="h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center" style="color:white">
+<div class="min-h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center" style="color:white">
     <h2 class="fw-bold text-3xl pb-6 text-center">How you can reach us</h2>
     <ItemLink link="{{href:'mailto:sylveon@mewdeko.tech', text:'sylveon@mewdeko.tech'}}">
         <MailIcon/>

@@ -4,7 +4,7 @@
     export let data: PageData;
 </script>
 
-<div class="bg-mewd-light-grey h-screen">
+<div class="bg-mewd-light-grey min-h-[calc(100vh-5.6rem)]">
     <h1 class="text-3xl text-center text-mewd-white"><br><br>Auth Code Receiver</h1>
     {#if data.code}
         <h3 class="text-center text-mewd-white text-2xl">Your Discord Auth Code is&nbsp;<code

@@ -1,5 +1,5 @@
 <div class="mb-8 px-3">
-    <div class="flex flex-col items-center sm:items-start max-w-[26rem]">
+    <div class="flex flex-col sm:items-start max-w-[26rem]">
         <p class="p-6 mb-4 rounded-2xl bg-mewd-dark-grey text-mewd-white">{@html text}</p>
         <div class="flex flex-row">
             <div>
