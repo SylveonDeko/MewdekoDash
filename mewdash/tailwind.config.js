@@ -11,7 +11,9 @@ export default {
                 "mewd-dark-grey": "#27262e",
                 "mewd-light-grey": "#2d2c38",
                 "mewd-yellow": "#938018",
+                "mewd-dark-yellow": "#6b5e14",
                 "mewd-green": "#19f5aa"
+
             }
         },
     },
