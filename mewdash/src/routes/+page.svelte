@@ -38,7 +38,7 @@
     {/if}
     <FluidContainer breakpoints='{["md", "xl"]}'>
       <Interactable
-        cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' }}"
+        cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' }}"
         description="With Auto Ban words, antispam, antiraid
                                     and 2 different warning systems (yes two!)
                                     Mewdeko can be as flexible as you want it to be!"
@@ -94,10 +94,18 @@
              class="w-full overflow-hidden rounded-xl" />
       </Interactable>
       <Interactable
+              description="Create up to 30 MultiGreets in one server!"
+              slot="element-4"
+              title="Overkill"
+      >
+        <img src="img/img.png" title="MultiGreets" alt="Github Repo"
+             class="w-full overflow-hidden rounded-xl" />
+      </Interactable>
+      <Interactable
         description="You can create custom text and slash commands using
                                     the embed builder and variables, both are optional!<br><br>
                                     Go to Resources at the top for links to the embed builder and placeholders!"
-        slot="element-4"
+        slot="element-5"
         title="Custom Responses"
       >
         <Carousel images="{[
@@ -119,7 +127,7 @@
         description="After spending hours on end making sure this works properly,
                                     you can customize many, many aspects of the bot to your liking!
                                     It's overkill sometimes honestly."
-        slot="element-5"
+        slot="element-6"
         title="Customizable"
       >
         <Carousel images="{[
@@ -139,7 +147,7 @@
       </Interactable>
       <Interactable
         description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"
-        slot="element-6"
+        slot="element-7"
         title="... And much more!"
       >
         <img src="https://media.discordapp.net/attachments/991151715313254520/1064271068266762390/image.png"

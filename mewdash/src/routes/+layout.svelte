@@ -4,6 +4,7 @@
 
     const navbarItems: { title: string, href: string }[] = [
         {href: "/", title: "Home"},
+        {href: "/partners", title: "Partners"},
         {href: "/contacts", title: "Contact Us"},
         {href: "/staff", title: "Staff"},
         {href: "/resources", title: "Resources"}
