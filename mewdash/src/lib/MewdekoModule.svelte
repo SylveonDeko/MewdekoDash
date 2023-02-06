@@ -31,7 +31,7 @@
                         class="flex flex-row justify-start w-full py-3 px-5 bg-black">
                     <h3 class="text-mewd-green text-md">{capitalizeFirstLetter(command.CommandName)}</h3>
                     {#if active !== computeCommandId(module, command)}
-                        <p class="pl-2 pt-2 text-sm whitespace-nowrap text-ellipsis overflow-hidden"> {command.Description}</p>
+                        <p class="px-4 pt-2 text-sm whitespace-nowrap text-ellipsis overflow-hidden"> {command.Description}</p>
                     {/if}
                 </button>
                 {#if active === computeCommandId(module, command)}
