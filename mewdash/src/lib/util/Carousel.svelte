@@ -1,5 +1,5 @@
 <script lang="ts">
-    import reducedMotion from './reducedMotion';
+    import reducedMotion from '../reducedMotion';
 
     type ImageType = {
         title: string,

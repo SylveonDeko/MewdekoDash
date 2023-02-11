@@ -1,7 +1,7 @@
 <script>
     import FluidContainer from "$lib/util/FluidContainer.svelte";
     import InteractableElement from "$lib/util/InteractableElement.svelte";
-    import Carousel from "$lib/Carousel.svelte";
+    import Carousel from "$lib/util/Carousel.svelte";
 </script>
 
 <section class="min-h-screen flex justify-center bg-mewd-dark-grey" title="Mewdeko's Partners!">

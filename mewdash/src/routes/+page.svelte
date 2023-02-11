@@ -2,7 +2,7 @@
     import FluidContainer from "$lib/util/FluidContainer.svelte";
     import Interactable from "$lib/util/InteractableElement.svelte";
     import CommentElement from "$lib/CommentElement.svelte";
-    import Carousel from "$lib/Carousel.svelte";
+    import Carousel from "$lib/util/Carousel.svelte";
     import type {PageData} from "./$types";
     import MultiButton from "$lib/MultiButton.svelte";
 
