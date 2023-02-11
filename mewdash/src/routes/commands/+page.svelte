@@ -18,14 +18,33 @@
     onDestroy(() => {
         unsubscribe();
     })
+
+    const MOCK_CONTENT = `
+## Lorem
+
+Lorem is currently extended with the following plugins.
+Instructions on how to use them in your application are linked below.
+
+| Plugin | README |
+| ------ | ------ |
+| Dropbox | [plugins/dropbox/README.md](Link) |
+| Medium | [plugins/medium/README.md](Link) |
+| Google Analytics | [plugins/googleanalytics/README.md](Link) |
+`;
+    export let data;
 </script>
+
+<div class="prose">
+    {@html data.code}
+</div>
 
 <div class="min-h-screen p-2 bg-mewd-dark-grey space-y-6">
     <div class="flex flex-col items-center py-6 space-y-4 ">
         <h1 class="text-4xl font-bold text-mewd-white text-center">Mewdeko Modules</h1>
         <div class="flex flex-wrap justify-center">
             <label for="search" class="text-mewd-white pr-2">Search for a Command:</label>
-            <input type="search" id="search" placeholder="Search..." class="rounded-full px-2 py-1 sm:w-96" bind:value={$searchStore.search}/>
+            <input type="search" id="search" placeholder="Search..." class="rounded-full px-2 py-1 sm:w-96"
+                   bind:value={$searchStore.search}/>
         </div>
     </div>
     <ul id="modules">
