@@ -11,7 +11,9 @@ export const createSearchStore = (data: Module[]) => {
 }
 
 export const searchHandler = (store: { search: string; filtered: Module[]; data: Module[]; }) => {
-    const searchTerms = store.search.toLowerCase().split(" ") || [];
+    const searchTerms = store.search.toLowerCase()
+        .split(" ")
+        .filter((term) => term) || [];
 
     store.filtered = store.data.map((module) => (
         {

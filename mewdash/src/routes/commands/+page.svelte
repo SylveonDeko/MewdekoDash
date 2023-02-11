@@ -31,7 +31,7 @@
     <ul id="modules">
         {#each $searchStore.filtered as module}
             <li class="mb-2 p-2 bg-mewd-light-grey rounded-xl ">
-                <MewdekoModule {module}/>
+                <MewdekoModule {module} searching="{!!$searchStore.search?.trim()}"/>
             </li>
         {/each}
     </ul>
