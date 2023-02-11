@@ -1,3 +1,5 @@
+import typography from "@tailwindcss/typography";
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: ['./src/**/*.{html,js,svelte,ts}'],
@@ -7,7 +9,7 @@ export default {
                 "mewd-transparent": "rgba(255, 255, 255, 0.55)",
                 "mewd-light-transparent": "rgba(255, 255, 255, 0.1)",
                 "mewd-white": "#ffffff",
-                "mewd-offwhite":"#b0bdd3",
+                "mewd-offwhite": "#b0bdd3",
                 "mewd-dark-grey": "#27262e",
                 "mewd-light-grey": "#2d2c38",
                 "mewd-yellow": "#938018",
@@ -23,5 +25,7 @@ export default {
         "md:w-1/2", "md:w-1/3",
         "sm:w-1/2",
     ],
-    plugins: [],
+    plugins: [
+        typography,
+    ],
 }
