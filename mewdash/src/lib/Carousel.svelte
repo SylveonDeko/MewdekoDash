@@ -27,13 +27,12 @@
         //Scroll to the element, smooth if reduced motion is not enabled
         scrollToElement.scrollIntoView({
             block: 'nearest',
-            inline: 'center',
-            behavior: $reducedMotion ? 'auto' : 'smooth',
+            inline: 'center'
         })
     }
 </script>
 <div class="relative mb-4">
-    <ul class="flex overflow-x-auto gap-6 snap-x snap-mandatory no-scroller"
+    <ul class="flex overflow-x-auto gap-6 snap-x snap-mandatory no-scroller {$reducedMotion ? '' : 'scroll-smooth'}"
         bind:this={carousel}
         on:scroll={() => carouselScroll = carousel.scrollLeft}>
         {#each images as {title, src}, index}
