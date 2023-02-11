@@ -21,7 +21,8 @@ export const searchHandler = (store: { search: string; filtered: Module[]; data:
             Commands: module.Commands.filter((command) =>
                 searchTerms.every(item =>
                     command.CommandName.toLowerCase().includes(item) ||
-                    command.Description.toLowerCase().includes(item)
+                    command.Description.toLowerCase().includes(item)||
+                    module.Name.toLowerCase().includes(item)
                 )
             )
         } as Module
