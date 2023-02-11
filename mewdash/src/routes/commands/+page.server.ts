@@ -1,20 +1,18 @@
 import type {PageServerLoad} from "./$types";
 import {compile} from "mdsvex";
+import type {Module} from "$lib/types/mewdekoModules";
 
-const MOCK_MARKDOWN = `
-## Lorem
+import json from "./modules.json"
 
-Lorem is currently extended with the following plugins.
-Instructions on how to use them in your application are linked below.
+export const load: PageServerLoad = async (): Promise<{ modules: Module[] }> => {
+    let modules: Module[] = json
+    modules.sort((a, b) => a.Name < b.Name ? -1 : a.Name > b.Name ? 1 : 0)
+    modules.forEach(module => {
+        module.Commands.sort((a, b) => a.CommandName < b.CommandName ? -1 : a.CommandName > b.CommandName ? 1 : 0)
+        module.Commands.forEach(async (command) => {
+            command.HtmlDescription = await compile(command.Description.trim()).then((result) => result?.code ?? "")
+        })
+    })
 
-| Plugin | README |
-| ------ | ------ |
-| Dropbox | [plugins/dropbox/README.md](Link) |
-| Medium | [plugins/medium/README.md](Link) |
-| Google Analytics | [plugins/googleanalytics/README.md](Link) |
-`;
-
-export const load: PageServerLoad= async () => {
-     // Get data with eg. `fetch`
-    return await compile(MOCK_MARKDOWN);
+    return {modules}
 };

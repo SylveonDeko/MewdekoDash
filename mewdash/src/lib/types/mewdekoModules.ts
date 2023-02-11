@@ -8,6 +8,7 @@ export type Command = {
     ChannelUserPermissions: string,
     CommandName: string,
     Description: string,
+    HtmlDescription?: string,
     Example: string[],
     GuildBotPermissions: string,
     GuildUserPermissions: string,

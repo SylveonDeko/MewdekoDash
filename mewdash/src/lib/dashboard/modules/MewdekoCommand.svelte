@@ -13,5 +13,5 @@
         <h3 class="text-mewd-yellow text-sm font-bold">{capitalizeFirstLetter(command.CommandName)}</h3>
         <h4 class="group-open:hidden px-4 text-sm whitespace-nowrap text-ellipsis overflow-hidden"> {command.Description}</h4>
     </summary>
-    <p class="px-4 pb-2 text-sm"> {command.Description}</p>
+    <p class="px-4 pb-2 text-sm prose prose-invert"> {@html command.HtmlDescription}</p>
 </details>
