@@ -16,7 +16,7 @@ export default {
                 "mewd-dark-yellow": "#6b5e14",
                 "mewd-green": "#19f5aa"
 
-            }
+            },
         },
     },
     safelist: [

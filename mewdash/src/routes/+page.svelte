@@ -19,19 +19,6 @@
           { text: 'Donate', href: 'https://ko-fi.com/mewdeko' },
           { text: 'Server', href: 'https://discord.gg/mewdeko' },
         ]}"/>
-    <!--div class="flex flex-row mt-12 overflow-hidden rounded-full">
-      <a
-         class="px-4 py-2 text-2xl hover:bg-mewd-dark-yellow bg-mewd-yellow text-mewd-white"
-         href="https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot"
-         target="_blank" rel="noreferrer">Invite</a>
-      <a
-        class="px-4 py-2 text-2xl hover:bg-mewd-dark-yellow bg-mewd-yellow text-mewd-white"
-        href="https://ko-fi.com/mewdeko"
-        target="_blank" rel="noreferrer">Donate</a>
-      <a class="px-4 py-2 text-2xl hover:bg-mewd-dark-yellow bg-mewd-yellow text-mewd-white"
-         href="https://discord.gg/mewdeko"
-         target="_blank" rel="noreferrer">Server</a>
-    </div-->
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="mewdekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
@@ -155,6 +142,7 @@
                     description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"
                     slot="element-7"
                     title="... And much more!"
+                    cta={{text: "Check them out!", href: "/commands"}}
             >
                 <img src="https://media.discordapp.net/attachments/991151715313254520/1064271068266762390/image.png"
                      title="Modules List" alt="Modules List" class="w-full overflow-hidden rounded-xl"/>
