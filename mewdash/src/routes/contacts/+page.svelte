@@ -9,6 +9,9 @@
     <ItemLink link="{{href:'mailto:sylveon@mewdeko.tech', text:'sylveon@mewdeko.tech'}}">
         <MailIcon/>
     </ItemLink>
+    <ItemLink link="{{href:'mailto:cottage@mewdeko.tech', text:'cottage@mewdeko.tech (GraveyardDwellingCat)'}}">
+        <MailIcon/>
+    </ItemLink>
     <ItemLink link="{{href:'https://discord.gg/mewdeko', text:'Discord Server'}}">
         <DiscordIcon/>
     </ItemLink>
