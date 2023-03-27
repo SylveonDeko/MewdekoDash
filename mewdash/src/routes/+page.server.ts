@@ -1,8 +1,12 @@
 import {TopGGKey} from "$lib/server/secrets";
 import type {PageServerLoad} from "./$types"
+import type {DiscordUser} from "../lib/types/discord";
+import Discord from "../lib/icon/Discord.svelte";
 
-export const load: PageServerLoad = async (cookies): Promise<{ server_count: number | null }> => {
-    return fetch("https://top.gg/api/bots/752236274261426212/stats", {
+export const load: PageServerLoad = async (cookies, locals): Promise<{ server_count: number | null, user: DiscordUser | null }> => {
+    let count: number | null;
+    let gottenUser: DiscordUser | null;
+    fetch("https://top.gg/api/bots/752236274261426212/stats", {
         method: "get",
         headers: new Headers({
             'Authorization': TopGGKey
@@ -12,9 +16,16 @@ export const load: PageServerLoad = async (cookies): Promise<{ server_count: num
             return response.json();
         })
         .then(data => {
-            return {server_count: parseInt(data.server_count)};
+            count: parseInt(data.server_count);
         })
         .catch(() => {
-            return {server_count: null};
+            count: null;
         });
+
+    if (locals.user)
+        gottenUse: locals.User;
+
+    return {server_count: count, user: gottenUser};
+    
+
 }
