@@ -1,15 +1,15 @@
-
+import {PUBLIC_DISCORD_API_URL, PUBLIC_DISCORD_REDIRECT_URI, PUBLIC_DISCORD_SCOPES} from "$env/static/public";
+import {DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET} from "$env/static/private";
 import type {Cookies} from "@sveltejs/kit";
-import {ClientId, ClientSecret, RedirectUri} from "../../../lib/server/secrets";
 
 const ACCESS_TOKEN_COOKIE = "discord_access_token",
     REFRESH_TOKEN_COOKIE = "discord_refresh_token";
 
 export const requestDiscordToken = async (searchParams: URLSearchParams): Promise<Tokens> => {
     // performing a Fetch request to Discord's token endpoint
-    const request = await fetch(`https://discord.com/api/v10/oauth2/token`, {
+    const request = await fetch(`${PUBLIC_DISCORD_API_URL}/oauth2/token`, {
         method: 'POST',
-        body: new URLSearchParams(searchParams),
+        body: searchParams,
         headers: {'Content-Type': 'application/x-www-form-urlencoded'}
     })
 
@@ -30,37 +30,40 @@ export const requestDiscordToken = async (searchParams: URLSearchParams): Promis
     }
 }
 
-export function buildSearchParams(scope: string, type: 'callback' | 'refresh', code: string): URLSearchParams {
+export function buildSearchParams(type: 'callback' | 'refresh', code: string): URLSearchParams {
     const searchParams = new URLSearchParams()
-    searchParams.append("client_id", ClientId);
-    searchParams.append("client_secret", ClientSecret
-    );
+    searchParams.append("client_id", DISCORD_CLIENT_ID);
+    searchParams.append("client_secret", DISCORD_CLIENT_SECRET);
     searchParams.append("grant_type", type == "callback" ? "authorization_code" : "refresh_token");
     searchParams.append(type == "callback" ? "code" : "refresh_token", code);
-    searchParams.append("redirect_uri", RedirectUri);
-    searchParams.append("scope", scope);
+    searchParams.append("redirect_uri", PUBLIC_DISCORD_REDIRECT_URI);
+    searchParams.append("scope", PUBLIC_DISCORD_SCOPES);
     return searchParams;
 }
 
 export function setCookies(tokens: Tokens, cookies: Cookies) {
-    cookies.set(
-        ACCESS_TOKEN_COOKIE, tokens.access_token,
-        {
-            path: '/',
-            expires: tokens.access_valid_until,
-            httpOnly: true,
-            sameSite: 'strict',
-        }
-    )
-    cookies.set(
-        REFRESH_TOKEN_COOKIE, tokens.refresh_token,
-        {
-            path: '/',
-            expires: tokens.refresh_valid_until,
-            httpOnly: true,
-            sameSite: 'strict',
-        }
-    )
+    try {
+        cookies.set(
+            ACCESS_TOKEN_COOKIE, tokens.access_token,
+            {
+                path: '/',
+                expires: tokens.access_valid_until,
+                httpOnly: true,
+                sameSite: 'strict',
+            }
+        )
+        cookies.set(
+            REFRESH_TOKEN_COOKIE, tokens.refresh_token,
+            {
+                path: '/',
+                expires: tokens.refresh_valid_until,
+                httpOnly: true,
+                sameSite: 'strict',
+            }
+        )
+    } catch (e) {
+        console.error("could not set cookies:" + e)
+    }
 }
 
 export function deleteCookies(cookies: Cookies) {

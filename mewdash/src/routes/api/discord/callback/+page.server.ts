@@ -1,7 +1,7 @@
 import {buildSearchParams, requestDiscordToken, setCookies} from "../discordAuth";
 import type {PageServerLoad} from "./$types";
 
-export const load: PageServerLoad = async ({url, cookies, locals}): Promise<{ loggedIn: boolean, error?:string }> => {
+export const load: PageServerLoad = async ({url, cookies, locals}): Promise<{ loggedIn: boolean, error?: string }> => {
     if (locals.user) return {loggedIn: true}
     // fetch returnCode set in the URL parameters.
     const returnCode = url.searchParams.get('code');
@@ -9,11 +9,15 @@ export const load: PageServerLoad = async ({url, cookies, locals}): Promise<{ lo
         return {loggedIn: false, error: 'No code provided.'}
     }
     try {
-        const tokens = await requestDiscordToken(buildSearchParams("identify guilds", "callback", returnCode));
+        const tokens = await requestDiscordToken(buildSearchParams("callback", returnCode));
+        console.log("tokens=" + JSON.stringify(tokens))
         setCookies(tokens, cookies)
         return {loggedIn: true}
     } catch (e) {
-        console.error(e)
+        console.error("callback-error=" + e)
+        if (typeof e == "string") {
+            return {loggedIn: false, error: e}
+        }
         return {loggedIn: false, error: "Failed to authenticate with Discord."}
     }
 }

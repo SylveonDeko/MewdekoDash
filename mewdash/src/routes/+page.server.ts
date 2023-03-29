@@ -1,31 +1,19 @@
-import {TopGGKey} from "$lib/server/secrets";
 import type {PageServerLoad} from "./$types"
 import type {DiscordUser} from "../lib/types/discord";
-import Discord from "../lib/icon/Discord.svelte";
+import {TOPGG_KEY} from "$env/static/private";
 
-export const load: PageServerLoad = async (cookies, locals): Promise<{ server_count: number | null, user: DiscordUser | null }> => {
-    let count: number | null;
-    let gottenUser: DiscordUser | null;
-    fetch("https://top.gg/api/bots/752236274261426212/stats", {
+export const load: PageServerLoad = async ({locals}): Promise<{ server_count: number | null, user: DiscordUser | null }> => {
+
+    const count: number | null = await fetch("https://top.gg/api/bots/752236274261426212/stats", {
         method: "get",
         headers: new Headers({
-            'Authorization': TopGGKey
+            'Authorization': TOPGG_KEY
         })
-    })
-        .then(response => {
-            return response.json();
-        })
-        .then(data => {
-            count: parseInt(data.server_count);
-        })
-        .catch(() => {
-            count: null;
-        });
+    }).then(response =>
+        response.json()
+    ).then(data =>
+        parseInt(data.server_count)
+    ).catch(() => null);
 
-    if (locals.user)
-        gottenUse: locals.User;
-
-    return {server_count: count, user: gottenUser};
-    
-
+    return {server_count: count, user: locals.user};
 }
