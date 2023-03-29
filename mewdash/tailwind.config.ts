@@ -1,6 +1,8 @@
+// @ts-ignore
 import typography from "@tailwindcss/typography";
+import {Config} from "tailwindcss";
 
-/** @type {import('tailwindcss').Config} */
+// noinspection JSUnusedGlobalSymbols
 export default {
     content: ['./src/**/*.{html,js,svelte,ts}'],
     theme: {
@@ -28,4 +30,4 @@ export default {
     plugins: [
         typography,
     ],
-}
+} satisfies Config
