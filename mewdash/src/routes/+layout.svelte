@@ -13,7 +13,7 @@
         {title: "Home", elements: [{href: "/"}]},
         {title: "Commands", elements: [{href: "/commands"}]},
         {
-            title: "Persons",
+            title: "About",
             elements: [
                 {href: "/partners", title: "Partners"},
                 {href: "/contacts", title: "Contact Us"},
