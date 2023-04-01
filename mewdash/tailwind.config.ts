@@ -7,6 +7,9 @@ export default {
     content: ['./src/**/*.{html,js,svelte,ts}'],
     theme: {
         extend: {
+            screens: {
+                "xs": "320px"
+            },
             colors: {
                 "mewd-transparent": "rgba(255, 255, 255, 0.55)",
                 "mewd-light-transparent": "rgba(255, 255, 255, 0.1)",

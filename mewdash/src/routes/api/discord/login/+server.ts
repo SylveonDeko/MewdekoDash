@@ -5,6 +5,7 @@ import type {RequestHandler} from '@sveltejs/kit';
 const DISCORD_ENDPOINT = `${PUBLIC_DISCORD_API_URL}/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(PUBLIC_DISCORD_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(PUBLIC_DISCORD_SCOPES)}`;
 
 export const GET: RequestHandler = async ({locals}) => {
+    console.log("login: " + JSON.stringify(locals.user))
     return new Response(null, {
         headers: {Location: locals.user ? "/" : DISCORD_ENDPOINT},
         status: 302

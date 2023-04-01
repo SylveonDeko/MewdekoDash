@@ -2,13 +2,25 @@
     import "../app.css";
     import Navbar from "$lib/nav/Navbar.svelte";
 
-    const navbarItems: { title: string, href: string }[] = [
-        {href: "/", title: "Home"},
-        {href: "/commands", title: "Commands"},
-        {href: "/partners", title: "Partners"},
-        {href: "/contacts", title: "Contact Us"},
-        {href: "/staff", title: "Staff"},
-        {href: "/resources", title: "Resources"}
+    export type NavItem = {
+        title: string,
+        elements: {
+            title?: string,
+            href: string
+        }[]
+    }
+    const navbarItems: NavItem[] = [
+        {title: "Home", elements: [{href: "/"}]},
+        {title: "Commands", elements: [{href: "/commands"}]},
+        {
+            title: "Persons",
+            elements: [
+                {href: "/partners", title: "Partners"},
+                {href: "/contacts", title: "Contact Us"},
+                {href: "/staff", title: "Staff"}
+            ]
+        },
+        {title: "Resources", elements: [{href: "/resources"}]}
     ]
 </script>
 
