@@ -1,6 +1,6 @@
 <nav class="py-4 bg-mewd-dark-grey">
     <div class="sm:container flex flex-wrap items-center justify-between mx-auto px-4">
-        <a title="mewdeko-banner" class="flex items-center mr-4 py-[0.3rem] w-[150px] justify-start" href="/">
+        <a title="mewdeko-banner" class="flex items-center mr-4 py-[0.3rem] grow max-w-[150px] justify-start" href="/">
             <img alt="Mewdekos Avatar" class="h-12 mr-3" height="48" width="48"
                  src="https://cdn.mewdeko.tech/Mewdeko.png"/>
             <span aria-hidden="true"
@@ -20,7 +20,7 @@
             </button>
         </div>
         {#if showMenu}
-            <div class="md:hidden w-full  flex flex-col p-4 mt-4" transition:slide={{ duration: 300 }}
+            <div class="md:hidden w-full flex flex-col p-4 mt-4" transition:slide={{ duration: 300 }}
                  id="mobile-navbar" title="pages nav">
                 {#each computedItems as item}
                     <Link item="{item}" current="{current}"/>

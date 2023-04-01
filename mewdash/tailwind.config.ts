@@ -8,7 +8,7 @@ export default {
     theme: {
         extend: {
             screens: {
-                "xs": "320px"
+                "xs": "330px"
             },
             colors: {
                 "mewd-transparent": "rgba(255, 255, 255, 0.55)",
