@@ -1,28 +1,44 @@
+<script lang="ts">
+    type Item = {
+        title: string,
+        wrapped: boolean,
+        href?: string,
+        children?: { title: string, href: string }[]
+    }
+    export let item: Item
+    export let current: string
+    let openOverride: boolean = false
+</script>
 <!-- Desktop - hidden md:block -->
 {#if item.wrapped}
-    <details class="group hidden md:block py-1 px-2">
-        <summary class="cursor-pointer flex list-none rounded text-mewd-offwhite hover:text-mewd-white">
-            {item.title}
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 class="group-open:rotate-180 w-5">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-        </summary>
-        <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden">
-            {#each item.children as child}
-                <!--a aria-current="{child.href===current?'page':'false'}" href="{child.href}"
-                   class="block text-mewd-white pl-4 pr-8  py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{child.title}</a-->
-                <a aria-current="{child.href===current?'page':'false'}"
-                   class="py-1 pl-2 pr-4 hover:text-mewd-white  {child.href===current?
+    <div on:mouseleave={()=>{openOverride=false}}>
+        <details class="group hidden md:block py-1 px-2" bind:open={openOverride}>
+            <summary
+                    class="cursor-pointer flex list-none rounded text-mewd-offwhite hover:text-mewd-white stroke-mewd-offwhite hover:stroke-mewd-white">
+                {item.title}
+                <svg viewBox="5 7 14 9" stroke-width="2" fill="none" stroke-linecap="round"
+                     class="ml-1 w-4 group-open:rotate-180">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </summary>
+            <div class="absolute -translate-y-2 pb-6 pr-7 text-transparent">
+                {item.title}
+            </div>
+            <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden">
+                {#each item.children as child}
+                    <!--a aria-current="{child.href===current?'page':'false'}" href="{child.href}"
+                       class="block text-mewd-white pl-4 pr-8  py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{child.title}</a-->
+                    <a aria-current="{child.href===current?'page':'false'}"
+                       class="py-1 pl-2 pr-4 hover:text-mewd-white  {child.href===current?
         'text-white bg-mewd-yellow rounded text-mewd-white':
         'rounded text-mewd-offwhite hover:bg-mewd-light-grey hover:text-mewd-offwhite md:hover:bg-transparent'}"
-                   href="{child.href}">
-                    {child.title}
-                </a>
-            {/each}
-        </div>
-    </details>
+                       href="{child.href}">
+                        {child.title}
+                    </a>
+                {/each}
+            </div>
+        </details>
+    </div>
 {:else}
     <a aria-current="{item.href===current?'page':'false'}"
        class="hidden md:flex py-1 px-2 hover:text-mewd-white{item.href===current?
@@ -52,14 +68,3 @@
         {item.title}
     </a>
 {/if}
-
-<script lang="ts">
-    type Item = {
-        title: string,
-        wrapped: boolean,
-        href?: string,
-        children?: { title: string, href: string }[]
-    }
-    export let item: Item
-    export let current: string
-</script>

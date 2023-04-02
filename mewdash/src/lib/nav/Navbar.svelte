@@ -35,6 +35,7 @@
         </div>
     </div>
 </nav>
+
 <!--
 {#if !user}
     <a class=" rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
