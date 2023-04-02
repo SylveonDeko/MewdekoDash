@@ -2,6 +2,8 @@
     import "../app.css";
     import Navbar from "$lib/nav/Navbar.svelte";
 
+    export let data;
+
     export type NavItem = {
         title: string,
         elements: {
@@ -45,7 +47,7 @@
     <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
 </svelte:head>
 
-<Navbar items="{navbarItems}"/>
+<Navbar user="{data.user}" items="{navbarItems}"/>
 <main>
     <slot/>
 </main>

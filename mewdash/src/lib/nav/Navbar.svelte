@@ -7,7 +7,33 @@
                   class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">Mewdeko</span>
         </a>
         <div class="flex md:order-2 grow max-w-[150px] justify-end">
-            <a class="rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
+            {#if !user}
+                <a class=" rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
+            {:else}
+                <div class="flex flex-col">
+                    <button class="h-full" on:click={toggleUserMenu}>
+                        {#if user.avatar.startsWith("a_")}
+                            <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.gif"
+                                 alt={user.username}
+                                 class="rounded-full bg-gray-600 h-12" height="48" width="48"/>
+                        {:else}
+                            <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png"
+                                 alt={user.username}
+                                 class="rounded-full bg-gray-600 h-12" height="48" width="48"/>
+                        {/if}
+                    </button>
+                    {#if userMenu}
+                        <div class="right-0 w-min bg-gray-900 rounded-b-md p-2 flex flex-col space-y-3">
+                            <div class="flex flex-row space-x-2">
+                                <h1 class="font-bold text-xl text-white">{user.username}</h1>
+                                <h2 class="text-lg text-gray-300">#{user.discriminator}</h2>
+                            </div>
+                            <a class="w-max px-3 py-1 rounded-full bg-gray-700 text-lg font-black text-white"
+                               href="/api/discord/logout">Logout</a>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
             <!--suppress HtmlWrongAttributeValue -->
             <button class="inline-flex items-center ml-4 px-3 py-1 rounded-3xl border border-px border-transparent hover:border-mewd-light-transparent md:hidden"
                     aria-controls="mobile-navbar" aria-expanded="{showMenu?'true':'false'}"
@@ -64,16 +90,16 @@
     import {page} from '$app/stores';
     import {slide} from 'svelte/transition';
     import Link from '$lib/nav/NavLink.svelte';
-    /*    import type {DiscordUser} from "../types/discord";
+    import type {DiscordUser} from "../types/discord";
 
-        export let user: DiscordUser | null = null;
 
-        function toggleUserMenu() {
-            userMenu = !userMenu;
-        }
+    export let user: DiscordUser | null = null;
 
-        let userMenu: boolean = false;
-    */
+    function toggleUserMenu() {
+        userMenu = !userMenu;
+    }
+
+    let userMenu: boolean = false;
     let showMenu: boolean = false;
     $: current = $page.route.id;
 

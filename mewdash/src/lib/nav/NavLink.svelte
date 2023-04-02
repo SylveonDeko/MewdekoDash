@@ -1,4 +1,5 @@
 <script lang="ts">
+    import {slide} from "svelte/transition";
     type Item = {
         title: string,
         wrapped: boolean,
@@ -12,7 +13,7 @@
 <!-- Desktop - hidden md:block -->
 {#if item.wrapped}
     <div on:mouseleave={()=>{openOverride=false}}>
-        <details class="group hidden md:block py-1 px-2 drop-shadow-xl" bind:open={openOverride}>
+        <details class="group hidden md:block py-1 px-2 drop-shadow-xl" transition:slide bind:open={openOverride}>
             <summary
                     class="cursor-pointer flex list-none rounded text-mewd-offwhite hover:text-mewd-white stroke-mewd-offwhite hover:stroke-mewd-white">
                 {item.title}
