@@ -21,7 +21,7 @@
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </summary>
-            <div class="absolute -translate-y-2 pb-6 pr-7 text-transparent">
+            <div class="cursor-default absolute -translate-y-2 pb-6 pr-7 text-transparent">
                 {item.title}
             </div>
             <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden">
