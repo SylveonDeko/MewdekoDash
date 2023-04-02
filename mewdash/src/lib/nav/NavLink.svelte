@@ -22,7 +22,7 @@
                 </svg>
             </summary>
             <div class="cursor-default absolute -translate-y-2 pb-6 pr-7 text-transparent">
-                {item.title}
+                {"he".repeat(Math.ceil(item.title.length / 2))}
             </div>
             <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden">
                 {#each item.children as child}
