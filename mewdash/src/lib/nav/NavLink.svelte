@@ -12,7 +12,7 @@
 <!-- Desktop - hidden md:block -->
 {#if item.wrapped}
     <div on:mouseleave={()=>{openOverride=false}}>
-        <details class="group hidden md:block py-1 px-2" bind:open={openOverride}>
+        <details class="group hidden md:block py-1 px-2 drop-shadow-xl" bind:open={openOverride}>
             <summary
                     class="cursor-pointer flex list-none rounded text-mewd-offwhite hover:text-mewd-white stroke-mewd-offwhite hover:stroke-mewd-white">
                 {item.title}
@@ -24,7 +24,7 @@
             <div class="cursor-default absolute -translate-y-2 pb-6 pr-7 text-transparent">
                 {"he".repeat(Math.ceil(item.title.length / 2))}
             </div>
-            <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden">
+            <div class="flex flex-col mt-2 -translate-x-2 absolute bg-mewd-light-grey rounded overflow-hidden w-max">
                 {#each item.children as child}
                     <!--a aria-current="{child.href===current?'page':'false'}" href="{child.href}"
                        class="block text-mewd-white pl-4 pr-8  py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{child.title}</a-->
