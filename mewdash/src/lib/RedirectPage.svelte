@@ -33,7 +33,7 @@
     $: count = delay ? Math.round((end - now) / 1000) : null;
 </script>
 
-<div class="flex flex-col justify-center place-items-center space-y-6 h-screen w-screen text-white px-6">
+<div class="flex flex-col justify-center place-items-center space-y-6 h-screen w-screen bg-mewd-dark-grey px-6 text-mewd-white">
     <div class="font-bold text-2xl">
         <slot/>
     </div>

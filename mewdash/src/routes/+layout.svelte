@@ -1,8 +1,10 @@
 <script lang="ts">
     import "../app.css";
     import Navbar from "$lib/nav/Navbar.svelte";
+    import type {DiscordGuild} from "../lib/types/discordGuild";
 
     export let data;
+    export let userAdminGuilds: DiscordGuild[];
 
     export type NavItem = {
         title: string,
@@ -22,6 +24,7 @@
                 {href: "/staff", title: "Staff"}
             ]
         },
+        {title: "Placeholders", elements: [{href: "/placeholders"}]},
         {title: "Resources", elements: [{href: "/resources"}]}
     ]
 </script>
@@ -47,7 +50,7 @@
     <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
 </svelte:head>
 
-<Navbar user="{data.user}" items="{navbarItems}"/>
+<Navbar user="{data.user}" items="{navbarItems}" adminGuilds="{userAdminGuilds}"/>
 <main>
     <slot/>
 </main>
