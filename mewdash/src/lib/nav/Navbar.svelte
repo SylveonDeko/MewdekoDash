@@ -53,9 +53,22 @@
         }
         return [{title: item.title, wrapped: true, children: elems}]
     });
+
+    function findTitleByHref(href) {
+    for (const item of items) {
+      for (const element of item.elements) {
+        if (element.href === href) {
+          return item.title;
+        }
+      }
+    }
+    return '';
+  }
 </script>
 
-
+<head>
+    <title>Mewdeko - {findTitleByHref(current)}</title>
+</head>
 <nav class="py-4 bg-mewd-dark-grey">
     <div class="sm:container flex flex-wrap items-center justify-between mx-auto px-4">
         <a title="mewdeko-banner" class="flex items-center mr-4 py-[0.3rem] grow max-w-[150px] justify-start" href="/">

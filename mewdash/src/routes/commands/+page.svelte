@@ -14,7 +14,15 @@
         unsubscribe();
     })
 </script>
-
+<head>
+    <meta content="Mewdeko - All the commands! Searchable!" property="og:title">
+    <meta content="Find out more about Mewdeko's commands and how to use them."
+          name="description">
+    <meta content="Find out more about Mewdeko's commands and how to use them."
+          property="og:description">
+    <meta content="Find out more about Mewdeko's commands and how to use them."
+          name="twitter:description">
+</head>
 <div class="">
     <div class="min-h-screen p-2 bg-mewd-dark-grey space-y-6">
         <h1 class="text-center text-4xl font-bold text-white">Mewdeko Modules</h1>

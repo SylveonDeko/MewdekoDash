@@ -8,7 +8,14 @@
 
     export let data: PageData;
 </script>
-
+<head><meta content="Mewdeko - The most customizable discord bot." property="og:title">
+    <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
+          name="description">
+    <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
+          property="og:description">
+     <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
+          name="twitter:description">
+</head>
 <header class="py-12 px-4 sm:px-12 flex flex-col items-center bg-mewd-light-grey">
     <h1
             class="pt-10 text-center font-extrabold text-mewd-white sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">

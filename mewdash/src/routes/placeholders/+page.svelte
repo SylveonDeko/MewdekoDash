@@ -3,6 +3,17 @@
     import MarkdownResolver from "$lib/MarkdownResolver.svelte";
     const converter = new showdown.Converter();
 </script>
+
+<head>
+    <meta content="Mewdeko - Placeholders for commands with embeds!" property="og:title">
+    <meta content="Placeholders for commands with embeds!"
+          name="description">
+    <meta content="Placeholders for commands with embeds!"
+          property="og:description">
+    <meta content="Placeholders for commands with embeds!"
+          name="twitter:description">
+</head>
+
 <div class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey">
 <MarkdownResolver content={`# Placeholders
 

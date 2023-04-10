@@ -4,6 +4,16 @@
     import Carousel from "$lib/util/Carousel.svelte";
 </script>
 
+<head>
+    <meta content="Mewdeko - Other people that helped along the way." property="og:title">
+    <meta content="Other people that helped along the way."
+          name="description">
+    <meta content="Other people that helped along the way."
+          property="og:description">
+    <meta content="Other people that helped along the way."
+          name="twitter:description">
+</head>
+
 <section class="min-h-screen flex justify-center bg-mewd-dark-grey" title="Mewdeko's Partners!">
     <div class="pt-32 pb-12 lg:mx-14 max-w-[45rem] lg:max-w-[82rem] px-3">
         <FluidContainer>
