@@ -15,7 +15,7 @@ export const requestDiscordToken = async (searchParams: URLSearchParams, cookies
     })
     const response = await request?.json()
 
-    if (request.status == 403)
+    if (request.status == 400)
     {
         deleteCookies(cookies)
         return redirect(302, '/api/discord/login')

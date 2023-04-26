@@ -1,10 +1,10 @@
-import type {RequestEvent} from "@sveltejs/kit";
+import type {Cookies, RequestEvent} from "@sveltejs/kit";
 import {PUBLIC_DISCORD_API_URL} from "$env/static/public"
 import type {DiscordUser} from "../types/discord";
 import {buildSearchParams, requestDiscordToken, setCookies} from "../../routes/api/discord/discordAuth";
 
-export async function authenticateUser(event: RequestEvent): Promise<DiscordUser | null> {
-    const token = await getOrRefreshToken(event);
+export async function authenticateUser(event: RequestEvent, cookies: Cookies): Promise<DiscordUser | null> {
+    const token = await getOrRefreshToken(event, cookies);
     if (!token) {
         return null
     }
@@ -14,7 +14,7 @@ export async function authenticateUser(event: RequestEvent): Promise<DiscordUser
     }).then(request => request.json())
 }
 
-async function getOrRefreshToken(event: RequestEvent): Promise<string | null> {
+async function getOrRefreshToken(event: RequestEvent, cookies: Cookies): Promise<string | null> {
     const token = event.cookies?.get('discord_access_token')
     if (token) {
         return token
@@ -24,7 +24,7 @@ async function getOrRefreshToken(event: RequestEvent): Promise<string | null> {
     // fetch refresh only if not already on refresh route (otherwise recursion go brrr)
     const refreshToken = event.cookies?.get('discord_refresh_token')
     if (refreshToken && !event.url.pathname.startsWith('/api/discord/refresh')) {
-        const tokens = await requestDiscordToken(buildSearchParams("refresh", refreshToken));
+        const tokens = await requestDiscordToken(buildSearchParams("refresh", refreshToken), cookies);
         setCookies(tokens, event.cookies)
         return tokens.access_token
     }
