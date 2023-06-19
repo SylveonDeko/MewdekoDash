@@ -83,29 +83,34 @@
       {#if !user}
         <a class=" rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
       {:else}
-        <div class="flex flex-col">
-          <button class="h-full" on:click|stopPropagation={handleMenuOpen}>
-            {#if user && user.avatar && user.avatar.startsWith("a_")}
-              <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.gif"
-                   alt={user.username}
-                   class="rounded-full bg-gray-600 h-12" height="48" width="48" />
-            {:else if user && user.avatar}
-              <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png"
-                   alt={user.username}
-                   class="rounded-full bg-gray-600 h-12" height="48" width="48" />
-            {/if}
-          </button>
-          {#if menuOpen}
-            <div class="right-0 w-min bg-gray-900 rounded-b-md p-2 flex flex-col space-y-3 absolute">
-              <div class="flex flex-row space-x-2">
-                <h1 class="font-bold text-md text-white">{user.username}</h1>
-                <h2 class="text-md text-gray-300">#{user.discriminator}</h2>
-              </div>
-              <a class="w-max px-3 py-1 rounded-full bg-gray-700 text-md font-black text-white"
-                 href="/api/discord/logout">Logout</a>
-            </div>
-          {/if}
-        </div>
+       <div class="flex flex-col relative">
+  <button class="h-full" on:click|stopPropagation={handleMenuOpen}>
+    {#if user && user.avatar && user.avatar.startsWith("a_")}
+      <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.gif"
+           alt={user.username}
+           class="rounded-full bg-gray-600 h-12" height="48" width="48" />
+    {:else if user && user.avatar}
+      <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png"
+           alt={user.username}
+           class="rounded-full bg-gray-600 h-12" height="48" width="48" />
+    {/if}
+  </button>
+  {#if menuOpen}
+    <div class="w-min mt-4 bg-gray-900 rounded-md p-2 flex flex-col space-y-3 absolute z-50 left-1/2 transform -translate-x-1/2 shadow-lg top-full">
+      <div class="flex flex-row space-x-2">
+        <h1 class="font-bold text-md text-white">{user.username}</h1>
+        {#if user.discriminator !== "0"}
+          <h1 class="font-bold text-md text-white">#{user.discriminator}</h1>
+        {/if}
+      </div>
+      <a class="w-max px-3 py-1 rounded-full bg-gray-700 text-md font-black text-white mx-auto"
+         href="/api/discord/logout">Logout</a>
+    </div>
+  {/if}
+</div>
+
+
+
       {/if}
       <!--suppress HtmlWrongAttributeValue -->
       <button

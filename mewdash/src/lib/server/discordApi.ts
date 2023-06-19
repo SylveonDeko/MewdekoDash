@@ -16,7 +16,7 @@ export async function authenticateUser(event: RequestEvent, cookies: Cookies): P
     }).then(request => request.json())
 }
 
-async function getOrRefreshToken(event: RequestEvent, cookies: Cookies): Promise<string | null> {
+export async function getOrRefreshToken(event: RequestEvent, cookies: Cookies): Promise<string | null> {
     let encryptedToken = event.cookies?.get('discord_access_token');
     let token = null;
     if (encryptedToken) {
