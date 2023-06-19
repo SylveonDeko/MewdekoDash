@@ -1,7 +1,5 @@
 <script>
-    import showdown from "showdown";
     import MarkdownResolver from "$lib/MarkdownResolver.svelte";
-    const converter = new showdown.Converter();
 </script>
 
 <head>

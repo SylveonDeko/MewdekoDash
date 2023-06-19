@@ -1,8 +1,7 @@
-import {DISCORD_CLIENT_ID} from "$env/static/private";
-import {PUBLIC_DISCORD_API_URL, PUBLIC_DISCORD_REDIRECT_URI, PUBLIC_DISCORD_SCOPES} from "$env/static/public";
+import {DISCORD_API_URL, DISCORD_CLIENT_ID, DISCORD_SCOPES, DISCORD_REDIRECT_URI} from "$env/static/private";
 import type {RequestHandler} from '@sveltejs/kit';
 
-const DISCORD_ENDPOINT = `${PUBLIC_DISCORD_API_URL}/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(PUBLIC_DISCORD_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(PUBLIC_DISCORD_SCOPES)}`;
+const DISCORD_ENDPOINT = `${DISCORD_API_URL}/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(DISCORD_SCOPES)}`;
 
 export const GET: RequestHandler = async ({locals}) => {
     console.log("login: " + JSON.stringify(locals.user))
