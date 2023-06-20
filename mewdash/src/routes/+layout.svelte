@@ -11,12 +11,10 @@
     if (data.user) {
       try {
         const response = await fetch("/api/guilds");
-        console.log(response);
         const guilds: DiscordGuild[] = await response.json();
 
         // Filter out guilds where the user is not an admin
         userAdminGuilds = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
-        console.log(userAdminGuilds.length);
       } catch (e) {
         console.error(e);
       }

@@ -7,6 +7,5 @@ export const GET: RequestHandler = async (request) => {
     if (guilds.status !== 200 || !guilds.data) {
         throw error(400, "Failed to fetch guilds.")
     }
-    console.log(guilds.data)
     return json(guilds.data)
 };

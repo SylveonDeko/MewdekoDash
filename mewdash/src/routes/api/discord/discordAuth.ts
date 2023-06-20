@@ -23,7 +23,6 @@ export const requestDiscordToken = async (searchParams: URLSearchParams, cookies
         headers: {'Content-Type': 'application/x-www-form-urlencoded'}
     })
     const response = await request?.json()
-    console.log(request.status)
     if (request.status == 400 || request.status == 401)
     {
         deleteCookies(cookies)

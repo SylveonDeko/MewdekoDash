@@ -10,7 +10,6 @@ export const load: PageServerLoad = async ({url, cookies, locals}): Promise<{ lo
     }
     try {
         const tokens = await requestDiscordToken(buildSearchParams("callback", returnCode), cookies);
-        console.log("tokens=" + JSON.stringify(tokens))
         setCookies(tokens, cookies)
         return {loggedIn: true}
     } catch (e) {
