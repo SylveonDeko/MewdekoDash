@@ -1,25 +1,35 @@
 <script lang="ts">
   import "../app.css";
   import Navbar from "$lib/nav/Navbar.svelte";
-  import { onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import type { DiscordGuild } from "../lib/types/discordGuild";
+  import {userAdminGuilds} from "../lib/stores/adminGuildsStore";
 
   export let data;
-  export let userAdminGuilds: DiscordGuild[];
+  let unsubscribe;
 
-  onMount(async () => {
-    if (data.user) {
+
+$: {
+    unsubscribe = data?.user && userAdminGuilds.subscribe(async () => {
       try {
         const response = await fetch("/api/guilds");
         const guilds: DiscordGuild[] = await response.json();
 
         // Filter out guilds where the user is not an admin
-        userAdminGuilds = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
+        const filteredGuilds = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
+
+        // Update the store value
+        userAdminGuilds.set(filteredGuilds);
       } catch (e) {
         console.error(e);
       }
-    }
+    });
+  }
+
+  onDestroy(() => {
+    unsubscribe?.();
   });
+
 
   export type NavItem = {
     title: string,
