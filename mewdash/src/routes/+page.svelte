@@ -5,6 +5,7 @@
     import Carousel from "$lib/util/Carousel.svelte";
     import type {PageData} from "./$types";
     import MultiButton from "$lib/MultiButton.svelte";
+    import TopServers from "$lib/TopServers.svelte";
 
     export let data: PageData;
 </script>
@@ -26,6 +27,8 @@
           { text: 'Donate', href: 'https://ko-fi.com/mewdeko' },
           { text: 'Server', href: 'https://discord.gg/mewdeko' },
         ]}"/>
+
+    <TopServers/>
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="mewdekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
@@ -36,6 +39,8 @@
                     class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
                 Mewdeko is in {data.server_count} servers, may the features below grant it one more.</h2>
         {/if}
+
+
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' }}"

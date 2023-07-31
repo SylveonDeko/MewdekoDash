@@ -9,7 +9,6 @@ import {
 import type { Cookies } from "@sveltejs/kit";
 import { redirect } from "@sveltejs/kit";
 import CryptoJS from "crypto-js";
-import type { DiscordGuild } from "../../../lib/types/discordGuild";
 
 
 const ACCESS_TOKEN_COOKIE = "discord_access_token",

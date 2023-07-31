@@ -1,19 +1,19 @@
 <script>
-    import MarkdownResolver from "$lib/MarkdownResolver.svelte";
+  import MarkdownResolver from "$lib/MarkdownResolver.svelte";
 </script>
 
 <head>
-    <meta content="Mewdeko - Placeholders for commands with embeds!" property="og:title">
-    <meta content="Placeholders for commands with embeds!"
-          name="description">
-    <meta content="Placeholders for commands with embeds!"
-          property="og:description">
-    <meta content="Placeholders for commands with embeds!"
-          name="twitter:description">
+  <meta content="Mewdeko - Placeholders for commands with embeds!" property="og:title">
+  <meta content="Placeholders for commands with embeds!"
+        name="description">
+  <meta content="Placeholders for commands with embeds!"
+        property="og:description">
+  <meta content="Placeholders for commands with embeds!"
+        name="twitter:description">
 </head>
 
 <div class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey">
-<MarkdownResolver content={`# Placeholders
+  <MarkdownResolver content={`# Placeholders
 
 Placeholders are used in Quotes, Custom Reactions, Greet/Bye messages, playing statuses, suggestions, and a few other places.
 
@@ -26,7 +26,8 @@ Some features have their own specific placeholders which are noted in that featu
 !!! Note
     If you're using placeholders in embeds, don't use %user.mention% and %bot.mention% in titles, footers and field names. They will not show properly.
 
-### AFK Placeholders
+
+## AFK Placeholders
 - \`%afk.message%\` - The users afk message
 - \`%afk.user%\` - The users name and discriminator
 - \`%afk.user.mention%\` - The mention of the afk user
@@ -53,7 +54,7 @@ Some features have their own specific placeholders which are noted in that featu
 - \`%suggest.mod.Id%\` - The id of the suggestion updater
 ![img]( https://media.discordapp.net/attachments/866308739334406174/870301575371948082/imgonline-com-ua-twotoone-IHpgQIykBfw.png)
 
-###Suggest Message Placeholders
+### Suggest Message Placeholders
 
 - \`%suggest.user%\` - The user who suggested
 - \`%suggest.message%\` - The suggestion
