@@ -23,7 +23,7 @@
 {#if fetched && guilds.length > 0}
   <section class="flex flex-col justify-center items-center bg-mewd-light-grey p-7" title="mewdekos features">
     <div class="mb-2 sm:text-3xl lg:text-5xl xl:text-[40px] text-white font-bold">Top Servers</div>
-    <div class="flex justify-center items-center space-x-[-24px]">
+    <div class="flex justify-center items-center space-x-[-24px] p-7">
       {#each guilds as guild (guild.Name)}
         <div class="relative group transform transition-all duration-200 hover:-translate-y-2">
           <img class="w-16 h-16 rounded-full" src={guild.IconUrl} alt={guild.Name} />
