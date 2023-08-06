@@ -4,6 +4,7 @@
   import Link from "$lib/nav/NavLink.svelte";
   import type { DiscordUser } from "../types/discord";
   import { userAdminGuilds } from "../stores/adminGuildsStore";
+  import { onDestroy, onMount } from "svelte";
 
   let menuOpen = false;
 
@@ -70,6 +71,31 @@
     }
     return "";
   }
+
+
+  let titles = ['Come back!', 'We miss you!', 'Still here for you!', 'Still Free!', 'Never gonna give you up...', 'Nya.'];
+  let titleIndex = 0;
+
+  function handleVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+      document.title = titles[titleIndex];
+      titleIndex = (titleIndex + 1) % titles.length;
+    } else {
+      document.title = originalTitle;
+    }
+  }
+
+  let originalTitle;
+
+  onMount(() => {
+    originalTitle = document.title;
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  });
 </script>
 
 <head>
