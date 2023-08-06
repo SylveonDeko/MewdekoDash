@@ -50,7 +50,9 @@ $: {
       ]
     },
     { title: "Placeholders", elements: [{ href: "/placeholders" }] },
-    { title: "Resources", elements: [{ href: "/resources" }] }
+    { title: "Resources", elements: [{ href: "/resources" }] },
+    { title: "Privacy", elements: [{ href: "/privacy" }] },
+    { title: "Terms", elements: [{ href: "/terms" }] }
   ];
 
 </script>
