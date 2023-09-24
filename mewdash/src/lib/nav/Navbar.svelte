@@ -21,7 +21,7 @@
   }
 
   export let user: DiscordUser | null = null;
-    let adminGuilds;
+  let adminGuilds;
 
   userAdminGuilds.subscribe(value => {
     adminGuilds = value;
@@ -73,7 +73,23 @@
   }
 
 
-  let titles = ['Come back!', 'We miss you!', 'Still here for you!', 'Still Free!', 'Never gonna give you up...', 'Nya.'];
+  let titles = [
+    'Come back!',
+    'We miss you!',
+    'Still here for you!',
+    'Still Free!',
+    'Never gonna let you down...',
+    'Never gonna run around...',
+    'Never gonna desert you...',
+    'Never gonna make you cry...',
+    'Never gonna say goodbye...',
+    'Never gonna tell a lie...',
+    'Your heart\'s been aching...',
+    'We know the game...',
+    'Never gonna give you up...',
+    'Nya.'
+];
+
   let titleIndex = 0;
   let originalTitle;
   let handleVisibilityChange;
