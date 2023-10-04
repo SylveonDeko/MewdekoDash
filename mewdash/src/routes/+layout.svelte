@@ -3,13 +3,13 @@
   import Navbar from "$lib/nav/Navbar.svelte";
   import { onDestroy } from "svelte";
   import type { DiscordGuild } from "../lib/types/discordGuild";
-  import {userAdminGuilds} from "../lib/stores/adminGuildsStore";
+  import { userAdminGuilds } from "../lib/stores/adminGuildsStore";
 
   export let data;
   let unsubscribe;
 
 
-$: {
+  $: {
     unsubscribe = data?.user && userAdminGuilds.subscribe(async () => {
       try {
         const response = await fetch("/api/guilds");
@@ -49,7 +49,13 @@ $: {
         { href: "/staff", title: "Staff" }
       ]
     },
-    { title: "Placeholders", elements: [{ href: "/placeholders" }] },
+    {
+      title: "Misc",
+      elements: [
+        { href: "/placeholders", title: "Placeholders" },
+        {href: "/credguide", title: "Credentials Guide"}
+      ]
+    },
     { title: "Resources", elements: [{ href: "/resources" }] },
     { title: "Privacy", elements: [{ href: "/privacy" }] },
     { title: "Terms", elements: [{ href: "/terms" }] }
@@ -63,7 +69,8 @@ $: {
   <meta content="Mewdeko - The most customizable discord bot." name="twitter:title">
   <meta content="summary_large_image" name="twitter:card">
   <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" name="twitter:image">
-  <meta name="keywords" content="Mewdeko, Mewdeko Bot, Mewdeko Discord Bot, Mewdeko Discord, Mewdeko D, free discord bot, free bot, anime themed discord bot, mewdeko.tech, mewdeko website, mewdeko dashboard, mewdeko commands, mewdeko donate, mewdeko paypal, mewdeko discord, mewdeko help" />
+  <meta name="keywords"
+        content="Mewdeko, Mewdeko Bot, Mewdeko Discord Bot, Mewdeko Discord, Mewdeko D, free discord bot, free bot, anime themed discord bot, mewdeko.tech, mewdeko website, mewdeko dashboard, mewdeko commands, mewdeko donate, mewdeko paypal, mewdeko discord, mewdeko help" />
   <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" property="og:image">
   <link href="img/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" type="image/png">
   <link href="img/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">

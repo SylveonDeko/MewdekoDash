@@ -4,7 +4,7 @@ import { error, json } from "@sveltejs/kit";
 import {REDIS_URL, DISCORD_CLIENT_ID} from "$env/static/private";
 
 export const GET: RequestHandler = async (request) => {
-    const redis = new Redis(REDIS_URL);
+    const redis = new Redis();
     const data = await redis.get(`${DISCORD_CLIENT_ID}_topguilds`);
 
     if (!data) {
