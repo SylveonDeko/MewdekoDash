@@ -10,12 +10,13 @@
 
     export let data: PageData;
 </script>
-<head><meta content="Mewdeko - The most customizable discord bot." property="og:title">
+<head>
+    <meta content="Mewdeko - The most customizable discord bot." property="og:title">
     <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
           name="description">
     <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
           property="og:description">
-     <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
+    <meta content="Come find out what the most customizable free and open source bot you'll find can offer you..."
           name="twitter:description">
 </head>
 <header class="py-12 px-4 sm:px-12 flex flex-col items-center bg-mewd-light-grey">
@@ -33,15 +34,9 @@
 </header>
 <section class="flex justify-center bg-mewd-dark-grey" title="mewdekos features">
     <div class="pt-12 pb-24 md:px-6 lg:px-12 max-w-[130rem]">
-        {#if !data.server_count}
-            <h2 class="text-center text-mewd-white text-2xl font-bold">Here's what Mewdeko can do for you</h2>
-        {:else}
-            <h2
-                    class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
-                Mewdeko is in {data.server_count} servers, may the features below grant it one more.</h2>
-        {/if}
-
-
+        <h2 class="pt-9 pb-16 px-3 text-center font-extrabold text-mewd-text text-2xl sm:text-2xl lg:text-[28px] text-white">
+            Mewdeko is in {data?.server_count!=null && !isNaN(data?.server_count) ? data?.server_count : "N/A"} servers, may the features below grant it one more.
+        </h2>
         <FluidContainer breakpoints='{["md", "xl"]}'>
             <Interactable
                     cta="{{text:'Invite Me',href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' }}"
