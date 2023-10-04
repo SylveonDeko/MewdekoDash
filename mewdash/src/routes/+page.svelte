@@ -2,7 +2,8 @@
     import FluidContainer from "$lib/util/FluidContainer.svelte";
     import Interactable from "$lib/util/InteractableElement.svelte";
     import CommentElement from "$lib/CommentElement.svelte";
-    import Carousel from "$lib/util/Carousel.svelte";
+    import Carousel from "$lib/carousel/Carousel.svelte";
+    import ImageWrapper from "$lib/carousel/ImageWrapper.svelte";
     import type {PageData} from "./$types";
     import MultiButton from "$lib/MultiButton.svelte";
     import TopServers from "$lib/TopServers.svelte";
@@ -50,20 +51,27 @@
                     slot="element-1"
                     title="Moderation"
             >
-                <Carousel images="{[
+                <Carousel items={[
                     {
-                        title: 'Auto Ban Words',
-                        src: 'https://media.discordapp.net/attachments/1004047472223588398/1059098637302501416/image.png'
-                    },
-                    {
-                        title: 'Commands',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059099724357054474/image.png'
-                    },
-                    {
-                        title: 'Anti Raid',
-                        src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
+                        component: ImageWrapper,
+                        props:  {
+                            alt: 'Auto Ban Words',
+                            src: 'https://media.discordapp.net/attachments/1004047472223588398/1059098637302501416/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props:   {
+                            title: 'Commands',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059099724357054474/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props: {
+                            title: 'Anti Raid',
+                            src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
+                        }
                     }
-                ]}"/>
+                ]}/>
             </Interactable>
             <Interactable
                     cta="{{text:'Support Server',href:'https://discord.gg/mewdeko' }}"
@@ -73,20 +81,27 @@
                     slot="element-2"
                     title="Helpful/Friendly Staff"
             >
-                <Carousel images="{[
+                <Carousel items={[
                     {
-                        title: 'Hosting A Bot',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059100950142394439/image.png'
-                    },
-                    {
-                        title: 'Help Command',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059101488833634344/image.png'
-                    },
-                    {
-                        title: 'Walking The Dog',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059102004334567424/image.png'
+                        component: ImageWrapper,
+                        props: {
+                            alt: 'Hosting A Bot',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059100950142394439/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props:  {
+                            alt: 'Help Command',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059101488833634344/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props: {
+                            alt: 'Walking The Dog',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059102004334567424/image.png'
+                        }
                     }
-                ]}"/>
+                ]}/>
             </Interactable>
             <Interactable
                     cta="{{text:'Source Code',href:'https://github.com/SylveonDeko/Mewdeko' }}"
@@ -113,20 +128,27 @@
                     slot="element-5"
                     title="Custom Responses"
             >
-                <Carousel images="{[
+                <Carousel items={[
                     {
-                        title: 'Creating Custom Response',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059150708651343873/image.png'
-                    },
-                    {
-                        title: 'Editing Custom Response',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059151273007517786/image.png'
-                    },
-                    {
-                        title: 'Custom Command In Action',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059151508651900938/image.png'
+                        component: ImageWrapper,
+                        props:  {
+                            alt: 'Creating Custom Response',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059150708651343873/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props:   {
+                            alt: 'Editing Custom Response',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059151273007517786/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props: {
+                            alt: 'Custom Command In Action',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059151508651900938/image.png'
+                        }
                     }
-                ]}"/>
+                ]}/>
             </Interactable>
             <Interactable
                     description="After spending hours on end making sure this works properly,
@@ -135,20 +157,27 @@
                     slot="element-6"
                     title="Customizable"
             >
-                <Carousel images="{[
+                <Carousel items={[
                     {
-                        title: 'Suggestion Commands',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181130579980318/image.png?width=666&height=701'
-                    },
-                    {
-                        title: 'Starboard Commands',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181297857200128/image.png'
-                    },
-                    {
-                        title: 'Afk Commands',
-                        src: 'https://media.discordapp.net/attachments/970494924938166352/1059181417793323028/image.png'
+                        component: ImageWrapper,
+                        props: {
+                            title: 'Suggestion Commands',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181130579980318/image.png?width=666&height=701'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props: {
+                            title: 'Starboard Commands',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181297857200128/image.png'
+                        }
+                    },{
+                        component: ImageWrapper,
+                        props: {
+                            title: 'Afk Commands',
+                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181417793323028/image.png'
+                        }
                     }
-                ]}"/>
+                ]}/>
             </Interactable>
             <Interactable
                     description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"
