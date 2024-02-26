@@ -6,14 +6,25 @@ import json from "./modules.json"
 const converter = new showdown.Converter();
 
 export const load: PageServerLoad = async (): Promise<{ modules: Module[] }> => {
-    let modules: Module[] = json
-    modules.sort((a, b) => a.Name < b.Name ? -1 : a.Name > b.Name ? 1 : 0)
-    modules.forEach(module => {
-        module.Commands.sort((a, b) => a.CommandName < b.CommandName ? -1 : a.CommandName > b.CommandName ? 1 : 0)
-        module.Commands.forEach(async (command) => {
-            command.HtmlDescription =  converter.makeHtml(command.Description.trim())
-        })
-    })
+    let modules: Module[] = json;
+    modules.sort((a, b) => a.Name.localeCompare(b.Name));
 
-    return {modules}
+    modules = modules.map(module => {
+        const commandsMap = new Map();
+
+        // Populate the map to ensure uniqueness and maintain order
+        module.Commands.forEach(command => {
+            commandsMap.set(command.CommandName, command);
+        });
+
+        // Convert each unique command's description to HTML
+        const uniqueCommands = Array.from(commandsMap.values()).map(command => ({
+            ...command,
+            HtmlDescription: converter.makeHtml(command.Description.trim())
+        }));
+
+        return { ...module, Commands: uniqueCommands };
+    });
+
+    return { modules };
 };
