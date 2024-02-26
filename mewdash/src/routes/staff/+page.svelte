@@ -26,11 +26,11 @@
         </div>
         <FluidContainer>
             <Profile slot="element-1"
-                     profileData='{{alt: "Owner/Developer", image: "https://cdn.discordapp.com/avatars/280835732728184843/a_7c7edfc05cfa28c83706a7c53da77d0a.gif", name: "SylveonDeko", description: "Owner/Developer"}}'/>
+                     profileData='{{alt: "Owner/Developer", image: "https://cdn.mewdeko.tech/sylveon.gif", name: "SylveonDeko", description: "Owner/Developer", eggy: "LEEEEROY JEEEENKINS"}}'/>
             <Profile slot="element-2"
-                     profileData='{{alt: "Owner/Developer", image: "https://theowlshed.cottagedwelling.dev/f9e1dfc9a3a8db57fdd872631a493512.png", name: "GraveyardDwellingCat", description: "Owner/Developer", eggy: "Head of evil science/Catgirl shenanigans"}}'/>
+                     profileData='{{alt: "Owner/Developer", image: "https://cdn.mewdeko.tech/Cottage.png", name: "GraveyardDwellingCat", description: "Owner/Developer", eggy: "Head of evil science/Catgirl shenanigans"}}'/>
             <Profile slot="element-3"
-                     profileData='{{alt: "Owner/Developer", image: "https://cdn.discordapp.com/avatars/436201394543001600/a_413cad5a6215188495d259ac8742b575.gif", name: "Paw", description: "Owner/Major Supporter"}}'/>
+                     profileData='{{alt: "Owner/Developer", image: "https://cdn.mewdeko.tech/Paw.gif", name: "Paw", description: "Owner/Major Supporter", eggy: "Placeholder"}}'/>
         </FluidContainer>
     </div>
 
