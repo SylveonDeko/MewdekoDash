@@ -180,7 +180,7 @@
                     title="... And much more!"
                     cta={{text: "Check them out!", href: "/commands"}}
             >
-                <img src="https://media.discordapp.net/attachments/991151715313254520/1064271068266762390/image.png"
+                <img src="https://cdn.mewdeko.tech/Modules1.png"
                      title="Modules List" alt="Modules List" class="w-full overflow-hidden rounded-xl"/>
             </Interactable>
         </FluidContainer>
