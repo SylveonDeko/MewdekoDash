@@ -25,7 +25,7 @@
         The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
     </h1>
     <MultiButton links="{[
-          { text: 'Invite', href: 'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303&scope=bot' },
+          { text: 'Invite', href: 'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' },
           { text: 'Donate', href: 'https://ko-fi.com/mewdeko' },
           { text: 'Server', href: 'https://discord.gg/mewdeko' },
         ]}"/>
@@ -51,19 +51,19 @@
                         component: ImageWrapper,
                         props:  {
                             alt: 'Auto Ban Words',
-                            src: 'https://media.discordapp.net/attachments/1004047472223588398/1059098637302501416/image.png'
+                            src: 'https://cdn.mewdeko.tech/AutoBan.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:   {
                             title: 'Commands',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059099724357054474/image.png'
+                            src: 'https://cdn.mewdeko.tech/Moderation.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Anti Raid',
-                            src: 'https://media.discordapp.net/attachments/970494951836254268/1059099875339423765/image.png'
+                            src: 'https://cdn.mewdeko.tech/AntiRaid.png'
                         }
                     }
                 ]}/>
@@ -81,19 +81,19 @@
                         component: ImageWrapper,
                         props: {
                             alt: 'Hosting A Bot',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059100950142394439/image.png'
+                            src: 'https://cdn.mewdeko.tech/FriendlyStaff1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:  {
                             alt: 'Help Command',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059101488833634344/image.png'
+                            src: 'https://cdn.mewdeko.tech/FriendlyStaff2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             alt: 'Walking The Dog',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059102004334567424/image.png'
+                            src: 'https://cdn.mewdeko.tech/FriendlyStaff3.png'
                         }
                     }
                 ]}/>
@@ -128,19 +128,19 @@
                         component: ImageWrapper,
                         props:  {
                             alt: 'Creating Custom Response',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059150708651343873/image.png'
+                            src: 'https://cdn.mewdeko.tech/ChatTriggers1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:   {
                             alt: 'Editing Custom Response',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059151273007517786/image.png'
+                            src: 'https://cdn.mewdeko.tech/ChatTriggers2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             alt: 'Custom Command In Action',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059151508651900938/image.png'
+                            src: 'https://cdn.mewdeko.tech/ChatTriggers3.png'
                         }
                     }
                 ]}/>
@@ -157,25 +157,25 @@
                         component: ImageWrapper,
                         props: {
                             title: 'Suggestion Commands',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181130579980318/image.png?width=666&height=701'
+                            src: 'https://cdn.mewdeko.tech/Customizeable1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Starboard Commands',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181297857200128/image.png'
+                            src: 'https://cdn.mewdeko.tech/Customizeable2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Afk Commands',
-                            src: 'https://media.discordapp.net/attachments/970494924938166352/1059181417793323028/image.png'
+                            src: 'https://cdn.mewdeko.tech/Customizeable3.png'
                         }
                     }
                 ]}/>
             </Interactable>
             <Interactable
-                    description="With a little over 20 modules, and me coming up with the most niche shit to add, you definitely wont get bored! (I hope)"
+                    description="With a little over 20 modules, and me coming up with the most niche stuff to add, you definitely wont get bored! (I hope)"
                     slot="element-7"
                     title="... And much more!"
                     cta={{text: "Check them out!", href: "/commands"}}
