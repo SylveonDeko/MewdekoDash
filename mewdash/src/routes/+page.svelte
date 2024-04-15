@@ -22,7 +22,7 @@
 <header class="py-12 px-4 sm:px-12 flex flex-col items-center bg-mewd-light-grey">
     <h1
             class="pt-10 text-center font-extrabold text-mewd-white sm:max-w-[40rem] md:max-w-[50rem] xl:max-w-[70rem] text-[28px] sm:text-3xl lg:text-4xl xl:text-[40px]">
-        The most&nbsp;customizable free&nbsp;bot you'll&nbsp;find. Open&nbsp;Source&nbsp;too.
+        The most customizable free bot you'll find. Open Source too.
     </h1>
     <MultiButton links="{[
           { text: 'Invite', href: 'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' },
@@ -51,19 +51,19 @@
                         component: ImageWrapper,
                         props:  {
                             alt: 'Auto Ban Words',
-                            src: 'https://cdn.mewdeko.tech/AutoBan.png'
+                            src: 'img/AutoBan.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:   {
                             title: 'Commands',
-                            src: 'https://cdn.mewdeko.tech/Moderation.png'
+                            src: 'img//Moderation.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Anti Raid',
-                            src: 'https://cdn.mewdeko.tech/AntiRaid.png'
+                            src: 'img//AntiRaid.png'
                         }
                     }
                 ]}/>
@@ -81,19 +81,19 @@
                         component: ImageWrapper,
                         props: {
                             alt: 'Hosting A Bot',
-                            src: 'https://cdn.mewdeko.tech/FriendlyStaff1.png'
+                            src: 'img//FriendlyStaff1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:  {
                             alt: 'Help Command',
-                            src: 'https://cdn.mewdeko.tech/FriendlyStaff2.png'
+                            src: 'img//FriendlyStaff2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             alt: 'Walking The Dog',
-                            src: 'https://cdn.mewdeko.tech/FriendlyStaff3.png'
+                            src: 'img//FriendlyStaff3.png'
                         }
                     }
                 ]}/>
@@ -128,19 +128,19 @@
                         component: ImageWrapper,
                         props:  {
                             alt: 'Creating Custom Response',
-                            src: 'https://cdn.mewdeko.tech/ChatTriggers1.png'
+                            src: 'img//ChatTriggers1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props:   {
                             alt: 'Editing Custom Response',
-                            src: 'https://cdn.mewdeko.tech/ChatTriggers2.png'
+                            src: 'img//ChatTriggers2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             alt: 'Custom Command In Action',
-                            src: 'https://cdn.mewdeko.tech/ChatTriggers3.png'
+                            src: 'img//ChatTriggers3.png'
                         }
                     }
                 ]}/>
@@ -157,19 +157,19 @@
                         component: ImageWrapper,
                         props: {
                             title: 'Suggestion Commands',
-                            src: 'https://cdn.mewdeko.tech/Customizeable1.png'
+                            src: 'img//Customizeable1.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Starboard Commands',
-                            src: 'https://cdn.mewdeko.tech/Customizeable2.png'
+                            src: 'img//Customizeable2.png'
                         }
                     },{
                         component: ImageWrapper,
                         props: {
                             title: 'Afk Commands',
-                            src: 'https://cdn.mewdeko.tech/Customizeable3.png'
+                            src: 'img//Customizeable3.png'
                         }
                     }
                 ]}/>
@@ -180,7 +180,7 @@
                     title="... And much more!"
                     cta={{text: "Check them out!", href: "/commands"}}
             >
-                <img src="https://cdn.mewdeko.tech/Modules1.png"
+                <img src="img//Modules1.png"
                      title="Modules List" alt="Modules List" class="w-full overflow-hidden rounded-xl"/>
             </Interactable>
         </FluidContainer>
@@ -205,7 +205,7 @@
                     platform="Top.gg"
                     text="This is the most useful bot that XNekø has used!
                             There is so many different types of things to do it’s amazing!
-                            5&nbsp;star to the bot and them who created the bot!&nbsp;:3"
+                            5 star to the bot and them who created the bot! :3"
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
@@ -215,21 +215,21 @@
             <CommentElement
                     slot="element-2"
                     platform="Top.gg"
-                    text="Out of all bots to exist, I&nbsp;understand this one the most lmao&nbsp;-&nbsp;so yeah!<br>
+                    text="Out of all bots to exist, I understand this one the most lmao - so yeah!<br>
                             I love the bot and hope nothing but the best for future reference"
                     user='{{
                         name:"[Heath] Her Strawberry BobaTea™",
                         href:"https://top.gg/user/2363846306423308288",
-                        avatar:"https://cdn.mewdeko.tech/DiscordDefault.png"
+                        avatar:"img//DiscordDefault.png"
                     }}'
             />
             <CommentElement
                     slot="element-3"
                     platform="Top.gg"
-                    text="这个&nbsp;Discord&nbsp;Bot&nbsp;很棒 +100&nbsp;Social&nbsp;Credit"
+                    text="这个 Discord Bot 很棒 +100 Social Credit"
                     user='{{
                         name:"aknatn",
-                        avatar:"https://cdn.mewdeko.tech/DiscordDefault.png"
+                        avatar:"img//DiscordDefault.png"
                     }}'
             />
         </FluidContainer>

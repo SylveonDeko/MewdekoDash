@@ -14,13 +14,13 @@
 </head>
 <div class="min-h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center" style="color:white">
     <h2 class="fw-bold text-3xl pb-6 text-center">How you can reach us</h2>
-    <ItemLink link="{{href:'mailto:sylveon@mewdeko.tech', text:'sylveon@mewdeko.tech'}}">
+    <ItemLink link="{{href:'mailto:sylveon@mewdeko.tech', text:'sylveon@mewdeko.tech', target: '_new'}}">
         <MailIcon/>
     </ItemLink>
-    <ItemLink link="{{href:'mailto:cottage@mewdeko.tech', text:'cottage@mewdeko.tech (GraveyardDwellingCat)'}}">
+    <ItemLink link="{{href:'mailto:cottage@mewdeko.tech', text:'cottage@mewdeko.tech (GraveyardDwellingCat)', target: '_new'}}">
         <MailIcon/>
     </ItemLink>
-    <ItemLink link="{{href:'https://discord.gg/mewdeko', text:'Discord Server'}}">
+    <ItemLink link="{{href:'https://discord.gg/mewdeko', text:'Discord Server', target: '_new'}}">
         <DiscordIcon/>
     </ItemLink>
 

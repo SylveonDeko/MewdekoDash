@@ -1,19 +1,19 @@
 <script lang="ts">
     import {onMount} from "svelte";
-
-    let guilds = [];
+    import type {RedisGuild} from "$lib/types/redisGuild";
+    let guilds: RedisGuild[] = [];
     let fetched = false;
     const MAX_GUILD_NAME_LENGTH = 20;
 
-    onMount(async () => {
-        const response = await fetch("/api/redis/guilds");
-        if (response.ok) {
-            guilds = await response.json();
-            fetched = true;
-        }
-    });
+        onMount(async () => {
+                const response = await fetch("/api/redis/guilds");
+                if (response.ok) {
+                    guilds = await response.json();
+                    fetched = true;
+                }
+        });
 
-    function truncateStringToLength(str, num) {
+    function truncateStringToLength(str:string, num:number):string {
         if (str.length <= num) {
             return str;
         }
