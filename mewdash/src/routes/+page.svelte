@@ -209,7 +209,7 @@
                     user='{{
                         name:"XNekø",
                         href:"https://top.gg/user/212055598057304064",
-                        avatar:"https://top.gg/_next/image?url=https%3A%2F%2Fimages.discordapp.net%2Favatars%2F873463733228273684%2F05dae0404286f73cb08f14af05c448c5.png%3Fsize%3D512&w=64&q=75"
+                        avatar:"img//xneko-pfp.gif"
                     }}'
             />
             <CommentElement
