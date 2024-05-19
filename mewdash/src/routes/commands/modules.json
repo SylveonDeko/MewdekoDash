@@ -9,6 +9,7 @@
         "Example": [
           ".xptempreload "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -23,6 +24,7 @@
           ".xpsetting xptextrate 4",
           ".xpsetting xptextrate"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -35,6 +37,7 @@
         "Example": [
           ".xprolereward 3 Social"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -48,6 +51,7 @@
           ".xpnotify global dm",
           ".xpnotify server channel"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -61,6 +65,7 @@
           ".xpnotify global dm",
           ".xpnotify server channel"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -73,6 +78,7 @@
         "Example": [
           ".xplvluprewards "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -85,6 +91,7 @@
         "Example": [
           ".xpleaderboard "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -97,6 +104,7 @@
         "Example": [
           ".xpexclusionlist "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -110,6 +118,7 @@
           ".xpexclude Role Excluded-Role",
           ".xpexclude Server"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -123,6 +132,7 @@
           ".xpexclude Role Excluded-Role",
           ".xpexclude Server"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -136,6 +146,7 @@
           ".xpexclude Role Excluded-Role",
           ".xpexclude Server"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -148,6 +159,7 @@
         "Example": [
           ".xpcurreward 3 50"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -160,6 +172,7 @@
         "Example": [
           ".xpadd 100 @Someone"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -172,6 +185,7 @@
         "Example": [
           ".xpadd 100 @Someone"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -184,6 +198,7 @@
         "Example": [
           ".syncrewards "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -197,6 +212,7 @@
           ".experience ",
           ".experience @someguy"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -209,6 +225,7 @@
         "Example": [
           ".clubunban user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -221,6 +238,7 @@
         "Example": [
           ".clubunban user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -233,6 +251,7 @@
         "Example": [
           ".clubtransfer @Someone"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -245,6 +264,7 @@
         "Example": [
           ".clublevelreq 7"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -257,6 +277,7 @@
         "Example": [
           ".clubleave "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -269,6 +290,7 @@
         "Example": [
           ".clublb 2"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -281,6 +303,7 @@
         "Example": [
           ".clubkick user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -293,6 +316,7 @@
         "Example": [
           ".clubkick user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -305,6 +329,7 @@
         "Example": [
           ".clubinfo My Brand New Club#23"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -317,6 +342,7 @@
         "Example": [
           ".clubinfo My Brand New Club#23"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -329,6 +355,7 @@
         "Example": [
           ".clubicon https://i.imgur.com/htfDMfU.png"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -341,6 +368,7 @@
         "Example": [
           ".clubdisband "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -353,6 +381,7 @@
         "Example": [
           ".clubdesc This is the best club please join."
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -365,6 +394,7 @@
         "Example": [
           ".clubcreate My Brand New Club"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -377,6 +407,7 @@
         "Example": [
           ".clubbans 2"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -389,6 +420,7 @@
         "Example": [
           ".clubban user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -401,6 +433,7 @@
         "Example": [
           ".clubban user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -413,6 +446,7 @@
         "Example": [
           ".clubapps 2"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -425,6 +459,7 @@
         "Example": [
           ".clubapply My Brand New Club#23"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -437,6 +472,7 @@
         "Example": [
           ".clubadmin @Someone"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -449,6 +485,7 @@
         "Example": [
           ".clubaccept user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -461,6 +498,7 @@
         "Example": [
           ".clubaccept user#1337"
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -474,6 +512,7 @@
           ".xpreset @Someone",
           ".xpreset "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -487,6 +526,7 @@
           ".xpreset @Someone",
           ".xpreset "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -500,6 +540,7 @@
           ".xpreset @Someone",
           ".xpreset "
         ],
+        "ListOptions":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -3016,7 +3057,7 @@
         "Example": [
           ".languageslist"
         ],
-        "List": [
+        "ListOptions": [
         "Arabic / العربية : ar",
         "Traditional Chinese, Taiwan / 繁體中文 台灣 : zh-TW",
         "Simplified Chinese, People's Republic of China / 简体中文, 中华人民共和国 : zh-CN",

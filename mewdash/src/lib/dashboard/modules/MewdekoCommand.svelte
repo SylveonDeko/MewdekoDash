@@ -39,9 +39,9 @@
         <p class="text-sm ml-4 mb-2">{command.ChannelBotPermissions}</p>
     {/if}
 
-    {#if command.List}
-        <h6 class="px-4 whitespace-nowrap text-ellipsis">List</h6>
-        <p class="text-sm ml-4 mb-2">{command.List}</p>
+    {#if command.ListOptions}
+        <h6 class="px-4 whitespace-nowrap text-ellipsis">Available Choices</h6>
+        <p class="text-sm ml-4 mb-2">{command.ListOptions}</p>
     {/if}
 
     <h6 class="px-4 py-2 whitespace-nowrap">Usage</h6>
