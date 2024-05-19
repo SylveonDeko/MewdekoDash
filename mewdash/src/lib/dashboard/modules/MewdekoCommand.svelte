@@ -44,6 +44,11 @@
         <p class="text-sm ml-4 mb-2">{command.ListOptions}</p>
     {/if}
 
+    {#if command.BotVersion}
+        <h6 class="px-4 whitespace-nowrap">Available on</h6>
+        <p class="text-sm ml-4 mb-2">{command.BotVersion}</p>
+    {/if}
+    
     <h6 class="px-4 py-2 whitespace-nowrap">Usage</h6>
     {#each command.Example as example}
         <code class="text-sm bg-gray-700 ml-4 rounded-sm my-2 py-1">{truncateString(example, 70)}</code><br>
