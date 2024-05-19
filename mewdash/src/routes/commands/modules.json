@@ -3001,7 +3001,8 @@
         "CommandName": "gamevoicechannel",
         "Description": "Toggles game voice channel feature in the voice channel you're currently in. Users who join the game voice channel will get automatically redirected to the voice channel with the name of their current game, if it exists. Can't move users to channels that the bot has no connect permission for. One per server.",
         "Example": [
-          ".gamevoicechannel "
+          ".gamevoicechannel",
+          ".gvc"
         ],
         "GuildBotPermissions": "MoveMembers",
         "GuildUserPermissions": "Administrator",
@@ -3011,10 +3012,17 @@
         "ChannelBotPermissions": "",
         "ChannelUserPermissions": "",
         "CommandName": "languageslist",
-        "Description": "List of languages for which translation (or part of it) exist atm.",
+        "Description": "List of languages for which translation (or part of it) exist at the moment.",
         "Example": [
-          ".languageslist "
+          ".languageslist"
         ],
+        "List": [
+        "Arabic / العربية : ar",
+        "Traditional Chinese, Taiwan / 繁體中文 台灣 : zh-TW",
+        "Simplified Chinese, People's Republic of China / 简体中文, 中华人民共和国 : zh-CN",
+        "Nederlands / Nederland : nl-NL",
+        "English / United States : en-US"
+        ], 
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false

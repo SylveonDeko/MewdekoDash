@@ -23,7 +23,7 @@
         <h6 class="px-4 whitespace-nowrap text-ellipsis">User Guild Permissions</h6>
         <p class="text-sm ml-4 mb-2">{command.GuildUserPermissions}</p>
     {/if}
-
+    
     {#if command.ChannelUserPermissions}
         <h6 class="px-4 whitespace-nowrap">User Channel Permissions</h6>
         <p class="text-sm ml-4 mb-2">{command.ChannelUserPermissions}</p>
@@ -37,6 +37,11 @@
     {#if command.ChannelBotPermissions}
         <h6 class="px-4 whitespace-nowrap">Bot Channel Permissions</h6>
         <p class="text-sm ml-4 mb-2">{command.ChannelBotPermissions}</p>
+    {/if}
+
+    {#if command.List}
+        <h6 class="px-4 whitespace-nowrap text-ellipsis">List</h6>
+        <p class="text-sm ml-4 mb-2">{command.List}</p>
     {/if}
 
     <h6 class="px-4 py-2 whitespace-nowrap">Usage</h6>
