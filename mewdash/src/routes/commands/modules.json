@@ -6176,6 +6176,8 @@
         "Example": [
           ".inviteinfo spdvbdfih"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6188,6 +6190,8 @@
         "Example": [
           ".invitedelete 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6200,6 +6204,8 @@
         "Example": [
           ".invitecreate "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6212,6 +6218,8 @@
         "Example": [
           ".pingip 127.0.0.1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6224,6 +6232,8 @@
         "Example": [
           ".quoteshow 123"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6236,6 +6246,8 @@
         "Example": [
           ".quotesearch keyword text"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6248,6 +6260,8 @@
         "Example": [
           ".quoteprint abc"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6260,6 +6274,8 @@
         "Example": [
           ".quoteid 123456"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6272,6 +6288,8 @@
         "Example": [
           ".quotedelete 123456"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6284,6 +6302,8 @@
         "Example": [
           ".quoteadd sayhi Hi"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6297,6 +6317,8 @@
           ".listquotes 3",
           ".listquotes 3 id"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6310,6 +6332,8 @@
           ".listquotes 3",
           ".listquotes 3 id"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6322,6 +6346,8 @@
         "Example": [
           ".delallquotes kek"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6334,6 +6360,8 @@
         "Example": [
           ".remindlist 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6346,6 +6374,8 @@
         "Example": [
           ".reminddelete 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6359,6 +6389,8 @@
           ".remind me 1d5h Do something",
           ".remind #general 1m Start now!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6372,6 +6404,8 @@
           ".remind me 1d5h Do something",
           ".remind #general 1m Start now!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6384,6 +6418,8 @@
         "Example": [
           ".repeatremove 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6396,6 +6432,8 @@
         "Example": [
           ".repeatredun 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6408,6 +6446,8 @@
         "Example": [
           ".repeatmessage 1 message/embedcode"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6420,6 +6460,8 @@
         "Example": [
           ".repeatlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6432,6 +6474,8 @@
         "Example": [
           ".repeatinvoke 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6445,6 +6489,8 @@
           ".repeatchannel 1 #channel",
           ".repeatchannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6460,6 +6506,8 @@
           ".repeat 10:00 Daily have a nice day! This will execute once every 24h.",
           ".repeat 21:00 30m Starting at 21 and every 30 minutes after that i will send this message!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6475,6 +6523,8 @@
           ".repeat 10:00 Daily have a nice day! This will execute once every 24h.",
           ".repeat 21:00 30m Starting at 21 and every 30 minutes after that i will send this message!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6490,6 +6540,8 @@
           ".repeat 10:00 Daily have a nice day! This will execute once every 24h.",
           ".repeat 21:00 30m Starting at 21 and every 30 minutes after that i will send this message!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6505,6 +6557,8 @@
           ".repeat 10:00 Daily have a nice day! This will execute once every 24h.",
           ".repeat 21:00 30m Starting at 21 and every 30 minutes after that i will send this message!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6518,6 +6572,8 @@
           ".streamrolewhitelist add @Someone#1234",
           ".streamrolewhitelist rem @Someone#1234"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -6531,6 +6587,8 @@
           ".streamrolekeyword ",
           ".streamrolekeyword PUBG"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -6544,6 +6602,8 @@
           ".streamroleblacklist add @Someone#1234",
           ".streamroleblacklist rem @Someone#1234"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -6556,6 +6616,8 @@
         "Example": [
           ".streamrole \"Eligible Streamers\" \"Featured Streams\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -6568,6 +6630,8 @@
         "Example": [
           ".streamrole \"Eligible Streamers\" \"Featured Streams\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -6580,6 +6644,8 @@
         "Example": [
           ".convertlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6592,6 +6658,8 @@
         "Example": [
           ".convert m km 1000"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6605,6 +6673,8 @@
           ".verboseerror ",
           ".verboseerror false"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -6624,6 +6694,8 @@
           ".rolegreetwebhook 26 Mewdeko",
           ".rolegreetwebhook 26"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6637,6 +6709,8 @@
           ".rolegreetremove 1",
           ".rolegreetremove @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6650,6 +6724,8 @@
           ".rolegreetremove 1",
           ".rolegreetremove @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6663,6 +6739,8 @@
           ".rolegreetmessage 2",
           ".rolegreetmessage 2 embedcode/message"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6675,6 +6753,8 @@
         "Example": [
           ".rolegreetlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6687,6 +6767,8 @@
         "Example": [
           ".rolegreetgreetbots 1 false"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6699,6 +6781,8 @@
         "Example": [
           ".rolegreetdisable 1 true/false"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6712,6 +6796,8 @@
           ".rolegreetdelete 1s",
           ".rolegreetdelete 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6725,6 +6811,8 @@
           ".rolegreetdelete 1s",
           ".rolegreetdelete 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6738,6 +6826,8 @@
           ".rolegreetadd @role",
           ".rolegreetadd @role #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -6755,6 +6845,8 @@
         "Example": [
           ".userstatsoptout "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6767,6 +6859,8 @@
         "Example": [
           ".setzodiac libra"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6780,6 +6874,8 @@
           ".setswitchfc SW-1234-1234-1234",
           ".setswitchfc "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6794,6 +6890,8 @@
           ".setpronouns tig/vamps",
           ".setpronouns "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6806,6 +6904,8 @@
         "Example": [
           ".setprofileimage imagelink"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6819,6 +6919,8 @@
           ".setprofilecolor Yellow",
           ".setprofilecolor Hex, im not looking up a hex just for this command"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6832,6 +6934,8 @@
           ".setprivacy Private",
           ".setprivacy Public"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6845,6 +6949,8 @@
           ".setbirthdayprivacy MonthOnly",
           ".setbirthdayprivacy MonthAndDateOnly"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6857,6 +6963,8 @@
         "Example": [
           ".setbirthday 10/04/2003"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6869,6 +6977,8 @@
         "Example": [
           ".setbio Hi there, owner of Mewdeko!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6882,6 +6992,8 @@
           ".pronounsforceclear @user true pronouns contained transphobic message",
           ".pronounsforceclear @user false pronouns being used to start conflict with another user, cleared as a warning."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6895,6 +7007,8 @@
           ".pronounsforceclear @user true pronouns contained transphobic message",
           ".pronounsforceclear @user false pronouns being used to start conflict with another user, cleared as a warning."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6908,6 +7022,8 @@
           ".pronouns @user",
           ".pronouns "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6921,6 +7037,8 @@
           ".profile ",
           ".profile @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6933,6 +7051,8 @@
         "Example": [
           ".deleteuserstatsdata "
         ],
+        "ListOptions":[""], 
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -6950,6 +7070,8 @@
         "Example": [
           ".voiceunmute @Someguy"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -6966,6 +7088,8 @@
           ".voicemute 1h30m @Someone",
           ".voicemute 1h @Someone silence"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -6982,6 +7106,8 @@
           ".voicemute 1h30m @Someone",
           ".voicemute 1h @Someone silence"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -6994,6 +7120,8 @@
         "Example": [
           ".unstfu @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7007,6 +7135,8 @@
           ".unmuteall ",
           ".unmuteall "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7019,6 +7149,8 @@
         "Example": [
           ".unmute @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers, ManageRoles",
         "IsDragon": false
@@ -7031,6 +7163,8 @@
         "Example": [
           ".stfu @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7043,6 +7177,8 @@
         "Example": [
           ".stfu @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7055,6 +7191,8 @@
         "Example": [
           ".removeonmute yes"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7068,6 +7206,8 @@
           ".muterole ",
           ".muterole Silenced"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -7083,6 +7223,8 @@
           ".mute 1h30m @Someone",
           ".mute 1h30m @Someone too noisy"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers, ManageRoles",
         "IsDragon": false
@@ -7098,6 +7240,8 @@
           ".mute 1h30m @Someone",
           ".mute 1h30m @Someone too noisy"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers, ManageRoles",
         "IsDragon": false
@@ -7113,6 +7257,8 @@
           ".mute 1h30m @Someone",
           ".mute 1h30m @Someone too noisy"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers, ManageRoles",
         "IsDragon": false
@@ -7125,6 +7271,8 @@
         "Example": [
           ".chatunmute @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -7141,6 +7289,8 @@
           ".chatmute 1h30m @Someone",
           ".chatmute 1h @Someone silence"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -7157,6 +7307,8 @@
           ".chatmute 1h30m @Someone",
           ".chatmute 1h @Someone silence"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -7178,6 +7330,8 @@
           ".purge 20 --nb",
           ".purge 20 --ob"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -7199,6 +7353,8 @@
           ".purge 20 --nb",
           ".purge 20 --ob"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7220,6 +7376,8 @@
           ".purge 20 --nb",
           ".purge 20 --ob"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7241,6 +7399,8 @@
           ".purge 20 --nb",
           ".purge 20 --ob"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7262,6 +7422,8 @@
           ".purge 20 --nb",
           ".purge 20 --ob"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7274,6 +7436,8 @@
         "Example": [
           ".authorize "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": true
@@ -7286,6 +7450,8 @@
         "Example": [
           ".warnpunishlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7301,6 +7467,8 @@
           ".warnpunish 5 Mute 2d12h",
           ".warnpunish 4 AddRole toxic 1h"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7316,6 +7484,8 @@
           ".warnpunish 5 Mute 2d12h",
           ".warnpunish 4 AddRole toxic 1h"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7331,6 +7501,8 @@
           ".warnpunish 5 Mute 2d12h",
           ".warnpunish 4 AddRole toxic 1h"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7344,6 +7516,8 @@
           ".warnlogall ",
           ".warnlogall 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7356,6 +7530,8 @@
         "Example": [
           ".warnlog @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7368,6 +7544,8 @@
         "Example": [
           ".warnlog @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7381,6 +7559,8 @@
           ".warnexpire 3",
           ".warnexpire 6 --delete"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7394,6 +7574,8 @@
           ".warnclear @PoorDude 3",
           ".warnclear @PoorDude"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7406,6 +7588,8 @@
         "Example": [
           ".warn @Someone Very rude person"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7418,6 +7602,8 @@
         "Example": [
           ".untimeout @user goodboi"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ModerateMembers",
         "GuildUserPermissions": "ModerateMembers",
         "IsDragon": false
@@ -7431,6 +7617,8 @@
           ".unban Sylveon#0069",
           ".unban 123123123"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7444,6 +7632,8 @@
           ".unban Sylveon#0069",
           ".unban 123123123"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7457,6 +7647,8 @@
           ".timeout 10d @user bad boi",
           ".timeout 28d @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ModerateMembers",
         "GuildUserPermissions": "ModerateMembers",
         "IsDragon": false
@@ -7470,6 +7662,8 @@
           ".softban @Someone Get out!",
           ".softban \"Some Guy#1234\" Your behaviour is toxic."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "KickMembers, ManageMessages",
         "IsDragon": false
@@ -7483,6 +7677,8 @@
           ".softban @Someone Get out!",
           ".softban \"Some Guy#1234\" Your behaviour is toxic."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "KickMembers, ManageMessages",
         "IsDragon": false
@@ -7495,6 +7691,8 @@
         "Example": [
           ".setwarnchannel #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7507,6 +7705,8 @@
         "Example": [
           ".sanitizeall "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "Administrator",
         "GuildUserPermissions": "ManageNicknames",
         "IsDragon": false
@@ -7519,6 +7719,8 @@
         "Example": [
           ".sanitize @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageNicknames",
         "GuildUserPermissions": "ManageNicknames",
         "IsDragon": false
@@ -7531,6 +7733,8 @@
         "Example": [
           ".massnickstop "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7543,6 +7747,8 @@
         "Example": [
           ".massnickprogress "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7555,6 +7761,8 @@
         "Example": [
           ".masskill BadPerson#1234 Toxic person"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7567,6 +7775,8 @@
         "Example": [
           ".masskick @user1 @user2 \"User with spaces"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "KickMembers",
         "GuildUserPermissions": "KickMembers",
         "IsDragon": false
@@ -7580,6 +7790,8 @@
           ".kick @Someone Get out!",
           ".kick \"Some Guy#1234\" Your behaviour is toxic."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "KickMembers",
         "GuildUserPermissions": "KickMembers",
         "IsDragon": false
@@ -7593,6 +7805,8 @@
           ".kick @Someone Get out!",
           ".kick \"Some Guy#1234\" Your behaviour is toxic."
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "KickMembers",
         "GuildUserPermissions": "KickMembers",
         "IsDragon": false
@@ -7606,6 +7820,8 @@
           ".dehoistall ",
           ".dehoistall true"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "Administrator",
         "GuildUserPermissions": "ManageNicknames",
         "IsDragon": false
@@ -7618,6 +7834,8 @@
         "Example": [
           ".dehoist @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageNicknames",
         "GuildUserPermissions": "ManageNicknames",
         "IsDragon": false
@@ -7631,6 +7849,8 @@
           ".banmsgtest No reason",
           ".banmsgtest 1h Test 1 hour ban message"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7644,6 +7864,8 @@
           ".banmsgtest No reason",
           ".banmsgtest 1h Test 1 hour ban message"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7656,6 +7878,8 @@
         "Example": [
           ".banmsgreset "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7669,6 +7893,8 @@
           ".banmessage %ban.user%, you've been banned from %server.name%. Reason: %ban.reason%",
           ".banmessage { \"description\": \"%ban.user% you have been banned from %server.name% by %ban.mod%\" }"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7683,6 +7909,8 @@
           ".ban \"Some Guy#1234\" Your behaviour is toxic.",
           ".ban 1d12h @Someone Come back when u chill"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7697,6 +7925,8 @@
           ".ban \"Some Guy#1234\" Your behaviour is toxic.",
           ".ban 1d12h @Someone Come back when u chill"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7711,6 +7941,8 @@
           ".ban \"Some Guy#1234\" Your behaviour is toxic.",
           ".ban 1d12h @Someone Come back when u chill"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7725,6 +7957,8 @@
           ".ban \"Some Guy#1234\" Your behaviour is toxic.",
           ".ban 1d12h @Someone Come back when u chill"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7739,6 +7973,8 @@
           ".ban \"Some Guy#1234\" Your behaviour is toxic.",
           ".ban 1d12h @Someone Come back when u chill"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "BanMembers",
         "GuildUserPermissions": "BanMembers",
         "IsDragon": false
@@ -7751,6 +7987,8 @@
         "Example": [
           ".setmwarnchannel #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7763,6 +8001,8 @@
         "Example": [
           ".mwarnpunishlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7776,6 +8016,8 @@
           ".mwarnpunish 1 Mute 15m",
           ".mwarnpunish 2 Ban 3d"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7789,6 +8031,8 @@
           ".mwarnpunish 1 Mute 15m",
           ".mwarnpunish 2 Ban 3d"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7802,6 +8046,8 @@
           ".mwarnpunish 1 Mute 15m",
           ".mwarnpunish 2 Ban 3d"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7814,6 +8060,8 @@
         "Example": [
           ".mwarnlogall "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7826,6 +8074,8 @@
         "Example": [
           ".mwarnlog @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7838,6 +8088,8 @@
         "Example": [
           ".mwarnlog @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7850,6 +8102,8 @@
         "Example": [
           ".mwarnlog @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7862,6 +8116,8 @@
         "Example": [
           ".mwarnlog @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7874,6 +8130,8 @@
         "Example": [
           ".mwarnexpire 30d"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7887,6 +8145,8 @@
           ".mwarnclear @user",
           ".mwarnclear @user 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7900,6 +8160,8 @@
           ".mwarnclear @user",
           ".mwarnclear @user 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -7912,6 +8174,8 @@
         "Example": [
           ".mwarn @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "MuteMembers",
         "IsDragon": false
@@ -7930,6 +8194,8 @@
           ".verbose ",
           ".verbose true"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7942,6 +8208,8 @@
         "Example": [
           ".usrmdl ModuleName enable SomeUsername"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7954,6 +8222,8 @@
         "Example": [
           ".usrcmd .command enable SomeUsername"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7966,6 +8236,8 @@
         "Example": [
           ".srvrmdl ModuleName enable"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7978,6 +8250,8 @@
         "Example": [
           ".srvrcmd \"command name\" disable"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -7990,6 +8264,8 @@
         "Example": [
           ".rolemdl ModuleName enable MyRole"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8002,6 +8278,8 @@
         "Example": [
           ".rolecmd \"command name\" disable MyRole"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8014,6 +8292,8 @@
         "Example": [
           ".resetperms "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8026,6 +8306,8 @@
         "Example": [
           ".removeperm 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8039,6 +8321,8 @@
           ".permrole Some Role",
           ".permrole reset"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8052,6 +8336,8 @@
           ".permrole Some Role",
           ".permrole reset"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8064,6 +8350,8 @@
         "Example": [
           ".moveperm 2 4"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8077,6 +8365,8 @@
           ".listperms ",
           ".listperms 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8089,6 +8379,8 @@
         "Example": [
           ".chnlmdl ModuleName enable SomeChannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8101,6 +8393,8 @@
         "Example": [
           ".chnlcmd .command enable SomeChannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8113,6 +8407,8 @@
         "Example": [
           ".catmdl ModuleName enable SomeChannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8126,6 +8422,8 @@
           ".catcmd .command name enable CategoryName",
           ".catcmd .command enable CategoryId"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8138,6 +8436,8 @@
         "Example": [
           ".allusrmdls enable @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8150,6 +8450,8 @@
         "Example": [
           ".allsrvrmdls [enable/disable]"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8162,6 +8464,8 @@
         "Example": [
           ".allrolemdls [enable/disable] MyRole"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8174,6 +8478,8 @@
         "Example": [
           ".allchnlmdls enable #SomeChannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8187,6 +8493,8 @@
           ".allcatmdls enable Category Name",
           ".allcatmdls enable CategoryId"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8200,6 +8508,8 @@
           ".userblacklist add @SomeUser spam pinging",
           ".userblacklist rem 12312312313 applied for unban"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8213,6 +8523,8 @@
           ".userblacklist add @SomeUser spam pinging",
           ".userblacklist rem 12312312313 applied for unban"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8226,6 +8538,8 @@
           ".serverblacklist add 12312321312",
           ".serverblacklist rem SomeTrashServer"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8239,6 +8553,8 @@
           ".serverblacklist add 12312321312",
           ".serverblacklist rem SomeTrashServer"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8251,6 +8567,8 @@
         "Example": [
           ".channelblacklist rem 12312312312"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8263,6 +8581,8 @@
         "Example": [
           ".cmdcooldown \"some cmd\" 10s"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8275,6 +8595,8 @@
         "Example": [
           ".allcmdcooldowns "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8287,6 +8609,8 @@
         "Example": [
           ".srvrfilterwords "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8299,6 +8623,8 @@
         "Example": [
           ".srvrfilterlin "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8311,6 +8637,8 @@
         "Example": [
           ".srvrfilterinv "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8323,6 +8651,8 @@
         "Example": [
           ".lstfilterwords "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8335,6 +8665,8 @@
         "Example": [
           ".invwarn y/n"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8347,6 +8679,8 @@
         "Example": [
           ".fwclear "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8359,6 +8693,8 @@
         "Example": [
           ".fwarn y/n"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8371,6 +8707,8 @@
         "Example": [
           ".filterword poop"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8383,6 +8721,8 @@
         "Example": [
           ".chnlfilterwords "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8395,6 +8735,8 @@
         "Example": [
           ".chnlfilterlin "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8407,6 +8749,8 @@
         "Example": [
           ".chnlfilterinv "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8419,6 +8763,8 @@
         "Example": [
           ".autobanwordlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8431,6 +8777,8 @@
         "Example": [
           ".autobanword fuck"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -8443,6 +8791,8 @@
         "Example": [
           ".resetglobalperms "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8455,6 +8805,8 @@
         "Example": [
           ".globalpermlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8467,6 +8819,8 @@
         "Example": [
           ".globalmodule nsfw"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8479,6 +8833,8 @@
         "Example": [
           ".globalcommand .stats"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8496,6 +8852,8 @@
         "Example": [
           ".yandere tag1+tag2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8508,6 +8866,8 @@
         "Example": [
           ".sankaku Vanilla"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8520,6 +8880,8 @@
         "Example": [
           ".safebooru yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8532,6 +8894,8 @@
         "Example": [
           ".rule34 yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8544,6 +8908,8 @@
         "Example": [
           ".redditnsfw waifus34"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8556,6 +8922,8 @@
         "Example": [
           ".realbooru anal"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8568,6 +8936,8 @@
         "Example": [
           ".pussy "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8580,6 +8950,8 @@
         "Example": [
           ".pornbomb anal"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8592,6 +8964,8 @@
         "Example": [
           ".porn "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8604,6 +8978,8 @@
         "Example": [
           ".nsfwtagbl poop"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -8619,6 +8995,8 @@
           ".nhentaisearch cumdump 3",
           ".nhentaisearch cumdump -futa 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8634,6 +9012,8 @@
           ".nhentaisearch cumdump 3",
           ".nhentaisearch cumdump -futa 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8649,6 +9029,8 @@
           ".nhentaisearch cumdump 3",
           ".nhentaisearch cumdump -futa 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8664,6 +9046,8 @@
           ".nhentaisearch cumdump 3",
           ".nhentaisearch cumdump -futa 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8679,6 +9063,8 @@
           ".nhentaisearch cumdump 3",
           ".nhentaisearch cumdump -futa 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8691,6 +9077,8 @@
         "Example": [
           ".nhentai 209519"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8703,6 +9091,8 @@
         "Example": [
           ".konachan yuri"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8715,6 +9105,8 @@
         "Example": [
           ".hentaigif "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8727,6 +9119,8 @@
         "Example": [
           ".hentaibomb yuri"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8739,6 +9133,8 @@
         "Example": [
           ".hentai yuri"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8751,6 +9147,8 @@
         "Example": [
           ".gelbooru yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8763,6 +9161,8 @@
         "Example": [
           ".e621 yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8775,6 +9175,8 @@
         "Example": [
           ".derpibooru yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8787,6 +9189,8 @@
         "Example": [
           ".danbooru yuri+kissing"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8800,6 +9204,8 @@
           ".butts ",
           ".butts "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8812,6 +9218,8 @@
         "Example": [
           ".boobs "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8824,6 +9232,8 @@
         "Example": [
           ".bondage "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8837,6 +9247,8 @@
           ".autohentai 30 yuri+kissing|tail+long_hair",
           ".autohentai "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8850,6 +9262,8 @@
           ".autobutts 30",
           ".autobutts "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8863,6 +9277,8 @@
           ".autoboobs 30",
           ".autoboobs "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8875,6 +9291,8 @@
         "Example": [
           ".anal "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -8892,6 +9310,8 @@
         "Example": [
           ".toggleremoveadded 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8904,6 +9324,8 @@
         "Example": [
           ".togglereaddremoved 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8917,6 +9339,8 @@
           ".setstatusroleembed 1 embedcode",
           ".setstatusroleembed 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8929,6 +9353,8 @@
         "Example": [
           ".setstatusrolechannel channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8941,6 +9367,8 @@
         "Example": [
           ".setremoveroles 1 role1 role2 \\\"Role with spaces\\\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8953,6 +9381,8 @@
         "Example": [
           ".setaddroles 1 role1 role2 \\\"Role with spaces\\\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8965,6 +9395,8 @@
         "Example": [
           ".removestatusrole index"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8977,6 +9409,8 @@
         "Example": [
           ".removeremoveroles 1 role1 role2 \\\"Role with spaces\\\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -8989,6 +9423,8 @@
         "Example": [
           ".removeaddroles 1 role1 role2 \\\"Role with spaces\\\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -9001,6 +9437,8 @@
         "Example": [
           ".liststatusroles "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -9013,6 +9451,8 @@
         "Example": [
           ".addstatusrole status"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageGuild",
         "IsDragon": false
@@ -9030,6 +9470,8 @@
         "Example": [
           ".confessunblacklist @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -9042,6 +9484,8 @@
         "Example": [
           ".confesslogchannel #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9055,6 +9499,8 @@
           ".confesschannel #channel",
           ".confesschannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -9067,6 +9513,8 @@
         "Example": [
           ".confessblacklist @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -9080,6 +9528,8 @@
           ".confess serverId confession",
           ".confess confession (If in server, using the slash command)"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9097,6 +9547,8 @@
         "Example": [
           ".suggestinfo 10"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9109,6 +9561,8 @@
         "Example": [
           ".suggestclear "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9121,6 +9575,8 @@
         "Example": [
           ".suggest suggestion"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9133,6 +9589,8 @@
         "Example": [
           ".setsuggestchannel #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -9145,6 +9603,8 @@
         "Example": [
           ".implemented number reason"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9157,6 +9617,8 @@
         "Example": [
           ".deny number reason"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9169,6 +9631,8 @@
         "Example": [
           ".consider number reason"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9181,6 +9645,8 @@
         "Example": [
           ".accept number reason"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9195,6 +9661,8 @@
           ".suggestthreadstype none",
           ".suggestthreadstype private"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9208,6 +9676,8 @@
           ".suggestmotesmode emotes",
           ".suggestmotesmode buttons"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9220,6 +9690,8 @@
         "Example": [
           ".suggestmotes emote1 emote2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9235,6 +9707,8 @@
           ".suggestmotecolor 3 gray",
           ".suggestmotecolor 4 green"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9247,6 +9721,8 @@
         "Example": [
           ".suggestmessage embedcodehere"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9260,6 +9736,8 @@
           ".suggestbuttonmessage embedcode",
           ".suggestbuttonmessage Suggest Here!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9272,6 +9750,8 @@
         "Example": [
           ".suggestbuttonlabel Suggest Here!"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9284,6 +9764,8 @@
         "Example": [
           ".suggestbuttonemote hanebomb"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9299,6 +9781,8 @@
           ".suggestbuttoncolor blue",
           ".suggestbuttoncolor grey"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9311,6 +9795,8 @@
         "Example": [
           ".suggestbuttonchannel #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9323,6 +9809,8 @@
         "Example": [
           ".minsuggestionlength 10"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9335,6 +9823,8 @@
         "Example": [
           ".maxsuggestionlength 4098"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9347,6 +9837,8 @@
         "Example": [
           ".implementmessage embedcodehere"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9360,6 +9852,8 @@
           ".implementchannel implemented",
           ".implementchannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9372,6 +9866,8 @@
         "Example": [
           ".denymessage embedcodehere"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9385,6 +9881,8 @@
           ".denychannel denied",
           ".denychannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9397,6 +9895,8 @@
         "Example": [
           ".considermessage embedcodehere"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9410,6 +9910,8 @@
           ".considerchannel considered",
           ".considerchannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9422,6 +9924,8 @@
         "Example": [
           ".archiveonimplement "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9434,6 +9938,8 @@
         "Example": [
           ".archiveondeny "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9446,6 +9952,8 @@
         "Example": [
           ".archiveonconsider "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9458,6 +9966,8 @@
         "Example": [
           ".archiveonaccept "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9470,6 +9980,8 @@
         "Example": [
           ".acceptmessage embedcodehere"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9483,6 +9995,8 @@
           ".acceptchannel accepted",
           ".acceptchannel "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9500,6 +10014,8 @@
         "Example": [
           ".viewrolestatessettings "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9512,6 +10028,8 @@
         "Example": [
           ".viewrolestates "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9524,6 +10042,8 @@
         "Example": [
           ".togglerolestatesignorebots "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9536,6 +10056,8 @@
         "Example": [
           ".togglerolestatesclearonban "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9548,6 +10070,8 @@
         "Example": [
           ".togglerolestates "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9560,6 +10084,8 @@
         "Example": [
           ".setuserrolestate user role1 role2 \"Role with spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9572,6 +10098,8 @@
         "Example": [
           ".rolestatesremovedenyrole role roleid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9584,6 +10112,8 @@
         "Example": [
           ".rolestatesremoveadduser user userid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9596,6 +10126,8 @@
         "Example": [
           ".rolestatesadddenyuser user userid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9608,6 +10140,8 @@
         "Example": [
           ".rolestatesadddenyrole role roleid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9620,6 +10154,8 @@
         "Example": [
           ".removerolesfromrolestate user role1 role2 \"Role with spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9633,6 +10169,8 @@
           ".deleteuserrolestate user",
           ".deleteuserrolestate userid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9646,6 +10184,8 @@
           ".deleteuserrolestate user",
           ".deleteuserrolestate userid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9658,6 +10198,8 @@
         "Example": [
           ".addrolestorolestate user role1 role2 \"Role with spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -9679,6 +10221,8 @@
         "Example": [
           ".rategirl @SomeGurl"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9691,6 +10235,8 @@
         "Example": [
           ".linux Spyware Windows"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9703,6 +10249,8 @@
         "Example": [
           ".eightball Is b1nzy a nice guy?"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9715,6 +10263,8 @@
         "Example": [
           ".dragon never"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9727,6 +10277,8 @@
         "Example": [
           ".choose Get up;Sleep;Sleep more"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9740,6 +10292,8 @@
           ".acrophobia ",
           ".acrophobia -s 30"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9752,6 +10306,8 @@
         "Example": [
           ".cleverbot "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9764,6 +10320,8 @@
         "Example": [
           ".hangmanstop "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9776,6 +10334,8 @@
         "Example": [
           ".hangmanlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9789,6 +10349,8 @@
           ".hangman ",
           ".hangman movies"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9801,6 +10363,8 @@
         "Example": [
           ".nunchi "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9814,6 +10378,8 @@
           ".plant 5",
           ".plant 10 meow"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9827,6 +10393,8 @@
           ".pick ",
           ".pick passwd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9839,6 +10407,8 @@
         "Example": [
           ".gencurrency "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9851,6 +10421,8 @@
         "Example": [
           ".gencurlist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9863,6 +10435,8 @@
         "Example": [
           ".pollstats "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9875,6 +10449,8 @@
         "Example": [
           ".pollend "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9888,6 +10464,8 @@
           ".poll Question?;Answer1;Answ 2;A_3",
           ".poll MultiAnswer Question;answer;answer;answer"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9901,6 +10479,8 @@
           ".poll Question?;Answer1;Answ 2;A_3",
           ".poll MultiAnswer Question;answer;answer;answer"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -9913,6 +10493,8 @@
         "Example": [
           ".typestop "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9925,6 +10507,8 @@
         "Example": [
           ".typestart "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9938,6 +10522,8 @@
           ".typelist ",
           ".typelist 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9950,6 +10536,8 @@
         "Example": [
           ".typedel 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9962,6 +10550,8 @@
         "Example": [
           ".typeadd wordswords"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9974,6 +10564,8 @@
         "Example": [
           ".tictactoe "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9987,6 +10579,8 @@
           ".trivia ",
           ".trivia --timeout 5 -p -w 3 -q 10"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -9999,6 +10593,8 @@
         "Example": [
           ".tq "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10011,6 +10607,8 @@
         "Example": [
           ".tl "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10028,6 +10626,8 @@
         "Example": [
           ".voteclaim "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10041,6 +10641,8 @@
           ".timelyset 100",
           ".timelyset 50 12"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10053,6 +10655,8 @@
         "Example": [
           ".timelyreset "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10065,6 +10669,8 @@
         "Example": [
           ".timely "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10077,6 +10683,8 @@
         "Example": [
           ".take 1 @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10089,6 +10697,8 @@
         "Example": [
           ".take 1 @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10102,6 +10712,8 @@
           ".rps r 100",
           ".rps scissors"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10115,6 +10727,8 @@
           ".rollduel 50 @Someone",
           ".rollduel @Challenger"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10128,6 +10742,8 @@
           ".rollduel 50 @Someone",
           ".rollduel @Challenger"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10141,6 +10757,8 @@
           ".raffleany ",
           ".raffleany  RoleName"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10154,6 +10772,8 @@
           ".raffle ",
           ".raffle RoleName"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10166,6 +10786,8 @@
         "Example": [
           ".leaderboard "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10179,6 +10801,8 @@
           ".give 1 @Someone",
           ".give 5 @CootGurl Ur so pwetty"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10192,6 +10816,8 @@
           ".give 1 @Someone",
           ".give 5 @CootGurl Ur so pwetty"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10204,6 +10830,8 @@
         "Example": [
           ".economy "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10217,6 +10845,8 @@
           ".curtrs 2",
           ".curtrs @SomeUser 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10230,6 +10860,8 @@
           ".curtrs 2",
           ".curtrs @SomeUser 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10243,6 +10875,8 @@
           ".curtrs 2",
           ".curtrs @SomeUser 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10256,6 +10890,8 @@
           ".cash ",
           ".cash @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10269,6 +10905,8 @@
           ".cash ",
           ".cash @Someone"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10281,6 +10919,8 @@
         "Example": [
           ".betroll 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10294,6 +10934,8 @@
           ".award 100 @person",
           ".award 5 Role Of Gamblers"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10307,6 +10949,8 @@
           ".award 100 @person",
           ".award 5 Role Of Gamblers"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10320,6 +10964,8 @@
           ".award 100 @person",
           ".award 5 Role Of Gamblers"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10333,6 +10979,8 @@
           ".award 100 @person",
           ".award 5 Role Of Gamblers"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10346,6 +10994,8 @@
           ".joinrace ",
           ".joinrace 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10358,6 +11008,8 @@
         "Example": [
           ".stand "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10370,6 +11022,8 @@
         "Example": [
           ".hit "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10382,6 +11036,8 @@
         "Example": [
           ".double "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10394,6 +11050,8 @@
         "Example": [
           ".blackjack 50"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10406,6 +11064,8 @@
         "Example": [
           ".connect4 "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10419,6 +11079,8 @@
           ".eventstart reaction",
           ".eventstart reaction -d 1 -a 50 --pot-size 1500"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10432,6 +11094,8 @@
           ".rafflecur 20",
           ".rafflecur mixed 15"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10445,6 +11109,8 @@
           ".rafflecur 20",
           ".rafflecur mixed 15"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10459,6 +11125,8 @@
           ".rolluo 7",
           ".rolluo 3d5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10473,6 +11141,8 @@
           ".rolluo 7",
           ".rolluo 3d5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10487,6 +11157,8 @@
           ".roll d8",
           ".roll 7d5, 2d100 / 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10501,6 +11173,8 @@
           ".roll d8",
           ".roll 7d5, 2d100 / 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10515,6 +11189,8 @@
           ".roll d8",
           ".roll 7d5, 2d100 / 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10528,6 +11204,8 @@
           ".nroll 5",
           ".nroll 5-15"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10541,6 +11219,8 @@
           ".drawnew ",
           ".drawnew 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10554,6 +11234,8 @@
           ".draw ",
           ".draw 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10566,6 +11248,8 @@
         "Example": [
           ".deckshuffle "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10579,6 +11263,8 @@
           ".flip ",
           ".flip 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10592,6 +11278,8 @@
           ".betflip 5 heads",
           ".betflip 3 t"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10604,6 +11292,8 @@
         "Example": [
           ".shopswap 1 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10616,6 +11306,8 @@
         "Example": [
           ".shopremove 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10628,6 +11320,8 @@
         "Example": [
           ".shopmove 2 4"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10640,6 +11334,8 @@
         "Example": [
           ".shoplistadd 1 Uni-que-Steam-Key"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10652,6 +11348,8 @@
         "Example": [
           ".shopchangeprice 1 500"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10664,6 +11362,8 @@
         "Example": [
           ".shopchangename 3 Cool stuff"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10676,6 +11376,8 @@
         "Example": [
           ".shopadd role 1000 Rich"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -10689,6 +11391,8 @@
           ".shop ",
           ".shop 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10701,6 +11405,8 @@
         "Example": [
           ".buy 2"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10713,6 +11419,8 @@
         "Example": [
           ".slottest 1000"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10725,6 +11433,8 @@
         "Example": [
           ".slotstats "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10737,6 +11447,8 @@
         "Example": [
           ".slot 5"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10749,6 +11461,8 @@
         "Example": [
           ".waifutransfer @ExWaifu @NewOwner"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10761,6 +11475,8 @@
         "Example": [
           ".waifutransfer @ExWaifu @NewOwner"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10773,6 +11489,8 @@
         "Example": [
           ".waifureset "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10786,6 +11504,8 @@
           ".waifulb ",
           ".waifulb 3"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10799,6 +11519,8 @@
           ".waifuinfo @MyCrush",
           ".waifuinfo "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10812,6 +11534,8 @@
           ".waifuinfo @MyCrush",
           ".waifuinfo "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10825,6 +11549,8 @@
           ".waifugift ",
           ".waifugift Rose @Himesama"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10838,6 +11564,8 @@
           ".waifugift ",
           ".waifugift Rose @Himesama"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10850,6 +11578,8 @@
         "Example": [
           ".waifuclaim 50 @Himesama"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10862,6 +11592,8 @@
         "Example": [
           ".divorce @CheatingSloot"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10874,6 +11606,8 @@
         "Example": [
           ".divorce @CheatingSloot"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10887,6 +11621,8 @@
           ".affinity @MyHusband",
           ".affinity "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10899,6 +11635,8 @@
         "Example": [
           ".wheeloffortune 10"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10916,6 +11654,8 @@
         "Example": [
           ".source "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10928,6 +11668,8 @@
         "Example": [
           ".searchcommand emoteadd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10940,6 +11682,8 @@
         "Example": [
           ".modules "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10953,6 +11697,8 @@
           ".help .cmds",
           ".help "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10966,6 +11712,8 @@
           ".help .cmds",
           ".help "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10979,6 +11727,8 @@
           ".guide ",
           ".guide "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -10991,6 +11741,8 @@
         "Example": [
           ".exportcommandsjson "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11003,6 +11755,8 @@
         "Example": [
           ".donate "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11015,6 +11769,8 @@
         "Example": [
           ".commands "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11032,6 +11788,8 @@
         "Example": [
           ".steal emote emote emote"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageEmojisAndStickers",
         "GuildUserPermissions": "ManageEmojisAndStickers",
         "IsDragon": false
@@ -11045,6 +11803,8 @@
           ".sfr role emote emote",
           ".sfr roleid emote emote"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageEmojisAndStickers",
         "GuildUserPermissions": "ManageEmojisAndStickers",
         "IsDragon": false
@@ -11057,6 +11817,8 @@
         "Example": [
           ".setsplash url"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11069,6 +11831,8 @@
         "Example": [
           ".setservername name"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11081,6 +11845,8 @@
         "Example": [
           ".seticon url"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11093,6 +11859,8 @@
         "Example": [
           ".setbanner url"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11105,6 +11873,8 @@
         "Example": [
           ".renameemote emote newname"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageEmojisAndStickers",
         "GuildUserPermissions": "ManageEmojisAndStickers",
         "IsDragon": false
@@ -11117,6 +11887,8 @@
         "Example": [
           ".removeemote emote"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageEmojisAndStickers",
         "GuildUserPermissions": "ManageEmojisAndStickers",
         "IsDragon": false
@@ -11131,6 +11903,8 @@
           ".permview @role",
           ".permview @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11145,6 +11919,8 @@
           ".permview @role",
           ".permview @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11159,6 +11935,8 @@
           ".permview @role",
           ".permview @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11172,6 +11950,8 @@
           ".addemote name emote",
           ".addemote name url"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageEmojisAndStickers",
         "GuildUserPermissions": "ManageEmojisAndStickers",
         "IsDragon": false
@@ -11184,6 +11964,8 @@
         "Example": [
           ".permcontrol #channel allow/deny user/role managemessages viewchannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11196,6 +11978,8 @@
         "Example": [
           ".permcontrol #channel allow/deny user/role managemessages viewchannel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11208,6 +11992,8 @@
         "Example": [
           ".unlockdown "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11221,6 +12007,8 @@
           ".unlock ",
           ".unlock #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageMessages",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -11236,6 +12024,8 @@
           ".slowmode seconds",
           ".slowmode seconds channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11251,6 +12041,8 @@
           ".slowmode seconds",
           ".slowmode seconds channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11263,6 +12055,8 @@
         "Example": [
           ".nuke #channel"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11275,6 +12069,8 @@
         "Example": [
           ".moveuserto @Yuno Gasai calls"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11287,6 +12083,8 @@
         "Example": [
           ".moveto calls"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11299,6 +12097,8 @@
         "Example": [
           ".lockdown "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11311,6 +12111,8 @@
         "Example": [
           ".lockcheck "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11323,6 +12125,8 @@
         "Example": [
           ".lock "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageMessages",
         "GuildUserPermissions": "ManageMessages",
         "IsDragon": false
@@ -11335,6 +12139,8 @@
         "Example": [
           ".grab @user"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11347,6 +12153,8 @@
         "Example": [
           ".createwebhook channel name avatar"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "Administrator",
         "IsDragon": false
@@ -11359,6 +12167,8 @@
         "Example": [
           ".ccvc CategoryName Channel \"Channel With Spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11371,6 +12181,8 @@
         "Example": [
           ".cctc CategoryName Channel \"Channel With Spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11383,6 +12195,8 @@
         "Example": [
           ".ccavc CategoryName Channel \"Channel With Spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11395,6 +12209,8 @@
         "Example": [
           ".ccatc CategoryName Channel \"Channel With Spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11407,6 +12223,8 @@
         "Example": [
           ".syncroletoallchannels @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageChannels",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11419,6 +12237,8 @@
         "Example": [
           ".syncroletoallcategories @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageChannels",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11432,6 +12252,8 @@
           ".syncroletoall @role",
           ".syncroletoall roleid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageChannels",
         "GuildUserPermissions": "ManageChannels",
         "IsDragon": false
@@ -11444,6 +12266,8 @@
         "Example": [
           ".sj 1"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11456,6 +12280,8 @@
         "Example": [
           ".setroles @user @role @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11468,6 +12294,8 @@
         "Example": [
           ".rj "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11480,6 +12308,8 @@
         "Example": [
           ".removeusersfromrole @role @user user userID"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11492,6 +12322,8 @@
         "Example": [
           ".removeroles @user @role @role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11504,6 +12336,8 @@
         "Example": [
           ".removefromrole inrole removethisfrominrole"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11516,6 +12350,8 @@
         "Example": [
           ".removefromallusers roletoremove"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11528,6 +12364,8 @@
         "Example": [
           ".removefromallbots roletoremove"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11540,6 +12378,8 @@
         "Example": [
           ".removefromall roletoremove"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11553,6 +12393,8 @@
           ".importrolelist ",
           ".importrolelist true"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11565,6 +12407,8 @@
         "Example": [
           ".exportrolelist "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11578,6 +12422,8 @@
           ".deleteroles @role @role",
           ".deleteroles roleid roleid"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11590,6 +12436,8 @@
         "Example": [
           ".createroles rolename \"role name with spaces\""
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11602,6 +12450,8 @@
         "Example": [
           ".atuu 7d role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11614,6 +12464,8 @@
         "Example": [
           ".atuo 7d role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11626,6 +12478,8 @@
         "Example": [
           ".adduserstorole @role @user user userID"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11638,6 +12492,8 @@
         "Example": [
           ".addtoallusers roletoadd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11650,6 +12506,8 @@
         "Example": [
           ".addtoallbots roletoadd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11662,6 +12520,8 @@
         "Example": [
           ".addtoall roletoadd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11674,6 +12534,8 @@
         "Example": [
           ".addthenremove roletoremove roletoadd"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11686,6 +12548,8 @@
         "Example": [
           ".addroletorole inrole addrole"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11698,6 +12562,8 @@
         "Example": [
           ".addroletolist role"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "ManageRoles",
         "GuildUserPermissions": "ManageRoles",
         "IsDragon": false
@@ -11715,6 +12581,8 @@
         "Example": [
           ".wait 3000"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11727,6 +12595,8 @@
         "Example": [
           ".sudo @sylveon make me a sandwich"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11739,6 +12609,8 @@
         "Example": [
           ".sudo @sylveon make me a sandwich"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11751,6 +12623,8 @@
         "Example": [
           ".stringsreload "
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
@@ -11763,6 +12637,8 @@
         "Example": [
           ".sqlexec UPDATE DiscordUser SET CurrencyAmount=CurrencyAmount+1234"
         ],
+        "ListOptions":[""],
+        "BotVersion":[""],
         "GuildBotPermissions": "",
         "GuildUserPermissions": "",
         "IsDragon": false
