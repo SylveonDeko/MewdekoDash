@@ -8,11 +8,7 @@
         .map((i) => `${breakpoints[i]}:w-${sizes[i]}`)  //Go  and map that to ascending splits
         .join(" ") //join with space
 
-    /* DONT REMOVE THIS, ITS FOR TAILWIND RETAINING CLASSES
-        md:w-1/2 md:w-1/3 md:w-1/4 md:w-1/5
-        lg:w-1/2 lg:w-1/3 lg:w-1/4 lg:w-1/5
-        xl:w-1/2 xl:w-1/3 xl:w-1/4 xl:w-1/5
-    */
+    /*OOPSIE */
 </script>
 
 <div class="w-full {widths} flex justify-center">
