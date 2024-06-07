@@ -27,7 +27,7 @@
     <MultiButton links="{[
           { text: 'Invite', href: 'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' },
           { text: 'Donate', href: 'https://ko-fi.com/mewdeko' },
-          { text: 'Server', href: 'https://discord.gg/mewdeko' },
+          { text: 'Server', href: 'https://discord.gg/deko' },
         ]}"/>
 
     <TopServers/>
