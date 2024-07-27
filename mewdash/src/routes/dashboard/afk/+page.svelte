@@ -6,6 +6,12 @@
     import { fade, slide } from 'svelte/transition';
     import type {Afk} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
+    import Notification from "$lib/Notification.svelte";
+
+
+    let showNotification = false;
+    let notificationMessage = '';
+    let notificationType: 'success' | 'error' = 'success';
 
     export let data: PageData;
 
@@ -20,6 +26,15 @@
             await goto("/dashboard");
         await fetchAfkUsers();
     });
+
+    function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {
+        notificationMessage = message;
+        notificationType = type;
+        showNotification = true;
+        setTimeout(() => {
+            showNotification = false;
+        }, 3000);
+    }
 
     async function fetchAfkUsers() {
         try {
@@ -44,10 +59,10 @@
                 throw new Error("Guild or user information is missing");
             }
             await api.setAfkStatus($currentGuild.id, data.user.id, afkMessage);
-            alert('AFK status updated');
+            showNotificationMessage('AFK Updated', 'success');
             await fetchAfkUsers();
         } catch (error) {
-            alert('Failed to update AFK status: ' + error.message);
+            showNotificationMessage(`Failed to set AFK: ${error.message}`, 'error');
         }
     }
 
@@ -57,10 +72,10 @@
                 throw new Error("No guild selected");
             }
             await api.deleteAfkStatus($currentGuild.id, userId);
-            alert('AFK status cleared');
+            showNotificationMessage('AFK Cleared', 'success');
             await fetchAfkUsers();
         } catch (error) {
-            alert('Failed to clear AFK status: ' + error.message);
+            showNotificationMessage('Failed to clear AFK status: ' + error.message, 'error');
         }
     }
 
