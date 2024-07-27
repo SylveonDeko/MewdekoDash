@@ -1,5 +1,5 @@
 export type DiscordUser = {
-    id: string,
+    id: bigint,
     username: string,
     discriminator: string,
     avatar: string,

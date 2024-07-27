@@ -17,8 +17,8 @@ async function makeRequest(url: string, method: string, headers: HeadersInit, bo
 
     try {
         const text = await response.text();
-        if (method === "POST" || method === "DELETE")
-            return json(null)   ;
+        if (!text || text.length < 1)
+            return json(null);
         const data = JSONbig.parse(text);
         return json(data)
     } catch (error) {

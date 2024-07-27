@@ -66,6 +66,13 @@
             apiRequest<SuggestionsModel[]>(`suggestions/${guildId}`),
         deleteSuggestion: (guildId: bigint, id: number) =>
             apiRequest<void>(`suggestions/${guildId}/${id}`, 'DELETE'),
+        updateSuggestionStatus: (guildId: bigint, suggestionId: bigint, update: {
+            state: number,
+            reason: string | null,
+            userId: bigint
+        }) =>
+            apiRequest<void>(`suggestions/${guildId}/${suggestionId}`, 'PATCH', update),
+
 
         getGuildRoles: (guildId: string) =>
             apiRequest<Array<{ id: string, name: string }>>(`ClientOperations/roles/${guildId}`),
