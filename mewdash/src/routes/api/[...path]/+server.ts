@@ -2,6 +2,7 @@ import { MEWDEKO_API_URL, MEWDEKO_API_KEY } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import JSONbig from 'json-bigint'
+import {ok} from "node:assert";
 
 async function makeRequest(url: string, method: string, headers: HeadersInit, body?: BodyInit) {
     const response = await fetch(url, {
@@ -16,8 +17,10 @@ async function makeRequest(url: string, method: string, headers: HeadersInit, bo
 
     try {
         const text = await response.text();
+        if (method === "POST" || method === "DELETE")
+            return json(null)   ;
         const data = JSONbig.parse(text);
-        return json(data);
+        return json(data)
     } catch (error) {
         console.error('Error parsing response:', error);
         return json({ error: 'Failed to parse response' }, { status: 500 });

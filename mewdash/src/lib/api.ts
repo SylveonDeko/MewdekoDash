@@ -18,7 +18,7 @@
         const text = await response.text();
 
         try {
-            return JSONbig.parse(text) as T;
+                return JSONbig.parse(text) as T;
         } catch (error) {
             console.error('Error parsing response:', error);
             return text as unknown as T;

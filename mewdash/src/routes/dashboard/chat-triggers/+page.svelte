@@ -7,6 +7,12 @@
     import MultiSelectDropdown from '$lib/MultiSelectDropdown.svelte';
     import type {ChatTriggers} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
+    import Notification from "$lib/Notification.svelte";
+
+
+    let showNotification = false;
+    let notificationMessage = '';
+    let notificationType: 'success' | 'error' = 'success';
 
     export let data: PageData;
     let triggers: ChatTriggers[] = [];
@@ -16,8 +22,12 @@
         response: '',
         grantedRoles: '',
         removedRoles: '',
-        isRegex: false
+        isRegex: false,
+        isValidRegex: true
     };
+    let newTriggerRegexTestString = '';
+    let newTriggerRegexTestResult = '';
+    let newTriggerRegexHighlightedString = '';
     let expandedTrigger: ChatTriggers = null;
     let loading = true;
     let error = null;
@@ -60,6 +70,15 @@
         await loadTriggers();
         await loadGuildRoles();
     });
+
+    function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {
+        notificationMessage = message;
+        notificationType = type;
+        showNotification = true;
+        setTimeout(() => {
+            showNotification = false;
+        }, 3000);
+    }
 
     function getDescriptiveLabel(key: string): string {
         switch (key) {
@@ -120,6 +139,39 @@
         }
     }
 
+    function handleNewTriggerRegexChange() {
+        if (newTrigger.isRegex) {
+            newTrigger.isValidRegex = validateRegex(newTrigger.trigger);
+            testNewTriggerRegex();
+        } else {
+            newTrigger.isValidRegex = true;
+            newTriggerRegexTestResult = '';
+            newTriggerRegexHighlightedString = '';
+        }
+    }
+
+    function testNewTriggerRegex() {
+        if (newTrigger.isRegex && newTrigger.isValidRegex) {
+            try {
+                const regex = new RegExp(newTrigger.trigger, 'g');
+                const matches = newTriggerRegexTestString.match(regex);
+                if (matches) {
+                    newTriggerRegexTestResult = `${matches.length} match${matches.length > 1 ? 'es' : ''}`;
+                    newTriggerRegexHighlightedString = highlightMatches(newTriggerRegexTestString, regex);
+                } else {
+                    newTriggerRegexTestResult = 'No matches';
+                    newTriggerRegexHighlightedString = newTriggerRegexTestString;
+                }
+            } catch (e) {
+                newTriggerRegexTestResult = 'Error testing regex';
+                newTriggerRegexHighlightedString = newTriggerRegexTestString;
+            }
+        } else {
+            newTriggerRegexTestResult = '';
+            newTriggerRegexHighlightedString = '';
+        }
+    }
+
     async function loadTriggers() {
         try {
             loading = true;
@@ -155,26 +207,51 @@
     }
 
     async function addTrigger() {
+        if (!newTrigger.trigger.trim() || !newTrigger.response.trim()) {
+            showNotificationMessage('Trigger and Response are required', 'error');
+            return;
+        }
+
+        if (newTrigger.isRegex && !newTrigger.isValidRegex) {
+            showNotificationMessage('Invalid regex pattern', 'error');
+            return;
+        }
+
         try {
             if (!$currentGuild?.id) {
                 throw new Error("No guild selected");
             }
             const addedTrigger = await api.addChatTrigger($currentGuild.id, newTrigger);
             triggers = [...triggers, addedTrigger];
+            showNotificationMessage('Trigger added successfully', 'success');
             newTrigger = {
                 guildId: $currentGuild.id,
                 trigger: '',
                 response: '',
                 grantedRoles: '',
                 removedRoles: '',
-                isRegex: false
+                isRegex: false,
+                isValidRegex: true
             };
+            newTriggerRegexTestString = '';
+            newTriggerRegexTestResult = '';
+            newTriggerRegexHighlightedString = '';
         } catch (error) {
-            alert('Failed to add trigger: ' + error.message);
+            showNotificationMessage('Failed to add trigger: ' + error.message, 'error');
         }
     }
 
     async function updateTrigger(trigger: ChatTriggers) {
+        if (!trigger.trigger.trim() || !trigger.response.trim()) {
+            showNotificationMessage('Trigger and Response are required', 'error');
+            return;
+        }
+
+        if (trigger.isRegex && !trigger.isValidRegex) {
+            showNotificationMessage('Invalid regex pattern', 'error');
+            return;
+        }
+
         try {
             if (!$currentGuild?.id) {
                 throw new Error("No guild selected");
@@ -186,10 +263,10 @@
                 guildId: $currentGuild.id,
             };
             await api.updateChatTrigger($currentGuild.id, updatedTrigger);
-            alert('Trigger updated successfully');
+            showNotificationMessage('Trigger updated successfully', 'success');
             await loadTriggers();
         } catch (error) {
-            alert('Failed to update trigger: ' + error.message);
+            showNotificationMessage('Failed to update trigger: ' + error.message, 'error');
         }
     }
 
@@ -203,10 +280,10 @@
                 throw new Error("No guild selected");
             }
             await api.deleteChatTrigger($currentGuild.id, triggerId);
-            alert('Trigger deleted successfully');
-            await loadTriggers(); // Reload the triggers to reflect the change
+            showNotificationMessage('Trigger deleted successfully', 'success');
+            await loadTriggers();
         } catch (error) {
-            alert('Failed to delete trigger: ' + error.message);
+            showNotificationMessage('Failed to delete trigger: ' + error.message, 'error');
         }
     }
 
@@ -309,7 +386,9 @@
 
 <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">Chat Triggers</h1>
-
+    {#if showNotification}
+        <Notification message={notificationMessage} type={notificationType} />
+    {/if}
     {#if loading}
         <p>Loading...</p>
     {:else if error}
@@ -435,20 +514,49 @@
             <input
                     bind:value={newTrigger.trigger}
                     class="w-full bg-gray-700 text-white p-2 rounded"
+                    class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
                     placeholder="Trigger Text or Pattern"
+                    on:input={handleNewTriggerRegexChange}
+                    required
             />
+            {#if newTrigger.isRegex && !newTrigger.isValidRegex}
+                <p class="text-red-500 text-sm mt-1">Invalid regex syntax</p>
+            {/if}
             <input
                     bind:value={newTrigger.response}
                     class="w-full bg-gray-700 text-white p-2 rounded"
                     placeholder="Response Message"
+                    required
             />
             <select
                     bind:value={newTrigger.isRegex}
                     class="w-full bg-gray-700 text-white p-2 rounded"
+                    on:change={handleNewTriggerRegexChange}
             >
                 <option value={false}>Normal Trigger</option>
                 <option value={true}>Regular Expression Trigger</option>
             </select>
+            {#if newTrigger.isRegex && newTrigger.isValidRegex}
+                <div class="mt-2">
+                    <input
+                            class="bg-gray-700 text-white p-2 rounded w-full"
+                            bind:value={newTriggerRegexTestString}
+                            placeholder="Test your regex here"
+                            on:input={testNewTriggerRegex}
+                    />
+                    {#if newTriggerRegexTestResult}
+                        <p class="text-sm mt-1" class:text-green-500={newTriggerRegexTestResult !== 'No matches'}
+                           class:text-red-500={newTriggerRegexTestResult === 'No matches'}>
+                            {newTriggerRegexTestResult}
+                        </p>
+                        {#if newTriggerRegexHighlightedString}
+                            <div class="mt-2 p-2 bg-gray-700 rounded">
+                                {@html newTriggerRegexHighlightedString}
+                            </div>
+                        {/if}
+                    {/if}
+                </div>
+            {/if}
             <button
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     on:click={addTrigger}
