@@ -3,12 +3,17 @@
     import { api } from '$lib/api';
     import { fade, fly } from 'svelte/transition';
     import type { BotStatusModel } from '$lib/types/models.ts';
+    import type {PageData} from "../../../.svelte-kit/types/src/routes/dashboard/afk/$types";
+    import {goto} from "$app/navigation";
 
     let botStatus: BotStatusModel | null = null;
     let loading = true;
     let error: string | null = null;
+    export let data: PageData;
 
     onMount(async () => {
+        if (!data.user)
+            await goto("/api/discord/login")
         try {
             botStatus = await api.getBotStatus();
         } catch (err) {
@@ -51,7 +56,11 @@
             <div class="col-span-1 md:col-span-2 lg:col-span-3 bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <div class="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
                     {#if botStatus.botBanner}
-                        <img src={`https://cdn.discordapp.com/banners/${botStatus.botBanner}`} alt="Bot Banner" class="w-full h-full object-cover" />
+                        <img
+                                src={`https://cdn.discordapp.com/banners/${botStatus.botBanner.id}/${botStatus.botBanner.hash}${botStatus.botBanner.hash.startsWith('a_') ? '.gif' : '.png'}?size=4096`}
+                                alt="Bot Banner"
+                                class="w-full h-full object-cover"
+                        />
                     {/if}
                     <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
                         <div class="flex items-center">
