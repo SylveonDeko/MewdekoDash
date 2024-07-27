@@ -1,4 +1,5 @@
-    import type { GuildConfig, ChatTriggers } from '$lib/types/models';
+    import type {GuildConfig, ChatTriggers, SuggestionsModel, BotStatusModel} from '$lib/types/models';
+    import JSONbig from 'json-bigint'
 
     async function apiRequest<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
         const response = await fetch(`/api/${endpoint}`, {
@@ -6,20 +7,28 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: body ? JSON.stringify(body) : undefined,
+            body: body ? JSONbig.stringify(body) : undefined,
         });
 
         if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+            console.error(`API error: ${response.status} ${response.statusText}`);
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
 
-        return response.json();
+        const text = await response.text();
+
+        try {
+            return JSONbig.parse(text) as T;
+        } catch (error) {
+            console.error('Error parsing response:', error);
+            return text as unknown as T;
+        }
     }
 
     export const api = {
         getAfkStatus: (guildId: string, userId: string) =>
             apiRequest<{ message: string }>(`afk/${guildId}/${userId}`),
-        setAfkStatus: (guildId: bigint, userId: bigint, message: string) =>
+        setAfkStatus: (guildId: bigint, userId: bigint, message: string)    =>
             apiRequest<void>(`afk/${guildId}/${userId}`, 'POST', message),
         deleteAfkStatus: (guildId: bigint, userId: bigint) =>
             apiRequest<void>(`afk/${guildId}/${userId}`, 'DELETE'),
@@ -48,20 +57,25 @@
         addChatTrigger: (guildId: string, trigger: Omit<ChatTriggers, 'id'>) =>
             apiRequest<ChatTriggers>(`chattriggers/${guildId}`, 'POST', trigger),
 
-        getGuildConfig: (guildId: string) =>
+        getGuildConfig: (guildId: bigint) =>
             apiRequest<GuildConfig>(`guildconfig/${guildId}`),
-        updateGuildConfig: (guildId: string, config: GuildConfig) =>
-            apiRequest<void>(`guildconfig/${guildId}`, 'POST', config),
+        updateGuildConfig: (guildId: bigint, config: GuildConfig) =>
+            apiRequest<void>(`guildconfig/${guildId }`, 'POST', config),
 
-        getSuggestions: (guildId: string, userId?: string) =>
-            apiRequest<any[]>(`suggestions/${guildId}${userId ? `/${userId}` : ''}`),
-        deleteSuggestion: (guildId: string, id: string) =>
+        getSuggestions: (guildId: bigint) =>
+            apiRequest<SuggestionsModel[]>(`suggestions/${guildId}`),
+        deleteSuggestion: (guildId: bigint, id: number) =>
             apiRequest<void>(`suggestions/${guildId}/${id}`, 'DELETE'),
 
         getGuildRoles: (guildId: string) =>
             apiRequest<Array<{ id: string, name: string }>>(`ClientOperations/roles/${guildId}`),
 
         getBotGuilds: () =>
-            apiRequest<Array<string>>('ClientOperations/guilds'),
+            apiRequest<Array<bigint>>('ClientOperations/guilds'),
 
+        getUser: (guildId: bigint, userId: bigint) =>
+            apiRequest<any>(`ClientOperations/user/${guildId}/${userId}`),
+
+        getBotStatus: () =>
+            apiRequest<BotStatusModel>('BotStatus')
     };

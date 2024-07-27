@@ -1,17 +1,15 @@
+import JSONbig from "json-bigint";
 
-export interface DbEntity {
-    id: string;
-}
 
-export interface GuildConfig extends DbEntity {
-    GuildId: string;
+export interface GuildConfig {
+    Id: number;
+    GuildId: bigint;
     Prefix: string;
     StaffRole: string;
     GameMasterRole: string;
     CommandLogChannel: string;
     DeleteMessageOnCommand: boolean;
     WarnMessage: string;
-    DelMsgOnCmdChannels: string[];
     AutoAssignRoleId: string;
     XpImgUrl: string;
     StatsOptOut: boolean;
@@ -98,10 +96,8 @@ export interface GuildConfig extends DbEntity {
     XpTxtRate: number;
     XpVoiceRate: number;
     XpVoiceTimeout: number;
-    WarnPunishments2: WarningPunishment2[];
     Stars: number;
     AfkType: number;
-    AntiAltSetting: AntiAltSetting;
     AfkDisabledChannels: string;
     AfkDel: string;
     AfkTimeout: number;
@@ -129,53 +125,25 @@ export interface GuildConfig extends DbEntity {
     ChannelGreetMessageText: string;
     SendChannelByeMessage: boolean;
     ChannelByeMessageText: string;
-    LogSetting: LogSetting;
     ExclusiveSelfAssignedRoles: boolean;
     AutoDeleteSelfAssignedRoleMessages: boolean;
     LogSettingId: number | null;
-    FollowedStreams: FollowedStream[];
-    Permissions: Permissionv2[] | null;
     VerbosePermissions: boolean;
     PermissionRole: string | null;
-    CommandCooldowns: CommandCooldown[];
     FilterInvites: boolean;
     FilterLinks: boolean;
-    FilterInvitesChannelIds: FilterInvitesChannelIds[];
-    FilterLinksChannelIds: FilterLinksChannelId[];
     FilterWords: boolean;
-    FilteredWords: FilteredWord[];
-    FilterWordsChannelIds: FilterWordsChannelIds[];
-    MutedUsers: MutedUserId[];
     MuteRoleName: string | null;
     CleverbotChannel: string;
-    GuildRepeaters: Repeater[];
-    AntiRaidSetting: AntiRaidSetting;
-    AntiSpamSetting: AntiSpamSetting;
-    Locale: string | null;
-    TimeZoneId: string | null;
-    UnmuteTimers: UnmuteTimer[];
-    UnbanTimer: UnbanTimer[];
-    UnroleTimer: UnroleTimer[];
-    VcRoleInfos: VcRoleInfo[];
-    CommandAliases: CommandAlias[];
-    WarnPunishments: WarningPunishment[];
-    WarningsInitialized: boolean;
-    NsfwBlacklistedTags: NsfwBlacklitedTag[];
-    GameVoiceChannel: string | null;
     VerboseErrors: boolean;
-    StreamRole: StreamRoleSettings | null;
-    XpSettings: XpSettings | null;
-    FeedSubs: FeedSub[];
-    ReactionRoleMessages: ReactionRoleMessage[];
     NotifyStreamOffline: boolean;
-    SelfAssignableRoleGroupNames: GroupName[];
     WarnExpireHours: number;
-    WarnExpireAction: WarnExpireAction;
+    WarnExpireAction: number;
     JoinGraphColor: number;
     LeaveGraphColor: number;
 }
 
-export interface ChatTriggers extends DbEntity {
+export interface ChatTriggers{
     UseCount: string;
     IsRegex: boolean;
     OwnerOnly: boolean;
@@ -250,6 +218,192 @@ export interface Afk {
         id: number;
         dateAdded: string;
     } | null;
+}
+
+export enum SuggestionState {
+    Pending = 0,
+    Accepted = 1,
+    Denied = 2,
+    Considered = 3,
+    Implemented = 4
+}
+
+export interface BotStatusModel {
+    botName: string;
+    botAvatar: string;
+    botBanner: string | null;
+    botLatency: number;
+    botVersion: string;
+    commandsCount: number;
+    modulesCount: number;
+    dNetVersion: string;
+    botStatus: string;
+    userCount: number;
+    commitHash: string;
+}
+
+export function convertToGuildConfig(jsonResponse: string): GuildConfig {
+    const parsed = JSONbig.parse(jsonResponse);
+
+    return {
+        Id: Number(parsed.Id),
+        GuildId: BigInt(parsed.GuildId),
+        Prefix: String(parsed.Prefix),
+        StaffRole: String(parsed.StaffRole),
+        GameMasterRole: String(parsed.GameMasterRole),
+        CommandLogChannel: String(parsed.CommandLogChannel),
+        DeleteMessageOnCommand: Boolean(parsed.DeleteMessageOnCommand),
+        WarnMessage: String(parsed.WarnMessage),
+        AutoAssignRoleId: String(parsed.AutoAssignRoleId),
+        XpImgUrl: parsed.XpImgUrl || '',
+        StatsOptOut: Boolean(parsed.StatsOptOut),
+        CurrencyName: String(parsed.CurrencyName),
+        CurrencyEmoji: String(parsed.CurrencyEmoji),
+        RewardAmount: Number(parsed.RewardAmount),
+        RewardTimeoutSeconds: Number(parsed.RewardTimeoutSeconds),
+        GiveawayBanner: String(parsed.GiveawayBanner),
+        GiveawayEmbedColor: String(parsed.GiveawayEmbedColor),
+        GiveawayWinEmbedColor: String(parsed.GiveawayWinEmbedColor),
+        DmOnGiveawayWin: Boolean(parsed.DmOnGiveawayWin),
+        GiveawayEndMessage: String(parsed.GiveawayEndMessage),
+        GiveawayPingRole: String(parsed.GiveawayPingRole),
+        StarboardAllowBots: Boolean(parsed.StarboardAllowBots),
+        StarboardRemoveOnDelete: Boolean(parsed.StarboardRemoveOnDelete),
+        StarboardRemoveOnReactionsClear: Boolean(parsed.StarboardRemoveOnReactionsClear),
+        StarboardRemoveOnBelowThreshold: Boolean(parsed.StarboardRemoveOnBelowThreshold),
+        UseStarboardBlacklist: Boolean(parsed.UseStarboardBlacklist),
+        StarboardCheckChannels: String(parsed.StarboardCheckChannels),
+        VotesPassword: parsed.VotesPassword || '',
+        VotesChannel: String(parsed.VotesChannel),
+        VoteEmbed: parsed.VoteEmbed || '',
+        SuggestionThreadType: Number(parsed.SuggestionThreadType),
+        ArchiveOnDeny: Boolean(parsed.ArchiveOnDeny),
+        ArchiveOnAccept: Boolean(parsed.ArchiveOnAccept),
+        ArchiveOnConsider: Boolean(parsed.ArchiveOnConsider),
+        ArchiveOnImplement: Boolean(parsed.ArchiveOnImplement),
+        SuggestButtonMessage: String(parsed.SuggestButtonMessage),
+        SuggestButtonName: String(parsed.SuggestButtonName),
+        SuggestButtonEmote: String(parsed.SuggestButtonEmote),
+        ButtonRepostThreshold: Number(parsed.ButtonRepostThreshold),
+        SuggestCommandsType: Number(parsed.SuggestCommandsType),
+        AcceptChannel: String(parsed.AcceptChannel),
+        DenyChannel: String(parsed.DenyChannel),
+        ConsiderChannel: String(parsed.ConsiderChannel),
+        ImplementChannel: String(parsed.ImplementChannel),
+        EmoteMode: Number(parsed.EmoteMode),
+        SuggestMessage: String(parsed.SuggestMessage),
+        DenyMessage: String(parsed.DenyMessage),
+        AcceptMessage: String(parsed.AcceptMessage),
+        ImplementMessage: String(parsed.ImplementMessage),
+        ConsiderMessage: String(parsed.ConsiderMessage),
+        MinSuggestLength: Number(parsed.MinSuggestLength),
+        MaxSuggestLength: Number(parsed.MaxSuggestLength),
+        SuggestEmotes: parsed.SuggestEmotes || '',
+        sugnum: String(parsed.sugnum),
+        sugchan: String(parsed.sugchan),
+        SuggestButtonChannel: String(parsed.SuggestButtonChannel),
+        Emote1Style: Number(parsed.Emote1Style),
+        Emote2Style: Number(parsed.Emote2Style),
+        Emote3Style: Number(parsed.Emote3Style),
+        Emote4Style: Number(parsed.Emote4Style),
+        Emote5Style: Number(parsed.Emote5Style),
+        SuggestButtonMessageId: String(parsed.SuggestButtonMessageId),
+        SuggestButtonRepostThreshold: Number(parsed.SuggestButtonRepostThreshold),
+        SuggestButtonColor: Number(parsed.SuggestButtonColor),
+        AfkMessage: String(parsed.AfkMessage),
+        AutoBotRoleIds: parsed.AutoBotRoleIds || '',
+        GBEnabled: Number(parsed.GBEnabled),
+        GBAction: Boolean(parsed.GBAction),
+        ConfessionLogChannel: String(parsed.ConfessionLogChannel),
+        ConfessionChannel: String(parsed.ConfessionChannel),
+        ConfessionBlacklist: String(parsed.ConfessionBlacklist),
+        MultiGreetType: Number(parsed.MultiGreetType),
+        MemberRole: String(parsed.MemberRole),
+        TOpenMessage: String(parsed.TOpenMessage),
+        GStartMessage: String(parsed.GStartMessage),
+        GEndMessage: String(parsed.GEndMessage),
+        GWinMessage: String(parsed.GWinMessage),
+        WarnlogChannelId: String(parsed.WarnlogChannelId),
+        MiniWarnlogChannelId: String(parsed.MiniWarnlogChannelId),
+        SendBoostMessage: Boolean(parsed.SendBoostMessage),
+        GRolesBlacklist: String(parsed.GRolesBlacklist),
+        GUsersBlacklist: String(parsed.GUsersBlacklist),
+        BoostMessage: String(parsed.BoostMessage),
+        BoostMessageChannelId: String(parsed.BoostMessageChannelId),
+        BoostMessageDeleteAfter: Number(parsed.BoostMessageDeleteAfter),
+        GiveawayEmote: String(parsed.GiveawayEmote),
+        TicketChannel: String(parsed.TicketChannel),
+        TicketCategory: String(parsed.TicketCategory),
+        snipeset: Boolean(parsed.snipeset),
+        AfkLength: Number(parsed.AfkLength),
+        XpTxtTimeout: Number(parsed.XpTxtTimeout),
+        XpTxtRate: Number(parsed.XpTxtRate),
+        XpVoiceRate: Number(parsed.XpVoiceRate),
+        XpVoiceTimeout: Number(parsed.XpVoiceTimeout),
+        Stars: Number(parsed.Stars),
+        AfkType: Number(parsed.AfkType),
+        AfkDisabledChannels: parsed.AfkDisabledChannels || '',
+        AfkDel: parsed.AfkDel || '',
+        AfkTimeout: Number(parsed.AfkTimeout),
+        Joins: String(parsed.Joins),
+        Leaves: String(parsed.Leaves),
+        Star2: String(parsed.Star2),
+        StarboardChannel: String(parsed.StarboardChannel),
+        RepostThreshold: Number(parsed.RepostThreshold),
+        PreviewLinks: Number(parsed.PreviewLinks),
+        ReactChannel: String(parsed.ReactChannel),
+        fwarn: Number(parsed.fwarn),
+        invwarn: Number(parsed.invwarn),
+        removeroles: Number(parsed.removeroles),
+        AutoDeleteGreetMessages: Boolean(parsed.AutoDeleteGreetMessages),
+        AutoDeleteByeMessages: Boolean(parsed.AutoDeleteByeMessages),
+        AutoDeleteGreetMessagesTimer: Number(parsed.AutoDeleteGreetMessagesTimer),
+        AutoDeleteByeMessagesTimer: Number(parsed.AutoDeleteByeMessagesTimer),
+        GreetMessageChannelId: String(parsed.GreetMessageChannelId),
+        ByeMessageChannelId: String(parsed.ByeMessageChannelId),
+        GreetHook: String(parsed.GreetHook),
+        LeaveHook: String(parsed.LeaveHook),
+        SendDmGreetMessage: Boolean(parsed.SendDmGreetMessage),
+        DmGreetMessageText: String(parsed.DmGreetMessageText),
+        SendChannelGreetMessage: Boolean(parsed.SendChannelGreetMessage),
+        ChannelGreetMessageText: String(parsed.ChannelGreetMessageText),
+        SendChannelByeMessage: Boolean(parsed.SendChannelByeMessage),
+        ChannelByeMessageText: String(parsed.ChannelByeMessageText),
+        ExclusiveSelfAssignedRoles: Boolean(parsed.ExclusiveSelfAssignedRoles),
+        AutoDeleteSelfAssignedRoleMessages: Boolean(parsed.AutoDeleteSelfAssignedRoleMessages),
+        LogSettingId: parsed.LogSettingId !== null ? Number(parsed.LogSettingId) : null,
+        VerbosePermissions: Boolean(parsed.VerbosePermissions),
+        PermissionRole: parsed.PermissionRole,
+        FilterInvites: Boolean(parsed.FilterInvites),
+        FilterLinks: Boolean(parsed.FilterLinks),
+        FilterWords: Boolean(parsed.FilterWords),
+        MuteRoleName: parsed.MuteRoleName,
+        CleverbotChannel: String(parsed.CleverbotChannel),
+        VerboseErrors: Boolean(parsed.VerboseErrors),
+        NotifyStreamOffline: Boolean(parsed.NotifyStreamOffline),
+        WarnExpireHours: Number(parsed.WarnExpireHours),
+        WarnExpireAction: Number(parsed.WarnExpireAction),
+        JoinGraphColor: Number(parsed.JoinGraphColor),
+        LeaveGraphColor: Number(parsed.LeaveGraphColor),
+    };
+}
+
+export interface SuggestionsModel {
+    id: number;
+    guildId: bigint;
+    suggestionId: bigint;
+    suggestion?: string;
+    messageId: bigint;
+    userId: bigint;
+    emoteCount1: number;
+    emoteCount2: number;
+    emoteCount3: number;
+    emoteCount4: number;
+    emoteCount5: number;
+    stateChangeUser: bigint;
+    stateChangeCount: bigint;
+    stateChangeMessageId: bigint;
+    currentState: SuggestionState;
 }
 
 // Add interfaces for other types used in GuildConfig

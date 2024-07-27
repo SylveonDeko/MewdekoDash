@@ -5,6 +5,7 @@
     import { currentGuild } from "$lib/stores/currentGuild.ts"
     import { fade, slide } from 'svelte/transition';
     import type {Afk} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
 
     export let data: PageData;
 
@@ -15,6 +16,8 @@
     let error = null;
 
     onMount(async () => {
+        if (!$currentGuild)
+            await goto("/dashboard");
         await fetchAfkUsers();
     });
 
@@ -27,7 +30,6 @@
             }
             const response = await api.getAllAfkStatus($currentGuild.id);
             afkUsers = response.filter( user => user.afkStatus !== null && user.afkStatus.message !== '' && user.afkStatus.message);
-            console.log(afkUsers)
         } catch (err) {
             console.error('Failed to fetch AFK users:', err);
             error = err.message || "Failed to fetch AFK users";
@@ -41,8 +43,6 @@
             if (!$currentGuild?.id || !data.user?.id) {
                 throw new Error("Guild or user information is missing");
             }
-            console.log($currentGuild?.id);
-            console.log(data.user.id)
             await api.setAfkStatus($currentGuild.id, data.user.id, afkMessage);
             alert('AFK status updated');
             await fetchAfkUsers();

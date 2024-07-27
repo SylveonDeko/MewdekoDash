@@ -1,5 +1,5 @@
 export type DiscordGuild = {
-  id: string;
+  id: bigint;
   name: string;
   icon: string;
   owner: boolean;

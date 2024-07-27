@@ -17,7 +17,7 @@
             const response = await fetch("/api/guilds");
             const guilds: DiscordGuild[] = await response.json();
 
-            // Filter out guilds where the user is not an admin
+            // Filter out guilds whe  re the user is not an admin
             const filteredGuilds: DiscordGuild[] = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
             const botGuilds = await api.getBotGuilds();
 
@@ -28,7 +28,7 @@
         });
       })
 
-    // ... (rest o
+
 
     onDestroy(() => {
       unsubscribe?.();
@@ -44,6 +44,7 @@
     }
     const navbarItems: NavItem[] = [
       { title: "Home", elements: [{ href: "/" }] },
+      { title: "Dashboard", elements: [{ href: "/dashboard" }] },
       { title: "Commands", elements: [{ href: "/commands" }] },
       {
         title: "About",
@@ -84,7 +85,7 @@
   </svelte:head>
 
   <Navbar user="{data.user}" items="{navbarItems}" adminGuilds="{userAdminGuilds}" />
-  {#if $navigating}
+  {#if $navigating} 
     <div class="loading">Loading...</div>
   {/if}
   <main>
