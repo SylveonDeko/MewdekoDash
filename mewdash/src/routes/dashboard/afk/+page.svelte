@@ -90,7 +90,9 @@
 
 <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">AFK Management</h1>
-
+    {#if showNotification}
+        <Notification message={notificationMessage} type={notificationType} />
+    {/if}
     <div class="mb-6">
         <input
                 bind:value={afkMessage}
