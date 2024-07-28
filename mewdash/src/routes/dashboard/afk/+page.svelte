@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { api } from '$lib/api';
-    import type { PageData } from "./$types";
-    import { currentGuild } from "$lib/stores/currentGuild.ts"
-    import { fade, slide } from 'svelte/transition';
+    import {onMount} from 'svelte';
+    import {api} from '$lib/api';
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild.ts"
+    import {fade, slide} from 'svelte/transition';
     import type {Afk} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/Notification.svelte";
@@ -44,7 +44,7 @@
                 throw new Error("No guild selected");
             }
             const response = await api.getAllAfkStatus($currentGuild.id);
-            afkUsers = response.filter( user => user.afkStatus !== null && user.afkStatus.message !== '' && user.afkStatus.message);
+            afkUsers = response.filter(user => user.afkStatus !== null && user.afkStatus.message !== '' && user.afkStatus.message);
         } catch (err) {
             console.error('Failed to fetch AFK users:', err);
             error = err.message || "Failed to fetch AFK users";
@@ -91,18 +91,18 @@
 <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">AFK Management</h1>
     {#if showNotification}
-        <Notification message={notificationMessage} type={notificationType} />
+        <Notification message={notificationMessage} type={notificationType}/>
     {/if}
     <div class="mb-6">
         <input
                 bind:value={afkMessage}
-                placeholder="AFK message"
                 class="p-2 border rounded mr-2 text-black"
+                placeholder="AFK message"
         />
         <button
-                on:click={setAfkStatus}
                 class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 disabled={!$currentGuild?.id || !data.user?.id}
+                on:click={setAfkStatus}
         >
             Set AFK Status
         </button>

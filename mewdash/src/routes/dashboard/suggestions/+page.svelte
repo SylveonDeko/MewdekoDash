@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { api } from '$lib/api';
-    import type { PageData } from './$types';
-    import { currentGuild } from "$lib/stores/currentGuild.ts"
-    import { fade, slide } from 'svelte/transition';
-    import { SuggestionState } from "$lib/types/models.ts"
-    import type { SuggestionsModel, GuildConfig } from "$lib/types/models.ts";
-    import { goto } from "$app/navigation";
+    import {onMount} from 'svelte';
+    import {api} from '$lib/api';
+    import type {PageData} from './$types';
+    import {currentGuild} from "$lib/stores/currentGuild.ts"
+    import {fade, slide} from 'svelte/transition';
+    import {SuggestionState} from "$lib/types/models.ts"
+    import type {SuggestionsModel, GuildConfig} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
     import Notification from "$lib/Notification.svelte";
 
     export let data: PageData;
@@ -129,24 +129,36 @@
     }
 
     function getStatusString(state: SuggestionState): string {
-        switch(state) {
-            case SuggestionState.Pending: return "Pending";
-            case SuggestionState.Accepted: return "Accepted";
-            case SuggestionState.Denied: return "Denied";
-            case SuggestionState.Considered: return "Considered";
-            case SuggestionState.Implemented: return "Implemented";
-            default: return "Unknown";
+        switch (state) {
+            case SuggestionState.Pending:
+                return "Pending";
+            case SuggestionState.Accepted:
+                return "Accepted";
+            case SuggestionState.Denied:
+                return "Denied";
+            case SuggestionState.Considered:
+                return "Considered";
+            case SuggestionState.Implemented:
+                return "Implemented";
+            default:
+                return "Unknown";
         }
     }
 
     function getStateColor(state: SuggestionState): string {
-        switch(state) {
-            case SuggestionState.Pending: return "bg-yellow-500";
-            case SuggestionState.Accepted: return "bg-green-500";
-            case SuggestionState.Denied: return "bg-red-500";
-            case SuggestionState.Considered: return "bg-blue-500";
-            case SuggestionState.Implemented: return "bg-purple-500";
-            default: return "bg-gray-500";
+        switch (state) {
+            case SuggestionState.Pending:
+                return "bg-yellow-500";
+            case SuggestionState.Accepted:
+                return "bg-green-500";
+            case SuggestionState.Denied:
+                return "bg-red-500";
+            case SuggestionState.Considered:
+                return "bg-blue-500";
+            case SuggestionState.Implemented:
+                return "bg-purple-500";
+            default:
+                return "bg-gray-500";
         }
     }
 
@@ -178,14 +190,14 @@
 <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">Suggestions</h1>
     {#if showNotification}
-        <Notification message={notificationMessage} type={notificationType} />
+        <Notification message={notificationMessage} type={notificationType}/>
     {/if}
     {#if loading}
         <p>Loading...</p>
-    {:else if error}
-        <p class="text-red-500">{error}</p>
     {:else if !suggestions || suggestions.length === 0}
         <p transition:fade class="text-gray-400 italic">No suggestions found.</p>
+    {:else if error}
+        <p class="text-red-500">{error}</p>
     {:else}
         <div class="mb-4 flex items-center">
             <select bind:value={sortBy} class="mr-2 bg-gray-700 text-white rounded p-2">
@@ -233,7 +245,7 @@
                                 <input
                                         type="text"
                                         bind:value={stateChangeReason}
-                                        placeholder="Reason for state change"
+                                        placeholder="Reason (Optional)"
                                         class="w-full p-2 rounded bg-gray-700 text-white"
                                 />
                             </div>

@@ -12,7 +12,7 @@
     export let data: PageData;
 
     onMount(async () => {
-        if (!data.user)
+        if (!data || !data.user)
             await goto("/api/discord/login")
         try {
             botStatus = await api.getBotStatus();
