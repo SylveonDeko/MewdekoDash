@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
+    import {onDestroy, onMount} from 'svelte';
     import {api} from '$lib/api';
     import type {PageData} from './$types';
     import {currentGuild} from "$lib/stores/currentGuild.ts"
@@ -8,6 +8,7 @@
     import type {SuggestionsModel, GuildConfig} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/Notification.svelte";
+    import {browser} from "$app/environment";
 
     export let data: PageData;
 
@@ -22,6 +23,7 @@
     let notificationType: 'success' | 'error' = 'success';
     let sortBy: 'dateAdded' | 'currentState' = 'dateAdded';
     let sortDirection: 'asc' | 'desc' = 'desc';
+    let isMobile = false;
 
     $: sortedSuggestions = [...suggestions].sort((a, b) => {
         if (a[sortBy] < b[sortBy]) return sortDirection === 'asc' ? -1 : 1;
@@ -33,12 +35,22 @@
         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     }
 
+    function checkMobile() {
+        isMobile = browser && window.innerWidth < 768;
+    }
+
     onMount(async () => {
         if (!$currentGuild)
             await goto("/dashboard");
         await fetchGuildConfig();
         await fetchSuggestions();
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
     });
+
+    onDestroy(async () => {
+        window.removeEventListener('resize', checkMobile);
+    })
 
     function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {
         notificationMessage = message;
@@ -111,7 +123,6 @@
                     userId: data.user.id
                 }
             );
-            // Update the suggestion state locally
             suggestion.currentState = newState;
             showNotificationMessage('Suggestion status updated', 'success');
             stateChangeReason = "";
@@ -122,7 +133,6 @@
 
     function toggleSuggestionExpand(id: number, event: MouseEvent) {
         if (event.target instanceof HTMLElement && event.target.closest('button, input')) {
-            // If the click was on a button or input, don't toggle
             return;
         }
         expandedSuggestion = expandedSuggestion === id ? null : id;
@@ -199,34 +209,34 @@
     {:else if error}
         <p class="text-red-500">{error}</p>
     {:else}
-        <div class="mb-4 flex items-center">
-            <select bind:value={sortBy} class="mr-2 bg-gray-700 text-white rounded p-2">
+        <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center">
+            <select bind:value={sortBy} class="w-full sm:w-auto mb-2 sm:mb-0 mr-0 sm:mr-2 bg-gray-700 text-white rounded p-2">
                 <option value="dateAdded">Sort by Date</option>
                 <option value="currentState">Sort by State</option>
             </select>
-            <button on:click={toggleSortDirection} class="bg-gray-700 text-white rounded p-2">
-                {sortDirection === 'asc' ? '▲' : '▼'}
+            <button on:click={toggleSortDirection} class="w-full sm:w-auto bg-gray-700 text-white rounded p-2">
+                {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
             </button>
         </div>
-        <ul class="space-y-2">
+        <ul class="space-y-4">
             {#each sortedSuggestions as suggestion (suggestion.id)}
                 <li
                         class="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200 relative overflow-hidden"
                         on:click={(event) => toggleSuggestionExpand(suggestion.id, event)}
                 >
                     <div class={`absolute left-0 top-0 bottom-0 w-1 ${getStateColor(suggestion.currentState)}`}></div>
-                    <div class="flex items-center">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center">
                         <img
                                 src={suggestion.user.avatarUrl}
                                 alt={suggestion.user.username}
-                                class="w-10 h-10 rounded-full mr-3"
+                                class="w-10 h-10 rounded-full mb-2 sm:mb-0 sm:mr-3"
                         />
-                        <div class="flex-grow">
+                        <div class="flex-grow mb-2 sm:mb-0">
                             <p class="font-semibold">{suggestion.user.username}</p>
                             <p class="text-sm text-gray-400">{suggestion.suggestion}</p>
                             <p class="text-sm text-gray-400">Status: {getStatusString(suggestion.currentState)}</p>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex flex-wrap gap-2 justify-start sm:justify-end w-full sm:w-auto">
                             {#each getEmotes() as emote, index}
                                 <div class="flex items-center bg-gray-700 rounded-full px-2 py-1">
                                     <span class="mr-1">{@html renderEmote(emote)}</span>
@@ -237,7 +247,7 @@
                     </div>
 
                     {#if expandedSuggestion === suggestion.id}
-                        <div transition:slide class="mt-3 pl-13">
+                        <div transition:slide class="mt-3 pl-0 sm:pl-13">
                             <p class="text-sm text-gray-400 mb-2">
                                 Suggestion ID: {suggestion.suggestionId}
                             </p>

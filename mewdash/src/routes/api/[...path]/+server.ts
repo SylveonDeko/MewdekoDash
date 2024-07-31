@@ -2,7 +2,6 @@ import { MEWDEKO_API_URL, MEWDEKO_API_KEY } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import JSONbig from 'json-bigint'
-import {ok} from "node:assert";
 
 async function makeRequest(url: string, method: string, headers: HeadersInit, body?: BodyInit) {
     const response = await fetch(url, {
@@ -19,11 +18,18 @@ async function makeRequest(url: string, method: string, headers: HeadersInit, bo
         const text = await response.text();
         if (!text || text.length < 1)
             return json(null);
-        const data = JSONbig.parse(text);
-        return json(data)
+
+        // Try to parse as JSON
+        try {
+            const data = JSONbig.parse(text);
+            return json(data);
+        } catch (jsonError) {
+            // If JSON parsing fails, return the raw text
+            return json({ data: text });
+        }
     } catch (error) {
-        console.error('Error parsing response:', error);
-        return json({ error: 'Failed to parse response' }, { status: 500 });
+        console.error(`Error processing response from ${url}:`, error);
+        return json({ error: 'Failed to process response' }, { status: 500 });
     }
 }
 

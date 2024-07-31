@@ -57,7 +57,7 @@
                 <div class="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
                     {#if botStatus.botBanner}
                         <img
-                                src={`https://cdn.discordapp.com/banners/${botStatus.botBanner.id}/${botStatus.botBanner.hash}${botStatus.botBanner.hash.startsWith('a_') ? '.gif' : '.png'}?size=4096`}
+                                src={botStatus.botBanner}
                                 alt="Bot Banner"
                                 class="w-full h-full object-cover"
                         />

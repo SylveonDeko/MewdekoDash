@@ -1,30 +1,73 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
-    import {api} from '$lib/api';
-    import type {PageData} from "./$types";
-    import {currentGuild} from "$lib/stores/currentGuild.ts"
-    import {fade, slide} from 'svelte/transition';
-    import type {Afk} from "$lib/types/models.ts";
-    import {goto} from "$app/navigation";
+    import { onMount } from 'svelte';
+    import { api } from '$lib/api';
+    import type { PageData } from "./$types";
+    import { currentGuild } from "$lib/stores/currentGuild.ts"
+    import { fade, slide } from 'svelte/transition';
+    import type { Afk } from "$lib/types/models.ts";
+    import { goto } from "$app/navigation";
     import Notification from "$lib/Notification.svelte";
 
+    export let data: PageData;
 
     let showNotification = false;
     let notificationMessage = '';
     let notificationType: 'success' | 'error' = 'success';
 
-    export let data: PageData;
-
-    let afkMessage = "";
     let afkUsers: Afk[] = [];
     let expandedUser = null;
     let loading = true;
     let error = null;
 
+    // AFK Settings
+    let afkDeletionTime = 0;
+    let afkMaxLength = 0;
+    let afkType = 1;
+    let afkTimeout = 0;
+    let afkDisabledChannels: string[] = [];
+    let customAfkMessage = '';
+    let changedSettings = new Set();
+
+    function markAsChanged(setting: string) {
+        changedSettings.add(setting);
+    }
+
+    async function updateAllAfkSettings() {
+        try {
+            if (!$currentGuild?.id) throw new Error("No guild selected");
+
+            const updatePromises = [];
+
+            if (changedSettings.has('deletion')) {
+                updatePromises.push(api.afkDelSet($currentGuild.id, afkDeletionTime));
+            }
+            if (changedSettings.has('maxLength')) {
+                updatePromises.push(api.afkLengthSet($currentGuild.id, afkMaxLength));
+            }
+            if (changedSettings.has('type')) {
+                updatePromises.push(api.afkTypeSet($currentGuild.id, afkType));
+            }
+            if (changedSettings.has('timeout')) {
+                updatePromises.push(api.afkTimeoutSet($currentGuild.id, afkTimeout));
+            }
+            if (changedSettings.has('customMessage')) {
+                updatePromises.push(api.setCustomAfkMessage($currentGuild.id, customAfkMessage));
+            }
+
+            await Promise.all(updatePromises);
+
+            showNotificationMessage('AFK settings updated successfully', 'success');
+            changedSettings.clear();
+        } catch (err) {
+            console.error('Failed to update AFK settings:', err);
+            showNotificationMessage('Failed to update AFK settings', 'error');
+        }
+    }
+
     onMount(async () => {
         if (!$currentGuild)
             await goto("/dashboard");
-        await fetchAfkUsers();
+        await Promise.all([fetchAfkUsers(), fetchAfkSettings()]);
     });
 
     function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {
@@ -34,6 +77,60 @@
         setTimeout(() => {
             showNotification = false;
         }, 3000);
+    }
+
+    async function fetchAfkSettings() {
+        try {
+            if (!$currentGuild?.id) throw new Error("No guild selected");
+
+            const [deletion, maxLength, type, timeout, disabledChannels, customMessage] = await Promise.all([
+                api.getAfkDel($currentGuild.id),
+                api.getAfkLength($currentGuild.id),
+                api.getAfkType($currentGuild.id),
+                api.getAfkTimeout($currentGuild.id),
+                api.getDisabledAfkChannels($currentGuild.id),
+                api.getCustomAfkMessage($currentGuild.id)
+            ]);
+
+            afkDeletionTime = deletion;
+            afkMaxLength = maxLength;
+            afkType = type;
+            afkTimeout = timeout;
+            afkDisabledChannels = disabledChannels ? disabledChannels.split(',') : [];
+            customAfkMessage = customMessage || '';
+
+        } catch (err) {
+            console.error('Failed to fetch AFK settings:', err);
+            showNotificationMessage('Failed to fetch AFK settings', 'error');
+        }
+    }
+
+    async function updateAfkSetting(setting: string, value: any) {
+        try {
+            if (!$currentGuild?.id) throw new Error("No guild selected");
+
+            switch (setting) {
+                case 'deletion':
+                    await api.afkDelSet($currentGuild.id, value);
+                    break;
+                case 'maxLength':
+                    await api.afkLengthSet($currentGuild.id, value);
+                    break;
+                case 'type':
+                    await api.afkTypeSet($currentGuild.id, value);
+                    break;
+                case 'timeout':
+                    await api.afkTimeoutSet($currentGuild.id, value);
+                    break;
+                case 'customMessage':
+                    await api.setCustomAfkMessage($currentGuild.id, value);
+                    break;
+            }
+            showNotificationMessage('AFK setting updated successfully', 'success');
+        } catch (err) {
+            console.error('Failed to update AFK setting:', err);
+            showNotificationMessage('Failed to update AFK setting', 'error');
+        }
     }
 
     async function fetchAfkUsers() {
@@ -50,19 +147,6 @@
             error = err.message || "Failed to fetch AFK users";
         } finally {
             loading = false;
-        }
-    }
-
-    async function setAfkStatus() {
-        try {
-            if (!$currentGuild?.id || !data.user?.id) {
-                throw new Error("Guild or user information is missing");
-            }
-            await api.setAfkStatus($currentGuild.id, data.user.id, afkMessage);
-            showNotificationMessage('AFK Updated', 'success');
-            await fetchAfkUsers();
-        } catch (error) {
-            showNotificationMessage(`Failed to set AFK: ${error.message}`, 'error');
         }
     }
 
@@ -93,19 +177,65 @@
     {#if showNotification}
         <Notification message={notificationMessage} type={notificationType}/>
     {/if}
-    <div class="mb-6">
-        <input
-                bind:value={afkMessage}
-                class="p-2 border rounded mr-2 text-black"
-                placeholder="AFK message"
-        />
-        <button
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                disabled={!$currentGuild?.id || !data.user?.id}
-                on:click={setAfkStatus}
-        >
-            Set AFK Status
-        </button>
+
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">AFK Settings</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold mb-2">Auto-deletion Time</h3>
+                <input type="number" bind:value={afkDeletionTime}
+                       on:input={() => markAsChanged('deletion')}
+                       class="w-full p-2 bg-gray-700 rounded"/>
+                <p class="text-sm text-gray-400 mt-1">Time in seconds before AFK messages are deleted. Set to 0 to disable.</p>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold mb-2">Max AFK Message Length</h3>
+                <input type="number" bind:value={afkMaxLength}
+                       on:input={() => markAsChanged('maxLength')}
+                       class="w-full p-2 bg-gray-700 rounded"/>
+                <p class="text-sm text-gray-400 mt-1">Maximum allowed length for AFK messages.</p>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold mb-2">AFK Type</h3>
+                <select bind:value={afkType}
+                        on:change={() => markAsChanged('type')}
+                        class="w-full p-2 bg-gray-700 rounded">
+                    <option value={1}>Self Disable</option>
+                    <option value={2}>On Message</option>
+                    <option value={3}>On Type</option>
+                    <option value={4}>Either</option>
+                </select>
+                <p class="text-sm text-gray-400 mt-1">Determines how AFK status is removed.</p>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold mb-2">AFK Timeout</h3>
+                <input type="number" bind:value={afkTimeout}
+                       on:input={() => markAsChanged('timeout')}
+                       class="w-full p-2 bg-gray-700 rounded"/>
+                <p class="text-sm text-gray-400 mt-1">Time before someone is actually considered afk after setting their afk. Format is 1h2m3s</p>
+            </div>
+        </div>
+
+        <div class="mt-4 bg-gray-800 p-4 rounded-lg">
+            <h3 class="font-semibold mb-2">Custom AFK Message</h3>
+            <textarea bind:value={customAfkMessage}
+                      on:input={() => markAsChanged('customMessage')}
+                      class="w-full p-2 bg-gray-700 rounded h-24"></textarea>
+            <p class="text-sm text-gray-400 mt-1">Custom embed to display when a user is afk. Use "-" to reset to default.</p>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <button
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    on:click={updateAllAfkSettings}
+                    disabled={changedSettings.size === 0}>
+                Save Changes
+            </button>
+        </div>
     </div>
 
     <h2 class="text-xl font-semibold mb-3">Currently AFK Users</h2>
@@ -153,3 +283,10 @@
         </ul>
     {/if}
 </div>
+
+<style>
+    :global(body) {
+        background-color: #1a202c;
+        color: #ffffff;
+    }
+</style>

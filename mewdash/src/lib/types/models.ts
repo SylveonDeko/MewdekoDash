@@ -240,6 +240,7 @@ export interface BotStatusModel {
     botStatus: string;
     userCount: number;
     commitHash: string;
+    botId: bigint
 }
 
 export function convertToGuildConfig(jsonResponse: string): GuildConfig {
