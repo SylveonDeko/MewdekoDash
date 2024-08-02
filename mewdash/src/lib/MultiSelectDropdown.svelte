@@ -19,8 +19,9 @@
         }
     }
 
-    function closeDropdown(event) {
-        if (!event.target.closest('.dropdown')) {
+    function closeDropdown(event: Event) {
+        const target = event.target as Element | null;
+        if (target && !target.closest('.dropdown')) {
             isOpen = false;
         }
     }

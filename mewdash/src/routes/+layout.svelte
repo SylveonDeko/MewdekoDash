@@ -8,7 +8,7 @@
     import {api} from "$lib/api.ts";
 
     export let data;
-    let unsubscribe;
+    let unsubscribe: boolean;
 
 
       onMount(() => {
@@ -31,11 +31,11 @@
 
 
     onDestroy(() => {
-      unsubscribe?.();
+      unsubscribe = false;
     });
 
 
-    export type NavItem = {
+    type NavItem = {
       title: string,
       elements: {
         title?: string,
@@ -61,7 +61,6 @@
           {href: "/credguide", title: "Credentials Guide"}
         ]
       },
-      { title: "Resources", elements: [{ href: "/resources" }] },
       { title: "Privacy", elements: [{ href: "/privacy" }] },
       { title: "Terms", elements: [{ href: "/terms" }] }
     ];

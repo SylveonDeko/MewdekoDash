@@ -5,6 +5,7 @@
   import type { DiscordUser } from "../types/discord";
   import { userAdminGuilds } from "../stores/adminGuildsStore";
   import { onDestroy, onMount } from "svelte";
+  import type {DiscordGuild} from "$lib/types/discordGuild.ts";
 
   let menuOpen = false;
 
@@ -19,7 +20,7 @@
   }
 
   export let user: DiscordUser | null = null;
-  let adminGuilds;
+  let adminGuilds: DiscordGuild[];
 
   userAdminGuilds.subscribe(value => {
     adminGuilds = value;
@@ -59,7 +60,7 @@
     return [{ title: item.title, wrapped: true, children: elems }];
   });
 
-  function findTitleByHref(href) {
+  function findTitleByHref(href: string) {
     for (const item of items) {
       for (const element of item.elements) {
         if (element.href === href) {
@@ -89,8 +90,8 @@
 ];
 
   let titleIndex = 0;
-  let originalTitle;
-  let handleVisibilityChange;
+  let originalTitle: string;
+  let handleVisibilityChange: () => void;
 
   onMount(() => {
     if (typeof window !== 'undefined') { // Check if window is defined

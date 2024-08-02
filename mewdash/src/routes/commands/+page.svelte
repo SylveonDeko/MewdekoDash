@@ -15,6 +15,7 @@
     })
 </script>
 <head>
+    <title>Mewdeko - Commands</title>
     <meta content="Mewdeko - All the commands! Searchable!" property="og:title">
     <meta content="Find out more about Mewdeko's commands and how to use them."
           name="description">

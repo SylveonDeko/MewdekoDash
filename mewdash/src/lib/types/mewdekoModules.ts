@@ -13,4 +13,6 @@ export type Command = {
     GuildBotPermissions: string,
     GuildUserPermissions: string,
     IsDragon: boolean
+    ListOptions: string[]
+    BotVersion: string
 }

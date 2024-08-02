@@ -102,7 +102,7 @@ export const api = {
     getMinLength: (guildId: bigint) =>
         apiRequest<number>(`suggestions/${guildId}/minLength`),
     setMinLength: (guildId: bigint, minLength: number) =>
-        apiRequest<void>(`sug   gestions/${guildId}/minLength`, 'POST', minLength),
+        apiRequest<void>(`suggestions/${guildId}/minLength`, 'POST', minLength),
     getMaxLength: (guildId: bigint) =>
         apiRequest<number>(`suggestions/${guildId}/maxLength`),
     setMaxLength: (guildId: bigint, maxLength: number) =>

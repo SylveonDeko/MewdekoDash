@@ -7,7 +7,7 @@
         children?: { title: string, href: string }[]
     }
     export let item: Item
-    export let current: string
+    export let current: string | null
     let openOverride: boolean = false
 </script>
 <!-- Desktop - hidden md:block -->

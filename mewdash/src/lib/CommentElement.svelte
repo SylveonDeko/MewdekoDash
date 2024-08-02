@@ -4,7 +4,7 @@
         <div class="flex flex-row">
             <div>
                 <img class="mr-4 rounded-full"
-                     src="{user?.avatar}" alt="{platform.trim()} {user?.name.trim().split(' ')[0]} Avatar"
+                     src="{user?.avatar.src}" alt="{platform.trim()} {user?.name.trim().split(' ')[0]} Avatar"
                      height="50" width="50">
             </div>
             <div>

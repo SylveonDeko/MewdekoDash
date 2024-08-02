@@ -1,7 +1,7 @@
 <script lang="ts">
     import type {Command} from "$lib/types/mewdekoModules";
 
-    function capitalizeFirstLetter(string) {
+    function capitalizeFirstLetter(string: string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
@@ -39,12 +39,12 @@
         <p class="text-sm ml-4 mb-2">{command.ChannelBotPermissions}</p>
     {/if}
 
-    {#if command.ListOptions}
+    {#if command.ListOptions && command.ListOptions.length > 0 && command.ListOptions.at(0) !== ""}
         <h6 class="px-4 whitespace-nowrap text-ellipsis">Available Choices</h6>
         <p class="text-sm ml-4 mb-2">{command.ListOptions}</p>
     {/if}
 
-    {#if command.BotVersion}
+    {#if command.BotVersion && command.BotVersion.length > 0 && command.BotVersion.at(0) !== ""}
         <h6 class="px-4 whitespace-nowrap">Available on</h6>
         <p class="text-sm ml-4 mb-2">{command.BotVersion}</p>
     {/if}
