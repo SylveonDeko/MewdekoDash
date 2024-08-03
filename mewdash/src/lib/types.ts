@@ -37,3 +37,11 @@ export interface Suggestion {
     content: string;
     status: 'pending' | 'approved' | 'denied' | 'implemented';
 }
+
+export interface PermissionOverride {
+    perm: bigint;
+    guildId: bigint;
+    command: string;
+    id: number;
+    dateAdded: string;
+}

@@ -46,12 +46,25 @@ export const GET: RequestHandler = async ({ url, params }) => {
 export const POST: RequestHandler = async ({ request, params }) => {
     const path = params.path;
     let body;
+    console.log(request.url);
+
     try {
-        body = await request.json();
+        const text = await request.text();
+        console.log('Raw request body:', text);
+
+        if (text) {
+            body = JSONbig.parse(text);
+        } else {
+            console.log('Request body is empty');
+            body = {}; // Use an empty object if the body is empty
+        }
     } catch (error) {
         console.error('Error parsing request body:', error);
+        // Use an empty object if there's an error parsing JSON
+        body = {};
     }
 
+    // Proceed with the request, using the parsed body or an empty object
     return makeRequest(
         `${MEWDEKO_API_URL}/${path}`,
         'POST',
@@ -59,7 +72,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
             'X-API-Key': MEWDEKO_API_KEY,
             'Content-Type': 'application/json',
         },
-        body ? JSONbig.stringify(body) : undefined
+        JSONbig.stringify(body)
     );
 };
 
@@ -82,11 +95,21 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
     );
 };
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async ({ request, params }) => {
     const path = params.path;
+    let body;
+    try {
+        body = await request.json();
+    } catch (error) {
+    }
+
     return makeRequest(
         `${MEWDEKO_API_URL}/${path}`,
         'DELETE',
-        { 'X-API-Key': MEWDEKO_API_KEY }
+        {
+            'X-API-Key': MEWDEKO_API_KEY,
+            'Content-Type': 'application/json',
+        },
+        body ? JSONbig.stringify(body) : undefined
     );
 };

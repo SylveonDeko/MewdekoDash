@@ -7,20 +7,23 @@
     import { currentGuild } from "$lib/stores/currentGuild.ts";
     import type { DiscordGuild } from "$lib/types/discordGuild.ts";
     import { browser } from '$app/environment';
-    import { onMount, onDestroy } from 'svelte';
+    import {onMount, onDestroy, tick} from 'svelte';
+    import {triggerAnimation, triggerMenuAnimation} from "$lib/stores/animationStores.ts";
 
     export let data: LayoutData;
 
     let items = [
         { href: '/dashboard', text: 'Dashboard', icon: '📊' },
         { href: '/dashboard/afk', text: 'AFK', icon: '💤' },
-        { href: '/dashboard/chat-triggers', text: 'Chat', icon: '💬' },
-        { href: '/dashboard/suggestions', text: 'Suggestions', icon: '💡' }
+        { href: '/dashboard/chat-triggers', text: 'Triggers', icon: '💬' },
+        { href: '/dashboard/suggestions', text: 'Suggestions', icon: '💡' },
+        { href: '/dashboard/permissions', text: 'Permissions', icon: '🔒' }
     ];
 
     let sidebarOpen = false;
     let dropdownOpen = false;
     let isMobile = false;
+    let animationKey = 0;
 
     function checkMobile() {
         isMobile = browser && window.innerWidth < 768;
@@ -45,9 +48,15 @@
         dropdownOpen = false;
     }
 
-    function selectGuild(guild: DiscordGuild) {
+
+    async function selectGuild(guild: DiscordGuild) {
+        if ($currentGuild === guild)
+            return;
         currentGuild.set(guild);
         closeDropdown();
+        await tick();
+        animationKey += 1;
+        triggerMenuAnimation();
     }
 
     function handleClickOutside() {
@@ -68,9 +77,11 @@
 
     function toggleSidebar() {
         sidebarOpen = !sidebarOpen;
+        if (browser) {
+            document.body.style.overflow = sidebarOpen ? 'hidden' : '';
+        }
     }
 </script>
-
 
 <div class="dashboard-container flex flex-col min-h-0">
     <div class="flex-grow flex {isMobile ? 'flex-col' : ''} overflow-hidden">
@@ -87,10 +98,16 @@
             </header>
         {/if}
 
-        <aside class="sidebar {isMobile ? 'fixed inset-y-0 left-0 z-50' : 'w-64'} bg-gray-800 overflow-y-auto"
+        {#if isMobile && sidebarOpen}
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-40"
+                 on:click={toggleSidebar}
+                 transition:fade={{duration: 300}}>
+            </div>
+        {/if}
+
+        <aside class="sidebar {isMobile ? 'fixed inset-y-0 left-0 z-50' : 'w-64'} bg-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out"
                class:translate-x-0={!isMobile || sidebarOpen}
-               class:-translate-x-full={isMobile && !sidebarOpen}
-               transition:slide={{duration: 300}}>
+               class:-translate-x-full={isMobile && !sidebarOpen}>
             <div class="sidebar-content p-5">
                 {#if isMobile}
                     <button on:click={toggleSidebar} class="text-white mb-4">
@@ -131,13 +148,21 @@
                     <ul>
                         {#key $currentGuild}
                             {#if $currentGuild}
-                                {#each items as item, index}
-                                    <li in:fly="{{ x: -50, delay: getStaggeredDelay(index), duration: 300 }}">
-                                        <a href={item.href}
-                                           class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === item.href ? 'bg-yellow-700' : ''}"
-                                           on:click={() => sidebarOpen = false}>
-                                            {item.icon} {item.text}
-                                        </a>
+                                <a href="/dashboard"
+                                   class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === '/dashboard' ? 'bg-yellow-700' : ''}"
+                                   on:click={() => sidebarOpen = false}>
+                                    📊 Dashboard
+                                </a>
+                                {#each items.slice(1) as item, index}
+                                    <li>
+                                        {#key $triggerAnimation}
+                                            <a href={item.href}
+                                               class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === item.href ? 'bg-yellow-700' : ''}"
+                                               on:click={() => sidebarOpen = false}
+                                               in:fly="{{ y: 50, delay: getStaggeredDelay(index, 100), duration: 300 }}">
+                                                {item.icon} {item.text}
+                                            </a>
+                                        {/key}
                                     </li>
                                 {/each}
                             {:else}
@@ -155,12 +180,12 @@
             </div>
         </aside>
 
-        <main class="dashboard-content flex-grow p-4 overflow-y-auto">
+        <main class="dashboard-content flex-grow p-4 overflow-y-auto transition-transform duration-300 ease-in-out"
+              class:translate-x-64={isMobile && sidebarOpen}>
             <slot/>
         </main>
     </div>
 </div>
-
 
 <style>
     .dashboard-container {
@@ -295,6 +320,10 @@
 
         .dropdown-item {
             padding: 15px;
+        }
+
+        .sidebar {
+            width: 250px; /* Set a fixed width for mobile */
         }
     }
 </style>

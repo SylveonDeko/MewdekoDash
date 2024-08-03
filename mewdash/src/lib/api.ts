@@ -1,5 +1,6 @@
 import type {GuildConfig, ChatTriggers, SuggestionsModel, BotStatusModel} from '$lib/types/models';
 import JSONbig from 'json-bigint'
+import type {PermissionOverride} from "$lib/types.ts";
 
 async function apiRequest<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
     const response = await fetch(`/api/${endpoint}`, {
@@ -191,5 +192,14 @@ export const api = {
         apiRequest<any>(`ClientOperations/user/${guildId}/${userId}`),
 
     getBotStatus: () =>
-        apiRequest<BotStatusModel>('BotStatus')
+        apiRequest<BotStatusModel>('BotStatus'),
+
+    getPermissionOverrides: (guildId: bigint) =>
+        apiRequest<PermissionOverride[]>(`Permissions/dpo/${guildId}`),
+
+    addPermissionOverride: (guildId: bigint, override: { command: string, permissions: bigint }) =>
+        apiRequest<PermissionOverride>(`Permissions/dpo/${guildId}`, 'POST', override),
+
+    deletePermissionOverride: (guildId: bigint, command: string) =>
+        apiRequest<void>(`Permissions/dpo/${guildId}/${command}`, 'DELETE')
 };

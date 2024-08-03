@@ -84,7 +84,7 @@
   </svelte:head>
 
   <Navbar user="{data.user}" items="{navbarItems}" adminGuilds="{userAdminGuilds}" />
-  {#if $navigating} 
+  {#if $navigating}
     <div class="loading">Loading...</div>
   {/if}
   <main>
