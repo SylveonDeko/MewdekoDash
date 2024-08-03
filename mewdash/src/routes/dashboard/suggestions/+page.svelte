@@ -45,11 +45,13 @@
         await fetchGuildConfig();
         await fetchSuggestions();
         checkMobile();
-        window.addEventListener('resize', checkMobile);
+        if (browser)
+            window.addEventListener('resize', checkMobile);
     });
 
     onDestroy(async () => {
-        window.removeEventListener('resize', checkMobile);
+        if (browser)
+            window.removeEventListener('resize', checkMobile);
     })
 
     function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {

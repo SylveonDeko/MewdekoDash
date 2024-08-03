@@ -201,5 +201,5 @@ export const api = {
         apiRequest<PermissionOverride>(`Permissions/dpo/${guildId}`, 'POST', override),
 
     deletePermissionOverride: (guildId: bigint, command: string) =>
-        apiRequest<void>(`Permissions/dpo/${guildId}/${command}`, 'DELETE')
+        apiRequest<void>(`Permissions/dpo/${guildId}`, 'DELETE', command)
 };

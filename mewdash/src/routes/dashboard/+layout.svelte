@@ -30,8 +30,11 @@
     }
 
     onMount(() => {
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
+        if (browser)
+        {
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+        }
     });
 
     onDestroy(() => {
