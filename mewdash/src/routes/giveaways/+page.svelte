@@ -5,16 +5,15 @@
     import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
     import { goto } from "$app/navigation";
     import { browser } from '$app/environment';
-    import type {Giveaways} from "$lib/types.ts";
+    import type { Giveaways } from "$lib/types.ts";
+    import {Turnstile} from 'svelte-turnstile';
 
     let guildId: bigint;
     let giveawayId: number;
     let userId: bigint;
     let turnstileToken: string;
     let message: string = '';
-    let turnstileLoaded = false;
     export let data: PageData;
-
 
     let giveaway: Giveaways | null = null;
     let loading = true;
@@ -30,16 +29,6 @@
         userId = data.user.id;
 
         if (browser) {
-            // Load Turnstile script
-            const script = document.createElement('script');
-            script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-            script.async = true;
-            script.defer = true;
-            script.onload = () => {
-                turnstileLoaded = true;
-            };
-            document.head.appendChild(script);
-
             // Fetch giveaway details
             try {
                 giveaway = await api.getGiveaway(giveawayId.toString());
@@ -70,19 +59,12 @@
         }
     }
 
-    function onTurnstileCallback(token: string) {
-        turnstileToken = token;
+    function onTurnstileSuccess(event: CustomEvent<string>) {
+        turnstileToken = event.detail;
     }
 
     function formatDate(date: string) {
         return new Date(date).toLocaleString();
-    }
-
-    if (browser) {
-        window.onTurnstileCallback = onTurnstileCallback;
-        window.addEventListener('turnstileCallback', (event) => {
-            onTurnstileCallback(event.detail);
-        });
     }
 </script>
 
@@ -112,24 +94,19 @@
             </div>
         </div>
 
-        {#if browser && turnstileLoaded}
-            <div class="mb-4">
-                <div
-                        class="cf-turnstile"
-                        data-sitekey="0x4AAAAAAAAvvAPaJgbIJWh-"
-                        data-callback="onTurnstileCallback"
-                ></div>
-            </div>
+        <div class="mb-4">
+            <Turnstile
+                    siteKey="0x4AAAAAAAAvvAPaJgbIJWh-"
+                    on:success={onTurnstileSuccess}
+            />
+        </div>
 
-            <button
-                    on:click={enterGiveaway}
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-                Enter Giveaway
-            </button>
-        {:else}
-            <p>Loading captcha...</p>
-        {/if}
+        <button
+                on:click={enterGiveaway}
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+            Enter Giveaway
+        </button>
 
         {#if message}
             <p class="mt-4 {message.includes('Successfully') ? 'text-green-500' : 'text-red-500'}">
