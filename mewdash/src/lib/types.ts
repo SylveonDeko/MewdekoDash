@@ -38,6 +38,24 @@ export interface Suggestion {
     status: 'pending' | 'approved' | 'denied' | 'implemented';
 }
 
+export interface Giveaways {
+    id: number;
+    when: string;
+    channelId: string;
+    serverId: string;
+    ended: number;
+    messageId: string;
+    winners: number;
+    userId: string;
+    item: string | null;
+    restrictTo: string | null;
+    blacklistUsers: string | null;
+    blacklistRoles: string | null;
+    emote: string | null;
+    useButton: boolean;
+    useCaptcha: boolean;
+}
+
 export interface PermissionOverride {
     perm: bigint;
     guildId: bigint;

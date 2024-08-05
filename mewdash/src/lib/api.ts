@@ -1,6 +1,6 @@
 import type {GuildConfig, ChatTriggers, SuggestionsModel, BotStatusModel} from '$lib/types/models';
 import JSONbig from 'json-bigint'
-import type {PermissionOverride} from "$lib/types.ts";
+import type {Giveaways, PermissionOverride} from "$lib/types.ts";
 
 async function apiRequest<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
     const response = await fetch(`/api/${endpoint}`, {
@@ -201,5 +201,15 @@ export const api = {
         apiRequest<PermissionOverride>(`Permissions/dpo/${guildId}`, 'POST', override),
 
     deletePermissionOverride: (guildId: bigint, command: string) =>
-        apiRequest<void>(`Permissions/dpo/${guildId}`, 'DELETE', command)
+        apiRequest<void>(`Permissions/dpo/${guildId}`, 'DELETE', command),
+
+    enterGiveaway: (data: {
+        guildId: bigint,
+        giveawayId: number,
+        userId: bigint,
+        turnstileToken: string
+    }) => apiRequest<void>('giveaways/enter', 'POST', data),
+
+    getGiveaway: (giveawayId: string | number) =>
+        apiRequest<Giveaways>(`giveaways/${giveawayId}`),
 };
