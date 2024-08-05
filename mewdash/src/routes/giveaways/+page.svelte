@@ -59,8 +59,8 @@
         }
     }
 
-    function onTurnstileSuccess(event: CustomEvent<string>) {
-        turnstileToken = event.detail;
+    function onTurnstileSuccess(event: CustomEvent<{ token: string; }>) {
+        turnstileToken = event.detail.token;
     }
 
     function formatDate(date: string) {
@@ -97,7 +97,7 @@
         <div class="mb-4">
             <Turnstile
                     siteKey="0x4AAAAAAAAvvAPaJgbIJWh-"
-                    on:success={onTurnstileSuccess}
+                    on:callback={onTurnstileSuccess}
             />
         </div>
 
