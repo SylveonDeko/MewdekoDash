@@ -53,19 +53,20 @@
 
 <header class="py-16 px-4 sm:px-12 flex flex-col items-center" in:fade={{ duration: 300 }}>
     <h1 class="text-center font-extrabold text-mewd-white max-w-4xl mx-auto text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-8">
-        Mewdeko - The Most Customizable Free and Open Source Discord Bot
+        Mewdeko
     </h1>
+    <h1 class="text-center font-extrabold text-mewd-white max-w-4x1">The Most Customizable Open Source Bot for Discord!</h1>
     <MultiButton links={[
             { text: 'Invite', href: 'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303' },
             { text: 'Donate', href: 'https://ko-fi.com/mewdeko' },
-            { text: 'Server', href: 'https://discord.gg/deko' },
+            { text: 'Server', href: 'https://discord.gg/invite/4stkEfZ6As' },
         ]}/>
 
     {#if fetched}
         <section class="mt-12 flex flex-col justify-center items-center"
                  title="Mewdeko's Top Servers"
                  in:fade={{ duration: 300, delay: 300 }}>
-            <h2 class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold">Top Servers</h2>
+            <h2 class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold">Our Top Servers</h2>
             {#if guilds.length > 0}
                 <div class="flex flex-wrap justify-center items-center gap-4 p-4">
                     {#each guilds as guild, index (guild.Name)}
@@ -91,11 +92,11 @@
 
 <section aria-label="Mewdeko's features" class="bg-mewd-dark-grey py-24">
     <div class="container mx-auto px-4 max-w-7xl">
-        <h2 class="text-3xl font-bold text-mewd-green mb-12 text-center">Key Features</h2>
+        <h2 class="text-3xl font-bold text-mewd-white mb-12 text-center">Key Features</h2>
         <FluidContainer breakpoints={['md', 'xl']}>
             <Interactable
                     cta={{text:'Invite Me', href:'https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303'}}
-                    description="With Auto Ban words, antispam, antiraid, and 2 different warning systems, Mewdeko can be as flexible as you want it to be!"
+                    description="With Auto Ban words, Anti Spam, Anti Raid, and two different warning systems, Mewdeko can be as flexible as you want!"
                     slot="element-1"
                     title="Moderation"
             >
@@ -107,10 +108,10 @@
             </Interactable>
 
             <Interactable
-                    cta={{text:'Support Server', href:'https://discord.gg/deko'}}
-                    description="With a team that actually cares about you, we try to help out in the best way possible! Don't be afraid to DM Sylveon for bot support, I don't bite!"
+                    cta={{text:'Support Server', href:'https://discord.gg/the-deko-tree-843489716674494475'}}
+                    description="With a team that cares about you, we try to help out in the best way possible!"
                     slot="element-2"
-                    title="Helpful/Friendly Staff"
+                    title="Helpful and Friendly Staff"
             >
                 <Carousel items={[
                         { component: ImageWrapper, props: { alt: 'Hosting A Bot', src: 'img/FriendlyStaff1.png' }},
@@ -178,9 +179,9 @@
 <section aria-label="Mewdeko testimonials" class="bg-mewd-light-grey py-24">
     <div class="container mx-auto px-4 max-w-7xl">
         <div class="text-center mb-16">
-            <p class="text-mewd-green font-extrabold mb-2">Testimonials</p>
+            <p class="text-mewd-offwhite font-extrabold mb-2">Testimonials</p>
             <h2 class="text-mewd-white text-3xl md:text-4xl font-black mb-4">What People Say About Mewdeko</h2>
-            <p class="text-mewd-offwhite">We've been around for 2 years, there's bound to be some good reviews.</p>
+            <p class="text-mewd-offwhite">We've been around for over three years, there's bound to be some good reviews.</p>
         </div>
         <FluidContainer breakpoints={['sm', 'lg']}>
             <CommentElement
