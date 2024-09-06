@@ -27,10 +27,10 @@
             <span class="text-sm text-mewd-offwhite mt-2">cottage@mewdeko.tech</span>
         </a>
 
-        <a href="https://discord.gg/deko" target="_new" class="contact-card">
+        <a href="https://discord.gg/invite/4stkEfZ6As" target="_new" class="contact-card">
             <DiscordIcon class="w-12 h-12 mb-4 text-mewd-offwhite" />
             <span class="text-lg font-semibold">Join Our Discord</span>
-            <span class="text-sm text-mewd-offwhite mt-2">discord.gg/deko</span>
+            <span class="text-sm text-mewd-offwhite mt-2">https://discord.gg/invite/4stkEfZ6As</span>
         </a>
     </div>
 </div>

@@ -17,7 +17,7 @@
             const response = await fetch("/api/guilds");
             const guilds: DiscordGuild[] = await response.json();
 
-            // Filter out guilds whe  re the user is not an admin
+            // Filter out guilds which the user is not an admin
             const filteredGuilds: DiscordGuild[] = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
             const botGuilds = await api.getBotGuilds();
 
