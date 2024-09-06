@@ -10,7 +10,7 @@
   </script>
 
   <svelte:head>
-    <title>Mewdeko - Setting up Credentials</title>
+    <title>Mewdeko - Setting Up Credentials</title>
     <meta content="Mewdeko - Setting up Credentials" property="og:title">
     <meta content="Guide to setting up credentials for Mewdeko Discord bot" name="description">
     <meta content="Guide to setting up credentials for Mewdeko Discord bot" property="og:description">
