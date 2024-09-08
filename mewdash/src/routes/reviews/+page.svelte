@@ -147,7 +147,7 @@
 <div class="container mx-auto p-4 max-w-4xl">
     <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">Bot Reviews</h1>
 
-    {#if user && !userHasReviewed}
+    {#if user && !userHasReviewed && !loading}
         <div class="bg-gray-800 rounded-lg p-6 mb-8 shadow-lg">
             <h2 class="text-2xl font-semibold mb-4 text-blue-300">Submit Your Review</h2>
             <div class="flex items-center mb-4">
