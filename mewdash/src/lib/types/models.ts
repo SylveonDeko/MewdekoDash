@@ -1,5 +1,14 @@
 import JSONbig from "json-bigint";
 
+export interface BotReviews {
+    id: number;
+    userId: bigint;
+    username: string;
+    avatarUrl: string;
+    stars: number;
+    review: string;
+    dateAdded: string;
+}
 
 export interface GuildConfig {
     Id: number;

@@ -176,47 +176,6 @@
     </div>
 </section>
 
-<section aria-label="Mewdeko testimonials" class="bg-mewd-light-grey py-24">
-    <div class="container mx-auto px-4 max-w-7xl">
-        <div class="text-center mb-16">
-            <p class="text-mewd-offwhite font-extrabold mb-2">Testimonials</p>
-            <h2 class="text-mewd-white text-3xl md:text-4xl font-black mb-4">What People Say About Mewdeko</h2>
-            <p class="text-mewd-offwhite">We've been around for over three years, there's bound to be some good reviews.</p>
-        </div>
-        <FluidContainer breakpoints={['sm', 'lg']}>
-            <CommentElement
-                    platform="Top.gg"
-                    slot="element-1"
-                    text="This is the most useful bot that XNekø has used! There is so many different types of things to do it's amazing! 5 stars to the bot and them who created the bot! :3"
-                    user={{
-                        name: "XNekø",
-                        href: "https://top.gg/user/212055598057304064",
-                        avatar: "img/xneko-pfp.gif"
-                    }}
-            />
-            <CommentElement
-                    platform="Top.gg"
-                    slot="element-2"
-                    text="Out of all bots to exist, I understand this one the most lmao - so yeah!<br>I love the bot and hope nothing but the best for future reference"
-                    user={{
-                        name: "[Heath] Her Strawberry BobaTea™",
-                        href: "https://top.gg/user/2363846306423308288",
-                        avatar: "img/DiscordDefault.png"
-                    }}
-            />
-            <CommentElement
-                    platform="Top.gg"
-                    slot="element-3"
-                    text="这个 Discord Bot 很棒 +100 Social Credit"
-                    user={{
-                        name: "aknatn",
-                        avatar: "img/DiscordDefault.png"
-                    }}
-            />
-        </FluidContainer>
-    </div>
-</section>
-
 <style>
     :global(body) {
         @apply bg-mewd-light-grey text-mewd-white;

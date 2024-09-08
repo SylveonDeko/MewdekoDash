@@ -1,4 +1,4 @@
-import type {PageServerLoad} from "../../../.svelte-kit/types/src/routes";
+import type {PageServerLoad} from "./$types";
 import type {DiscordUser} from "$lib/types/discord.ts";
 
 

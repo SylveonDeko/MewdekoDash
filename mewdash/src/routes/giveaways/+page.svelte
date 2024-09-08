@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
-    import { api } from '$lib/api';
+    import { api } from '$lib/api.ts';
     import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
     import { goto } from "$app/navigation";
     import { browser } from '$app/environment';

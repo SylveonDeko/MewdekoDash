@@ -17,7 +17,8 @@
         { href: '/dashboard/afk', text: 'AFK', icon: '💤' },
         { href: '/dashboard/chat-triggers', text: 'Triggers', icon: '💬' },
         { href: '/dashboard/suggestions', text: 'Suggestions', icon: '💡' },
-        { href: '/dashboard/permissions', text: 'Permissions', icon: '🔒' }
+        { href: '/dashboard/permissions', text: 'Permissions', icon: '🔒' },
+        { href: '/dashboard/giveaways', text: 'Giveaways', icon: '�'}
     ];
 
     let sidebarOpen = false;

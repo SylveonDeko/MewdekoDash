@@ -1,4 +1,4 @@
-import type {GuildConfig, ChatTriggers, SuggestionsModel, BotStatusModel} from '$lib/types/models';
+import type {GuildConfig, ChatTriggers, SuggestionsModel, BotStatusModel, BotReviews} from '$lib/types/models';
 import JSONbig from 'json-bigint'
 import type {Giveaways, PermissionOverride} from "$lib/types.ts";
 
@@ -182,7 +182,7 @@ export const api = {
         apiRequest<void>(`suggestions/${guildId}/suggestEmotes`, 'POST', emotes),
 
 
-    getGuildRoles: (guildId: string) =>
+    getGuildRoles: (guildId: bigint) =>
         apiRequest<Array<{ id: string, name: string }>>(`ClientOperations/roles/${guildId}`),
 
     getBotGuilds: () =>
@@ -208,8 +208,26 @@ export const api = {
         giveawayId: number,
         userId: bigint,
         turnstileToken: string
-    }) => apiRequest<void>('giveaways/enter', 'POST', data),
+    }) => apiRequest<void>('entergiveaway/enter', 'POST', data),
 
     getGiveaway: (giveawayId: string | number) =>
         apiRequest<Giveaways>(`giveaways/${giveawayId}`),
+
+    getGiveaways: (guildId: bigint) =>
+        apiRequest<Giveaways[]>(`giveaways/${guildId}`),
+
+    createGiveaway: (guildId: bigint, giveaway: Partial<Giveaways>) =>
+        apiRequest<Giveaways>(`giveaways/${guildId}`, 'POST', giveaway),
+
+    endGiveaway: (guildId: bigint, giveawayId: number) =>
+        apiRequest<void>(`giveaways/${guildId}/${giveawayId}`, 'PATCH'),
+
+    submitBotReview: (review: Partial<BotReviews>) =>
+        apiRequest<BotReviews>('reviews', 'POST', review),
+
+    getBotReviews: () =>
+        apiRequest<BotReviews[]>('reviews'),
+
+    deleteBotReview: (reviewId: number) =>
+        apiRequest<void>(`reviews/${reviewId}`, 'DELETE'),
 };
