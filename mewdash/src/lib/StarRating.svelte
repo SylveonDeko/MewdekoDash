@@ -1,4 +1,3 @@
-<!-- src/lib/components/StarRating.svelte -->
 <script lang="ts">
     export let value: number = 0;
     export let readonly: boolean = false;
@@ -22,13 +21,40 @@
         hoveredValue = null;
     }
 
+    function handleKeyDown(event: KeyboardEvent) {
+        if (readonly) return;
+
+        switch (event.key) {
+            case 'ArrowRight':
+            case 'ArrowUp':
+                event.preventDefault();
+                value = Math.min(value + 1, max);
+                break;
+            case 'ArrowLeft':
+            case 'ArrowDown':
+                event.preventDefault();
+                value = Math.max(value - 1, 0);
+                break;
+            case 'Home':
+                event.preventDefault();
+                value = 0;
+                break;
+            case 'End':
+                event.preventDefault();
+                value = max;
+                break;
+        }
+    }
+
     $: displayValue = hoveredValue !== null ? hoveredValue : value;
 </script>
 
 <div
         class="star-rating"
         on:mouseleave={handleMouseLeave}
+        on:keydown={handleKeyDown}
         role="slider"
+        tabindex={readonly ? -1 : 0}
         aria-valuenow={value}
         aria-valuemin="0"
         aria-valuemax={max}
@@ -54,6 +80,11 @@
     .star-rating {
         display: inline-flex;
         gap: 0.25rem;
+    }
+
+    .star-rating:focus {
+        outline: 2px solid #007bff;
+        border-radius: 4px;
     }
 
     .star {
