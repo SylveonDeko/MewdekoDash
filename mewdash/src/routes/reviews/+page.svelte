@@ -14,6 +14,7 @@
     let newReview: Partial<BotReviews> = { stars: 0, review: '' };
     let loading = true;
     let error: string | null = null;
+    $: previewContent = parseMarkdown(newReview.review || '');
 
     $: user = data.user as DiscordUser | undefined;
     $: userReview = user ? reviews.find(review => review.userId === BigInt(user.id)) : undefined;
@@ -22,6 +23,12 @@
     onMount(async () => {
         await fetchReviews();
     });
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.ctrlKey && event.key === 'Enter') {
+            submitReview();
+        }
+    }
 
     async function deleteReview(reviewId: number) {
         if (!user) {
@@ -152,14 +159,28 @@
             <h2 class="text-2xl font-semibold mb-4 text-blue-300">Submit Your Review</h2>
             <div class="flex items-center mb-4">
                 <StarRating bind:value={newReview.stars} />
-                <span class="ml-2 text-gray-400">{newReview.stars} out of 5 stars</span>
+                <span class="ml-2 text-gray-400" aria-live="polite">{newReview.stars} out of 5 stars</span>
             </div>
-            <textarea
-                    bind:value={newReview.review}
-                    placeholder="Write your review here (optional, supports Markdown)"
-                    class="w-full p-3 mt-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    rows="4"
-            ></textarea>
+            <div class="mb-4 flex space-x-4">
+                <div class="w-1/2">
+                    <label for="review-input" class="block text-sm font-medium text-gray-400 mb-2">Write your review (supports Markdown)</label>
+                    <textarea
+                            id="review-input"
+                            bind:value={newReview.review}
+                            on:keydown={handleKeydown}
+                            placeholder="Write your review here..."
+                            class="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            rows="10"
+                            aria-label="Review text"
+                    ></textarea>
+                </div>
+                <div class="w-1/2">
+                    <h3 class="text-sm font-medium text-gray-400 mb-2">Preview</h3>
+                    <div class="bg-gray-700 p-3 rounded-lg prose prose-sm max-w-none prose-invert h-full overflow-auto" aria-live="polite">
+                        {@html previewContent || '<p class="text-gray-500">Preview will appear here as you type...</p>'}
+                    </div>
+                </div>
+            </div>
             <button
                     on:click={submitReview}
                     class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
@@ -168,24 +189,24 @@
             </button>
         </div>
     {:else if !user}
-        <div class="bg-yellow-800 text-yellow-200 p-4 rounded-lg mb-6 text-center">
+        <div class="bg-yellow-800 text-yellow-200 p-4 rounded-lg mb-6 text-center" role="alert">
             Please log in to submit a review.
         </div>
     {:else}
-        <div class="bg-green-800 text-green-200 p-4 rounded-lg mb-6 text-center">
+        <div class="bg-green-800 text-green-200 p-4 rounded-lg mb-6 text-center" role="status">
             Thank you for your review!
         </div>
     {/if}
 
     {#if error}
-        <div class="bg-red-800 text-red-200 p-4 rounded-lg mb-6 text-center">
+        <div class="bg-red-800 text-red-200 p-4 rounded-lg mb-6 text-center" role="alert">
             {error}
         </div>
     {/if}
 
     {#if loading}
-        <div class="text-center text-gray-400">
-            <svg class="animate-spin h-8 w-8 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div class="text-center text-gray-400" aria-live="polite">
+            <svg class="animate-spin h-8 w-8 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
