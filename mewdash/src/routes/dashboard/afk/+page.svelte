@@ -8,7 +8,6 @@
     import { goto } from "$app/navigation";
     import Notification from "$lib/Notification.svelte";
 
-    export let data: PageData;
 
     let showNotification = false;
     let notificationMessage = '';
@@ -166,6 +165,14 @@
     function toggleUserExpand(userId) {
         expandedUser = expandedUser === userId ? null : userId;
     }
+
+    function handleUserKeydown(event: KeyboardEvent, userId: string) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleUserExpand(userId);
+        }
+    }
+
 </script>
 
 <svelte:head>
@@ -183,24 +190,24 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="font-semibold mb-2">Auto-deletion Time</h3>
-                <input type="number" bind:value={afkDeletionTime}
+                <label for="afk-deletion-time" class="font-semibold mb-2 block">Auto-deletion Time</label>
+                <input type="number" id="afk-deletion-time" bind:value={afkDeletionTime}
                        on:input={() => markAsChanged('deletion')}
                        class="w-full p-2 bg-gray-700 rounded"/>
                 <p class="text-sm text-gray-400 mt-1">Time in seconds before AFK messages are deleted. Set to 0 to disable.</p>
             </div>
 
             <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="font-semibold mb-2">Max AFK Message Length</h3>
-                <input type="number" bind:value={afkMaxLength}
+                <label for="afk-max-length" class="font-semibold mb-2 block">Max AFK Message Length</label>
+                <input type="number" id="afk-max-length" bind:value={afkMaxLength}
                        on:input={() => markAsChanged('maxLength')}
                        class="w-full p-2 bg-gray-700 rounded"/>
                 <p class="text-sm text-gray-400 mt-1">Maximum allowed length for AFK messages.</p>
             </div>
 
             <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="font-semibold mb-2">AFK Type</h3>
-                <select bind:value={afkType}
+                <label for="afk-type" class="font-semibold mb-2 block">AFK Type</label>
+                <select id="afk-type" bind:value={afkType}
                         on:change={() => markAsChanged('type')}
                         class="w-full p-2 bg-gray-700 rounded">
                     <option value={1}>Self Disable</option>
@@ -212,8 +219,8 @@
             </div>
 
             <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="font-semibold mb-2">AFK Timeout</h3>
-                <input type="number" bind:value={afkTimeout}
+                <label for="afk-timeout" class="font-semibold mb-2 block">AFK Timeout</label>
+                <input type="number" id="afk-timeout" bind:value={afkTimeout}
                        on:input={() => markAsChanged('timeout')}
                        class="w-full p-2 bg-gray-700 rounded"/>
                 <p class="text-sm text-gray-400 mt-1">Time before someone is actually considered afk after setting their afk. Format is 1h2m3s</p>
@@ -221,8 +228,8 @@
         </div>
 
         <div class="mt-4 bg-gray-800 p-4 rounded-lg">
-            <h3 class="font-semibold mb-2">Custom AFK Message</h3>
-            <textarea bind:value={customAfkMessage}
+            <label for="custom-afk-message" class="font-semibold mb-2 block">Custom AFK Message</label>
+            <textarea id="custom-afk-message" bind:value={customAfkMessage}
                       on:input={() => markAsChanged('customMessage')}
                       class="w-full p-2 bg-gray-700 rounded h-24"></textarea>
             <p class="text-sm text-gray-400 mt-1">Custom embed to display when a user is afk. Use "-" to reset to default.</p>
@@ -232,7 +239,8 @@
             <button
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     on:click={updateAllAfkSettings}
-                    disabled={changedSettings.size === 0}>
+                    disabled={changedSettings.size === 0}
+                    aria-disabled={changedSettings.size === 0}>
                 Save Changes
             </button>
         </div>
@@ -241,32 +249,37 @@
     <h2 class="text-xl font-semibold mb-3">Currently AFK Users</h2>
 
     {#if loading}
-        <p>Loading...</p>
+        <p role="status">Loading...</p>
     {:else if error}
-        <p class="text-red-500">{error}</p>
+        <p class="text-red-500" role="alert">{error}</p>
     {:else if afkUsers.length === 0}
         <p transition:fade class="text-gray-400 italic">No users are currently AFK.</p>
     {:else}
-        <ul class="space-y-2">
+        <ul class="space-y-2" aria-label="List of AFK users">
             {#each afkUsers as user (user.userId)}
-                <li
-                        class="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200"
-                        on:click={() => toggleUserExpand(user.userId)}
-                >
-                    <div class="flex items-center">
-                        <img
-                                src={user.avatarUrl}
-                                alt={user.username}
-                                class="w-10 h-10 rounded-full mr-3"
-                        />
-                        <div>
-                            <p class="font-semibold">{user.username}</p>
-                            <p class="text-sm text-gray-400">{user.afkStatus.message}</p>
+                <li class="bg-gray-800 rounded-lg overflow-hidden">
+                    <button
+                            class="w-full text-left p-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200"
+                            on:keydown={(event) => handleUserKeydown(event, user.userId)}
+                            on:click={() => toggleUserExpand(user.userId)}
+                            aria-expanded={expandedUser === user.userId}
+                            aria-controls={`user-details-${user.userId}`}
+                    >
+                        <div class="flex items-center">
+                            <img
+                                    src={user.avatarUrl}
+                                    alt=""
+                                    class="w-10 h-10 rounded-full mr-3"
+                            />
+                            <div>
+                                <p class="font-semibold">{user.username}</p>
+                                <p class="text-sm text-gray-400">{user.afkStatus.message}</p>
+                            </div>
                         </div>
-                    </div>
+                    </button>
 
                     {#if expandedUser === user.userId}
-                        <div transition:slide class="mt-3 pl-13">
+                        <div transition:slide class="p-4 bg-gray-750" id={`user-details-${user.userId}`}>
                             <p class="text-sm text-gray-400 mb-2">
                                 AFK since: {new Date(user.afkStatus.dateAdded).toLocaleString()}
                             </p>

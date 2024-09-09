@@ -8,15 +8,32 @@
   import type {DiscordGuild} from "$lib/types/discordGuild.ts";
 
   let menuOpen = false;
+  let menuButtonRef: HTMLButtonElement;
+  let mobileMenuButtonRef: HTMLButtonElement;
+  let menuRef: HTMLDivElement;
 
   function handleMenuOpen() {
     menuOpen = true;
-    document.body.addEventListener("click", handleMenuClose);
+    setTimeout(() => menuRef?.focus(), 0);
+    document.addEventListener("click", handleMenuClose);
   }
 
-  function handleMenuClose() {
-    menuOpen = false;
-    document.body.removeEventListener("click", handleMenuClose);
+  function handleMenuClose(event: MouseEvent) {
+    if (!menuButtonRef.contains(event.target as Node) && !menuRef?.contains(event.target as Node)) {
+      menuOpen = false;
+      document.removeEventListener("click", handleMenuClose);
+    }
+  }
+
+  function handleMenuKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      menuOpen = false;
+      menuButtonRef.focus();
+    }
+  }
+
+  function toggleMobileMenu() {
+    showMenu = !showMenu;
   }
 
   export let user: DiscordUser | null = null;
@@ -120,20 +137,25 @@
 <head>
   <title>Mewdeko - {findTitleByHref(current)}</title>
 </head>
-<nav class="py-4 bg-mewd-dark-grey">
+<nav class="py-4 bg-mewd-dark-grey" aria-label="Main navigation">
   <div class="sm:container flex flex-wrap items-center justify-between mx-auto px-4">
     <a title="mewdeko-banner" class="flex items-center mr-4 py-[0.3rem] grow max-w-[150px] justify-start" href="/">
-      <img alt="Mewdekos Avatar" class="h-12 mr-3" height="48" width="48"
+      <img alt="Mewdeko's Avatar" class="h-12 mr-3" height="48" width="48"
            src="https://cdn.mewdeko.tech/Mewdeko.png" />
-      <span aria-hidden="true"
-            class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">Mewdeko</span>
+      <span class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">Mewdeko</span>
     </a>
     <div class="flex md:order-2 grow max-w-[150px] justify-end">
       {#if !user}
-        <a class=" rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
+        <a class="rounded-md bg-teal-800 p-2 text-white" href="/api/discord/login">Login</a>
       {:else}
         <div class="flex flex-col relative">
-          <button class="h-full" on:click|stopPropagation={handleMenuOpen}>
+          <button
+                  class="h-full"
+                  on:click|stopPropagation={handleMenuOpen}
+                  aria-expanded={menuOpen}
+                  aria-haspopup="true"
+                  bind:this={menuButtonRef}
+          >
             {#if user && user.avatar && user.avatar.startsWith("a_")}
               <img src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.gif"
                    alt={user.username}
@@ -145,47 +167,63 @@
             {/if}
           </button>
           {#if menuOpen}
-            <div on:click|stopPropagation
-                 class="w-auto mt-4 bg-gray-900 rounded-md p-2 flex flex-col space-y-3 items-center absolute z-50 left-1/2 transform -translate-x-1/2 shadow-lg top-full">
+            <div
+                    bind:this={menuRef}
+                    tabindex="-1"
+                    on:keydown={handleMenuKeydown}
+                    class="w-auto mt-4 bg-gray-900 rounded-md p-2 flex flex-col space-y-3 items-center absolute z-50 left-1/2 transform -translate-x-1/2 shadow-lg top-full"
+                    role="menu"
+                    aria-labelledby="user-menu-button"
+            >
               <div class="flex flex-row space-x-2">
-                <h1 class="font-bold text-md text-white">{user.username}</h1>
+                <h2 class="font-bold text-md text-white">{user.username}</h2>
                 {#if user.discriminator !== "0"}
-                  <h1 class="font-bold text-md text-white">#{user.discriminator}</h1>
+                  <span class="font-bold text-md text-white">#{user.discriminator}</span>
                 {/if}
               </div>
               <div class="text-white text-md">Manageable Guilds: {adminGuilds.length}</div>
-              <a class="w-max px-3 py-1 rounded-full bg-gray-700 text-md font-black text-white mx-auto"
-                 href="/api/discord/logout">Logout</a>
+              <a
+                      class="w-max px-3 py-1 rounded-full bg-gray-700 text-md font-black text-white mx-auto"
+                      href="/api/discord/logout"
+                      role="menuitem"
+              >
+                Logout
+              </a>
             </div>
           {/if}
-
-
         </div>
-
-
       {/if}
-      <!--suppress HtmlWrongAttributeValue -->
       <button
-        class="inline-flex items-center ml-4 px-3 py-1 rounded-3xl border border-px border-transparent hover:border-mewd-light-transparent md:hidden"
-        aria-controls="mobile-navbar" aria-expanded="{showMenu?'true':'false'}"
-        on:click={()=>showMenu ^= true}>
-        <span class="sr-only">open nav-menu</span>
-        <svg class="h-8 stroke-mewd-transparent" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 7h22M4 15h22M4 23h22" stroke-linecap="round" stroke-miterlimit="10"
-                stroke-width="2" />
+              class="inline-flex items-center ml-4 px-3 py-1 rounded-3xl border border-px border-transparent hover:border-mewd-light-transparent md:hidden"
+              aria-controls="mobile-navbar"
+              aria-expanded={showMenu}
+              on:click={toggleMobileMenu}
+              bind:this={mobileMenuButtonRef}
+      >
+        <span class="sr-only">Toggle navigation menu</span>
+        <svg class="h-8 stroke-mewd-transparent" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M4 7h22M4 15h22M4 23h22" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" />
         </svg>
       </button>
     </div>
     {#if showMenu}
-      <div class="md:hidden w-full flex flex-col p-4 mt-4" transition:slide={{ duration: 300 }}
-           id="mobile-navbar" title="pages nav">
+      <nav
+              class="md:hidden w-full flex flex-col p-4 mt-4"
+              transition:slide={{ duration: 300 }}
+              id="mobile-navbar"
+              aria-label="Mobile navigation"
+      >
         {#each computedItems as item}
           <Link item="{item}" current="{current}" />
         {/each}
-      </div>
+      </nav>
     {/if}
-    <div class="hidden md:flex w-auto flex-row p-4 space-x-4 text-[16px] font-medium border-0"
-         id="tablet-navbar" title="pages nav">
+    <div
+            class="hidden md:flex w-auto flex-row p-4 space-x-4 text-[16px] font-medium border-0"
+            id="tablet-navbar"
+            role="navigation"
+            aria-label="Desktop navigation"
+    >
       {#each computedItems as item}
         <Link item="{item}" current="{current}" />
       {/each}

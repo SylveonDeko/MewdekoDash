@@ -14,7 +14,6 @@
     let notificationMessage = '';
     let notificationType: 'success' | 'error' = 'success';
 
-    export let data: PageData;
     let triggers: ChatTriggers[] = [];
     let newTrigger = {
         guildId: $currentGuild?.id,
@@ -34,6 +33,8 @@
     let guildRoles = [];
     let regexTestString = '';
     let regexTestResult = '';
+    let dropdownRef: HTMLDivElement;
+    let activeDropdown: string | null = null;
 
     const RequirePrefixType = {
         None: 0,
@@ -70,6 +71,56 @@
         await loadTriggers();
         await loadGuildRoles();
     });
+
+    function handleDropdownKeydown(event: KeyboardEvent, key: string) {
+        if (event.key === 'Escape') {
+            closeDropdown();
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const options = Array.from(dropdownRef.querySelectorAll(`[data-dropdown="${key}"] [role="option"]`));
+            const currentIndex = options.findIndex(option => option === document.activeElement);
+            let nextIndex;
+            if (event.key === 'ArrowDown') {
+                nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+            } else {
+                nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+            }
+            (options[nextIndex] as HTMLElement).focus();
+        }
+    }
+
+    function getEnumDisplayValue(enumObj: object, value: any): string {
+        const entry = Object.entries(enumObj).find(([key, val]) => val === value);
+        return entry ? entry[0] : 'Unknown';
+    }
+
+    function handleOptionKeydown(event: KeyboardEvent, option: string, key: string, trigger: ChatTriggers) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleOption(option, key, trigger);
+        }
+    }
+
+    function toggleOption(option: string, key: string, trigger: ChatTriggers) {
+        if (isEnum(key)) {
+            trigger[key] = getEnumOptions(key)[option];
+        } else if (isRoleSelection(key)) {
+            const index = trigger[key].indexOf(option);
+            if (index === -1) {
+                trigger[key] = [...trigger[key], option];
+            } else {
+                trigger[key] = trigger[key].filter((role: string) => role !== option);
+            }
+        }
+    }
+
+    function toggleDropdown(key: string) {
+        activeDropdown = activeDropdown === key ? null : key;
+    }
+
+    function closeDropdown() {
+        activeDropdown = null;
+    }
 
     function showNotificationMessage(message: string, type: 'success' | 'error' = 'success') {
         notificationMessage = message;
@@ -390,77 +441,112 @@
         <Notification message={notificationMessage} type={notificationType} />
     {/if}
     {#if loading}
-        <p>Loading...</p>
+        <p role="status">Loading...</p>
     {:else if error}
-        <p class="text-red-500">{error}</p>
+        <p class="text-red-500" role="alert">{error}</p>
     {:else if triggers.length === 0}
         <p transition:fade class="text-gray-400 italic">No chat triggers found.</p>
     {:else}
-        <ul class="space-y-4">
+        <ul class="space-y-4" aria-label="Chat triggers list">
             {#each triggers as trigger (trigger.id)}
                 <li class="bg-gray-800 rounded-lg p-4">
-                    <div class="flex justify-between items-center cursor-pointer"
-                         on:click={() => toggleExpand(trigger.id)}>
+                    <div class="flex justify-between items-center">
                         <div>
                             <p class="font-semibold">Trigger: {trigger.trigger}</p>
                             <p class="text-sm text-gray-400">Response: {trigger.response}</p>
                         </div>
-                        <button class="text-blue-500">
+                        <button
+                                class="text-blue-500"
+                                on:click={() => toggleExpand(trigger.id)}
+                                aria-expanded={expandedTrigger === trigger.id}
+                                aria-controls={`trigger-details-${trigger.id}`}
+                        >
                             {expandedTrigger === trigger.id ? 'Collapse' : 'Expand'}
                         </button>
                     </div>
 
                     {#if expandedTrigger === trigger.id}
-                        <div transition:slide class="mt-4 space-y-4">
+                        <div
+                                transition:slide
+                                class="mt-4 space-y-4"
+                                id={`trigger-details-${trigger.id}`}
+                        >
                             {#each Object.entries(trigger) as [key, value]}
                                 {#if !['id', 'dateAdded', 'guildId', 'isValidRegex', 'useCount', 'applicationCommandId'].includes(key)}
                                     <div class="flex flex-col">
-                                        <label class="text-sm text-gray-400 mb-1">{getDescriptiveLabel(key)}:</label>
+                                        <label for={`${trigger.id}-${key}`} class="text-sm text-gray-400 mb-1">{getDescriptiveLabel(key)}:</label>
                                         {#if key === 'trigger'}
                                             <input
+                                                    id={`${trigger.id}-${key}`}
                                                     class="bg-gray-700 text-white p-2 rounded"
                                                     class:border-red-500={trigger.isRegex && !trigger.isValidRegex}
                                                     bind:value={trigger[key]}
                                                     on:input={() => handleRegexChange(trigger)}
-                                                    on:click|stopPropagation={() => {}}
+                                                    aria-invalid={trigger.isRegex && !trigger.isValidRegex}
                                             />
                                             {#if trigger.isRegex && !trigger.isValidRegex}
-                                                <p class="text-red-500 text-sm mt-1">Invalid regex syntax</p>
+                                                <p class="text-red-500 text-sm mt-1" role="alert">Invalid regex syntax</p>
                                             {/if}
                                         {:else if isBoolean(value)}
                                             <select
+                                                    id={`${trigger.id}-${key}`}
                                                     class="bg-gray-700 text-white p-2 rounded"
                                                     bind:value={trigger[key]}
                                                     on:change={() => key === 'isRegex' && handleRegexChange(trigger)}
-                                                    on:click|stopPropagation={() => {}}
                                             >
                                                 <option value={true}>Yes</option>
                                                 <option value={false}>No</option>
                                             </select>
                                         {:else if isEnum(key)}
-                                            <select
-                                                    class="bg-gray-700 text-white p-2 rounded"
-                                                    bind:value={trigger[key]}
-                                                    on:click|stopPropagation={() =>          {}}
-                                            >
-                                                {#each Object.entries(getEnumOptions(key)) as [optionKey, optionValue]}
-                                                    <option value={optionValue}>{optionKey}</option>
-                                                {/each}
-                                            </select>
+                                            <div class="relative">
+                                                <button
+                                                        id={`${trigger.id}-${key}`}
+                                                        class="bg-gray-700 text-white p-2 rounded w-full text-left"
+                                                        on:click={() => toggleDropdown(`${trigger.id}-${key}`)}
+                                                        aria-haspopup="listbox"
+                                                        aria-expanded={activeDropdown === `${trigger.id}-${key}`}
+                                                >
+                                                    {getEnumDisplayValue(getEnumOptions(key), trigger[key])}
+                                                </button>
+                                                {#if activeDropdown === `${trigger.id}-${key}`}
+                                                    <div
+                                                            class="absolute z-10 w-full mt-1 bg-gray-700 rounded shadow-lg"
+                                                            role="listbox"
+                                                            tabindex="-1"
+                                                            aria-labelledby={`${trigger.id}-${key}`}
+                                                            data-dropdown={`${trigger.id}-${key}`}
+                                                            bind:this={dropdownRef}
+                                                            on:keydown={(event) => handleDropdownKeydown(event, `${trigger.id}-${key}`)}
+                                                    >
+                                                        {#each Object.entries(getEnumOptions(key)) as [optionKey, optionValue]}
+                                                            <button
+                                                                    role="option"
+                                                                    aria-selected={trigger[key] === optionValue}
+                                                                    class="block w-full text-left px-4 py-2 hover:bg-gray-600"
+                                                                    on:click={() => toggleOption(optionKey, key, trigger)}
+                                                                    on:keydown={(event) => handleOptionKeydown(event, optionKey, key, trigger)}
+                                                            >
+                                                                {optionKey}
+                                                            </button>
+                                                        {/each}
+                                                    </div>
+                                                {/if}
+                                            </div>
                                         {:else if isRoleSelection(key)}
                                             <MultiSelectDropdown
+                                                    id={`${trigger.id}-${key}`}
                                                     options={guildRoles}
                                                     bind:selected={trigger[key]}
                                                     placeholder="Select roles"
                                                     on:change={(e) => {
-                                                                 trigger[key] = e.detail;
-                                                            }}
+                                                    trigger[key] = e.detail;
+                                                }}
                                             />
                                         {:else}
                                             <input
+                                                    id={`${trigger.id}-${key}`}
                                                     class="bg-gray-700 text-white p-2 rounded"
                                                     bind:value={trigger[key]}
-                                                    on:click|stopPropagation={() => {}}
                                             />
                                         {/if}
                                     </div>
@@ -468,7 +554,9 @@
                             {/each}
                             {#if trigger.isRegex && trigger.isValidRegex}
                                 <div class="mt-2">
+                                    <label for={`${trigger.id}-regex-test`} class="sr-only">Test regex</label>
                                     <input
+                                            id={`${trigger.id}-regex-test`}
                                             class="bg-gray-700 text-white p-2 rounded w-full"
                                             bind:value={regexTestString}
                                             placeholder="Test your regex here"
@@ -476,11 +564,11 @@
                                     />
                                     {#if regexTestResult}
                                         <p class="text-sm mt-1" class:text-green-500={regexTestResult !== 'No matches'}
-                                           class:text-red-500={regexTestResult === 'No matches'}>
+                                           class:text-red-500={regexTestResult === 'No matches'} aria-live="polite">
                                             {regexTestResult}
                                         </p>
                                         {#if regexHighlightedString}
-                                            <div class="mt-2 p-2 bg-gray-700 rounded">
+                                            <div class="mt-2 p-2 bg-gray-700 rounded" aria-live="polite">
                                                 {@html regexHighlightedString}
                                             </div>
                                         {/if}
@@ -489,13 +577,13 @@
                             {/if}
                             <div class="flex justify-between mt-2">
                                 <button
-                                        on:click|stopPropagation={() => updateTrigger(trigger)}
+                                        on:click={() => updateTrigger(trigger)}
                                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                                 >
                                     Update Trigger
                                 </button>
                                 <button
-                                        on:click|stopPropagation={() => deleteTrigger(trigger.id)}
+                                        on:click={() => deleteTrigger(trigger.id)}
                                         class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                                 >
                                     Delete Trigger
@@ -511,24 +599,31 @@
     <div class="mt-8 bg-gray-800 rounded-lg p-4">
         <h2 class="text-xl font-semibold mb-4">Add New Trigger</h2>
         <div class="space-y-4">
+            <label for="new-trigger" class="sr-only">Trigger Text or Pattern</label>
             <input
+                    id="new-trigger"
                     bind:value={newTrigger.trigger}
                     class="w-full bg-gray-700 text-white p-2 rounded"
                     class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
                     placeholder="Trigger Text or Pattern"
                     on:input={handleNewTriggerRegexChange}
                     required
+                    aria-invalid={newTrigger.isRegex && !newTrigger.isValidRegex}
             />
             {#if newTrigger.isRegex && !newTrigger.isValidRegex}
-                <p class="text-red-500 text-sm mt-1">Invalid regex syntax</p>
+                <p class="text-red-500 text-sm mt-1" role="alert">Invalid regex syntax</p>
             {/if}
+            <label for="new-response" class="sr-only">Response Message</label>
             <input
+                    id="new-response"
                     bind:value={newTrigger.response}
                     class="w-full bg-gray-700 text-white p-2 rounded"
                     placeholder="Response Message"
                     required
             />
+            <label for="new-trigger-type" class="sr-only">Trigger Type</label>
             <select
+                    id="new-trigger-type"
                     bind:value={newTrigger.isRegex}
                     class="w-full bg-gray-700 text-white p-2 rounded"
                     on:change={handleNewTriggerRegexChange}
@@ -538,7 +633,9 @@
             </select>
             {#if newTrigger.isRegex && newTrigger.isValidRegex}
                 <div class="mt-2">
+                    <label for="new-regex-test" class="sr-only">Test regex</label>
                     <input
+                            id="new-regex-test"
                             class="bg-gray-700 text-white p-2 rounded w-full"
                             bind:value={newTriggerRegexTestString}
                             placeholder="Test your regex here"
@@ -546,11 +643,11 @@
                     />
                     {#if newTriggerRegexTestResult}
                         <p class="text-sm mt-1" class:text-green-500={newTriggerRegexTestResult !== 'No matches'}
-                           class:text-red-500={newTriggerRegexTestResult === 'No matches'}>
+                           class:text-red-500={newTriggerRegexTestResult === 'No matches'} aria-live="polite">
                             {newTriggerRegexTestResult}
                         </p>
                         {#if newTriggerRegexHighlightedString}
-                            <div class="mt-2 p-2 bg-gray-700 rounded">
+                            <div class="mt-2 p-2 bg-gray-700 rounded" aria-live="polite">
                                 {@html newTriggerRegexHighlightedString}
                             </div>
                         {/if}

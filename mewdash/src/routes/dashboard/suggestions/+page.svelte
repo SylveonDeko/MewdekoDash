@@ -133,11 +133,17 @@
         }
     }
 
-    function toggleSuggestionExpand(id: number, event: MouseEvent) {
-        if (event.target instanceof HTMLElement && event.target.closest('button, input')) {
-            return;
-        }
+    function toggleSuggestionExpand(id: number, event: Event) {
+        // Prevent the click from propagating to parent elements
+        event.stopPropagation();
         expandedSuggestion = expandedSuggestion === id ? null : id;
+    }
+
+    function handleKeydown(event: KeyboardEvent, id: number) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleSuggestionExpand(id, event);
+        }
     }
 
     function getStatusString(state: SuggestionState): string {
@@ -212,7 +218,8 @@
         <p class="text-red-500">{error}</p>
     {:else}
         <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center">
-            <select bind:value={sortBy} class="w-full sm:w-auto mb-2 sm:mb-0 mr-0 sm:mr-2 bg-gray-700 text-white rounded p-2">
+            <label for="sortBy" class="sr-only">Sort by</label>
+            <select id="sortBy" bind:value={sortBy} class="w-full sm:w-auto mb-2 sm:mb-0 mr-0 sm:mr-2 bg-gray-700 text-white rounded p-2">
                 <option value="dateAdded">Sort by Date</option>
                 <option value="currentState">Sort by State</option>
             </select>
@@ -222,39 +229,44 @@
         </div>
         <ul class="space-y-4">
             {#each sortedSuggestions as suggestion (suggestion.id)}
-                <li
-                        class="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200 relative overflow-hidden"
-                        on:click={(event) => toggleSuggestionExpand(suggestion.id, event)}
-                >
-                    <div class={`absolute left-0 top-0 bottom-0 w-1 ${getStateColor(suggestion.currentState)}`}></div>
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center">
-                        <img
-                                src={suggestion.user.avatarUrl}
-                                alt={suggestion.user.username}
-                                class="w-10 h-10 rounded-full mb-2 sm:mb-0 sm:mr-3"
-                        />
-                        <div class="flex-grow mb-2 sm:mb-0">
-                            <p class="font-semibold">{suggestion.user.username}</p>
-                            <p class="text-sm text-gray-400">{suggestion.suggestion}</p>
-                            <p class="text-sm text-gray-400">Status: {getStatusString(suggestion.currentState)}</p>
+                <li class="bg-gray-800 rounded-lg overflow-hidden relative">
+                    <button
+                            class="w-full text-left p-4 hover:bg-gray-700 transition-colors duration-200"
+                            on:click={(event) => toggleSuggestionExpand(suggestion.id, event)}
+                            aria-expanded={expandedSuggestion === suggestion.id}
+                    >
+                        <div class={`absolute left-0 top-0 bottom-0 w-1 ${getStateColor(suggestion.currentState)}`}></div>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center">
+                            <img
+                                    src={suggestion.user.avatarUrl}
+                                    alt={`${suggestion.user.username}'s avatar`}
+                                    class="w-10 h-10 rounded-full mb-2 sm:mb-0 sm:mr-3"
+                            />
+                            <div class="flex-grow mb-2 sm:mb-0">
+                                <p class="font-semibold">{suggestion.user.username}</p>
+                                <p class="text-sm text-gray-400">{suggestion.suggestion}</p>
+                                <p class="text-sm text-gray-400">Status: {getStatusString(suggestion.currentState)}</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 justify-start sm:justify-end w-full sm:w-auto">
+                                {#each getEmotes() as emote, index}
+                                    <div class="flex items-center bg-gray-700 rounded-full px-2 py-1">
+                                        <span class="mr-1">{@html renderEmote(emote)}</span>
+                                        <span class="text-xs font-semibold">{suggestion[`emoteCount${index + 1}`]}</span>
+                                    </div>
+                                {/each}
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 justify-start sm:justify-end w-full sm:w-auto">
-                            {#each getEmotes() as emote, index}
-                                <div class="flex items-center bg-gray-700 rounded-full px-2 py-1">
-                                    <span class="mr-1">{@html renderEmote(emote)}</span>
-                                    <span class="text-xs font-semibold">{suggestion[`emoteCount${index + 1}`]}</span>
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
+                    </button>
 
                     {#if expandedSuggestion === suggestion.id}
-                        <div transition:slide class="mt-3 pl-0 sm:pl-13">
+                        <div transition:slide class="p-4 bg-gray-750">
                             <p class="text-sm text-gray-400 mb-2">
                                 Suggestion ID: {suggestion.suggestionId}
                             </p>
                             <div class="mb-2">
+                                <label for={`reason-${suggestion.id}`} class="sr-only">Reason for status change</label>
                                 <input
+                                        id={`reason-${suggestion.id}`}
                                         type="text"
                                         bind:value={stateChangeReason}
                                         placeholder="Reason (Optional)"

@@ -152,33 +152,34 @@ export interface GuildConfig {
     LeaveGraphColor: number;
 }
 
-export interface ChatTriggers{
-    UseCount: string;
-    IsRegex: boolean;
-    OwnerOnly: boolean;
-    GuildId: string | null;
-    Response: string | null;
-    Trigger: string | null;
-    PrefixType: RequirePrefixType;
-    CustomPrefix: string | null;
-    AutoDeleteTrigger: boolean;
-    ReactToTrigger: boolean;
-    NoRespond: boolean;
-    DmResponse: boolean;
-    ContainsAnywhere: boolean;
-    AllowTarget: boolean;
-    Reactions: string | null;
-    GrantedRoles: string | null;
-    RemovedRoles: string | null;
-    RoleGrantType: CtRoleGrantType;
-    ValidTriggerTypes: ChatTriggerType;
-    ApplicationCommandId: string;
-    ApplicationCommandName: string | null;
-    ApplicationCommandDescription: string | null;
-    ApplicationCommandType: CtApplicationCommandType;
-    EphemeralResponse: boolean;
-    CrosspostingChannelId: string;
-    CrosspostingWebhookUrl: string | null;
+export interface ChatTriggers {
+    id: number;
+    useCount: string;
+    isRegex: boolean;
+    ownerOnly: boolean;
+    guildId: string | null;
+    response: string | null;
+    trigger: string | null;
+    prefixType: RequirePrefixType;
+    customPrefix: string | null;
+    autoDeleteTrigger: boolean;
+    reactToTrigger: boolean;
+    noRespond: boolean;
+    dmResponse: boolean;
+    containsAnywhere: boolean;
+    allowTarget: boolean;
+    reactions: string | null;
+    grantedRoles: string | null;
+    removedRoles: string | null;
+    roleGrantType: CtRoleGrantType;
+    validTriggerTypes: ChatTriggerType;
+    applicationCommandId: string;
+    applicationCommandName: string | null;
+    applicationCommandDescription: string | null;
+    applicationType: CtApplicationCommandType;
+    ephemeralResponse: boolean;
+    crosspostingChannelId: string;
+    crosspostingWebhookUrl: string | null;
 }
 
 export enum RequirePrefixType {

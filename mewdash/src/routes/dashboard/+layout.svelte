@@ -2,15 +2,12 @@
     import { page } from '$app/stores';
     import { fly, slide, fade } from 'svelte/transition';
     import { clickOutside } from './clickOutside';
-    import type { LayoutData } from './$types';
     import { userAdminGuilds } from '$lib/stores/adminGuildsStore';
     import { currentGuild } from "$lib/stores/currentGuild.ts";
     import type { DiscordGuild } from "$lib/types/discordGuild.ts";
     import { browser } from '$app/environment';
-    import {onMount, onDestroy, tick} from 'svelte';
-    import {triggerAnimation, triggerMenuAnimation} from "$lib/stores/animationStores.ts";
-
-    export let data: LayoutData;
+    import { onMount, onDestroy, tick } from 'svelte';
+    import { triggerAnimation, triggerMenuAnimation } from "$lib/stores/animationStores.ts";
 
     let items = [
         { href: '/dashboard', text: 'Dashboard', icon: '📊' },
@@ -18,7 +15,7 @@
         { href: '/dashboard/chat-triggers', text: 'Triggers', icon: '💬' },
         { href: '/dashboard/suggestions', text: 'Suggestions', icon: '💡' },
         { href: '/dashboard/permissions', text: 'Permissions', icon: '🔒' },
-        { href: '/dashboard/giveaways', text: 'Giveaways', icon: '�'}
+        { href: '/dashboard/giveaways', text: 'Giveaways', icon: '🎁'}
     ];
 
     let sidebarOpen = false;
@@ -31,8 +28,7 @@
     }
 
     onMount(() => {
-        if (browser)
-        {
+        if (browser) {
             checkMobile();
             window.addEventListener('resize', checkMobile);
         }
@@ -51,7 +47,6 @@
     function closeDropdown() {
         dropdownOpen = false;
     }
-
 
     async function selectGuild(guild: DiscordGuild) {
         if ($currentGuild === guild)
@@ -85,14 +80,27 @@
             document.body.style.overflow = sidebarOpen ? 'hidden' : '';
         }
     }
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleDropdown();
+        }
+    }
+
+    function handleGuildKeydown(event: KeyboardEvent, guild: DiscordGuild) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectGuild(guild);
+        }
+    }
 </script>
 
 <div class="dashboard-container flex flex-col min-h-0">
     <div class="flex-grow flex {isMobile ? 'flex-col' : ''} overflow-hidden">
         {#if isMobile}
             <header class="bg-gray-800 p-4 flex items-center justify-between">
-                <button on:click={toggleSidebar} class="text-white">
-                    <span class="sr-only">Menu</span>
+                <button on:click={toggleSidebar} class="text-white" aria-label="Toggle menu">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
@@ -105,17 +113,19 @@
         {#if isMobile && sidebarOpen}
             <div class="fixed inset-0 bg-black bg-opacity-50 z-40"
                  on:click={toggleSidebar}
-                 transition:fade={{duration: 300}}>
+                 transition:fade={{duration: 300}}
+                 role="presentation">
             </div>
         {/if}
 
         <aside class="sidebar {isMobile ? 'fixed inset-y-0 left-0 z-50' : 'w-64'} bg-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out"
                class:translate-x-0={!isMobile || sidebarOpen}
-               class:-translate-x-full={isMobile && !sidebarOpen}>
+               class:-translate-x-full={isMobile && !sidebarOpen}
+               role="region"
+               aria-label="Main navigation">
             <div class="sidebar-content p-5">
                 {#if isMobile}
-                    <button on:click={toggleSidebar} class="text-white mb-4">
-                        <span class="sr-only">Close</span>
+                    <button on:click={toggleSidebar} class="text-white mb-4" aria-label="Close menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -123,25 +133,32 @@
                 {/if}
                 <div class="guild-selector relative mb-5" use:clickOutside on:clickoutside={handleClickOutside}>
                     <button class="dropdown-toggle w-full p-2 bg-gray-700 text-white border border-gray-600 rounded cursor-pointer text-sm text-left flex items-center"
-                            on:click={toggleDropdown}>
+                            on:click={toggleDropdown}
+                            on:keydown={handleKeydown}
+                            aria-haspopup="listbox"
+                            aria-expanded={dropdownOpen}
+                            aria-label="Select a guild">
                         {#if $currentGuild}
-                            <img src={getGuildIconUrl($currentGuild)} alt={$currentGuild.name}
-                                 class="guild-icon w-6 h-6 rounded-full mr-2 object-cover"/>
+                            <img src={getGuildIconUrl($currentGuild)} alt="" class="guild-icon w-6 h-6 rounded-full mr-2 object-cover"/>
                             <span class="guild-name flex-grow">{$currentGuild.name}</span>
                         {:else}
                             <span class="guild-name flex-grow">Select a Guild</span>
                         {/if}
-                        <span class="dropdown-arrow text-xs">▼</span>
+                        <span class="dropdown-arrow text-xs" aria-hidden="true">▼</span>
                     </button>
                     {#if dropdownOpen}
                         <ul class="dropdown-menu absolute top-full left-0 right-0 bg-gray-700 border border-gray-600 rounded mt-1 max-h-48 overflow-y-auto z-10"
-                            transition:fly="{{ y: -10, duration: 200 }}">
+                            transition:fly="{{ y: -10, duration: 200 }}"
+                            role="listbox"
+                            tabindex="-1">
                             {#each $userAdminGuilds as guild}
-                                <li on:click={() => selectGuild(guild)}
-                                    class="dropdown-item p-2 cursor-pointer transition-colors duration-200 hover:bg-gray-600 flex items-center">
-                                    <img src={getGuildIconUrl(guild)} alt={guild.name}
-                                         class="guild-icon w-6 h-6 rounded-full mr-2 object-cover"/>
-                                    <span class="guild-name">{guild.name}</span>
+                                <li role="option" aria-selected={$currentGuild === guild}>
+                                    <button on:click={() => selectGuild(guild)}
+                                            on:keydown={(event) => handleGuildKeydown(event, guild)}
+                                            class="dropdown-item w-full text-left p-2 cursor-pointer transition-colors duration-200 hover:bg-gray-600 flex items-center">
+                                        <img src={getGuildIconUrl(guild)} alt="" class="guild-icon w-6 h-6 rounded-full mr-2 object-cover"/>
+                                        <span class="guild-name">{guild.name}</span>
+                                    </button>
                                 </li>
                             {/each}
                         </ul>
@@ -152,11 +169,13 @@
                     <ul>
                         {#key $currentGuild}
                             {#if $currentGuild}
-                                <a href="/dashboard"
-                                   class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === '/dashboard' ? 'bg-yellow-700' : ''}"
-                                   on:click={() => sidebarOpen = false}>
-                                    📊 Dashboard
-                                </a>
+                                <li>
+                                    <a href="/dashboard"
+                                       class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 nav-link.active {$page.url.pathname === '/dashboard' ? 'bg-yellow-700' : ''}"
+                                       on:click={() => sidebarOpen = false}>
+                                        📊 Dashboard
+                                    </a>
+                                </li>
                                 {#each items.slice(1) as item, index}
                                     <li>
                                         {#key $triggerAnimation}
@@ -164,7 +183,7 @@
                                                class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === item.href ? 'bg-yellow-700' : ''}"
                                                on:click={() => sidebarOpen = false}
                                                in:fly="{{ y: 50, delay: getStaggeredDelay(index, 100), duration: 300 }}">
-                                                {item.icon} {item.text}
+                                                <span aria-hidden="true">{item.icon}</span> {item.text}
                                             </a>
                                         {/key}
                                     </li>
@@ -174,7 +193,7 @@
                                     <a href="/dashboard"
                                        class="nav-link block text-white no-underline p-2 mb-1 rounded transition-colors duration-200 hover:bg-gray-700 {$page.url.pathname === '/dashboard' ? 'bg-yellow-700' : ''}"
                                        on:click={() => sidebarOpen = false}>
-                                        📊 Dashboard
+                                        <span aria-hidden="true">📊</span> Dashboard
                                     </a>
                                 </li>
                             {/if}
@@ -298,10 +317,6 @@
         background-color: #3a3a3a;
     }
 
-    .nav-link.active {
-        background-color: #938018;
-    }
-
     @media (max-width: 767px) {
         .dashboard-content {
             padding: 10px 10px 70px;
@@ -336,5 +351,5 @@
 
 <svelte:head>
     <title>{$currentGuild ? $currentGuild.name : 'Dashboard'} - Mewdeko</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
 </svelte:head>

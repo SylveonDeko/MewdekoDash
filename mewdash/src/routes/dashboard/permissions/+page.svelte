@@ -23,6 +23,7 @@
     let showPermissionDropdown = false;
     let selectedPermissions: string[] = [];
     let editingOverride: PermissionOverride | null = null;
+    let dropdownRef: HTMLDivElement;
 
     onMount(async () => {
         if (!$currentGuild) {
@@ -125,13 +126,39 @@
         }
     }
 
-    function toggleDropdown(event: MouseEvent) {
-        event.stopPropagation();
+    function toggleDropdown() {
         showPermissionDropdown = !showPermissionDropdown;
+        if (showPermissionDropdown) {
+            setTimeout(() => dropdownRef?.focus(), 0);
+        }
     }
 
     function closeDropdown() {
         showPermissionDropdown = false;
+    }
+
+    function handleDropdownKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            closeDropdown();
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const options = Array.from(dropdownRef.querySelectorAll('button[role="option"]'));
+            const currentIndex = options.findIndex(option => option === document.activeElement);
+            let nextIndex;
+            if (event.key === 'ArrowDown') {
+                nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+            } else {
+                nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+            }
+            (options[nextIndex] as HTMLElement).focus();
+        }
+    }
+
+    function handleOptionKeydown(event: KeyboardEvent, permission: string) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            togglePermission(permission);
+        }
     }
 
     function formatPermissionName(name: string): string {
@@ -167,12 +194,14 @@
     {#if loading}
         <p>Loading...</p>
     {:else if error}
-        <p class="text-red-500">{error}</p>
+        <p class="text-red-500" role="alert">{error}</p>
     {:else}
         <div class="mb-6 bg-gray-800 p-4 rounded-lg">
             <h2 class="text-xl font-semibold mb-2">Add New Override</h2>
             <div class="flex flex-col gap-2">
+                <label for="new-command" class="sr-only">Command</label>
                 <input
+                        id="new-command"
                         bind:value={newOverride.command}
                         placeholder="Command"
                         class="p-2 rounded bg-gray-700 text-white w-full"
@@ -180,28 +209,33 @@
                 <div class="relative">
                     <button
                             on:click={toggleDropdown}
+                            aria-haspopup="listbox"
+                            aria-expanded={showPermissionDropdown}
                             class="p-2 rounded bg-gray-700 text-white w-full text-left flex justify-between items-center"
                     >
                         <span class="truncate">{selectedPermissionsText}</span>
-                        <span class="transform transition-transform duration-200 {showPermissionDropdown ? 'rotate-180' : ''}">▼</span>
+                        <span class="transform transition-transform duration-200 {showPermissionDropdown ? 'rotate-180' : ''}" aria-hidden="true">▼</span>
                     </button>
                     {#if showPermissionDropdown}
                         <div
+                                bind:this={dropdownRef}
+                                role="listbox"
+                                tabindex="-1"
+                                aria-label="Permissions"
                                 class="absolute z-10 w-full mt-1 bg-gray-700 rounded shadow-lg max-h-60 overflow-y-auto"
-                                on:click|stopPropagation={() => {}}
+                                on:keydown={handleDropdownKeydown}
                         >
                             {#each Object.entries(PermissionParser.getPermissions()) as [permission, value]}
-                                <label
-                                        class="flex items-center p-2 hover:bg-gray-600 cursor-pointer {selectedPermissions.includes(permission) ? 'bg-green-700' : ''}"
+                                <button
+                                        type="button"
+                                        role="option"
+                                        aria-selected={selectedPermissions.includes(permission)}
+                                        on:click={() => togglePermission(permission)}
+                                        on:keydown={(event) => handleOptionKeydown(event, permission)}
+                                        class="w-full text-left flex items-center p-2 hover:bg-gray-600 cursor-pointer {selectedPermissions.includes(permission) ? 'bg-green-700' : ''}"
                                 >
-                                    <input
-                                            type="checkbox"
-                                            checked={selectedPermissions.includes(permission)}
-                                            on:change={() => togglePermission(permission)}
-                                            class="mr-2 hidden"
-                                    />
                                     <span>{formatPermissionName(permission)}</span>
-                                </label>
+                                </button>
                             {/each}
                         </div>
                     {/if}
@@ -218,7 +252,7 @@
         {#if permissionOverrides.length === 0}
             <p transition:fade class="text-gray-400 italic">No permission overrides found.</p>
         {:else}
-            <ul class="space-y-4">
+            <ul class="space-y-4" aria-label="Permission overrides list">
                 {#each permissionOverrides as override (override.command)}
                     <li
                             transition:slide
@@ -226,7 +260,9 @@
                     >
                         {#if editingOverride && editingOverride.command === override.command}
                             <div class="flex flex-col gap-2">
+                                <label for="edit-command-{override.command}" class="sr-only">Command</label>
                                 <input
+                                        id="edit-command-{override.command}"
                                         bind:value={editingOverride.command}
                                         class="p-2 rounded bg-gray-700 text-white w-full"
                                         disabled
@@ -234,28 +270,33 @@
                                 <div class="relative">
                                     <button
                                             on:click={toggleDropdown}
+                                            aria-haspopup="listbox"
+                                            aria-expanded={showPermissionDropdown}
                                             class="p-2 rounded bg-gray-700 text-white w-full text-left flex justify-between items-center"
                                     >
                                         <span class="truncate">{selectedPermissionsText}</span>
-                                        <span class="transform transition-transform duration-200 {showPermissionDropdown ? 'rotate-180' : ''}">▼</span>
+                                        <span class="transform transition-transform duration-200 {showPermissionDropdown ? 'rotate-180' : ''}" aria-hidden="true">▼</span>
                                     </button>
                                     {#if showPermissionDropdown}
                                         <div
+                                                bind:this={dropdownRef}
+                                                role="listbox"
+                                                tabindex="-1"
+                                                aria-label="Permissions"
                                                 class="absolute z-10 w-full mt-1 bg-gray-700 rounded shadow-lg max-h-60 overflow-y-auto"
-                                                on:click|stopPropagation={() => {}}
+                                                on:keydown={handleDropdownKeydown}
                                         >
                                             {#each Object.entries(PermissionParser.getPermissions()) as [permission, value]}
-                                                <label
-                                                        class="flex items-center p-2 hover:bg-gray-600 cursor-pointer {selectedPermissions.includes(permission) ? 'bg-green-700' : ''}"
+                                                <button
+                                                        type="button"
+                                                        role="option"
+                                                        aria-selected={selectedPermissions.includes(permission)}
+                                                        on:click={() => togglePermission(permission)}
+                                                        on:keydown={(event) => handleOptionKeydown(event, permission)}
+                                                        class="w-full text-left flex items-center p-2 hover:bg-gray-600 cursor-pointer {selectedPermissions.includes(permission) ? 'bg-green-700' : ''}"
                                                 >
-                                                    <input
-                                                            type="checkbox"
-                                                            checked={selectedPermissions.includes(permission)}
-                                                            on:change={() => togglePermission(permission)}
-                                                            class="mr-2 hidden"
-                                                    />
                                                     <span>{formatPermissionName(permission)}</span>
-                                                </label>
+                                                </button>
                                             {/each}
                                         </div>
                                     {/if}
