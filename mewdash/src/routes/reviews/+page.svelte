@@ -17,8 +17,7 @@
     let previewContent = '';
 
     $: user = data.user as DiscordUser | undefined;
-    $: userReview = user ? reviews.find(review => review.userId === BigInt(user.id)) : undefined;
-    $: userHasReviewed = !!userReview;
+    $: userHasReviewed = false;
 
     onMount(async () => {
         await fetchReviews();
@@ -56,6 +55,11 @@
         try {
             loading = true;
             reviews = await api.getBotReviews();
+            if (user) {
+                let review = reviews.find(review => review.userId === user.id)
+                if (review)
+                    userHasReviewed = true;
+            }
         } catch (err) {
             console.error('Failed to fetch reviews:', err);
             error = 'Failed to load reviews. Please try again later.';
