@@ -5,7 +5,7 @@
     import type { PageData} from './$types';
     import StarRating from '$lib/StarRating.svelte';
     import { marked } from 'marked';
-    import DOMPurify from 'dompurify';
+    import {sanitize} from 'dompurify';
     import type {DiscordUser} from "$lib/types/discord.ts";
 
     export let data: PageData;
@@ -101,7 +101,7 @@
         let parsedText = marked(text);
         parsedText = parseEmojis(parsedText);
         parsedText = parseMentions(parsedText);
-        return DOMPurify.sanitize(parsedText);
+        return sanitize(parsedText);
     }
 
     function formatDate(dateString: string): string {
