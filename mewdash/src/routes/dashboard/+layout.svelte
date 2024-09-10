@@ -54,7 +54,6 @@
         currentGuild.set(guild);
         closeDropdown();
         await tick();
-        animationKey += 1;
         triggerMenuAnimation();
     }
 

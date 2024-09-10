@@ -1,37 +1,28 @@
 <script lang="ts">
     import "../app.css";
     import Navbar from "$lib/nav/Navbar.svelte";
-    import {onDestroy, onMount} from "svelte";
     import type {DiscordGuild} from "../lib/types/discordGuild";
     import {userAdminGuilds} from "../lib/stores/adminGuildsStore";
     import {navigating} from '$app/stores';
     import {api} from "$lib/api.ts";
 
     export let data;
-    let unsubscribe: boolean;
 
+    $: if ($navigating) {
+        fetchGuilds();
+    }
 
-    onMount(() => {
-        unsubscribe = data?.user && userAdminGuilds.subscribe(async () => {
-            try {
-                const response = await fetch("/api/guilds");
-                const guilds: DiscordGuild[] = await response.json();
-
-                // Filter out guilds whe  re the user is not an admin
-                const filteredGuilds: DiscordGuild[] = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
-                const botGuilds = await api.getBotGuilds();
-
-                userAdminGuilds.set(filteredGuilds.filter(guild => botGuilds.includes(guild.id)));
-            } catch (e) {
-                console.error(e);
-            }
-        });
-    })
-
-
-    onDestroy(() => {
-        unsubscribe = false;
-    });
+    async function fetchGuilds() {
+        try {
+            const response = await fetch("/api/guilds");
+            const guilds: DiscordGuild[] = await response.json();
+            const filteredGuilds = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
+            const botGuilds = await api.getBotGuilds();
+            userAdminGuilds.set(filteredGuilds.filter(guild => botGuilds.includes(guild.id)));
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
 
     type NavItem = {
