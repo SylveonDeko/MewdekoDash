@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -14,11 +14,38 @@
   $: totalDurationMs =
     ((days * 24 + hours) * 60 * 60 + minutes * 60 + seconds) * 1000;
 
-  // Update end time whenever the duration changes
-  $: {
-    const endTime = new Date(Date.now() + totalDurationMs);
-    dispatch('change', endTime);
+  // End time, updated every second
+  let endTime: Date = new Date(Date.now() + totalDurationMs);
+
+  let intervalId: NodeJS.Timeout;
+
+  // Update endTime every second
+  function startInterval() {
+    intervalId = setInterval(() => {
+      endTime = new Date(Date.now() + totalDurationMs);
+      dispatch('change', endTime);
+    }, 1000);
   }
+
+  function stopInterval() {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  }
+
+  onMount(() => {
+    days = 0;
+    hours = 0;
+    minutes = 0;
+    seconds = 0;
+    endTime = new Date(Date.now() + totalDurationMs);
+    dispatch('change', endTime);
+    startInterval();
+  });
+
+  onDestroy(() => {
+    stopInterval();
+  });
 
   // Validate inputs to prevent negative values and to conform to maximum values
   function validateInput(
@@ -54,15 +81,11 @@
         seconds = value;
         break;
     }
-  }
 
-  // Reset the picker when the component mounts
-  onMount(() => {
-    days = 0;
-    hours = 0;
-    minutes = 0;
-    seconds = 0;
-  });
+    // Update endTime immediately when inputs change
+    endTime = new Date(Date.now() + totalDurationMs);
+    dispatch('change', endTime);
+  }
 </script>
 
 <style>
@@ -144,7 +167,7 @@
     <p>
       Giveaway will end at:
       <span class="font-semibold">
-        {new Date(Date.now() + totalDurationMs).toLocaleString()}
+        {endTime.toLocaleString()}
       </span>
     </p>
   </div>
