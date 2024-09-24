@@ -85,6 +85,7 @@
         <div>
             <label for={`${id}-time-input`} class="block text-sm font-medium text-gray-300 mb-1">Time</label>
             <button
+                    type="button"
                     id={`${id}-time-input`}
                     on:click={toggleTimePicker}
                     aria-expanded={showTimePicker}
@@ -109,6 +110,7 @@
         >
             <div class="flex justify-between items-center mb-4">
                 <button
+                        type="button"
                         on:click={() => setHours(hours === 12 ? 1 : hours + 1)}
                         class="text-2xl text-white bg-blue-500 w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
                         aria-label="Increase hours"
@@ -117,6 +119,7 @@
                 </button>
                 <span class="text-2xl font-bold text-white" aria-label="Current hours">{hours.toString().padStart(2, '0')}</span>
                 <button
+                        type="button"
                         on:click={() => setHours(hours === 1 ? 12 : hours - 1)}
                         class="text-2xl text-white bg-blue-500 w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
                         aria-label="Decrease hours"
@@ -126,6 +129,7 @@
             </div>
             <div class="flex justify-between items-center mb-4">
                 <button
+                        type="button"
                         on:click={() => setMinutes((minutes + 1) % 60)}
                         class="text-2xl text-white bg-blue-500 w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
                         aria-label="Increase minutes"
@@ -134,6 +138,7 @@
                 </button>
                 <span class="text-2xl font-bold text-white" aria-label="Current minutes">{minutes.toString().padStart(2, '0')}</span>
                 <button
+                        type="button"
                         on:click={() => setMinutes((minutes - 1 + 60) % 60)}
                         class="text-2xl text-white bg-blue-500 w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
                         aria-label="Decrease minutes"
@@ -142,6 +147,7 @@
                 </button>
             </div>
             <button
+                    type="button"
                     on:click={toggleAmPm}
                     class="w-full p-2 bg-blue-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 mb-4"
                     aria-label="Toggle AM/PM"
@@ -149,6 +155,7 @@
                 {ampm}
             </button>
             <button
+                    type="button"
                     on:click={applyTime}
                     class="w-full p-2 bg-green-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50"
             >
