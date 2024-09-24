@@ -8,7 +8,6 @@
     import { browser } from '$app/environment';
     import { onMount, onDestroy, tick } from 'svelte';
     import { triggerAnimation, triggerMenuAnimation } from "$lib/stores/animationStores.ts";
-    import {api} from "$lib/api.ts";
 
     let items = [
         { href: '/dashboard', text: 'Dashboard', icon: '📊' },
@@ -24,37 +23,7 @@
     let isMobile = false;
     let animationKey = 0;
 
-    let guildsFetched = false;
-
-    onMount(() => {
-        fetchGuilds();
-    });
-
-    async function fetchGuilds() {
-        if (guildsFetched) return; // Prevent multiple fetches
-        guildsFetched = true;
-
-        try {
-            const response = await fetch("/api/guilds");
-            const guilds: DiscordGuild[] = await response.json();
-
-            // Filter guilds where the user has admin permissions
-            const filteredGuilds = guilds.filter(
-                guild => (guild.permissions & 0x8) === 0x8
-            );
-
-            // Get bot guilds from API
-            const botGuilds = await api.getBotGuilds();
-
-            // Set the store with guilds that the bot is in and the user administers
-            userAdminGuilds.set(
-                filteredGuilds.filter(guild => botGuilds.includes(guild.id))
-            );
-        } catch (e) {
-            console.error('Error fetching guilds:', e);
-        }
-    }
-
+    $: userAdminGuilds;
 
     function checkMobile() {
         isMobile = browser && window.innerWidth < 768;
