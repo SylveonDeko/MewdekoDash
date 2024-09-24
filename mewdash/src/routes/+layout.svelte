@@ -1,26 +1,41 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import "../app.css";
     import Navbar from "$lib/nav/Navbar.svelte";
-    import type {DiscordGuild} from "../lib/types/discordGuild";
-    import {userAdminGuilds} from "../lib/stores/adminGuildsStore";
-    import {navigating} from '$app/stores';
-    import {api} from "$lib/api.ts";
+    import type { DiscordGuild } from "../lib/types/discordGuild";
+    import { userAdminGuilds } from "../lib/stores/adminGuildsStore";
+    import { api } from "$lib/api.ts";
 
     export let data;
 
-    $: if ($navigating) {
+    let guildsFetched = false;
+
+    onMount(() => {
         fetchGuilds();
-    }
+    });
 
     async function fetchGuilds() {
+        if (guildsFetched) return; // Prevent multiple fetches
+        guildsFetched = true;
+
         try {
             const response = await fetch("/api/guilds");
             const guilds: DiscordGuild[] = await response.json();
-            const filteredGuilds = guilds.filter(guild => (guild.permissions & 0x8) === 0x8);
+
+            // Filter guilds where the user has admin permissions
+            const filteredGuilds = guilds.filter(
+                guild => (guild.permissions & 0x8) === 0x8
+            );
+
+            // Get bot guilds from API
             const botGuilds = await api.getBotGuilds();
-            userAdminGuilds.set(filteredGuilds.filter(guild => botGuilds.includes(guild.id)));
+
+            // Set the store with guilds that the bot is in and the user administers
+            userAdminGuilds.set(
+                filteredGuilds.filter(guild => botGuilds.includes(guild.id))
+            );
         } catch (e) {
-            console.error(e);
+            console.error('Error fetching guilds:', e);
         }
     }
 
@@ -75,9 +90,6 @@
 </svelte:head>
 
 <Navbar adminGuilds="{userAdminGuilds}" items="{navbarItems}" user="{data.user}"/>
-{#if $navigating}
-    <div class="loading">Loading...</div>
-{/if}
 <main>
     <slot/>
 </main>

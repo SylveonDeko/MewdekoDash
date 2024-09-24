@@ -23,6 +23,8 @@
     let isMobile = false;
     let animationKey = 0;
 
+    $: userAdminGuilds;
+
     function checkMobile() {
         isMobile = browser && window.innerWidth < 768;
     }
