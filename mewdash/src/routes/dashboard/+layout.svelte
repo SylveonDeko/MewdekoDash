@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from '$app/stores';
     import { fly, slide, fade } from 'svelte/transition';
-    import { clickOutside } from './clickOutside';
+    import { clickOutside } from '$lib/clickOutside.ts';
     import { userAdminGuilds } from '$lib/stores/adminGuildsStore';
     import { currentGuild } from "$lib/stores/currentGuild.ts";
     import type { DiscordGuild } from "$lib/types/discordGuild.ts";

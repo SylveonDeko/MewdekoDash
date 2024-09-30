@@ -7,6 +7,11 @@ declare global {
             user: DiscordUser | null
         }
 
+        interface HTMLAttributes<T> {
+            // If you want to use on:clickoutside
+            "on:clickoutside"?: (event: CustomEvent<any>) => void;
+        }
+
         // interface PageData {}
         // interface Platform {}
     }

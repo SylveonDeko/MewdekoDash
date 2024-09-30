@@ -78,15 +78,15 @@
     <meta content="website" property="og:type">
     <meta content="Mewdeko - The most customizable discord bot." name="twitter:title">
     <meta content="summary_large_image" name="twitter:card">
-    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" name="twitter:image">
+    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp" name="twitter:image">
     <meta content="Mewdeko, Mewdeko Bot, Mewdeko Discord Bot, Mewdeko Discord, Mewdeko D, free discord bot, free bot, anime themed discord bot, mewdeko.tech, mewdeko website, mewdeko dashboard, mewdeko commands, mewdeko donate, mewdeko paypal, mewdeko discord, mewdeko help"
           name="keywords"/>
-    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.jpg" property="og:image">
-    <link href="img/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" type="image/png">
-    <link href="img/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
-    <link href="img/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
-    <link href="img/apple-touch-icon.png" rel="icon" sizes="180x180" type="image/png">
-    <link href="img/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
+    <meta content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp" property="og:image">
+    <link href="img/apple-touch-icon.webp" rel="apple-touch-icon" sizes="180x180" type="image/webp">
+    <link href="img/favicon-16x16.webp" rel="icon" sizes="16x16" type="image/webp">
+    <link href="img/favicon-32x32.webp" rel="icon" sizes="32x32" type="image/webp">
+    <link href="img/apple-touch-icon.webp" rel="icon" sizes="180x180" type="image/webp">
+    <link href="img/android-chrome-192x192.webp" rel="icon" sizes="192x192" type="image/webp">
 </svelte:head>
 
 <Navbar adminGuilds="{userAdminGuilds}" items="{navbarItems}" user="{data.user}"/>
