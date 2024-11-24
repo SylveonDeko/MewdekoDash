@@ -1,6 +1,7 @@
+<!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { onMount, onDestroy } from 'svelte';
+  import { createEventDispatcher } from "svelte";
+  import { onMount, onDestroy } from "svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -23,7 +24,7 @@
   function startInterval() {
     intervalId = setInterval(() => {
       endTime = new Date(Date.now() + totalDurationMs);
-      dispatch('change', endTime);
+      dispatch("change", endTime);
     }, 1000);
   }
 
@@ -39,7 +40,7 @@
     minutes = 0;
     seconds = 0;
     endTime = new Date(Date.now() + totalDurationMs);
-    dispatch('change', endTime);
+    dispatch("change", endTime);
     startInterval();
   });
 
@@ -50,7 +51,7 @@
   // Validate inputs to prevent negative values and to conform to maximum values
   function validateInput(
     event: Event,
-    unit: 'days' | 'hours' | 'minutes' | 'seconds'
+    unit: "days" | "hours" | "minutes" | "seconds",
   ) {
     const input = event.target as HTMLInputElement;
     let value = parseInt(input.value);
@@ -59,52 +60,40 @@
       value = 0;
     }
 
-    if (unit === 'hours' && value > 23) {
+    if (unit === "hours" && value > 23) {
       value = 23;
-    } else if ((unit === 'minutes' || unit === 'seconds') && value > 59) {
+    } else if ((unit === "minutes" || unit === "seconds") && value > 59) {
       value = 59;
     }
 
     input.value = value.toString();
 
     switch (unit) {
-      case 'days':
+      case "days":
         days = value;
         break;
-      case 'hours':
+      case "hours":
         hours = value;
         break;
-      case 'minutes':
+      case "minutes":
         minutes = value;
         break;
-      case 'seconds':
+      case "seconds":
         seconds = value;
         break;
     }
 
     // Update endTime immediately when inputs change
     endTime = new Date(Date.now() + totalDurationMs);
-    dispatch('change', endTime);
+    dispatch("change", endTime);
   }
 </script>
-
-<style>
-  /* Hide the spin buttons on number inputs */
-  input[type='number']::-webkit-inner-spin-button,
-  input[type='number']::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type='number'] {
-    -moz-appearance: textfield;
-  }
-</style>
 
 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
   <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
     <div class="flex flex-col">
-      <label for="days-input" class="mb-2 font-medium text-gray-300">Days</label>
+      <label for="days-input" class="mb-2 font-medium text-gray-300">Days</label
+      >
       <input
         id="days-input"
         type="number"
@@ -112,13 +101,15 @@
         inputmode="numeric"
         pattern="[0-9]*"
         bind:value={days}
-        on:input={(e) => validateInput(e, 'days')}
+        on:input={(e) => validateInput(e, "days")}
         class="p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Days"
       />
     </div>
     <div class="flex flex-col">
-      <label for="hours-input" class="mb-2 font-medium text-gray-300">Hours</label>
+      <label for="hours-input" class="mb-2 font-medium text-gray-300"
+        >Hours</label
+      >
       <input
         id="hours-input"
         type="number"
@@ -127,13 +118,15 @@
         inputmode="numeric"
         pattern="[0-9]*"
         bind:value={hours}
-        on:input={(e) => validateInput(e, 'hours')}
+        on:input={(e) => validateInput(e, "hours")}
         class="p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Hours"
       />
     </div>
     <div class="flex flex-col">
-      <label for="minutes-input" class="mb-2 font-medium text-gray-300">Minutes</label>
+      <label for="minutes-input" class="mb-2 font-medium text-gray-300"
+        >Minutes</label
+      >
       <input
         id="minutes-input"
         type="number"
@@ -142,13 +135,15 @@
         inputmode="numeric"
         pattern="[0-9]*"
         bind:value={minutes}
-        on:input={(e) => validateInput(e, 'minutes')}
+        on:input={(e) => validateInput(e, "minutes")}
         class="p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Minutes"
       />
     </div>
     <div class="flex flex-col">
-      <label for="seconds-input" class="mb-2 font-medium text-gray-300">Seconds</label>
+      <label for="seconds-input" class="mb-2 font-medium text-gray-300"
+        >Seconds</label
+      >
       <input
         id="seconds-input"
         type="number"
@@ -157,7 +152,7 @@
         inputmode="numeric"
         pattern="[0-9]*"
         bind:value={seconds}
-        on:input={(e) => validateInput(e, 'seconds')}
+        on:input={(e) => validateInput(e, "seconds")}
         class="p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Seconds"
       />
@@ -172,3 +167,16 @@
     </p>
   </div>
 </div>
+
+<style>
+  /* Hide the spin buttons on number inputs */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+</style>

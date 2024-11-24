@@ -1,7 +1,8 @@
+<!-- routes/api/discord/logout/+page.svelte -->
 <script>
-    import RedirectPage from "$lib/RedirectPage.svelte";
+  import RedirectPage from "$lib/RedirectPage.svelte";
 </script>
 
 <RedirectPage to="/" delay={3}>
-    <h1>You have been signed out.</h1>
+  <h1>You have been signed out.</h1>
 </RedirectPage>

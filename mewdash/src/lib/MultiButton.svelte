@@ -1,7 +1,8 @@
+<!-- lib/MultiButton.svelte -->
 <script lang="ts">
-  import { fly } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { clickOutside } from './clickOutside';
+  import { fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import { clickOutside } from "./clickOutside";
 
   export let buttons: ButtonConfig[] = [];
 
@@ -33,7 +34,11 @@
   {#each buttons as button, index}
     {#if button.options}
       <!-- Button with Dropdown -->
-      <div class="relative {index > 0 ? '-ml-px' : ''}" use:clickOutside on:clickoutside={() => (openDropdownIndex = null)}>
+      <div
+        class="relative {index > 0 ? '-ml-px' : ''}"
+        use:clickOutside
+        on:clickoutside={() => (openDropdownIndex = null)}
+      >
         <button
           on:click={() => toggleDropdown(index)}
           class="inline-flex items-center justify-center bg-mewd-yellow text-mewd-white font-bold text-2xl px-6 py-2 border border-mewd-yellow transition-colors duration-200
@@ -43,7 +48,7 @@
           aria-label={button.ariaLabel || button.label}
           aria-expanded={openDropdownIndex === index}
           aria-controls={`dropdown-${index}`}
-          >
+        >
           {button.label}
         </button>
 

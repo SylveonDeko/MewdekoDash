@@ -1,3 +1,4 @@
+// lib/types/discordGuild.ts
 export type DiscordGuild = {
   id: bigint;
   name: string;
