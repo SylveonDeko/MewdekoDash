@@ -451,6 +451,79 @@ export enum MultiGreetType {
   Off = 2,
 }
 
+/**
+ * Represents a module containing commands
+ */
+export interface Module {
+  /**
+   * List of commands in the module
+   */
+  commands: Command[];
+
+  /**
+   * The name of the module
+   */
+  name: string;
+}
+
+/**
+ * Represents a command's information
+ */
+export interface Command {
+  /**
+   * The bot version the specified command exists on
+   */
+  botVersion: string;
+
+  /**
+   * Whether the command is a dragon command (beta only)
+   */
+  isDragon: boolean;
+
+  /**
+   * The name of the command
+   */
+  commandName: string;
+
+  /**
+   * The description of the command
+   */
+  description: string;
+
+  /**
+   * Examples of how to use the command
+   */
+  example: string[];
+
+  /**
+   * The guild permissions required by the user to use the command
+   */
+  guildUserPermissions?: string;
+
+  /**
+   * The channel permissions required by the user to use the command
+   */
+  channelUserPermissions?: string;
+
+  /**
+   * The channel permissions required by the bot to use the command
+   */
+  channelBotPermissions?: string;
+
+  /**
+   * The guild permissions required by the bot to use the command
+   */
+  guildBotPermissions?: string;
+}
+
+export interface BotInstance {
+    port: number;
+    botId: bigint;
+    botName: string;
+    botAvatar: string;
+    isActive: boolean;
+}
+
 export interface MusicSettings {
     maxVolume: number;
     defaultVolume: number;
@@ -461,6 +534,50 @@ export interface MusicSettings {
     djOnlyMode: boolean;
     djRole: string;
     defaultRepeatMode: 'None' | 'Track' | 'Queue';
+}
+
+export enum PrimaryPermissionType {
+  Server = 0,
+  Channel = 1,
+  Category = 2,
+  Role = 3,
+  User = 4
+}
+
+export enum SecondaryPermissionType {
+  Command = 0,
+  Module = 1,
+  AllModules = 2
+}
+
+export interface Permission {
+  index: number;
+  primaryTarget: PrimaryPermissionType;
+  primaryTargetId: bigint;
+  secondaryTarget: SecondaryPermissionType;
+  secondaryTargetName: string;
+  state: boolean;
+  isCustomCommand?: boolean;
+}
+
+export interface PermissionCache {
+  permissions: Permission[];
+  verbose: boolean;
+  permRole: bigint | null;
+}
+
+export interface PermissionOverride {
+  id: number;
+  guildId: bigint;
+  command: string;
+  discordPermission: bigint;
+}
+
+export interface CommandInfo {
+  name: string;
+  module: string;
+  description: string;
+  isCustom?: boolean;
 }
 
 export interface Track {

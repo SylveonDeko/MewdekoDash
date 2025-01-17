@@ -1,8 +1,9 @@
 // routes/api/[path]/+server.ts
-import { MEWDEKO_API_URL, MEWDEKO_API_KEY } from "$env/static/private";
+import { MEWDEKO_API_KEY } from "$env/static/private";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import JSONbig from "json-bigint";
+import { logger } from "$lib/logger";
 
 async function makeRequest(
   url: string,
@@ -16,17 +17,16 @@ async function makeRequest(
     body,
   });
 
+  console.log('Request URL:', url);
+
   try {
     const text = await response.text();
     if (!text || text.length < 1) return json(null);
 
-    // Try to parse the response as JSON
     try {
       const data = JSONbig.parse(text);
 
-      // If response is not ok, handle the error details
       if (!response.ok) {
-        // Handle ValidationProblemDetails format
         if (data.errors || data.title || data.status) {
           return json({
             error: {
@@ -42,37 +42,49 @@ async function makeRequest(
 
       return json(data);
     } catch (jsonError) {
-      // If JSON parsing fails, return the raw text
       if (!response.ok) {
         return json({ error: text }, { status: response.status });
       }
       return json({ data: text });
     }
   } catch (error) {
-    console.error(`Error processing response from ${url}:`, error);
+    logger.error(`Error processing response from ${url}:`, error);
     return json({ error: "Failed to process response" }, { status: 500 });
   }
 }
 
-export const GET: RequestHandler = async ({ url, params }) => {
+export const GET: RequestHandler = async ({ url, params, request }) => {
   const path = params.path;
-  return makeRequest(`${MEWDEKO_API_URL}/${path}${url.search}`, "GET", {
+  const instanceUrl = request.headers.get('x-instance-url');
+
+  if (!instanceUrl) {
+    return json({ error: "No instance URL provided" }, { status: 400 });
+  }
+
+  const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
+
+  return makeRequest(finalUrl, "GET", {
     "X-API-Key": MEWDEKO_API_KEY,
   });
 };
 
 export const POST: RequestHandler = async ({ request, params }) => {
   const path = params.path;
-  let body;
+  const instanceUrl = request.headers.get('x-instance-url');
+  const url = new URL(request.url);
 
+  if (!instanceUrl) {
+    return json({ error: "No instance URL provided" }, { status: 400 });
+  }
+
+  let body;
   try {
     const text = await request.text();
     console.log("Raw request body:", text);
 
     if (text) {
-      // Ensure we're parsing booleans correctly
       if (text === 'true' || text === 'false') {
-        body = JSON.parse(text); // This will properly parse it as a boolean
+        body = JSON.parse(text);
       } else {
         body = JSONbig.parse(text);
       }
@@ -81,17 +93,18 @@ export const POST: RequestHandler = async ({ request, params }) => {
       body = {};
     }
   } catch (error) {
-    console.error("Error parsing request body:", error);
+    logger.error("Error parsing request body:", error);
     body = {};
   }
 
-  // Ensure we're stringifying the body correctly
   const jsonBody = typeof body === 'boolean'
-    ? JSON.stringify(body)  // Use regular JSON.stringify for booleans
+    ? JSON.stringify(body)
     : JSONbig.stringify(body);
 
+  const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
+
   return makeRequest(
-    `${MEWDEKO_API_URL}/${path}`,
+    finalUrl,
     "POST",
     {
       "X-API-Key": MEWDEKO_API_KEY,
@@ -103,6 +116,13 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
 export const PUT: RequestHandler = async ({ request, params }) => {
   const path = params.path;
+  const instanceUrl = request.headers.get('x-instance-url');
+  const url = new URL(request.url);
+
+  if (!instanceUrl) {
+    return json({ error: "No instance URL provided" }, { status: 400 });
+  }
+
   let body;
   try {
     const text = await request.text();
@@ -112,57 +132,76 @@ export const PUT: RequestHandler = async ({ request, params }) => {
       body = JSONbig.parse(text);
     } else {
       console.log("Request body is empty");
-      body = {}; // Use an empty object if the body is empty
+      body = {};
     }
   } catch (error) {
-    console.error("Error parsing request body:", error);
-    // Use an empty object if there's an error parsing JSON
+    logger.error("Error parsing request body:", error);
     body = {};
   }
 
+  const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
+
   return makeRequest(
-    `${MEWDEKO_API_URL}/${path}`,
+    finalUrl,
     "PUT",
     {
       "X-API-Key": MEWDEKO_API_KEY,
       "Content-Type": "application/json",
     },
-    JSONbig.stringify(body),
+    JSONbig.stringify(body)
   );
 };
 
 export const PATCH: RequestHandler = async ({ request, params }) => {
   const path = params.path;
+  const instanceUrl = request.headers.get('x-instance-url');
+  const url = new URL(request.url);
+
+  if (!instanceUrl) {
+    return json({ error: "No instance URL provided" }, { status: 400 });
+  }
+
   let body;
   try {
     body = await request.json();
   } catch (error) {}
 
+  const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
+
   return makeRequest(
-    `${MEWDEKO_API_URL}/${path}`,
+    finalUrl,
     "PATCH",
     {
       "X-API-Key": MEWDEKO_API_KEY,
       "Content-Type": "application/json",
     },
-    body ? JSONbig.stringify(body) : undefined,
+    body ? JSONbig.stringify(body) : undefined
   );
 };
 
 export const DELETE: RequestHandler = async ({ request, params }) => {
   const path = params.path;
+  const instanceUrl = request.headers.get('x-instance-url');
+  const url = new URL(request.url);
+
+  if (!instanceUrl) {
+    return json({ error: "No instance URL provided" }, { status: 400 });
+  }
+
   let body;
   try {
     body = await request.json();
   } catch (error) {}
 
+  const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
+
   return makeRequest(
-    `${MEWDEKO_API_URL}/${path}`,
+    finalUrl,
     "DELETE",
     {
       "X-API-Key": MEWDEKO_API_KEY,
       "Content-Type": "application/json",
     },
-    body ? JSONbig.stringify(body) : undefined,
+    body ? JSONbig.stringify(body) : undefined
   );
 };

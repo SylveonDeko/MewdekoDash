@@ -1,17 +1,21 @@
-// routes/api/discord/login/+server.ts
-import {
-  DISCORD_API_URL,
-  DISCORD_CLIENT_ID,
-  DISCORD_SCOPES,
-  DISCORD_REDIRECT_URI,
-} from "$env/static/private";
-import type { RequestHandler } from "@sveltejs/kit";
+import { redirect } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { DISCORD_CLIENT_ID, DISCORD_REDIRECT_URI, DISCORD_SCOPES } from '$env/static/private';
 
-const DISCORD_ENDPOINT = `${DISCORD_API_URL}/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(DISCORD_SCOPES)}`;
+export const GET: RequestHandler = async ({ url, cookies }) => {
+    const returnTo = url.searchParams.get('returnTo') || '/dashboard';
+    cookies.set('returnTo', returnTo, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 60 * 5 // 5 minutes
+    });
 
-export const GET: RequestHandler = async ({ locals }) => {
-  return new Response(null, {
-    headers: { Location: locals.user ? "/" : DISCORD_ENDPOINT },
-    status: 302,
-  });
+    const authorizeUrl = new URL('https://discord.com/api/oauth2/authorize');
+    authorizeUrl.searchParams.append('client_id', DISCORD_CLIENT_ID);
+    authorizeUrl.searchParams.append('redirect_uri', DISCORD_REDIRECT_URI);
+    authorizeUrl.searchParams.append('response_type', 'code');
+    authorizeUrl.searchParams.append('scope', DISCORD_SCOPES);
+
+    throw redirect(302, authorizeUrl.toString());
 };

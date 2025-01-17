@@ -1,8 +1,7 @@
-// routes/api/discord/logout/+page.server.ts
-import { deleteCookies } from "../discordAuth";
-import type { PageServerLoad } from "./$types";
+import { redirect, type RequestHandler } from "@sveltejs/kit";
+import { deleteCookies } from '../discordAuth';
 
-export const load: PageServerLoad = async ({ cookies }) => {
+export const load: RequestHandler = async ({ cookies }) => {
   deleteCookies(cookies);
-  return {};
+  throw redirect(302, '/');
 };

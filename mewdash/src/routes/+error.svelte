@@ -1,47 +1,33 @@
-<!-- routes/+error.svelte -->
 <script lang="ts">
-  import { page } from "$app/stores";
-  import Interactable from "$lib/util/InteractableElement.svelte";
+  import { page } from '$app/stores';
+  import type { PageData } from './$types';
+
+  export let data: PageData;
 </script>
 
 <svelte:head>
   <title>Error {$page.status} - Mewdeko</title>
-  <meta
-    name="description"
-    content="Oops! Something went wrong. Error {$page.status}"
-  />
 </svelte:head>
 
-<div
-  class="min-h-[calc(100vh-5.6rem)] w-full bg-mewd-light-grey flex flex-col justify-center items-center px-4 py-8"
->
-  <h1 class="text-4xl font-bold mb-4 text-mewd-green">Error {$page.status}</h1>
-  <p class="text-xl text-mewd-offwhite mb-8">Oops! Something went wrong.</p>
+<div class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold text-white mb-4">Error {$page.status}</h1>
+    <p class="text-xl text-gray-400 mb-8">{$page.error?.message || 'Something went wrong'}</p>
 
-  <div class="max-w-3xl w-full flex justify-center">
-    <Interactable cta={{ text: "Return Home", href: "/", target: "_self" }}>
-      <div class="flex justify-center">
-        <img
-          class="max-w-full h-auto rounded-lg shadow-lg"
-          alt="Error {$page.status} Cat"
-          title="Error Cat"
-          src="https://http.cat/{$page.status}"
-          loading="lazy"
-        />
-      </div>
-    </Interactable>
+    {#if $page.status === 401}
+      <a
+        href="/api/discord/login"
+        class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      >
+        Login with Discord
+      </a>
+    {:else}
+      <a
+        href="/"
+        class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      >
+        Return Home
+      </a>
+    {/if}
   </div>
-
-  <p class="mt-8 text-mewd-offwhite text-center">
-    If the problem persists, please <a
-      href="/contact"
-      class="text-mewd-green hover:underline">contact us</a
-    >.
-  </p>
 </div>
-
-<style lang="scss">
-  :global(.interactable-element) {
-    @apply transition-transform duration-300 hover:scale-105;
-  }
-</style>

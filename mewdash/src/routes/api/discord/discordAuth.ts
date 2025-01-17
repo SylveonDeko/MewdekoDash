@@ -8,8 +8,8 @@ import {
   DISCORD_SCOPES,
 } from "$env/static/private";
 import type { Cookies } from "@sveltejs/kit";
-import { redirect } from "@sveltejs/kit";
 import CryptoJS from "crypto-js";
+import { logger } from "$lib/logger";
 
 const ACCESS_TOKEN_COOKIE = "discord_access_token",
   REFRESH_TOKEN_COOKIE = "discord_refresh_token";
@@ -17,26 +17,30 @@ const ACCESS_TOKEN_COOKIE = "discord_access_token",
 export const requestDiscordToken = async (
   searchParams: URLSearchParams,
   cookies: Cookies,
-): Promise<Tokens | any> => {
+): Promise<Tokens> => {  // Note: removed the | any to ensure type safety
   // performing a Fetch request to Discord's token endpoint
   const request = await fetch(`${DISCORD_API_URL}/oauth2/token`, {
     method: "POST",
     body: searchParams,
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
+
   const response = await request?.json();
+
+  // Instead of returning a redirect, throw an error that can be caught
   if (request.status == 400 || request.status == 401) {
     deleteCookies(cookies);
-    return redirect(302, "/api/discord/login");
+    throw new Error("Authentication failed");
   }
 
   if (response.error) {
-    throw response.error;
+    throw new Error(response.error);
   }
 
   // redirect user to front page with cookies set
   const access_expire = new Date(Date.now() + response.expires_in); // 10 minutes
   const refresh_expire = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
   return {
     access_token: response.access_token,
     refresh_token: response.refresh_token,
@@ -44,6 +48,20 @@ export const requestDiscordToken = async (
     refresh_valid_until: refresh_expire,
   };
 };
+
+export async function getUserData(accessToken: string): Promise<any> {
+  const response = await fetch(`${DISCORD_API_URL}/users/@me`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user data: ${response.statusText}`);
+  }
+
+  return response.json();
+}
 
 export function buildSearchParams(
   type: "callback" | "refresh",
@@ -86,7 +104,7 @@ export function setCookies(tokens: Tokens, cookies: Cookies) {
       sameSite: "strict",
     });
   } catch (e) {
-    console.error("could not set cookies:" + e);
+    logger.error("could not set cookies:" + e);
   }
 }
 

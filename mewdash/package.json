@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev --force",
     "build": "npm run generate-sitemap && vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -21,6 +21,7 @@
     "@types/showdown": "^2.0.2",
     "autoprefixer": "^10.4.16",
     "axios": "^1.5.1",
+    "colorthief": "^2.6.0",
     "cookie": "^0.5.0",
     "crypto-js": "^4.1.1",
     "discord-api-types": "^0.37.79",

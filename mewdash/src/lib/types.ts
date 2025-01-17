@@ -42,12 +42,13 @@ export interface Suggestion {
 export interface Giveaways {
   id: number;
   when: string;
-  channelId: string;
-  serverId: string;
+  channelId: BigInt;
+  serverId: BigInt;
   ended: number;
-  messageId: string;
+  messageId: BigInt;
   winners: number;
-  userId: string;
+  userId: BigInt;
+  messageCountReq: BigInt | null;
   item: string | null;
   restrictTo: string | null;
   blacklistUsers: string | null;

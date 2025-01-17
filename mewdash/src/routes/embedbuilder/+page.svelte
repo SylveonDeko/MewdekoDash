@@ -767,7 +767,7 @@
     try {
       chatTriggers = await api.getChatTriggers(guildId);
     } catch (error) {
-      console.error("Failed to load chat triggers:", error);
+      logger.error("Failed to load chat triggers:", error);
       chatTriggers = [];
     }
   }

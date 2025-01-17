@@ -5,39 +5,57 @@ import {
   type SuggestionsModel,
   type BotStatusModel,
   type BotReviews,
-  type MultiGreetType, type MultiGreet
+  type MultiGreetType,
+  type MultiGreet,
+  type BotInstance,
+  PrimaryPermissionType,
+  SecondaryPermissionType,
+  type PermissionCache, type Module
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
+import { logger } from "$lib/logger";
 import type { Giveaways, PermissionOverride } from "$lib/types.ts";
+import { currentInstance } from "$lib/stores/instanceStore.ts";
+import { get } from "svelte/store";
+import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
+import type { DiscordGuild } from "$lib/types/discordGuild.ts";
 
 async function apiRequest<T>(
   endpoint: string,
   method: string = "GET",
-  body?: any
+  body?: any,
+  headers: HeadersInit = {},
+  customFetch: typeof fetch = fetch
 ): Promise<T> {
-  const response = await fetch(`/api/${endpoint}`, {
+  const instance = get(currentInstance);
+  let baseUrl = instance ? `http://localhost:${instance.port}/botapi` : PUBLIC_MEWDEKO_API_URL;
+
+  const response = await customFetch(`/api/${endpoint}`, {
     method,
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "X-Instance-Url": baseUrl,
+      ...headers
     },
     body: body ? JSONbig.stringify(body) : undefined
   });
 
   if (!response.ok) {
-    console.error(`API error: ${response.status} ${response.statusText}`);
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    logger.error(`API error: ${response.status} - ${errorText}`);
+    throw new Error(`API error: ${response.status} - ${errorText}`);
   }
 
-  const text = await response.text();
+  const responseText = await response.text();
 
   try {
-    return JSONbig.parse(text) as T;
-  } catch (error) {
-    console.error("Error parsing response:", error);
-    // If parsing fails, return the raw text
-    return text as unknown as T;
+    return JSONbig.parse(responseText) as T;
+  } catch (err) {
+    logger.error("Error parsing JSON response:", err);
+    throw new Error("Failed to parse JSON response.");
   }
 }
+
 
 type SuggestStateUpdate = {
   state: number;
@@ -46,6 +64,36 @@ type SuggestStateUpdate = {
 };
 
 export const api = {
+
+  getCommandsAndModules: () =>
+  apiRequest<Module[]>('Permissions/commands'),
+
+  getPermissions: (guildId: bigint) =>
+    apiRequest<PermissionCache>(`Permissions/regular/${guildId}`),
+
+  addPermission: (guildId: bigint, permission: {
+    primaryTarget: PrimaryPermissionType,
+    primaryTargetId: bigint,
+    secondaryTarget: SecondaryPermissionType,
+    secondaryTargetName: string,
+    state: boolean,
+    isCustomCommand?: boolean
+  }) => apiRequest<void>(`Permissions/regular/${guildId}`, "POST", permission),
+
+  removePermission: (guildId: bigint, index: number) =>
+    apiRequest<void>(`Permissions/regular/${guildId}/${index}`, "DELETE"),
+
+  movePermission: (guildId: bigint, from: number, to: number) =>
+    apiRequest<void>(`Permissions/regular/${guildId}/move`, "POST", { from, to }),
+
+  resetPermissions: (guildId: bigint) =>
+    apiRequest<void>(`Permissions/regular/${guildId}/reset`, "POST"),
+
+  setVerbose: (guildId: bigint, verbose: boolean) =>
+    apiRequest<void>(`Permissions/regular/${guildId}/verbose`, "POST", verbose),
+
+  setPermissionRole: (guildId: bigint, roleId: string | null) =>
+    apiRequest<void>(`Permissions/regular/${guildId}/role`, "POST", roleId),
   getAfkStatus: (guildId: bigint, userId: string) =>
     apiRequest<{ message: string }>(`afk/${guildId}/${userId}`),
   setAfkStatus: (guildId: bigint, userId: bigint, message: string) =>
@@ -94,6 +142,15 @@ export const api = {
     apiRequest<string>(`afk/${guildId}/custom-message`),
   setCustomAfkMessage: (guildId: bigint, message: string) =>
     apiRequest<void>(`afk/${guildId}/custom-message`, "POST", message),
+
+  getBotInstances: () =>
+    apiRequest<BotInstance[]>("InstanceManagement"),
+
+  addBotInstance: (port: number) =>
+    apiRequest<void>(`InstanceManagement/${port}`, "POST"),
+
+  removeBotInstance: (port: number) =>
+    apiRequest<void>(`InstanceManagement/${port}`, "DELETE"),
 
   deleteChatTrigger: (guildId: bigint, triggerId: number) =>
     apiRequest<void>(`chattriggers/${guildId}/${triggerId}`, "DELETE"),
@@ -336,6 +393,9 @@ export const api = {
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
+  getMutualGuilds: (userId: bigint, customFetch: typeof fetch = fetch) =>
+    apiRequest<DiscordGuild[]>(`ClientOperations/mutualguilds/${userId}`, "GET", undefined, {}, customFetch),
+
   getPermissionOverrides: (guildId: bigint) =>
     apiRequest<PermissionOverride[]>(`Permissions/dpo/${guildId}`),
 
@@ -395,6 +455,9 @@ export const api = {
 
   skipTrack: (guildId: bigint) =>
     apiRequest<void>(`music/${guildId}/skip`, "POST"),
+
+  previousTrack: (guildId: bigint) =>
+    apiRequest<void>(`music/${guildId}/previous`, "POST"),
 
   getMusicSettings: (guildId: bigint) =>
     apiRequest<any>(`music/${guildId}/settings`),

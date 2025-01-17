@@ -5,6 +5,7 @@ import { error, json } from "@sveltejs/kit";
 import fs from "fs/promises";
 import path from "path";
 import { REDIS_URL, DISCORD_CLIENT_ID, USE_REDIS } from "$env/static/private";
+import { logger } from "$lib/logger";
 
 export const GET: RequestHandler = async ({}) => {
   if (USE_REDIS === "true") {
@@ -17,7 +18,7 @@ export const GET: RequestHandler = async ({}) => {
         return json(guilds);
       }
     } catch (err) {
-      console.error("Redis error:", err);
+      logger.error("Redis error:", err);
       redis.disconnect();
     }
   }
@@ -28,7 +29,7 @@ export const GET: RequestHandler = async ({}) => {
     const guilds = JSON.parse(fileData);
     return json(guilds);
   } catch (fileErr) {
-    console.error("File read error:", fileErr);
+    logger.error("File read error:", fileErr);
     throw error(500, "Failed to fetch guild data from backup file.");
   }
 };

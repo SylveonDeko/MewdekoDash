@@ -1,17 +1,38 @@
 <!-- routes/dashboard/afk/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
-  import type { Afk } from "$lib/types/models.ts";
+  import type { Afk, BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
   import Notification from "$lib/Notification.svelte";
+  import { Clock, Users, MessageCircle, Settings, AlertCircle } from "lucide-svelte";
+  import { browser } from "$app/environment";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from '$lib/stores/colorStore';
+  import { logger } from "$lib/logger.ts";
 
+
+  let botStatus: BotStatusModel | null = null;
+
+  export let data: PageData;
   let showNotification = false;
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
+  let isMobile = false;
+
+  let colors = {
+    primary: "#3b82f6",
+    secondary: "#8b5cf6",
+    accent: "#ec4899",
+    text: "#ffffff",
+    muted: "#9ca3af",
+    gradientStart: "#3b82f6",
+    gradientMid: "#8b5cf6",
+    gradientEnd: "#ec4899"
+  };
 
   let afkUsers: Afk[] = [];
   let expandedUser = null;
@@ -27,8 +48,29 @@
   let customAfkMessage = "";
   let changedSettings = new Set();
 
+  async function fetchBotStatus() {
+  try {
+    botStatus = await api.getBotStatus();
+  } catch (err) {
+    logger.error("Failed to fetch bot status:", err);
+  }
+}
+
+
+  $: if ($currentInstance) {
+    Promise.all([
+      fetchAfkUsers(),
+      fetchAfkSettings(),
+      fetchBotStatus()
+    ]);
+  }
+
   function markAsChanged(setting: string) {
-    changedSettings.add(setting);
+    changedSettings = changedSettings.add(setting);
+  }
+
+  function checkMobile() {
+    isMobile = browser && window.innerWidth < 768;
   }
 
   async function updateAllAfkSettings() {
@@ -50,30 +92,33 @@
         updatePromises.push(api.afkTimeoutSet($currentGuild.id, afkTimeout));
       }
       if (changedSettings.has("customMessage")) {
-        updatePromises.push(
-          api.setCustomAfkMessage($currentGuild.id, customAfkMessage),
-        );
+        updatePromises.push(api.setCustomAfkMessage($currentGuild.id, customAfkMessage));
       }
 
       await Promise.all(updatePromises);
-
       showNotificationMessage("AFK settings updated successfully", "success");
       changedSettings.clear();
     } catch (err) {
-      console.error("Failed to update AFK settings:", err);
+      logger.error("Failed to update AFK settings:", err);
       showNotificationMessage("Failed to update AFK settings", "error");
     }
   }
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
-    await Promise.all([fetchAfkUsers(), fetchAfkSettings()]);
+    await Promise.all([
+      fetchAfkUsers(),
+      fetchAfkSettings(),
+      fetchBotStatus()
+    ]);
+    checkMobile();
+    if (browser) window.addEventListener("resize", checkMobile);
+  });
+  onDestroy(() => {
+    if (browser) window.removeEventListener("resize", checkMobile);
   });
 
-  function showNotificationMessage(
-    message: string,
-    type: "success" | "error" = "success",
-  ) {
+  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
     showNotification = true;
@@ -86,20 +131,13 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const [
-        deletion,
-        maxLength,
-        type,
-        timeout,
-        disabledChannels,
-        customMessage,
-      ] = await Promise.all([
+      const [deletion, maxLength, type, timeout, disabledChannels, customMessage] = await Promise.all([
         api.getAfkDel($currentGuild.id),
         api.getAfkLength($currentGuild.id),
         api.getAfkType($currentGuild.id),
         api.getAfkTimeout($currentGuild.id),
         api.getDisabledAfkChannels($currentGuild.id),
-        api.getCustomAfkMessage($currentGuild.id),
+        api.getCustomAfkMessage($currentGuild.id)
       ]);
 
       afkDeletionTime = deletion;
@@ -109,36 +147,8 @@
       afkDisabledChannels = disabledChannels ? disabledChannels.split(",") : [];
       customAfkMessage = customMessage || "";
     } catch (err) {
-      console.error("Failed to fetch AFK settings:", err);
-      showNotificationMessage("Failed to fetch AFK settings", "error");
-    }
-  }
-
-  async function updateAfkSetting(setting: string, value: any) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-
-      switch (setting) {
-        case "deletion":
-          await api.afkDelSet($currentGuild.id, value);
-          break;
-        case "maxLength":
-          await api.afkLengthSet($currentGuild.id, value);
-          break;
-        case "type":
-          await api.afkTypeSet($currentGuild.id, value);
-          break;
-        case "timeout":
-          await api.afkTimeoutSet($currentGuild.id, value);
-          break;
-        case "customMessage":
-          await api.setCustomAfkMessage($currentGuild.id, value);
-          break;
-      }
-      showNotificationMessage("AFK setting updated successfully", "success");
-    } catch (err) {
-      console.error("Failed to update AFK setting:", err);
-      showNotificationMessage("Failed to update AFK setting", "error");
+      logger.error("Failed to fetch AFK settings:", err);
+      error = err instanceof Error ? err.message : "Failed to fetch AFK settings";
     }
   }
 
@@ -150,37 +160,36 @@
         throw new Error("No guild selected");
       }
       const response = await api.getAllAfkStatus($currentGuild.id);
-      afkUsers = response.filter(
-        (user) =>
-          user.afkStatus !== null &&
-          user.afkStatus.message !== "" &&
-          user.afkStatus.message,
+      afkUsers = response.filter(user =>
+        user.afkStatus !== null &&
+        user.afkStatus.message !== "" &&
+        user.afkStatus.message
       );
     } catch (err) {
-      console.error("Failed to fetch AFK users:", err);
-      error = err.message || "Failed to fetch AFK users";
+      logger.error("Failed to fetch AFK users:", err);
+      error = err instanceof Error ? err.message : "Failed to fetch AFK users";
     } finally {
       loading = false;
     }
   }
 
-  async function clearAfkStatus(userId) {
+  async function clearAfkStatus(userId: string) {
     try {
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
       await api.deleteAfkStatus($currentGuild.id, userId);
-      showNotificationMessage("AFK Cleared", "success");
+      showNotificationMessage("AFK Status Cleared", "success");
       await fetchAfkUsers();
     } catch (error) {
       showNotificationMessage(
-        "Failed to clear AFK status: " + error.message,
-        "error",
+        "Failed to clear AFK status: " + (error instanceof Error ? error.message : "Unknown error"),
+        "error"
       );
     }
   }
 
-  function toggleUserExpand(userId) {
+  function toggleUserExpand(userId: string) {
     expandedUser = expandedUser === userId ? null : userId;
   }
 
@@ -190,177 +199,365 @@
       toggleUserExpand(userId);
     }
   }
+
+  $: colorVars = `
+    --color-primary: ${$colorStore.primary};
+    --color-secondary: ${$colorStore.secondary};
+    --color-accent: ${$colorStore.accent};
+    --color-text: ${$colorStore.text};
+    --color-muted: ${$colorStore.muted};
+`;
+
+  $: if ($currentGuild) {
+    fetchAfkUsers();
+    fetchAfkSettings();
+  }
+
+  $: if ($currentInstance) {
+    fetchAfkUsers();
+    fetchAfkSettings();
+  }
+
 </script>
 
 <svelte:head>
-  <title>AFK Management - Mewdeko Dashboard</title>
+  <title>AFK Management - Dashboard</title>
 </svelte:head>
 
-<div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4">AFK Management</h1>
-  {#if showNotification}
-    <Notification message={notificationMessage} type={notificationType} />
-  {/if}
+<div
+  class="min-h-screen p-4 md:p-6"
+  style="{colorVars} background: radial-gradient(circle at top,
+    {$colorStore.gradientStart}15 0%,
+    {$colorStore.gradientMid}10 50%,
+    {$colorStore.gradientEnd}05 100%);"
+>
+  <div class="max-w-7xl mx-auto space-y-8">
+    {#if showNotification}
+      <div class="fixed top-4 right-4 z-50" transition:fade>
+        <Notification message={notificationMessage} type={notificationType} />
+      </div>
+    {/if}
 
-  <div class="mb-8">
-    <h2 class="text-xl font-semibold mb-4">AFK Settings</h2>
+    <!-- Header -->
+    <div
+      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+    >
+      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">AFK Management</h1>
+      <p class="mt-2" style="color: {$colorStore.muted}">Configure AFK settings and manage AFK users</p>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="bg-gray-800 p-4 rounded-lg">
-        <label for="afk-deletion-time" class="font-semibold mb-2 block"
-          >Auto-deletion Time</label
+    <!-- Settings Section -->
+    <div
+      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <div
+          class="p-3 rounded-xl"
+          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+                 color: {$colorStore.primary};"
         >
-        <input
-          type="number"
-          id="afk-deletion-time"
-          bind:value={afkDeletionTime}
-          on:input={() => markAsChanged("deletion")}
-          class="w-full p-2 bg-gray-700 rounded"
-        />
-        <p class="text-sm text-gray-400 mt-1">
-          Time in seconds before AFK messages are deleted. Set to 0 to disable.
-        </p>
+          <Settings class="w-6 h-6" />
+        </div>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">AFK Settings</h2>
       </div>
 
-      <div class="bg-gray-800 p-4 rounded-lg">
-        <label for="afk-max-length" class="font-semibold mb-2 block"
-          >Max AFK Message Length</label
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Auto-deletion Time -->
+        <div
+          class="rounded-xl p-4"
+          style="background: {$colorStore.primary}10;"
         >
-        <input
-          type="number"
-          id="afk-max-length"
-          bind:value={afkMaxLength}
-          on:input={() => markAsChanged("maxLength")}
-          class="w-full p-2 bg-gray-700 rounded"
-        />
-        <p class="text-sm text-gray-400 mt-1">
-          Maximum allowed length for AFK messages.
-        </p>
+          <div class="flex items-center gap-2 mb-3">
+            <Clock class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-deletion Time</h3>
+          </div>
+          <input
+            bind:value={afkDeletionTime}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            on:input={() => markAsChanged("deletion")}
+            style="border-color: {$colorStore.primary}30;
+                   color: {$colorStore.text};
+                   focus-visible:outline: none;
+                   focus-visible:ring: 2px;
+                   focus-visible:ring-color: {$colorStore.primary}50;"
+            type="number"
+          />
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
+            Time in seconds before AFK messages are deleted. Set to 0 to disable.
+          </p>
+        </div>
+
+        <!-- Max Message Length -->
+        <div
+          class="rounded-xl p-4"
+          style="background: {$colorStore.primary}10;"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <MessageCircle class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <h3 class="font-semibold" style="color: {$colorStore.text}">Max Message Length</h3>
+          </div>
+          <input
+            bind:value={afkMaxLength}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            on:input={() => markAsChanged("maxLength")}
+            style="border-color: {$colorStore.secondary}30;
+                   color: {$colorStore.text};
+                   focus-visible:outline: none;
+                   focus-visible:ring: 2px;
+                   focus-visible:ring-color: {$colorStore.secondary}50;"
+            type="number"
+          />
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
+            Maximum allowed length for AFK messages.
+          </p>
+        </div>
+
+        <!-- AFK Type -->
+        <div
+          class="rounded-xl p-4"
+          style="background: {$colorStore.primary}10;"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <Settings class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Type</h3>
+          </div>
+          <select
+            bind:value={afkType}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            on:change={() => markAsChanged("type")}
+            style="border-color: {$colorStore.accent}30;
+                   color: {$colorStore.text};
+                   focus-visible:outline: none;
+                   focus-visible:ring: 2px;
+                   focus-visible:ring-color: {$colorStore.accent}50;"
+          >
+            <option value={1}>Self Disable</option>
+            <option value={2}>On Message</option>
+            <option value={3}>On Type</option>
+            <option value={4}>Either</option>
+          </select>
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
+            Determines how AFK status is removed.
+          </p>
+        </div>
+
+        <!-- AFK Timeout -->
+        <div
+          class="rounded-xl p-4"
+          style="background: {$colorStore.primary}10;"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <Clock class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Timeout</h3>
+          </div>
+          <input
+            bind:value={afkTimeout}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            on:input={() => markAsChanged("timeout")}
+            style="border-color: {$colorStore.secondary}30;
+                   color: {$colorStore.text};
+                   focus-visible:outline: none;
+                   focus-visible:ring: 2px;
+                   focus-visible:ring-color: {$colorStore.secondary}50;"
+            type="text"
+          />
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
+            Time before someone is considered AFK (format: 1h2m3s)
+          </p>
+        </div>
+
+        <!-- Custom Message -->
+        <div
+          class="col-span-full rounded-xl p-4"
+          style="background: {$colorStore.primary}10;"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <MessageCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <h3 class="font-semibold" style="color: {$colorStore.text}">Custom AFK Message</h3>
+          </div>
+          <textarea
+            bind:value={customAfkMessage}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[120px] resize-vertical"
+            on:input={() => markAsChanged("customMessage")}
+            placeholder="Enter custom AFK message..."
+            style="border-color: {$colorStore.primary}30;
+                   color: {$colorStore.text};
+                   focus-visible:outline: none;
+                   focus-visible:ring: 2px;
+                   focus-visible:ring-color: {$colorStore.primary}50;"
+          ></textarea>
+          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
+            Custom embed to display when a user is AFK. Use "-" to reset to default.
+          </p>
+        </div>
       </div>
 
-      <div class="bg-gray-800 p-4 rounded-lg">
-        <label for="afk-type" class="font-semibold mb-2 block">AFK Type</label>
-        <select
-          id="afk-type"
-          bind:value={afkType}
-          on:change={() => markAsChanged("type")}
-          class="w-full p-2 bg-gray-700 rounded"
+      <!-- Save Button -->
+      <div class="mt-6 flex justify-end">
+        <button
+          class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+          disabled={changedSettings.size === 0}
+          on:click={updateAllAfkSettings}
+          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
+                 color: {$colorStore.text};"
         >
-          <option value={1}>Self Disable</option>
-          <option value={2}>On Message</option>
-          <option value={3}>On Type</option>
-          <option value={4}>Either</option>
-        </select>
-        <p class="text-sm text-gray-400 mt-1">
-          Determines how AFK status is removed.
-        </p>
-      </div>
-
-      <div class="bg-gray-800 p-4 rounded-lg">
-        <label for="afk-timeout" class="font-semibold mb-2 block"
-          >AFK Timeout</label
-        >
-        <input
-          type="number"
-          id="afk-timeout"
-          bind:value={afkTimeout}
-          on:input={() => markAsChanged("timeout")}
-          class="w-full p-2 bg-gray-700 rounded"
-        />
-        <p class="text-sm text-gray-400 mt-1">
-          Time before someone is actually considered afk after setting their
-          afk. Format is 1h2m3s
-        </p>
+          Save Changes
+        </button>
       </div>
     </div>
 
-    <div class="mt-4 bg-gray-800 p-4 rounded-lg">
-      <label for="custom-afk-message" class="font-semibold mb-2 block"
-        >Custom AFK Message</label
-      >
-      <textarea
-        id="custom-afk-message"
-        bind:value={customAfkMessage}
-        on:input={() => markAsChanged("customMessage")}
-        class="w-full p-2 bg-gray-700 rounded h-24"
-      ></textarea>
-      <p class="text-sm text-gray-400 mt-1">
-        Custom embed to display when a user is afk. Use "-" to reset to default.
-      </p>
-    </div>
+    <!-- AFK Users Section -->
+    <div
+      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <div
+          class="p-3 rounded-xl"
+          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+                 color: {$colorStore.primary};"
+        >
+          <Users class="w-6 h-6" />
+        </div>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Currently AFK Users</h2>
+      </div>
 
-    <div class="mt-4 flex justify-end">
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        on:click={updateAllAfkSettings}
-        disabled={changedSettings.size === 0}
-        aria-disabled={changedSettings.size === 0}
-      >
-        Save Changes
-      </button>
+      {#if loading}
+        <div class="flex justify-center items-center min-h-[200px]">
+          <div
+            class="w-12 h-12 border-4 rounded-full animate-spin"
+            style="border-color: {$colorStore.primary}20;
+                   border-top-color: {$colorStore.primary};">
+          </div>
+        </div>
+      {:else if error}
+        <div
+          class="rounded-xl p-4 flex items-center gap-3"
+          style="background: {$colorStore.accent}10;"
+          role="alert"
+        >
+          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" />
+          <p style="color: {$colorStore.accent}">{error}</p>
+        </div>
+      {:else if afkUsers.length === 0}
+        <div
+          class="text-center py-12"
+          transition:fade
+        >
+          <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+          <p style="color: {$colorStore.muted}">No users are currently AFK</p>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          {#each afkUsers as user (user.userId)}
+            <div
+              class="rounded-xl overflow-hidden border transition-all duration-200"
+              style="background: {$colorStore.primary}10;
+                     border-color: {$colorStore.primary}20;
+                     hover:border-color: {$colorStore.primary}30;"
+            >
+              <button
+                class="w-full text-left p-4 transition-colors duration-200"
+                style="hover:background: {$colorStore.primary}15;"
+                on:click={() => toggleUserExpand(user.userId)}
+                aria-expanded={expandedUser === user.userId}
+                aria-controls="user-details-{user.userId}"
+              >
+                <div class="flex items-center gap-4">
+                  <img
+                    src={user.avatarUrl}
+                    alt=""
+                    class="w-12 h-12 rounded-full border-2"
+                    style="border-color: {$colorStore.primary}30;"
+                  />
+                  <div class="flex-grow min-w-0">
+                    <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
+                    <p class="text-sm truncate" style="color: {$colorStore.muted}">{user.afkStatus.message}</p>
+                  </div>
+                </div>
+              </button>
+
+              {#if expandedUser === user.userId}
+                <div
+                  transition:slide
+                  class="p-4 border-t"
+                  style="background: {$colorStore.primary}15;
+                         border-color: {$colorStore.primary}20;"
+                  id="user-details-{user.userId}"
+                >
+                  <p class="mb-4" style="color: {$colorStore.muted}">
+                    AFK since: {new Date(user.afkStatus.dateAdded).toLocaleString()}
+                  </p>
+                  <button
+                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                    style="background: {$colorStore.accent}15;
+                           color: {$colorStore.accent};
+                           hover:background: {$colorStore.accent}20;"
+                    on:click={() => clearAfkStatus(user.userId)}
+                  >
+                    Clear AFK Status
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
-
-  <h2 class="text-xl font-semibold mb-3">Currently AFK Users</h2>
-
-  {#if loading}
-    <p role="status">Loading...</p>
-  {:else if error}
-    <p class="text-red-500" role="alert">{error}</p>
-  {:else if afkUsers.length === 0}
-    <p transition:fade class="text-gray-400 italic">
-      No users are currently AFK.
-    </p>
-  {:else}
-    <ul class="space-y-2" aria-label="List of AFK users">
-      {#each afkUsers as user (user.userId)}
-        <li class="bg-gray-800 rounded-lg overflow-hidden">
-          <button
-            class="w-full text-left p-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200"
-            on:keydown={(event) => handleUserKeydown(event, user.userId)}
-            on:click={() => toggleUserExpand(user.userId)}
-            aria-expanded={expandedUser === user.userId}
-            aria-controls={`user-details-${user.userId}`}
-          >
-            <div class="flex items-center">
-              <img
-                src={user.avatarUrl}
-                alt=""
-                class="w-10 h-10 rounded-full mr-3"
-              />
-              <div>
-                <p class="font-semibold">{user.username}</p>
-                <p class="text-sm text-gray-400">{user.afkStatus.message}</p>
-              </div>
-            </div>
-          </button>
-
-          {#if expandedUser === user.userId}
-            <div
-              transition:slide
-              class="p-4 bg-gray-750"
-              id={`user-details-${user.userId}`}
-            >
-              <p class="text-sm text-gray-400 mb-2">
-                AFK since: {new Date(user.afkStatus.dateAdded).toLocaleString()}
-              </p>
-              <button
-                on:click|stopPropagation={() => clearAfkStatus(user.userId)}
-                class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
-              >
-                Clear AFK Status
-              </button>
-            </div>
-          {/if}
-        </li>
-      {/each}
-    </ul>
-  {/if}
 </div>
 
-<style>
-  :global(body) {
-    background-color: #1a202c;
-    color: #ffffff;
-  }
+<style lang="postcss">
+    :global(body) {
+        background-color: #1a202c;
+        color: #ffffff;
+    }
+
+    :global(select),
+    :global(input),
+    :global(textarea) {
+        color-scheme: dark;
+    }
+
+    :global(*::-webkit-scrollbar) {
+        @apply w-2;
+    }
+
+    :global(*::-webkit-scrollbar-track) {
+        background: var(--color-primary) 10;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb) {
+        background: var(--color-primary) 30;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb:hover) {
+        background: var(--color-primary) 50;
+    }
+
+    /* Prevent iOS styling */
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    /* Prevent blue highlight on iOS */
+    select:focus {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom styling for options */
+    option {
+        background-color: #374151;
+        color: white;
+        padding: 0.5rem;
+    }
 </style>

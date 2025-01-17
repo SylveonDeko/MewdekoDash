@@ -1,55 +1,17 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
   import "../app.css";
-  import Navbar from "$lib/nav/Navbar.svelte";
-  import type { DiscordGuild } from "../lib/types/discordGuild";
+  import UnifiedNav from "$lib/nav/UnifiedNav.svelte";
   import { userAdminGuilds } from "../lib/stores/adminGuildsStore";
-  import { api } from "$lib/api.ts";
-  import { currentUser } from "$lib/stores/currentUserStore.ts";
+  import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
 
-  export let data;
 
-  let guildsFetched = false;
+  export let data: LayoutData;
 
-  onMount(() => {
-    fetchGuilds();
-  });
+  $: userAdminGuilds.set(data.guilds);
 
-  async function fetchGuilds() {
-    if (guildsFetched) return; // Prevent multiple fetches
-    guildsFetched = true;
-    currentUser.set(data.user);
-
-    try {
-      const response = await fetch("/api/guilds");
-      const guilds: DiscordGuild[] = await response.json();
-
-      // Filter guilds where the user has admin permissions
-      const filteredGuilds = guilds.filter(
-        (guild) => (guild.permissions & 0x8) === 0x8,
-      );
-
-      // Get bot guilds from API
-      const botGuilds = await api.getBotGuilds();
-
-      // Set the store with guilds that the bot is in and the user administers
-      userAdminGuilds.set(
-        filteredGuilds.filter((guild) => botGuilds.includes(guild.id)),
-      );
-    } catch (e) {
-      console.error("Error fetching guilds:", e);
-    }
-  }
-
-  type NavItem = {
-    title: string;
-    elements: {
-      title?: string;
-      href: string;
-    }[];
-  };
-  const navbarItems: NavItem[] = [
+  // Main navigation items
+  const navItems = [
     { title: "Home", elements: [{ href: "/" }] },
     { title: "Dashboard", elements: [{ href: "/dashboard" }] },
     { title: "Commands", elements: [{ href: "/commands" }] },
@@ -95,39 +57,10 @@
     content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp"
     property="og:image"
   />
-  <link
-    href="img/apple-touch-icon.webp"
-    rel="apple-touch-icon"
-    sizes="180x180"
-    type="image/webp"
-  />
-  <link
-    href="img/favicon-16x16.webp"
-    rel="icon"
-    sizes="16x16"
-    type="image/webp"
-  />
-  <link
-    href="img/favicon-32x32.webp"
-    rel="icon"
-    sizes="32x32"
-    type="image/webp"
-  />
-  <link
-    href="img/apple-touch-icon.webp"
-    rel="icon"
-    sizes="180x180"
-    type="image/webp"
-  />
-  <link
-    href="img/android-chrome-192x192.webp"
-    rel="icon"
-    sizes="192x192"
-    type="image/webp"
-  />
 </svelte:head>
 
-<Navbar adminGuilds={userAdminGuilds} items={navbarItems} user={data.user} />
-<main>
+<UnifiedNav items={navItems} data={data} />
+
+<main class="min-h-screen bg-mewd-dark-grey">
   <slot />
 </main>

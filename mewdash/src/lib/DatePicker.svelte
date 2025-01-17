@@ -1,7 +1,7 @@
 <!-- lib/DatePicker.svelte -->
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { fly } from "svelte/transition";
 
   export let value: Date;
   export let id: string;

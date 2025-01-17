@@ -1,19 +1,21 @@
-import type { DiscordUser } from "./lib/types/discord";
+import type { DiscordUser } from '$lib/types/discord';
+import type { DiscordGuild } from "$lib/types/discordGuild.ts";
 
 declare global {
   namespace App {
-    // interface Error {}
     interface Locals {
       user: DiscordUser | null;
+      guilds: DiscordGuild[] | null;
     }
 
-    interface HTMLAttributes<T> {
-      // If you want to use on:clickoutside
-      "on:clickoutside"?: (event: CustomEvent<any>) => void;
+    interface PageData {
+      user: DiscordUser | null;
+      guilds: DiscordGuild[] | null;
     }
 
-    // interface PageData {}
-    // interface Platform {}
+    interface Error {
+      message: string;
+    }
   }
 }
 

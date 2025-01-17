@@ -4,12 +4,19 @@
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade, slide } from "svelte/transition";
-  import type { MultiGreet, GuildConfig } from "$lib/types/models.ts";
+  import { fade } from "svelte/transition";
+  import type { MultiGreet } from "$lib/types/models.ts";
   import { MultiGreetType } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
   import Notification from "$lib/Notification.svelte";
   import { browser } from "$app/environment";
+  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import ColorThief from 'colorthief';
+  import {
+    MessageCircle, Plus, Check, X, Edit2, Trash2,
+    Clock, Bot, Webhook, Settings, ChevronDown, Users, AlertTriangle
+  } from 'lucide-svelte';
+  import { logger } from "$lib/logger.ts";
 
   export let data: PageData;
   let channels: Array<{ id: string; name: string }> = [];
@@ -23,12 +30,101 @@
   let selectedChannel: string | null = null;
   let editMessage: { id: number; message: string } | null = null;
   let editDeleteTime: { id: number; time: string } | null = null;
-  let editWebhook: { id: number; name: string; avatarUrl: string } | null =
-    null;
+  let editWebhook: { id: number; name: string; avatarUrl: string } | null = null;
   let greetType: MultiGreetType = MultiGreetType.MultiGreet;
   let isMobile = false;
 
+  // Theme and color management
+  let colors = {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    accent: '#ec4899',
+    text: '#ffffff',
+    muted: '#9ca3af',
+    gradientStart: '#3b82f6',
+    gradientMid: '#8b5cf6',
+    gradientEnd: '#ec4899'
+  };
+
   $: sortedGreets = [...greets].sort((a, b) => a.id - b.id);
+  $: colorVars = `
+    --color-primary: ${colors.primary};
+    --color-secondary: ${colors.secondary};
+    --color-accent: ${colors.accent};
+    --color-text: ${colors.text};
+    --color-muted: ${colors.muted};
+  `;
+
+  function rgbToHsl(r: number, g: number, b: number) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    return [h * 360, s * 100, l * 100];
+  }
+
+  function rgbToHex(r: number, g: number, b: number) {
+    return '#' + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+  }
+
+  function adjustLightness(rgb: number[], lightness: number) {
+    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
+  }
+
+  async function extractColors() {
+    if (!$currentGuild?.icon) return;
+    try {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = $currentInstance?.botAvatar;
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const colorThief = new ColorThief();
+      const dominantColor = colorThief.getColor(img);
+      const palette = colorThief.getPalette(img);
+
+      const primaryHex = rgbToHex(...dominantColor);
+      const secondaryHex = rgbToHex(...palette[1]);
+      const accentHex = rgbToHex(...palette[2]);
+
+      colors = {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        accent: accentHex,
+        text: adjustLightness(dominantColor, 95),
+        muted: adjustLightness(dominantColor, 60),
+        gradientStart: primaryHex,
+        gradientMid: secondaryHex,
+        gradientEnd: accentHex
+      };
+    } catch (err) {
+      logger.error('Failed to extract colors:', err);
+    }
+  }
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -36,7 +132,7 @@
 
   function showNotificationMessage(
     message: string,
-    type: "success" | "error" = "success",
+    type: "success" | "error" = "success"
   ) {
     notificationMessage = message;
     notificationType = type;
@@ -57,7 +153,7 @@
       greets = await api.getMultiGreets(guildId);
       greetType = await api.getMultiGreetType(guildId);
     } catch (err) {
-      console.error("Failed to fetch greets:", err);
+      logger.error("Failed to fetch greets:", err);
       error = err instanceof Error ? err.message : "Failed to fetch greets";
     } finally {
       loading = false;
@@ -71,7 +167,7 @@
       }
       channels = await api.getGuildTextChannels(BigInt($currentGuild.id));
     } catch (err) {
-      console.error("Failed to fetch channels:", err);
+      logger.error("Failed to fetch channels:", err);
       error = err instanceof Error ? err.message : "Failed to fetch channels";
     }
   }
@@ -81,16 +177,13 @@
       if (!$currentGuild?.id || !selectedChannel) {
         throw new Error("No guild or channel selected");
       }
-      await api.addMultiGreet(
-        BigInt($currentGuild.id),
-        BigInt(selectedChannel),
-      );
+      await api.addMultiGreet(BigInt($currentGuild.id), BigInt(selectedChannel));
       showNotificationMessage("Greet added successfully");
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to add greet",
-        "error",
+        "error"
       );
     }
   }
@@ -106,7 +199,7 @@
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to remove greet",
-        "error",
+        "error"
       );
     }
   }
@@ -123,7 +216,7 @@
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update message",
-        "error",
+        "error"
       );
     }
   }
@@ -140,7 +233,7 @@
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update delete time",
-        "error",
+        "error"
       );
     }
   }
@@ -150,17 +243,13 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetGreetBots(
-        BigInt($currentGuild.id),
-        id,
-        enabled,
-      );
+      await api.updateMultiGreetGreetBots(BigInt($currentGuild.id), id, enabled);
       showNotificationMessage("Greet bots setting updated successfully");
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update greet bots",
-        "error",
+        "error"
       );
     }
   }
@@ -180,7 +269,7 @@
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update webhook",
-        "error",
+        "error"
       );
     }
   }
@@ -190,17 +279,13 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetDisabled(
-        BigInt($currentGuild.id),
-        id,
-        disabled,
-      );
+      await api.updateMultiGreetDisabled(BigInt($currentGuild.id), id, disabled);
       showNotificationMessage("Greet status updated successfully");
       await fetchGreets();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update status",
-        "error",
+        "error"
       );
     }
   }
@@ -216,9 +301,15 @@
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to update greet type",
-        "error",
+        "error"
       );
     }
+  }
+
+  $: if ($currentGuild) {
+    fetchGreets();
+    fetchChannels();
+    extractColors();
   }
 
   onMount(async () => {
@@ -233,720 +324,455 @@
   });
 </script>
 
-<svelte:head>
-  <title>MultiGreets - Mewdeko Dashboard</title>
-</svelte:head>
+<div
+  class="min-h-screen p-4 md:p-6"
+  style="{colorVars} background: radial-gradient(circle at top,
+    {colors.gradientStart}15 0%,
+    {colors.gradientMid}10 50%,
+    {colors.gradientEnd}05 100%);"
+>
+  <div class="max-w-7xl mx-auto space-y-8">
+    <h1 class="text-3xl font-bold mb-8" style="color: {colors.text}">MultiGreets Configuration</h1>
 
-<div class="container mx-auto px-4 py-6 max-w-7xl min-h-screen">
-  <h1 class="text-3xl font-bold mb-8">MultiGreets Configuration</h1>
-
-  {#if showNotification}
-    <div class="fixed top-4 right-4 z-50">
-      <Notification message={notificationMessage} type={notificationType} />
-    </div>
-  {/if}
-
-  <!-- Greet Type Section -->
-  <section
-    class="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6"
-    transition:fade
-  >
-    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-      <svg
-        class="h-5 w-5 text-blue-400"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      Greet Type Configuration
-    </h2>
-    <div class="flex flex-col sm:flex-row gap-3">
-      {#each [{ type: MultiGreetType.MultiGreet, label: "All Greets", icon: "🔄", desc: "Send all configured greets" }, { type: MultiGreetType.RandomGreet, label: "Random Greet", icon: "🎲", desc: "Send one random greet" }, { type: MultiGreetType.Off, label: "Disabled", icon: "⭕", desc: "Disable all greets" }] as option}
-        <button
-          class="flex-1 px-4 py-3 rounded-lg transition-all duration-200
-                           {greetType === option.type
-            ? 'bg-blue-500 text-white ring-2 ring-blue-400/50 ring-offset-1 ring-offset-gray-800'
-            : 'bg-gray-700/50 hover:bg-gray-700 text-gray-200'}"
-          on:click={() => updateGreetType(option.type)}
-        >
-          <div class="flex flex-col items-center gap-1">
-            <span class="text-xl mb-1">{option.icon}</span>
-            <span class="font-medium">{option.label}</span>
-            <span class="text-xs opacity-75">{option.desc}</span>
-          </div>
-        </button>
-      {/each}
-    </div>
-  </section>
-
-  {#if loading}
-    <div class="flex flex-col items-center justify-center h-64">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/50 border-t-blue-500"
-      ></div>
-      <span class="mt-4 text-gray-400">Loading configurations...</span>
-    </div>
-  {:else if error}
-    <div
-      class="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 rounded-lg mb-6"
-      role="alert"
-    >
-      <div class="flex items-center gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-            clip-rule="evenodd"
-          />
-        </svg>
-        <div>
-          <div class="font-medium">Error Occurred</div>
-          <div class="text-sm mt-1">{error}</div>
-        </div>
+    {#if showNotification}
+      <div class="fixed top-4 right-4 z-50" transition:fade>
+        <Notification message={notificationMessage} type={notificationType} />
       </div>
-    </div>
-  {:else}
-    <!-- Add New Greet Section -->
+    {/if}
+
+    <!-- Greet Type Section -->
     <section
-      class="mb-8 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6"
+      class="mb-8 backdrop-blur-sm rounded-xl border p-6"
+      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+             border-color: {colors.primary}30;"
+      transition:fade
     >
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 text-green-400"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-            clip-rule="evenodd"
-          />
-        </svg>
-        Add New Greet
+      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {colors.text}">
+        <Settings class="h-5 w-5" style="color: {colors.primary}" />
+        Greet Type Configuration
       </h2>
       <div class="flex flex-col sm:flex-row gap-3">
-        <!-- Improved Select Dropdown -->
-        <div class="relative flex-grow group">
-          <select
-            bind:value={selectedChannel}
-            class="w-full h-12 appearance-none rounded-lg border border-gray-600/50 bg-gray-700/50
-                               px-4 py-2 pr-10 text-base text-white placeholder-gray-400
-                               focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent
-                               disabled:opacity-50 disabled:cursor-not-allowed
-                               transition-all duration-200
-                               group-hover:border-gray-500/50"
-            aria-label="Select channel"
+        {#each [
+          { type: MultiGreetType.MultiGreet, label: "All Greets", icon: "🔄", desc: "Send all configured greets" },
+          { type: MultiGreetType.RandomGreet, label: "Random Greet", icon: "🎲", desc: "Send one random greet" },
+          { type: MultiGreetType.Off, label: "Disabled", icon: "⭕", desc: "Disable all greets" }
+        ] as option}
+          <button
+            class="flex-1 px-4 py-3 rounded-lg transition-all duration-200"
+            class:ring-2={greetType === option.type}
+            class:ring-offset-1={greetType === option.type}
+            style="background: {greetType === option.type ? colors.primary : `${colors.primary}20`};
+                   color: {greetType === option.type ? colors.text : colors.muted};
+                   ring-color: {`${colors.primary}50`};
+                   ring-offset-color: #1a1b1e;"
+            on:click={() => updateGreetType(option.type)}
           >
-            <option value="" disabled selected>Select a channel</option>
-            {#each channels as channel}
-              <option class="bg-gray-700 text-white py-2" value={channel.id}
-                >{channel.name}</option
-              >
-            {/each}
-          </select>
-          <div
-            class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-400
-                                group-hover:text-gray-300 transition-colors duration-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
-        <button
-          class="h-12 px-6 rounded-lg bg-blue-500 text-white font-medium transition-all duration-200
-                           hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed
-                           disabled:hover:bg-blue-500 whitespace-nowrap flex items-center justify-center gap-2
-                           focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-1
-                           focus:ring-offset-gray-800"
-          disabled={!selectedChannel}
-          on:click={addGreet}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Add Greet
-        </button>
+            <div class="flex flex-col items-center gap-1">
+              <span class="text-xl mb-1">{option.icon}</span>
+              <span class="font-medium">{option.label}</span>
+              <span class="text-xs opacity-75">{option.desc}</span>
+            </div>
+          </button>
+        {/each}
       </div>
     </section>
 
-    <!-- Greets List -->
-    {#if !greets.length}
+    {#if loading}
+      <div class="flex justify-center items-center min-h-[400px]">
+        <div class="relative">
+          <div
+            class="w-16 h-16 border-4 rounded-full animate-spin"
+            style="border-color: {colors.primary}20; border-top-color: {colors.primary}"
+          ></div>
+          <span class="mt-4 block text-center" style="color: {colors.muted}">Loading configurations...</span>
+        </div>
+      </div>
+    {:else if error}
       <div
-        class="text-gray-400 text-center p-8 bg-gray-800/50 backdrop-blur-sm rounded-xl
-                        border border-gray-700/50"
-        transition:fade
+        class="p-6 rounded-xl mb-6"
+        style="background: {colors.accent}10; border: 1px solid {colors.accent}40;"
+        role="alert"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-16 w-16 mx-auto mb-4 text-gray-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          />
-        </svg>
-        <p class="text-lg font-medium">No Greets Configured</p>
-        <p class="text-sm text-gray-500 mt-2">
-          Add your first greet message using the form above.
-        </p>
+        <div class="flex items-center gap-3">
+          <AlertTriangle class="w-6 h-6" style="color: {colors.accent}" />
+          <div style="color: {colors.accent}">
+            <div class="font-semibold text-lg">Error Occurred</div>
+            <div class="text-sm mt-1" style="color: {colors.accent}90">{error}</div>
+          </div>
+        </div>
       </div>
     {:else}
-      <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-        {#each sortedGreets as greet (greet.id)}
-          <div
-            class="bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700/50
-                                overflow-hidden hover:border-gray-600/50 transition-all duration-200"
-          >
-            <!-- Card Header -->
-            <div
-              class="p-4 bg-gradient-to-b from-gray-700/50 to-gray-800/50 border-b border-gray-700/50"
+      <!-- Add New Greet Section -->
+      <section
+        class="mb-8 backdrop-blur-sm rounded-xl border p-6"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+               border-color: {colors.primary}30;"
+      >
+        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {colors.text}">
+          <Plus class="h-5 w-5" style="color: {colors.primary}" />
+          Add New Greet
+        </h2>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-grow group">
+            <select
+              bind:value={selectedChannel}
+              class="w-full h-12 appearance-none rounded-lg border px-4 py-2 pr-10 text-base
+                     focus:outline-none focus:ring-2 transition-all duration-200"
+              style="background: {colors.primary}10;
+                     border-color: {colors.primary}30;
+                     color: {colors.text}"
             >
-              <div class="flex justify-between items-start">
-                <div>
-                  <h3 class="font-medium flex items-center gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M9.493 2.853a1 1 0 011.014 0l6 3.5A1 1 0 0117 7.5v5a1 1 0 01-.493.853l-6 3.5a1 1 0 01-1.014 0l-6-3.5A1 1 0 013 12.5v-5a1 1 0 01.493-.853l6-3.5zM10 4.5L5.5 7 10 9.5 14.5 7 10 4.5z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    <span class="truncate max-w-[180px]">{greet.channelId}</span
-                    >
-                    <span class="text-sm text-gray-400 font-normal"
-                      >#{greet.id}</span
-                    >
-                  </h3>
-                  <p
-                    class="text-sm text-gray-400 mt-0.5 flex items-center gap-1"
+              <option value="" disabled>Select a channel</option>
+              {#each channels as channel}
+                <option class="bg-gray-800 text-white py-2" value={channel.id}>
+                  {channel.name}
+                </option>
+              {/each}
+            </select>
+            <ChevronDown
+              class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+              style="color: {colors.muted}"
+            />
+          </div>
+          <button
+            class="h-12 px-6 rounded-lg font-medium transition-all duration-200
+                   disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            style="background: {colors.primary}; color: {colors.text}"
+            disabled={!selectedChannel}
+            on:click={addGreet}
+          >
+            <Plus class="h-5 w-5" />
+            Add Greet
+          </button>
+        </div>
+      </section>
+
+      <!-- Greets List -->
+      {#if !greets.length}
+        <div
+          class="text-center p-8 backdrop-blur-sm rounded-xl border"
+          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                 border-color: {colors.primary}30;"
+          transition:fade
+        >
+          <MessageCircle
+            class="h-16 w-16 mx-auto mb-4"
+            style="color: {colors.muted}"
+          />
+          <p class="text-lg font-medium" style="color: {colors.text}">No Greets Configured</p>
+          <p class="text-sm mt-2" style="color: {colors.muted}">
+            Add your first greet message using the form above.
+          </p>
+        </div>
+      {:else}
+        <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          {#each sortedGreets as greet (greet.id)}
+            <div
+              class="backdrop-blur-sm rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
+              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                     border-color: {colors.primary}30;"
+              transition:fade
+            >
+              <!-- Card Header -->
+              <div
+                class="p-4 border-b"
+                style="background: linear-gradient(to bottom, {colors.gradientStart}20, {colors.gradientMid}20);
+                       border-color: {colors.primary}30;"
+              >
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-medium flex items-center gap-2">
+                      <MessageCircle class="w-4 h-4" style="color: {colors.primary}" />
+                      <span class="truncate max-w-[180px]">#{greet.channelId}</span>
+                      <span class="text-sm" style="color: {colors.muted}">#{greet.id}</span>
+                    </h3>
+                  </div>
+                  <button
+                    class="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10"
+                    style="color: {colors.muted}"
+                    on:click={() => removeGreet(greet.id)}
                   >
-                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-                    {greet.channelId}
-                  </p>
+                    <Trash2 class="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  class="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10
-                                           transition-all duration-200 group"
-                  on:click={() => removeGreet(greet.id)}
-                  title="Remove greet"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 transform group-hover:scale-110 transition-transform duration-200"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Card Content -->
-            <div class="p-4 space-y-6">
-              <!-- Message Section -->
-              <div class="space-y-3">
-                {#if editMessage?.id === greet.id}
-                  <div class="space-y-3">
-                    <textarea
-                      bind:value={editMessage.message}
-                      class="w-full min-h-[120px] p-3 rounded-lg border border-gray-600/50
-                                                   bg-gray-700/50 text-sm resize-none focus:ring-2
-                                                   focus:ring-blue-500/50 focus:border-transparent
-                                                   placeholder-gray-500"
-                      placeholder="Enter greeting message..."
-                      aria-label="Edit greeting message"
-                    />
-                    <div class="flex gap-2">
-                      <button
-                        class="flex-1 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium
-                                                       hover:bg-blue-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() =>
-                          updateMessage(greet.id, editMessage.message)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Save
-                      </button>
-                      <button
-                        class="flex-1 py-2 rounded-lg bg-gray-700 text-white text-sm font-medium
-                                                       hover:bg-gray-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() => (editMessage = null)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                {:else}
-                  <div class="flex justify-between items-start gap-4">
-                    <div class="flex-grow">
-                      <h4
-                        class="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 text-blue-400"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Message
-                      </h4>
-                      <div
-                        class="text-sm break-words bg-gray-700/30 p-3 rounded-lg"
-                      >
-                        {#if greet.message}
-                          <p class="whitespace-pre-wrap">{greet.message}</p>
-                        {:else}
-                          <p class="text-gray-500 italic">No message set</p>
-                        {/if}
-                      </div>
-                    </div>
-                    <button
-                      class="p-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700
-                                                   transition-colors duration-200 group"
-                      on:click={() =>
-                        (editMessage = {
-                          id: greet.id,
-                          message: greet.message ?? "",
-                        })}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 transform group-hover:scale-110 transition-transform duration-200"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                {/if}
               </div>
 
-              <!-- Delete Time Section -->
-              <div class="space-y-3">
-                {#if editDeleteTime?.id === greet.id}
-                  <div class="space-y-3">
-                    <div class="relative">
-                      <input
-                        type="text"
-                        bind:value={editDeleteTime.time}
-                        placeholder="e.g. 1m30s"
-                        class="w-full p-3 rounded-lg border border-gray-600/50 bg-gray-700/50
-                                                       text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-transparent
-                                                       pl-9 placeholder-gray-500"
-                        aria-label="Edit delete time"
+              <!-- Card Content -->
+              <div class="p-4 space-y-6">
+                <!-- Message Section -->
+                <div class="space-y-3">
+                  {#if editMessage?.id === greet.id}
+                    <div class="space-y-3">
+                      <textarea
+                        bind:value={editMessage.message}
+                        class="w-full min-h-[120px] p-3 rounded-lg border resize-none focus:ring-2"
+                        style="background: {colors.primary}10;
+                               border-color: {colors.primary}30;
+                               color: {colors.text}"
+                        placeholder="Enter greeting message..."
                       />
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
+                      <div class="flex gap-2">
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                          style="background: {colors.primary}; color: {colors.text}"
+                          on:click={() => updateMessage(greet.id, editMessage.message)}
+                        >
+                          <Check class="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                          style="background: {colors.primary}20; color: {colors.text}"
+                          on:click={() => editMessage = null}
+                        >
+                          <X class="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <div class="flex gap-2">
-                      <button
-                        class="flex-1 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium
-                                                       hover:bg-blue-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() =>
-                          updateDeleteTime(greet.id, editDeleteTime.time)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
+                  {:else}
+                    <div class="flex justify-between items-start gap-4">
+                      <div class="flex-grow">
+                        <h4 class="text-sm font-medium mb-2 flex items-center gap-2"
+                            style="color: {colors.text}">
+                          <MessageCircle class="w-4 h-4" style="color: {colors.primary}" />
+                          Message
+                        </h4>
+                        <div
+                          class="text-sm break-words p-3 rounded-lg"
+                          style="background: {colors.primary}10;"
                         >
-                          <path
-                            fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Save
-                      </button>
+                          {#if greet.message}
+                            <p class="whitespace-pre-wrap" style="color: {colors.text}">{greet.message}</p>
+                          {:else}
+                            <p style="color: {colors.muted}">No message set</p>
+                          {/if}
+                        </div>
+                      </div>
                       <button
-                        class="flex-1 py-2 rounded-lg bg-gray-700 text-white text-sm font-medium
-                                                       hover:bg-gray-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() => (editDeleteTime = null)}
+                        class="p-2 rounded-lg transition-all duration-200"
+                        style="background: {colors.primary}10;
+                               color: {colors.muted}"
+                        on:click={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Cancel
+                        <Edit2 class="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                {:else}
-                  <div class="flex justify-between items-center">
-                    <div>
-                      <h4
-                        class="text-sm font-medium text-gray-300 flex items-center gap-2"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 text-purple-400"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Delete After
-                      </h4>
-                      <p class="text-sm text-gray-400 mt-1">
-                        {#if greet.deleteTime}
-                          <span
-                            class="bg-purple-500/10 text-purple-400 px-2 py-1 rounded"
-                          >
-                            {greet.deleteTime}s
-                          </span>
-                        {:else}
-                          <span class="text-gray-500 italic">Never</span>
-                        {/if}
-                      </p>
-                    </div>
-                    <button
-                      class="p-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700
-                                                   transition-colors duration-200 group"
-                      on:click={() =>
-                        (editDeleteTime = {
-                          id: greet.id,
-                          time: String(greet.deleteTime || ""),
-                        })}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 transform group-hover:scale-110 transition-transform duration-200"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                {/if}
-              </div>
+                  {/if}
+                </div>
 
-              <!-- Webhook Configuration -->
-              <div class="space-y-3">
-                {#if editWebhook?.id === greet.id}
-                  <div class="space-y-3">
-                    <div class="space-y-2">
+                <!-- Delete Time Section -->
+                <div class="space-y-3">
+                  {#if editDeleteTime?.id === greet.id}
+                    <div class="space-y-3">
                       <div class="relative">
                         <input
                           type="text"
-                          bind:value={editWebhook.name}
-                          placeholder="Webhook Name"
-                          class="w-full p-3 rounded-lg border border-gray-600/50 bg-gray-700/50
-                                                           text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-transparent
-                                                           pl-9 placeholder-gray-500"
-                          aria-label="Webhook name"
+                          bind:value={editDeleteTime.time}
+                          placeholder="e.g. 1m30s"
+                          class="w-full p-3 rounded-lg border focus:ring-2"
+                          style="background: {colors.primary}10;
+                                 border-color: {colors.primary}30;
+                                 color: {colors.text}"
                         />
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
+                        <Clock
+                          class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                          style="color: {colors.muted}"
+                        />
                       </div>
-                      <div class="relative">
-                        <input
-                          type="text"
-                          bind:value={editWebhook.avatarUrl}
-                          placeholder="Avatar URL (optional)"
-                          class="w-full p-3 rounded-lg border border-gray-600/50 bg-gray-700/50
-                                                           text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-transparent
-                                                           pl-9 placeholder-gray-500"
-                          aria-label="Webhook avatar URL"
-                        />
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
+                      <div class="flex gap-2">
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
+                          style="background: {colors.primary}; color: {colors.text}"
+                          on:click={() => updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
-                          <path
-                            fill-rule="evenodd"
-                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
+                          <Check class="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
+                          style="background: {colors.primary}20; color: {colors.text}"
+                          on:click={() => editDeleteTime = null}
+                        >
+                          <X class="w-4 h-4" />
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                    <div class="flex gap-2">
+                  {:else}
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <h4 class="text-sm font-medium flex items-center gap-2"
+                            style="color: {colors.text}">
+                          <Clock class="w-4 h-4" style="color: {colors.secondary}" />
+                          Delete After
+                        </h4>
+                        <p class="text-sm mt-1">
+                          {#if greet.deleteTime}
+                            <span class="px-2 py-1 rounded"
+                                  style="background: {colors.secondary}10;
+                                         color: {colors.secondary}">
+                              {greet.deleteTime}s
+                            </span>
+                          {:else}
+                            <span style="color: {colors.muted}">Never</span>
+                          {/if}
+                        </p>
+                      </div>
                       <button
-                        class="flex-1 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium
-                                                       hover:bg-blue-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() => updateWebhook(greet.id)}
+                        class="p-2 rounded-lg transition-all duration-200"
+                        style="background: {colors.primary}10;
+                               color: {colors.muted}"
+                        on:click={() => editDeleteTime = { id: greet.id, time: String(greet.deleteTime || "") }}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Save
-                      </button>
-                      <button
-                        class="flex-1 py-2 rounded-lg bg-gray-700 text-white text-sm font-medium
-                                                       hover:bg-gray-600 transition-colors duration-200
-                                                       flex items-center justify-center gap-2"
-                        on:click={() => (editWebhook = null)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        Cancel
+                        <Edit2 class="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                {:else}
-                  <div class="flex justify-between items-center">
-                    <div>
-                      <h4
-                        class="text-sm font-medium text-gray-300 flex items-center gap-2"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4 text-green-400"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"
-                            clip-rule="evenodd"
+                  {/if}
+                </div>
+
+                <!-- Webhook Configuration -->
+                <div class="space-y-3">
+                  {#if editWebhook?.id === greet.id}
+                    <div class="space-y-3">
+                      <div class="space-y-2">
+                        <div class="relative">
+                          <input
+                            type="text"
+                            bind:value={editWebhook.name}
+                            placeholder="Webhook Name"
+                            class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
+                            style="background: {colors.primary}10;
+                                   border-color: {colors.primary}30;
+                                   color: {colors.text}"
                           />
-                        </svg>
-                        Webhook
-                      </h4>
-                      <p class="text-sm text-gray-400 mt-1">
-                        {#if greet.webhookUrl}
-                          <span
-                            class="bg-green-500/10 text-green-400 px-2 py-1 rounded"
-                          >
-                            Configured
-                          </span>
-                        {:else}
-                          <span class="text-gray-500 italic"
-                            >Not configured</span
-                          >
-                        {/if}
-                      </p>
+                          <Bot
+                            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                            style="color: {colors.muted}"
+                          />
+                        </div>
+                        <div class="relative">
+                          <input
+                            type="text"
+                            bind:value={editWebhook.avatarUrl}
+                            placeholder="Avatar URL (optional)"
+                            class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
+                            style="background: {colors.primary}10;
+                                   border-color: {colors.primary}30;
+                                   color: {colors.text}"
+                          />
+                          <Users
+                            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                            style="color: {colors.muted}"
+                          />
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
+                          style="background: {colors.primary}; color: {colors.text}"
+                          on:click={() => updateWebhook(greet.id)}
+                        >
+                          <Check class="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
+                          style="background: {colors.primary}20; color: {colors.text}"
+                          on:click={() => editWebhook = null}
+                        >
+                          <X class="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      class="p-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-700
-                                                   transition-colors duration-200 group"
-                      on:click={() =>
-                        (editWebhook = {
+                  {:else}
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <h4 class="text-sm font-medium flex items-center gap-2"
+                            style="color: {colors.text}">
+                          <Webhook class="w-4 h-4" style="color: {colors.accent}" />
+                          Webhook
+                        </h4>
+                        <p class="text-sm mt-1">
+                          {#if greet.webhookUrl}
+                            <span class="px-2 py-1 rounded"
+                                  style="background: {colors.accent}10;
+                                         color: {colors.accent}">
+                              Configured
+                            </span>
+                          {:else}
+                            <span style="color: {colors.muted}">Not configured</span>
+                          {/if}
+                          </p>
+                      </div>
+                      <button
+                        class="p-2 rounded-lg transition-all duration-200"
+                        style="background: {colors.primary}10;
+                               color: {colors.muted}"
+                        on:click={() => editWebhook = {
                           id: greet.id,
                           name: "",
-                          avatarUrl: "",
-                        })}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 transform group-hover:scale-110 transition-transform duration-200"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
+                          avatarUrl: ""
+                        }}
                       >
-                        <path
-                          d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                {/if}
-              </div>
+                        <Edit2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  {/if}
+                </div>
 
-              <!-- Toggle Controls -->
-              <div
-                class="flex flex-wrap gap-4 pt-2 border-t border-gray-700/50"
-              >
-                <label
-                  class="relative inline-flex items-center cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    class="sr-only peer"
-                    checked={greet.greetBots}
-                    on:change={(e) =>
-                      updateGreetBots(greet.id, e.currentTarget.checked)}
-                  />
-                  <div
-                    class="w-11 h-6 bg-gray-700 rounded-full peer-focus:ring-2
-                                                peer-focus:ring-blue-500/50 peer-checked:bg-blue-500
-                                                peer-checked:after:translate-x-full peer-checked:after:border-white
-                                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                                after:bg-white after:rounded-full after:h-5 after:w-5
-                                                after:transition-all"
-                  ></div>
-                  <span
-                    class="ml-3 text-sm font-medium text-gray-300 group-hover:text-white"
-                  >
-                    Greet Bots
-                  </span>
-                </label>
+                <!-- Toggle Controls -->
+                <div class="flex flex-wrap gap-4 pt-4 border-t"
+                     style="border-color: {colors.primary}20">
+                  <label class="relative inline-flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      checked={greet.greetBots}
+                      on:change={(e) => updateGreetBots(greet.id, e.currentTarget.checked)}
+                    />
+                    <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
+                              after:absolute after:top-[2px] after:left-[2px] after:bg-white
+                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                         style="background: {greet.greetBots ? colors.primary : `${colors.primary}20`};
+                                ring-color: {colors.primary}50">
+                    </div>
+                    <span class="ml-3 text-sm font-medium transition-colors duration-200"
+                          style="color: {colors.text}">
+                      Greet Bots
+                    </span>
+                  </label>
 
-                <label
-                  class="relative inline-flex items-center cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    class="sr-only peer"
-                    checked={!greet.disabled}
-                    on:change={(e) =>
-                      updateDisabled(greet.id, !e.currentTarget.checked)}
-                  />
-                  <div
-                    class="w-11 h-6 bg-gray-700 rounded-full peer-focus:ring-2
-                                                peer-focus:ring-green-500/50 peer-checked:bg-green-500
-                                                peer-checked:after:translate-x-full peer-checked:after:border-white
-                                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                                after:bg-white after:rounded-full after:h-5 after:w-5
-                                                after:transition-all"
-                  ></div>
-                  <span
-                    class="ml-3 text-sm font-medium text-gray-300 group-hover:text-white"
-                  >
-                    Enabled
-                  </span>
-                </label>
+                  <label class="relative inline-flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      checked={!greet.disabled}
+                      on:change={(e) => updateDisabled(greet.id, !e.currentTarget.checked)}
+                    />
+                    <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
+                              after:absolute after:top-[2px] after:left-[2px] after:bg-white
+                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                         style="background: {!greet.disabled ? colors.primary : `${colors.primary}20`};
+                                ring-color: {colors.primary}50">
+                    </div>
+                    <span class="ml-3 text-sm font-medium transition-colors duration-200"
+                          style="color: {colors.text}">
+                      Enabled
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-        {/each}
-      </div>
+          {/each}
+        </div>
+      {/if}
     {/if}
-  {/if}
+  </div>
 </div>
 
-<style>
+<style lang="postcss">
   :global(body) {
     background-color: #1a202c;
     color: #ffffff;
@@ -973,5 +799,47 @@
     background-color: #374151;
     color: white;
     padding: 0.5rem;
+  }
+
+  /* Add smooth transitions for color changes */
+  [style*="background"],
+  [style*="color"] {
+    @apply transition-colors duration-300;
+  }
+
+  /* Add container queries for better responsive behavior */
+  @container (max-width: 640px) {
+    .music-controls {
+      @apply flex-col items-stretch;
+    }
+  }
+
+  /* Add better card spacing for mobile */
+  @media (max-width: 640px) {
+    :global(.card-grid) {
+      @apply gap-4;
+    }
+
+    :global(.card) {
+      @apply p-4;
+    }
+  }
+
+  :global(*::-webkit-scrollbar) {
+    @apply w-2;
+  }
+
+  :global(*::-webkit-scrollbar-track) {
+    background: var(--color-primary)10;
+    @apply rounded-full;
+  }
+
+  :global(*::-webkit-scrollbar-thumb) {
+    background: var(--color-primary)30;
+    @apply rounded-full;
+  }
+
+  :global(*::-webkit-scrollbar-thumb:hover) {
+    background: var(--color-primary)50;
   }
 </style>

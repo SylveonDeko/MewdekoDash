@@ -8,6 +8,53 @@
   import ImageWrapper from "$lib/carousel/ImageWrapper.svelte";
   import type { RedisGuild } from "$lib/types/redisGuild";
   import MultiButton from "$lib/MultiButton.svelte";
+  import { extractColors, type ColorPalette } from "$lib/colorUtils";
+  import { logger } from "$lib/logger.ts";
+
+  export let data;
+
+
+  $: {
+    updateColors();
+  }
+
+  async function updateColors() {
+    try {
+      if (data?.user?.avatar) {
+        colors = await extractColors(
+          data.user.avatar.startsWith("a_")
+            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+        );
+      } else {
+        // Default fallback colors when no user
+        colors = await extractColors("/img/Mewdeko.png");
+      }
+    } catch (err) {
+      logger.error('Failed to extract colors:', err);
+      // Fallback colors in case of error
+      colors = {
+        primary: '#3b82f6',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        text: '#ffffff',
+        muted: '#9ca3af',
+        gradientStart: '#3b82f6',
+        gradientMid: '#8b5cf6',
+        gradientEnd: '#ec4899'
+      };
+    }
+
+    colorVars = `
+    --color-primary: ${colors.primary};
+    --color-secondary: ${colors.secondary};
+    --color-accent: ${colors.accent};
+    --color-text: ${colors.text};
+    --color-muted: ${colors.muted};
+  `;
+  }
+  let colors: ColorPalette;
+  let colorVars: string;
 
   let guilds: RedisGuild[] = [];
   let fetched = false;
@@ -21,14 +68,14 @@
         {
           label: "Stable",
           href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot",
-          ariaLabel: "Invite Stable Version of Mewdeko",
+          ariaLabel: "Invite Stable Version of Mewdeko"
         },
         {
           label: "Nightly",
           href: "https://discord.com/oauth2/authorize?client_id=964590728397344868&permissions=6618603&scope=bot",
-          ariaLabel: "Invite Nightly Version of Mewdeko",
-        },
-      ],
+          ariaLabel: "Invite Nightly Version of Mewdeko"
+        }
+      ]
     },
     {
       label: "Donate",
@@ -37,24 +84,25 @@
         {
           label: "Ko-fi",
           href: "https://ko-fi.com/mewdeko",
-          ariaLabel: "Donate via Ko-fi",
+          ariaLabel: "Donate via Ko-fi"
         },
         {
           label: "Paypal",
           href: "https://paypal.me/eugenevernik",
-          ariaLabel: "Donate via Paypal",
-        },
-      ],
+          ariaLabel: "Donate via Paypal"
+        }
+      ]
     },
     {
       label: "Server",
       href: "https://discord.gg/invite/4stkEfZ6As",
-      ariaLabel: "Join the Mewdeko Server",
-    },
+      ariaLabel: "Join the Mewdeko Server"
+    }
   ];
 
   onMount(async () => {
     try {
+      await updateColors();
       const response = await fetch("/api/redis/guilds");
       if (response.ok) {
         guilds = await response.json();
@@ -65,7 +113,7 @@
         throw new Error("Failed to fetch guilds");
       }
     } catch (error) {
-      console.error("Error fetching guilds:", error);
+      logger.error("Error fetching guilds:", error);
     }
   });
 
@@ -98,10 +146,15 @@
   />
 </svelte:head>
 
-<main>
+<main style={colorVars}>
   <header
-    class="py-16 px-4 sm:px-12 flex flex-col items-center"
+    class="py-16 px-4 sm:px-12 flex flex-col items-center relative"
     in:fade={{ duration: 300 }}
+    style="background: radial-gradient(circle at top,
+      {colors?.gradientStart}15 0%,
+      {colors?.gradientMid}10 50%,
+      {colors?.gradientEnd}05 100%
+    );"
   >
     <h1
       class="text-center font-extrabold text-mewd-white max-w-4xl mx-auto text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-8"
@@ -116,9 +169,13 @@
 
     {#if fetched}
       <section
-        class="mt-12 flex flex-col justify-center items-center"
-        aria-labelledby="top-servers-heading"
-        in:fade={{ duration: 300, delay: 300 }}
+        aria-labelledby="features-heading"
+        class="relative"
+        style="background: linear-gradient(135deg,
+      {colors?.gradientStart}10,
+      {colors?.gradientMid}15,
+      {colors?.gradientEnd}10
+    );"
       >
         <h2
           id="top-servers-heading"
@@ -156,7 +213,7 @@
                   </p>
                 </div>
                 <span class="sr-only"
-                  >{guild.Name}, {guild.MemberCount.toLocaleString()}
+                >{guild.Name}, {guild.MemberCount.toLocaleString()}
                   Members</span
                 >
               </li>
@@ -361,8 +418,15 @@
   </section>
 </main>
 
-<style>
-  :global(body) {
-    @apply bg-mewd-light-grey text-mewd-white;
-  }
+<style lang="postcss">
+    :global(body) {
+        @apply text-mewd-white;
+        background: var(--color-primary);
+    }
+
+    /* Add smooth transitions for color changes */
+    [style*="background"],
+    [style*="color"] {
+        @apply transition-colors duration-300;
+    }
 </style>

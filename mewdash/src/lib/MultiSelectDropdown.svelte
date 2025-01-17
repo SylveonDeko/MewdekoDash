@@ -1,4 +1,4 @@
-<!-- lib/MultiSelectDropdown.svelte -->
+!-- lib/MultiSelectDropdown.svelte -->
 <script lang="ts">
   export let options: { id: string; name: string }[];
   export let selected: string[];

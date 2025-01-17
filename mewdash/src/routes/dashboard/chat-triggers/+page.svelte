@@ -1,6 +1,6 @@
 <!-- routes/dashboard/chat-triggers/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
@@ -9,6 +9,29 @@
   import Notification from "$lib/Notification.svelte";
   import { get } from "svelte/store";
   import type { ChatTriggers } from "$lib/types/models";
+  import ColorThief from 'colorthief';
+  import type { PageData } from "./$types";
+  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import {
+    MessageCircle, Plus, Settings, AlertTriangle, Delete,
+    Edit, Check, X, ChevronDown, ChevronUp, Command, Users, ToggleRight, Sparkles
+  } from 'lucide-svelte';
+  import { browser } from "$app/environment";
+  import { logger } from "$lib/logger.ts";
+
+  export let data: PageData;
+
+  // Color system
+  let colors = {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    accent: '#ec4899',
+    text: '#ffffff',
+    muted: '#9ca3af',
+    gradientStart: '#3b82f6',
+    gradientMid: '#8b5cf6',
+    gradientEnd: '#ec4899'
+  };
 
   // Notification variables
   let showNotification = false;
@@ -39,6 +62,7 @@
   let regexHighlightedString = "";
   let dropdownRef: HTMLDivElement;
   let activeDropdown: string | null = null;
+  let isMobile = false;
 
   // Enums
   const RequirePrefixType = {
@@ -68,17 +92,81 @@
     User: 3,
   };
 
-  // On component mount
-  onMount(async () => {
-    const guild = get(currentGuild);
-    if (!guild) {
-      await goto("/dashboard");
-      return;
+  // Color system functions
+  function rgbToHsl(r: number, g: number, b: number) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
     }
-    newTrigger.guildId = guild.id;
-    await loadTriggers();
-    await loadGuildRoles();
-  });
+
+    return [h * 360, s * 100, l * 100];
+  }
+
+  function rgbToHex(r: number, g: number, b: number) {
+    return '#' + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+  }
+
+  function adjustLightness(rgb: number[], lightness: number) {
+    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
+  }
+
+  async function extractColors() {
+    if (!data?.user?.avatar) return;
+    try {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = $currentInstance?.botAvatar;
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const colorThief = new ColorThief();
+      const dominantColor = colorThief.getColor(img);
+      const palette = colorThief.getPalette(img);
+
+      const primaryHex = rgbToHex(...dominantColor);
+      const secondaryHex = rgbToHex(...palette[1]);
+      const accentHex = rgbToHex(...palette[2]);
+
+      colors = {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        accent: accentHex,
+        text: adjustLightness(dominantColor, 95),
+        muted: adjustLightness(dominantColor, 60),
+        gradientStart: primaryHex,
+        gradientMid: secondaryHex,
+        gradientEnd: accentHex
+      };
+    } catch (err) {
+      logger.error('Failed to extract colors:', err);
+    }
+  }
+
+  function checkMobile() {
+    isMobile = browser && window.innerWidth < 768;
+  }
 
   // Function to load triggers
   async function loadTriggers() {
@@ -98,7 +186,7 @@
         isValidRegex: trigger.isRegex ? validateRegex(trigger.trigger) : true,
       }));
     } catch (err: any) {
-      console.error("Failed to fetch chat triggers:", err);
+      logger.error("Failed to fetch chat triggers:", err);
       error = err.message || "Failed to fetch chat triggers";
     } finally {
       loading = false;
@@ -114,7 +202,7 @@
       }
       guildRoles = await api.getGuildRoles(guild.id);
     } catch (err) {
-      console.error("Failed to fetch guild roles:", err);
+      logger.error("Failed to fetch guild roles:", err);
     }
   }
 
@@ -340,7 +428,7 @@
     } else {
       return [];
     }
-  }
+    }
 
   function validateRegex(regex: string): boolean {
     try {
@@ -464,282 +552,535 @@
       showNotification = false;
     }, 3000);
   }
+
+  onMount(async () => {
+    const guild = get(currentGuild);
+    if (!guild) {
+      await goto("/dashboard");
+      return;
+    }
+    newTrigger.guildId = guild.id;
+    loading = true;
+    try {
+      await Promise.all([loadTriggers(), loadGuildRoles(), extractColors()]);
+      checkMobile();
+      if (browser) window.addEventListener("resize", checkMobile);
+    } catch (err) {
+      error = "Failed to fetch data";
+      logger.error(error, err);
+    } finally {
+      loading = false;
+    }
+  });
+
+    // Watch for guild changes
+  $: if ($currentGuild) {
+    loadTriggers()
+    loadGuildRoles()
+  }
+
+
+  onDestroy(() => {
+    if (browser) window.removeEventListener("resize", checkMobile);
+  });
+
+  $: colorVars = `
+    --color-primary: ${colors.primary};
+    --color-secondary: ${colors.secondary};
+    --color-accent: ${colors.accent};
+    --color-text: ${colors.text};
+    --color-muted: ${colors.muted};
+  `;
 </script>
 
 <svelte:head>
-  <title>Chat Triggers - Mewdeko Dashboard</title>
+  <title>Chat Triggers - Dashboard</title>
 </svelte:head>
 
-<div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4">Chat Triggers</h1>
-  {#if showNotification}
-    <Notification message={notificationMessage} type={notificationType} />
-  {/if}
-  {#if loading}
-    <p role="status">Loading...</p>
-  {:else if error}
-    <p class="text-red-500" role="alert">{error}</p>
-  {:else if triggers.length === 0}
-    <p transition:fade class="text-gray-400 italic">No chat triggers found.</p>
-  {:else}
-    <ul class="space-y-4" aria-label="Chat triggers list">
-      {#each triggers as trigger (trigger.id)}
-        <li class="bg-gray-800 rounded-lg p-4">
-          <div
-            class="flex flex-col md:flex-row md:justify-between items-start md:items-center"
-          >
-            <div class="flex-1">
-              <p class="font-semibold break-words">
-                Trigger: {trigger.trigger}
-              </p>
-              <p class="text-sm text-gray-400 break-words">
-                Response: {trigger.response}
-              </p>
-            </div>
-            <button
-              class="text-blue-500 mt-2 md:mt-0 self-start md:self-center"
-              on:click={() => toggleExpand(trigger.id)}
-              aria-expanded={expandedTriggerId === trigger.id}
-              aria-controls={`trigger-details-${trigger.id}`}
-            >
-              {expandedTriggerId === trigger.id ? "Collapse" : "Expand"}
-            </button>
-          </div>
+<div
+  class="min-h-screen p-4 md:p-6"
+  style="{colorVars} background: radial-gradient(circle at top,
+    {colors.gradientStart}15 0%,
+    {colors.gradientMid}10 50%,
+    {colors.gradientEnd}05 100%);"
+>
+  <div class="max-w-7xl mx-auto space-y-8">
+    {#if showNotification}
+      <div class="fixed top-4 right-4 z-50" transition:fade>
+        <Notification {notificationMessage} type={notificationType} />
+      </div>
+    {/if}
 
-          {#if expandedTriggerId === trigger.id}
-            <div
-              transition:slide
-              class="mt-4 space-y-4"
-              id={`trigger-details-${trigger.id}`}
-            >
-              {#each Object.entries(trigger) as [key, value]}
-                {#if !["id", "dateAdded", "guildId", "isValidRegex", "useCount", "applicationCommandId"].includes(key)}
-                  <div class="flex flex-col">
-                    <label
-                      for={`${trigger.id}-${key}`}
-                      class="text-sm text-gray-400 mb-1"
-                      >{getDescriptiveLabel(key)}:</label
-                    >
-                    {#if key === "trigger"}
-                      <input
-                        id={`${trigger.id}-${key}`}
-                        class="bg-gray-700 text-white p-2 rounded"
-                        class:border-red-500={trigger.isRegex &&
-                          !trigger.isValidRegex}
-                        bind:value={trigger[key]}
-                        on:input={() => handleRegexChange(trigger)}
-                        aria-invalid={trigger.isRegex && !trigger.isValidRegex}
-                      />
-                      {#if trigger.isRegex && !trigger.isValidRegex}
-                        <p class="text-red-500 text-sm mt-1" role="alert">
-                          Invalid regex syntax
-                        </p>
-                      {/if}
-                    {:else if isBoolean(value)}
-                      <select
-                        id={`${trigger.id}-${key}`}
-                        class="bg-gray-700 text-white p-2 rounded"
-                        bind:value={trigger[key]}
-                        on:change={() =>
-                          key === "isRegex" && handleRegexChange(trigger)}
-                      >
-                        <option value={true}>Yes</option>
-                        <option value={false}>No</option>
-                      </select>
-                    {:else if isEnum(key)}
-                      <div class="relative">
-                        <button
-                          id={`${trigger.id}-${key}`}
-                          class="bg-gray-700 text-white p-2 rounded w-full text-left"
-                          on:click={() =>
-                            toggleDropdown(`${trigger.id}-${key}`)}
-                          aria-haspopup="listbox"
-                          aria-expanded={activeDropdown ===
-                            `${trigger.id}-${key}`}
-                        >
-                          {getEnumDisplayValue(
-                            getEnumOptions(key),
-                            trigger[key],
-                          )}
-                        </button>
-                        {#if activeDropdown === `${trigger.id}-${key}`}
-                          <div
-                            class="absolute z-10 w-full mt-1 bg-gray-700 rounded shadow-lg"
-                            role="listbox"
-                            tabindex="-1"
-                            aria-labelledby={`${trigger.id}-${key}`}
-                            data-dropdown={`${trigger.id}-${key}`}
-                            bind:this={dropdownRef}
-                            on:keydown={(event) =>
-                              handleDropdownKeydown(
-                                event,
-                                `${trigger.id}-${key}`,
-                              )}
+    <!-- Header -->
+    <div
+      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+             border-color: {colors.primary}30;"
+    >
+      <h1 class="text-3xl font-bold" style="color: {colors.text}">Chat Triggers</h1>
+      <p style="color: {colors.muted}" class="mt-2">Create and manage automated responses to messages</p>
+    </div>
+
+    {#if loading}
+      <div class="flex justify-center items-center min-h-[200px]">
+        <div
+          class="w-12 h-12 border-4 rounded-full animate-spin"
+          style="border-color: {colors.primary}20;
+                 border-top-color: {colors.primary};">
+        </div>
+      </div>
+    {:else if error}
+      <div
+        class="rounded-xl p-4 flex items-center gap-3"
+        style="background: {colors.accent}10;"
+        role="alert"
+      >
+        <AlertTriangle class="w-5 h-5" style="color: {colors.accent}" />
+        <p style="color: {colors.accent}">{error}</p>
+      </div>
+    {:else if triggers.length === 0}
+      <div
+        class="text-center py-12 backdrop-blur-sm rounded-2xl border shadow-2xl"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+               border-color: {colors.primary}30;"
+        transition:fade
+      >
+        <MessageCircle class="w-12 h-12 mx-auto mb-4" style="color: {colors.muted}" />
+        <p style="color: {colors.muted}">No chat triggers found</p>
+      </div>
+    {:else}
+      <!-- Existing Triggers List -->
+      <div class="space-y-4">
+        {#each triggers as trigger (trigger.id)}
+          <div
+            class="backdrop-blur-sm rounded-2xl border shadow-2xl overflow-hidden transition-all duration-200"
+            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                   border-color: {colors.primary}30;
+                   hover:border-color: {colors.primary}50;"
+          >
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-grow">
+                  <div class="flex items-center gap-2">
+                    <Command class="w-5 h-5" style="color: {colors.primary}" />
+                    <span class="font-medium break-all" style="color: {colors.text}">
+                      {trigger.trigger}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-2">
+                    <MessageCircle class="w-4 h-4" style="color: {colors.muted}" />
+                    <span class="text-sm break-all" style="color: {colors.muted}">
+                      {trigger.response}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="p-2 rounded-lg transition-colors duration-200"
+                    style="background: {colors.primary}10;
+                           hover:background: {colors.primary}20;"
+                    on:click={() => toggleExpand(trigger.id)}
+                    aria-expanded={expandedTriggerId === trigger.id}
+                  >
+                    <svelte:component
+                      this={expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
+                      class="w-5 h-5"
+                      style="color: {colors.primary}"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {#if expandedTriggerId === trigger.id}
+                <div
+                  transition:slide
+                  class="mt-4 space-y-4 border-t"
+                  style="border-color: {colors.primary}20;"
+                >
+                  {#each Object.entries(trigger) as [key, value]}
+                    {#if !["id", "dateAdded", "guildId", "isValidRegex", "useCount", "applicationCommandId"].includes(key)}
+                      <div class="mt-4">
+                        <div class="flex items-center gap-2 mb-2">
+                          <svelte:component
+                            this={key.includes('role') ? Users : key === 'trigger' ? Command : key === 'response' ? MessageCircle : Settings}
+                            class="w-4 h-4"
+                            style="color: {colors.secondary}"
+                          />
+                          <label
+                            for={`${trigger.id}-${key}`}
+                            class="font-medium"
+                            style="color: {colors.text}"
                           >
-                            {#each Object.entries(getEnumOptions(key)) as [optionKey, optionValue]}
-                              <button
-                                role="option"
-                                aria-selected={trigger[key] === optionValue}
-                                class="block w-full text-left px-4 py-2 hover:bg-gray-600"
-                                on:click={() =>
-                                  toggleOption(optionKey, key, trigger)}
-                                on:keydown={(event) =>
-                                  handleOptionKeydown(
-                                    event,
-                                    optionKey,
-                                    key,
-                                    trigger,
-                                  )}
-                              >
-                                {optionKey}
-                              </button>
-                            {/each}
+                            {getDescriptiveLabel(key)}
+                          </label>
+                        </div>
+
+                        {#if key === "trigger"}
+                          <div>
+                            <input
+                              id={`${trigger.id}-${key}`}
+                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+                              class:border-red-500={trigger.isRegex && !trigger.isValidRegex}
+                              style="border-color: {colors.primary}30;
+                                     color: {colors.text};
+                                     background: {colors.primary}10;"
+                              bind:value={trigger[key]}
+                              on:input={() => handleRegexChange(trigger)}
+                            />
+                            {#if trigger.isRegex && !trigger.isValidRegex}
+                              <p class="mt-1 flex items-center gap-2" style="color: {colors.accent}">
+                                <AlertTriangle class="w-4 h-4" />
+                                <span>Invalid regex syntax</span>
+                              </p>
+                            {/if}
                           </div>
+                        {:else if isBoolean(value)}
+                          <div class="relative">
+                            <select
+                              id={`${trigger.id}-${key}`}
+                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
+                              style="border-color: {colors.secondary}30;
+                                     color: {colors.text};
+                                     background: {colors.primary}10;"
+                              bind:value={trigger[key]}
+                            >
+                              <option value={true}>Yes</option>
+                              <option value={false}>No</option>
+                            </select>
+                            <ChevronDown
+                              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                              style="color: {colors.muted}"
+                            />
+                          </div>
+                        {:else if isEnum(key)}
+                          <div class="relative">
+                            <select
+                              id={`${trigger.id}-${key}`}
+                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
+                              style="border-color: {colors.secondary}30;
+                                     color: {colors.text};
+                                     background: {colors.primary}10;"
+                              bind:value={trigger[key]}
+                            >
+                              {#each Object.entries(getEnumOptions(key)) as [optionKey, optionValue]}
+                                <option value={optionValue}>{optionKey}</option>
+                              {/each}
+                            </select>
+                            <ChevronDown
+                              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                              style="color: {colors.muted}"
+                            />
+                          </div>
+                        {:else if isRoleSelection(key)}
+                          <MultiSelectDropdown
+                            id={`${trigger.id}-${key}`}
+                            options={guildRoles}
+                            bind:selected={trigger[key]}
+                            placeholder="Select roles"
+                            on:change={(e) => {
+                              trigger[key] = e.detail;
+                            }}
+                          />
+                        {:else}
+                          <input
+                            id={`${trigger.id}-${key}`}
+                            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+                            style="border-color: {colors.primary}30;
+                                   color: {colors.text};
+                                   background: {colors.primary}10;"
+                            bind:value={trigger[key]}
+                          />
                         {/if}
                       </div>
-                    {:else if isRoleSelection(key)}
-                      <MultiSelectDropdown
-                        id={`${trigger.id}-${key}`}
-                        options={guildRoles}
-                        bind:selected={trigger[key]}
-                        placeholder="Select roles"
-                        on:change={(e) => {
-                          trigger[key] = e.detail;
-                        }}
-                      />
-                    {:else}
-                      <input
-                        id={`${trigger.id}-${key}`}
-                        class="bg-gray-700 text-white p-2 rounded"
-                        bind:value={trigger[key]}
-                      />
                     {/if}
-                  </div>
-                {/if}
-              {/each}
-              {#if trigger.isRegex && trigger.isValidRegex}
-                <div class="mt-2">
-                  <label for={`${trigger.id}-regex-test`} class="sr-only"
-                    >Test regex</label
-                  >
-                  <input
-                    id={`${trigger.id}-regex-test`}
-                    class="bg-gray-700 text-white p-2 rounded w-full"
-                    bind:value={regexTestString}
-                    placeholder="Test your regex here"
-                    on:input={() => testRegex(trigger)}
-                  />
-                  {#if regexTestResult}
-                    <p
-                      class="text-sm mt-1"
-                      class:text-green-500={regexTestResult !== "No matches"}
-                      class:text-red-500={regexTestResult === "No matches"}
-                      aria-live="polite"
-                    >
-                      {regexTestResult}
-                    </p>
-                    {#if regexHighlightedString}
-                      <div
-                        class="mt-2 p-2 bg-gray-700 rounded"
-                        aria-live="polite"
-                      >
-                        {@html regexHighlightedString}
+                  {/each}
+
+                  {#if trigger.isRegex && trigger.isValidRegex}
+                    <div class="mt-4">
+                      <div class="flex items-center gap-2 mb-2">
+                        <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
+                        <label class="font-medium" style="color: {colors.text}">
+                          Test Regex Pattern
+                        </label>
                       </div>
-                    {/if}
+                      <input
+                        class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+                        style="border-color: {colors.accent}30;
+                               color: {colors.text};
+                               background: {colors.primary}10;"
+                        bind:value={regexTestString}
+                        placeholder="Enter text to test your regex pattern"
+                        on:input={() => testRegex(trigger)}
+                      />
+                      {#if regexTestResult}
+                        <p
+                          class="mt-2 flex items-center gap-2"
+                          style="color: {regexTestResult !== 'No matches' ? colors.primary : colors.accent}"
+                        >
+                          <svelte:component
+                            this={regexTestResult !== 'No matches' ? Check : X}
+                            class="w-4 h-4"
+                          />
+                          <span>{regexTestResult}</span>
+                        </p>
+                        {#if regexHighlightedString}
+                          <div
+                            class="mt-2 p-3 rounded-lg"
+                            style="background: {colors.primary}10;"
+                          >
+                            {@html regexHighlightedString}
+                          </div>
+                        {/if}
+                      {/if}
+                    </div>
                   {/if}
+
+                  <div class="flex justify-between gap-4 pt-4 mt-4" style="border-top: 1px solid {colors.primary}20;">
+                    <button
+                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                      style="background: {colors.primary}15;
+                             color: {colors.primary};
+                             hover:background: {colors.primary}25;"
+                      on:click={() => updateTrigger(trigger)}
+                    >
+                      <div class="flex items-center gap-2">
+                        <Edit class="w-4 h-4" />
+                        <span>Update</span>
+                      </div>
+                    </button>
+                    <button
+                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                      style="background: {colors.accent}15;
+                             color: {colors.accent};
+                             hover:background: {colors.accent}25;"
+                      on:click={() => deleteTrigger(trigger.id)}
+                    >
+                      <div class="flex items-center gap-2">
+                        <Delete class="w-4 h-4" />
+                        <span>Delete</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               {/if}
-              <div class="flex justify-between mt-2">
-                <button
-                  on:click={() => updateTrigger(trigger)}
-                  class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Update Trigger
-                </button>
-                <button
-                  on:click={() => deleteTrigger(trigger.id)}
-                  class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Delete Trigger
-                </button>
-              </div>
             </div>
-          {/if}
-        </li>
-      {/each}
-    </ul>
-  {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
 
-  <div class="mt-8 bg-gray-800 rounded-lg p-4">
-    <h2 class="text-xl font-semibold mb-4">Add New Trigger</h2>
-    <div class="space-y-4">
-      <label for="new-trigger" class="sr-only">Trigger Text or Pattern</label>
-      <input
-        id="new-trigger"
-        bind:value={newTrigger.trigger}
-        class="w-full bg-gray-700 text-white p-2 rounded"
-        class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
-        placeholder="Trigger Text or Pattern"
-        on:input={handleNewTriggerRegexChange}
-        required
-        aria-invalid={newTrigger.isRegex && !newTrigger.isValidRegex}
-      />
-      {#if newTrigger.isRegex && !newTrigger.isValidRegex}
-        <p class="text-red-500 text-sm mt-1" role="alert">
-          Invalid regex syntax
-        </p>
-      {/if}
-      <label for="new-response" class="sr-only">Response Message</label>
-      <input
-        id="new-response"
-        bind:value={newTrigger.response}
-        class="w-full bg-gray-700 text-white p-2 rounded"
-        placeholder="Response Message"
-        required
-      />
-      <label for="new-trigger-type" class="sr-only">Trigger Type</label>
-      <select
-        id="new-trigger-type"
-        bind:value={newTrigger.isRegex}
-        class="w-full bg-gray-700 text-white p-2 rounded"
-        on:change={handleNewTriggerRegexChange}
-      >
-        <option value={false}>Normal Trigger</option>
-        <option value={true}>Regular Expression Trigger</option>
-      </select>
-      {#if newTrigger.isRegex && newTrigger.isValidRegex}
-        <div class="mt-2">
-          <label for="new-regex-test" class="sr-only">Test regex</label>
+    <!-- Add New Trigger Section -->
+    <div
+      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+             border-color: {colors.primary}30;"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <div
+          class="p-3 rounded-xl"
+          style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                 color: {colors.primary};"
+        >
+          <Plus class="w-6 h-6" />
+        </div>
+        <h2 class="text-xl font-bold" style="color: {colors.text}">Add New Trigger</h2>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Trigger Input -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <Command class="w-4 h-4" style="color: {colors.primary}" />
+            <label class="font-medium" style="color: {colors.text}">
+              Trigger Pattern
+            </label>
+          </div>
           <input
-            id="new-regex-test"
-            class="bg-gray-700 text-white p-2 rounded w-full"
-            bind:value={newTriggerRegexTestString}
-            placeholder="Test your regex here"
-            on:input={testNewTriggerRegex}
+            bind:value={newTrigger.trigger}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
+            style="border-color: {colors.primary}30;
+                   color: {colors.text};
+                   background: {colors.primary}10;"
+            placeholder="Enter trigger text or pattern"
+            on:input={handleNewTriggerRegexChange}
+            aria-invalid={newTrigger.isRegex && !newTrigger.isValidRegex}
           />
-          {#if newTriggerRegexTestResult}
-            <p
-              class="text-sm mt-1"
-              class:text-green-500={newTriggerRegexTestResult !== "No matches"}
-              class:text-red-500={newTriggerRegexTestResult === "No matches"}
-              aria-live="polite"
-            >
-              {newTriggerRegexTestResult}
+          {#if newTrigger.isRegex && !newTrigger.isValidRegex}
+            <p class="mt-1 flex items-center gap-2" style="color: {colors.accent}">
+              <AlertTriangle class="w-4 h-4" />
+              <span>Invalid regex syntax</span>
             </p>
-            {#if newTriggerRegexHighlightedString}
-              <div class="mt-2 p-2 bg-gray-700 rounded" aria-live="polite">
-                {@html newTriggerRegexHighlightedString}
-              </div>
-            {/if}
           {/if}
         </div>
-      {/if}
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        on:click={addTrigger}
-      >
-        Add Trigger
-      </button>
+
+        <!-- Response Input -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <MessageCircle class="w-4 h-4" style="color: {colors.secondary}" />
+            <label class="font-medium" style="color: {colors.text}">
+              Response Message
+            </label>
+          </div>
+          <input
+            bind:value={newTrigger.response}
+            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            style="border-color: {colors.secondary}30;
+                   color: {colors.text};
+                   background: {colors.primary}10;"
+            placeholder="Enter response message"
+          />
+        </div>
+
+        <!-- Trigger Type -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <ToggleRight class="w-4 h-4" style="color: {colors.accent}" />
+            <label class="font-medium" style="color: {colors.text}">
+              Trigger Type
+            </label>
+          </div>
+          <div class="relative">
+            <select
+              bind:value={newTrigger.isRegex}
+              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
+              style="border-color: {colors.accent}30;
+                     color: {colors.text};
+                     background: {colors.primary}10;"
+              on:change={handleNewTriggerRegexChange}
+            >
+              <option value={false}>Normal Trigger</option>
+              <option value={true}>Regular Expression</option>
+            </select>
+            <ChevronDown
+              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style="color: {colors.muted}"
+            />
+          </div>
+        </div>
+
+        <!-- Regex Test Area -->
+        {#if newTrigger.isRegex && newTrigger.isValidRegex}
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
+              <label class="font-medium" style="color: {colors.text}">
+                Test Regex Pattern
+              </label>
+            </div>
+            <input
+              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+              style="border-color: {colors.accent}30;
+                     color: {colors.text};
+                     background: {colors.primary}10;"
+              bind:value={newTriggerRegexTestString}
+              placeholder="Enter text to test your regex pattern"
+              on:input={testNewTriggerRegex}
+            />
+            {#if newTriggerRegexTestResult}
+              <p
+                class="mt-2 flex items-center gap-2"
+                style="color: {newTriggerRegexTestResult !== 'No matches' ? colors.primary : colors.accent}"
+              >
+                <svelte:component
+                  this={newTriggerRegexTestResult !== 'No matches' ? Check : X}
+                  class="w-4 h-4"
+                />
+                <span>{newTriggerRegexTestResult}</span>
+              </p>
+              {#if newTriggerRegexHighlightedString}
+                <div
+                  class="mt-2 p-3 rounded-lg"
+                  style="background: {colors.primary}10;"
+                >
+                  {@html newTriggerRegexHighlightedString}
+                </div>
+              {/if}
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Add Button -->
+        <div class="flex justify-end mt-6">
+          <button
+            class="px-6 py-3 rounded-lg font-medium transition-all duration-200"
+            style="background: linear-gradient(to right, {colors.primary}, {colors.secondary});
+                   color: {colors.text};
+                   hover:opacity: 0.9;"
+            on:click={addTrigger}
+          >
+            <div class="flex items-center gap-2">
+              <Plus class="w-5 h-5" />
+              <span>Add Trigger</span>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<style lang="postcss">
+  :global(body) {
+    background-color: #1a202c;
+    color: #ffffff;
+  }
+
+  :global(select),
+  :global(input),
+  :global(textarea) {
+    color-scheme: dark;
+  }
+
+  /* Custom scrollbar */
+  :global(*::-webkit-scrollbar) {
+    @apply w-2;
+  }
+
+  :global(*::-webkit-scrollbar-track) {
+    background: var(--color-primary)10;
+    @apply rounded-full;
+  }
+
+  :global(*::-webkit-scrollbar-thumb) {
+    background: var(--color-primary)30;
+    @apply rounded-full;
+  }
+
+  :global(*::-webkit-scrollbar-thumb:hover) {
+    background: var(--color-primary)50;
+  }
+
+  /* Prevent iOS styling */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* Prevent blue highlight on iOS */
+  select:focus {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom styling for options */
+  option {
+    background-color: #374151;
+    color: white;
+    padding: 0.5rem;
+  }
+
+  /* Animation for loading spinner */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+</style>

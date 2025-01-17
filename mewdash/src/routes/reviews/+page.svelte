@@ -61,7 +61,7 @@
         if (review) userHasReviewed = true;
       }
     } catch (err) {
-      console.error("Failed to fetch reviews:", err);
+      logger.error("Failed to fetch reviews:", err);
       error = "Failed to load reviews. Please try again later.";
     } finally {
       loading = false;
@@ -91,7 +91,7 @@
       userHasReviewed = true;
       error = null;
     } catch (err) {
-      console.error("Failed to submit review:", err);
+      logger.error("Failed to submit review:", err);
       error = "Failed to submit review. Please try again later.";
     }
   }
