@@ -14,7 +14,7 @@
   export let data;
 
 
-  $: {
+  $: if (data.user) {
     updateColors();
   }
 
