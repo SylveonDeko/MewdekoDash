@@ -151,10 +151,10 @@
     class="py-16 px-4 sm:px-12 flex flex-col items-center relative"
     in:fade={{ duration: 300 }}
     style="background: radial-gradient(circle at top,
-      {colors?.gradientStart}15 0%,
-      {colors?.gradientMid}10 50%,
-      {colors?.gradientEnd}05 100%
-    );"
+    {colors?.gradientStart}15 0%,
+    {colors?.gradientMid}10 50%,
+    {colors?.gradientEnd}05 100%
+  );"
   >
     <h1
       class="text-center font-extrabold text-mewd-white max-w-4xl mx-auto text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-8"
@@ -170,31 +170,26 @@
     {#if fetched}
       <section
         aria-labelledby="features-heading"
-        class="relative"
-        style="background: linear-gradient(135deg,
-      {colors?.gradientStart}10,
-      {colors?.gradientMid}15,
-      {colors?.gradientEnd}10
-    );"
+        class="relative mt-16"
       >
-        <h2
-          id="top-servers-heading"
-          class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold text-center"
+      <h2
+        id="top-servers-heading"
+        class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold text-center"
+      >
+        Our Top Servers
+      </h2>
+      {#if guilds.length > 0}
+        <ul
+          class="flex flex-wrap justify-center items-center gap-4 p-4"
+          aria-label="Top servers list"
         >
-          Our Top Servers
-        </h2>
-        {#if guilds.length > 0}
-          <ul
-            class="flex flex-wrap justify-center items-center gap-4 p-4"
-            aria-label="Top servers list"
-          >
-            {#each guilds as guild, index (guild.Name)}
-              <li
-                class="relative group"
-                in:fly={{ y: 20, duration: 300, delay: index * 100 }}
-              >
-                <img
-                  class="w-12 h-12 rounded-full transition-transform duration-200 transform group-hover:scale-110"
+          {#each guilds as guild, index (guild.Name)}
+            <li
+              class="relative group"
+              in:fly={{ y: 20, duration: 300, delay: index * 100 }}
+            >
+              <img
+                class="w-12 h-12 rounded-full transition-transform duration-200 transform group-hover:scale-110"
                   src={guild.IconUrl}
                   alt=""
                   loading="lazy"

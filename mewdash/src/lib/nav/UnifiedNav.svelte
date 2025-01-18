@@ -39,6 +39,28 @@
   let isFetchingGuilds = false;
   let resizeTimer: number;
 
+  interface ColorPalette {
+    primary: string;
+    secondary: string;
+    accent: string;
+    text: string;
+    muted: string;
+    gradientStart: string;
+    gradientMid: string;
+    gradientEnd: string;
+  }
+
+  const DEFAULT_PALETTE: ColorPalette = {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    accent: '#ec4899',
+    text: '#ffffff',
+    muted: '#9ca3af',
+    gradientStart: '#3b82f6',
+    gradientMid: '#8b5cf6',
+    gradientEnd: '#ec4899'
+  };
+
   // Computed
   $: isDashboard = $page.url.pathname.startsWith("/dashboard");
   $: current = $page.url.pathname;
@@ -217,29 +239,24 @@
 
   async function updateColors() {
     try {
-      if (data?.user?.avatar) {
-        colors = await extractColors(
-          data.user.avatar.startsWith("a_")
-            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-        );
-      } else {
-        // Default fallback colors when no user
-        colors = await extractColors("/img/Mewdeko.png");
+      if (typeof window === 'undefined') {
+        colors = DEFAULT_PALETTE;
+        return;
       }
+
+      let imageUrl: string;
+      if (data?.user?.avatar) {
+        imageUrl = data.user.avatar.startsWith("a_")
+          ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+          : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
+      } else {
+        imageUrl = new URL('/img/Mewdeko.png', window.location.origin).href;
+      }
+
+      colors = await extractColors(imageUrl);
     } catch (err) {
-      logger.error("Failed to extract colors:", err);
-      // Fallback colors in case of error
-      colors = {
-        primary: "#3b82f6",
-        secondary: "#8b5cf6",
-        accent: "#ec4899",
-        text: "#ffffff",
-        muted: "#9ca3af",
-        gradientStart: "#3b82f6",
-        gradientMid: "#8b5cf6",
-        gradientEnd: "#ec4899"
-      };
+      logger.error('Failed to extract colors:', err);
+      colors = DEFAULT_PALETTE;
     }
 
     colorVars = `
@@ -320,6 +337,10 @@
       });
     }
   });
+
+  $: if (data.user) {
+    updateColors()
+  }
 </script>
 
 <nav
@@ -343,7 +364,7 @@
           alt="Mewdeko's Avatar"
           class="h-12 mr-3"
           height="48"
-          src="http://cdn.mewdeko.tech/img/Mewdeko.png"
+          src="/img/Mewdeko.png"
           width="48"
         />
         <span class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">

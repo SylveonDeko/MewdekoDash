@@ -12,6 +12,17 @@ export interface ColorPalette {
   gradientEnd: string;
 }
 
+const DEFAULT_PALETTE: ColorPalette = {
+  primary: '#3b82f6',
+  secondary: '#8b5cf6',
+  accent: '#ec4899',
+  text: '#ffffff',
+  muted: '#9ca3af',
+  gradientStart: '#3b82f6',
+  gradientMid: '#8b5cf6',
+  gradientEnd: '#ec4899'
+};
+
 type RGB = [number, number, number];
 
 function adjustLightness(rgb: RGB, lightness: number) {
@@ -44,23 +55,47 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
 }
 
 export async function extractColors(imageUrl: string): Promise<ColorPalette> {
-  try {
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = imageUrl;
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    return DEFAULT_PALETTE;
+  }
 
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
+  try {
+    const img = new window.Image();
+    img.crossOrigin = "Anonymous";
+
+    // Create a loading promise
+    const loadImage = new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageUrl;
     });
 
-    const colorThief = new ColorThief();
-    const palette = colorThief.getPalette(img) as RGB[];
+    // Add timeout to prevent hanging
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Image loading timeout')), 5000);
+    });
 
-    const rgbToHex = (r: number, g: number, b: number) =>
+    // Race between image loading and timeout
+    await Promise.race([loadImage, timeout]);
+
+    // Only proceed if ColorThief is available
+    if (typeof ColorThief === 'undefined') {
+      throw new Error('ColorThief is not available');
+    }
+
+    const colorThief = new ColorThief();
+    const palette = colorThief.getPalette(img, 3) as RGB[];
+
+    if (!palette || palette.length < 3) {
+      throw new Error('Could not extract enough colors from image');
+    }
+
+    const rgbToHex = (r: number, g: number, b: number): string =>
       '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 
-    const adjustBrightness = (color: RGB, factor: number): string => {
+    const adjustLightness = (color: RGB, percentage: number): string => {
+      const factor = percentage / 100;
       const adjusted: RGB = [
         Math.min(255, Math.max(0, Math.round(color[0] * factor))),
         Math.min(255, Math.max(0, Math.round(color[1] * factor))),
@@ -73,24 +108,14 @@ export async function extractColors(imageUrl: string): Promise<ColorPalette> {
       primary: rgbToHex(...palette[0]),
       secondary: rgbToHex(...palette[1]),
       accent: rgbToHex(...palette[2]),
-      text: adjustLightness(palette[0], 90), // Using 90% lightness for text
-      muted: adjustLightness(palette[0], 70), // Using 70% lightness for muted
+      text: adjustLightness(palette[0], 90),
+      muted: adjustLightness(palette[0], 70),
       gradientStart: rgbToHex(...palette[0]),
       gradientMid: rgbToHex(...palette[1]),
       gradientEnd: rgbToHex(...palette[2])
     };
   } catch (error) {
     logger.error('Error extracting colors:', error);
-    // Fallback colors
-    return {
-      primary: '#3b82f6',
-      secondary: '#8b5cf6',
-      accent: '#ec4899',
-      text: '#ffffff',
-      muted: '#9ca3af',
-      gradientStart: '#3b82f6',
-      gradientMid: '#8b5cf6',
-      gradientEnd: '#ec4899'
-    };
+    return DEFAULT_PALETTE;
   }
 }
