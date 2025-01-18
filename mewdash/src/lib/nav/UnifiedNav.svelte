@@ -18,6 +18,7 @@
   // Props
   export let items: NavItem[] = [];
   export let data;
+  let guildFetchError: string | null = null;
 
   let lastSelectedGuild: BigInt | null = null;
   let instances: BotInstance[] = [];
@@ -71,16 +72,6 @@
   }
 
   $: if (shouldFetchGuilds) {
-    const fetchGuildsIfReady = async () => {
-      try {
-        console.log('Fetching guilds for user:', data.user.id, 'and instance:', $currentInstance.botId);
-        const newGuilds = await api.getMutualGuilds(data.user.id);
-        adminGuilds = [...newGuilds];
-      } catch (e) {
-        logger.error("Error fetching guilds:", e);
-      }
-    };
-
     fetchGuildsIfReady();
   }
 
@@ -216,6 +207,25 @@
     // Only close dropdown after successful store/save
     closeDropdown();
   }
+
+  const fetchGuildsIfReady = async () => {
+    isFetchingGuilds = true;
+    guildFetchError = null;
+    try {
+      console.log('Fetching guilds for user:', data.user.id, 'and instance:', $currentInstance.botId);
+      const newGuilds = await api.getMutualGuilds(data.user.id);
+      adminGuilds = newGuilds || [];
+      if (adminGuilds.length === 0) {
+        guildFetchError = "No available servers";
+      }
+    } catch (e) {
+      logger.error("Error fetching guilds:", e);
+      guildFetchError = "Failed to load servers";
+      adminGuilds = [];
+    } finally {
+      isFetchingGuilds = false;
+    }
+  };
 
   async function handleInstanceSelect(instance: BotInstance) {
     currentInstance.set(instance);
@@ -552,9 +562,19 @@
                   </button>
                   <div class="max-h-48 overflow-y-auto">
                     {#if isFetchingGuilds}
-                      <div class="text-sm text-gray-400 px-2 py-1">Loading servers...</div>
+                      <div class="text-sm text-gray-400 px-2 py-1">Loading...</div>
+                    {:else if guildFetchError}
+                      <div class="text-sm text-gray-400 px-2 py-1">
+                        <span>{guildFetchError}</span>
+                        <button
+                          class="text-xs text-blue-400 hover:text-blue-300 transition-colors ml-2"
+                          on:click={() => fetchGuildsIfReady()}
+                        >
+                          Retry
+                        </button>
+                      </div>
                     {:else if adminGuilds.length === 0}
-                      <div class="text-sm text-gray-400 px-2 py-1">No servers found</div>
+                      <div class="text-sm text-gray-400 px-2 py-1">No available servers</div>
                     {:else}
                       {#each adminGuilds as guild, i}
                         <button
@@ -726,17 +746,30 @@
             <button
               class="text-sm text-gray-400 hover:text-white transition-colors mb-2"
               on:click={() => {
-              openQuickSwitcher();
-              closeMobileMenu();
-            }}
+        openQuickSwitcher();
+        closeMobileMenu();
+      }}
             >
               Quick Switch (⌘K)
             </button>
             <div class="space-y-2">
               {#if isFetchingGuilds}
-                <div class="text-sm text-gray-400">Loading servers...</div>
+                <div class="text-sm text-gray-400">Loading...</div>
+              {:else if guildFetchError}
+                <div class="text-sm text-gray-400">
+                  <span>{guildFetchError}</span>
+                  <button
+                    class="text-xs text-blue-400 hover:text-blue-300 transition-colors ml-2"
+                    on:click={() => {
+              fetchGuildsIfReady();
+              closeMobileMenu();
+            }}
+                  >
+                    Retry
+                  </button>
+                </div>
               {:else if adminGuilds.length === 0}
-                <div class="text-sm text-gray-400">No servers found</div>
+                <div class="text-sm text-gray-400">No available servers</div>
               {:else}
                 {#each adminGuilds as guild}
                   <button
@@ -838,10 +871,23 @@
         </div>
         <div class="max-h-[50vh] overflow-y-auto">
           {#if isFetchingGuilds}
-            <div class="text-center p-4 text-gray-400">Loading servers...</div>
+            <div class="text-center p-4 text-gray-400">Loading...</div>
+          {:else if guildFetchError}
+            <div class="text-center p-4 text-gray-400">
+              <span>{guildFetchError}</span>
+              <button
+                class="text-sm text-blue-400 hover:text-blue-300 transition-colors ml-2"
+                on:click={() => {
+            fetchGuildsIfReady();
+            showQuickSwitcher = false;
+          }}
+              >
+                Retry
+              </button>
+            </div>
           {:else if filteredGuilds.length === 0}
             <div class="text-center p-4 text-gray-400">
-              {guildSearch ? 'No servers found' : 'No servers available'}
+              {guildSearch ? 'No matches found' : 'No available servers'}
             </div>
           {:else}
             {#each filteredGuilds as guild}
