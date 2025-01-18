@@ -208,6 +208,13 @@ $: if (musicStatus?.currentTrack) {
 
   $ : if(currentInstance) {
     colorStore.extractFromImage($currentInstance?.botAvatar);
+    fetchBotStatus();
+    fetchMusicStatus();
+    musicInterval = setInterval(fetchMusicStatus, 3000);
+  }
+
+  async function fetchBotStatus() {
+    botStatus = await api.getBotStatus();
   }
 </script>
 
