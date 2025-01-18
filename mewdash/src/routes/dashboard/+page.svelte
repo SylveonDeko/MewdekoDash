@@ -20,7 +20,7 @@
   import { logger } from "$lib/logger.ts";
 
   export let data;
-  let currentUser = writable(data.user)
+  let currentUser = data.user;
   let botStatus: BotStatusModel | null = null;
   let loading = true;
   let error: string | null = null;
@@ -81,8 +81,8 @@ $: if (musicStatus?.currentTrack) {
 
   async function fetchMusicStatus() {
     try {
-      if (!$currentGuild?.id || !$currentUser?.id) return;
-      const newStatus = await api.getPlayerStatus($currentGuild.id, $currentUser.id);
+      if (!$currentGuild?.id || !currentUser?.id) return;
+      const newStatus = await api.getPlayerStatus($currentGuild.id, currentUser.id);
       if (newStatus.position !== musicStatus?.position) {
         lastPosition = getSeconds(newStatus.position?.relativePosition || '00:00:00');
       }
@@ -177,7 +177,7 @@ $: if (musicStatus?.currentTrack) {
   }
 
   onMount(async () => {
-    if (!$currentUser) await goto("/api/discord/login");
+    if (!currentUser) await goto("/api/discord/login");
     try {
       botStatus = await api.getBotStatus();
       await fetchMusicStatus();

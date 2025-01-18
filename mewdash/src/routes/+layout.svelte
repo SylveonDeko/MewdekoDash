@@ -4,11 +4,21 @@
   import UnifiedNav from "$lib/nav/UnifiedNav.svelte";
   import { userAdminGuilds } from "../lib/stores/adminGuildsStore";
   import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto, invalidateAll } from "$app/navigation";
 
 
   export let data: LayoutData;
 
-  $: userAdminGuilds.set(data.guilds);
+  onMount(async () => {
+    if (browser) {
+      if (window.location.toString().includes("?loggedin")) {
+        await invalidateAll()
+        await goto("/")
+      }
+    }
+  })
 
   // Main navigation items
   const navItems = [

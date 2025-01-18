@@ -5,12 +5,10 @@ declare global {
   namespace App {
     interface Locals {
       user: DiscordUser | null;
-      guilds: DiscordGuild[] | null;
     }
 
     interface PageData {
       user: DiscordUser | null;
-      guilds: DiscordGuild[] | null;
     }
 
     interface Error {

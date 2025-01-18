@@ -1,10 +1,10 @@
 <!-- routes/dashboard/permissions/+page.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
-  import type { Permission, PermissionCache, CommandInfo, BotStatusModel, Module } from "$lib/types/models";
+  import type { BotStatusModel, CommandInfo, Module, Permission, PermissionCache } from "$lib/types/models";
   import { PrimaryPermissionType, SecondaryPermissionType } from "$lib/types/models";
   import { goto } from "$app/navigation";
   import Notification from "$lib/Notification.svelte";
@@ -12,9 +12,20 @@
   import ColorThief from "colorthief";
   import { currentInstance } from "$lib/stores/instanceStore";
   import {
-    Shield, Settings, Command, Hash, FolderOpen, Plus, Trash2,
-    Server, AlertTriangle, ChevronDown, Lock,
-    Eye, ChevronUp, Search
+    AlertTriangle,
+    ChevronDown,
+    ChevronUp,
+    Command,
+    Eye,
+    FolderOpen,
+    Hash,
+    Lock,
+    Plus,
+    Search,
+    Server,
+    Settings,
+    Shield,
+    Trash2
   } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
@@ -186,8 +197,8 @@
 
   async function addPermission() {
     try {
-      console.log(selectedTarget)
-      console.log(selectedCommandOrModule)
+      console.log(selectedTarget);
+      console.log(selectedCommandOrModule);
       if (!$currentGuild?.id || !selectedTarget || !selectedCommandOrModule) {
         throw new Error("Missing required fields");
       }
@@ -658,77 +669,82 @@
             </select>
           </div>
 
-         <!-- Command/Module Selection -->
-{#if selectedSecondaryType !== SecondaryPermissionType.AllModules}
-  <div class="space-y-2">
-    <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
-      {#if selectedSecondaryType === SecondaryPermissionType.Command}
-        <Command class="w-4 h-4" style="color: {colors.secondary}" />
-        Command
-      {:else}
-        <FolderOpen class="w-4 h-4" style="color: {colors.secondary}" />
-        Module
-      {/if}
-    </label>
+          <!-- Command/Module Selection -->
+          {#if selectedSecondaryType !== SecondaryPermissionType.AllModules}
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+                {#if selectedSecondaryType === SecondaryPermissionType.Command}
+                  <Command class="w-4 h-4" style="color: {colors.secondary}" />
+                  Command
+                {:else}
+                  <FolderOpen class="w-4 h-4" style="color: {colors.secondary}" />
+                  Module
+                {/if}
+              </label>
 
-    <div class="relative">
-      <input
-        type="text"
-        bind:value={searchTerm}
-        placeholder={selectedSecondaryType === SecondaryPermissionType.Command ? "Search commands..." : "Search modules..."}
-        on:focus={() => showCommandDropdown = true}
-        class="w-full p-3 pl-10 rounded-lg border transition-all duration-200"
-        style="background: {colors.primary}15;
+              <div class="relative" style="z-index: 100000;">
+                <input
+                  type="text"
+                  bind:value={searchTerm}
+                  placeholder={selectedSecondaryType === SecondaryPermissionType.Command ? "Search commands..." : "Search modules..."}
+                  on:focus={() => showCommandDropdown = true}
+                  class="w-full p-3 pl-10 rounded-lg border transition-all duration-200 command-input relative"
+                  style="background: {colors.primary}15;
                border-color: {colors.primary}30;
-               color: {colors.text}"
-      />
-      <Search
-        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-        style="color: {colors.muted}"
-      />
+               color: {colors.text};
+               z-index: 100000;"
+                />
+                <Search
+                  class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                  style="color: {colors.muted}"
+                />
 
-      {#if showCommandDropdown}
-        <div
-          bind:this={commandDropdownRef}
-          class="absolute z-50 w-full mt-2 rounded-lg border shadow-xl max-h-[300px] overflow-y-auto backdrop-blur"
-          style="background: {colors.primary}30;
-                 border-color: {colors.primary}40;"
-        >
-          {#each getFilteredItems() as item}
-            <button
-              type="button"
-              class="w-full text-left p-3 border-b last:border-b-0 transition-all duration-200"
-              style="border-color: {colors.primary}20;
-                     hover:background: {colors.primary}20;"
-              on:click={() => handleCommandSelect(item)}
-            >
-              <div class="flex items-center gap-4">
-                <div class="flex-grow">
-                  <p class="font-medium" style="color: {colors.text}">{item.name}</p>
-                  <p class="text-sm truncate" style="color: {colors.muted}">{item.description}</p>
-                </div>
-                {#if 'module' in item}
-                  <span
-                    class="text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    style="background: {colors.secondary}20;
-                           color: {colors.secondary}"
+                {#if showCommandDropdown}
+                  <div
+                    bind:this={commandDropdownRef}
+                    class="command-dropdown absolute left-0 right-0 mt-2 rounded-lg border shadow-xl max-h-[300px] overflow-y-auto"
+                    style="background: rgb(17, 24, 39);
+                 border-color: {colors.primary}40;
+                 z-index: 100000;"
                   >
-                    {item.module}
-                  </span>
+                    <div class="relative">
+                      {#each getFilteredItems() as item}
+                        <button
+                          type="button"
+                          class="w-full text-left p-3 border-b last:border-b-0 transition-all duration-200"
+                          style="border-color: {colors.primary}20;
+                       color: {colors.text};
+                       background: transparent;
+                       hover:background-color: {colors.primary}20;"
+                          on:click={() => handleCommandSelect(item)}
+                        >
+                          <div class="flex items-center gap-4">
+                            <div class="flex-grow">
+                              <p class="font-medium text-white">{item.name}</p>
+                              <p class="text-sm truncate text-gray-300">{item.description}</p>
+                            </div>
+                            {#if 'module' in item}
+                    <span
+                      class="text-xs px-2 py-1 rounded-full whitespace-nowrap"
+                      style="background: {colors.secondary}20;
+                             color: {colors.secondary}"
+                    >
+                      {item.module}
+                    </span>
+                            {/if}
+                          </div>
+                        </button>
+                      {:else}
+                        <div class="p-4 text-center text-gray-400">
+                          No results found
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
                 {/if}
               </div>
-            </button>
-          {/each}
-          {#if getFilteredItems().length === 0}
-            <div class="p-4 text-center" style="color: {colors.muted}">
-              No results found
             </div>
           {/if}
-        </div>
-      {/if}
-    </div>
-  </div>
-{/if}
         </div>
 
         <!-- Action Toggle -->
@@ -911,8 +927,34 @@
         padding: 0.5rem;
     }
 
-     .command-dropdown {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
-                0 4px 8px rgba(0, 0, 0, 0.2);
-  }
+    .command-dropdown {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .command-dropdown {
+        position: absolute;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .command-dropdown {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Make sure the entire dropdown container is above other content */
+    .command-dropdown {
+        z-index: 100000;
+    }
+
+    /* Improve hover states */
+    .command-dropdown button:hover {
+        @apply bg-opacity-25;
+    }
+
+    /* Ensure the container is above other sections */
+    .relative {
+        isolation: isolate;
+    }
 </style>

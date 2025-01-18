@@ -24,6 +24,7 @@ export const load: PageServerLoad = async (): Promise<{
     const uniqueAndSortedCommands = Array.from(commandsMap.values())
       .map((command) => ({
         ...command,
+        ListOptions: [], // Default empty array to satisfy the Command type
         HtmlDescription: converter.makeHtml(command.Description.trim()),
       }))
       .sort((a, b) => a.CommandName.localeCompare(b.CommandName)); // Sort commands alphabetically

@@ -179,7 +179,7 @@
       >
         <h2
           id="top-servers-heading"
-          class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold"
+          class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold text-center"
         >
           Our Top Servers
         </h2>

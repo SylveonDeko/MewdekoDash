@@ -17,8 +17,6 @@ async function makeRequest(
     body,
   });
 
-  console.log('Request URL:', url);
-
   try {
     const text = await response.text();
     if (!text || text.length < 1) return json(null);
@@ -56,7 +54,6 @@ async function makeRequest(
 export const GET: RequestHandler = async ({ url, params, request }) => {
   const path = params.path;
   const instanceUrl = request.headers.get('x-instance-url');
-
   if (!instanceUrl) {
     return json({ error: "No instance URL provided" }, { status: 400 });
   }
@@ -80,7 +77,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
   let body;
   try {
     const text = await request.text();
-    console.log("Raw request body:", text);
 
     if (text) {
       if (text === 'true' || text === 'false') {
@@ -126,8 +122,6 @@ export const PUT: RequestHandler = async ({ request, params }) => {
   let body;
   try {
     const text = await request.text();
-    console.log("Raw request body:", text);
-
     if (text) {
       body = JSONbig.parse(text);
     } else {

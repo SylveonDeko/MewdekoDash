@@ -1,16 +1,19 @@
 // lib/api.ts
-import {
-  type GuildConfig,
-  type ChatTriggers,
-  type SuggestionsModel,
-  type BotStatusModel,
-  type BotReviews,
-  type MultiGreetType,
-  type MultiGreet,
-  type BotInstance,
+import type {
+  GuildConfig,
+  ChatTriggers,
+  SuggestionsModel,
+  BotStatusModel,
+  BotReviews,
+  MultiGreetType,
+  MultiGreet,
+  BotInstance,
+  PermissionCache,
+  Module
+} from "$lib/types/models";
+import type {
   PrimaryPermissionType,
-  SecondaryPermissionType,
-  type PermissionCache, type Module
+  SecondaryPermissionType
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
@@ -19,6 +22,9 @@ import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import type { DiscordGuild } from "$lib/types/discordGuild.ts";
+
+const ALLOWED_ORIGINS = ['localhost', '127.0.0.1'];
+const ALLOWED_PORTS = new Set(['3000', '5173']);
 
 async function apiRequest<T>(
   endpoint: string,
@@ -42,7 +48,7 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    logger.error(`API error: ${response.status} - ${errorText}`);
+    logger.debug(`API error: ${response.status} - ${errorText}`);
     throw new Error(`API error: ${response.status} - ${errorText}`);
   }
 
@@ -390,6 +396,9 @@ export const api = {
 
   getUser: (guildId: bigint, userId: bigint) =>
     apiRequest<any>(`ClientOperations/user/${guildId}/${userId}`),
+
+  getUsers: (guildId: bigint, userIds: bigint[]) =>
+    apiRequest<any[]>(`ClientOperations/users/${guildId}`, "POST", userIds),
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 

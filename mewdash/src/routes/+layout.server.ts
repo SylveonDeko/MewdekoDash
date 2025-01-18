@@ -1,7 +1,5 @@
-// routes/+layout.ts or +layout.server.ts
-
-export async function load({ locals }) {
+export async function load({ locals, url }){
   return {
-    guilds: locals.guilds, user: locals.user
+    user: locals.user
   };
 }

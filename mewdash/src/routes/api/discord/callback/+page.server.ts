@@ -8,17 +8,14 @@ import { logger } from "$lib/logger";
 export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     const code = url.searchParams.get('code');
     if (!code) {
-        throw redirect(302, '/');
+        throw redirect(303, "/?loggedin");
     }
 
     // Check if we've already processed this code
     const processedCode = cookies.get('processed_oauth_code');
     if (processedCode === code) {
-        // Already processed this code, redirect to intended destination
-        const returnTo = cookies.get('returnTo') || '/dashboard';
-        cookies.delete('returnTo', { path: '/' });
         cookies.delete('processed_oauth_code', { path: '/' });
-        throw redirect(302, returnTo);
+        throw redirect(303, "/?loggedin");
     }
 
     try {
@@ -39,18 +36,19 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
         const userData = await getUserData(tokens.access_token);
         locals.user = userData;
 
-        const returnTo = cookies.get('returnTo') || '/dashboard';
-        cookies.delete('returnTo', { path: '/' });
-
-        return { success: true, returnTo };
+        throw redirect(303, "/?loggedin");
     } catch (error) {
-        logger.error('Callback error details:', {
-            error: error.message,
-            name: error.name,
-            status: error.status,
-            response: error.response
-        });
+        if (error instanceof Error) {
+            logger.error('Callback error details:', {
+                error: error.message,
+                name: error.name,
+                status: (error as any).status,
+                response: (error as any).response
+            });
+        } else {
+            logger.error('Callback error details:', { error });
+        }
 
-        throw redirect(302, '/?error=auth_failed');
+        throw redirect(303, "/?loggedin");
     }
 };
