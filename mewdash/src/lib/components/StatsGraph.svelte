@@ -169,6 +169,7 @@
   }
 
   onMount(() => {
+    console.log(data);
     resizeObserver = new ResizeObserver(handleResize);
     if (canvas?.parentElement) {
       resizeObserver.observe(canvas.parentElement);
