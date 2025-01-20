@@ -5,7 +5,6 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
-  import { logger } from "$lib/logger.ts";
 
   export let data;
   let instances: BotInstance[] = [];
@@ -53,8 +52,6 @@
       await goto("/api/discord/login");
       return;
     }
-
-    try {
       const response = await api.getBotInstances();
       instances = response;
 
@@ -69,12 +66,6 @@
         // Check all instances in parallel
         await Promise.all(instances.map(checkInstanceMutualGuilds));
       }
-    } catch (err) {
-      error = "Failed to load bot instances";
-      logger.error(err);
-    } finally {
-      loading = false;
-    }
   });
 
   async function handleInstanceSelect(instance: BotInstance) {
