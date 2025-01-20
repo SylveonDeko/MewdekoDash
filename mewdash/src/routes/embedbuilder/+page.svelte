@@ -10,6 +10,7 @@
   import { marked } from "marked";
   import DOMPurify from "dompurify";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
+  import { logger } from "$lib/logger.ts";
 
   // Types
   interface Author {

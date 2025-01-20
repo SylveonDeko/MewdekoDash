@@ -1,8 +1,8 @@
 <!-- routes/partners+page.svelte -->
 <script>
-  import FluidContainer from "$lib/util/FluidContainer.svelte";
-  import InteractableElement from "$lib/util/InteractableElement.svelte";
-  import Carousel from "$lib/util/Carousel.svelte";
+  import FluidContainer from "$lib/components/FluidContainer.svelte";
+  import InteractableElement from "$lib/components/InteractableElement.svelte";
+  import Carousel from "$lib/components/Carousel.svelte";
 </script>
 
 <head>
@@ -31,6 +31,7 @@
         cta={{
           text: "Invite DittoBOT",
           href: "https://discordapp.com/api/oauth2/authorize?client_id=1000125868938633297&permissions=387136&scope=bot+applications.commands",
+          target: "_blank",
         }}
         description="The most in depth and fully featured Pokemon themed discord bot! 6v6 PvP dueling, Nearly ALL abilities/moves/ and secondary's are working!"
         slot="element-1"
@@ -49,50 +50,6 @@
             {
               title: "Breeding!",
               src: "img/img_2.png",
-            },
-          ]}
-        ></Carousel>
-      </InteractableElement>
-      <InteractableElement
-        cta={{
-          text: "Join The Server!",
-          href: "https://discord.gg/AGzkRSYWb8",
-        }}
-        description="Created by the person who helped make this site (Enormous props to him, helped me learn a lot about tailwind and svelte), NotABot is a way to redefine how a bot works, using installable modules!"
-        slot="element-2"
-        title="NotABot"
-      >
-        <img
-          src="img/f0904d25b340c6ac4ac94c6d16fc2be7.webp"
-          alt="NotABot logo"
-        />
-      </InteractableElement>
-      <InteractableElement
-        cta={{
-          text: "Join Island Getaway!",
-          href: "https://discord.gg/animalcrossing",
-        }}
-        description="A Server that is Karuta Featured, Wholesome (Except for the karuta side), and has caring staff! The owner of the server helps keep mewdeko alive and is our biggest partner/sponsor!"
-        slot="element-3"
-        title="Island Getaway"
-      >
-        <Carousel
-          images={[
-            {
-              title: "Cat!",
-              src: "img/img_4.png",
-            },
-            {
-              title: "Giveaways!",
-              src: "img/img_5.png",
-            },
-            {
-              title: "Karuta!",
-              src: "img/img_6.png",
-            },
-            {
-              title: "Karuta Giveaways!",
-              src: "img/img_7.png",
             },
           ]}
         ></Carousel>

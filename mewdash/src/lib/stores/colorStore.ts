@@ -1,9 +1,11 @@
-// lib/stores/colorStore.ts
-import { writable } from 'svelte/store';
-import type ColorThief from 'colorthief';
+import { writable } from "svelte/store";
+import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
 
-interface Colors {
+// Types
+type RGB = [number, number, number];
+
+interface ColorPalette {
   primary: string;
   secondary: string;
   accent: string;
@@ -14,7 +16,7 @@ interface Colors {
   gradientEnd: string;
 }
 
-const defaultColors: Colors = {
+const DEFAULT_PALETTE: ColorPalette = {
   primary: '#3b82f6',
   secondary: '#8b5cf6',
   accent: '#ec4899',
@@ -26,11 +28,10 @@ const defaultColors: Colors = {
 };
 
 function createColorStore() {
-  const { subscribe, set, update } = writable<Colors>(defaultColors);
-  let colorThief: typeof ColorThief;
+  const { subscribe, set, update } = writable<ColorPalette>(DEFAULT_PALETTE);
 
-  // Function to convert RGB to HSL
-  function rgbToHsl(r: number, g: number, b: number) {
+  // Color conversion utilities
+  function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
     r /= 255;
     g /= 255;
     b /= 255;
@@ -54,65 +55,99 @@ function createColorStore() {
     return [h * 360, s * 100, l * 100];
   }
 
-  // Function to convert RGB to HEX
-  function rgbToHex(r: number, g: number, b: number) {
+  function rgbToHex(r: number, g: number, b: number): string {
     return '#' + [r, g, b].map(x => {
       const hex = x.toString(16);
       return hex.length === 1 ? '0' + hex : hex;
     }).join('');
   }
 
-  // Function to adjust color lightness
-  function adjustLightness(rgb: number[], lightness: number) {
+  function adjustLightness(rgb: RGB, percentage: number): string {
     const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
+    return `hsl(${hsl[0]}, ${hsl[1]}%, ${percentage}%)`;
+  }
+
+  async function extractColors(imageUrl: string): Promise<ColorPalette> {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined") {
+      return DEFAULT_PALETTE;
+    }
+
+    try {
+      const img = new window.Image();
+      img.crossOrigin = "Anonymous";
+
+      // Create a loading promise
+      const loadImage = new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = imageUrl;
+      });
+
+      // Add timeout to prevent hanging
+      const timeout = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Image loading timeout")), 5000);
+      });
+
+      // Race between image loading and timeout
+      await Promise.race([loadImage, timeout]);
+
+      // Only proceed if ColorThief is available
+      if (typeof ColorThief === "undefined") {
+        throw new Error("ColorThief is not available");
+      }
+
+      const colorThief = new ColorThief();
+      const palette = colorThief.getPalette(img, 3) as RGB[];
+
+      if (!palette || palette.length < 3) {
+        throw new Error("Could not extract enough colors from image");
+      }
+
+      const rgbToHex = (r: number, g: number, b: number): string =>
+        "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+
+      const adjustLightness = (color: RGB, percentage: number): string => {
+        const factor = percentage / 100;
+        const adjusted: RGB = [
+          Math.min(255, Math.max(0, Math.round(color[0] * factor))),
+          Math.min(255, Math.max(0, Math.round(color[1] * factor))),
+          Math.min(255, Math.max(0, Math.round(color[2] * factor)))
+        ];
+        return rgbToHex(...adjusted);
+      };
+
+      return {
+        primary: rgbToHex(...palette[0]),
+        secondary: rgbToHex(...palette[1]),
+        accent: rgbToHex(...palette[2]),
+        text: adjustLightness(palette[0], 90),
+        muted: adjustLightness(palette[0], 70),
+        gradientStart: rgbToHex(...palette[0]),
+        gradientMid: rgbToHex(...palette[1]),
+        gradientEnd: rgbToHex(...palette[2])
+      };
+    } catch (error) {
+      logger.error("Error extracting colors:", error);
+      return DEFAULT_PALETTE;
+    }
   }
 
   return {
     subscribe,
-    reset: () => set(defaultColors),
+    reset: () => set(DEFAULT_PALETTE),
     extractFromImage: async (imageUrl: string) => {
       if (!imageUrl) {
-        set(defaultColors);
+        set(DEFAULT_PALETTE);
         return;
       }
 
       try {
-        if (!colorThief) {
-          const ColorThiefModule = await import('colorthief');
-          colorThief = ColorThiefModule.default;
-        }
-
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.src = imageUrl;
-
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-
-        const thief = new colorThief();
-        const dominantColor = thief.getColor(img);
-        const palette = thief.getPalette(img);
-
-        const primaryHex = rgbToHex(...dominantColor);
-        const secondaryHex = rgbToHex(...palette[1]);
-        const accentHex = rgbToHex(...palette[2]);
-
-        update(colors => ({
-          primary: primaryHex,
-          secondary: secondaryHex,
-          accent: accentHex,
-          text: adjustLightness(dominantColor, 95),
-          muted: adjustLightness(dominantColor, 60),
-          gradientStart: primaryHex,
-          gradientMid: secondaryHex,
-          gradientEnd: accentHex
-        }));
+        const palette = await extractColors(imageUrl);
+        set(palette);
       } catch (err) {
         logger.error('Failed to extract colors:', err);
-        set(defaultColors);
+        set(DEFAULT_PALETTE);
       }
     }
   };

@@ -1,16 +1,16 @@
 <!-- routes/dashboard/music/+page.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/Notification.svelte";
+  import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
   import ColorThief from "colorthief";
-  import {currentInstance} from "$lib/stores/instanceStore.ts";
-  import { Volume2, Music2, Settings, Users, Clock, List, AlertCircle, Sliders } from "lucide-svelte";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2 } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
   export let data: PageData;

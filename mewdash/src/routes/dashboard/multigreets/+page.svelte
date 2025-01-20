@@ -8,14 +8,25 @@
   import type { MultiGreet } from "$lib/types/models.ts";
   import { MultiGreetType } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/Notification.svelte";
+  import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
-  import {currentInstance} from "$lib/stores/instanceStore.ts";
-  import ColorThief from 'colorthief';
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import ColorThief from "colorthief";
   import {
-    MessageCircle, Plus, Check, X, Edit2, Trash2,
-    Clock, Bot, Webhook, Settings, ChevronDown, Users, AlertTriangle
-  } from 'lucide-svelte';
+    AlertTriangle,
+    Bot,
+    Check,
+    ChevronDown,
+    Clock,
+    Edit2,
+    MessageCircle,
+    Plus,
+    Settings,
+    Trash2,
+    Users,
+    Webhook,
+    X
+  } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
   export let data: PageData;

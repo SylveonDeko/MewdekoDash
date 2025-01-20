@@ -1,6 +1,7 @@
 <!-- lib/Notification.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+
   export let message: string;
   export let type: "success" | "error" = "success";
 </script>

@@ -2,17 +2,21 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import FluidContainer from "$lib/util/FluidContainer.svelte";
-  import Interactable from "$lib/util/InteractableElement.svelte";
-  import Carousel from "$lib/carousel/Carousel.svelte";
-  import ImageWrapper from "$lib/carousel/ImageWrapper.svelte";
+  import FluidContainer from "$lib/components/FluidContainer.svelte";
+  import Interactable from "$lib/components/InteractableElement.svelte";
+  import Carousel from "$lib/components/Carousel.svelte";
+  import ImageWrapper from "$lib/components/ImageWrapper.svelte";
   import type { RedisGuild } from "$lib/types/redisGuild";
-  import MultiButton from "$lib/MultiButton.svelte";
-  import { extractColors, type ColorPalette } from "$lib/colorUtils";
+  import MultiButton from "$lib/components/MultiButton.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
 
   export let data;
 
+  let guilds: RedisGuild[] = [];
+  let fetched = false;
+  const MAX_GUILD_NAME_LENGTH = 20;
+  const MAX_GUILDS_TO_SHOW = 10;
 
   $: if (data.user) {
     updateColors();
@@ -21,45 +25,22 @@
   async function updateColors() {
     try {
       if (data?.user?.avatar) {
-        colors = await extractColors(
+        // Extract colors from user avatar
+        await colorStore.extractFromImage(
           data.user.avatar.startsWith("a_")
             ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
             : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
         );
       } else {
-        // Default fallback colors when no user
-        colors = await extractColors("/img/Mewdeko.png");
+        // Fallback to default image
+        await colorStore.extractFromImage("/img/Mewdeko.png");
       }
     } catch (err) {
       logger.error('Failed to extract colors:', err);
-      // Fallback colors in case of error
-      colors = {
-        primary: '#3b82f6',
-        secondary: '#8b5cf6',
-        accent: '#ec4899',
-        text: '#ffffff',
-        muted: '#9ca3af',
-        gradientStart: '#3b82f6',
-        gradientMid: '#8b5cf6',
-        gradientEnd: '#ec4899'
-      };
+      colorStore.reset(); // Reset to default colors
     }
-
-    colorVars = `
-    --color-primary: ${colors.primary};
-    --color-secondary: ${colors.secondary};
-    --color-accent: ${colors.accent};
-    --color-text: ${colors.text};
-    --color-muted: ${colors.muted};
-  `;
   }
-  let colors: ColorPalette;
-  let colorVars: string;
 
-  let guilds: RedisGuild[] = [];
-  let fetched = false;
-  const MAX_GUILD_NAME_LENGTH = 20;
-  const MAX_GUILDS_TO_SHOW = 10;
   const buttons = [
     {
       label: "Invite",
@@ -146,22 +127,29 @@
   />
 </svelte:head>
 
-<main style={colorVars}>
+<main
+  style="--color-primary: {$colorStore.primary};
+         --color-secondary: {$colorStore.secondary};
+         --color-accent: {$colorStore.accent};
+         --color-text: {$colorStore.text};
+         --color-muted: {$colorStore.muted};"
+>
   <header
-    class="py-16 px-4 sm:px-12 flex flex-col items-center relative"
+    class="py-16 px-4 sm:px-12 flex flex-col items-center relative backdrop-blur-sm"
     in:fade={{ duration: 300 }}
     style="background: radial-gradient(circle at top,
-    {colors?.gradientStart}15 0%,
-    {colors?.gradientMid}10 50%,
-    {colors?.gradientEnd}05 100%
-  );"
+      {$colorStore.gradientStart}15 0%,
+      {$colorStore.gradientMid}10 50%,
+      {$colorStore.gradientEnd}05 100%
+    );"
   >
     <h1
-      class="text-center font-extrabold text-mewd-white max-w-4xl mx-auto text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-8"
+      class="text-center font-extrabold max-w-4xl mx-auto text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-8"
+      style="color: {$colorStore.text}"
     >
       Mewdeko
     </h1>
-    <p class="text-center font-extrabold text-mewd-white max-w-4x1">
+    <p class="text-center font-extrabold max-w-4x1" style="color: {$colorStore.text}">
       The Most Customizable Open Source Bot for Discord!
     </p>
 
@@ -170,52 +158,53 @@
     {#if fetched}
       <section
         aria-labelledby="features-heading"
-        class="relative mt-16"
+        class="relative mt-16 w-full z-40"
       >
-      <h2
-        id="top-servers-heading"
-        class="mb-6 text-2xl lg:text-3xl text-mewd-white font-bold text-center"
-      >
-        Our Top Servers
-      </h2>
-      {#if guilds.length > 0}
-        <ul
-          class="flex flex-wrap justify-center items-center gap-4 p-4"
-          aria-label="Top servers list"
+        <h2
+          id="top-servers-heading"
+          class="mb-6 text-2xl lg:text-3xl font-bold text-center"
+          style="color: {$colorStore.text}"
         >
-          {#each guilds as guild, index (guild.Name)}
-            <li
-              class="relative group"
-              in:fly={{ y: 20, duration: 300, delay: index * 100 }}
-            >
-              <img
-                class="w-12 h-12 rounded-full transition-transform duration-200 transform group-hover:scale-110"
+          Our Top Servers
+        </h2>
+        {#if guilds.length > 0}
+          <ul
+            class="flex flex-wrap justify-center items-center gap-4 p-4"
+            aria-label="Top servers list"
+          >
+            {#each guilds as guild, index (guild.Name)}
+              <li
+                class="relative group"
+                in:fly={{ y: 20, duration: 300, delay: index * 100 }}
+              >
+                <img
+                  class="w-12 h-12 rounded-full transition-transform duration-200 transform group-hover:scale-110"
                   src={guild.IconUrl}
                   alt=""
                   loading="lazy"
                   aria-hidden="true"
                 />
                 <div
-                  class="absolute hidden group-hover:block z-10 px-3 py-2 text-xs bg-mewd-dark-grey text-mewd-white rounded-md shadow-lg whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-2"
+                  class="absolute hidden group-hover:block z-10 px-3 py-2 text-xs rounded-md shadow-lg whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-2 backdrop-blur-sm"
                   role="tooltip"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
+                         border: 1px solid {$colorStore.primary}30;"
                 >
-                  <p class="font-semibold">
+                  <p class="font-semibold" style="color: {$colorStore.text}">
                     {truncateStringToLength(guild.Name, MAX_GUILD_NAME_LENGTH)}
                   </p>
-                  <p class="text-mewd-offwhite">
-                    {guild.MemberCount.toLocaleString()}
-                    Members
+                  <p style="color: {$colorStore.muted}">
+                    {guild.MemberCount.toLocaleString()} Members
                   </p>
                 </div>
-                <span class="sr-only"
-                >{guild.Name}, {guild.MemberCount.toLocaleString()}
-                  Members</span
-                >
+                <span class="sr-only">
+                  {guild.Name}, {guild.MemberCount.toLocaleString()} Members
+                </span>
               </li>
             {/each}
           </ul>
         {:else}
-          <p class="text-mewd-offwhite">
+          <p style="color: {$colorStore.muted}">
             No top servers available at the moment.
           </p>
         {/if}
@@ -223,11 +212,20 @@
     {/if}
   </header>
 
-  <section aria-labelledby="features-heading" class="bg-mewd-dark-grey py-24">
+  <section
+    aria-labelledby="features-heading"
+    class="py-24 backdrop-blur-sm"
+    style="background: radial-gradient(circle at center,
+      {$colorStore.gradientStart}15 0%,
+      {$colorStore.gradientMid}10 50%,
+      {$colorStore.gradientEnd}05 100%
+    );"
+  >
     <div class="container mx-auto px-4 max-w-7xl">
       <h2
-        class="text-3xl font-bold text-mewd-white mb-12 text-center"
+        class="text-3xl font-bold mb-12 text-center"
         id="features-heading"
+        style="color: {$colorStore.text}"
       >
         Key Features
       </h2>
@@ -423,5 +421,48 @@
     [style*="background"],
     [style*="color"] {
         @apply transition-colors duration-300;
+    }
+
+    /* Improve gradient transitions */
+    .backdrop-blur-sm {
+        @apply transition-all duration-300;
+    }
+
+    /* Consistent border styling */
+    [class*="border"] {
+        @apply transition-colors duration-300;
+    }
+
+    /* Ensure proper gradient overlays */
+    [style*="gradient"] {
+        @apply transition-all duration-300;
+    }
+
+    /* Custom scrollbar styling */
+    :global(*::-webkit-scrollbar) {
+        @apply w-2;
+    }
+
+    :global(*::-webkit-scrollbar-track) {
+        background: var(--color-primary) 10;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb) {
+        background: var(--color-primary) 30;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb:hover) {
+        background: var(--color-primary) 50;
+    }
+
+    /* Image hover effects */
+    img {
+        @apply transition-transform duration-300;
+    }
+
+    .group:hover img {
+        @apply scale-105;
     }
 </style>

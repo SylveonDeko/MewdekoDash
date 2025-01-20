@@ -1,6 +1,6 @@
 <!-- routes/commands/+page.svelte -->
 <script lang="ts">
-  import MewdekoModule from "$lib/dashboard/modules/MewdekoModule.svelte";
+  import MewdekoModule from "$lib/components/MewdekoModule.svelte";
   import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
   import { onDestroy } from "svelte";
   import type { PageData } from "./$types";

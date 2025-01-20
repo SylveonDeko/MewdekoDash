@@ -1,26 +1,34 @@
 <!-- routes/dashboard/giveaways/+page.svelte -->
 <script lang="ts">
- import { onMount, onDestroy } from "svelte";
- import { api } from "$lib/api.ts";
- import { currentGuild } from "$lib/stores/currentGuild.ts";
- import { currentInstance } from "$lib/stores/instanceStore.ts";
- import { fade, slide } from "svelte/transition";
- import type { Giveaways } from "$lib/types";
- import { goto } from "$app/navigation";
- import Notification from "$lib/Notification.svelte";
- import MultiSelectDropdown from "$lib/MultiSelectDropdown.svelte";
- import IntervalPicker from "$lib/IntervalPicker.svelte";
- import { browser } from "$app/environment";
- import ColorThief from 'colorthief';
- import {
-   Gift, Users, Hash, MessageCircle,
-   X, ChevronDown, Trophy,
-   Clock, AlertTriangle,
-   Bot, Award, Target
- } from 'lucide-svelte';
- import { logger } from "$lib/logger.ts";
+  import { onDestroy, onMount } from "svelte";
+  import { api } from "$lib/api.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { fade, slide } from "svelte/transition";
+  import type { Giveaways } from "$lib/types";
+  import { goto } from "$app/navigation";
+  import Notification from "$lib/components/Notification.svelte";
+  import MultiSelectDropdown from "$lib/components/MultiSelectDropdown.svelte";
+  import IntervalPicker from "$lib/components/IntervalPicker.svelte";
+  import { browser } from "$app/environment";
+  import ColorThief from "colorthief";
+  import {
+    AlertTriangle,
+    Award,
+    Bot,
+    ChevronDown,
+    Clock,
+    Gift,
+    Hash,
+    MessageCircle,
+    Target,
+    Trophy,
+    Users,
+    X
+  } from "lucide-svelte";
+  import { logger } from "$lib/logger.ts";
 
- let giveaways: Giveaways[] = [];
+  let giveaways: Giveaways[] = [];
  let expandedGiveaway: number | null = null;
  let loading = true;
  let error: string | null = null;

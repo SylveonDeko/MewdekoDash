@@ -5,18 +5,27 @@
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
-  import { type SuggestionsModel, type GuildConfig, SuggestionState } from "$lib/types/models.ts";
-  import Notification from "$lib/Notification.svelte";
+  import { type GuildConfig, type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
+  import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
-  import { colorStore } from '$lib/stores/colorStore';
+  import { colorStore } from "$lib/stores/colorStore";
   import {
-    Settings, Inbox, MessageSquare, Hash, Archive,
-    Smile, Plus, Check, X, AlertTriangle, Users,
-    ThumbsUp, ThumbsDown, MessageCircle, Clock,
-    ArrowUp, ArrowDown, Trash2
-  } from 'lucide-svelte';
+    AlertTriangle,
+    Archive,
+    ArrowDown,
+    ArrowUp,
+    Check,
+    Hash,
+    Inbox,
+    MessageCircle,
+    MessageSquare,
+    Settings,
+    Smile,
+    Trash2,
+    X
+  } from "lucide-svelte";
   import { goto } from "$app/navigation";
-  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
 
   export let data: PageData;
 

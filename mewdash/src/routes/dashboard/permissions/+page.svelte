@@ -7,7 +7,7 @@
   import type { BotStatusModel, CommandInfo, Module, Permission, PermissionCache } from "$lib/types/models";
   import { PrimaryPermissionType, SecondaryPermissionType } from "$lib/types/models";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/Notification.svelte";
+  import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
   import ColorThief from "colorthief";
   import { currentInstance } from "$lib/stores/instanceStore";

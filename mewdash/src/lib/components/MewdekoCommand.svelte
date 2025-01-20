@@ -1,6 +1,6 @@
 <!-- lib/dashboard/modules/MewdekoCommand.svelte -->
 <script lang="ts">
-  import type { Command } from "$lib/types/mewdekoModules";
+  import type { Command } from "$lib/types/mewdekoModules.ts";
 
   function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);

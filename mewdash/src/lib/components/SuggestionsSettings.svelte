@@ -2,9 +2,9 @@
 <!-- lib/dashboard/suggestions/SuggestionsSettings.svelte -->
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { Settings, MessageSquare, Hash, Square, Archive, Smile } from 'lucide-svelte';
+  import { api } from "$lib/api.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { Archive, Hash, MessageSquare, Settings, Smile, Square } from "lucide-svelte";
   import { onMount } from "svelte";
 
   export let colors: any;

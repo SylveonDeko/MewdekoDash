@@ -1,17 +1,17 @@
 <!-- routes/dashboard/afk/+page.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
   import type { Afk, BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/Notification.svelte";
-  import { Clock, Users, MessageCircle, Settings, AlertCircle } from "lucide-svelte";
+  import Notification from "$lib/components/Notification.svelte";
+  import { AlertCircle, Clock, MessageCircle, Settings, Users } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from '$lib/stores/colorStore';
+  import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
 
 

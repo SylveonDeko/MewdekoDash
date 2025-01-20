@@ -111,8 +111,8 @@ export interface GuildConfig {
   AfkDisabledChannels: string;
   AfkDel: string;
   AfkTimeout: number;
-  Joins: string;
-  Leaves: string;
+  Joins: number;
+  Leaves: number;
   Star2: string;
   StarboardChannel: string;
   RepostThreshold: number;
@@ -647,3 +647,21 @@ export interface XpSettings {}
 export interface FeedSub {}
 export interface ReactionRoleMessage {}
 export interface GroupName {}
+
+
+export interface GraphStatsResponse {
+  dailyStats: DailyStatDto[];
+  summary: GraphSummaryDto;
+}
+
+export interface DailyStatDto {
+  date: string;
+  count: number;
+}
+
+export interface GraphSummaryDto {
+  total: number;
+  average: number;
+  peakDate: string;
+  peakCount: number;
+}

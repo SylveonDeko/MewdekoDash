@@ -1,19 +1,17 @@
 // lib/api.ts
 import type {
-  GuildConfig,
-  ChatTriggers,
-  SuggestionsModel,
-  BotStatusModel,
-  BotReviews,
-  MultiGreetType,
-  MultiGreet,
   BotInstance,
+  BotReviews,
+  BotStatusModel,
+  ChatTriggers,
+  GuildConfig,
+  Module,
+  MultiGreet,
+  MultiGreetType,
   PermissionCache,
-  Module
-} from "$lib/types/models";
-import type {
   PrimaryPermissionType,
-  SecondaryPermissionType
+  SecondaryPermissionType,
+  SuggestionsModel
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
@@ -168,7 +166,7 @@ export const api = {
   getGuildConfig: (guildId: bigint) =>
     apiRequest<GuildConfig>(`guildconfig/${guildId}`),
   updateGuildConfig: (guildId: bigint, config: GuildConfig) =>
-    apiRequest<void>(`guildconfig/${guildId}`, "POST", config),
+    apiRequest<void>(`GuildConfig/${guildId}`, "POST", config),
 
   getSuggestions: (guildId: bigint) =>
     apiRequest<SuggestionsModel[]>(`suggestions/${guildId}`),
@@ -402,8 +400,14 @@ export const api = {
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
-  getMutualGuilds: (userId: bigint, customFetch: typeof fetch = fetch) =>
-    apiRequest<DiscordGuild[]>(`ClientOperations/mutualguilds/${userId}`, "GET", undefined, {}, customFetch),
+  getMutualGuilds: (userId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
+    apiRequest<DiscordGuild[]>(
+      `ClientOperations/mutualguilds/${userId}`,
+      "GET",
+      undefined,
+      additionalHeaders,
+      customFetch
+    ),
 
   getPermissionOverrides: (guildId: bigint) =>
     apiRequest<PermissionOverride[]>(`Permissions/dpo/${guildId}`),
@@ -481,5 +485,151 @@ export const api = {
     apiRequest<void>(`music/${guildId}/shuffle`, "POST"),
 
   setRepeatMode: (guildId: bigint, mode: string) =>
-    apiRequest<void>(`music/${guildId}/repeat/${mode}`, "POST")
+    apiRequest<void>(`music/${guildId}/repeat/${mode}`, "POST"),
+
+  getInviteSettings: (guildId: bigint) =>
+    apiRequest<{
+      isEnabled: boolean;
+      removeInviteOnLeave: boolean;
+      minAccountAge: string;
+    }>(`InviteTracking/${guildId}/settings`),
+
+  toggleInviteTracking: (guildId: bigint, enabled: boolean) =>
+    apiRequest<boolean>(`InviteTracking/${guildId}/toggle`, "POST", enabled),
+
+  setRemoveOnLeave: (guildId: bigint, removeOnLeave: boolean) =>
+    apiRequest<boolean>(`InviteTracking/${guildId}/remove-on-leave`, "POST", removeOnLeave),
+
+  setMinAccountAge: (guildId: bigint, minAge: string) =>
+    apiRequest<string>(`InviteTracking/${guildId}/min-age`, "POST", minAge),
+
+  getInviteCount: (guildId: bigint, userId: bigint) =>
+    apiRequest<number>(`InviteTracking/${guildId}/count/${userId}`),
+
+  getInviter: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      id: string;
+      username: string;
+      discriminator: string;
+      avatarUrl: string;
+    }>(`InviteTracking/${guildId}/inviter/${userId}`),
+
+  getInvitedUsers: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: string;
+      username: string;
+      discriminator: string;
+      avatarUrl: string;
+    }>>(`InviteTracking/${guildId}/invited/${userId}`),
+
+  getInviteLeaderboard: (guildId: bigint, page?: number, pageSize?: number) =>
+    apiRequest<Array<{
+      userId: string;
+      username: string;
+      inviteCount: number;
+    }>>(`InviteTracking/${guildId}/leaderboard?page=${page || 1}&pageSize=${pageSize || 10}`),
+
+// Role States endpoints
+  getRoleStateSettings: (guildId: bigint) =>
+    apiRequest<{
+      enabled: boolean;
+      clearOnBan: boolean;
+      ignoreBots: boolean;
+      deniedRoles: string;
+      deniedUsers: string;
+    }>(`RoleStates/${guildId}/settings`),
+
+  toggleRoleStates: (guildId: bigint) =>
+    apiRequest<boolean>(`RoleStates/${guildId}/toggle`, "POST"),
+
+  getUserRoleState: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      userId: bigint;
+      guildId: bigint;
+      savedRoles: string;
+      userName: string;
+    }>(`RoleStates/${guildId}/user/${userId}`),
+
+  getAllRoleStates: (guildId: bigint) =>
+    apiRequest<Array<{
+      userId: bigint;
+      guildId: bigint;
+      savedRoles: string;
+      userName: string;
+    }>>(`RoleStates/${guildId}/all`),
+
+  addRolesToUser: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`RoleStates/${guildId}/user/${userId}/roles`, "POST", roleIds),
+
+  removeRolesFromUser: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`RoleStates/${guildId}/user/${userId}/roles`, "DELETE", roleIds),
+
+  deleteUserRoleState: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`RoleStates/${guildId}/user/${userId}`, "DELETE"),
+
+  applyRoleState: (guildId: bigint, sourceUserId: bigint, targetUserId: bigint) =>
+    apiRequest<void>(`RoleStates/${guildId}/user/${sourceUserId}/apply/${targetUserId}`, "POST"),
+
+  setUserRoles: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`RoleStates/${guildId}/user/${userId}/set-roles`, "POST", roleIds),
+
+// Role Greet endpoints
+  getRoleGreets: (guildId: bigint, roleId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      roleId: bigint;
+      channelId: bigint;
+      message: string;
+      deleteTime: number;
+      webhookUrl: string | null;
+      greetBots: boolean;
+      disabled: boolean;
+    }>>(`RoleGreet/${guildId}/role/${roleId}`),
+
+  getAllRoleGreets: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      roleId: bigint;
+      channelId: bigint;
+      message: string;
+      deleteTime: number;
+      webhookUrl: string | null;
+      greetBots: boolean;
+      disabled: boolean;
+    }>>(`RoleGreet/${guildId}`),
+
+  addRoleGreet: (guildId: bigint, roleId: bigint, channelId: bigint) =>
+    apiRequest<void>(`RoleGreet/${guildId}/role/${roleId}`, "POST", channelId),
+
+  updateRoleGreetMessage: (guildId: bigint, greetId: number, message: string) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}/message`, "PUT", message),
+
+  updateRoleGreetDeleteTime: (guildId: bigint, greetId: number, seconds: number) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}/delete-time`, "PUT", seconds),
+
+  updateRoleGreetWebhook: (guildId: bigint, greetId: number, webhookUrl: string | null) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}/webhook`, "PUT", { webhookUrl }),
+
+  updateRoleGreetBots: (guildId: bigint, greetId: number, enabled: boolean) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}/greet-bots`, "PUT", enabled),
+
+  disableRoleGreet: (guildId: bigint, greetId: number, disabled: boolean) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}/disable`, "PUT", disabled),
+
+  getAverageJoins: (guildId: bigint) =>
+    apiRequest<number>(`JoinLeave/${guildId}/average-joins`),
+
+  getJoinStats: (guildId: bigint) =>
+    apiRequest<GraphStatsResponse>(`JoinLeave/${guildId}/join-stats`),
+
+  getLeaveStats: (guildId: bigint) =>
+    apiRequest<GraphStatsResponse>(`JoinLeave/${guildId}/leave-stats`),
+
+  setJoinColor: (guildId: bigint, color: number) =>
+    apiRequest<void>(`JoinLeave/${guildId}/join-color`, "POST", color),
+
+  setLeaveColor: (guildId: bigint, color: number) =>
+    apiRequest<void>(`JoinLeave/${guildId}/leave-color`, "POST", color)
 };

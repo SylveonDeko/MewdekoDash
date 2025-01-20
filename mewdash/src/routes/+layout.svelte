@@ -1,8 +1,7 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
   import "../app.css";
-  import UnifiedNav from "$lib/nav/UnifiedNav.svelte";
-  import { userAdminGuilds } from "../lib/stores/adminGuildsStore";
+  import UnifiedNav from "$lib/components/UnifiedNav.svelte";
   import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";

@@ -1,6 +1,6 @@
 <!-- lib/util/FluidContainer.svelte -->
 <script lang="ts">
-  import Elem from "$lib/util/FluidElement.svelte";
+  import Elem from "$lib/components/FluidElement.svelte";
 
   export let breakpoints = ["md", "lg", "xl"];
   const maxBreaks = Object.keys($$slots).length;

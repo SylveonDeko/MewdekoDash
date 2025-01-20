@@ -1,7 +1,7 @@
 <!-- lib/dashboard/suggestions/StatusChangeModal.svelte -->
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
-  import { Check, X } from 'lucide-svelte';
+  import { Check, X } from "lucide-svelte";
   import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
 
   export let suggestion: SuggestionsModel | null = null;

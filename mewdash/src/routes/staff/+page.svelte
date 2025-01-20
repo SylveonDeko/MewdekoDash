@@ -1,7 +1,7 @@
 <!-- routes/staff/+page.svelte -->
 <script>
-  import Profile from "$lib/Profile.svelte";
-  import FluidContainer from "$lib/util/FluidContainer.svelte";
+  import Profile from "$lib/components/Profile.svelte";
+  import FluidContainer from "$lib/components/FluidContainer.svelte";
 </script>
 
 <head>

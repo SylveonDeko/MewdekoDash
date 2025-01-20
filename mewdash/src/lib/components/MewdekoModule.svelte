@@ -1,6 +1,6 @@
 <!-- lib/dashboard/modules/MewdekoCommandModule.svelte -->
 <script lang="ts">
-  import type { Module } from "$lib/types/mewdekoModules";
+  import type { Module } from "$lib/types/mewdekoModules.ts";
   import MewdekoCommand from "./MewdekoCommand.svelte";
 
   export let module: Module;

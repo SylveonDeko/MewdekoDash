@@ -1,6 +1,5 @@
-<!-- lib/carousel/Carousel.svelte -->
 <script lang="ts">
-  import reducedMotion from "$lib/reducedMotion";
+  import reducedMotion from "$lib/reducedMotion.ts";
   import type { SvelteComponent } from "svelte";
 
   export type Item = {

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
-  import { type SuggestionsModel, SuggestionState } from "$lib/types/models";
-  import { MessageCircle, ThumbsUp, Edit2, Trash2, MessageSquare } from 'lucide-svelte';
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
+  import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
+  import { Edit2, MessageCircle, MessageSquare, ThumbsUp, Trash2 } from "lucide-svelte";
+  import { api } from "$lib/api.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
 
   export let suggestions: SuggestionsModel[] = [];
   export let colors: any;

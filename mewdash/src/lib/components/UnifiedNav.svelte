@@ -1,19 +1,18 @@
 <!-- lib/nav/UnifiedNav.svelte -->
 <script lang="ts">
   import { page } from "$app/stores";
-  import { slide, fade, scale } from "svelte/transition";
-  import { clickOutside } from "$lib/clickOutside";
+  import { fade, scale, slide } from "svelte/transition";
+  import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
   import { onDestroy, onMount } from "svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
   import type { BotInstance } from "$lib/types/models.ts";
-  import { extractColors, type ColorPalette } from "$lib/colorUtils";
+  import { type ColorPalette, extractColors } from "$lib/colorUtils.ts";
   import { api } from "$lib/api.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { get } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { logger } from "$lib/logger.ts";
-  import JSONbig from "json-bigint";
 
   // Props
   export let items: NavItem[] = [];
@@ -95,6 +94,7 @@
   // Dashboard items with icons
   const dashboardItems = [
     { title: "Dashboard", href: "/dashboard", icon: "📊" },
+    { title: "Settings", href: "/dashboard/settings", icon: "⚙️" },
     { title: "AFK", href: "/dashboard/afk", icon: "💤" },
     { title: "Music", href: "/dashboard/music", icon: "🎵" },
     { title: "Triggers", href: "/dashboard/chat-triggers", icon: "💬" },
@@ -318,7 +318,7 @@
     if (stored) {
       const storedGuild = JSON.parse(stored) as DiscordGuild;
       lastSelectedGuild = storedGuild.id;
-      const guild = data.guilds.find(g => g.id === lastSelectedGuild);
+      const guild = data.guilds?.find(g => g.id === lastSelectedGuild);
       if (guild) {
         await selectGuild(guild);
       }

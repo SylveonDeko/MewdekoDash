@@ -1,21 +1,33 @@
 <!-- routes/dashboard/chat-triggers/+page.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
-  import MultiSelectDropdown from "$lib/MultiSelectDropdown.svelte";
+  import MultiSelectDropdown from "$lib/components/MultiSelectDropdown.svelte";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/Notification.svelte";
+  import Notification from "$lib/components/Notification.svelte";
   import { get } from "svelte/store";
   import type { ChatTriggers } from "$lib/types/models";
-  import ColorThief from 'colorthief';
+  import ColorThief from "colorthief";
   import type { PageData } from "./$types";
-  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
   import {
-    MessageCircle, Plus, Settings, AlertTriangle, Delete,
-    Edit, Check, X, ChevronDown, ChevronUp, Command, Users, ToggleRight, Sparkles
-  } from 'lucide-svelte';
+    AlertTriangle,
+    Check,
+    ChevronDown,
+    ChevronUp,
+    Command,
+    Delete,
+    Edit,
+    MessageCircle,
+    Plus,
+    Settings,
+    Sparkles,
+    ToggleRight,
+    Users,
+    X
+  } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { logger } from "$lib/logger.ts";
 

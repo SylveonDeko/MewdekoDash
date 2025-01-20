@@ -1,9 +1,8 @@
 <!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-  import { onMount, onDestroy } from "svelte";
-  import { Clock, Calendar, Clock3, Timer } from 'lucide-svelte';
-  import { fade } from 'svelte/transition';
+  import { createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { Calendar, Clock, Clock3, Timer } from "lucide-svelte";
+  import { fade } from "svelte/transition";
 
   const dispatch = createEventDispatcher();
 
