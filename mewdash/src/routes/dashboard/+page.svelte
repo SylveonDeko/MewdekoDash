@@ -70,7 +70,7 @@
       ]);
 
       roleStats = {
-        totalRoleStates: roleStates.length,
+        totalRoleStates: roleStates?.length,
         activeRoleGreets: roleGreets.filter(g => !g.disabled).length,
         savedRoles: roleStates.reduce((sum, state) =>
           sum + (state.savedRoles?.split(",").length || 0), 0),

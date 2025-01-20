@@ -13,6 +13,10 @@
   let resizeObserver: ResizeObserver;
 
   function draw() {
+    if (data === undefined)
+      return;
+    if (data.summary === undefined)
+      return;
     if (!canvas || !data) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
