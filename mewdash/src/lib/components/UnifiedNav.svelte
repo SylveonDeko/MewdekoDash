@@ -23,7 +23,6 @@
   let instances: BotInstance[] = [];
   let instancesLoading = true;
   let instancesError: string | null = null;
-  $: shouldFetchGuilds = Boolean(browser && data?.user && $currentInstance);
 
   let colors: ColorPalette;
   let colorVars: string;
@@ -51,14 +50,14 @@
   }
 
   const DEFAULT_PALETTE: ColorPalette = {
-    primary: '#3b82f6',
-    secondary: '#8b5cf6',
-    accent: '#ec4899',
-    text: '#ffffff',
-    muted: '#9ca3af',
-    gradientStart: '#3b82f6',
-    gradientMid: '#8b5cf6',
-    gradientEnd: '#ec4899'
+    primary: "#3b82f6",
+    secondary: "#8b5cf6",
+    accent: "#ec4899",
+    text: "#ffffff",
+    muted: "#9ca3af",
+    gradientStart: "#3b82f6",
+    gradientMid: "#8b5cf6",
+    gradientEnd: "#ec4899"
   };
 
   // Computed
@@ -70,7 +69,7 @@
     computedItems = isDashboard ? buildDashboardItems() : buildMainItems(items);
   }
 
-  $: if (shouldFetchGuilds) {
+  $: if ($currentInstance) {
     fetchGuildsIfReady();
   }
 
@@ -212,7 +211,7 @@
     isFetchingGuilds = true;
     guildFetchError = null;
     try {
-      console.log('Fetching guilds for user:', data.user.id, 'and instance:', $currentInstance.botId);
+      console.log("Fetching guilds for user:", data.user.id, "and instance:", $currentInstance.botId);
       const newGuilds = await api.getMutualGuilds(data.user.id);
       adminGuilds = newGuilds || [];
       if (adminGuilds.length === 0) {
@@ -249,7 +248,7 @@
 
   async function updateColors() {
     try {
-      if (typeof window === 'undefined') {
+      if (typeof window === "undefined") {
         colors = DEFAULT_PALETTE;
         return;
       }
@@ -260,12 +259,12 @@
           ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
           : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
       } else {
-        imageUrl = new URL('/img/Mewdeko.png', window.location.origin).href;
+        imageUrl = new URL("/img/Mewdeko.png", window.location.origin).href;
       }
 
       colors = await extractColors(imageUrl);
     } catch (err) {
-      logger.error('Failed to extract colors:', err);
+      logger.error("Failed to extract colors:", err);
       colors = DEFAULT_PALETTE;
     }
 
@@ -349,7 +348,7 @@
   });
 
   $: if (data.user) {
-    updateColors()
+    updateColors();
   }
 </script>
 

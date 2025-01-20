@@ -401,7 +401,7 @@ export const api = {
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
   getMutualGuilds: (userId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
-    apiRequest<DiscordGuild[]>(
+    apiRequest<DiscordGuild[] | undefined | null>(
       `ClientOperations/mutualguilds/${userId}`,
       "GET",
       undefined,
