@@ -181,6 +181,7 @@
   });
 
   $: if (canvas && data && width && height) {
+    console.log(data);
     draw();
   }
 </script>
