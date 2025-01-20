@@ -168,8 +168,12 @@
     }
   }
 
+  function formatAverage(average: string | number): string {
+    const numValue = typeof average === "string" ? parseFloat(average) : average;
+    return numValue.toFixed(2);
+  }
+
   onMount(() => {
-    console.log(data);
     resizeObserver = new ResizeObserver(handleResize);
     if (canvas?.parentElement) {
       resizeObserver.observe(canvas.parentElement);
@@ -181,7 +185,6 @@
   });
 
   $: if (canvas && data && width && height) {
-    console.log(data);
     draw();
   }
 </script>
@@ -197,7 +200,9 @@
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
         <div class="text-sm" style="color: {$colorStore.muted}">Average per Day</div>
-        <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.average.toFixed(2)}</div>
+        <div class="text-lg font-semibold" style="color: {$colorStore.text}">
+          {formatAverage(data.summary.average)}
+        </div>
       </div>
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">

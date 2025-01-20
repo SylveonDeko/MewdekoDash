@@ -660,8 +660,8 @@ export interface DailyStatDto {
 }
 
 export interface GraphSummaryDto {
-  total: number;
-  average: number;
-  peakDate: string;
+  average: string | number;
   peakCount: number;
+  peakDate: string;
+  total: number;
 }
