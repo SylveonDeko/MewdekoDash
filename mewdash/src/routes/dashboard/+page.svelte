@@ -91,6 +91,7 @@
 
     joinStats = joinData;
     leaveStats = leaveData;
+    console.log(joinStats, leaveStats);
   }
 
 
