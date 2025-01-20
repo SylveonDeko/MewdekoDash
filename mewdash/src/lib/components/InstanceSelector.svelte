@@ -1,13 +1,13 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { api } from "$lib/api.ts";
-    import type { BotInstance } from "$lib/types/models.ts";
-    import { currentInstance } from "$lib/stores/instanceStore.ts";
-    import { fade } from "svelte/transition";
-    import { goto } from "$app/navigation";
-    import { logger } from "$lib/logger.ts";
+  import { onMount } from "svelte";
+  import { api } from "$lib/api.ts";
+  import type { BotInstance } from "$lib/types/models.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { fade } from "svelte/transition";
+  import { goto } from "$app/navigation";
+  import { logger } from "$lib/logger.ts";
 
-    export let data;
+  export let data;
   let instances: BotInstance[] = [];
   let loading = true;
   let error: string | null = null;
@@ -19,43 +19,61 @@
     error: string | null;
   }> = new Map();
 
-  async function checkInstanceMutualGuilds(instance: BotInstance) {
-    if (!data.user) return false;
+    async function checkInstanceMutualGuilds(instance: BotInstance) {
+      if (!data.user) return false;
 
-    try {
-      instanceStates.set(instance.botId.toString(), {
-        loading: true,
-        hasMutualGuild: false,
-        error: null
-      });
-      instanceStates = instanceStates;
+      try {
+        instanceStates.set(instance.botId.toString(), {
+          loading: true,
+          hasMutualGuild: false,
+          error: null
+        });
+        instanceStates = instanceStates;
 
-      // Use standard api call but with custom headers to set instance URL
-      const customHeaders = {
-        "X-Instance-Url": `http://localhost:${instance.port}/botapi`
-      };
+        const customHeaders = {
+          "X-Instance-Url": `http://localhost:${instance.port}/botapi`
+        };
 
-      const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
+        try {
+          const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
 
-      instanceStates.set(instance.botId.toString(), {
-        loading: false,
-        hasMutualGuild: mutualGuilds.length > 0,
-        error: null
-      });
-      instanceStates = instanceStates;
+          instanceStates.set(instance.botId.toString(), {
+            loading: false,
+            hasMutualGuild: mutualGuilds.length > 0,
+            error: null
+          });
+          instanceStates = instanceStates;
 
-      return mutualGuilds.length > 0;
-    } catch (err) {
-      logger.error(`Failed to check mutual guilds for instance ${instance.botId}:`, err);
-      instanceStates.set(instance.botId.toString(), {
-        loading: false,
-        hasMutualGuild: false,
-        error: err instanceof Error ? err.message : "Failed to check mutual guilds"
-      });
-      instanceStates = instanceStates;
-      return false;
+          return mutualGuilds.length > 0;
+
+        } catch (err) {
+          // Check if the error is a 404
+          if (err instanceof Error && "status" in err && (err as any).status === 404) {
+            // Just filter out this instance by returning false
+            instanceStates.set(instance.botId.toString(), {
+              loading: false,
+              hasMutualGuild: false,
+              error: null  // Don't show error for 404
+            });
+            instanceStates = instanceStates;
+            return false;
+          }
+
+          // For other errors, show the error message
+          throw err;
+        }
+
+      } catch (err) {
+        logger.error(`Failed to check mutual guilds for instance ${instance.botId}:`, err);
+        instanceStates.set(instance.botId.toString(), {
+          loading: false,
+          hasMutualGuild: false,
+          error: err instanceof Error ? err.message : "Failed to check mutual guilds"
+        });
+        instanceStates = instanceStates;
+        return false;
+      }
     }
-  }
 
   onMount(async () => {
     if (!data.user) {
