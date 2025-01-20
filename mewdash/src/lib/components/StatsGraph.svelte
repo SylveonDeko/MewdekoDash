@@ -184,33 +184,35 @@
   }
 </script>
 
-<div class="space-y-6">
-  <!-- Stats Summary -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-      <div class="text-sm" style="color: {$colorStore.muted}">Total {type === 'join' ? 'Joins' : 'Leaves'}</div>
-      <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.total}</div>
-    </div>
+{#if data && data !== undefined}
+  <div class="space-y-6">
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
+        <div class="text-sm" style="color: {$colorStore.muted}">Total {type === 'join' ? 'Joins' : 'Leaves'}</div>
+        <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.total}</div>
+      </div>
 
-    <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-      <div class="text-sm" style="color: {$colorStore.muted}">Average per Day</div>
-      <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.average.toFixed(2)}</div>
-    </div>
+      <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
+        <div class="text-sm" style="color: {$colorStore.muted}">Average per Day</div>
+        <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.average.toFixed(2)}</div>
+      </div>
 
-    <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-      <div class="text-sm" style="color: {$colorStore.muted}">Peak Day</div>
-      <div class="text-lg font-semibold" style="color: {$colorStore.text}">
-        {new Date(data.summary.peakDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-        <span class="text-sm" style="color: {$colorStore.muted}">({data.summary.peakCount})</span>
+      <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
+        <div class="text-sm" style="color: {$colorStore.muted}">Peak Day</div>
+        <div class="text-lg font-semibold" style="color: {$colorStore.text}">
+          {new Date(data.summary.peakDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          <span class="text-sm" style="color: {$colorStore.muted}">({data.summary.peakCount})</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Graph -->
-  <div class="w-full h-[300px] relative">
-    <canvas
-      bind:this={canvas}
-      class="w-full h-full"
-    />
+    <!-- Graph -->
+    <div class="w-full h-[300px] relative">
+      <canvas
+        bind:this={canvas}
+        class="w-full h-full"
+      />
+    </div>
   </div>
-</div>
+{/if}
