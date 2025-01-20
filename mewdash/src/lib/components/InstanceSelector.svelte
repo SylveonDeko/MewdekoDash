@@ -19,61 +19,61 @@
     error: string | null;
   }> = new Map();
 
-    async function checkInstanceMutualGuilds(instance: BotInstance) {
-      if (!data.user) return false;
+  async function checkInstanceMutualGuilds(instance: BotInstance) {
+    if (!data.user) return false;
+
+    try {
+      instanceStates.set(instance.botId.toString(), {
+        loading: true,
+        hasMutualGuild: false,
+        error: null
+      });
+      instanceStates = instanceStates;
+
+      const customHeaders = {
+        "X-Instance-Url": `http://localhost:${instance.port}/botapi`
+      };
 
       try {
+        const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
+
         instanceStates.set(instance.botId.toString(), {
-          loading: true,
-          hasMutualGuild: false,
+          loading: false,
+          hasMutualGuild: mutualGuilds.length > 0,
           error: null
         });
         instanceStates = instanceStates;
 
-        const customHeaders = {
-          "X-Instance-Url": `http://localhost:${instance.port}/botapi`
-        };
+        return mutualGuilds.length > 0;
 
-        try {
-          const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
-
+      } catch (err) {
+        // If it's a 404, that just means no mutuals - not an error
+        if (err instanceof Error && "status" in err && (err as any).status === 404) {
           instanceStates.set(instance.botId.toString(), {
             loading: false,
-            hasMutualGuild: mutualGuilds.length > 0,
+            hasMutualGuild: false,
             error: null
           });
           instanceStates = instanceStates;
-
-          return mutualGuilds.length > 0;
-
-        } catch (err) {
-          // Check if the error is a 404
-          if (err instanceof Error && "status" in err && (err as any).status === 404) {
-            // Just filter out this instance by returning false
-            instanceStates.set(instance.botId.toString(), {
-              loading: false,
-              hasMutualGuild: false,
-              error: null  // Don't show error for 404
-            });
-            instanceStates = instanceStates;
-            return false;
-          }
-
-          // For other errors, show the error message
-          throw err;
+          return false;
         }
 
-      } catch (err) {
-        logger.error(`Failed to check mutual guilds for instance ${instance.botId}:`, err);
-        instanceStates.set(instance.botId.toString(), {
-          loading: false,
-          hasMutualGuild: false,
-          error: err instanceof Error ? err.message : "Failed to check mutual guilds"
-        });
-        instanceStates = instanceStates;
-        return false;
+        // If it's any other error, rethrow it to be handled by outer catch
+        throw err;
       }
+
+    } catch (err) {
+      // Only log and show errors for non-404 cases
+      logger.error(`Failed to check mutual guilds for instance ${instance.botId}:`, err);
+      instanceStates.set(instance.botId.toString(), {
+        loading: false,
+        hasMutualGuild: false,
+        error: err instanceof Error ? err.message : "Failed to check mutual guilds"
+      });
+      instanceStates = instanceStates;
+      return false;
     }
+  }
 
   onMount(async () => {
     if (!data.user) {
