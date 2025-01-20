@@ -1,4 +1,3 @@
-// In a new file like musicPlayerColorStore.ts
 import { writable } from "svelte/store";
 import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
@@ -22,26 +21,70 @@ const DEFAULT_COLORS: MusicPlayerColors = {
 function createMusicPlayerColorStore() {
   const { subscribe, set, update } = writable<MusicPlayerColors>(DEFAULT_COLORS);
 
+  // Cache for processed image URLs
+  const processedUrls = new Map<string, string>();
+
+  async function getProxiedImageUrl(originalUrl: string): Promise<string> {
+    if (processedUrls.has(originalUrl)) {
+      return processedUrls.get(originalUrl)!;
+    }
+
+    const isSameDomain = originalUrl.startsWith(window.location.origin);
+    if (isSameDomain) {
+      return originalUrl;
+    }
+
+    try {
+      const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
+      processedUrls.set(originalUrl, proxiedUrl);
+      return proxiedUrl;
+    } catch (error) {
+      logger.error("Failed to proxy image:", error);
+      return originalUrl;
+    }
+  }
+
   async function extractColors(imageUrl: string): Promise<MusicPlayerColors> {
     if (typeof window === "undefined") {
       return DEFAULT_COLORS;
     }
 
     try {
-      const img = new window.Image();
-      img.crossOrigin = "Anonymous";
+      const proxiedUrl = await getProxiedImageUrl(imageUrl);
 
-      await new Promise<void>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+
+      const imageLoadPromise = new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = imageUrl;
+        img.onerror = (error) => {
+          logger.error("Failed to load image:", error);
+          reject(new Error("Failed to load image"));
+        };
+
+        // Add timestamp to bypass cache
+        img.src = `${proxiedUrl}${proxiedUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
       });
 
+      // Set a timeout for image loading
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Image loading timeout")), 5000);
+      });
+
+      await Promise.race([imageLoadPromise, timeoutPromise]);
+
       const colorThief = new ColorThief();
-      const palette = colorThief.getPalette(img, 2) as RGB[];
+      let palette: RGB[];
+
+      try {
+        palette = colorThief.getPalette(img, 3) as RGB[];
+      } catch (error) {
+        logger.error("ColorThief failed to extract colors:", error);
+        return DEFAULT_COLORS;
+      }
 
       if (!palette || palette.length < 2) {
-        throw new Error("Could not extract enough colors from image");
+        return DEFAULT_COLORS;
       }
 
       const rgbToHex = (r: number, g: number, b: number): string =>
@@ -55,11 +98,20 @@ function createMusicPlayerColorStore() {
         );
       };
 
+      // Calculate perceived brightness to determine if we need light or dark text
+      const getBrightness = ([r, g, b]: RGB): number => {
+        return (r * 299 + g * 587 + b * 114) / 1000;
+      };
+
+      const mainColor = palette[0];
+      const brightness = getBrightness(mainColor);
+      const textColor = brightness > 128 ? "#000000" : "#ffffff";
+
       return {
         background: darkenColor(palette[0]),
         foreground: rgbToHex(...palette[0]),
         accent: rgbToHex(...palette[1]),
-        text: "#ffffff"
+        text: textColor
       };
     } catch (error) {
       logger.error("Error extracting colors for music player:", error);
