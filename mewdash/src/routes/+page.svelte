@@ -18,29 +18,6 @@
   const MAX_GUILD_NAME_LENGTH = 20;
   const MAX_GUILDS_TO_SHOW = 10;
 
-  $: if (data.user) {
-    updateColors();
-  }
-
-  async function updateColors() {
-    try {
-      if (data?.user?.avatar) {
-        // Extract colors from user avatar
-        await colorStore.extractFromImage(
-          data.user.avatar.startsWith("a_")
-            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-        );
-      } else {
-        // Fallback to default image
-        await colorStore.extractFromImage("/img/Mewdeko.png");
-      }
-    } catch (err) {
-      logger.error('Failed to extract colors:', err);
-      colorStore.reset(); // Reset to default colors
-    }
-  }
-
   const buttons = [
     {
       label: "Invite",
@@ -83,7 +60,6 @@
 
   onMount(async () => {
     try {
-      await updateColors();
       const response = await fetch("/api/redis/guilds");
       if (response.ok) {
         guilds = await response.json();
