@@ -4,7 +4,7 @@
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
-  import type { BotStatusModel, CommandInfo, Module, Permission, PermissionCache } from "$lib/types/models";
+  import type {BotStatusModel, CommandInfo, Module, Permission, PermissionCache, Permissionv2} from "$lib/types/models";
   import { PrimaryPermissionType, SecondaryPermissionType } from "$lib/types/models";
   import { goto } from "$app/navigation";
   import Notification from "$lib/components/Notification.svelte";
@@ -12,7 +12,7 @@
   import ColorThief from "colorthief";
   import { currentInstance } from "$lib/stores/instanceStore";
   import {
-    AlertTriangle,
+    AlertTriangle, Check,
     ChevronDown,
     ChevronUp,
     Command,
@@ -28,6 +28,7 @@
     Trash2
   } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
+  import {colorStore} from "$lib/stores/colorStore.ts";
 
   let permCache: PermissionCache | null = null;
   let loading = true;
@@ -42,6 +43,7 @@
   let searchTerm = "";
   let showCommandDropdown = false;
   let commandDropdownRef: HTMLDivElement;
+  let commandInputRect: DOMRect | null = null;
 
   // New permission form state
   let selectedPrimaryType = PrimaryPermissionType.Server;
@@ -72,81 +74,80 @@
     gradientEnd: "#ec4899"
   };
 
-  function rgbToHsl(r: number, g: number, b: number) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
 
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        case b:
-          h = (r - g) / d + 4;
-          break;
+  $ : colorStore.subscribe(pallete => {
+    colors = pallete;
+  })
+
+
+  // Deduplicate modules and process commands
+  function getUniqueModules(modules) {
+    const moduleMap = new Map();
+
+    modules.forEach(module => {
+      if (!moduleMap.has(module.name)) {
+        moduleMap.set(module.name, {
+          name: module.name,
+          commands: []
+        });
       }
-      h /= 6;
-    }
 
-    return [h * 360, s * 100, l * 100];
-  }
-
-  function rgbToHex(r: number, g: number, b: number) {
-    return "#" + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    }).join("");
-  }
-
-  function adjustLightness(rgb: number[], lightness: number) {
-    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
-  }
-
-  async function extractColors() {
-    if (!botStatus?.botAvatar) return;
-    try {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = $currentInstance?.botAvatar;
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+      const existingModule = moduleMap.get(module.name);
+      module.commands.forEach(command => {
+        const commandWithModule = {
+          ...command,
+          module: module.name
+        };
+        // Check if command already exists to avoid duplicates
+        if (!existingModule.commands.some(cmd => cmd.commandName === command.commandName)) {
+          existingModule.commands.push(commandWithModule);
+        }
       });
+    });
 
-      const colorThief = new ColorThief();
-      const dominantColor = colorThief.getColor(img);
-      const palette = colorThief.getPalette(img);
+    return Array.from(moduleMap.values());
+  }
 
-      const primaryHex = rgbToHex(...dominantColor);
-      const secondaryHex = rgbToHex(...palette[1]);
-      const accentHex = rgbToHex(...palette[2]);
+  // Safe filter function
+  function safeFilter(item, searchTerm) {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
 
-      colors = {
-        primary: primaryHex,
-        secondary: secondaryHex,
-        accent: accentHex,
-        text: adjustLightness(dominantColor, 95),
-        muted: adjustLightness(dominantColor, 60),
-        gradientStart: primaryHex,
-        gradientMid: secondaryHex,
-        gradientEnd: accentHex
-      };
-    } catch (err) {
-      logger.error("Failed to extract colors:", err);
+    if (typeof item === 'string') {
+      return item.toLowerCase().includes(term);
     }
+
+    return false;
+  }
+
+  function handleSelect(value) {
+    selectedCommandOrModule = value;
+    searchTerm = value;
+  }
+
+  $: processedModuleList = moduleList ? getUniqueModules(moduleList) : [];
+
+  $: filteredModules = processedModuleList.filter(module =>
+          !searchTerm ||
+          module.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  $: filteredCommands = processedModuleList.flatMap(module =>
+          module.commands.filter(command => {
+            if (!searchTerm) return true;
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                    (command.commandName || '').toLowerCase().includes(searchLower) ||
+                    (command.description || '').toLowerCase().includes(searchLower) ||
+                    (command.module || '').toLowerCase().includes(searchLower)
+            );
+          })
+  );
+
+  // Reset search and selection when changing types
+  $: if (selectedSecondaryType) {
+    searchTerm = "";
+    selectedCommandOrModule = "";
   }
 
   function checkMobile() {
@@ -183,9 +184,8 @@
       permCache = perms;
       guildRoles = roles;
       guildChannels = channels;
-      guildCategories = channels.filter(c => c.name.includes("category")); // This is a simplification
+      guildCategories = channels.filter(c => c.name.includes("category"));
       botStatus = statusResponse;
-      await extractColors();
 
     } catch (err) {
       logger.error("Failed to fetch permissions:", err);
@@ -197,19 +197,31 @@
 
   async function addPermission() {
     try {
-      console.log(selectedTarget);
-      console.log(selectedCommandOrModule);
-      if (!$currentGuild?.id || !selectedTarget || !selectedCommandOrModule) {
+      if (!$currentGuild?.id || !selectedCommandOrModule) {
         throw new Error("Missing required fields");
       }
 
-      const permission = {
+      // For server-wide permissions, we don't need a target and should use 0 as the ID
+      const targetId = selectedPrimaryType === PrimaryPermissionType.Server
+              ? BigInt(0)
+              : selectedTarget
+                      ? BigInt(selectedTarget)
+                      : null;
+
+      // If we need a target but don't have one, throw error
+      if (selectedPrimaryType !== PrimaryPermissionType.Server && !targetId) {
+        throw new Error("Please select a target");
+      }
+
+      const permission:Permissionv2 = {
         primaryTarget: selectedPrimaryType,
-        primaryTargetId: BigInt(selectedTarget),
+        primaryTargetId: targetId,
         secondaryTarget: selectedSecondaryType,
-        secondaryTargetName: selectedCommandOrModule.toLowerCase(),
+        secondaryTargetName: selectedSecondaryType === SecondaryPermissionType.AllModules ? "*" : selectedCommandOrModule,
         state: enableState
       };
+
+      console.log(permission)
 
       await api.addPermission($currentGuild.id, permission);
       showNotificationMessage("Permission added successfully");
@@ -217,8 +229,8 @@
       resetForm();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to add permission",
-        "error"
+              error instanceof Error ? error.message : "Failed to add permission",
+              "error"
       );
     }
   }
@@ -235,8 +247,8 @@
       await fetchPermissions();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to remove permission",
-        "error"
+              error instanceof Error ? error.message : "Failed to remove permission",
+              "error"
       );
     }
   }
@@ -249,8 +261,8 @@
       await fetchPermissions();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to move permission",
-        "error"
+              error instanceof Error ? error.message : "Failed to move permission",
+              "error"
       );
     }
   }
@@ -263,8 +275,8 @@
       await fetchPermissions();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to reset permissions",
-        "error"
+              error instanceof Error ? error.message : "Failed to reset permissions",
+              "error"
       );
     }
   }
@@ -277,8 +289,8 @@
       await fetchPermissions();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update verbose mode",
-        "error"
+              error instanceof Error ? error.message : "Failed to update verbose mode",
+              "error"
       );
     }
   }
@@ -291,8 +303,8 @@
       await fetchPermissions();
     } catch (error) {
       showNotificationMessage(
-        error instanceof Error ? error.message : "Failed to update permission role",
-        "error"
+              error instanceof Error ? error.message : "Failed to update permission role",
+              "error"
       );
     }
   }
@@ -353,7 +365,6 @@
         break;
     }
 
-
     // Check if it's the default permission
     if (permission.index === 0) {
       return `Default Server Permission (${permission.state ? "Enabled" : "Disabled"} ${targetType})`;
@@ -371,25 +382,25 @@
 
     if (selectedSecondaryType === SecondaryPermissionType.Module) {
       return moduleList
-        .filter(m => m.name.toLowerCase().includes(searchLower))
-        .map(m => ({
-          name: m.name,
-          description: `${m.commands.length} commands`
-        }));
+              .filter(m => m.name.toLowerCase().includes(searchLower))
+              .map(m => ({
+                name: m.name,
+                description: `${m.commands.length} commands`
+              }));
     }
 
     return moduleList
-      .flatMap(m => m.commands
-        .filter(c =>
-          c.commandName.toLowerCase().includes(searchLower) ||
-          c.description.toLowerCase().includes(searchLower)
-        )
-        .map(c => ({
-          name: c.commandName,
-          description: c.description,
-          module: m.name
-        }))
-      );
+            .flatMap(m => m.commands
+                    .filter(c =>
+                            c.commandName.toLowerCase().includes(searchLower) ||
+                            c.description.toLowerCase().includes(searchLower)
+                    )
+                    .map(c => ({
+                      name: c.commandName,
+                      description: c.description,
+                      module: m.name
+                    }))
+            );
   }
 
   function handleCommandSelect(item: { name: string; description: string }) {
@@ -398,24 +409,18 @@
     searchTerm = item.name;
   }
 
+  function handleInputFocus(event: FocusEvent) {
+    const input = event.target as HTMLInputElement;
+    commandInputRect = input.getBoundingClientRect();
+    showCommandDropdown = true;
+  }
+
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (!target.closest(".command-dropdown") && !target.closest(".command-input")) {
+    if (!target.closest('.command-dropdown') && !target.closest('.command-input')) {
       showCommandDropdown = false;
     }
   }
-
-  $: if ($currentGuild) {
-    fetchPermissions();
-  }
-
-  $: colorVars = `
-    --color-primary: ${colors.primary};
-    --color-secondary: ${colors.secondary};
-    --color-accent: ${colors.accent};
-    --color-text: ${colors.text};
-    --color-muted: ${colors.muted};
-  `;
 
   async function fetchCommandsAndModules() {
     try {
@@ -434,17 +439,43 @@
     ]);
     await fetchPermissions();
     checkMobile();
-    if (browser) window.addEventListener("resize", checkMobile);
+    if (browser) {
+      window.addEventListener("resize", checkMobile);
+      window.addEventListener('click', handleClickOutside);
+      window.addEventListener('scroll', () => {
+        if (showCommandDropdown) {
+          const input = document.querySelector('.command-input') as HTMLInputElement;
+          if (input) {
+            commandInputRect = input.getBoundingClientRect();
+          }
+        }
+      });
+    }
   });
 
   onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
+    if (browser) {
+      window.removeEventListener("resize", checkMobile);
+      window.removeEventListener('click', handleClickOutside);
+    }
   });
+
+  $: if ($currentGuild) {
+    fetchPermissions();
+  }
+
+  $: colorVars = `
+    --color-primary: ${colors.primary};
+    --color-secondary: ${colors.secondary};
+    --color-accent: ${colors.accent};
+    --color-text: ${colors.text};
+    --color-muted: ${colors.muted};
+  `;
 </script>
 
 <div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
+        class="min-h-screen p-4 md:p-6"
+        style="{colorVars} background: radial-gradient(circle at top,
     {colors.gradientStart}15 0%,
     {colors.gradientMid}10 50%,
     {colors.gradientEnd}05 100%);"
@@ -458,8 +489,8 @@
 
     <!-- Header -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+            class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
              border-color: {colors.primary}30;"
     >
       <h1 class="text-3xl font-bold flex items-center gap-3" style="color: {colors.text}">
@@ -475,17 +506,17 @@
       <div class="flex justify-center items-center min-h-[400px]">
         <div class="relative">
           <div
-            class="w-16 h-16 border-4 rounded-full animate-spin"
-            style="border-color: {colors.primary}20; border-top-color: {colors.primary}"
+                  class="w-16 h-16 border-4 rounded-full animate-spin"
+                  style="border-color: {colors.primary}20; border-top-color: {colors.primary}"
           ></div>
           <span class="mt-4 block text-center" style="color: {colors.muted}">Loading permissions...</span>
         </div>
       </div>
     {:else if error}
       <div
-        class="p-6 rounded-xl mb-6"
-        style="background: {colors.accent}10; border: 1px solid {colors.accent}40;"
-        role="alert"
+              class="p-6 rounded-xl mb-6"
+              style="background: {colors.accent}10; border: 1px solid {colors.accent}40;"
+              role="alert"
       >
         <div class="flex items-center gap-3">
           <AlertTriangle class="w-6 h-6" style="color: {colors.accent}" />
@@ -498,14 +529,14 @@
     {:else}
       <!-- Settings Section -->
       <section
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                border-color: {colors.primary}30;"
       >
         <div class="flex items-center gap-3 mb-6">
           <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                  class="p-3 rounded-xl"
+                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                    color: {colors.primary};"
           >
             <Settings class="w-6 h-6" />
@@ -516,8 +547,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Verbose Mode -->
           <div
-            class="rounded-xl p-4"
-            style="background: {colors.primary}10;"
+                  class="rounded-xl p-4"
+                  style="background: {colors.primary}10;"
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
@@ -529,10 +560,10 @@
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input
-                  type="checkbox"
-                  class="sr-only peer"
-                  checked={permCache?.verbose ?? false}
-                  on:change={toggleVerbose}
+                        type="checkbox"
+                        class="sr-only peer"
+                        checked={permCache?.verbose ?? false}
+                        on:change={toggleVerbose}
                 />
                 <div class="w-11 h-6 rounded-full peer-focus:ring-2
                           after:content-[''] after:absolute after:top-[2px]
@@ -547,25 +578,25 @@
 
           <!-- Permission Role -->
           <div
-            class="rounded-xl p-4"
-            style="background: {colors.primary}10;"
+                  class="rounded-xl p-4"
+                  style="background: {colors.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
               <Lock class="w-5 h-5" style="color: {colors.secondary}" />
               <h3 class="font-semibold" style="color: {colors.text}">Permission Role</h3>
             </div>
             <select
-              class="w-full p-3 rounded-lg border transition-all duration-200"
-              style="background: {colors.primary}20;
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {colors.primary}20;
                      border-color: {colors.primary}30;
                      color: {colors.text}"
-              on:change={(e) => updatePermissionRole(e.currentTarget.value)}
+                    on:change={(e) => updatePermissionRole(e.currentTarget.value)}
             >
               <option value="">No Permission Role</option>
               {#each guildRoles as role}
                 <option
-                  value={role.id}
-                  selected={permCache?.permRole === role.id}
+                        value={role.id}
+                        selected={permCache?.permRole === role.id}
                 >
                   {role.name}
                 </option>
@@ -576,11 +607,11 @@
 
         <!-- Reset Button -->
         <button
-          class="mt-6 py-2 px-4 rounded-lg font-medium transition-all duration-200
+                class="mt-6 py-2 px-4 rounded-lg font-medium transition-all duration-200
                  flex items-center justify-center gap-2"
-          style="background: {colors.accent}20;
+                style="background: {colors.accent}20;
                  color: {colors.accent}"
-          on:click={resetPermissions}
+                on:click={resetPermissions}
         >
           <Trash2 class="w-4 h-4" />
           Reset All Permissions
@@ -589,14 +620,14 @@
 
       <!-- Add New Permission Section -->
       <section
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                border-color: {colors.primary}30;"
       >
         <div class="flex items-center gap-3 mb-6">
           <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                  class="p-3 rounded-xl"
+                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                    color: {colors.primary};"
           >
             <Plus class="w-6 h-6" />
@@ -612,9 +643,9 @@
               Target Type
             </label>
             <select
-              bind:value={selectedPrimaryType}
-              class="w-full p-3 rounded-lg border transition-all duration-200"
-              style="background: {colors.primary}10;
+                    bind:value={selectedPrimaryType}
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {colors.primary}10;
                      border-color: {colors.primary}30;
                      color: {colors.text}"
             >
@@ -634,15 +665,15 @@
                 Target
               </label>
               <select
-                bind:value={selectedTarget}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
+                      bind:value={selectedTarget}
+                      class="w-full p-3 rounded-lg border transition-all duration-200"
+                      style="background: {colors.primary}10;
                        border-color: {colors.primary}30;
                        color: {colors.text}"
               >
                 <option value="">Select {selectedPrimaryType === PrimaryPermissionType.Channel ? 'Channel' :
-                  selectedPrimaryType === PrimaryPermissionType.Category ? 'Category' :
-                    selectedPrimaryType === PrimaryPermissionType.Role ? 'Role' : 'User'}</option>
+                        selectedPrimaryType === PrimaryPermissionType.Category ? 'Category' :
+                                selectedPrimaryType === PrimaryPermissionType.Role ? 'Role' : 'User'}</option>
                 {#each getTargetOptions() as option}
                   <option value={option.id}>{option.name}</option>
                 {/each}
@@ -657,9 +688,9 @@
               Permission Type
             </label>
             <select
-              bind:value={selectedSecondaryType}
-              class="w-full p-3 rounded-lg border transition-all duration-200"
-              style="background: {colors.primary}10;
+                    bind:value={selectedSecondaryType}
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {colors.primary}10;
                      border-color: {colors.primary}30;
                      color: {colors.text}"
             >
@@ -682,64 +713,87 @@
                 {/if}
               </label>
 
-              <div class="relative" style="z-index: 100000;">
+              <!-- Search input -->
+              <div class="relative">
                 <input
-                  type="text"
-                  bind:value={searchTerm}
-                  placeholder={selectedSecondaryType === SecondaryPermissionType.Command ? "Search commands..." : "Search modules..."}
-                  on:focus={() => showCommandDropdown = true}
-                  class="w-full p-3 pl-10 rounded-lg border transition-all duration-200 command-input relative"
-                  style="background: {colors.primary}15;
+                        type="text"
+                        bind:value={searchTerm}
+                        placeholder={selectedSecondaryType === SecondaryPermissionType.Command ? "Filter commands..." : "Filter modules..."}
+                        class="w-full p-3 pl-10 rounded-t-lg border-x border-t transition-all duration-200"
+                        style="background: {colors.primary}10;
                border-color: {colors.primary}30;
-               color: {colors.text};
-               z-index: 100000;"
+               color: {colors.text};"
                 />
                 <Search
-                  class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                  style="color: {colors.muted}"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+                        style="color: {colors.muted}"
                 />
+              </div>
 
-                {#if showCommandDropdown}
-                  <div
-                    bind:this={commandDropdownRef}
-                    class="command-dropdown absolute left-0 right-0 mt-2 rounded-lg border shadow-xl max-h-[300px] overflow-y-auto"
-                    style="background: rgb(17, 24, 39);
-                 border-color: {colors.primary}40;
-                 z-index: 100000;"
-                  >
-                    <div class="relative">
-                      {#each getFilteredItems() as item}
-                        <button
-                          type="button"
-                          class="w-full text-left p-3 border-b last:border-b-0 transition-all duration-200"
-                          style="border-color: {colors.primary}20;
-                       color: {colors.text};
-                       background: transparent;
-                       hover:background-color: {colors.primary}20;"
-                          on:click={() => handleCommandSelect(item)}
-                        >
-                          <div class="flex items-center gap-4">
-                            <div class="flex-grow">
-                              <p class="font-medium text-white">{item.name}</p>
-                              <p class="text-sm truncate text-gray-300">{item.description}</p>
-                            </div>
-                            {#if 'module' in item}
-                    <span
-                      class="text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                      style="background: {colors.secondary}20;
-                             color: {colors.secondary}"
+              <!-- Custom Select List -->
+              <div
+                      class="max-h-64 overflow-y-auto rounded-b-lg border-x border-b divide-y"
+                      style="background: {colors.primary}10;
+             border-color: {colors.primary}30;
+             divide-color: {colors.primary}20;"
+              >
+                {#if selectedSecondaryType === SecondaryPermissionType.Module}
+                  {#each filteredModules as module}
+                    <button
+                            class="w-full p-3 text-left transition-all duration-200 flex items-center justify-between hover:bg-gray-800"
+                            on:click={() => handleSelect(module.name)}
                     >
-                      {item.module}
-                    </span>
-                            {/if}
-                          </div>
-                        </button>
-                      {:else}
-                        <div class="p-4 text-center text-gray-400">
-                          No results found
+                      <div>
+                        <span class="font-medium" style="color: {colors.text}">{module.name}</span>
+                        <span class="text-sm ml-2" style="color: {colors.muted}">
+                {module.commands.length} commands
+              </span>
+                      </div>
+                      {#if selectedCommandOrModule === module.name}
+                        <div style="color: {colors.primary}">
+                          <Check class="w-4 h-4" />
                         </div>
-                      {/each}
-                    </div>
+                      {/if}
+                    </button>
+                  {/each}
+                {:else}
+                  {#each filteredCommands as command}
+                    <button
+                            class="w-full p-3 text-left transition-all duration-200 hover:bg-gray-800"
+                            on:click={() => handleSelect(command.commandName)}
+                    >
+                      <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                <span class="font-medium" style="color: {colors.text}">
+                  {command.commandName}
+                </span>
+                          <p class="text-sm truncate mt-1" style="color: {colors.muted}">
+                            {command.description}
+                          </p>
+                        </div>
+                        <div class="ml-3 flex items-center">
+                <span
+                        class="text-xs px-2 py-1 rounded-full"
+                        style="background: {colors.secondary}20;
+                         color: {colors.secondary}"
+                >
+                  {command.module}
+                </span>
+                          {#if selectedCommandOrModule === command.commandName}
+                            <div class="ml-2" style="color: {colors.primary}">
+                              <Check class="w-4 h-4" />
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                    </button>
+                  {/each}
+                {/if}
+
+                {#if (selectedSecondaryType === SecondaryPermissionType.Module && filteredModules.length === 0) ||
+                (selectedSecondaryType === SecondaryPermissionType.Command && filteredCommands.length === 0)}
+                  <div class="p-4 text-center" style="color: {colors.muted}">
+                    No results found
                   </div>
                 {/if}
               </div>
@@ -751,9 +805,9 @@
         <div class="mt-6 flex items-center gap-4">
           <label class="relative inline-flex items-center cursor-pointer">
             <input
-              type="checkbox"
-              class="sr-only peer"
-              bind:checked={enableState}
+                    type="checkbox"
+                    class="sr-only peer"
+                    bind:checked={enableState}
             />
             <div class="w-11 h-6 rounded-full peer-focus:ring-2
                       after:content-[''] after:absolute after:top-[2px]
@@ -770,11 +824,11 @@
 
         <!-- Submit Button -->
         <button
-          on:click={addPermission}
-          disabled={selectedPrimaryType !== PrimaryPermissionType.Server && !selectedTarget}
-          class="mt-6 w-full py-3 px-4 rounded-lg font-medium transition-all duration-200
+                on:click={addPermission}
+                disabled={selectedPrimaryType !== PrimaryPermissionType.Server && !selectedTarget}
+                class="mt-6 w-full py-3 px-4 rounded-lg font-medium transition-all duration-200
                  flex items-center justify-center gap-2 disabled:opacity-50"
-          style="background: linear-gradient(to right, {colors.primary}, {colors.secondary});
+                style="background: linear-gradient(to right, {colors.primary}, {colors.secondary});
                  color: {colors.text};"
         >
           <Plus class="w-5 h-5" />
@@ -784,14 +838,14 @@
 
       <!-- Current Permissions List -->
       <section
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                border-color: {colors.primary}30;"
       >
         <div class="flex items-center gap-3 mb-6">
           <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                  class="p-3 rounded-xl"
+                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                    color: {colors.primary};"
           >
             <Lock class="w-6 h-6" />
@@ -801,8 +855,8 @@
 
         {#if !permCache?.permissions?.length}
           <div
-            class="text-center py-12"
-            transition:fade
+                  class="text-center py-12"
+                  transition:fade
           >
             <Shield class="w-12 h-12 mx-auto mb-4" style="color: {colors.muted}" />
             <p style="color: {colors.muted}">No permissions configured</p>
@@ -814,10 +868,10 @@
           <div class="space-y-4">
             {#each permCache.permissions as permission, i}
               <div
-                class="rounded-xl border overflow-hidden transition-all duration-200"
-                style="background: {colors.primary}10;
+                      class="rounded-xl border overflow-hidden transition-all duration-200"
+                      style="background: {colors.primary}10;
                        border-color: {colors.primary}30;"
-                transition:slide
+                      transition:slide
               >
                 <div class="p-4">
                   <div class="flex flex-col sm:flex-row justify-between gap-4">
@@ -825,11 +879,11 @@
                       <h3 class="font-medium flex items-center gap-2" style="color: {colors.text}">
                         Permission #{permission.index + 1}
                         {#if i === 0}
-        <span class="text-xs px-2 py-1 rounded-full"
-              style="background: {colors.primary}20;
-                     color: {colors.primary}">
-          Default
-        </span>
+                          <span class="text-xs px-2 py-1 rounded-full"
+                                style="background: {colors.primary}20;
+                                       color: {colors.primary}">
+                            Default
+                          </span>
                         {/if}
                       </h3>
                       <p class="text-sm mt-2" style="color: {colors.muted}">
@@ -839,9 +893,9 @@
                     <div class="flex gap-2">
                       {#if i > 1}
                         <button
-                          on:click={() => movePermission(i, i - 1)}
-                          class="p-2 rounded-lg transition-all duration-200"
-                          style="background: {colors.primary}20;
+                                on:click={() => movePermission(i, i - 1)}
+                                class="p-2 rounded-lg transition-all duration-200"
+                                style="background: {colors.primary}20;
                                  color: {colors.text}"
                         >
                           <ChevronUp class="w-5 h-5" />
@@ -849,9 +903,9 @@
                       {/if}
                       {#if i < permCache.permissions.length - 1 && i > 0}
                         <button
-                          on:click={() => movePermission(i, i + 1)}
-                          class="p-2 rounded-lg transition-all duration-200"
-                          style="background: {colors.primary}20;
+                                on:click={() => movePermission(i, i + 1)}
+                                class="p-2 rounded-lg transition-all duration-200"
+                                style="background: {colors.primary}20;
                                  color: {colors.text}"
                         >
                           <ChevronDown class="w-5 h-5" />
@@ -859,10 +913,10 @@
                       {/if}
                       {#if i !== 0}
                         <button
-                          on:click={() => removePermission(i)}
-                          class="p-2 rounded-lg transition-all duration-200"
-                          style="background: {colors.accent}20;
-           color: {colors.accent}"
+                                on:click={() => removePermission(i)}
+                                class="p-2 rounded-lg transition-all duration-200"
+                                style="background: {colors.accent}20;
+                                 color: {colors.accent}"
                         >
                           <Trash2 class="w-5 h-5" />
                         </button>
@@ -880,81 +934,59 @@
 </div>
 
 <style lang="postcss">
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
+  :global(body) {
+    background-color: #1a202c;
+    color: #ffffff;
+  }
 
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
+  :global(*::-webkit-scrollbar) {
+    @apply w-2;
+  }
 
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
+  :global(*::-webkit-scrollbar-track) {
+    background: var(--color-primary) 10;
+    @apply rounded-full;
+  }
 
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
+  :global(*::-webkit-scrollbar-thumb) {
+    background: var(--color-primary) 30;
+    @apply rounded-full;
+  }
 
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
+  :global(*::-webkit-scrollbar-thumb:hover) {
+    background: var(--color-primary) 50;
+  }
 
-    /* Add smooth transitions */
-    [style*="background"],
-    [style*="color"] {
-        @apply transition-colors duration-300;
-    }
+  /* Add smooth transitions */
+  [style*="background"],
+  [style*="color"] {
+    @apply transition-colors duration-300;
+  }
 
-    select, input, textarea {
-        color-scheme: dark;
-    }
+  select, input, textarea {
+    color-scheme: dark;
+  }
 
-    /* Prevent iOS styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
+  /* Prevent iOS styling */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
 
-    /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
+  /* Custom styling for options */
+  option {
+    background-color: #374151;
+    color: white;
+    padding: 0.5rem;
+  }
+  /* Improve hover states */
+  .command-dropdown button:hover {
+    @apply bg-opacity-25;
+  }
 
-    .command-dropdown {
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
-        0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .command-dropdown {
-        position: absolute;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
-        0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .command-dropdown {
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-        0 4px 16px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Make sure the entire dropdown container is above other content */
-    .command-dropdown {
-        z-index: 100000;
-    }
-
-    /* Improve hover states */
-    .command-dropdown button:hover {
-        @apply bg-opacity-25;
-    }
-
-    /* Ensure the container is above other sections */
-    .relative {
-        isolation: isolate;
-    }
-</style>
+  /* Ensure the container is above other sections */
+  .relative {
+    isolation: isolate;
+  }
+  </style>

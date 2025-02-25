@@ -537,16 +537,16 @@ export interface MusicSettings {
 }
 
 export enum PrimaryPermissionType {
-  Server = 0,
+  User = 0,
   Channel = 1,
-  Category = 2,
-  Role = 3,
-  User = 4
+  Role = 2,
+  Server = 3,
+  Category = 4
 }
 
 export enum SecondaryPermissionType {
-  Command = 0,
-  Module = 1,
+  Module = 0,
+  Command = 1,
   AllModules = 2
 }
 
@@ -620,12 +620,22 @@ export interface PlayerStatus {
     isInVoiceChannel: boolean;
 }
 
+export interface Permissionv2 {
+  guildConfigId?: number;
+  primaryTarget: PrimaryPermissionType;
+  primaryTargetId: bigint;
+  secondaryTarget: SecondaryPermissionType;
+  secondaryTargetName: string | null;
+  isCustomCommand: boolean;
+  state: boolean;
+  index: number;
+}
+
 // Add interfaces for other types used in GuildConfig
 export interface WarningPunishment2 {}
 export interface AntiAltSetting {}
 export interface LogSetting {}
 export interface FollowedStream {}
-export interface Permissionv2 {}
 export interface CommandCooldown {}
 export interface FilterInvitesChannelIds {}
 export interface FilterLinksChannelId {}

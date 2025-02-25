@@ -6,6 +6,9 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto, invalidateAll } from "$app/navigation";
+  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import {colorStore} from "$lib/stores/colorStore.ts";
+  import {logger} from "$lib/logger.ts";
 
 
   export let data: LayoutData;
@@ -15,6 +18,28 @@
       if (window.location.toString().includes("?loggedin")) {
         await invalidateAll()
         await goto("/")
+      }
+      if (window.location.toString().includes("dashboard")) {
+        if ($currentInstance)
+          await colorStore.extractFromImage($currentInstance.botAvatar);
+      }
+      else {
+        try {
+          if (data?.user?.avatar) {
+            // Extract colors from user avatar
+            await colorStore.extractFromImage(
+                    data.user.avatar.startsWith("a_")
+                            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+            );
+          } else {
+            // Fallback to default image
+            await colorStore.extractFromImage("/img/Mewdeko.png");
+          }
+        } catch (err) {
+          logger.error('Failed to extract colors:', err);
+          colorStore.reset(); // Reset to default colors
+        }
       }
     }
   })
@@ -41,8 +66,7 @@
         { title: "Terms", href: "/terms" },
       ],
     },
-    { title: "Reviews", elements: [{ href: "/reviews" }] },
-    { title: "Embed Builder", elements: [{ href: "/embedbuilder" }] },
+    { title: "Reviews", elements: [{ href: "/reviews" }] }
   ];
 </script>
 
