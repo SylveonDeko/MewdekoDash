@@ -1,26 +1,25 @@
 // lib/api.ts
 import type {
-    BotInstance,
-    BotReviews,
-    BotStatusModel,
-    ChatTriggers,
-    GuildConfig,
-    Module,
-    MultiGreet,
-    MultiGreetType,
-    PermissionCache,
-    Permissionv2,
-    PrimaryPermissionType,
-    SecondaryPermissionType,
-    SuggestionsModel
+  BotInstance,
+  BotReviews,
+  BotStatusModel,
+  ChatTriggers,
+  GraphStatsResponse,
+  GuildConfig,
+  Module,
+  MultiGreet,
+  MultiGreetType,
+  PermissionCache,
+  Permissionv2,
+  SuggestionsModel
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
-import {logger} from "$lib/logger";
-import type {Giveaways, PermissionOverride} from "$lib/types.ts";
-import {currentInstance} from "$lib/stores/instanceStore.ts";
-import {get} from "svelte/store";
-import {PUBLIC_MEWDEKO_API_URL} from "$env/static/public";
-import type {DiscordGuild} from "$lib/types/discordGuild.ts";
+import { logger } from "$lib/logger";
+import type { Giveaways, PermissionOverride } from "$lib/types.ts";
+import { currentInstance } from "$lib/stores/instanceStore.ts";
+import { get } from "svelte/store";
+import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
+import type { DiscordGuild } from "$lib/types/discordGuild.ts";
 
 const ALLOWED_ORIGINS = ['localhost', '127.0.0.1'];
 const ALLOWED_PORTS = new Set(['3000', '5173']);
@@ -408,6 +407,35 @@ export const api = {
             additionalHeaders,
             customFetch
         ),
+
+  isOwner: (userId: bigint) =>
+    apiRequest<boolean>(`Ownership/${userId}`),
+
+  getPerformanceData: (userId: bigint) =>
+    apiRequest<Array<{
+      methodName: string;
+      callCount: number;
+      totalTime: number;
+      avgExecutionTime: number;
+      lastExecuted: string;
+    }>>(`Performance?userId=${userId}`),
+
+  clearPerformanceData: (userId: bigint) =>
+    apiRequest<void>(`Performance/clear?userId=${userId}`, "POST"),
+
+  getSystemInfo: (userId: bigint) =>
+    apiRequest<{
+      cpuUsage: number;
+      memoryUsageMb: number;
+      totalMemoryMb: number;
+      uptime: string;
+      processStartTime: string;
+      threadCount: number;
+      topMethods: Array<{
+        name: string;
+        avgTime: number;
+      }>;
+    }>(`SystemInfo?userId=${userId}`),
 
     getPermissionOverrides: (guildId: bigint) =>
         apiRequest<PermissionOverride[]>(`Permissions/dpo/${guildId}`),

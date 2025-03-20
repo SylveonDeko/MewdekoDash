@@ -10,7 +10,7 @@
   import { type ColorPalette, extractColors } from "$lib/colorUtils.ts";
   import { api } from "$lib/api.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { get } from "svelte/store";
+  import { get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { logger } from "$lib/logger.ts";
 
@@ -60,6 +60,8 @@
     gradientEnd: "#ec4899"
   };
 
+  const isOwnerStore = writable(false);
+
   // Computed
   $: isDashboard = $page.url.pathname.startsWith("/dashboard");
   $: current = $page.url.pathname;
@@ -91,57 +93,84 @@
   };
 
   // Dashboard items with icons
-  const dashboardItems = [
-    {
-      category: "Core",
-      items: [
-        { title: "Dashboard", href: "/dashboard", icon: "📊" },
-        { title: "Settings", href: "/dashboard/settings", icon: "⚙️" },
-      ]
-    },
-    {
-      category: "Community",
-      items: [
-        { title: "AFK", href: "/dashboard/afk", icon: "💤" },
-        { title: "Suggestions", href: "/dashboard/suggestions", icon: "💡" },
-        { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" },
-      ]
-    },
-    {
-      category: "Content",
-      items: [
-        { title: "Music", href: "/dashboard/music", icon: "🎵" },
-        { title: "Triggers", href: "/dashboard/chat-triggers", icon: "💬" },
-        { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: "🔗" },
-      ]
-    },
-    {
-      category: "Management",
-      items: [
-        { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
-        { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" },
-      ]
+  function getDashboardItems() {
+    const items = [
+      {
+        category: "Core",
+        items: [
+          { title: "Dashboard", href: "/dashboard", icon: "📊" },
+          { title: "Settings", href: "/dashboard/settings", icon: "⚙️" }
+        ]
+      },
+      {
+        category: "Community",
+        items: [
+          { title: "AFK", href: "/dashboard/afk", icon: "💤" },
+          { title: "Suggestions", href: "/dashboard/suggestions", icon: "💡" },
+          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" }
+        ]
+      },
+      {
+        category: "Content",
+        items: [
+          { title: "Music", href: "/dashboard/music", icon: "🎵" },
+          { title: "Triggers", href: "/dashboard/chat-triggers", icon: "💬" },
+          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: "🔗" }
+        ]
+      },
+      {
+        category: "Management",
+        items: [
+          { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
+          { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" }
+        ]
+      }
+    ];
+
+    // Add Performance item only if user is owner
+    if ($isOwnerStore) {
+      items.find(item => item.category === "Management")?.items.push(
+        { title: "Performance", href: "/dashboard/performance", icon: "📈" }
+      );
     }
-  ];
+
+    return items;
+  }
+
+
+  async function checkOwnership() {
+    if (!data?.user?.id) return;
+
+    try {
+      const isOwner = await api.isOwner(BigInt(data.user.id));
+      isOwnerStore.set(isOwner);
+    } catch (err) {
+      logger.error("Error checking owner status:", err);
+      isOwnerStore.set(false);
+    }
+  }
 
   function buildDashboardItems(): ProcessedItem[] {
     if (!currentGuild) {
       return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: "📊" }];
     }
 
+    // Get the dashboard items directly instead of using the reactive variable
+    const items = getDashboardItems();
+
     // Flatten the categorized items for mobile view or return a nested structure for desktop
     if (isMobile) {
-      return dashboardItems.flatMap(category =>
-              category.items.map(item => ({
-                title: item.title,
-                wrapped: false,
-                href: item.href,
-                icon: item.icon
-              }))
+      return items.flatMap(category =>
+        category.items.map(item => ({
+          title: item.title,
+          wrapped: false,
+          href: item.href,
+          icon: item.icon
+        }))
       );
     } else {
       // For desktop, return categorized items
-      return dashboardItems.map(category => ({
+      return items.map(category => ({
         title: category.category,
         wrapped: true,
         children: category.items.map(item => ({
@@ -323,6 +352,10 @@
           openQuickSwitcher();
         }
       });
+
+      if (data?.user) {
+        await checkOwnership();
+      }
 
       try {
         const response = await api.getBotInstances();
