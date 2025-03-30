@@ -32,7 +32,7 @@ async function apiRequest<T>(
   customFetch: typeof fetch = fetch
 ): Promise<T> {
   const instance = get(currentInstance);
-  let baseUrl = instance ? `http://localhost:${instance.port}/botapi` : PUBLIC_MEWDEKO_API_URL;
+  let baseUrl = instance ? `https://localhost:${instance.port}/botapi` : PUBLIC_MEWDEKO_API_URL;
 
   const response = await customFetch(`/api/${endpoint}`, {
     method,
