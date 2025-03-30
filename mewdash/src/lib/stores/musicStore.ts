@@ -42,8 +42,17 @@ function createMusicStore() {
     if (!useWebSocket) return; // Skip if WebSockets are disabled
 
     const guildId = get(currentGuild)?.id;
+    const instancePort = get(currentInstance)?.port;
+
     if (!guildId || !userId) {
       logger.error("Missing guildId or userId for WebSocket connection", { guildId, userId });
+      useWebSocket = false;
+      startPolling(userId);
+      return;
+    }
+
+    if (!instancePort) {
+      logger.error("Missing instance port for WebSocket connection");
       useWebSocket = false;
       startPolling(userId);
       return;
@@ -56,14 +65,16 @@ function createMusicStore() {
         webSocket = null;
       }
 
-      // Create WebSocket URL with guild and user IDs
-      const wsUrl = `ws://localhost:${get(currentInstance)?.port}/botapi/music/${guildId}/events?userId=${userId}`;
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsHost = window.location.host; // Will be "mewdeko.tech" in production (if its the main bot)
 
-      //logger.debug(`Connecting to WebSocket: ${wsUrl}`);
+      const wsUrl = `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}`;
+
+      logger.debug(`Connecting to WebSocket: ${wsUrl}`);
       webSocket = new WebSocket(wsUrl);
 
       webSocket.onopen = () => {
-        //logger.debug('WebSocket connection established');
+        logger.debug("WebSocket connection established");
 
         // Reset failure counter on successful connection
         update(state => ({
@@ -77,7 +88,7 @@ function createMusicStore() {
       webSocket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          //logger.debug('WebSocket message received', { data });
+          logger.debug("WebSocket message received", { data });
 
           // Get current state to check for track changes
           const currentState = get({ subscribe });
@@ -97,7 +108,7 @@ function createMusicStore() {
 
           // If track has changed, update the artwork colors
           if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
-            //logger.debug(`Track changed: ${prevTrackId} → ${newTrackId}`);
+            logger.debug(`Track changed: ${prevTrackId} → ${newTrackId}`);
             musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
           }
         } catch (err) {
@@ -122,7 +133,7 @@ function createMusicStore() {
       };
 
       webSocket.onclose = (event) => {
-        //logger.debug(`WebSocket closed: ${event.code} ${event.reason}`);
+        logger.debug(`WebSocket closed: ${event.code} ${event.reason}`);
 
         // Check if this was a normal closure (1000) or an error
         if (event.code !== 1000 && useWebSocket) {
