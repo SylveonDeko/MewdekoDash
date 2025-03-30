@@ -591,6 +591,42 @@ export const api = {
   setVolume: (guildId: bigint, volume: number) =>
     apiRequest<void>(`music/${guildId}/volume/${volume}`, "POST"),
 
+  searchTracks: (guildId: bigint, query: string, platform: string = "youtube", limit: number = 10) =>
+    apiRequest<{
+      tracks: Array<{
+        title: string;
+        author: string;
+        duration: string;
+        uri: string;
+        artworkUri: string;
+        provider: string;
+      }>
+    }>(`Music/${guildId}/search?query=${encodeURIComponent(query)}&mode=${platform}&limit=${limit}`),
+
+// Update this function as well for consistency
+  extractTrack: (guildId: bigint, url: string) =>
+    apiRequest<{
+      title: string;
+      author: string;
+      duration: string;
+      uri: string;
+      artworkUri: string;
+      provider: string;
+    }>(`Music/${guildId}/extract?url=${encodeURIComponent(url)}`),
+
+  playTrack: (guildId: bigint, playRequest: {
+    url: string;
+    requester: {
+      Id: string | bigint;
+      Username: string;
+      AvatarUrl: string;
+    }
+  }) =>
+    apiRequest<{
+      track: any;
+      position: number;
+    }>(`Music/${guildId}/play`, "POST", playRequest),
+
   skipTrack: (guildId: bigint) =>
     apiRequest<void>(`music/${guildId}/skip`, "POST"),
 

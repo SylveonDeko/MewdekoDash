@@ -8,7 +8,9 @@
     Mic2,
     Pause,
     Play,
+    PlusCircle,
     Repeat,
+    Search,
     SkipBack,
     SkipForward,
     Volume,
@@ -19,13 +21,15 @@
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { logger } from "$lib/logger";
-  import type { MusicStatus } from "$lib/types/music";
+  import type { MusicStatus, Requester } from "$lib/types/music";
   import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
+  import MusicSearch from "./MusicSearch.svelte";
 
   export let musicStatus: MusicStatus;
 
   let isRotationEnabled = true;
   let selectedQueueItem = -1;
+  let isSearchModalOpen = false; // New state for search modal
 
   let progressInterval: number | null = null;
   let currentProgress = 0;
@@ -206,29 +210,24 @@
       // Call the API to toggle playback
       await api.pauseResume($currentGuild.id);
 
-      // Handle silent audio element for MediaSession
+      // Handle silent audio element for MediaSession API
       if (silentAudioElement) {
         if (musicStatus.State !== 2) { // Will become playing
           // Only try to play if we're not already in the middle of a play operation
           if (!audioPlayPromisePending && silentAudioElement.paused) {
             audioPlayPromisePending = true;
 
-            const playPromise = silentAudioElement.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  audioPlayPromisePending = false;
-                })
-                .catch(e => {
-                  audioPlayPromisePending = false;
-                  logger.debug("Silent audio play prevented:", e);
-                });
-            } else {
+            try {
+              await silentAudioElement.play();
               audioPlayPromisePending = false;
+            } catch (e) {
+              audioPlayPromisePending = false;
+              logger.debug("Silent audio play prevented:", e);
+              // Continue anyway - this is just for MediaSession support
             }
           }
         } else { // Will become paused
-          // Only pause if we're not in the middle of a play operation
+          // Only pause if not in the middle of a play operation
           if (!audioPlayPromisePending && !silentAudioElement.paused) {
             silentAudioElement.pause();
           }
@@ -532,20 +531,22 @@
   }
 
   let silentAudioElement: HTMLAudioElement;
-  let audioPlayPromisePending = false; // Separate variable to track the play promise state
+  let audioPlayPromisePending = false;
 
   // Set up a silent audio element to activate MediaSession API
   function setupSilentAudio() {
-    // Create a silent audio element if it doesn't exist
     if (!silentAudioElement) {
       silentAudioElement = new Audio();
 
       try {
-
-        silentAudioElement.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+        silentAudioElement.src = "/silent-audio.mp3";
         silentAudioElement.loop = true;
-        silentAudioElement.volume = 0;
-        silentAudioElement.muted = true; // Ensure it's muted
+        silentAudioElement.volume = 0.01;
+
+        // Add event listeners
+        silentAudioElement.addEventListener("play", () => {
+          updateMediaSessionMetadata();
+        });
 
         logger.debug("Silent audio element initialized");
       } catch (err) {
@@ -572,9 +573,10 @@
             audioPlayPromisePending = false;
           })
           .catch(err => {
-            // Play was prevented or failed
+            // Play was prevented or failed - this is okay, just log and continue
             audioPlayPromisePending = false;
             logger.debug("Silent audio play prevented:", err);
+
           });
       } else {
         // Promise not returned (older browsers), assume it worked
@@ -687,6 +689,27 @@
 
   // Playback state for ARIA
   $: playbackState = musicStatus?.State === 2 ? "playing" : "paused";
+
+  // Function to open search modal
+  function openSearchModal() {
+    isSearchModalOpen = true;
+  }
+
+  // Function to handle when a track is added through the search modal
+  function handleTrackAdded(event) {
+    isSearchModalOpen = false;
+    announceToScreenReader(`Added ${event.detail.track.title} to queue`);
+  }
+
+  // Get user information for the requester field
+  function getCurrentUser(): Requester {
+    // This should be replaced with actual user information from your auth system
+    return {
+      Id: musicStatus?.CurrentTrack?.Requester?.Id || 0,
+      Username: musicStatus?.CurrentTrack?.Requester?.Username || "Unknown User",
+      AvatarUrl: musicStatus?.CurrentTrack?.Requester?.AvatarUrl || "/default-avatar.png"
+    };
+  }
 
   // Clean up on component destroy
   onDestroy(() => {
@@ -950,6 +973,17 @@
             >
               <SkipForward class="w-6 h-6" />
             </button>
+
+            <!-- Add Music button -->
+            <button
+              class="flex items-center gap-2 p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2"
+              style="color: var(--music-accent); --ring-color: var(--music-accent);"
+              on:click={openSearchModal}
+              aria-label="Add Music"
+            >
+              <PlusCircle class="w-6 h-6" />
+              <span class="hidden sm:inline text-sm">Add</span>
+            </button>
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
@@ -1047,6 +1081,16 @@
             {musicStatus.Queue.length} tracks
           </span>
         </div>
+
+        <!-- Add search button to queue header -->
+        <button
+          class="p-2 rounded-full transition-colors"
+          style="background: var(--music-accent)20; color: var(--music-accent);"
+          on:click={openSearchModal}
+          aria-label="Add more tracks"
+        >
+          <Search class="w-4 h-4" />
+        </button>
       </div>
 
       <!-- Mobile Queue (Horizontal Scroll) -->
@@ -1182,6 +1226,15 @@
       </div>
     </details>
   </div>
+
+  <!-- Music Search Modal -->
+  <MusicSearch
+    bind:isOpen={isSearchModalOpen}
+    colors={colors}
+    currentUser={getCurrentUser()}
+    on:close={() => isSearchModalOpen = false}
+    on:trackAdded={handleTrackAdded}
+  />
 </div>
 
 <style lang="postcss">
