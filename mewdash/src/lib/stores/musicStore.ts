@@ -2,7 +2,6 @@
 import { get, writable } from "svelte/store";
 import { api } from "$lib/api";
 import { currentGuild } from "$lib/stores/currentGuild";
-import { logger } from "$lib/logger";
 import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 
@@ -12,7 +11,7 @@ interface MusicStoreState {
   failedFetchCount: number;
   isPolling: boolean;
   error: string | null;
-  userId: string | null;
+  userId: bigint | null;
 }
 
 function createMusicStore() {
@@ -38,21 +37,21 @@ function createMusicStore() {
   });
 
   // WebSocket Connection
-  function connectWebSocket(userId: string) {
+  function connectWebSocket(userId: bigint) {
     if (!useWebSocket) return; // Skip if WebSockets are disabled
 
     const guildId = get(currentGuild)?.id;
     const instancePort = get(currentInstance)?.port;
 
     if (!guildId || !userId) {
-      logger.error("Missing guildId or userId for WebSocket connection", { guildId, userId });
+      //logger.error("Missing guildId or userId for WebSocket connection", { guildId, userId });
       useWebSocket = false;
       startPolling(userId);
       return;
     }
 
     if (!instancePort) {
-      logger.error("Missing instance port for WebSocket connection");
+      //logger.error("Missing instance port for WebSocket connection");
       useWebSocket = false;
       startPolling(userId);
       return;
@@ -68,13 +67,13 @@ function createMusicStore() {
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsHost = window.location.host; // Will be "mewdeko.tech" in production (if its the main bot)
 
-      const wsUrl = `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}`;
+      const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1") ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}` : `${wsProtocol}//127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
 
-      logger.debug(`Connecting to WebSocket: ${wsUrl}`);
+      //logger.debug(`Connecting to WebSocket: ${wsUrl}`);
       webSocket = new WebSocket(wsUrl);
 
       webSocket.onopen = () => {
-        logger.debug("WebSocket connection established");
+        //logger.debug("WebSocket connection established");
 
         // Reset failure counter on successful connection
         update(state => ({
@@ -88,7 +87,7 @@ function createMusicStore() {
       webSocket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          logger.debug("WebSocket message received", { data });
+          //logger.debug("WebSocket message received", { data });
 
           // Get current state to check for track changes
           const currentState = get({ subscribe });
@@ -108,16 +107,15 @@ function createMusicStore() {
 
           // If track has changed, update the artwork colors
           if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
-            logger.debug(`Track changed: ${prevTrackId} → ${newTrackId}`);
             musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
           }
         } catch (err) {
-          logger.error("Error processing WebSocket message:", err);
+          //logger.error("Error processing WebSocket message:", err);
         }
       };
 
       webSocket.onerror = (error) => {
-        logger.error("WebSocket error:", error);
+        //logger.error("WebSocket error:", error);
 
         // Track connection errors
         update(state => ({
@@ -133,7 +131,7 @@ function createMusicStore() {
       };
 
       webSocket.onclose = (event) => {
-        logger.debug(`WebSocket closed: ${event.code} ${event.reason}`);
+        ////logger.debug(`WebSocket closed: ${event.code} ${event.reason}`);
 
         // Check if this was a normal closure (1000) or an error
         if (event.code !== 1000 && useWebSocket) {
@@ -142,13 +140,13 @@ function createMusicStore() {
         }
       };
     } catch (err) {
-      logger.error("Failed to establish WebSocket connection:", err);
+      //logger.error("Failed to establish WebSocket connection:", err);
       useWebSocket = false;
       startPolling(userId);
     }
   }
 
-  function scheduleReconnect(userId: string) {
+  function scheduleReconnect(userId: bigint) {
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout);
     }
@@ -160,10 +158,10 @@ function createMusicStore() {
   }
 
   // Fallback polling implementation
-  async function fetchStatus(userId: string) {
+  async function fetchStatus(userId: bigint) {
     const state = get({ subscribe });
     if (state.failedFetchCount >= MAX_RETRIES) {
-      logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling`);
+      ////logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling`);
       stopPolling();
       return;
     }
@@ -171,7 +169,7 @@ function createMusicStore() {
     try {
       const guildId = get(currentGuild)?.id;
       if (!guildId) {
-        logger.error("Missing guildId for polling", { userId });
+        ////logger.error("Missing guildId for polling", { userId });
         return;
       }
 
@@ -194,7 +192,6 @@ function createMusicStore() {
 
       // If track has changed, update the artwork colors
       if (trackChanged && status?.CurrentTrack?.Track?.ArtworkUri) {
-        //logger.debug(`Track changed: ${state.lastTrackId} → ${newTrackId}`);
         await musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
       }
 
@@ -212,7 +209,7 @@ function createMusicStore() {
         }
       }
     } catch (err) {
-      logger.error("Failed to fetch music status:", err);
+      //logger.error("Failed to fetch music status:", err);
 
       update(state => {
         const newCount = state.failedFetchCount + 1;
@@ -235,7 +232,7 @@ function createMusicStore() {
           currentPollDelay = backoffDelay;
         }
 
-        //logger.debug(`Failed fetch count: ${newCount}, next delay: ${backoffDelay}ms`);
+        ////logger.debug(`Failed fetch count: ${newCount}, next delay: ${backoffDelay}ms`);
 
         return {
           ...state,
@@ -246,18 +243,18 @@ function createMusicStore() {
     }
   }
 
-  function startPolling(userId: string) {
+  function startPolling(userId: bigint) {
     // Clean up any existing connections
     stopPolling();
 
     if (!userId) {
-      logger.error("Cannot start polling without userId");
+      //logger.error("Cannot start polling without userId");
       return;
     }
 
     const guildId = get(currentGuild)?.id;
     if (!guildId) {
-      logger.error("Cannot start polling without guildId");
+      //logger.error("Cannot start polling without guildId");
       return;
     }
 
@@ -283,7 +280,7 @@ function createMusicStore() {
   }
 
   function stopPolling() {
-    //logger.debug("Stopping music polling");
+    ////logger.debug("Stopping music polling");
 
     // Clean up WebSocket
     if (webSocket) {
@@ -309,7 +306,7 @@ function createMusicStore() {
   }
 
   function reset() {
-    //logger.debug("Resetting music store");
+    ////logger.debug("Resetting music store");
     stopPolling();
     useWebSocket = true; // Reset WebSocket preference
     set({

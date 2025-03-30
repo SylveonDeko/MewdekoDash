@@ -69,6 +69,9 @@ type SuggestStateUpdate = {
 
 export const api = {
 
+  playTrackAt: (guildId: bigint, index: number) =>
+    apiRequest<void>(`music/${guildId}/play-track/${index}`, "POST"),
+
   getChatMessages: (guildId: bigint, channelId: bigint, after: string) =>
     apiRequest<Array<{
       id: string;

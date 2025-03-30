@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from "svelte";
   import {
     Clock,
+    Disc,
     List,
     Mic2,
     Pause,
@@ -15,7 +16,6 @@
     Volume2,
     VolumeX
   } from "lucide-svelte";
-  // Import the API methods related to music
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { logger } from "$lib/logger";
@@ -23,6 +23,9 @@
   import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 
   export let musicStatus: MusicStatus;
+
+  let isRotationEnabled = true;
+  let selectedQueueItem = -1;
 
   let progressInterval: number | null = null;
   let currentProgress = 0;
@@ -36,7 +39,17 @@
   let lastMusicStatusUpdate = 0;
   const UPDATE_DEBOUNCE_TIME = 250; // ms - prevents too frequent updates
 
+  // Function to determine if a track is currently playing
+  function isCurrentlyPlaying(track) {
+    if (!musicStatus?.CurrentTrack?.Track) return false;
+
+    // Compare by title and author to identify the same track
+    return track.Track.Title === musicStatus.CurrentTrack.Track.Title &&
+      track.Track.Author === musicStatus.CurrentTrack.Track.Author;
+  }
+
   function getSeconds(timeStr: string): number {
+    if (!timeStr) return 0;
     const parts = timeStr.split(":");
     return parts.length === 3
       ? parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
@@ -75,7 +88,7 @@
   }
 
   function syncTimeWithServer() {
-    if (!musicStatus.Position) return;
+    if (!musicStatus?.Position) return;
 
     const serverTime = new Date(musicStatus.Position.SystemClock.UtcNow).getTime();
     const localTime = Date.now();
@@ -94,7 +107,7 @@
   }
 
   function updateProgress(timestamp = performance.now()) {
-    if (!musicStatus?.State === 2) return; // Not playing
+    if (musicStatus?.State !== 2) return; // Not playing
 
     // Calculate time delta since last frame for smooth interpolation
     const delta = lastAnimationTimestamp ? (timestamp - lastAnimationTimestamp) / 1000 : 0;
@@ -140,7 +153,7 @@
    * Uses the SeekRequest model expected by the backend API
    */
   async function handleSeek(event: MouseEvent | KeyboardEvent) {
-    if (!progressBarElement) return;
+    if (!progressBarElement || !musicStatus?.CurrentTrack?.Track?.Duration) return;
 
     let percentage = 0;
 
@@ -189,7 +202,38 @@
   async function togglePlayPause() {
     try {
       if (!$currentGuild?.id) return;
+
+      // Call the API to toggle playback
       await api.pauseResume($currentGuild.id);
+
+      // Handle silent audio element for MediaSession
+      if (silentAudioElement) {
+        if (musicStatus.State !== 2) { // Will become playing
+          // Only try to play if we're not already in the middle of a play operation
+          if (!audioPlayPromisePending && silentAudioElement.paused) {
+            audioPlayPromisePending = true;
+
+            const playPromise = silentAudioElement.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  audioPlayPromisePending = false;
+                })
+                .catch(e => {
+                  audioPlayPromisePending = false;
+                  logger.debug("Silent audio play prevented:", e);
+                });
+            } else {
+              audioPlayPromisePending = false;
+            }
+          }
+        } else { // Will become paused
+          // Only pause if we're not in the middle of a play operation
+          if (!audioPlayPromisePending && !silentAudioElement.paused) {
+            silentAudioElement.pause();
+          }
+        }
+      }
 
       // Announce to screen readers
       const action = musicStatus.State === 2 ? "Paused" : "Playing";
@@ -220,6 +264,43 @@
       logger.error("Failed to go to previous track:", err);
       announceToScreenReader("Failed to go to previous track");
     }
+  }
+
+  // New function: Play a specific track from the queue
+  async function playQueueItem(index: number) {
+    try {
+      if (!$currentGuild?.id) return;
+
+      // Set as selected before API call for better UX
+      selectedQueueItem = index;
+
+      // Get the track from the queue
+      const track = musicStatus.Queue[index];
+
+      // Call the API function to play a specific track
+      await api.playTrackAt($currentGuild.id, track.Index);
+
+      // Announce to screen readers
+      announceToScreenReader(`Playing ${track.Track.Title}`);
+    } catch (err) {
+      logger.error("Failed to play queue item:", err);
+      announceToScreenReader("Failed to play selected track");
+      selectedQueueItem = -1; // Reset selection on error
+    }
+  }
+
+  // Queue item keyboard handling
+  function handleQueueItemKeyDown(event: KeyboardEvent, index: number) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      playQueueItem(index);
+    }
+  }
+
+  // Toggle album rotation
+  function toggleRotation() {
+    isRotationEnabled = !isRotationEnabled;
+    announceToScreenReader(isRotationEnabled ? "Album rotation enabled" : "Album rotation disabled");
   }
 
   async function handleVolumeChange(event: Event) {
@@ -337,9 +418,183 @@
     }
   }
 
+  // Register with MediaSession API
+  function setupMediaSession() {
+    // Check if MediaSession API is available
+    if ("mediaSession" in navigator) {
+      try {
+        // Set initial metadata
+        updateMediaSessionMetadata();
+
+        // Register action handlers
+        navigator.mediaSession.setActionHandler("play", () => {
+          if (musicStatus?.State !== 2) togglePlayPause();
+        });
+
+        navigator.mediaSession.setActionHandler("pause", () => {
+          if (musicStatus?.State === 2) togglePlayPause();
+        });
+
+        navigator.mediaSession.setActionHandler("previoustrack", () => {
+          previousTrack();
+        });
+
+        navigator.mediaSession.setActionHandler("nexttrack", () => {
+          skipTrack();
+        });
+
+        // Add seek controls if supported
+        try {
+          navigator.mediaSession.setActionHandler("seekto", (details) => {
+            if (!musicStatus?.CurrentTrack?.Track?.Duration) return;
+
+            const duration = getSeconds(musicStatus.CurrentTrack.Track.Duration);
+            if (details.seekTime !== undefined && duration > 0) {
+              const seekRequest = { Position: details.seekTime };
+              if ($currentGuild?.id) {
+                api.seek($currentGuild.id, seekRequest)
+                  .then(() => {
+                    currentProgress = details.seekTime;
+                  })
+                  .catch(err => {
+                    logger.error("Failed to seek via MediaSession:", err);
+                  });
+              }
+            }
+          });
+
+          // Set supported seek positions if seekto is supported
+          navigator.mediaSession.setPositionState({
+            duration: musicStatus?.CurrentTrack?.Track ? getSeconds(musicStatus.CurrentTrack.Track.Duration) : 0,
+            position: currentProgress || 0,
+            playbackRate: 1.0
+          });
+        } catch (error) {
+          logger.debug("MediaSession seekto not supported", error);
+        }
+
+        logger.info("MediaSession API initialized successfully");
+      } catch (err) {
+        logger.error("Error setting up MediaSession:", err);
+      }
+    } else {
+      logger.debug("MediaSession API not supported");
+    }
+  }
+
+  // Update media session metadata when track changes
+  function updateMediaSessionMetadata() {
+    if (!("mediaSession" in navigator) || !musicStatus?.CurrentTrack?.Track) return;
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: musicStatus.CurrentTrack.Track.Title || "Unknown Title",
+        artist: musicStatus.CurrentTrack.Track.Author || "Unknown Artist",
+        album: musicStatus.CurrentTrack.Track.SourceName || "",
+        artwork: [
+          {
+            src: musicStatus.CurrentTrack.Track.ArtworkUri || "/default-album.png",
+            sizes: "512x512",
+            type: "image/png"
+          }
+        ]
+      });
+
+      // Update the playback state
+      navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
+
+      // Update position state if available and validate values
+      if ("setPositionState" in navigator.mediaSession) {
+        const duration = getSeconds(musicStatus.CurrentTrack.Track.Duration) || 0;
+        let position = currentProgress || 0;
+
+        if (position > duration && duration > 0) {
+          position = duration;
+        }
+
+        // Only set position state if we have valid values
+        if (duration > 0 && position >= 0) {
+          try {
+            navigator.mediaSession.setPositionState({
+              duration: duration,
+              position: position,
+              playbackRate: 1.0
+            });
+          } catch (error) {
+            // Silently handle position state errors
+            logger.debug("MediaSession position state error:", error);
+          }
+        }
+      }
+    } catch (err) {
+      logger.error("Error updating MediaSession metadata:", err);
+    }
+  }
+
+  let silentAudioElement: HTMLAudioElement;
+  let audioPlayPromisePending = false; // Separate variable to track the play promise state
+
+  // Set up a silent audio element to activate MediaSession API
+  function setupSilentAudio() {
+    // Create a silent audio element if it doesn't exist
+    if (!silentAudioElement) {
+      silentAudioElement = new Audio();
+
+      try {
+
+        silentAudioElement.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+        silentAudioElement.loop = true;
+        silentAudioElement.volume = 0;
+        silentAudioElement.muted = true; // Ensure it's muted
+
+        logger.debug("Silent audio element initialized");
+      } catch (err) {
+        logger.error("Error setting up silent audio:", err);
+      }
+    }
+  }
+
+  // Function to ensure silent audio is playing when needed
+  function ensureSilentAudioPlaying() {
+    if (!silentAudioElement) return;
+
+    if (musicStatus?.State === 2 && silentAudioElement.paused && !audioPlayPromisePending) {
+      // Mark that we have a play operation in progress
+      audioPlayPromisePending = true;
+
+      // We need to play in response to user interaction
+      const playPromise = silentAudioElement.play();
+
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Successfully started playing
+            audioPlayPromisePending = false;
+          })
+          .catch(err => {
+            // Play was prevented or failed
+            audioPlayPromisePending = false;
+            logger.debug("Silent audio play prevented:", err);
+          });
+      } else {
+        // Promise not returned (older browsers), assume it worked
+        audioPlayPromisePending = false;
+      }
+    } else if (musicStatus?.State !== 2 && !silentAudioElement.paused && !audioPlayPromisePending) {
+      // Only pause if no play operation is in progress
+      silentAudioElement.pause();
+    }
+  }
+
   // Add and remove global event listeners
   onMount(() => {
     window.addEventListener("keydown", handleGlobalKeydown);
+
+    // Set up silent audio for MediaSession
+    setupSilentAudio();
+
+    // Initialize MediaSession API
+    setupMediaSession();
   });
 
   /**
@@ -367,6 +622,9 @@
         if (status.CurrentTrack.Track.ArtworkUri) {
           musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
         }
+
+        // Reset queue selection when track changes
+        selectedQueueItem = -1;
       } else if (initialLoad && status.CurrentTrack.Track.ArtworkUri) {
         // Initial load - set colors without transition
         musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
@@ -383,6 +641,20 @@
   // Process music status updates through the debounced handler
   $: if (musicStatus?.CurrentTrack?.Track) {
     handleMusicStatusUpdate(musicStatus);
+
+    // Update MediaSession metadata when track changes
+    updateMediaSessionMetadata();
+  }
+
+  // Update MediaSession playback state when playback state changes
+  $: if (musicStatus?.State !== undefined) {
+    // Try to sync silent audio with player state
+    ensureSilentAudioPlaying();
+
+    // Update media session if available
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
+    }
   }
 
   $: if (musicStatus) {
@@ -411,7 +683,7 @@
 
   // Calculate progress percentage for ARIA attributes
   $: progressPercentage = musicStatus?.CurrentTrack?.Track ?
-    Math.round((currentProgress / getSeconds(musicStatus.CurrentTrack.Track.Duration)) * 100) : 0;
+    Math.round((currentProgress / Math.max(0.01, getSeconds(musicStatus.CurrentTrack.Track.Duration))) * 100) : 0;
 
   // Playback state for ARIA
   $: playbackState = musicStatus?.State === 2 ? "playing" : "paused";
@@ -426,6 +698,33 @@
     lastAnimationTimestamp = 0;
     smoothProgress = 0;
     lastMusicStatusUpdate = 0;
+
+    // Stop silent audio if it exists
+    if (silentAudioElement) {
+      silentAudioElement.pause();
+      silentAudioElement.src = "";
+      silentAudioElement = null;
+    }
+
+    // Clear MediaSession if supported
+    if ("mediaSession" in navigator) {
+      // Clear action handlers
+      const actions = ["play", "pause", "previoustrack", "nexttrack", "seekto"];
+      actions.forEach(action => {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch (e) {
+          // Ignore errors for unsupported actions
+        }
+      });
+
+      // Clear metadata
+      try {
+        navigator.mediaSession.metadata = null;
+      } catch (e) {
+        // Some browsers might not support clearing metadata
+      }
+    }
 
     musicPlayerColors.cleanup(); // Clean up any color transitions
     window.removeEventListener("keydown", handleGlobalKeydown);
@@ -455,24 +754,37 @@
   <div class="flex flex-col md:flex-row gap-6">
     <!-- Album Art -->
     <div class="relative group w-full md:w-auto md:min-w-[160px] max-w-[220px] mx-auto md:mx-0">
+      <!-- Rotation Toggle Button -->
+      <button
+        aria-label={isRotationEnabled ? "Disable rotation" : "Enable rotation"}
+        class="absolute top-2 right-2 z-20 p-1.5 rounded-full backdrop-blur-sm transition-all duration-200 hover:bg-opacity-40 focus:outline-none focus:ring-2"
+        on:click={toggleRotation}
+        style="background: var(--music-foreground)30; color: var(--music-text); --ring-color: var(--music-accent)"
+      >
+        <Disc class="w-4 h-4" />
+      </button>
+
       <div class="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
            style="background: radial-gradient(circle at center, var(--music-foreground)30 0%, transparent 70%);">
       </div>
-      <div class={`relative rounded-xl overflow-hidden ${musicStatus.State === 2 ? "album-rotation" : ""}`}>
+
+      <div
+        class={`relative overflow-hidden transition-all duration-300 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${musicStatus?.State === 2 && isRotationEnabled ? "album-rotation" : ""}`}>
         <!-- Circular overlay for vinyl-like appearance -->
         <div class="absolute inset-0 z-10 vinyl-overlay">
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="w-1/4 h-1/4 rounded-full bg-black opacity-20 z-20"></div>
           </div>
         </div>
+
         <img
-          alt={`Album artwork for ${musicStatus.CurrentTrack.Track.Title} by ${musicStatus.CurrentTrack.Track.Author}`}
-          class="w-full lg:w-[160px] h-[160px] rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
-          class:track-image-transition={isTransitioning}
-          src={musicStatus.CurrentTrack.Track.ArtworkUri || '/default-album.png'}
+          alt={musicStatus?.CurrentTrack?.Track ? `Album artwork for ${musicStatus.CurrentTrack.Track.Title} by ${musicStatus.CurrentTrack.Track.Author}` : "Album artwork"}
+          class={`w-full lg:w-[160px] h-[160px] object-cover transition-transform duration-300 group-hover:scale-105 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
+          src={musicStatus?.CurrentTrack?.Track?.ArtworkUri || '/default-album.png'}
         />
+
         <!-- Vinyl record effect when playing -->
-        {#if musicStatus.State === 2}
+        {#if musicStatus?.State === 2 && isRotationEnabled}
           <div class="vinyl-effect"></div>
         {/if}
       </div>
@@ -482,15 +794,17 @@
     <div class="flex-grow flex flex-col gap-4 min-w-0">
       <div class="w-full">
         <div class="flex flex-wrap items-center gap-2 mb-2">
-          <span
-            class="px-3 py-1 rounded-full text-xs font-medium truncate max-w-full"
-            style="background: var(--music-foreground)20; color: var(--music-foreground);"
-          >
-            {musicStatus.CurrentTrack.Track.SourceName}
-          </span>
+          {#if musicStatus?.CurrentTrack?.Track?.SourceName}
+            <span
+              class="px-3 py-1 rounded-full text-xs font-medium truncate max-w-full"
+              style="background: var(--music-foreground)20; color: var(--music-foreground);"
+            >
+              {musicStatus.CurrentTrack.Track.SourceName}
+            </span>
+          {/if}
 
           <!-- Repeat mode indicator -->
-          {#if musicStatus.RepeatMode > 0}
+          {#if musicStatus?.RepeatMode > 0}
             <span
               class="flex items-center px-2 py-1 rounded-full text-xs"
               style="background: var(--music-foreground)20; color: var(--music-foreground);"
@@ -501,67 +815,72 @@
           {/if}
         </div>
 
-        <h2
-          class="text-xl md:text-2xl font-bold mb-1 truncate max-w-full transition-opacity duration-300"
-          class:track-text-transition={isTransitioning}
-          style="color: var(--music-text)"
-        >
-          {musicStatus.CurrentTrack.Track.Title}
-        </h2>
-        <p
-          class="text-sm md:text-base truncate max-w-full transition-opacity duration-300"
-          class:track-text-transition={isTransitioning}
-          style="color: var(--music-text)80"
-        >
-          {musicStatus.CurrentTrack.Track.Author}
-        </p>
+        {#if musicStatus?.CurrentTrack?.Track}
+          <h2
+            class="text-xl md:text-2xl font-bold mb-1 truncate max-w-full transition-opacity duration-300"
+            class:track-text-transition={isTransitioning}
+            style="color: var(--music-text)"
+          >
+            {musicStatus.CurrentTrack.Track.Title}
+          </h2>
+          <p
+            class="text-sm md:text-base truncate max-w-full transition-opacity duration-300"
+            class:track-text-transition={isTransitioning}
+            style="color: var(--music-text)80"
+          >
+            {musicStatus.CurrentTrack.Track.Author}
+          </p>
+        {/if}
       </div>
 
       <!-- Progress Bar -->
-      <div class="space-y-2 w-full mt-auto">
-        <div
-          aria-label="Song progress"
-          aria-valuemax="100"
-          on:click={handleSeek}
-          aria-valuemin="0"
-          aria-valuenow={progressPercentage}
-          aria-valuetext={`${formatTime(musicStatus.Position)} of ${formatTime(musicStatus.CurrentTrack.Track.Duration)}`}
-          bind:this={progressBarElement}
-          class="relative w-full h-3 rounded-full overflow-hidden group cursor-pointer"
-          on:keydown={handleSeek}
-          role="slider"
-          style="background: var(--music-foreground)20;"
-          tabindex="0"
-        >
+      {#if musicStatus?.CurrentTrack?.Track}
+        <div class="space-y-2 w-full mt-auto">
           <div
-            class="h-full rounded-full transition-transform duration-75 ease-linear progress-bar-fill liquid-progress"
-            style="background: var(--music-accent);"
-            style:width={`${(currentProgress / getSeconds(musicStatus.CurrentTrack.Track.Duration)) * 100}%`}
+            aria-label="Song progress"
+            aria-valuemax="100"
+            on:click={handleSeek}
+            aria-valuemin="0"
+            aria-valuenow={progressPercentage}
+            aria-valuetext={`${formatTime(musicStatus.Position)} of ${formatTime(musicStatus.CurrentTrack.Track.Duration)}`}
+            bind:this={progressBarElement}
+            class="relative w-full h-3 rounded-full overflow-hidden group cursor-pointer"
+            on:keydown={handleSeek}
+            role="slider"
+            style="background: var(--music-foreground)20;"
+            tabindex="0"
           >
-            <div class="liquid-animation"></div>
-          </div>
-          <!-- Gradient overlay on progress bar -->
-          <div
-            class="absolute top-0 left-0 h-full w-full opacity-30 pointer-events-none progress-bar-glow"
-            style="background: linear-gradient(90deg, transparent, var(--music-controls-highlight)40);
-                   width: {(currentProgress / getSeconds(musicStatus.CurrentTrack.Track.Duration)) * 100}%"
-          ></div>
+            <div
+              class="h-full rounded-full transition-transform duration-75 ease-linear progress-bar-fill liquid-progress"
+              style="background: var(--music-accent); width: {progressPercentage}%;"
+            >
+              <div class="liquid-animation"></div>
+            </div>
 
-          <!-- Pulsating position indicator -->
-          <div
-            class="absolute top-50% w-3 h-3 rounded-full transform -translate-y-1/2 progress-indicator"
-            style="background: var(--music-accent); left: calc({(currentProgress / getSeconds(musicStatus.CurrentTrack.Track.Duration)) * 100}% - 6px);
-                   box-shadow: 0 0 8px var(--music-accent);"
-          ></div>
+            <!-- Gradient overlay on progress bar -->
+            <div
+              class="absolute top-0 left-0 h-full w-full opacity-30 pointer-events-none progress-bar-glow"
+              style="background: linear-gradient(90deg, transparent, var(--music-controls-highlight)40);
+                     width: {progressPercentage}%"
+            ></div>
+
+            <!-- Pulsating position indicator -->
+            <div
+              class="absolute top-50% w-3 h-3 rounded-full transform -translate-y-1/2 progress-indicator"
+              style="background: var(--music-accent); left: calc({progressPercentage}% - 6px);
+                     box-shadow: 0 0 8px var(--music-accent);"
+            ></div>
+          </div>
+
+          <div class="flex justify-between text-xs font-medium" style="color: var(--music-text)80">
+            <span>{formatTime(musicStatus.Position)}</span>
+            <span>{formatTime(musicStatus.CurrentTrack.Track.Duration)}</span>
+          </div>
         </div>
-        <div class="flex justify-between text-xs font-medium" style="color: var(--music-text)80">
-          <span>{formatTime(musicStatus.Position)}</span>
-          <span>{formatTime(musicStatus.CurrentTrack.Track.Duration)}</span>
-        </div>
-      </div>
+      {/if}
 
       <!-- Controls -->
-      {#if musicStatus.IsInVoiceChannel}
+      {#if musicStatus?.IsInVoiceChannel}
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 w-full">
           <div class="flex items-center gap-4 justify-center sm:justify-start w-full sm:w-auto">
             <button
@@ -593,21 +912,23 @@
               class="p-4 rounded-full transition-all duration-300 transform hover:scale-105 focus:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--music-accent)] relative overflow-hidden control-pulse"
               style="background: var(--music-controls-highlight); color: var(--music-text);"
               on:click={togglePlayPause}
-              aria-label={musicStatus.State === 2 ? 'Pause' : 'Play'}
-              aria-pressed={musicStatus.State === 2}
+              aria-label={musicStatus?.State === 2 ? 'Pause' : 'Play'}
+              aria-pressed={musicStatus?.State === 2}
             >
               <!-- Button glow effect -->
               <div class="absolute inset-0 opacity-40 rounded-full"
                    style="background: radial-gradient(circle at center, var(--music-foreground)80 0%, transparent 70%);"></div>
-              <svelte:component
-                this={musicStatus.State === 2 ? Pause : Play}
-                class="w-6 h-6 relative z-10"
-              />
+
+              {#if musicStatus?.State === 2}
+                <Pause class="w-6 h-6 relative z-10" />
+              {:else}
+                <Play class="w-6 h-6 relative z-10" />
+              {/if}
             </button>
 
             <button
               class="p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2"
-              style="color: var(--music-text)80; focus-visible:ring-color: var(--music-foreground);"
+              style="color: var(--music-text)80; --ring-color: var(--music-foreground);"
               on:mouseover={(e) => {
                 e.currentTarget.style.color = 'var(--music-foreground)';
                 e.currentTarget.style.background = 'var(--music-foreground)20';
@@ -645,7 +966,6 @@
               max="100"
               value={musicStatus.Volume * 100}
               class="volume-slider w-full sm:w-24"
-              role="slider"
               aria-label="Volume"
               aria-valuemin="0"
               aria-valuemax="100"
@@ -658,7 +978,7 @@
         </div>
 
         <!-- Filters -->
-        {#if musicStatus.Filters && Object.values(musicStatus.Filters).some(f => f)}
+        {#if musicStatus?.Filters && Object.values(musicStatus.Filters).some(f => f)}
           <div class="flex flex-wrap gap-2 mt-2" aria-label="Active audio filters">
             {#if musicStatus.Filters.BassBoost}
               <span class="px-2 py-1 rounded-full text-xs filter-badge"
@@ -682,20 +1002,22 @@
         {/if}
 
         <!-- Requester Info -->
-        <div class="flex items-center gap-2 mt-2">
-          <div class="w-5 h-5 rounded-full overflow-hidden relative">
-            <div class="absolute inset-0 opacity-25 rounded-full"
-                 style="background: radial-gradient(circle at center, var(--music-foreground) 0%, transparent 100%);"></div>
-            <img
-              src={musicStatus.CurrentTrack.Requester.AvatarUrl}
-              alt={`${musicStatus.CurrentTrack.Requester.Username}'s avatar`}
-              class="w-full h-full rounded-full relative z-10"
-            />
+        {#if musicStatus?.CurrentTrack?.Requester}
+          <div class="flex items-center gap-2 mt-2">
+            <div class="w-5 h-5 rounded-full overflow-hidden relative">
+              <div class="absolute inset-0 opacity-25 rounded-full"
+                   style="background: radial-gradient(circle at center, var(--music-foreground) 0%, transparent 100%);"></div>
+              <img
+                src={musicStatus.CurrentTrack.Requester.AvatarUrl}
+                alt={`${musicStatus.CurrentTrack.Requester.Username}'s avatar`}
+                class="w-full h-full rounded-full relative z-10"
+              />
+            </div>
+            <span class="text-sm" style="color: var(--music-text)80">
+              Requested by {musicStatus.CurrentTrack.Requester.Username}
+            </span>
           </div>
-          <span class="text-sm" style="color: var(--music-text)80">
-            Requested by {musicStatus.CurrentTrack.Requester.Username}
-          </span>
-        </div>
+        {/if}
       {:else}
         <div
           class="flex items-center gap-2 px-4 py-3 rounded-lg mt-4"
@@ -709,7 +1031,7 @@
     </div>
   </div>
 
-  {#if musicStatus.Queue?.length > 0}
+  {#if musicStatus?.Queue?.length > 0}
     <div
       class="mt-6 pt-6"
       style="border-top: 1px solid var(--music-foreground)20;"
@@ -731,27 +1053,39 @@
       <div class="md:hidden overflow-x-auto pb-4 mb-2">
         <div class="flex gap-3" style="min-width: max-content;">
           {#each musicStatus.Queue as track, i}
-            <div
-              class="flex-shrink-0 w-44 p-3 rounded-xl transition-all duration-200 queue-card"
-              style="background: var(--music-foreground)10;"
-              on:mouseover={(e) => {
-                e.currentTarget.style.background = 'var(--music-foreground)20';
-              }}
-              on:mouseleave={(e) => {
-                e.currentTarget.style.background = 'var(--music-foreground)10';
-              }}
-              role="listitem"
-              tabindex="0"
+            <button
+              type="button"
+              class="flex-shrink-0 w-44 p-3 rounded-xl transition-all duration-200 queue-card text-left focus:outline-none focus:ring-2 relative"
+              style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)40' : selectedQueueItem === i ? 'var(--music-accent)20' : 'var(--music-foreground)10'};
+                     border-left: {isCurrentlyPlaying(track) ? '4px solid var(--music-accent)' : selectedQueueItem === i ? '4px solid var(--music-accent)' : 'none'};
+                     --ring-color: var(--music-accent);"
+              on:click={() => playQueueItem(i)}
+              on:keydown={(e) => handleQueueItemKeyDown(e, i)}
+              aria-current={isCurrentlyPlaying(track) ? 'true' : undefined}
             >
               <div class="flex items-center mb-2">
-                <div class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mr-2"
-                     style="background: var(--music-accent)20; color: var(--music-accent)">
+                <div class="queue-number-circle flex-shrink-0 w-5 h-5 flex items-center justify-center mr-2"
+                     style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)' : selectedQueueItem === i ? 'var(--music-accent)' : 'var(--music-accent)20'};
+                            color: {isCurrentlyPlaying(track) || selectedQueueItem === i ? 'white' : 'var(--music-accent)'}">
                   <span class="text-xs font-medium">{i + 1}</span>
                 </div>
-                <Clock class="w-4 h-4 ml-auto" style="color: var(--music-foreground)" aria-hidden="true" />
-                <span class="text-xs ml-1" style="color: var(--music-text)80">
-                  {formatTime(track.Track.Duration)}
-                </span>
+
+                {#if isCurrentlyPlaying(track)}
+                  <div class="playing-indicator-mobile ml-auto mr-2">
+                    <div class="playing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
+                {/if}
+
+                <div class="flex items-center {isCurrentlyPlaying(track) ? '' : 'ml-auto'}">
+                  <Clock class="w-4 h-4" style="color: var(--music-foreground)" aria-hidden="true" />
+                  <span class="text-xs ml-1" style="color: var(--music-text)80">
+                    {formatTime(track.Track.Duration)}
+                  </span>
+                </div>
               </div>
 
               <p class="text-sm font-medium truncate mb-1" style="color: var(--music-text)">
@@ -760,7 +1094,7 @@
               <p class="text-xs truncate" style="color: var(--music-text)80">
                 {track.Track.Author}
               </p>
-            </div>
+            </button>
           {/each}
         </div>
       </div>
@@ -773,21 +1107,22 @@
         aria-label="Upcoming tracks"
       >
         {#each musicStatus.Queue as track, i}
-          <div
-            class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item"
-            style="background: var(--music-foreground)10;"
-            on:mouseover={(e) => {
-              e.currentTarget.style.background = 'var(--music-foreground)20';
-            }}
-            on:mouseleave={(e) => {
-              e.currentTarget.style.background = 'var(--music-foreground)10';
-            }}
-            role="listitem"
-            tabindex="0"
+          <button
+            type="button"
+            class="flex w-full items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item text-left focus:outline-none focus:ring-2"
+            style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)40' : selectedQueueItem === i ? 'var(--music-accent)20' : 'var(--music-foreground)10'};
+                   border-left: {isCurrentlyPlaying(track) ? '4px solid var(--music-accent)' : selectedQueueItem === i ? '4px solid var(--music-accent)' : 'none'};
+                   --ring-color: var(--music-accent);"
+            on:click={() => playQueueItem(i)}
+            on:keydown={(e) => handleQueueItemKeyDown(e, i)}
+            aria-current={isCurrentlyPlaying(track) ? 'true' : undefined}
           >
-            <div class="queue-position flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium"
-                 style="background: var(--music-accent)20; color: var(--music-accent)">
-              {i + 1}
+            <div class="w-8 flex-shrink-0">
+              <div class="queue-position flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium"
+                   style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)' : selectedQueueItem === i ? 'var(--music-accent)' : 'var(--music-accent)20'};
+                          color: {isCurrentlyPlaying(track) || selectedQueueItem === i ? 'white' : 'var(--music-accent)'}">
+                {i + 1}
+              </div>
             </div>
             <div class="flex-grow truncate">
               <p
@@ -803,7 +1138,8 @@
                 {track.Track.Author}
               </p>
             </div>
-            <div class="flex items-center gap-2">
+
+            <div class="flex items-center gap-2 ml-auto pr-8 flex-shrink-0">
               <Clock
                 class="w-4 h-4"
                 style="color: var(--music-foreground)"
@@ -816,7 +1152,17 @@
                 {formatTime(track.Track.Duration)}
               </span>
             </div>
-          </div>
+
+            {#if isCurrentlyPlaying(track)}
+              <div class="absolute right-3 flex items-center justify-center">
+                <div class="playing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            {/if}
+          </button>
         {/each}
       </div>
     </div>
@@ -838,7 +1184,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
     /* Volume slider styles */
     .volume-slider {
         width: 100%;
@@ -944,7 +1290,6 @@
         }
     }
 
-    /* Progress bar enhancements */
     .progress-bar-fill {
         position: relative;
         will-change: width;
@@ -1062,11 +1407,7 @@
 
     /* Album art rotation effect */
     .album-rotation {
-        animation: subtle-rotation 20s infinite linear paused;
-    }
-
-    .album-rotation:hover, :global(.State-2) .album-rotation {
-        animation-play-state: running;
+        animation: subtle-rotation 20s infinite linear;
     }
 
     @keyframes subtle-rotation {
@@ -1133,38 +1474,62 @@
         transition: background 1s ease-out;
     }
 
-    /* Queue item hover effect */
-    .queue-item {
+    .queue-item, .queue-card {
         position: relative;
         overflow: hidden;
+        transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
     }
 
-    .queue-item::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.1),
-                transparent
-        );
-        transition: 0.5s;
-    }
-
-    .queue-item:hover::after {
-        left: 100%;
+    .queue-item:hover, .queue-card:hover {
+        background-color: var(--music-accent) 30 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .queue-position {
         transition: transform 0.2s ease;
     }
 
-    .queue-item:hover .queue-position {
+    .queue-item:hover .queue-position, .queue-card:hover .queue-position {
         transform: scale(1.2);
+    }
+
+    .playing-indicator {
+        display: flex;
+        align-items: flex-end;
+        height: 16px;
+        gap: 2px;
+    }
+
+    .playing-indicator span {
+        display: inline-block;
+        width: 3px;
+        height: 5px;
+        background-color: var(--music-accent);
+        border-radius: 1px;
+        animation: soundBars 1.2s infinite ease-in-out;
+    }
+
+    .playing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+        height: 8px;
+    }
+
+    .playing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+        height: 5px;
+    }
+
+    @keyframes soundBars {
+        0% {
+            height: 5px;
+        }
+        50% {
+            height: 12px;
+        }
+        100% {
+            height: 5px;
+        }
     }
 
     /* Force hardware acceleration */
@@ -1178,14 +1543,42 @@
         perspective: 1000px;
     }
 
+    /* Mobile improvements */
     @media (max-width: 640px) {
         .volume-slider {
             width: 100%;
             max-width: 100%;
+            height: 10px;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            margin-top: -4px;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
         }
 
         .queue-item {
             padding: 0.75rem;
+        }
+
+        /* Enhanced mobile scrolling */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 12px;
+        }
+
+        /* Snap each card to grid when scrolling */
+        .queue-card {
+            scroll-snap-align: start;
+            min-height: 100px;
+            padding: 10px;
+            margin-bottom: 8px;
         }
     }
 
