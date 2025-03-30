@@ -1,164 +1,175 @@
-// stores/musicStore.ts (modified version)
+// stores/musicStore.ts
 import { get, writable } from "svelte/store";
 import { api } from "$lib/api";
 import { currentGuild } from "$lib/stores/currentGuild";
 import { logger } from "$lib/logger";
 import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
+import { browser } from "$app/environment";
+import { useWebSocket } from "$lib/hooks/useWebSocket";
 
 interface MusicStoreState {
   status: any | null;
-  lastTrackId: string | null;
-  failedFetchCount: number;
-  isPolling: boolean;
+  lastTrackId: string | null; // Track the current track ID to detect changes
+  connectionStatus: "disconnected" | "connecting" | "connected" | "error";
   error: string | null;
   userId: string | null;
 }
 
 function createMusicStore() {
   // Configuration
-  const BASE_DELAY = 3000;
-  const PAUSED_DELAY = 5000;
-  const MAX_DELAY = 60000;
-  const MAX_RETRIES = 10;
+  const RECONNECT_DELAY = 5000;
+  const FALLBACK_POLL_INTERVAL = 3000;
 
-  let pollInterval: NodeJS.Timeout | null = null;
-  let currentPollDelay = BASE_DELAY;
-  let eventSource: EventSource | null = null;
-  let reconnectTimeout: NodeJS.Timeout | null = null;
-  let useSSE = true; // Try Server-Sent Events first, fallback to polling
-
+  // Store state
   const { subscribe, set, update } = writable<MusicStoreState>({
     status: null,
     lastTrackId: null,
-    failedFetchCount: 0,
-    isPolling: false,
+    connectionStatus: "disconnected",
     error: null,
     userId: null
   });
 
-  // Server-Sent Events Connection
-  function connectSSE(userId: string) {
-    if (!useSSE) return; // Skip if SSE is disabled
+  // WebSocket connection
+  let wsConnection: ReturnType<typeof useWebSocket> | null = null;
+  let fallbackPollInterval: NodeJS.Timeout | null = null;
+  let reconnectTimeout: NodeJS.Timeout | null = null;
+
+  // Track if we're using fallback polling
+  let usingFallback = false;
+
+  function startWebSocketConnection(userId: string) {
+    stopConnection(); // Clean up any existing connection
 
     const guildId = get(currentGuild)?.id;
     const instance = get(currentInstance);
 
-    if (!guildId || !userId || !instance) {
-      logger.error("Missing guildId, userId or instance for SSE connection", { guildId, userId, instance });
-      useSSE = false;
-      startPolling(userId);
+    if (!guildId || !instance?.port || !userId || !browser) {
+      logger.error("Missing required parameters for WebSocket connection", { guildId, userId, instance });
       return;
     }
 
+    // Update state
+    update(state => ({
+      ...state,
+      connectionStatus: "connecting",
+      userId
+    }));
+
     try {
-      // Close any existing connection
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-      }
+      // Create proxy WebSocket URL (through our SvelteKit server)
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/api/ws-proxy?guildId=${guildId}&userId=${userId}&port=${instance.port}`;
 
-      // Create event source URL
-      const sseUrl = `/api/music/proxy`;
+      logger.debug("Connecting to WebSocket proxy:", wsUrl);
 
-      // Initialize EventSource for SSE
-      const fetchController = new AbortController();
+      // Create WebSocket connection
+      wsConnection = useWebSocket(wsUrl);
 
-      // Post the connection parameters to the server
-      fetch(sseUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          guildId,
-          userId,
-          instancePort: instance.port
-        }),
-        signal: fetchController.signal
-      }).then(response => {
-        if (!response.ok) {
-          throw new Error(`SSE connection failed: ${response.status}`);
+      // Subscribe to WebSocket status
+      const statusUnsubscribe = wsConnection.status.subscribe(status => {
+        if (status === "open") {
+          logger.debug("WebSocket connected");
+          update(state => ({ ...state, connectionStatus: "connected", error: null }));
+
+          // If we were using fallback, stop it
+          if (usingFallback) {
+            stopFallbackPolling();
+            usingFallback = false;
+          }
+        } else if (status === "error") {
+          logger.error("WebSocket connection error");
+          update(state => ({ ...state, connectionStatus: "error", error: "WebSocket connection error" }));
+
+          // Start fallback polling if not already using it
+          if (!usingFallback) {
+            startFallbackPolling(userId);
+            usingFallback = true;
+          }
+        } else if (status === "closed") {
+          logger.debug("WebSocket connection closed");
+          update(state => ({ ...state, connectionStatus: "disconnected" }));
+
+          // Schedule reconnect
+          scheduleReconnect(userId);
+
+          // Start fallback polling if not already using it
+          if (!usingFallback) {
+            startFallbackPolling(userId);
+            usingFallback = true;
+          }
         }
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error("No readable stream available");
-        }
-
-        // Process the stream
-        const decoder = new TextDecoder();
-
-        function processStream() {
-          reader.read().then(({ done, value }) => {
-            if (done) {
-              logger.debug("SSE stream closed");
-              return;
-            }
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n\n");
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const eventData = JSON.parse(line.substring(6));
-
-                  if (eventData.type === "error") {
-                    logger.error("SSE error:", eventData.message);
-                    continue;
-                  }
-
-                  if (eventData.type === "disconnected") {
-                    scheduleReconnect(userId);
-                    return;
-                  }
-
-                  // Handle normal music status updates
-                  handleMusicStatusUpdate(eventData);
-                } catch (err) {
-                  logger.error("Error parsing SSE data:", err);
-                }
-              }
-            }
-
-            // Continue reading
-            processStream();
-          }).catch(err => {
-            logger.error("Error reading SSE stream:", err);
-            useSSE = false;
-            startPolling(userId);
-          });
-        }
-
-        processStream();
-
-        // Update store state
-        update(state => ({
-          ...state,
-          isPolling: true,
-          failedFetchCount: 0,
-          error: null
-        }));
-      }).catch(err => {
-        logger.error("Failed to establish SSE connection:", err);
-        useSSE = false;
-        startPolling(userId);
       });
 
+      // Subscribe to WebSocket data
+      const dataUnsubscribe = wsConnection.data.subscribe(data => {
+        if (!data) return;
+
+        try {
+          // Get current state for track change detection
+          const state = get({ subscribe });
+          const newTrackId = data?.CurrentTrack?.Index;
+          const prevTrackId = state.lastTrackId;
+
+          // Check if track has changed
+          const trackChanged = newTrackId && newTrackId !== prevTrackId;
+
+          // Update the store
+          update(state => ({
+            ...state,
+            status: data,
+            lastTrackId: newTrackId || state.lastTrackId,
+            error: null
+          }));
+
+          // If track has changed, update the artwork colors
+          if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
+            logger.debug(`Track changed: ${prevTrackId} → ${newTrackId}`);
+            musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
+          }
+        } catch (err) {
+          logger.error("Error processing WebSocket data:", err);
+        }
+      });
+
+      // Handle cleanup
+      return () => {
+        statusUnsubscribe();
+        dataUnsubscribe();
+        if (wsConnection) {
+          wsConnection.disconnect();
+          wsConnection = null;
+        }
+      };
     } catch (err) {
-      logger.error("Failed to establish SSE connection:", err);
-      useSSE = false;
-      startPolling(userId);
+      logger.error("Failed to establish WebSocket connection:", err);
+      update(state => ({
+        ...state,
+        connectionStatus: "error",
+        error: err instanceof Error ? err.message : "Failed to connect"
+      }));
+
+      // Start fallback polling
+      startFallbackPolling(userId);
+      usingFallback = true;
     }
   }
 
-  function handleMusicStatusUpdate(data: any) {
+  // Fallback polling mechanism in case WebSocket fails
+  async function fallbackPoll(userId: string) {
     try {
-      // Get current state to check for track changes
-      const currentState = get({ subscribe });
-      const newTrackId = data?.CurrentTrack?.Index;
-      const prevTrackId = currentState.lastTrackId;
+      const guildId = get(currentGuild)?.id;
+      if (!guildId) {
+        logger.error("Missing guildId for fallback polling");
+        return;
+      }
+
+      const status = await api.getPlayerStatus(guildId, userId);
+
+      // Get current state for track change detection
+      const state = get({ subscribe });
+      const newTrackId = status?.CurrentTrack?.Index;
+      const prevTrackId = state.lastTrackId;
 
       // Check if track has changed
       const trackChanged = newTrackId && newTrackId !== prevTrackId;
@@ -166,18 +177,38 @@ function createMusicStore() {
       // Update the store
       update(state => ({
         ...state,
-        status: data,
-        lastTrackId: newTrackId || state.lastTrackId,
-        error: null
+        status,
+        lastTrackId: newTrackId || state.lastTrackId
       }));
 
       // If track has changed, update the artwork colors
-      if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
-        //logger.debug(`Track changed: ${prevTrackId} → ${newTrackId}`);
-        musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
+      if (trackChanged && status?.CurrentTrack?.Track?.ArtworkUri) {
+        logger.debug(`Track changed (fallback): ${prevTrackId} → ${newTrackId}`);
+        await musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
       }
     } catch (err) {
-      logger.error("Error processing music status update:", err);
+      logger.error("Fallback polling failed:", err);
+    }
+  }
+
+  function startFallbackPolling(userId: string) {
+    if (fallbackPollInterval) {
+      clearInterval(fallbackPollInterval);
+    }
+
+    logger.debug("Starting fallback polling");
+
+    // Initial poll
+    fallbackPoll(userId);
+
+    // Set up interval
+    fallbackPollInterval = setInterval(() => fallbackPoll(userId), FALLBACK_POLL_INTERVAL);
+  }
+
+  function stopFallbackPolling() {
+    if (fallbackPollInterval) {
+      clearInterval(fallbackPollInterval);
+      fallbackPollInterval = null;
     }
   }
 
@@ -188,79 +219,33 @@ function createMusicStore() {
 
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;
-      connectSSE(userId);
-    }, 5000) as unknown as NodeJS.Timeout;
+      startWebSocketConnection(userId);
+    }, RECONNECT_DELAY) as unknown as NodeJS.Timeout;
   }
 
-  // Fallback polling implementation
-  async function fetchStatus(userId: string) {
-    const state = get({ subscribe });
-    if (state.failedFetchCount >= MAX_RETRIES) {
-      logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling`);
-      stopPolling();
-      return;
+  function stopConnection() {
+    // Clean up WebSocket
+    if (wsConnection) {
+      wsConnection.disconnect();
+      wsConnection = null;
     }
 
-    try {
-      const guildId = get(currentGuild)?.id;
-      if (!guildId) {
-        logger.error("Missing guildId for polling", { userId });
-        return;
-      }
+    // Clean up fallback polling
+    stopFallbackPolling();
 
-      const status = await api.getPlayerStatus(guildId, userId);
-      handleMusicStatusUpdate(status);
-
-      // Adjust polling frequency based on player state
-      const optimalDelay = status?.State === 2 ? BASE_DELAY : PAUSED_DELAY;
-
-      // Only change interval if it's significantly different
-      if (Math.abs(currentPollDelay - optimalDelay) > 500) {
-        currentPollDelay = optimalDelay;
-
-        // Reset interval with new delay
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
-        }
-      }
-    } catch (err) {
-      logger.error("Failed to fetch music status:", err);
-
-      update(state => {
-        const newCount = state.failedFetchCount + 1;
-        // Exponential backoff
-        const backoffDelay = Math.min(BASE_DELAY * Math.pow(2, newCount - 1), MAX_DELAY);
-
-        if (newCount >= MAX_RETRIES) {
-          stopPolling();
-          return {
-            ...state,
-            failedFetchCount: newCount,
-            error: "Max retries exceeded"
-          };
-        }
-
-        // Update interval with backoff delay
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = setInterval(() => fetchStatus(userId), backoffDelay);
-          currentPollDelay = backoffDelay;
-        }
-
-        return {
-          ...state,
-          failedFetchCount: newCount,
-          error: err instanceof Error ? err.message : "Failed to fetch music status"
-        };
-      });
+    // Clean up reconnection timer
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
     }
+
+    // Reset fallback flag
+    usingFallback = false;
+
+    update(state => ({ ...state, connectionStatus: "disconnected" }));
   }
 
   function startPolling(userId: string) {
-    // Clean up any existing connections
-    stopPolling();
-
     if (!userId) {
       logger.error("Cannot start polling without userId");
       return;
@@ -274,53 +259,24 @@ function createMusicStore() {
 
     update(state => ({
       ...state,
-      isPolling: true,
-      failedFetchCount: 0,
-      error: null,
       userId
     }));
 
-    // Try SSE connection first
-    if (useSSE) {
-      connectSSE(userId);
-    } else {
-      // Fall back to traditional polling
-      currentPollDelay = BASE_DELAY;
-      fetchStatus(userId);
-      pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
-    }
+    // Start WebSocket connection (which will fall back to polling if needed)
+    startWebSocketConnection(userId);
   }
 
   function stopPolling() {
-    // Clean up EventSource
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
-    }
-
-    // Clean up reconnection timer
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
-    }
-
-    // Clean up polling interval
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
-
-    update(state => ({ ...state, isPolling: false }));
+    stopConnection();
   }
 
   function reset() {
-    stopPolling();
-    useSSE = true; // Reset SSE preference
+    logger.debug("Resetting music store");
+    stopConnection();
     set({
       status: null,
       lastTrackId: null,
-      failedFetchCount: 0,
-      isPolling: false,
+      connectionStatus: "disconnected",
       error: null,
       userId: null
     });
@@ -330,10 +286,10 @@ function createMusicStore() {
     const state = get({ subscribe });
     return {
       state,
-      isPolling: !!pollInterval || !!eventSource,
-      sseState: eventSource ? "connected" : "none",
-      currentDelay: currentPollDelay,
-      guildId: get(currentGuild)?.id
+      usingFallback,
+      wsStatus: wsConnection ? get(wsConnection.status) : null,
+      guildId: get(currentGuild)?.id,
+      instancePort: get(currentInstance)?.port
     };
   }
 
@@ -342,13 +298,7 @@ function createMusicStore() {
     startPolling,
     stopPolling,
     reset,
-    getDebugInfo,
-    // For testing
-    forcePolling: () => {
-      useSSE = false;
-      const userId = get({ subscribe }).userId;
-      if (userId) startPolling(userId);
-    }
+    getDebugInfo
   };
 }
 
