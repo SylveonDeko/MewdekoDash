@@ -11,7 +11,6 @@
   let loading = true;
   let error: string | null = null;
 
-  // Track loading and validity state for each instance
   let instanceStates: Map<string, {
     loading: boolean;
     hasMutualGuild: boolean;
@@ -31,20 +30,29 @@
       "X-Instance-Url": `http://localhost:${instance.port}/botapi`
     };
 
-    const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
+    try {
+      const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
 
-    if (!mutualGuilds || mutualGuilds === undefined)
+      if (!mutualGuilds || mutualGuilds === undefined)
+        return false;
+
+      instanceStates.set(instance.botId.toString(), {
+        loading: false,
+        hasMutualGuild: mutualGuilds.length > 0,
+        error: null
+      });
+      instanceStates = instanceStates;
+
+      return mutualGuilds.length > 0;
+    } catch (err) {
+      instanceStates.set(instance.botId.toString(), {
+        loading: false,
+        hasMutualGuild: false,
+        error: "Failed to check mutual guilds"
+      });
+      instanceStates = instanceStates;
       return false;
-
-    instanceStates.set(instance.botId.toString(), {
-      loading: false,
-      hasMutualGuild: mutualGuilds.length > 0,
-      error: null
-    });
-    instanceStates = instanceStates;
-
-    return mutualGuilds.length > 0;
-
+    }
   }
 
   onMount(async () => {
@@ -52,6 +60,8 @@
       await goto("/api/discord/login");
       return;
     }
+
+    try {
       const response = await api.getBotInstances();
       instances = response;
 
@@ -62,10 +72,15 @@
           currentInstance.set(instances[0]);
           await goto("/dashboard");
         }
-      } else {
+      } else if (instances.length > 0) {
         // Check all instances in parallel
         await Promise.all(instances.map(checkInstanceMutualGuilds));
       }
+    } catch (err) {
+      error = "Failed to load bot instances. Please try again later.";
+    } finally {
+      loading = false;
+    }
   });
 
   async function handleInstanceSelect(instance: BotInstance) {
