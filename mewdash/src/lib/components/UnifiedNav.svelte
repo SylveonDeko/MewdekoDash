@@ -122,7 +122,8 @@
         category: "Management",
         items: [
           { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
-          { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" }
+          { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" },
+          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "💾" }
         ]
       }
     ];
