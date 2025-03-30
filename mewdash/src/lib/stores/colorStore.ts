@@ -1,4 +1,4 @@
-import { writable, get } from "svelte/store";
+import { writable } from "svelte/store";
 import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
 
@@ -28,9 +28,27 @@ const DEFAULT_PALETTE: ColorPalette = {
   gradientEnd: '#ff006e'
 };
 
+// Dark UI constants - representing the background color of your UI
+const DARK_BG: RGB = [18, 24, 40]; // rgb(18, 24, 40) - your dark UI background
+const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
+let currentPalette = DEFAULT_PALETTE;
+
+
+function getCssVars(): string {
+  return `
+    --color-primary: ${currentPalette.primary};
+    --color-secondary: ${currentPalette.secondary};
+    --color-accent: ${currentPalette.accent};
+    --color-text: ${currentPalette.text};
+    --color-muted: ${currentPalette.muted};
+    --gradient-start: ${currentPalette.gradientStart};
+    --gradient-mid: ${currentPalette.gradientMid};
+    --gradient-end: ${currentPalette.gradientEnd};
+  `.trim();
+}
+
 function createColorStore() {
   const store = writable<ColorPalette>(DEFAULT_PALETTE);
-  let currentPalette = DEFAULT_PALETTE;
 
   // Update current palette when store changes
   store.subscribe(value => {
@@ -42,8 +60,8 @@ function createColorStore() {
     const [rs, gs, bs] = [r, g, b].map(c => {
       const channel = c / 255;
       return channel <= 0.03928
-          ? channel / 12.92
-          : Math.pow((channel + 0.055) / 1.055, 2.4);
+        ? channel / 12.92
+        : Math.pow((channel + 0.055) / 1.055, 2.4);
     });
     return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
   }
@@ -127,105 +145,209 @@ function createColorStore() {
     return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
   }
 
-  // Improved contrast adjustment function working in HSL space
-  function adjustForContrast(color: RGB, bgLuminance: number, minContrast = 4.5): RGB {
+  // Improved text color selection for dark UI
+  function getTextColor(backgroundColor: RGB): string {
+    const bgLuminance = getLuminance(...backgroundColor);
+
+    // For dark UI themes, always prefer white text unless the
+    // background is extremely light (ensures good contrast)
+    const isVeryLightBackground = bgLuminance > 0.7;
+
+    // On our dark UI, backgrounds are typically semi-transparent,
+    // so we need to account for the dark background showing through
+    return isVeryLightBackground ? "#000000" : "#ffffff";
+  }
+
+  // Improved contrast adjustment function for dark UI theme context
+  function adjustForContrast(color: RGB, minContrast = 4.5): RGB {
     let [r, g, b] = color;
     let [h, s, l] = rgbToHsl(r, g, b);
     let currentLuminance = getLuminance(r, g, b);
-    let contrast = getContrastRatio(currentLuminance, bgLuminance);
+    let contrast = getContrastRatio(currentLuminance, DARK_BG_LUMINANCE);
 
-    // Determine whether to lighten or darken
-    const shouldLighten = currentLuminance < bgLuminance;
-
-    // If contrast is already good, return the original color
+    // For dark UI, we need to ensure colors are visible against the dark background
     if (contrast >= minContrast) {
       return [r, g, b];
     }
 
-    // First try adjusting saturation to improve contrast
-    // Reduce saturation if lightening, increase if darkening
-    const saturationStep = shouldLighten ? -5 : 5;
-    let newS = s;
+    // For dark UI, we generally need to lighten colors
+    // First try boosting saturation to maintain color vibrancy
+    let newS = Math.min(s + 15, 100);
     let attempts = 0;
 
-    while (contrast < minContrast && newS >= 0 && newS <= 100 && attempts < 10) {
-      newS = Math.max(0, Math.min(100, newS + saturationStep));
+    while (contrast < minContrast && attempts < 5) {
       attempts++;
 
       // Convert back to RGB to check contrast
       const newColor = hslToRgb(h, newS, l);
       const newLuminance = getLuminance(...newColor);
-      contrast = getContrastRatio(newLuminance, bgLuminance);
+      contrast = getContrastRatio(newLuminance, DARK_BG_LUMINANCE);
 
       if (contrast >= minContrast) {
         return newColor;
       }
     }
 
-    // If saturation adjustment didn't work enough, adjust lightness
-    const lightnessStep = shouldLighten ? 5 : -5;
-    let newL = l;
+    // If saturation adjustment didn't work enough, increase lightness
     attempts = 0;
+    let newL = l;
+    const lightnessStep = 5;
 
     while (contrast < minContrast && attempts < 20) {
-      newL = Math.max(0, Math.min(100, newL + lightnessStep));
+      newL = Math.min(95, newL + lightnessStep);
       attempts++;
 
       // Convert back to RGB to check contrast
-      const newColor = hslToRgb(h, newS, newL); // Use the adjusted saturation
+      const newColor = hslToRgb(h, newS, newL);
       const newLuminance = getLuminance(...newColor);
-      contrast = getContrastRatio(newLuminance, bgLuminance);
+      contrast = getContrastRatio(newLuminance, DARK_BG_LUMINANCE);
 
-      // Break if we hit lightness limits
-      if (newL <= 0 || newL >= 100) break;
+      // Break if we hit lightness limits or contrast is good enough
+      if (newL >= 95 || contrast >= minContrast) break;
     }
 
     return hslToRgb(h, newS, newL);
   }
 
-  function getTextColor(backgroundColor: RGB): string {
-    const bgLuminance = getLuminance(...backgroundColor);
-    // For better readability, we'll use a higher contrast threshold for text
-    const whiteContrast = getContrastRatio(1, bgLuminance);
-    const blackContrast = getContrastRatio(0, bgLuminance);
-
-    // For dark UI background, we need to be more aggressive in ensuring light text
-    // Dark text on dark backgrounds is particularly problematic
-    const isLightBackground = bgLuminance > 0.5;
-
-    // Force white text on dark UI unless the background is very light
-    if (!isLightBackground) {
-      // On dark backgrounds, always return white for better readability
-      return '#ffffff';
-    }
-
-    // For light backgrounds, use standard contrast comparison but with higher threshold
-    return whiteContrast >= blackContrast * 1.2 ? '#ffffff' : '#000000';
-  }
-
   function createMutedColor(color: RGB, textColor: string): string {
     const [h, s, l] = rgbToHsl(...color);
 
-    // For dark UI themes, text follows a different contrast pattern
-    // We want muted text that's still readable on dark backgrounds
-
+    // For dark UI, the muted color should be lighter than the background
+    // but less bright than the primary text color
     if (textColor === '#ffffff') {
-      // For dark backgrounds with white text, create a light gray with some color tint
-      // The muted color should be significantly lighter than the background but not pure white
-      const newSaturation = Math.min(s * 0.4, 15); // Very low saturation for muted effect
-      const newLightness = Math.max(Math.min(l + 30, 75), 65); // Ensure it's light enough but not too light
+      // For dark backgrounds with white text, create a light gray with color tint
+      const newSaturation = Math.min(s * 0.6, 30); // Slightly more saturation for better visibility
+      const newLightness = 65; // Keep consistent for all themes
 
       return hslToString(h, newSaturation, newLightness);
     } else {
-      // For light backgrounds with dark text (rare in dark UI), make a darker muted color
+      // For light backgrounds with dark text (rare in dark UI)
       const newSaturation = Math.min(s * 0.5, 20);
-      const newLightness = Math.max(l - 15, 30); // Darker but still visible
+      const newLightness = Math.max(l - 15, 30);
 
       return hslToString(h, newSaturation, newLightness);
     }
   }
 
-  // Improved color extraction with harmony considerations
+  // Enhanced color score function for anime/cartoon images with better accent handling
+  function scoreColor(color: RGB): number {
+    const [h, s, l] = rgbToHsl(...color);
+
+    // Cartoon colors should be vibrant - prioritize saturation
+    const saturationScore = s / 100;
+
+    // We want middle-range lightness for visibility on dark UI
+    // but not too dark (below 30%) or too light (above 80%)
+    const lightnessScore = 1 - Math.abs(l - 55) / 55;
+
+    // Bonus for non-grayscale colors (has actual hue)
+    const colorfulness = s > 20 ? 1 : s / 20;
+
+    // Accent color bonus - certain hue ranges get a boost for anime characters
+    // Yellow-orange-red (eyes, mouth, accents) and blue-purple (hair, clothing) ranges
+    let accentBonus = 0;
+
+    // Check for warm accent colors (amber eyes, orange mouth, pink cheeks)
+    // Hue ranges: yellow (40-60), orange (20-40), red (0-20, 340-360)
+    if ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) {
+      // Higher bonus for more saturated warm colors
+      accentBonus = Math.min(0.5, (s / 100) * 0.5);
+    }
+
+    // Check for cool accent colors (blue hair elements, clothing)
+    // Hue ranges: blue (180-240), purple (240-300)
+    if (h >= 180 && h <= 300) {
+      // Higher bonus for more saturated cool colors
+      accentBonus = Math.min(0.3, (s / 100) * 0.3);
+    }
+
+    // Combine scores with weights prioritizing saturation and accents for anime
+    return (saturationScore * 0.5) + (lightnessScore * 0.2) + (colorfulness * 0.1) + (accentBonus * 0.2);
+  }
+
+  // Enhanced detection for anime/cartoon characters with better handling for light characters
+  function isLikelyCartoon(palette: RGB[]): boolean {
+    // Anime/cartoon images typically have:
+    // 1. Some very saturated colors (even if small areas like eyes)
+    // 2. Distinct color areas rather than gradual transitions
+    // 3. Often have skin tones in limited ranges
+    // 4. For anime specifically, eye colors are often distinctive
+
+    let highSaturationCount = 0;
+    let distinctColorCount = new Set();
+    let hasSkinTones = false;
+    let hasEyeColors = false;
+    let hasAnimeColorPattern = false;
+
+    for (const color of palette) {
+      const [h, s, l] = rgbToHsl(...color);
+
+      // Count high saturation colors - lower threshold to catch more anime images
+      if (s > 50) {
+        highSaturationCount++;
+      }
+
+      // Count distinct hue regions
+      const hueRegion = Math.floor(h / 30);
+      distinctColorCount.add(hueRegion);
+
+      // Check for typical anime skin tones (light peachy colors)
+      if ((h >= 10 && h <= 40) && s < 40 && l > 70) {
+        hasSkinTones = true;
+      }
+
+      // Check for typical anime eye colors
+      // Yellow-gold, amber, red, blue, green, purple
+      if (((h >= 35 && h <= 55) || // Gold/amber
+          (h >= 0 && h <= 10) ||  // Red
+          (h >= 200 && h <= 240) || // Blue
+          (h >= 90 && h <= 150) || // Green
+          (h >= 250 && h <= 290)) && // Purple
+        s > 50 && l > 30 && l < 75) {
+        hasEyeColors = true;
+      }
+
+      // Check for common anime color patterns
+      // White/light hair + colorful eyes + clothing color
+      if ((l > 80 && s < 20) || // White/light hair or skin
+        (s > 70 && l > 50 && l < 65) || // Vibrant eyes/accessories
+        (s > 50 && l > 40 && l < 70)) { // Clothing colors
+        hasAnimeColorPattern = true;
+      }
+    }
+
+    // Enhanced cartoon detection logic
+    // Multiple conditions to catch different anime styles
+    return (highSaturationCount >= 1 && distinctColorCount.size >= 3) || // Traditional detection
+      (hasSkinTones && hasEyeColors) || // Character face detection
+      (hasAnimeColorPattern && distinctColorCount.size >= 2); // Simplified anime pattern
+  }
+
+  // Create optimized cartoon-friendly colors
+  function createCartoonFriendlyColors(dominantHue: number): {
+    primary: RGB;
+    secondary: RGB;
+    accent: RGB;
+  } {
+    // For cartoon/anime images, use a harmonious color scheme based on the dominant hue
+
+    // Create a balanced triad with the dominant hue
+    const primaryHue = dominantHue;
+    const secondaryHue = (dominantHue + 120) % 360;
+    const accentHue = (dominantHue + 240) % 360;
+
+    // Use high saturation and appropriate lightness for visibility on dark backgrounds
+    const saturation = 85;
+    const lightness = 60;
+
+    return {
+      primary: hslToRgb(primaryHue, saturation, lightness),
+      secondary: hslToRgb(secondaryHue, saturation, lightness),
+      accent: hslToRgb(accentHue, saturation, lightness)
+    };
+  }
+
+  // Enhanced color extraction with improved accent handling for anime/cartoon avatars
   async function extractColors(imageUrl: string): Promise<ColorPalette> {
     if (typeof window === "undefined") {
       return DEFAULT_PALETTE;
@@ -250,197 +372,176 @@ function createColorStore() {
       await Promise.race([loadImage, timeout]);
 
       const colorThief = new ColorThief();
-      // Extract more colors for better selection
-      const palette = colorThief.getPalette(img, 5) as RGB[];
+      // Extract more colors for better accent detection
+      const palette = colorThief.getPalette(img, 12) as RGB[]; // Increased from 8 to 12 colors
 
       if (!palette || palette.length < 3) {
         throw new Error("Could not extract enough colors from image");
       }
 
-      // Dark theme background luminance (rgb(18, 24, 40))
-      const BG_LUMINANCE = getLuminance(18, 24, 40);
+      // Check if this is likely a cartoon/anime image
+      const isCartoonImage = isLikelyCartoon(palette);
 
-      // Create a scoring function that prioritizes colorfulness and vibrance
-      // This is critical for anime/cartoon images that have a lot of white but important color accents
-      const colorScore = (color: RGB): number => {
-        const [h, s, l] = rgbToHsl(...color);
+      // For cartoon images, we need special handling
+      if (isCartoonImage) {
+        logger.debug("Detected cartoon/anime style image");
 
-        // Calculate colorfulness score
-        // Higher saturation = more colorful
-        const saturationScore = s / 100;
+        // Analyze extracted colors
+        const colorAnalysis = palette.map(color => {
+          const [h, s, l] = rgbToHsl(...color);
+          return { color, h, s, l, score: scoreColor(color) };
+        });
 
-        // Penalize extremely light or dark colors
-        // We want colors in the middle range for better visibility
-        const lightnessScore = 1 - Math.abs(l - 50) / 50;
+        // Log color analysis for debugging
+        logger.debug("Anime color analysis:",
+          colorAnalysis.map(({ color, h, s, l, score }) =>
+            `${rgbToHex(...color)} (h:${Math.round(h)}° s:${Math.round(s)}% l:${Math.round(l)}%) score:${score.toFixed(2)}`
+          )
+        );
 
-        // Bonus for non-grayscale colors (has actual hue)
-        const hueBonus = s > 15 ? 1 : 0;
+        // Sort colors by score
+        const scoredColors = colorAnalysis.sort((a, b) => b.score - a.score);
 
-        // Combine scores with weights
-        return (saturationScore * 0.6) + (lightnessScore * 0.3) + (hueBonus * 0.1);
-      };
+        // Get top colors (will include accent colors like eyes due to enhanced scoring)
+        const topColors = scoredColors.slice(0, 5); // Take top 5 colors for more diversity
 
-      // Sort colors by our comprehensive scoring function
-      const sortedColors = [...palette].sort((a, b) => {
-        return colorScore(b) - colorScore(a);
-      });
+        // Find warm and cool accent colors
+        const warmAccents = colorAnalysis.filter(({ h, s }) =>
+          ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) && s > 50
+        ).sort((a, b) => b.score - a.score);
+
+        const coolAccents = colorAnalysis.filter(({ h, s }) =>
+          (h >= 180 && h <= 300) && s > 40
+        ).sort((a, b) => b.score - a.score);
+
+        // Ensure we have both warm and cool colors
+        let primary, secondary, accent;
+
+        if (warmAccents.length > 0 && coolAccents.length > 0) {
+          // If we have both warm and cool colors, use them for contrast
+          primary = coolAccents[0].color;
+          secondary = warmAccents[0].color;
+          accent = (warmAccents[1] || coolAccents[1] || scoredColors[2]).color;
+        } else {
+          // Otherwise, use the top scored colors
+          primary = topColors[0].color;
+          secondary = topColors[1].color;
+          accent = topColors[2].color;
+
+          // Check if we have mostly warm or cool colors
+          const [primaryHue] = rgbToHsl(...primary);
+
+          // If palette is heavily skewed to one temperature, create better contrast
+          if ((primaryHue >= 0 && primaryHue <= 60) || (primaryHue >= 300 && primaryHue <= 360)) {
+            // Primary is warm, make secondary cool
+            secondary = hslToRgb((primaryHue + 180) % 360, 85, 60);
+          } else {
+            // Primary is cool, make accent warm
+            accent = hslToRgb((primaryHue + 180) % 360, 85, 60);
+          }
+        }
+
+        // Special handling for anime eye colors - often golden/amber
+        const eyeColorCandidates = colorAnalysis.filter(({ h, s, l }) =>
+          // Yellow/golden hue range typical for anime eyes
+          ((h >= 35 && h <= 55) || (h >= 0 && h <= 30 && s > 70)) &&
+          // Not too dark or light
+          l > 40 && l < 75 &&
+          // Reasonably saturated
+          s > 50
+        );
+
+        // If we found likely eye colors, prioritize them for accent
+        if (eyeColorCandidates.length > 0) {
+          accent = eyeColorCandidates[0].color;
+          logger.debug("Found anime eye color:", rgbToHex(...accent));
+        }
+
+        // Adjust colors for better contrast with dark background
+        const adjustedPrimary = adjustForContrast(primary, 4.5);
+        const adjustedSecondary = adjustForContrast(secondary, 4.5);
+        const adjustedAccent = adjustForContrast(accent, 4.5);
+
+        // Log our choices
+        logger.debug("Selected anime palette colors:", {
+          primary: rgbToHex(...adjustedPrimary),
+          secondary: rgbToHex(...adjustedSecondary),
+          accent: rgbToHex(...adjustedAccent)
+        });
+
+        // Determine text and muted colors
+        const textColor = getTextColor(adjustedPrimary);
+        const muted = createMutedColor(adjustedPrimary, textColor);
+
+        // Create gradient colors with intentional color separation
+        const [primaryHsl, secondaryHsl, accentHsl] = [
+          rgbToHsl(...adjustedPrimary),
+          rgbToHsl(...adjustedSecondary),
+          rgbToHsl(...adjustedAccent)
+        ];
+
+        // Use higher saturation for gradients to make them pop
+        const gradientSaturation = 90;
+        const gradientLightness = 65;
+
+        const gradientStart = hslToString(primaryHsl[0], gradientSaturation, gradientLightness);
+        const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
+        const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
+
+        return {
+          primary: rgbToHex(...adjustedPrimary),
+          secondary: rgbToHex(...adjustedSecondary),
+          accent: rgbToHex(...adjustedAccent),
+          text: textColor,
+          muted: muted,
+          gradientStart,
+          gradientMid,
+          gradientEnd
+        };
+      }
+
+      // Generic image handling (non-cartoon)
+      // Sort colors by score
+      const sortedColors = [...palette].sort((a, b) =>
+        scoreColor(b) - scoreColor(a)
+      );
 
       // Log the top colors for debugging
       logger.debug("Top extracted colors:",
-          sortedColors.slice(0, 3).map(color => {
-            const hex = rgbToHex(...color);
-            const [h, s, l] = rgbToHsl(...color);
-            return `${hex} (h:${Math.round(h)}° s:${Math.round(s)}% l:${Math.round(l)}%)`;
-          })
+        sortedColors.slice(0, 3).map(color => {
+          const hex = rgbToHex(...color);
+          const [h, s, l] = rgbToHsl(...color);
+          return `${hex} (h:${Math.round(h)}° s:${Math.round(s)}% l:${Math.round(l)}%)`;
+        })
       );
 
-      // Use the most saturated color for primary
+      // Use the top colors for our palette
       const primary = sortedColors[0];
+      const secondary = sortedColors[1] || sortedColors[0];
+      const accent = sortedColors[2] || sortedColors[0];
 
-      // Find a color that's harmonious with primary for secondary
-      const [extractedPrimaryHue] = rgbToHsl(...primary);
-      let bestSecondary = sortedColors[1];
-      let bestScore = 0;
+      // Always adjust for contrast with dark background
+      const adjustedPrimary = adjustForContrast(primary);
+      const adjustedSecondary = adjustForContrast(secondary);
+      const adjustedAccent = adjustForContrast(accent);
 
-      // Look for colors that are either analogous or complementary to primary
-      for (let i = 1; i < sortedColors.length; i++) {
-        const [h] = rgbToHsl(...sortedColors[i]);
-        const hueDiff = Math.abs((h - extractedPrimaryHue + 180) % 360 - 180);
+      // Determine text color based on contrast with our dark background
+      const textColor = "#ffffff"; // Almost always white for dark UI
 
-        // Score higher if close to 30° (analogous) or 180° (complementary)
-        const analogousScore = Math.max(0, 1 - Math.abs(hueDiff - 30) / 15);
-        const complementaryScore = Math.max(0, 1 - Math.abs(hueDiff - 180) / 15);
-        const score = Math.max(analogousScore, complementaryScore);
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestSecondary = sortedColors[i];
-        }
-      }
-
-      // For accent, choose a color that contrasts well with both primary and secondary
-      let bestAccent = sortedColors[2];
-      bestScore = 0;
-
-      for (let i = 2; i < sortedColors.length; i++) {
-        const [h, s, l] = rgbToHsl(...sortedColors[i]);
-        const primaryHueDiff = Math.abs((h - extractedPrimaryHue + 180) % 360 - 180);
-        const secondaryHue = rgbToHsl(...bestSecondary)[0];
-        const secondaryHueDiff = Math.abs((h - secondaryHue + 180) % 360 - 180);
-
-        // Score higher if distinct from both primary and secondary
-        // We want accent to stand out, so prioritize colors with hue difference
-        const distinctScore = (Math.min(primaryHueDiff, 360 - primaryHueDiff) +
-            Math.min(secondaryHueDiff, 360 - secondaryHueDiff)) / 360;
-
-        // Prefer more saturated colors for accent
-        const saturationScore = s / 100;
-
-        // Combine scores with weights
-        const score = distinctScore * 0.7 + saturationScore * 0.3;
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestAccent = sortedColors[i];
-        }
-      }
-
-      // If we couldn't find good harmony, create one by adjusting hues
-      if (bestScore < 0.3) {
-        const [pH, pS, pL] = rgbToHsl(...primary);
-
-        // Create a complementary or triadic color scheme
-        const secondaryHueValue = (pH + 180) % 360; // Complementary
-        const accentHueValue = (pH + 120) % 360;    // Triadic
-
-        bestSecondary = hslToRgb(secondaryHueValue, pS, pL);
-        bestAccent = hslToRgb(accentHueValue, pS, pL);
-      }
-
-      // Detect if we're dealing with a predominantly light image
-      // This helps us adjust our approach for very light anime/cartoon avatars
-      const isLightImage = palette.reduce((count, color) => {
-        const lum = getLuminance(...color);
-        return count + (lum > 0.6 ? 1 : 0);
-      }, 0) >= Math.floor(palette.length * 0.6);
-
-      // For anime-style images, we need to ensure we have some color even if the image is predominantly white
-      // Check if we have any vibrant colors at all in our top colors
-      const hasVibrantColors = sortedColors.slice(0, 3).some(color => {
-        const [, s, l] = rgbToHsl(...color);
-        // A color is vibrant if it has reasonable saturation and isn't too light or dark
-        return s > 40 && l > 25 && l < 85;
-      });
-
-      // If we don't have vibrant colors but the image is anime-like, force vibrant colors
-      // This is crucial for white anime characters with small color accents
-      if (!hasVibrantColors && isLightImage) {
-        // If it's an anime character with no vibrant colors, use default anime-friendly palette
-        // Common anime/manga color schemes often use these colors
-        // Brighter, more saturated colors for anime characters
-        const animePrimary = hexToRgb('#5D4EF7');      // Vibrant blue-purple
-        const animeSecondary = hexToRgb('#FF3A8C');    // Vibrant hot pink
-        const animeAccent = hexToRgb('#FFA000');       // Bright golden (for eyes/accents)
-
-        // Use these colors instead of the extracted ones
-        sortedColors.unshift(animeAccent, animeSecondary, animePrimary);
-
-        logger.debug("Using anime-friendly color palette");
-      }
-
-      // For light images, we need more aggressive contrast enhancement
-      const contrastTarget = isLightImage ? 5.5 : 4.5;
-
-      // Adjust colors for contrast with both the main background and card backgrounds
-      // This ensures text is readable everywhere
-      const adjustedPrimary = adjustForContrast(primary, BG_LUMINANCE, contrastTarget);
-      const adjustedSecondary = adjustForContrast(bestSecondary, BG_LUMINANCE, contrastTarget);
-      const adjustedAccent = adjustForContrast(bestAccent, BG_LUMINANCE, contrastTarget);
-
-      // Determine text color based on adjusted primary color
-      const textColor = getTextColor(adjustedPrimary);
-
-      // Create more sophisticated gradient colors with controlled saturation and lightness
+      // Extract HSL values for gradient creation
       const [primaryHsl, secondaryHsl, accentHsl] = [
         rgbToHsl(...adjustedPrimary),
         rgbToHsl(...adjustedSecondary),
         rgbToHsl(...adjustedAccent)
       ];
 
-      // For anime/light images on dark backgrounds, we need more vibrant gradients
-      // Prioritize the actual colors from the image rather than just adjusting lightness/saturation
+      // Create visually distinct gradients
+      const gradientSaturation = 80;
+      const gradientLightness = 60;
 
-      // Extract base hues from our colors
-      // For anime-style images, we need to ensure colors are extremely vibrant
-      // Use a much higher baseline saturation and appropriate lightness
-
-      // Default saturation/lightness values for gradients
-      let gradientSaturation = isLightImage ? 90 : 70;
-      const gradientLightness = isLightImage ? 60 : 55;
-
-      // For anime characters, we need even more dramatic colors for the gradients
-      // If we detected a mostly white/light image, increase saturation further
-      if (isLightImage) {
-        gradientSaturation = 95; // Maximum saturation for anime images
-      }
-
-      // Create gradient colors with better color separation
       const gradientStart = hslToString(primaryHsl[0], gradientSaturation, gradientLightness);
-
-      // Make mid gradient a complementary or analogous color to ensure visible difference
-      const midHue = (primaryHsl[0] + 150) % 360; // Off-complementary for better effect
-      const gradientMid = hslToString(midHue, gradientSaturation, gradientLightness);
-
-      // Make end gradient a triadic color to complete the palette
-      const endHue = (primaryHsl[0] + 210) % 360; // Triadic relationship
-      const gradientEnd = hslToString(endHue, gradientSaturation, gradientLightness);
-
-      // Log the gradient colors for debugging
-      logger.debug("Gradient colors:", {
-        start: gradientStart,
-        mid: gradientMid,
-        end: gradientEnd
-      });
+      const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
+      const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
 
       return {
         primary: rgbToHex(...adjustedPrimary),

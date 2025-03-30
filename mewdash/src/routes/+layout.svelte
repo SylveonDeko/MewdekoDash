@@ -6,9 +6,9 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto, invalidateAll } from "$app/navigation";
-  import {currentInstance} from "$lib/stores/instanceStore.ts";
-  import {colorStore} from "$lib/stores/colorStore.ts";
-  import {logger} from "$lib/logger.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { logger } from "$lib/logger.ts";
 
 
   export let data: LayoutData;
@@ -94,6 +94,6 @@
 
 <UnifiedNav items={navItems} data={data} />
 
-<main class="min-h-screen bg-mewd-dark-grey">
+<main class="min-h-screen bg-mewd-dark-grey w-full overflow-x-hidden">
   <slot />
 </main>

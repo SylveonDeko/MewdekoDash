@@ -15,6 +15,7 @@
     Library,
     Link,
     MessageSquare,
+    Music,
     Server,
     Shield,
     Star,
@@ -201,6 +202,7 @@
 
   $: if ($currentGuild) {
     fetchGuildStuffs();
+    musicStore.startPolling(currentUser.id);
   }
 </script>
 
@@ -246,10 +248,25 @@
         </div>
       {:else}
         <!-- Music Player Section -->
-        {#if musicStatus?.currentTrack}
-          <MusicPlayer
-            {musicStatus}
-          />
+        {#if musicStatus?.CurrentTrack}
+          <div class="w-full overflow-hidden">
+            <MusicPlayer
+              {musicStatus}
+            />
+          </div>
+        {:else}
+          <!-- No Music Placeholder -->
+          <div class="backdrop-blur-sm rounded-2xl border p-6 text-center"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                      border-color: {$colorStore.primary}30;">
+            <Music class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+            <h3 class="text-xl font-semibold" style="color: {$colorStore.text}">
+              No music is currently playing
+            </h3>
+            <p class="mt-2" style="color: {$colorStore.muted}">
+              Join a voice channel and use commands to play music
+            </p>
+          </div>
         {/if}
 
         <!-- Main Grid -->

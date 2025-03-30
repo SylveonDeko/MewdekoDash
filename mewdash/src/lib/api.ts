@@ -651,6 +651,9 @@ export const api = {
       inviteCount: number;
     }>>(`InviteTracking/${guildId}/leaderboard?page=${page || 1}&pageSize=${pageSize || 10}`),
 
+  seek: (guildId: bigint, request: { Position: number }) =>
+    apiRequest<void>(`music/${guildId}/seek`, "POST", request),
+
 // Role States endpoints
   getRoleStateSettings: (guildId: bigint) =>
     apiRequest<{

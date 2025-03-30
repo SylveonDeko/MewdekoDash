@@ -11,7 +11,7 @@
   import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import ColorThief from "colorthief";
+  import { colorStore } from "$lib/stores/colorStore.ts"; // Import the global colorStore
   import {
     AlertTriangle,
     Bot,
@@ -45,97 +45,8 @@
   let greetType: MultiGreetType = MultiGreetType.MultiGreet;
   let isMobile = false;
 
-  // Theme and color management
-  let colors = {
-    primary: '#3b82f6',
-    secondary: '#8b5cf6',
-    accent: '#ec4899',
-    text: '#ffffff',
-    muted: '#9ca3af',
-    gradientStart: '#3b82f6',
-    gradientMid: '#8b5cf6',
-    gradientEnd: '#ec4899'
-  };
-
   $: sortedGreets = [...greets].sort((a, b) => a.id - b.id);
-  $: colorVars = `
-    --color-primary: ${colors.primary};
-    --color-secondary: ${colors.secondary};
-    --color-accent: ${colors.accent};
-    --color-text: ${colors.text};
-    --color-muted: ${colors.muted};
-  `;
-
-  function rgbToHsl(r: number, g: number, b: number) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-      }
-      h /= 6;
-    }
-
-    return [h * 360, s * 100, l * 100];
-  }
-
-  function rgbToHex(r: number, g: number, b: number) {
-    return '#' + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('');
-  }
-
-  function adjustLightness(rgb: number[], lightness: number) {
-    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
-  }
-
-  async function extractColors() {
-    if (!$currentGuild?.icon) return;
-    try {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = $currentInstance?.botAvatar;
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const colorThief = new ColorThief();
-      const dominantColor = colorThief.getColor(img);
-      const palette = colorThief.getPalette(img);
-
-      const primaryHex = rgbToHex(...dominantColor);
-      const secondaryHex = rgbToHex(...palette[1]);
-      const accentHex = rgbToHex(...palette[2]);
-
-      colors = {
-        primary: primaryHex,
-        secondary: secondaryHex,
-        accent: accentHex,
-        text: adjustLightness(dominantColor, 95),
-        muted: adjustLightness(dominantColor, 60),
-        gradientStart: primaryHex,
-        gradientMid: secondaryHex,
-        gradientEnd: accentHex
-      };
-    } catch (err) {
-      logger.error('Failed to extract colors:', err);
-    }
-  }
+  $: colorVars = $colorStore; // Use colorStore's CSS vars
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -320,7 +231,9 @@
   $: if ($currentGuild) {
     fetchGreets();
     fetchChannels();
-    extractColors();
+    if ($currentInstance?.botAvatar) {
+      colorStore.extractFromImage($currentInstance.botAvatar);
+    }
   }
 
   onMount(async () => {
@@ -338,12 +251,12 @@
 <div
   class="min-h-screen p-4 md:p-6"
   style="{colorVars} background: radial-gradient(circle at top,
-    {colors.gradientStart}15 0%,
-    {colors.gradientMid}10 50%,
-    {colors.gradientEnd}05 100%);"
+    {$colorStore.gradientStart}15 0%,
+    {$colorStore.gradientMid}10 50%,
+    {$colorStore.gradientEnd}05 100%);"
 >
   <div class="max-w-7xl mx-auto space-y-8">
-    <h1 class="text-3xl font-bold mb-8" style="color: {colors.text}">MultiGreets Configuration</h1>
+    <h1 class="text-3xl font-bold mb-8" style="color: {$colorStore.text}">MultiGreets Configuration</h1>
 
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -354,12 +267,12 @@
     <!-- Greet Type Section -->
     <section
       class="mb-8 backdrop-blur-sm rounded-xl border p-6"
-      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-             border-color: {colors.primary}30;"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
       transition:fade
     >
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {colors.text}">
-        <Settings class="h-5 w-5" style="color: {colors.primary}" />
+      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+        <Settings class="h-5 w-5" style="color: {$colorStore.primary}" />
         Greet Type Configuration
       </h2>
       <div class="flex flex-col sm:flex-row gap-3">
@@ -372,9 +285,9 @@
             class="flex-1 px-4 py-3 rounded-lg transition-all duration-200"
             class:ring-2={greetType === option.type}
             class:ring-offset-1={greetType === option.type}
-            style="background: {greetType === option.type ? colors.primary : `${colors.primary}20`};
-                   color: {greetType === option.type ? colors.text : colors.muted};
-                   ring-color: {`${colors.primary}50`};
+            style="background: {greetType === option.type ? $colorStore.primary : `${$colorStore.primary}20`};
+                   color: {greetType === option.type ? $colorStore.text : $colorStore.muted};
+                   ring-color: {`${$colorStore.primary}50`};
                    ring-offset-color: #1a1b1e;"
             on:click={() => updateGreetType(option.type)}
           >
@@ -393,22 +306,22 @@
         <div class="relative">
           <div
             class="w-16 h-16 border-4 rounded-full animate-spin"
-            style="border-color: {colors.primary}20; border-top-color: {colors.primary}"
+            style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary}"
           ></div>
-          <span class="mt-4 block text-center" style="color: {colors.muted}">Loading configurations...</span>
+          <span class="mt-4 block text-center" style="color: {$colorStore.muted}">Loading configurations...</span>
         </div>
       </div>
     {:else if error}
       <div
         class="p-6 rounded-xl mb-6"
-        style="background: {colors.accent}10; border: 1px solid {colors.accent}40;"
+        style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;"
         role="alert"
       >
         <div class="flex items-center gap-3">
-          <AlertTriangle class="w-6 h-6" style="color: {colors.accent}" />
-          <div style="color: {colors.accent}">
+          <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+          <div style="color: {$colorStore.accent}">
             <div class="font-semibold text-lg">Error Occurred</div>
-            <div class="text-sm mt-1" style="color: {colors.accent}90">{error}</div>
+            <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
           </div>
         </div>
       </div>
@@ -416,11 +329,11 @@
       <!-- Add New Greet Section -->
       <section
         class="mb-8 backdrop-blur-sm rounded-xl border p-6"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-               border-color: {colors.primary}30;"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+               border-color: {$colorStore.primary}30;"
       >
-        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {colors.text}">
-          <Plus class="h-5 w-5" style="color: {colors.primary}" />
+        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+          <Plus class="h-5 w-5" style="color: {$colorStore.primary}" />
           Add New Greet
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">
@@ -429,9 +342,9 @@
               bind:value={selectedChannel}
               class="w-full h-12 appearance-none rounded-lg border px-4 py-2 pr-10 text-base
                      focus:outline-none focus:ring-2 transition-all duration-200"
-              style="background: {colors.primary}10;
-                     border-color: {colors.primary}30;
-                     color: {colors.text}"
+              style="background: {$colorStore.primary}10;
+                     border-color: {$colorStore.primary}30;
+                     color: {$colorStore.text}"
             >
               <option value="" disabled>Select a channel</option>
               {#each channels as channel}
@@ -442,13 +355,13 @@
             </select>
             <ChevronDown
               class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              style="color: {colors.muted}"
+              style="color: {$colorStore.muted}"
             />
           </div>
           <button
             class="h-12 px-6 rounded-lg font-medium transition-all duration-200
                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            style="background: {colors.primary}; color: {colors.text}"
+            style="background: {$colorStore.primary}; color: {$colorStore.text}"
             disabled={!selectedChannel}
             on:click={addGreet}
           >
@@ -462,16 +375,16 @@
       {#if !greets.length}
         <div
           class="text-center p-8 backdrop-blur-sm rounded-xl border"
-          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-                 border-color: {colors.primary}30;"
+          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                 border-color: {$colorStore.primary}30;"
           transition:fade
         >
           <MessageCircle
             class="h-16 w-16 mx-auto mb-4"
-            style="color: {colors.muted}"
+            style="color: {$colorStore.muted}"
           />
-          <p class="text-lg font-medium" style="color: {colors.text}">No Greets Configured</p>
-          <p class="text-sm mt-2" style="color: {colors.muted}">
+          <p class="text-lg font-medium" style="color: {$colorStore.text}">No Greets Configured</p>
+          <p class="text-sm mt-2" style="color: {$colorStore.muted}">
             Add your first greet message using the form above.
           </p>
         </div>
@@ -480,27 +393,27 @@
           {#each sortedGreets as greet (greet.id)}
             <div
               class="backdrop-blur-sm rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
-              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-                     border-color: {colors.primary}30;"
+              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                     border-color: {$colorStore.primary}30;"
               transition:fade
             >
               <!-- Card Header -->
               <div
                 class="p-4 border-b"
-                style="background: linear-gradient(to bottom, {colors.gradientStart}20, {colors.gradientMid}20);
-                       border-color: {colors.primary}30;"
+                style="background: linear-gradient(to bottom, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
+                       border-color: {$colorStore.primary}30;"
               >
                 <div class="flex justify-between items-start">
                   <div>
                     <h3 class="font-medium flex items-center gap-2">
-                      <MessageCircle class="w-4 h-4" style="color: {colors.primary}" />
+                      <MessageCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
                       <span class="truncate max-w-[180px]">#{greet.channelId}</span>
-                      <span class="text-sm" style="color: {colors.muted}">#{greet.id}</span>
+                      <span class="text-sm" style="color: {$colorStore.muted}">#{greet.id}</span>
                     </h3>
                   </div>
                   <button
                     class="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10"
-                    style="color: {colors.muted}"
+                    style="color: {$colorStore.muted}"
                     on:click={() => removeGreet(greet.id)}
                   >
                     <Trash2 class="w-5 h-5" />
@@ -517,15 +430,15 @@
                       <textarea
                         bind:value={editMessage.message}
                         class="w-full min-h-[120px] p-3 rounded-lg border resize-none focus:ring-2"
-                        style="background: {colors.primary}10;
-                               border-color: {colors.primary}30;
-                               color: {colors.text}"
+                        style="background: {$colorStore.primary}10;
+                               border-color: {$colorStore.primary}30;
+                               color: {$colorStore.text}"
                         placeholder="Enter greeting message..."
                       />
                       <div class="flex gap-2">
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                          style="background: {colors.primary}; color: {colors.text}"
+                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           on:click={() => updateMessage(greet.id, editMessage.message)}
                         >
                           <Check class="w-4 h-4" />
@@ -533,7 +446,7 @@
                         </button>
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                          style="background: {colors.primary}20; color: {colors.text}"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           on:click={() => editMessage = null}
                         >
                           <X class="w-4 h-4" />
@@ -545,25 +458,25 @@
                     <div class="flex justify-between items-start gap-4">
                       <div class="flex-grow">
                         <h4 class="text-sm font-medium mb-2 flex items-center gap-2"
-                            style="color: {colors.text}">
-                          <MessageCircle class="w-4 h-4" style="color: {colors.primary}" />
+                            style="color: {$colorStore.text}">
+                          <MessageCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
                           Message
                         </h4>
                         <div
                           class="text-sm break-words p-3 rounded-lg"
-                          style="background: {colors.primary}10;"
+                          style="background: {$colorStore.primary}10;"
                         >
                           {#if greet.message}
-                            <p class="whitespace-pre-wrap" style="color: {colors.text}">{greet.message}</p>
+                            <p class="whitespace-pre-wrap" style="color: {$colorStore.text}">{greet.message}</p>
                           {:else}
-                            <p style="color: {colors.muted}">No message set</p>
+                            <p style="color: {$colorStore.muted}">No message set</p>
                           {/if}
                         </div>
                       </div>
                       <button
                         class="p-2 rounded-lg transition-all duration-200"
-                        style="background: {colors.primary}10;
-                               color: {colors.muted}"
+                        style="background: {$colorStore.primary}10;
+                               color: {$colorStore.muted}"
                         on:click={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
                       >
                         <Edit2 class="w-4 h-4" />
@@ -582,19 +495,19 @@
                           bind:value={editDeleteTime.time}
                           placeholder="e.g. 1m30s"
                           class="w-full p-3 rounded-lg border focus:ring-2"
-                          style="background: {colors.primary}10;
-                                 border-color: {colors.primary}30;
-                                 color: {colors.text}"
+                          style="background: {$colorStore.primary}10;
+                                 border-color: {$colorStore.primary}30;
+                                 color: {$colorStore.text}"
                         />
                         <Clock
                           class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                          style="color: {colors.muted}"
+                          style="color: {$colorStore.muted}"
                         />
                       </div>
                       <div class="flex gap-2">
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {colors.primary}; color: {colors.text}"
+                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           on:click={() => updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
                           <Check class="w-4 h-4" />
@@ -602,7 +515,7 @@
                         </button>
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {colors.primary}20; color: {colors.text}"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           on:click={() => editDeleteTime = null}
                         >
                           <X class="w-4 h-4" />
@@ -614,26 +527,26 @@
                     <div class="flex justify-between items-center">
                       <div>
                         <h4 class="text-sm font-medium flex items-center gap-2"
-                            style="color: {colors.text}">
-                          <Clock class="w-4 h-4" style="color: {colors.secondary}" />
+                            style="color: {$colorStore.text}">
+                          <Clock class="w-4 h-4" style="color: {$colorStore.secondary}" />
                           Delete After
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.deleteTime}
                             <span class="px-2 py-1 rounded"
-                                  style="background: {colors.secondary}10;
-                                         color: {colors.secondary}">
+                                  style="background: {$colorStore.secondary}10;
+                                         color: {$colorStore.secondary}">
                               {greet.deleteTime}s
                             </span>
                           {:else}
-                            <span style="color: {colors.muted}">Never</span>
+                            <span style="color: {$colorStore.muted}">Never</span>
                           {/if}
                         </p>
                       </div>
                       <button
                         class="p-2 rounded-lg transition-all duration-200"
-                        style="background: {colors.primary}10;
-                               color: {colors.muted}"
+                        style="background: {$colorStore.primary}10;
+                               color: {$colorStore.muted}"
                         on:click={() => editDeleteTime = { id: greet.id, time: String(greet.deleteTime || "") }}
                       >
                         <Edit2 class="w-4 h-4" />
@@ -653,13 +566,13 @@
                             bind:value={editWebhook.name}
                             placeholder="Webhook Name"
                             class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
-                            style="background: {colors.primary}10;
-                                   border-color: {colors.primary}30;
-                                   color: {colors.text}"
+                            style="background: {$colorStore.primary}10;
+                                   border-color: {$colorStore.primary}30;
+                                   color: {$colorStore.text}"
                           />
                           <Bot
                             class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                            style="color: {colors.muted}"
+                            style="color: {$colorStore.muted}"
                           />
                         </div>
                         <div class="relative">
@@ -668,20 +581,20 @@
                             bind:value={editWebhook.avatarUrl}
                             placeholder="Avatar URL (optional)"
                             class="w-full p-3 pl-9 rounded-lg border focus:ring-2"
-                            style="background: {colors.primary}10;
-                                   border-color: {colors.primary}30;
-                                   color: {colors.text}"
+                            style="background: {$colorStore.primary}10;
+                                   border-color: {$colorStore.primary}30;
+                                   color: {$colorStore.text}"
                           />
                           <Users
                             class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                            style="color: {colors.muted}"
+                            style="color: {$colorStore.muted}"
                           />
                         </div>
                       </div>
                       <div class="flex gap-2">
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {colors.primary}; color: {colors.text}"
+                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           on:click={() => updateWebhook(greet.id)}
                         >
                           <Check class="w-4 h-4" />
@@ -689,7 +602,7 @@
                         </button>
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {colors.primary}20; color: {colors.text}"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           on:click={() => editWebhook = null}
                         >
                           <X class="w-4 h-4" />
@@ -701,26 +614,26 @@
                     <div class="flex justify-between items-center">
                       <div>
                         <h4 class="text-sm font-medium flex items-center gap-2"
-                            style="color: {colors.text}">
-                          <Webhook class="w-4 h-4" style="color: {colors.accent}" />
+                            style="color: {$colorStore.text}">
+                          <Webhook class="w-4 h-4" style="color: {$colorStore.accent}" />
                           Webhook
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.webhookUrl}
                             <span class="px-2 py-1 rounded"
-                                  style="background: {colors.accent}10;
-                                         color: {colors.accent}">
+                                  style="background: {$colorStore.accent}10;
+                                         color: {$colorStore.accent}">
                               Configured
                             </span>
                           {:else}
-                            <span style="color: {colors.muted}">Not configured</span>
+                            <span style="color: {$colorStore.muted}">Not configured</span>
                           {/if}
-                          </p>
+                        </p>
                       </div>
                       <button
                         class="p-2 rounded-lg transition-all duration-200"
-                        style="background: {colors.primary}10;
-                               color: {colors.muted}"
+                        style="background: {$colorStore.primary}10;
+                               color: {$colorStore.muted}"
                         on:click={() => editWebhook = {
                           id: greet.id,
                           name: "",
@@ -735,7 +648,7 @@
 
                 <!-- Toggle Controls -->
                 <div class="flex flex-wrap gap-4 pt-4 border-t"
-                     style="border-color: {colors.primary}20">
+                     style="border-color: {$colorStore.primary}20">
                   <label class="relative inline-flex items-center cursor-pointer group">
                     <input
                       type="checkbox"
@@ -746,11 +659,11 @@
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
                               after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
-                         style="background: {greet.greetBots ? colors.primary : `${colors.primary}20`};
-                                ring-color: {colors.primary}50">
+                         style="background: {greet.greetBots ? $colorStore.primary : `${$colorStore.primary}20`};
+                                ring-color: {$colorStore.primary}50">
                     </div>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
-                          style="color: {colors.text}">
+                          style="color: {$colorStore.text}">
                       Greet Bots
                     </span>
                   </label>
@@ -765,11 +678,11 @@
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
                               after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
-                         style="background: {!greet.disabled ? colors.primary : `${colors.primary}20`};
-                                ring-color: {colors.primary}50">
+                         style="background: {!greet.disabled ? $colorStore.primary : `${$colorStore.primary}20`};
+                                ring-color: {$colorStore.primary}50">
                     </div>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
-                          style="color: {colors.text}">
+                          style="color: {$colorStore.text}">
                       Enabled
                     </span>
                   </label>
@@ -784,73 +697,73 @@
 </div>
 
 <style lang="postcss">
-  :global(body) {
-    background-color: #1a202c;
-    color: #ffffff;
-  }
-
-  :global(input[type="checkbox"]) {
-    color-scheme: dark;
-  }
-
-  /* Prevent iOS styling */
-  select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-  }
-
-  /* Prevent blue highlight on iOS */
-  select:focus {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Custom styling for options */
-  option {
-    background-color: #374151;
-    color: white;
-    padding: 0.5rem;
-  }
-
-  /* Add smooth transitions for color changes */
-  [style*="background"],
-  [style*="color"] {
-    @apply transition-colors duration-300;
-  }
-
-  /* Add container queries for better responsive behavior */
-  @container (max-width: 640px) {
-    .music-controls {
-      @apply flex-col items-stretch;
-    }
-  }
-
-  /* Add better card spacing for mobile */
-  @media (max-width: 640px) {
-    :global(.card-grid) {
-      @apply gap-4;
+    :global(body) {
+        background-color: #1a202c;
+        color: #ffffff;
     }
 
-    :global(.card) {
-      @apply p-4;
+    :global(input[type="checkbox"]) {
+        color-scheme: dark;
     }
-  }
 
-  :global(*::-webkit-scrollbar) {
-    @apply w-2;
-  }
+    /* Prevent iOS styling */
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
 
-  :global(*::-webkit-scrollbar-track) {
-    background: var(--color-primary)10;
-    @apply rounded-full;
-  }
+    /* Prevent blue highlight on iOS */
+    select:focus {
+        -webkit-tap-highlight-color: transparent;
+    }
 
-  :global(*::-webkit-scrollbar-thumb) {
-    background: var(--color-primary)30;
-    @apply rounded-full;
-  }
+    /* Custom styling for options */
+    option {
+        background-color: #374151;
+        color: white;
+        padding: 0.5rem;
+    }
 
-  :global(*::-webkit-scrollbar-thumb:hover) {
-    background: var(--color-primary)50;
-  }
+    /* Add smooth transitions for color changes */
+    [style*="background"],
+    [style*="color"] {
+        @apply transition-colors duration-300;
+    }
+
+    /* Add container queries for better responsive behavior */
+    @container (max-width: 640px) {
+        .music-controls {
+            @apply flex-col items-stretch;
+        }
+    }
+
+    /* Add better card spacing for mobile */
+    @media (max-width: 640px) {
+        :global(.card-grid) {
+            @apply gap-4;
+        }
+
+        :global(.card) {
+            @apply p-4;
+        }
+    }
+
+    :global(*::-webkit-scrollbar) {
+        @apply w-2;
+    }
+
+    :global(*::-webkit-scrollbar-track) {
+        background: var(--color-primary) 10;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb) {
+        background: var(--color-primary) 30;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb:hover) {
+        background: var(--color-primary) 50;
+    }
 </style>

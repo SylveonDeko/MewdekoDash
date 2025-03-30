@@ -1,67 +1,67 @@
 // src/lib/types/music.ts
 export interface Track {
-  title: string;
-  identifier: string;
-  author: string;
-  duration: string;
-  isLiveStream: boolean;
-  isSeekable: boolean;
-  uri: string;
-  artworkUri: string;
-  isrc: string | null;
-  sourceName: string;
-  startPosition: string | null;
-  probeInfo: any | null;
-  provider: number;
-  additionalInformation: Record<string, any>;
+  Title: string;
+  Identifier: string;
+  Author: string;
+  Duration: string;
+  IsLiveStream: boolean;
+  IsSeekable: boolean;
+  Uri: string;
+  ArtworkUri: string;
+  Isrc: string | null;
+  SourceName: string;
+  StartPosition: string | null;
+  ProbeInfo: any | null;
+  Provider: number;
+  AdditionalInformation: Record<string, any>;
 }
 
 export interface Requester {
-  id: number;
-  username: string;
-  avatarUrl: string;
+  Id: number;
+  Username: string;
+  AvatarUrl: string;
 }
 
 export interface TrackInfo {
-  index: number;
-  track: Track;
-  requester: Requester;
+  Index: number;
+  Track: Track;
+  Requester: Requester;
 }
 
 export interface Position {
-  systemClock: {
-    utcNow: string;
+  SystemClock: {
+    UtcNow: string;
   };
-  syncedAt: string;
-  unstretchedRelativePosition: string;
-  timeStretchFactor: number;
-  relativePosition: string;
-  unstretchedUnsyncedDuration: string;
-  unsyncedDuration: string;
-  unstretchedPosition: string;
-  position: string;
-  isStretched: boolean;
+  SyncedAt: string;
+  UnstretchedRelativePosition: string;
+  TimeStretchFactor: number;
+  RelativePosition: string;
+  UnstretchedUnsyncedDuration: string;
+  UnsyncedDuration: string;
+  UnstretchedPosition: string;
+  Position: string;
+  IsStretched: boolean;
 }
 
 export interface Filters {
-  bassBoost: boolean;
-  nightcore: boolean;
-  vaporwave: boolean;
-  karaoke: boolean;
-  tremolo: boolean;
-  vibrato: boolean;
-  rotation: boolean;
-  distortion: boolean;
-  channelMix: boolean;
+  BassBoost: boolean;
+  Nightcore: boolean;
+  Vaporwave: boolean;
+  Karaoke: boolean;
+  Tremolo: boolean;
+  Vibrato: boolean;
+  Rotation: boolean;
+  Distortion: boolean;
+  ChannelMix: boolean;
 }
 
 export interface MusicStatus {
-  currentTrack: TrackInfo;
-  queue: TrackInfo[];
-  state: number;
-  volume: number;
-  position: Position;
-  repeatMode: number;
-  filters: Filters;
-  isInVoiceChannel: boolean;
+  CurrentTrack: TrackInfo;
+  Queue: TrackInfo[];
+  State: number;
+  Volume: number;
+  Position: Position;
+  RepeatMode: number;
+  Filters: Filters;
+  IsInVoiceChannel: boolean;
 }

@@ -8,8 +8,7 @@
   import { goto } from "$app/navigation";
   import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
-  import ColorThief from "colorthief";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
   import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2 } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
@@ -25,16 +24,7 @@
   let musicInterval: NodeJS.Timeout;
   let isMobile = false;
 
-  let colors = {
-    primary: "#3b82f6",
-    secondary: "#8b5cf6",
-    accent: "#ec4899",
-    text: "#ffffff",
-    muted: "#9ca3af",
-    gradientStart: "#3b82f6",
-    gradientMid: "#8b5cf6",
-    gradientEnd: "#ec4899"
-  };
+  $: colors = $colorStore;
 
   // Settings based on your MusicPlayerSettings model
   let settings = {
@@ -67,85 +57,6 @@
   }
 
   // Function to convert RGB to HSL
-  function rgbToHsl(r: number, g: number, b: number) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          h = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          h = (b - r) / d + 2;
-          break;
-        case b:
-          h = (r - g) / d + 4;
-          break;
-      }
-      h /= 6;
-    }
-
-    return [h * 360, s * 100, l * 100];
-  }
-
-  // Function to convert RGB to HEX
-  function rgbToHex(r: number, g: number, b: number) {
-    return "#" + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    }).join("");
-  }
-
-  // Function to adjust color lightness
-  function adjustLightness(rgb: number[], lightness: number) {
-    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
-  }
-
-  async function extractColors() {
-    if (!data?.user?.avatar) return;
-    try {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = $currentInstance?.botAvatar;
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const colorThief = new ColorThief();
-      const dominantColor = colorThief.getColor(img);
-      const palette = colorThief.getPalette(img);
-
-      const primaryHex = rgbToHex(...dominantColor);
-      const secondaryHex = rgbToHex(...palette[1]);
-      const accentHex = rgbToHex(...palette[2]);
-
-      colors = {
-        primary: primaryHex,
-        secondary: secondaryHex,
-        accent: accentHex,
-        text: adjustLightness(dominantColor, 95),
-        muted: adjustLightness(dominantColor, 60),
-        gradientStart: primaryHex,
-        gradientMid: secondaryHex,
-        gradientEnd: accentHex
-      };
-    } catch (err) {
-      logger.error("Failed to extract colors:", err);
-    }
-  }
-
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
   }
@@ -223,7 +134,7 @@
     if (!$currentGuild) await goto("/dashboard");
     loading = true;
     try {
-      await Promise.all([fetchSettings(), fetchChannels(), fetchRoles(), extractColors()]);
+      await Promise.all([fetchSettings(), fetchChannels(), fetchRoles()]);
       musicInterval = setInterval(fetchPlaybackStatus, 5000);
       checkMobile();
       if (browser) window.addEventListener("resize", checkMobile);

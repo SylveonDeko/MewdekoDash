@@ -9,9 +9,7 @@
   import Notification from "$lib/components/Notification.svelte";
   import { get } from "svelte/store";
   import type { ChatTriggers } from "$lib/types/models";
-  import ColorThief from "colorthief";
   import type { PageData } from "./$types";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
   import {
     AlertTriangle,
     Check,
@@ -30,20 +28,9 @@
   } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { logger } from "$lib/logger.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
 
   export let data: PageData;
-
-  // Color system
-  let colors = {
-    primary: '#3b82f6',
-    secondary: '#8b5cf6',
-    accent: '#ec4899',
-    text: '#ffffff',
-    muted: '#9ca3af',
-    gradientStart: '#3b82f6',
-    gradientMid: '#8b5cf6',
-    gradientEnd: '#ec4899'
-  };
 
   // Notification variables
   let showNotification = false;
@@ -103,78 +90,6 @@
     Message: 2,
     User: 3,
   };
-
-  // Color system functions
-  function rgbToHsl(r: number, g: number, b: number) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-      }
-      h /= 6;
-    }
-
-    return [h * 360, s * 100, l * 100];
-  }
-
-  function rgbToHex(r: number, g: number, b: number) {
-    return '#' + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('');
-  }
-
-  function adjustLightness(rgb: number[], lightness: number) {
-    const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-    return `hsl(${hsl[0]}, ${hsl[1]}%, ${lightness}%)`;
-  }
-
-  async function extractColors() {
-    if (!data?.user?.avatar) return;
-    try {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = $currentInstance?.botAvatar;
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const colorThief = new ColorThief();
-      const dominantColor = colorThief.getColor(img);
-      const palette = colorThief.getPalette(img);
-
-      const primaryHex = rgbToHex(...dominantColor);
-      const secondaryHex = rgbToHex(...palette[1]);
-      const accentHex = rgbToHex(...palette[2]);
-
-      colors = {
-        primary: primaryHex,
-        secondary: secondaryHex,
-        accent: accentHex,
-        text: adjustLightness(dominantColor, 95),
-        muted: adjustLightness(dominantColor, 60),
-        gradientStart: primaryHex,
-        gradientMid: secondaryHex,
-        gradientEnd: accentHex
-      };
-    } catch (err) {
-      logger.error('Failed to extract colors:', err);
-    }
-  }
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -574,7 +489,7 @@
     newTrigger.guildId = guild.id;
     loading = true;
     try {
-      await Promise.all([loadTriggers(), loadGuildRoles(), extractColors()]);
+      await Promise.all([loadTriggers(), loadGuildRoles()]);
       checkMobile();
       if (browser) window.addEventListener("resize", checkMobile);
     } catch (err) {
@@ -591,6 +506,7 @@
     loadGuildRoles()
   }
 
+  $: colors = $colorStore;
 
   onDestroy(() => {
     if (browser) window.removeEventListener("resize", checkMobile);

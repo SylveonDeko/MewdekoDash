@@ -16,9 +16,9 @@
   });
 </script>
 
-<div class="pt-4 flex">
+<div class="pt-4 flex w-full overflow-x-hidden">
   <!-- Main content -->
-  <div class="flex-1">
+  <div class="flex-1 w-full overflow-x-hidden">
     {#if !$currentInstance}
       <InstanceSelector data="{data}" />
     {:else}
