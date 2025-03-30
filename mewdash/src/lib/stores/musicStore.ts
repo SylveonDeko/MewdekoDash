@@ -57,8 +57,7 @@ function createMusicStore() {
       }
 
       // Create WebSocket URL with guild and user IDs
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//localhost:${get(currentInstance)?.port}/botapi/music/${guildId}/events?userId=${userId}`;
+      const wsUrl = `ws://localhost:${get(currentInstance)?.port}/botapi/music/${guildId}/events?userId=${userId}`;
 
       //logger.debug(`Connecting to WebSocket: ${wsUrl}`);
       webSocket = new WebSocket(wsUrl);
