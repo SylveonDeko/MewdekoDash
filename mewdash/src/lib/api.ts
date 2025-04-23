@@ -69,6 +69,121 @@ type SuggestStateUpdate = {
 
 export const api = {
 
+// XP Management endpoints
+  getXpSettings: (guildId: bigint) =>
+    apiRequest<any>(`xp/${guildId}/settings`),
+
+  updateXpSettings: (guildId: bigint, settings: any) =>
+    apiRequest<any>(`xp/${guildId}/settings`, "POST", settings),
+
+  getUserXpStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      userId: bigint;
+      guildId: bigint;
+      totalXp: number;
+      level: number;
+      levelXp: number;
+      requiredXp: number;
+      rank: number;
+      bonusXp: number;
+      username: string;
+      avatarUrl: string;
+      timeOnLevel: {
+        days: number;
+        hours: number;
+        minutes: number;
+      };
+    }>(`xp/${guildId}/user/${userId}`),
+
+  addUserXp: (guildId: bigint, userId: bigint, amount: number) =>
+    apiRequest<void>(`xp/${guildId}/user/${userId}/add`, "POST", amount),
+
+  resetUserXp: (guildId: bigint, userId: bigint, resetBonusXp: boolean = false) =>
+    apiRequest<void>(`xp/${guildId}/user/${userId}/reset`, "POST", resetBonusXp),
+
+  setUserXp: (guildId: bigint, userId: bigint, amount: number) =>
+    apiRequest<void>(`xp/${guildId}/user/${userId}/set`, "POST", amount),
+
+  getXpLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 10) =>
+    apiRequest<Array<{
+      userId: bigint;
+      guildId: bigint;
+      totalXp: number;
+      level: number;
+      levelXp: number;
+      requiredXp: number;
+      rank: number;
+      username: string;
+      avatarUrl: string;
+    }>>(`xp/${guildId}/leaderboard?page=${page}&pageSize=${pageSize}`),
+
+  getXpRoleRewards: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      level: number;
+      roleId: bigint;
+      roleName: string;
+    }>>(`xp/${guildId}/rewards/roles`),
+
+  addXpRoleReward: (guildId: bigint, level: number, roleId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/rewards/roles`, "POST", { level, roleId }),
+
+  removeXpRoleReward: (guildId: bigint, rewardId: number) =>
+    apiRequest<void>(`xp/${guildId}/rewards/roles/${rewardId}`, "DELETE"),
+
+  getXpCurrencyRewards: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      level: number;
+      amount: number;
+    }>>(`xp/${guildId}/rewards/currency`),
+
+  addXpCurrencyReward: (guildId: bigint, level: number, amount: number) =>
+    apiRequest<void>(`xp/${guildId}/rewards/currency`, "POST", { level, amount }),
+
+  removeXpCurrencyReward: (guildId: bigint, rewardId: number) =>
+    apiRequest<void>(`xp/${guildId}/rewards/currency/${rewardId}`, "DELETE"),
+
+  getXpExcludedChannels: (guildId: bigint) =>
+    apiRequest<Array<bigint>>(`xp/${guildId}/excluded/channels`),
+
+  excludeXpChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/channels`, "POST", channelId),
+
+  includeXpChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/channels/${channelId}`, "DELETE"),
+
+  getXpExcludedRoles: (guildId: bigint) =>
+    apiRequest<Array<bigint>>(`xp/${guildId}/excluded/roles`),
+
+  excludeXpRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/roles`, "POST", roleId),
+
+  includeXpRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`xp/${guildId}/excluded/roles/${roleId}`, "DELETE"),
+
+  getXpTemplate: (guildId: bigint) =>
+    apiRequest<any>(`xp/${guildId}/template`),
+
+  updateXpTemplate: (guildId: bigint, template: any) =>
+    apiRequest<void>(`xp/${guildId}/template`, "POST", template),
+
+  getXpServerStats: (guildId: bigint) =>
+    apiRequest<{
+      totalUsers: number;
+      totalXp: number;
+      averageLevel: number;
+      highestLevel: number;
+      recentActivity: Array<{
+        userId: bigint;
+        username: string;
+        avatarUrl: string;
+        timestamp: string;
+      }>;
+    }>(`xp/${guildId}/stats`),
+
   playTrackAt: (guildId: bigint, index: number) =>
     apiRequest<void>(`music/${guildId}/play-track/${index}`, "POST"),
 

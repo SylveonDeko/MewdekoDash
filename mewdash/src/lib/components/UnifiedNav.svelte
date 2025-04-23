@@ -1,7 +1,7 @@
 <!-- lib/nav/UnifiedNav.svelte -->
 <script lang="ts">
   import { page } from "$app/stores";
-  import { fade, scale, slide } from "svelte/transition";
+  import { fade, slide } from "svelte/transition";
   import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
   import { onDestroy, onMount } from "svelte";
@@ -10,70 +10,10 @@
   import { type ColorPalette, extractColors } from "$lib/colorUtils.ts";
   import { api } from "$lib/api.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { get, writable } from "svelte/store";
+  import { derived, get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
   import { logger } from "$lib/logger.ts";
-
-  // Props
-  export let items: NavItem[] = [];
-  export let data;
-  let guildFetchError: string | null = null;
-
-  let lastSelectedGuild: BigInt | null = null;
-  let instances: BotInstance[] = [];
-  let instancesLoading = true;
-  let instancesError: string | null = null;
-
-  let colors: ColorPalette;
-  let colorVars: string;
-
-  // State
-  let menuOpen = false;
-  let sidebarOpen = false;
-  let dropdownOpen = false;
-  let isMobile = browser ? window.innerWidth < 768 : false;
-  let menuButtonRef: HTMLButtonElement;
-  let menuRef: HTMLDivElement;
-  let adminGuilds: DiscordGuild[] = [];
-  let isFetchingGuilds = false;
-  let resizeTimer: number;
-
-  interface ColorPalette {
-    primary: string;
-    secondary: string;
-    accent: string;
-    text: string;
-    muted: string;
-    gradientStart: string;
-    gradientMid: string;
-    gradientEnd: string;
-  }
-
-  const DEFAULT_PALETTE: ColorPalette = {
-    primary: "#3b82f6",
-    secondary: "#8b5cf6",
-    accent: "#ec4899",
-    text: "#ffffff",
-    muted: "#9ca3af",
-    gradientStart: "#3b82f6",
-    gradientMid: "#8b5cf6",
-    gradientEnd: "#ec4899"
-  };
-
-  const isOwnerStore = writable(false);
-
-  // Computed
-  $: isDashboard = $page.url.pathname.startsWith("/dashboard");
-  $: current = $page.url.pathname;
-  $: computedItems = isDashboard ? buildDashboardItems() : buildMainItems(items);
-
-  $: if (currentGuild) {
-    computedItems = isDashboard ? buildDashboardItems() : buildMainItems(items);
-  }
-
-  $: if ($currentInstance) {
-    fetchGuildsIfReady();
-  }
 
   // Types
   type NavItem = {
@@ -89,11 +29,87 @@
     wrapped: boolean;
     href?: string;
     icon?: string;
-    children?: { title?: string; href: string }[];
+    children?: { title?: string; href: string; icon?: string }[];
   };
 
+  const DEFAULT_PALETTE: ColorPalette = {
+    primary: "#3b82f6",
+    secondary: "#8b5cf6",
+    accent: "#ec4899",
+    text: "#ffffff",
+    muted: "#9ca3af",
+    gradientStart: "#3b82f6",
+    gradientMid: "#8b5cf6",
+    gradientEnd: "#ec4899"
+  };
+
+  // Props
+  export let items: NavItem[] = [];
+  export let data;
+
+  // Stores
+  const isOwnerStore = writable(false);
+  const colorsStore = writable<ColorPalette>(DEFAULT_PALETTE);
+
+  // State
+  let guildFetchError: string | null = null;
+  let lastSelectedGuild: BigInt | null = null;
+  let instances: BotInstance[] = [];
+  let instancesLoading = true;
+  let instancesError: string | null = null;
+  let menuOpen = false;
+  let sidebarOpen = false;
+  let dropdownOpen = false;
+  let isMobile = false;
+  let adminGuilds: DiscordGuild[] = [];
+  let isFetchingGuilds = false;
+  let colorVars: string;
+
+  // Computed
+  $: isDashboard = $page.url.pathname.startsWith("/dashboard");
+  $: current = $page.url.pathname;
+
+  // Derived store for computed items
+  const computedItemsStore = derived(
+    [page, isOwnerStore],
+    ([$page, $isOwner]) => {
+      const isDashboard = $page.url.pathname.startsWith("/dashboard");
+      return isDashboard ? buildDashboardItems($isOwner) : buildMainItems(items);
+    }
+  );
+  $: computedItems = $computedItemsStore;
+
+  // ====== Functions ======
+  function debounce(fn: Function, ms: number) {
+    let timer: number;
+    return (...args: any[]) => {
+      if (browser) {
+        clearTimeout(timer);
+        timer = window.setTimeout(() => fn(...args), ms);
+      }
+    };
+  }
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && (menuOpen || sidebarOpen || dropdownOpen)) {
+      e.preventDefault();
+      closeMobileMenu();
+      closeDropdown();
+    }
+  };
+
+  function handleResize() {
+    isMobile = browser ? window.innerWidth < 768 : false;
+  }
+
+  const debouncedResize = debounce(handleResize, 250);
+
+  function checkMobile() {
+    handleResize();
+  }
+
   // Dashboard items with icons
-  function getDashboardItems() {
+  function getDashboardItems(isOwner: boolean = false) {
     const items = [
       {
         category: "Core",
@@ -106,6 +122,7 @@
         category: "Community",
         items: [
           { title: "AFK", href: "/dashboard/afk", icon: "💤" },
+          { title: "XP", href: "/dashboard/xp", icon: "⭐" },
           { title: "Suggestions", href: "/dashboard/suggestions", icon: "💡" },
           { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" }
         ]
@@ -128,8 +145,7 @@
       }
     ];
 
-    // Add Performance item only if user is owner
-    if ($isOwnerStore) {
+    if (isOwner) {
       items.find(item => item.category === "Management")?.items.push(
         { title: "Performance", href: "/dashboard/performance", icon: "📈" }
       );
@@ -138,39 +154,16 @@
     return items;
   }
 
-
-  async function checkOwnership() {
-    if (!data?.user?.id) return;
-
-    try {
-      const isOwner = await api.isOwner(BigInt(data.user.id));
-      isOwnerStore.set(isOwner);
-    } catch (err) {
-      logger.error("Error checking owner status:", err);
-      isOwnerStore.set(false);
-    }
-  }
-
-  function buildDashboardItems(): ProcessedItem[] {
-    if (!currentGuild) {
+  function buildDashboardItems(isOwner: boolean = false): ProcessedItem[] {
+    if (!get(currentGuild)) {
       return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: "📊" }];
     }
 
-    // Get the dashboard items directly instead of using the reactive variable
-    const items = getDashboardItems();
+    const items = getDashboardItems(isOwner);
 
-    // Flatten the categorized items for mobile view or return a nested structure for desktop
     if (isMobile) {
-      return items.flatMap(category =>
-        category.items.map(item => ({
-          title: item.title,
-          wrapped: false,
-          href: item.href,
-          icon: item.icon
-        }))
-      );
+      return [];
     } else {
-      // For desktop, return categorized items
       return items.map(category => ({
         title: category.category,
         wrapped: true,
@@ -201,10 +194,7 @@
     });
   }
 
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
+  // UI Interaction Functions
   function toggleMenu() {
     if (isDashboard) {
       sidebarOpen = !sidebarOpen;
@@ -229,33 +219,28 @@
     dropdownOpen = !dropdownOpen;
   }
 
-  function debouncedResize() {
-    clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(handleResize, 250);
-  }
-
   function closeDropdown() {
     dropdownOpen = false;
   }
 
-  let guildSearch = "";
-  $: filteredGuilds = adminGuilds.filter(guild =>
-    guild.name.toLowerCase().includes(guildSearch.toLowerCase())
-  );
+  // API and Data Functions
+  async function checkOwnership() {
+    if (!data?.user?.id) return;
 
-  let showQuickSwitcher = false;
-
-  function openQuickSwitcher() {
-    showQuickSwitcher = true;
+    try {
+      const isOwner = await api.isOwner(BigInt(data.user.id));
+      isOwnerStore.set(isOwner);
+    } catch (err) {
+      logger.error("Error checking owner status:", err);
+      isOwnerStore.set(false);
+    }
   }
 
   async function selectGuild(guild: DiscordGuild) {
     if (get(currentGuild) === guild) return;
 
-    // Set the guild in store
     currentGuild.set(guild);
 
-    // Store in localStorage with proper serialization
     if (browser) {
       try {
         localStorage.setItem("lastSelectedGuild", JSON.stringify({
@@ -270,21 +255,21 @@
         logger.error("Failed to save guild to localStorage:", err);
       }
     }
-
-    // Only close dropdown after successful store/save
-    closeDropdown();
   }
 
-  const fetchGuildsIfReady = async () => {
+  async function fetchGuildsIfReady() {
+    if (!get(currentInstance)) return;
+
     isFetchingGuilds = true;
     guildFetchError = null;
     try {
-      console.log("Fetching guilds for user:", data.user.id, "and instance:", $currentInstance.botId);
+      logger.info("Fetching guilds for user:", data.user.id, "and instance:", get(currentInstance).botId);
       const newGuilds = await api.getMutualGuilds(data.user.id);
       adminGuilds = newGuilds || [];
       if (adminGuilds.length === 0) {
         guildFetchError = "No available servers";
       }
+      userAdminGuilds.set(adminGuilds);
     } catch (e) {
       logger.error("Error fetching guilds:", e);
       guildFetchError = "Failed to load servers";
@@ -292,7 +277,7 @@
     } finally {
       isFetchingGuilds = false;
     }
-  };
+  }
 
   async function handleInstanceSelect(instance: BotInstance) {
     currentInstance.set(instance);
@@ -302,23 +287,23 @@
     closeDropdown();
   }
 
-  function handleResize() {
-    isMobile = window.innerWidth < 768;
-  }
-
-  function getGuildIconUrl(guild: DiscordGuild) {
-    if (guild.icon) {
-      const extension = guild.icon.startsWith("a_") ? "gif" : "png";
-      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${extension}`;
-    }
-    return "https://cdn.discordapp.com/embed/avatars/0.png";
-  }
-
   async function updateColors() {
     try {
       if (typeof window === "undefined") {
-        colors = DEFAULT_PALETTE;
+        colorsStore.set(DEFAULT_PALETTE);
         return;
+      }
+
+      if (browser && data?.user?.id) {
+        const cachedColors = localStorage.getItem(`colors_${data.user.id}`);
+        if (cachedColors) {
+          const parsedColors = JSON.parse(cachedColors);
+          if (parsedColors.timestamp && Date.now() - parsedColors.timestamp < 86400000) {
+            colorsStore.set(parsedColors.palette);
+            updateColorVars(parsedColors.palette);
+            return;
+          }
+        }
       }
 
       let imageUrl: string;
@@ -330,96 +315,117 @@
         imageUrl = new URL("/img/Mewdeko.png", window.location.origin).href;
       }
 
-      colors = await extractColors(imageUrl);
+      const newColors = await extractColors(imageUrl);
+      colorsStore.set(newColors);
+      updateColorVars(newColors);
+
+      if (browser && data?.user?.id) {
+        localStorage.setItem(`colors_${data.user.id}`, JSON.stringify({
+          palette: newColors,
+          timestamp: Date.now()
+        }));
+      }
     } catch (err) {
       logger.error("Failed to extract colors:", err);
-      colors = DEFAULT_PALETTE;
+      colorsStore.set(DEFAULT_PALETTE);
+      updateColorVars(DEFAULT_PALETTE);
     }
+  }
 
+  function updateColorVars(colors: ColorPalette) {
     colorVars = `
-    --color-primary: ${colors.primary};
-    --color-secondary: ${colors.secondary};
-    --color-accent: ${colors.accent};
-    --color-text: ${colors.text};
-    --color-muted: ${colors.muted};
-  `;
+      --color-primary: ${colors.primary};
+      --color-secondary: ${colors.secondary};
+      --color-accent: ${colors.accent};
+      --color-text: ${colors.text};
+      --color-muted: ${colors.muted};
+    `;
+  }
+
+  async function initializeInstances() {
+    instancesLoading = true;
+    instancesError = null;
+
+    try {
+      const response = await api.getBotInstances();
+      instances = response;
+
+      if (instances.length === 1) {
+        await handleInstanceSelect(instances[0]);
+      }
+
+      const storedInstance = localStorage.getItem("selectedInstance");
+      if (storedInstance) {
+        const instance = instances.find(
+          i => i.botId === JSON.parse(storedInstance).botId
+        );
+        if (instance) {
+          currentInstance.set(instance);
+        }
+      }
+    } catch (err) {
+      instancesError = "Failed to load instances";
+      logger.error("Error loading instances:", err);
+    } finally {
+      instancesLoading = false;
+    }
+  }
+
+  async function restoreLastGuild() {
+    const stored = localStorage.getItem("lastSelectedGuild");
+    if (stored) {
+      try {
+        const storedGuild = JSON.parse(stored) as DiscordGuild;
+        lastSelectedGuild = storedGuild.id;
+        const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
+        if (guild) {
+          await selectGuild(guild);
+        }
+      } catch (err) {
+        logger.error("Error restoring last guild:", err);
+      }
+    }
   }
 
   onMount(async () => {
     if (browser) {
-      window.addEventListener("keydown", (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-          e.preventDefault();
-          openQuickSwitcher();
-        }
-      });
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("resize", debouncedResize);
 
       if (data?.user) {
         await checkOwnership();
       }
 
-      try {
-        const response = await api.getBotInstances();
-        instances = response;
+      await initializeInstances();
 
-        // If there's only one instance, select it
-        if (instances.length === 1) {
-          await handleInstanceSelect(instances[0]);
+      const unsubscribe = currentInstance.subscribe(value => {
+        if (value) {
+          fetchGuildsIfReady();
         }
+      });
 
-        // Check for stored instance
-        const storedInstance = localStorage.getItem("selectedInstance");
-        if (storedInstance) {
-          const instance = instances.find(
-            i => i.botId === JSON.parse(storedInstance).botId
-          );
-          if (instance) {
-            currentInstance.set(instance);
-          }
-        }
-      } catch (err) {
-        instancesError = "Failed to load instances";
-        logger.error("Error loading instances:", err);
-      } finally {
-        instancesLoading = false;
+      if (get(currentInstance)) {
+        await fetchGuildsIfReady();
+        await restoreLastGuild();
       }
-    }
 
-    const stored = localStorage.getItem("lastSelectedGuild");
-    if (stored) {
-      const storedGuild = JSON.parse(stored) as DiscordGuild;
-      lastSelectedGuild = storedGuild.id;
-      const guild = data.guilds?.find(g => g.id === lastSelectedGuild);
-      if (guild) {
-        await selectGuild(guild);
-      }
-    }
+      checkMobile();
+      await updateColors();
 
-    const storedInstance = localStorage.getItem("selectedInstance");
-    if (storedInstance) {
-      currentInstance.set(JSON.parse(storedInstance));
+      return () => {
+        unsubscribe();
+      };
     }
-
-    checkMobile();
-    await updateColors();
-    window.addEventListener("resize", debouncedResize);
-    handleResize();
   });
 
   onDestroy(() => {
     if (browser) {
       window.removeEventListener("resize", debouncedResize);
-      clearTimeout(resizeTimer);
-      window.removeEventListener("keydown", (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-          e.preventDefault();
-          openQuickSwitcher();
-        }
-      });
+      window.removeEventListener("keydown", handleKeyDown);
     }
   });
 
-  $: if (data.user) {
+  $: if (data.user && browser) {
     updateColors();
   }
 </script>
@@ -428,9 +434,9 @@
   aria-label="Main navigation"
   class="py-4 relative"
   style="{colorVars} background: linear-gradient(135deg,
-    {colors?.gradientStart}10,
-    {colors?.gradientMid}15,
-    {colors?.gradientEnd}10
+    {$colorsStore?.gradientStart}10,
+    {$colorsStore?.gradientMid}15,
+    {$colorsStore?.gradientEnd}10
   );"
 >
   <div class="sm:container flex items-center mx-auto px-4">
@@ -463,7 +469,12 @@
         {#each computedItems as item}
           {#if item.wrapped}
             <div class="relative group">
-              <button class="flex items-center space-x-2 text-white p-2 rounded-md hover:bg-gray-700">
+              <button
+                class="flex items-center space-x-2 text-white p-2 rounded-md hover:bg-opacity-20 transition-colors"
+                style="hover:background-color: {$colorsStore.primary}20; color: {$colorsStore.text};"
+                aria-expanded="false"
+                aria-haspopup="true"
+              >
                 <span>{item.title}</span>
                 <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                   <path
@@ -474,13 +485,21 @@
                 </svg>
               </button>
               <div
-                class="absolute left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+                      border: 1px solid {$colorsStore.primary}30;"
+                role="menu"
+              >
                 {#each item.children || [] as child}
                   <a
                     href={child.href}
-                    class="block text-white p-2 hover:bg-gray-700"
-                    class:bg-yellow-700={current === child.href}
+                    class="block p-2 hover:bg-opacity-20 transition-colors"
+                    style="color: {$colorsStore.text}; hover:background-color: {$colorsStore.primary}20;"
+                    class:bg-opacity-30={current === child.href}
+                    style:background-color={current === child.href ? `${$colorsStore.primary}30` : 'transparent'}
+                    role="menuitem"
                   >
+                    {#if child.icon}<span aria-hidden="true" class="mr-2">{child.icon}</span>{/if}
                     {child.title}
                   </a>
                 {/each}
@@ -489,8 +508,10 @@
           {:else}
             <a
               href={item.href}
-              class="flex items-center space-x-2 text-white p-2 rounded-md hover:bg-gray-700"
-              class:bg-yellow-700={current === item.href}
+              class="flex items-center space-x-2 p-2 rounded-md hover:bg-opacity-20 transition-colors"
+              style="color: {$colorsStore.text}; hover:background-color: {$colorsStore.primary}20;"
+              class:bg-opacity-30={current === item.href}
+              style:background-color={current === item.href ? `${$colorsStore.primary}30` : 'transparent'}
             >
               {#if item.icon}
                 <span aria-hidden="true">{item.icon}</span>
@@ -507,170 +528,136 @@
       {#if !data?.user}
         <form action="/api/discord/login" method="GET" data-sveltekit-reload>
           <button type="submit"
-                  class="rounded-md bg-teal-800 p-2 text-white hover:bg-teal-700 transition-colors">
+                  class="rounded-md p-2 transition-colors"
+                  style="background-color: {$colorsStore.primary}; color: {$colorsStore.text}; hover:background-color: {$colorsStore.secondary};">
             Login
           </button>
         </form>
       {:else}
-        <!-- Desktop User & Guild Display -->
+        <!-- Desktop User & Instance Display -->
         <div class="hidden md:flex relative" use:clickOutside on:clickoutside={closeDropdown}>
           <button
-            class="flex items-center gap-2 p-1 pl-2 pr-3 rounded-lg hover:bg-gray-700/50 transition-colors"
+            class="flex items-center gap-2 p-1 pl-2 pr-3 rounded-lg hover:bg-opacity-20 transition-colors"
+            style="hover:background-color: {$colorsStore.primary}20;"
             on:click={toggleDropdown}
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
+            aria-label="Toggle user menu"
           >
             <!-- User Avatar -->
             <img
-              src={data.user.avatar.startsWith("a_")
-                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`}
+              src={data.user.avatar
+                ? (data.user.avatar.startsWith("a_")
+                  ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                  : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+                : `https://cdn.discordapp.com/embed/avatars/0.png`}
               alt={data.user.username}
-              class="w-10 h-10 rounded-full bg-gray-600"
+              class="w-10 h-10 rounded-full"
+              style="background: {$colorsStore.primary}20;"
             />
 
-            <!-- Guild Display (if in dashboard and guild selected) -->
-            {#if isDashboard}
-              {#if $currentGuild}
-                <div class="flex items-center gap-2 max-w-[150px]">
-                  <img
-                    src={getGuildIconUrl($currentGuild)}
-                    alt=""
-                    class="w-8 h-8 rounded-full"
-                    in:scale|local={{ duration: 300, start: 0.5 }}
-                  />
-                  <span class="text-white font-medium truncate">
-                    {$currentGuild.name}
-                  </span>
-                </div>
-              {:else}
-                <div class="flex items-center gap-2 text-gray-300 hover:text-white">
-                  <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path
-                        d="M5 3a2 2 0 012-2h6a2 2 0 012 2v2h2a2 2 0 012 2v12a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h2V3z" />
-                    </svg>
-                  </div>
-                  <span class="font-medium">Select Server</span>
-                </div>
-              {/if}
-            {/if}
+            <!-- Username and dropdown icon -->
+            <div class="flex flex-col">
+              <span class="text-sm font-medium" style="color: {$colorsStore.text}">
+                {data.user.username}
+              </span>
+            </div>
+
+            <svg
+              class="h-5 w-5 transition-transform"
+              class:rotate-180={dropdownOpen}
+              style="color: {$colorsStore.muted};"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </button>
 
           <!-- Desktop Dropdown -->
           {#if dropdownOpen}
             <div
-              class="absolute right-0 mt-2 w-72 bg-gray-900 rounded-md p-4 flex flex-col space-y-4 shadow-lg z-50"
+              class="absolute right-0 mt-2 w-72 rounded-md p-4 flex flex-col space-y-4 shadow-lg z-50 backdrop-blur-sm"
+              style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+                    border: 1px solid {$colorsStore.primary}30;"
               role="menu"
               transition:slide|local={{ duration: 200 }}
             >
               <!-- User Info -->
               <div class="flex items-center space-x-3">
                 <img
-                  src={data.user.avatar.startsWith("a_")
-                    ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                    : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`}
+                  src={data.user.avatar
+                    ? (data.user.avatar.startsWith("a_")
+                      ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                      : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`}
                   alt={data.user.username}
                   class="w-10 h-10 rounded-full"
                 />
                 <div>
                   <div class="flex items-center space-x-2">
-                    <h2 class="font-bold text-white">{data.user.username}</h2>
+                    <h2 class="font-bold" style="color: {$colorsStore.text};">{data.user.username}</h2>
                     {#if data.user.discriminator !== "0"}
-                      <span class="text-gray-400">#{data.user.discriminator}</span>
+                      <span style="color: {$colorsStore.muted};">#{data.user.discriminator}</span>
                     {/if}
                   </div>
                 </div>
               </div>
 
-              {#if isDashboard}
-                <!-- Instance Selection -->
-                <div class="py-2 border-t border-gray-700">
-                  <div class="text-sm font-medium text-gray-400 mb-2">Bot Instances</div>
-                  <div class="max-h-48 overflow-y-auto">
-                    {#if instancesLoading}
-                      <div class="text-sm text-gray-400 px-2 py-1">Loading instances...</div>
-                    {:else if instancesError}
-                      <div class="text-sm text-red-400 px-2 py-1">{instancesError}</div>
-                    {:else if instances.length === 0}
-                      <div class="text-sm text-gray-400 px-2 py-1">No instances found</div>
-                    {:else}
-                      {#each instances as instance}
-                        <button
-                          class="w-full text-left p-2 hover:bg-gray-800 rounded-md flex items-center space-x-2 transition-all"
-                          class:bg-gray-800={$currentInstance?.botId === instance.botId}
-                          on:click={() => handleInstanceSelect(instance)}
-                        >
-                          <img
-                            src={instance.botAvatar}
-                            alt=""
-                            class="w-6 h-6 rounded-full"
-                          />
-                          <div class="flex flex-col flex-1 min-w-0">
-                            <span class="text-white text-sm truncate">
-                              {instance.botName}
-                            </span>
-                          </div>
-                          {#if !instance.isActive}
-                            <span class="px-1.5 py-0.5 rounded text-xs bg-red-500/10 text-red-500">
-                              Offline
-                            </span>
-                          {/if}
-                        </button>
-                      {/each}
-                    {/if}
-                  </div>
+              <!-- Instance Selection -->
+              <div class="py-2 border-t border-opacity-30" style="border-color: {$colorsStore.primary};">
+                <div class="text-sm font-medium mb-2" style="color: {$colorsStore.muted};">Bot Instances</div>
+                <div class="max-h-48 overflow-y-auto">
+                  {#if instancesLoading}
+                    <div class="text-sm px-2 py-1 flex items-center" style="color: {$colorsStore.muted};">
+                      <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
+                           style="border-color: {$colorsStore.primary}30; border-top-color: {$colorsStore.primary};"></div>
+                      Loading instances...
+                    </div>
+                  {:else if instancesError}
+                    <div class="text-sm px-2 py-1" style="color: {$colorsStore.accent};">{instancesError}</div>
+                  {:else if instances.length === 0}
+                    <div class="text-sm px-2 py-1" style="color: {$colorsStore.muted};">No instances found</div>
+                  {:else}
+                    {#each instances as instance}
+                      <button
+                        class="w-full text-left p-2 rounded-md flex items-center space-x-2 transition-all hover:bg-opacity-20"
+                        style="color: {$colorsStore.text};
+                               hover:background-color: {$colorsStore.primary}20;
+                               background-color: {$currentInstance?.botId === instance.botId ? $colorsStore.primary + '30' : 'transparent'};"
+                        on:click={() => handleInstanceSelect(instance)}
+                        aria-selected={$currentInstance?.botId === instance.botId}
+                      >
+                        <img
+                          src={instance.botAvatar}
+                          alt=""
+                          class="w-6 h-6 rounded-full"
+                        />
+                        <div class="flex flex-col flex-1 min-w-0">
+                          <span class="text-sm truncate">
+                            {instance.botName}
+                          </span>
+                        </div>
+                        {#if !instance.isActive}
+                          <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
+                                style="color: {$colorsStore.accent}; background-color: {$colorsStore.accent}10;">
+                            Offline
+                          </span>
+                        {/if}
+                      </button>
+                    {/each}
+                  {/if}
                 </div>
-
-                <!-- Server Selection in dropdown -->
-                <div class="py-2 border-t border-gray-700">
-                  <div class="text-sm font-medium text-gray-400 mb-2">Your Servers</div>
-                  <button
-                    class="text-sm text-gray-400 hover:text-white transition-colors px-2 py-1"
-                    on:click={openQuickSwitcher}
-                  >
-                    Quick Switch (⌘K)
-                  </button>
-                  <div class="max-h-48 overflow-y-auto">
-                    {#if isFetchingGuilds}
-                      <div class="text-sm text-gray-400 px-2 py-1">Loading...</div>
-                    {:else if guildFetchError}
-                      <div class="text-sm text-gray-400 px-2 py-1">
-                        <span>{guildFetchError}</span>
-                        <button
-                          class="text-xs text-blue-400 hover:text-blue-300 transition-colors ml-2"
-                          on:click={() => fetchGuildsIfReady()}
-                        >
-                          Retry
-                        </button>
-                      </div>
-                    {:else if adminGuilds.length === 0}
-                      <div class="text-sm text-gray-400 px-2 py-1">No available servers</div>
-                    {:else}
-                      {#each adminGuilds as guild, i}
-                        <button
-                          class="w-full text-left p-2 hover:bg-gray-800 rounded-md flex items-center space-x-2 transition-all"
-                          class:bg-gray-800={$currentGuild === guild}
-                          on:click={() => selectGuild(guild)}
-                          in:slide|local={{ duration: 200, delay: i * 50 }}
-                        >
-                          <img
-                            src={getGuildIconUrl(guild)}
-                            alt=""
-                            class="w-6 h-6 rounded-full"
-                          />
-                          <span class="text-white text-sm truncate">
-                          {guild.name}
-                        </span>
-                        </button>
-                      {/each}
-                    {/if}
-                  </div>
-                </div>
-              {/if}
+              </div>
 
               <!-- Logout -->
-              <div class="pt-2 border-t border-gray-700">
+              <div class="pt-2 border-t border-opacity-30" style="border-color: {$colorsStore.primary};">
                 <form
                   action="/api/discord/logout"
                   method="GET"
@@ -678,7 +665,8 @@
                 >
                   <button
                     type="submit"
-                    class="block w-full text-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                    class="block w-full text-center px-4 py-2 rounded-md transition-colors"
+                    style="background-color: {$colorsStore.accent}; color: {$colorsStore.text}; hover:opacity: 0.9;"
                   >
                     Logout
                   </button>
@@ -691,11 +679,14 @@
         <!-- Mobile User Display -->
         <div class="md:hidden flex items-center gap-2">
           <img
-            src={data.user.avatar.startsWith("a_")
-              ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-              : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`}
+            src={data.user.avatar
+              ? (data.user.avatar.startsWith("a_")
+                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+              : `https://cdn.discordapp.com/embed/avatars/0.png`}
             alt={data.user.username}
-            class="w-8 h-8 rounded-full bg-gray-600"
+            class="w-8 h-8 rounded-full"
+            style="background: {$colorsStore.primary}20;"
           />
         </div>
 
@@ -703,7 +694,9 @@
         <button
           aria-controls="mobile-menu"
           aria-expanded={menuOpen || sidebarOpen}
-          class="inline-flex items-center p-2 rounded-lg border border-transparent hover:bg-gray-700/50 transition-colors md:hidden"
+          aria-label="Toggle navigation menu"
+          class="inline-flex items-center p-2 rounded-lg border border-transparent hover:bg-opacity-20 transition-colors md:hidden"
+          style="hover:background-color: {$colorsStore.primary}20; border-color: {$colorsStore.primary}30;"
           on:click={toggleMenu}
         >
           <span class="sr-only">Toggle navigation menu</span>
@@ -712,6 +705,7 @@
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            style="color: {$colorsStore.text};"
           >
             <path
               stroke-linecap="round"
@@ -731,37 +725,48 @@
       class="fixed inset-0 bg-black bg-opacity-50 z-40"
       on:click={closeMobileMenu}
       transition:fade={{ duration: 200 }}
+      aria-hidden="true"
     ></div>
 
     <div
-      class="fixed inset-y-0 right-0 w-72 bg-gray-900 z-50 flex flex-col overflow-hidden"
+      class="fixed inset-y-0 right-0 w-72 z-50 flex flex-col overflow-hidden transition-transform duration-300 backdrop-blur-md"
+      style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+             border-left: 1px solid {$colorsStore.primary}30;"
       class:translate-x-0={menuOpen || sidebarOpen}
       class:translate-x-full={!(menuOpen || sidebarOpen)}
-      transition:slide={{ duration: 300, axis: 'x' }}
+      id="mobile-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mobile-menu-title"
     >
       <!-- Mobile Header -->
-      <div class="p-4 border-b border-gray-800 flex-shrink-0">
+      <div class="p-4 border-b border-opacity-30" style="border-color: {$colorsStore.primary};">
         <div class="flex justify-between items-center">
+          <div id="mobile-menu-title" class="sr-only">Mobile Navigation Menu</div>
           {#if data?.user}
             <div class="flex items-center space-x-3">
               <img
-                src={data.user.avatar?.startsWith("a_")
-                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`}
+                src={data.user.avatar
+                  ? (data.user.avatar.startsWith("a_")
+                    ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                    : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+                  : `https://cdn.discordapp.com/embed/avatars/0.png`}
                 alt={data.user.username}
                 class="w-10 h-10 rounded-full"
               />
               <div>
-                <div class="text-white font-medium">{data.user.username}</div>
+                <div class="font-medium" style="color: {$colorsStore.text};">{data.user.username}</div>
                 {#if data.user.discriminator !== "0"}
-                  <div class="text-gray-400 text-sm">#{data.user.discriminator}</div>
+                  <div style="color: {$colorsStore.muted};" class="text-sm">#{data.user.discriminator}</div>
                 {/if}
               </div>
             </div>
           {/if}
           <button
-            class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800"
+            class="p-2 rounded-lg hover:bg-opacity-20 transition-colors"
+            style="color: {$colorsStore.muted}; hover:background-color: {$colorsStore.primary}20;"
             on:click={closeMobileMenu}
+            aria-label="Close menu"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -772,139 +777,98 @@
 
       <!-- Mobile Navigation Content -->
       <div class="flex-1 overflow-y-auto">
-        {#if isDashboard}
-          <!-- Instance Selection for Dashboard -->
-          <div class="p-4 border-b border-gray-800">
-            <div class="text-sm font-medium text-gray-400 mb-2">Bot Instances</div>
-            <div class="space-y-2">
-              {#if instancesLoading}
-                <div class="text-sm text-gray-400">Loading instances...</div>
-              {:else if instancesError}
-                <div class="text-sm text-red-400">{instancesError}</div>
-              {:else if instances.length === 0}
-                <div class="text-sm text-gray-400">No instances found</div>
-              {:else}
-                {#each instances as instance}
-                  <button
-                    class="w-full text-left p-2 hover:bg-gray-800 rounded-md flex items-center space-x-2 transition-all"
-                    class:bg-gray-800={$currentInstance?.botId === instance.botId}
-                    on:click={() => handleInstanceSelect(instance)}
-                  >
-                    <img
-                      src={instance.botAvatar}
-                      alt=""
-                      class="w-6 h-6 rounded-full"
-                    />
-                    <div class="flex flex-col flex-1 min-w-0">
-                    <span class="text-white text-sm truncate">
-                      {instance.botName}
-                    </span>
-                    </div>
-                    {#if !instance.isActive}
-                    <span class="px-1.5 py-0.5 rounded text-xs bg-red-500/10 text-red-500">
-                      Offline
-                    </span>
-                    {/if}
-                  </button>
-                {/each}
-              {/if}
-            </div>
-          </div>
-
-          <!-- Server Selection for Dashboard -->
-          <div class="p-4 border-b border-gray-800">
-            <div class="text-sm font-medium text-gray-400 mb-2">Your Servers</div>
-            <button
-              class="text-sm text-gray-400 hover:text-white transition-colors mb-2"
-              on:click={() => {
-        openQuickSwitcher();
-        closeMobileMenu();
-      }}
-            >
-              Quick Switch (⌘K)
-            </button>
-            <div class="space-y-2">
-              {#if isFetchingGuilds}
-                <div class="text-sm text-gray-400">Loading...</div>
-              {:else if guildFetchError}
-                <div class="text-sm text-gray-400">
-                  <span>{guildFetchError}</span>
-                  <button
-                    class="text-xs text-blue-400 hover:text-blue-300 transition-colors ml-2"
-                    on:click={() => {
-              fetchGuildsIfReady();
-              closeMobileMenu();
-            }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              {:else if adminGuilds.length === 0}
-                <div class="text-sm text-gray-400">No available servers</div>
-              {:else}
-                {#each adminGuilds as guild}
-                  <button
-                    class="w-full text-left p-2 hover:bg-gray-800 rounded-md flex items-center space-x-2 transition-all"
-                    class:bg-gray-800={$currentGuild?.id === guild.id}
-                    on:click={() => {
-                    selectGuild(guild);
+        <!-- Instance Selection (shown on both mobile dashboard and regular nav) -->
+        <div class="p-4 border-b border-opacity-30" style="border-color: {$colorsStore.primary};">
+          <div class="text-sm font-medium mb-2" style="color: {$colorsStore.muted};">Bot Instances</div>
+          <div class="space-y-2">
+            {#if instancesLoading}
+              <div class="text-sm flex items-center" style="color: {$colorsStore.muted};">
+                <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
+                     style="border-color: {$colorsStore.primary}30; border-top-color: {$colorsStore.primary};"></div>
+                Loading instances...
+              </div>
+            {:else if instancesError}
+              <div class="text-sm" style="color: {$colorsStore.accent};">{instancesError}</div>
+            {:else if instances.length === 0}
+              <div class="text-sm" style="color: {$colorsStore.muted};">No instances found</div>
+            {:else}
+              {#each instances as instance}
+                <button
+                  class="w-full text-left p-2 rounded-md flex items-center space-x-2 transition-all hover:bg-opacity-20 font-extrabold"
+                  style="color: {$colorsStore.text};
+                         hover:background-color: {$colorsStore.primary}20;
+                         background-color: {$currentInstance?.botId === instance.botId ? $colorsStore.primary + '30' : 'transparent'};"
+                  on:click={() => {
+                    handleInstanceSelect(instance);
                     closeMobileMenu();
                   }}
-                  >
-                    <img
-                      src={getGuildIconUrl(guild)}
-                      alt=""
-                      class="w-6 h-6 rounded-full"
-                    />
-                    <span class="text-white text-sm truncate">
-                    {guild.name}
-                  </span>
-                  </button>
-                {/each}
-              {/if}
-            </div>
-          </div>
-        {/if}
-
-        <!-- Navigation Items -->
-        <nav class="p-4 space-y-1">
-          {#each computedItems as item}
-            {#if item.wrapped}
-              <div class="space-y-1">
-                <div class="text-sm font-medium text-gray-400 px-2">{item.title}</div>
-                {#each item.children || [] as child}
-                  <a
-                    href={child.href}
-                    class="block px-2 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                    class:bg-gray-800={current === child.href}
-                    class:text-white={current === child.href}
-                    on:click={closeMobileMenu}
-                  >
-                    {child.title}
-                  </a>
-                {/each}
-              </div>
-            {:else}
-              <a
-                href={item.href}
-                class="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                class:bg-gray-800={current === item.href}
-                class:text-white={current === item.href}
-                style="background: {current === item.href ? colors?.primary + '20' : 'transparent'}"
-                on:click={closeMobileMenu}
-              >
-                {#if item.icon}
-                  <span class="text-lg" aria-hidden="true">{item.icon}</span>
-                {/if}
-                <span>{item.title}</span>
-              </a>
+                  aria-selected={$currentInstance?.botId === instance.botId}
+                >
+                  <img
+                    src={instance.botAvatar}
+                    alt=""
+                    class="w-6 h-6 rounded-full"
+                  />
+                  <div class="flex flex-col flex-1 min-w-0">
+                    <span class="text-sm truncate">
+                      {instance.botName}
+                    </span>
+                  </div>
+                  {#if !instance.isActive}
+                    <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
+                          style="color: {$colorsStore.accent}; background-color: {$colorsStore.accent}10;">
+                      Offline
+                    </span>
+                  {/if}
+                </button>
+              {/each}
             {/if}
-          {/each}
-        </nav>
+          </div>
+        </div>
+
+        <!-- Only show navigation items on non-dashboard pages for mobile -->
+        {#if !isDashboard}
+          <nav class="p-4 space-y-1">
+            {#each computedItems as item}
+              {#if item.wrapped}
+                <div class="space-y-1">
+                  <div class="text-sm font-medium px-2" style="color: {$colorsStore.muted};">{item.title}</div>
+                  {#each item.children || [] as child}
+                    <a
+                      href={child.href}
+                      class="block px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors backdrop-blur-md"
+                      style="color: {$colorsStore.text};
+                    hover:background-color: {$colorsStore.primary}20;
+                    background-color: {current === child.href ? $colorsStore.primary + '30' : 'transparent'};"
+                      on:click={closeMobileMenu}
+                    >
+                      {#if child.icon}<span class="mr-2" aria-hidden="true">{child.icon}</span>{/if}
+                      {child.title}
+                    </a>
+                  {/each}
+                </div>
+              {:else}
+                <a
+                  href={item.href}
+                  class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors backdrop-blur-md"
+                  style="color: {$colorsStore.text};
+                hover:background-color: {$colorsStore.primary}20;
+                background-color: {current === item.href ? $colorsStore.primary + '30' : 'transparent'};"
+                  on:click={closeMobileMenu}
+                >
+                  {#if item.icon}
+                    <span class="text-lg" aria-hidden="true">{item.icon}</span>
+                  {/if}
+                  <span>{item.title}</span>
+                </a>
+              {/if}
+            {/each}
+          </nav>
+        {/if}
       </div>
 
       <!-- Mobile Footer -->
-      <div class="p-4 border-t border-gray-800 flex-shrink-0">
+      <div class="p-4 border-t border-opacity-30" style="border-color: {$colorsStore.primary};">
         <form
           action="/api/discord/logout"
           method="GET"
@@ -912,73 +876,12 @@
         >
           <button
             type="submit"
-            class="block w-full text-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            class="block w-full text-center px-4 py-2 rounded-lg transition-colors"
+            style="background-color: {$colorsStore.accent}; color: {$colorsStore.text}; hover:opacity: 0.9;"
           >
             Logout
           </button>
         </form>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Quick Switcher -->
-  {#if showQuickSwitcher}
-    <div
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      transition:fade
-      on:click|self={() => showQuickSwitcher = false}
-    >
-      <div
-        class="bg-gray-900 rounded-lg p-4 w-full max-w-md shadow-xl"
-        transition:scale
-      >
-        <div class="mb-4">
-          <input
-            type="text"
-            placeholder="Search servers..."
-            class="w-full bg-gray-800 text-white rounded px-4 py-2"
-            bind:value={guildSearch}
-          />
-        </div>
-        <div class="max-h-[50vh] overflow-y-auto">
-          {#if isFetchingGuilds}
-            <div class="text-center p-4 text-gray-400">Loading...</div>
-          {:else if guildFetchError}
-            <div class="text-center p-4 text-gray-400">
-              <span>{guildFetchError}</span>
-              <button
-                class="text-sm text-blue-400 hover:text-blue-300 transition-colors ml-2"
-                on:click={() => {
-            fetchGuildsIfReady();
-            showQuickSwitcher = false;
-          }}
-              >
-                Retry
-              </button>
-            </div>
-          {:else if filteredGuilds.length === 0}
-            <div class="text-center p-4 text-gray-400">
-              {guildSearch ? 'No matches found' : 'No available servers'}
-            </div>
-          {:else}
-            {#each filteredGuilds as guild}
-              <button
-                class="w-full text-left p-2 hover:bg-gray-800 rounded flex items-center gap-3"
-                on:click={() => {
-                selectGuild(guild);
-                showQuickSwitcher = false;
-              }}
-              >
-                <img
-                  src={getGuildIconUrl(guild)}
-                  alt=""
-                  class="w-8 h-8 rounded-full"
-                />
-                <span class="text-white">{guild.name}</span>
-              </button>
-            {/each}
-          {/if}
-        </div>
       </div>
     </div>
   {/if}
@@ -990,37 +893,21 @@
     }
 
     :global(*::-webkit-scrollbar-track) {
-        @apply bg-gray-700 rounded-full;
+        background: rgba(var(--color-primary), 0.1);
+        @apply rounded-full;
     }
 
     :global(*::-webkit-scrollbar-thumb) {
-        @apply bg-gray-600 rounded-full;
+        background: rgba(var(--color-primary), 0.3);
+        @apply rounded-full;
     }
 
     :global(*::-webkit-scrollbar-thumb:hover) {
-        @apply bg-gray-500;
+        background: rgba(var(--color-primary), 0.5);
     }
 
     /* Ensure dropdowns appear above other content */
     .group:hover .absolute {
         z-index: 50;
-    }
-
-    @keyframes guildSelect {
-        0% {
-            transform: scale(0.95);
-            opacity: 0;
-        }
-        50% {
-            transform: scale(1.05);
-        }
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-
-    .guild-select-animation {
-        animation: guildSelect 0.3s ease-out forwards;
     }
 </style>

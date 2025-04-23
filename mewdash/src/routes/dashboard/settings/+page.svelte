@@ -25,6 +25,7 @@
   } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
+  import { writable } from "svelte/store";
 
   export let data: PageData;
   let guildConfig: GuildConfig | null = null;
@@ -34,7 +35,7 @@
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
   let isMobile = false;
-  let changedSettings = new Set<string>();
+  let changedSettings = writable<Set<string>>(new Set());
   let channels: Array<{ id: string; name: string }> = [];
   let roles: Array<{ id: string; name: string }> = [];
   let botStatus: BotStatusModel | null = null;
@@ -73,33 +74,38 @@
   }
 
   function markAsChanged(setting: string) {
-    changedSettings.add(setting);
+    changedSettings.update(set => {
+      const newSet = new Set(set);
+      newSet.add(setting);
+      return newSet;
+    });
   }
 
   async function fetchGuildSettings() {
     try {
       if (!$currentGuild?.id) return;
       const config = await api.getGuildConfig($currentGuild.id);
+      console.log(config);
       guildConfig = config;
 
       // Update local settings
       settings = {
-        prefix: config.Prefix,
-        staffRole: config.StaffRole?.toString() || "0",
-        gameMasterRole: config.GameMasterRole?.toString() || "0",
-        useMessageCount: config.UseMessageCount,
-        minMessageLength: config.MinMessageLength,
-        commandLogChannel: config.CommandLogChannel?.toString() || "0",
-        deleteMessageOnCommand: config.DeleteMessageOnCommand,
-        currencyName: config.CurrencyName,
-        currencyEmoji: config.CurrencyEmoji,
-        autoAssignRoleId: config.AutoAssignRoleId?.toString() || null,
-        memberRole: config.MemberRole?.toString() || "0",
-        commandsChannel: config.CommandLogChannel?.toString() || "0",
-        warningsEnabled: config.WarningsInitialized,
-        warnExpireHours: config.WarnExpireHours,
-        starboardChannel: config.StarboardChannel?.toString() || "0",
-        starboardThreshold: config.Stars || 1
+        prefix: config.prefix,
+        staffRole: config.staffRole?.toString() || "0",
+        gameMasterRole: config.gameMasterRole?.toString() || "0",
+        useMessageCount: config.useMessageCount,
+        minMessageLength: config.minMessageLength,
+        commandLogChannel: config.commandLogChannel?.toString() || "0",
+        deleteMessageOnCommand: config.deleteMessageOnCommand,
+        currencyName: config.currencyName,
+        currencyEmoji: config.currencyEmoji,
+        autoAssignRoleId: config.autoAssignRoleId?.toString() || null,
+        memberRole: config.memberRole?.toString() || "0",
+        commandsChannel: config.commandLogChannel?.toString() || "0",
+        warningsEnabled: config.warningsInitialized,
+        warnExpireHours: config.warnExpireHours,
+        starboardChannel: config.starboardChannel?.toString() || "0",
+        starboardThreshold: config.stars || 1
       };
     } catch (err) {
       logger.error("Failed to fetch guild settings:", err);
@@ -125,28 +131,30 @@
     try {
       if (!$currentGuild?.id || !guildConfig) return;
 
+      // Create updated config with lowercase property names
       const updatedConfig = {
         ...guildConfig,
-        Prefix: settings.prefix,
-        StaffRole: settings.staffRole === "0" ? 0 : BigInt(settings.staffRole),
-        GameMasterRole: settings.gameMasterRole === "0" ? 0 : BigInt(settings.gameMasterRole),
-        UseMessageCount: settings.useMessageCount,
-        MinMessageLength: settings.minMessageLength,
-        CommandLogChannel: settings.commandLogChannel === "0" ? 0 : BigInt(settings.commandLogChannel),
-        DeleteMessageOnCommand: settings.deleteMessageOnCommand,
-        CurrencyName: settings.currencyName,
-        CurrencyEmoji: settings.currencyEmoji,
-        AutoAssignRoleId: settings.autoAssignRoleId ? BigInt(settings.autoAssignRoleId) : null,
-        MemberRole: settings.memberRole === "0" ? 0 : BigInt(settings.memberRole),
-        WarningsInitialized: settings.warningsEnabled,
-        WarnExpireHours: settings.warnExpireHours,
-        StarboardChannel: settings.starboardChannel === "0" ? 0 : BigInt(settings.starboardChannel),
-        Stars: settings.starboardThreshold
+        prefix: settings.prefix,
+        staffRole: settings.staffRole === "0" ? 0 : BigInt(settings.staffRole),
+        gameMasterRole: settings.gameMasterRole === "0" ? 0 : BigInt(settings.gameMasterRole),
+        useMessageCount: settings.useMessageCount,
+        minMessageLength: settings.minMessageLength,
+        commandLogChannel: settings.commandLogChannel === "0" ? 0 : BigInt(settings.commandLogChannel),
+        deleteMessageOnCommand: settings.deleteMessageOnCommand,
+        currencyName: settings.currencyName,
+        currencyEmoji: settings.currencyEmoji,
+        autoAssignRoleId: settings.autoAssignRoleId ? settings.autoAssignRoleId : null,
+        memberRole: settings.memberRole === "0" ? 0 : BigInt(settings.memberRole),
+        warningsInitialized: settings.warningsEnabled,
+        warnExpireHours: settings.warnExpireHours,
+        starboardChannel: settings.starboardChannel === "0" ? 0 : BigInt(settings.starboardChannel),
+        stars: settings.starboardThreshold
       };
 
       await api.updateGuildConfig($currentGuild.id, updatedConfig);
       showNotificationMessage("Settings updated successfully");
-      changedSettings.clear();
+      // Clear changed settings store
+      changedSettings.set(new Set());
     } catch (err) {
       logger.error("Failed to update settings:", err);
       showNotificationMessage("Failed to update settings", "error");

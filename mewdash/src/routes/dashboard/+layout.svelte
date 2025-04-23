@@ -4,11 +4,13 @@
   import { currentInstance } from "$lib/stores/instanceStore";
   import InstanceSelector from "$lib/components/InstanceSelector.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import MobileNavBar from "$lib/components/MobileNavBar.svelte";
 
   export let data;
 
   onMount(() => {
-    const savedInstance = localStorage.getItem('selectedInstance');
+    const savedInstance = localStorage.getItem("selectedInstance");
     if (savedInstance) {
       currentInstance.set(JSON.parse(savedInstance));
     }
@@ -23,6 +25,9 @@
       <InstanceSelector data="{data}" />
     {:else}
       <slot />
+      {#if $currentGuild}
+        <MobileNavBar />
+      {/if}
     {/if}
   </div>
 </div>

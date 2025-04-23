@@ -1,12 +1,13 @@
-import { writable } from "svelte/store";
+import { derived, writable } from "svelte/store";
 import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
+import { browser } from "$app/environment";
 
 // Types
 type RGB = [number, number, number];
 type HSL = [number, number, number];
 
-interface ColorPalette {
+export interface ColorPalette {
   primary: string;
   secondary: string;
   accent: string;
@@ -33,6 +34,9 @@ const DARK_BG: RGB = [18, 24, 40]; // rgb(18, 24, 40) - your dark UI background
 const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
 let currentPalette = DEFAULT_PALETTE;
 
+// Cache for extracted colors
+const colorCache = new Map<string, { palette: ColorPalette, timestamp: number }>();
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
 function getCssVars(): string {
   return `
@@ -353,6 +357,15 @@ function createColorStore() {
       return DEFAULT_PALETTE;
     }
 
+    // Check cache first
+    if (browser && colorCache.has(imageUrl)) {
+      const cached = colorCache.get(imageUrl);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_EXPIRY) {
+        logger.debug("Using cached colors for:", imageUrl);
+        return cached.palette;
+      }
+    }
+
     try {
       const img = new window.Image();
       img.crossOrigin = "Anonymous";
@@ -488,7 +501,7 @@ function createColorStore() {
         const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
         const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
 
-        return {
+        const resultPalette = {
           primary: rgbToHex(...adjustedPrimary),
           secondary: rgbToHex(...adjustedSecondary),
           accent: rgbToHex(...adjustedAccent),
@@ -498,6 +511,16 @@ function createColorStore() {
           gradientMid,
           gradientEnd
         };
+
+        // Cache the result
+        if (browser) {
+          colorCache.set(imageUrl, {
+            palette: resultPalette,
+            timestamp: Date.now()
+          });
+        }
+
+        return resultPalette;
       }
 
       // Generic image handling (non-cartoon)
@@ -543,7 +566,7 @@ function createColorStore() {
       const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
       const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
 
-      return {
+      const resultPalette = {
         primary: rgbToHex(...adjustedPrimary),
         secondary: rgbToHex(...adjustedSecondary),
         accent: rgbToHex(...adjustedAccent),
@@ -553,6 +576,16 @@ function createColorStore() {
         gradientMid,
         gradientEnd
       };
+
+      // Cache the result
+      if (browser) {
+        colorCache.set(imageUrl, {
+          palette: resultPalette,
+          timestamp: Date.now()
+        });
+      }
+
+      return resultPalette;
     } catch (error) {
       logger.error("Error extracting colors:", error);
       return DEFAULT_PALETTE;
@@ -617,8 +650,53 @@ function createColorStore() {
         logger.error('Failed to extract colors:', err);
         store.set(DEFAULT_PALETTE);
       }
+    },
+
+    // Clear the color cache
+    clearCache(): void {
+      colorCache.clear();
     }
   };
 }
 
 export const colorStore = createColorStore();
+
+// Export derived store for CSS variables
+export const colorStyleVars = derived(colorStore, ($colorStore) => {
+  return `
+    --color-primary: ${$colorStore.primary};
+    --color-secondary: ${$colorStore.secondary};
+    --color-accent: ${$colorStore.accent};
+    --color-text: ${$colorStore.text};
+    --color-muted: ${$colorStore.muted};
+    --gradient-start: ${$colorStore.gradientStart};
+    --gradient-mid: ${$colorStore.gradientMid};
+    --gradient-end: ${$colorStore.gradientEnd};
+  `.trim();
+});
+
+// Export derived store for gradient backgrounds
+export const colorGradients = derived(colorStore, ($colorStore) => {
+  return {
+    // Radial gradient for page backgrounds
+    pageBackground: `radial-gradient(circle at top,
+      ${$colorStore.gradientStart}15 0%,
+      ${$colorStore.gradientMid}10 50%,
+      ${$colorStore.gradientEnd}05 100%)`,
+
+    // Linear gradient for cards
+    cardBackground: `linear-gradient(135deg, 
+      ${$colorStore.gradientStart}10, 
+      ${$colorStore.gradientMid}15)`,
+
+    // Button gradient
+    buttonBackground: `linear-gradient(135deg, 
+      ${$colorStore.primary}80, 
+      ${$colorStore.secondary}80)`,
+
+    // Highlight gradient
+    highlightBackground: `linear-gradient(135deg, 
+      ${$colorStore.primary}20, 
+      ${$colorStore.secondary}20)`
+  };
+});
