@@ -15,6 +15,7 @@
     Settings,
     Shield,
     Star,
+    Users,
     ZapOff
   } from "lucide-svelte";
   import { page } from "$app/stores";
@@ -23,6 +24,7 @@
   import { musicStore } from "$lib/stores/musicStore";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
 
   // Define navigation items (main visible buttons)
   const navItems = [
@@ -42,7 +44,8 @@
     { label: "Triggers", icon: MessageSquare, href: "/dashboard/chat-triggers" },
     { label: "Embeds", icon: Link, href: "/dashboard/embedbuilder" },
     { label: "Giveaways", icon: Gift, href: "/dashboard/giveaways" },
-    { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver" }
+    { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver" },
+    { label: "Invites", icon: Users, href: "/dashboard/invites" }
   ];
 
   // State
@@ -204,21 +207,44 @@
                 <div
                   class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 max-w-xs w-screen more-menu rounded-lg shadow-xl backdrop-blur-md"
                   style="max-height: 60vh; overflow-y: auto; margin-left: max(-40vw, -150px);
-                         border: 1px solid {$colorStore.primary}30;"
+           border: 1px solid {$colorStore.primary}30;
+           background: rgba(0, 0, 0, 0.5);"
                   transition:scale|local={{
-                    duration: 200,
-                    start: 0.8,
-                    opacity: 0,
-                    easing: cubicOut
-                  }}
+      duration: 200,
+      start: 0.8,
+      opacity: 0,
+      easing: cubicOut
+    }}
                 >
-                  <div class="grid grid-cols-2 gap-1 p-1 backdrop-blur-md">
+                  <div class="grid grid-cols-2 gap-1 p-1 backdrop-blur-md" style="background: rgba(0, 0, 0, 0.3);">
                     {#each moreItems as moreItem, j}
                       <a
                         href={moreItem.href}
+                        data-sveltekit-preload-data="hover"
+                        data-sveltekit-noscroll
                         class="flex flex-col items-center gap-1 px-2 py-3 hover:bg-opacity-20 transition-colors rounded-lg text-center backdrop-blur-md"
                         style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};"
                         in:slide|local={{ delay: j * 50, duration: 200 }}
+                        on:click|preventDefault={(e) => {
+            if ($currentGuild) {
+              if (browser) {
+                try {
+                  localStorage.setItem("lastSelectedGuild", JSON.stringify({
+                    id: $currentGuild.id.toString(),
+                    name: $currentGuild.name,
+                    icon: $currentGuild.icon,
+                    owner: $currentGuild.owner,
+                    permissions: $currentGuild.permissions,
+                    features: $currentGuild.features
+                  }));
+                } catch (err) {
+                  console.error("Error storing guild:", err);
+                }
+              }
+            }
+            goto(moreItem.href);
+            showMoreMenu = false;
+          }}
                       >
                         <svelte:component this={moreItem.icon} size={20} />
                         <span class="text-xs whitespace-normal">{moreItem.label}</span>
@@ -227,6 +253,7 @@
                   </div>
                 </div>
               {/if}
+
             </button>
           {:else}
             <!-- Regular nav item -->

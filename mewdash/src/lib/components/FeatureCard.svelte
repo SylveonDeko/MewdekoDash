@@ -79,24 +79,32 @@
 
   {#if !isActive && showTooltip}
     <div
-      class="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-800 rounded-lg p-3 shadow-xl max-w-xs text-center"
+      class="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 rounded-lg px-4 py-3 shadow-xl
+             w-auto max-w-[200px] min-w-[150px] text-center backdrop-blur-md border"
+      style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.9));
+             border-color: {$colorStore.primary}50;"
       transition:scale={{ duration: 200, start: 0.8 }}
       on:mouseleave={closeTooltip}
     >
-      <div class="text-sm mb-2" style="color: {$colorStore.text}">{inactiveMessage}</div>
+      <div class="text-sm mb-3" style="color: {$colorStore.text}">{inactiveMessage}</div>
 
       {#if href}
         <a
           {href}
-          class="text-xs py-1 px-2 rounded inline-block"
-          style="background: {$colorStore.primary}30; color: {$colorStore.primary}"
+          class="text-xs py-1.5 px-3 rounded inline-block transition-colors duration-200"
+          style="background: {$colorStore.primary}40;
+                 color: {$colorStore.text};
+                 border: 1px solid {$colorStore.primary}50;
+                 hover:background-color: {$colorStore.primary}60;"
         >
           Configure
         </a>
       {/if}
 
       <div
-        class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-800 rotate-45"
+        class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 rotate-45 border-b border-r"
+        style="background: rgba(0,0,0,0.9);
+               border-color: {$colorStore.primary}50;"
       ></div>
     </div>
   {/if}
@@ -104,11 +112,17 @@
   {#if isActive && description && href}
     <!-- Info tooltip on hover for active features -->
     <div
-      class="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-800 rounded-lg p-3 shadow-xl max-w-xs text-center opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+      class="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 rounded-lg px-4 py-3 shadow-xl
+             w-auto max-w-[220px] min-w-[180px] text-center opacity-0 invisible group-hover:opacity-100
+             group-hover:visible transition-all duration-200 backdrop-blur-md border"
+      style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.9));
+             border-color: {$colorStore.primary}50;"
     >
       <div class="text-sm" style="color: {$colorStore.text}">{description}</div>
       <div
-        class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-800 rotate-45"
+        class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 rotate-45 border-b border-r"
+        style="background: rgba(0,0,0,0.9);
+               border-color: {$colorStore.primary}50;"
       ></div>
     </div>
   {/if}

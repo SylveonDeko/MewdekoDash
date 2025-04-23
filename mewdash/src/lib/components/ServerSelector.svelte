@@ -36,6 +36,7 @@
 
   function handleSelect(guild: DiscordGuild) {
     onSelect(guild);
+    currentGuild.set(guild);
     closeDropdown();
     if (browser) {
       hasEverSelectedServer = true;

@@ -11,6 +11,7 @@ import type {
   MultiGreetType,
   PermissionCache,
   Permissionv2,
+  Starboard,
   SuggestionsModel
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
@@ -852,6 +853,25 @@ export const api = {
   setUserRoles: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
     apiRequest<void>(`RoleStates/${guildId}/user/${userId}/set-roles`, "POST", roleIds),
 
+  toggleClearOnBan: (guildId: bigint, roleStateSettings: any) =>
+    apiRequest<boolean>(`RoleStates/${guildId}/clear-on-ban`, "POST", {
+      clearOnBan: !roleStateSettings.clearOnBan
+    }),
+
+  toggleIgnoreBots: (guildId: bigint, roleStateSettings: any) =>
+    apiRequest<boolean>(`RoleStates/${guildId}/ignore-bots`, "POST", {
+      ignoreBots: !roleStateSettings.ignoreBots
+    }),
+
+  updateRoleStateSettings: (guildId: bigint, settings: any) =>
+    apiRequest<void>(`RoleStates/${guildId}/settings`, "POST", settings),
+
+  saveAllUserRoleStates: (guildId: bigint) =>
+    apiRequest<{
+      savedCount: number;
+      errorMessage: string;
+    }>(`RoleStates/${guildId}/save-all`, "POST"),
+
 // Role Greet endpoints
   getRoleGreets: (guildId: bigint, roleId: bigint) =>
     apiRequest<Array<{
@@ -910,5 +930,41 @@ export const api = {
     apiRequest<void>(`JoinLeave/${guildId}/join-color`, "POST", color),
 
   setLeaveColor: (guildId: bigint, color: number) =>
-    apiRequest<void>(`JoinLeave/${guildId}/leave-color`, "POST", color)
+    apiRequest<void>(`JoinLeave/${guildId}/leave-color`, "POST", color),
+
+  getStarboards: (guildId: bigint) =>
+    apiRequest<Array<Starboard>>(`Starboard/${guildId}/all`),
+
+  createStarboard: (guildId: bigint, channelId: bigint, emote: string, threshold: number) =>
+    apiRequest<number>(`Starboard/${guildId}`, "POST", { channelId, emote, threshold }),
+
+  deleteStarboard: (guildId: bigint, starboardId: number) =>
+    apiRequest<void>(`Starboard/${guildId}/${starboardId}`, "DELETE"),
+
+  setAllowBots: (guildId: bigint, starboardId: number, allowed: boolean) =>
+    apiRequest<boolean>(`Starboard/${guildId}/${starboardId}/allow-bots`, "POST", allowed),
+
+  setRemoveOnDelete: (guildId: bigint, starboardId: number, removeOnDelete: boolean) =>
+    apiRequest<boolean>(`Starboard/${guildId}/${starboardId}/remove-on-delete`, "POST", removeOnDelete),
+
+  setRemoveOnClear: (guildId: bigint, starboardId: number, removeOnClear: boolean) =>
+    apiRequest<boolean>(`Starboard/${guildId}/${starboardId}/remove-on-clear`, "POST", removeOnClear),
+
+  setRemoveBelowThreshold: (guildId: bigint, starboardId: number, removeBelowThreshold: boolean) =>
+    apiRequest<boolean>(`Starboard/${guildId}/${starboardId}/remove-below-threshold`, "POST", removeBelowThreshold),
+
+  setRepostThreshold: (guildId: bigint, starboardId: number, threshold: number) =>
+    apiRequest<number>(`Starboard/${guildId}/${starboardId}/repost-threshold`, "POST", threshold),
+
+  setStarThreshold: (guildId: bigint, starboardId: number, threshold: number) =>
+    apiRequest<number>(`Starboard/${guildId}/${starboardId}/star-threshold`, "POST", threshold),
+
+  setUseBlacklist: (guildId: bigint, starboardId: number, useBlacklist: boolean) =>
+    apiRequest<boolean>(`Starboard/${guildId}/${starboardId}/use-blacklist`, "POST", useBlacklist),
+
+  toggleChannel: (guildId: bigint, starboardId: number, channelId: bigint) =>
+    apiRequest<{
+      wasAdded: boolean;
+      config: Starboard
+    }>(`Starboard/${guildId}/${starboardId}/toggle-channel`, "POST", channelId)
 };

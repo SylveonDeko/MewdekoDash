@@ -711,7 +711,7 @@
               title="Role States"
               isActive={guildFeatures.roleStates}
               description={featureDescriptions.roleStates}
-              href="/dashboard/permissions"
+              href="/dashboard/rolestates"
               animationDelay={50}
             />
 
@@ -721,7 +721,7 @@
               title="Role Greets"
               isActive={guildFeatures.roleGreets}
               description={featureDescriptions.roleGreets}
-              href="/dashboard/multigreets"
+              href="/dashboard/rolegreets"
               animationDelay={100}
             />
 

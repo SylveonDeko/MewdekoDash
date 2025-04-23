@@ -14,6 +14,7 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
   import { logger } from "$lib/logger.ts";
+  import { goto } from "$app/navigation";
 
   // Types
   type NavItem = {
@@ -64,6 +65,7 @@
   let adminGuilds: DiscordGuild[] = [];
   let isFetchingGuilds = false;
   let colorVars: string;
+  let initialized = false;
 
   // Computed
   $: isDashboard = $page.url.pathname.startsWith("/dashboard");
@@ -71,8 +73,8 @@
 
   // Derived store for computed items
   const computedItemsStore = derived(
-    [page, isOwnerStore],
-    ([$page, $isOwner]) => {
+    [page, currentGuild, isOwnerStore],
+    ([$page, $currentGuild, $isOwner]) => {
       const isDashboard = $page.url.pathname.startsWith("/dashboard");
       return isDashboard ? buildDashboardItems($isOwner) : buildMainItems(items);
     }
@@ -124,7 +126,10 @@
           { title: "AFK", href: "/dashboard/afk", icon: "💤" },
           { title: "XP", href: "/dashboard/xp", icon: "⭐" },
           { title: "Suggestions", href: "/dashboard/suggestions", icon: "💡" },
-          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" }
+          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" },
+          { title: "Invites", href: "/dashboard/invites", icon: "👥" },
+          { title: "Role Greets", href: "/dashboard/rolegreets", icon: "🏷️" },
+          { title: "Role States", href: "/dashboard/rolestates", icon: "🔄" }
         ]
       },
       {
@@ -258,7 +263,10 @@
   }
 
   async function fetchGuildsIfReady() {
-    if (!get(currentInstance)) return;
+    if (!get(currentInstance)) {
+      logger.debug("No current instance, skipping guild fetch");
+      return;
+    }
 
     isFetchingGuilds = true;
     guildFetchError = null;
@@ -266,10 +274,21 @@
       logger.info("Fetching guilds for user:", data.user.id, "and instance:", get(currentInstance).botId);
       const newGuilds = await api.getMutualGuilds(data.user.id);
       adminGuilds = newGuilds || [];
+
       if (adminGuilds.length === 0) {
         guildFetchError = "No available servers";
       }
+
       userAdminGuilds.set(adminGuilds);
+      logger.debug("Guilds fetched successfully:", adminGuilds.length);
+
+      if (initialized && lastSelectedGuild) {
+        const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
+        if (guild) {
+          await selectGuild(guild);
+        }
+      }
+
     } catch (e) {
       logger.error("Error fetching guilds:", e);
       guildFetchError = "Failed to load servers";
@@ -283,6 +302,9 @@
     currentInstance.set(instance);
     if (browser) {
       localStorage.setItem("selectedInstance", JSON.stringify(instance));
+
+      // After setting an instance, fetch the guilds
+      await fetchGuildsIfReady();
     }
     closeDropdown();
   }
@@ -350,17 +372,28 @@
       const response = await api.getBotInstances();
       instances = response;
 
-      if (instances.length === 1) {
-        await handleInstanceSelect(instances[0]);
-      }
-
-      const storedInstance = localStorage.getItem("selectedInstance");
-      if (storedInstance) {
-        const instance = instances.find(
-          i => i.botId === JSON.parse(storedInstance).botId
-        );
-        if (instance) {
-          currentInstance.set(instance);
+      // Check for stored instance
+      if (browser) {
+        const storedInstance = localStorage.getItem("selectedInstance");
+        if (storedInstance) {
+          try {
+            const parsedInstance = JSON.parse(storedInstance);
+            const instance = instances.find(i => i.botId === parsedInstance.botId);
+            if (instance) {
+              logger.debug("Restoring instance:", instance.botName);
+              currentInstance.set(instance);
+              // Wait a moment to ensure instance is set before fetching guilds
+              setTimeout(fetchGuildsIfReady, 100);
+            }
+          } catch (err) {
+            logger.error("Error parsing stored instance:", err);
+          }
+        } else if (instances.length === 1) {
+          // Auto-select if there's only one instance
+          logger.debug("Auto-selecting the only instance:", instances[0].botName);
+          currentInstance.set(instances[0]);
+          // Wait a moment to ensure instance is set before fetching guilds
+          setTimeout(fetchGuildsIfReady, 100);
         }
       }
     } catch (err) {
@@ -372,18 +405,49 @@
   }
 
   async function restoreLastGuild() {
+    if (!browser) return;
+
     const stored = localStorage.getItem("lastSelectedGuild");
     if (stored) {
       try {
-        const storedGuild = JSON.parse(stored) as DiscordGuild;
-        lastSelectedGuild = storedGuild.id;
-        const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
-        if (guild) {
-          await selectGuild(guild);
+        const storedGuild = JSON.parse(stored);
+        lastSelectedGuild = BigInt(storedGuild.id);
+
+        // Only attempt to select if we have guilds loaded
+        if (adminGuilds.length > 0) {
+          const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
+          if (guild) {
+            logger.debug("Restoring last guild:", guild.name);
+            await selectGuild(guild);
+          }
         }
       } catch (err) {
         logger.error("Error restoring last guild:", err);
       }
+    }
+  }
+
+  async function initialize() {
+    if (!browser || initialized) return;
+
+    try {
+      logger.debug("Initializing navigation component");
+      if (data?.user) {
+        await checkOwnership();
+      }
+
+      await initializeInstances();
+
+      // Explicitly check if we have a current instance now
+      const currentInst = get(currentInstance);
+      if (currentInst) {
+        await fetchGuildsIfReady();
+        await restoreLastGuild();
+      }
+
+      initialized = true;
+    } catch (err) {
+      logger.error("Error during initialization:", err);
     }
   }
 
@@ -392,28 +456,21 @@
       window.addEventListener("keydown", handleKeyDown);
       window.addEventListener("resize", debouncedResize);
 
-      if (data?.user) {
-        await checkOwnership();
-      }
+      checkMobile();
+      await updateColors();
+      await initialize();
 
-      await initializeInstances();
-
+      // Watch for instance changes to refetch guilds
       const unsubscribe = currentInstance.subscribe(value => {
-        if (value) {
+        if (value && initialized) {
           fetchGuildsIfReady();
         }
       });
 
-      if (get(currentInstance)) {
-        await fetchGuildsIfReady();
-        await restoreLastGuild();
-      }
-
-      checkMobile();
-      await updateColors();
-
       return () => {
         unsubscribe();
+        window.removeEventListener("resize", debouncedResize);
+        window.removeEventListener("keydown", handleKeyDown);
       };
     }
   });
@@ -470,8 +527,8 @@
           {#if item.wrapped}
             <div class="relative group">
               <button
-                class="flex items-center space-x-2 text-white p-2 rounded-md hover:bg-opacity-20 transition-colors"
-                style="hover:background-color: {$colorsStore.primary}20; color: {$colorsStore.text};"
+                class="flex items-center space-x-2 p-2 rounded-md hover:bg-opacity-20 transition-colors"
+                style="color: {$colorsStore.text}; hover:background-color: {$colorsStore.primary}20;"
                 aria-expanded="false"
                 aria-haspopup="true"
               >
@@ -485,19 +542,40 @@
                 </svg>
               </button>
               <div
-                class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
-                style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+                class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 backdrop-blur-md"
+                style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
                       border: 1px solid {$colorsStore.primary}30;"
                 role="menu"
               >
                 {#each item.children || [] as child}
                   <a
                     href={child.href}
+                    data-sveltekit-preload-data="hover"
+                    data-sveltekit-noscroll
                     class="block p-2 hover:bg-opacity-20 transition-colors"
                     style="color: {$colorsStore.text}; hover:background-color: {$colorsStore.primary}20;"
                     class:bg-opacity-30={current === child.href}
                     style:background-color={current === child.href ? `${$colorsStore.primary}30` : 'transparent'}
                     role="menuitem"
+                    on:click|preventDefault={(e) => {
+    if ($currentGuild) {
+      if (browser) {
+        try {
+          localStorage.setItem("lastSelectedGuild", JSON.stringify({
+            id: $currentGuild.id.toString(),
+            name: $currentGuild.name,
+            icon: $currentGuild.icon,
+            owner: $currentGuild.owner,
+            permissions: $currentGuild.permissions,
+            features: $currentGuild.features
+          }));
+        } catch (err) {
+          logger.error("Error storing guild:", err);
+        }
+      }
+    }
+    goto(child.href);
+  }}
                   >
                     {#if child.icon}<span aria-hidden="true" class="mr-2">{child.icon}</span>{/if}
                     {child.title}
@@ -508,10 +586,31 @@
           {:else}
             <a
               href={item.href}
+              data-sveltekit-preload-data="hover"
+              data-sveltekit-noscroll
               class="flex items-center space-x-2 p-2 rounded-md hover:bg-opacity-20 transition-colors"
               style="color: {$colorsStore.text}; hover:background-color: {$colorsStore.primary}20;"
               class:bg-opacity-30={current === item.href}
               style:background-color={current === item.href ? `${$colorsStore.primary}30` : 'transparent'}
+              on:click|preventDefault={(e) => {
+    if ($currentGuild) {
+      if (browser) {
+        try {
+          localStorage.setItem("lastSelectedGuild", JSON.stringify({
+            id: $currentGuild.id.toString(),
+            name: $currentGuild.name,
+            icon: $currentGuild.icon,
+            owner: $currentGuild.owner,
+            permissions: $currentGuild.permissions,
+            features: $currentGuild.features
+          }));
+        } catch (err) {
+          logger.error("Error storing guild:", err);
+        }
+      }
+    }
+    goto(item.href);
+  }}
             >
               {#if item.icon}
                 <span aria-hidden="true">{item.icon}</span>
@@ -556,15 +655,28 @@
               style="background: {$colorsStore.primary}20;"
             />
 
-            <!-- Username and dropdown icon -->
-            <div class="flex flex-col">
+            <!-- Username and instance display -->
+            <div class="flex flex-col items-start">
               <span class="text-sm font-medium" style="color: {$colorsStore.text}">
                 {data.user.username}
               </span>
+              {#if $currentInstance}
+                <div class="flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full"
+                        style="background-color: {$currentInstance.isActive ? '#10B981' : $colorsStore.accent};"></span>
+                  <span class="text-xs" style="color: {$colorsStore.muted}">
+                    {$currentInstance.botName}
+                  </span>
+                </div>
+              {:else}
+                <span class="text-xs" style="color: {$colorsStore.muted}">
+                  Select Instance
+                </span>
+              {/if}
             </div>
 
             <svg
-              class="h-5 w-5 transition-transform"
+              class="h-5 w-5 transition-transform ml-1"
               class:rotate-180={dropdownOpen}
               style="color: {$colorsStore.muted};"
               fill="none"
@@ -583,8 +695,8 @@
           <!-- Desktop Dropdown -->
           {#if dropdownOpen}
             <div
-              class="absolute right-0 mt-2 w-72 rounded-md p-4 flex flex-col space-y-4 shadow-lg z-50 backdrop-blur-sm"
-              style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+              class="absolute right-0 mt-2 w-72 rounded-md p-4 flex flex-col space-y-4 shadow-lg z-50 backdrop-blur-md"
+              style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
                     border: 1px solid {$colorsStore.primary}30;"
               role="menu"
               transition:slide|local={{ duration: 200 }}
@@ -730,7 +842,7 @@
 
     <div
       class="fixed inset-y-0 right-0 w-72 z-50 flex flex-col overflow-hidden transition-transform duration-300 backdrop-blur-md"
-      style="background: linear-gradient(135deg, {$colorsStore.gradientStart}90, {$colorsStore.gradientMid}90);
+      style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
              border-left: 1px solid {$colorsStore.primary}30;"
       class:translate-x-0={menuOpen || sidebarOpen}
       class:translate-x-full={!(menuOpen || sidebarOpen)}
@@ -794,7 +906,7 @@
             {:else}
               {#each instances as instance}
                 <button
-                  class="w-full text-left p-2 rounded-md flex items-center space-x-2 transition-all hover:bg-opacity-20 font-extrabold"
+                  class="w-full text-left p-2 rounded-md flex items-center space-x-2 transition-all hover:bg-opacity-20"
                   style="color: {$colorsStore.text};
                          hover:background-color: {$colorsStore.primary}20;
                          background-color: {$currentInstance?.botId === instance.botId ? $colorsStore.primary + '30' : 'transparent'};"
@@ -836,7 +948,7 @@
                   {#each item.children || [] as child}
                     <a
                       href={child.href}
-                      class="block px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors backdrop-blur-md"
+                      class="block px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors"
                       style="color: {$colorsStore.text};
                     hover:background-color: {$colorsStore.primary}20;
                     background-color: {current === child.href ? $colorsStore.primary + '30' : 'transparent'};"
@@ -850,7 +962,7 @@
               {:else}
                 <a
                   href={item.href}
-                  class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors backdrop-blur-md"
+                  class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-opacity-20 transition-colors"
                   style="color: {$colorsStore.text};
                 hover:background-color: {$colorsStore.primary}20;
                 background-color: {current === item.href ? $colorsStore.primary + '30' : 'transparent'};"

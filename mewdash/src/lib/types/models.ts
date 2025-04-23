@@ -153,6 +153,21 @@ export interface GuildConfig {
   minMessageLength: number;
 }
 
+export interface Starboard {
+  id: number;
+  guildId: bigint;
+  starboardChannelId: bigint;
+  emote: string;
+  threshold: number;
+  checkedChannels: string;
+  useBlacklist: boolean;
+  allowBots: boolean;
+  removeOnDelete: boolean;
+  removeOnReactionsClear: boolean;
+  removeBelowThreshold: boolean;
+  repostThreshold: number;
+}
+
 export interface ChatTriggers {
   id: number;
   useCount: string;

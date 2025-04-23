@@ -1,4 +1,4 @@
-// routes/dashboard/performance/+page.server.ts
+// routes/dashboard/rolegreets/+page.server.ts
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
