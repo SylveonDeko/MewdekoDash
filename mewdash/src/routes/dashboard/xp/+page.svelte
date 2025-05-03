@@ -1801,6 +1801,7 @@
                 <option value={1}>Linear</option>
                 <option value={2}>Quadratic</option>
                 <option value={3}>Exponential</option>
+                <option value={5}>Legacy</option>
               </select>
               <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
                 Determines how much XP is required for each level.

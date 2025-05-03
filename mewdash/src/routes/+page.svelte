@@ -53,7 +53,7 @@
     },
     {
       label: "Server",
-      href: "https://discord.gg/invite/4stkEfZ6As",
+      href: "https://discord.gg/Z9DYApMXFN",
       ariaLabel: "Join the Mewdeko Server"
     }
   ];
@@ -115,7 +115,7 @@
     in:fade={{ duration: 300 }}
     style="background: radial-gradient(circle at top,
       {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientMid}10 50%,
+      {$colorStore.gradientEnd}10 50%,
       {$colorStore.gradientEnd}05 100%
     );"
   >
@@ -163,7 +163,7 @@
                 <div
                   class="absolute hidden group-hover:block z-10 px-3 py-2 text-xs rounded-md shadow-lg whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-2 backdrop-blur-sm"
                   role="tooltip"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientEnd}80);
                          border: 1px solid {$colorStore.primary}30;"
                 >
                   <p class="font-semibold" style="color: {$colorStore.text}">
@@ -193,7 +193,7 @@
     class="py-24 backdrop-blur-sm"
     style="background: radial-gradient(circle at center,
       {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientMid}10 50%,
+      {$colorStore.gradientEnd}10 50%,
       {$colorStore.gradientEnd}05 100%
     );"
   >

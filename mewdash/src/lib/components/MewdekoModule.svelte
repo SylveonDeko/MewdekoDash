@@ -1,16 +1,23 @@
-<!-- lib/dashboard/modules/MewdekoCommandModule.svelte -->
+<!-- lib/components/MewdekoModule.svelte -->
 <script lang="ts">
-  import type { Module } from "$lib/types/mewdekoModules.ts";
+  import type { Module } from "$lib/types/mewdekoModules";
   import MewdekoCommand from "./MewdekoCommand.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
 
   export let module: Module;
   export let searching: boolean;
 </script>
 
-<details class="text-2xl font-bold text-mewd-white m-2" bind:open={searching}>
-  <summary class="cursor-pointer">{module.Name}</summary>
+<details
+  bind:open={searching}
+  class="text-2xl font-bold m-2 transition-all duration-300"
+  style="color: {$colorStore.text};"
+>
+  <summary class="cursor-pointer hover:opacity-80 transition-opacity duration-200">
+    {module.Name}
+  </summary>
   <div
-    class="mt-4 flex flex-wrap font-semibold"
+    class="mt-4 flex flex-wrap font-semibold w-full"
     role="list"
     aria-label={`Commands for ${module.Name}`}
   >

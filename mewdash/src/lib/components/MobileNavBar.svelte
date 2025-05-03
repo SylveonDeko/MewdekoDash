@@ -32,7 +32,7 @@
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     { label: "Music", icon: Music, href: "/dashboard/music" },
     { label: "XP", icon: Star, href: "/dashboard/xp" },
-    { label: "Roles", icon: Shield, href: "/dashboard/permissions" },
+    { label: "Perms", icon: Shield, href: "/dashboard/permissions" },
     { label: "More", icon: Menu, href: "#", isMore: true }
   ];
 

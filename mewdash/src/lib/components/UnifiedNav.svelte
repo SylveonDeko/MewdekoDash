@@ -40,7 +40,7 @@
     text: "#ffffff",
     muted: "#9ca3af",
     gradientStart: "#3b82f6",
-    gradientMid: "#8b5cf6",
+    gradientEnd: "#8b5cf6",
     gradientEnd: "#ec4899"
   };
 
@@ -492,7 +492,7 @@
   class="py-4 relative"
   style="{colorVars} background: linear-gradient(135deg,
     {$colorsStore?.gradientStart}10,
-    {$colorsStore?.gradientMid}15,
+    {$colorsStore?.gradientEnd}15,
     {$colorsStore?.gradientEnd}10
   );"
 >
@@ -543,7 +543,7 @@
               </button>
               <div
                 class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 backdrop-blur-md"
-                style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
+                style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientEnd}95);
                       border: 1px solid {$colorsStore.primary}30;"
                 role="menu"
               >
@@ -696,7 +696,7 @@
           {#if dropdownOpen}
             <div
               class="absolute right-0 mt-2 w-72 rounded-md p-4 flex flex-col space-y-4 shadow-lg z-50 backdrop-blur-md"
-              style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
+              style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientEnd}95);
                     border: 1px solid {$colorsStore.primary}30;"
               role="menu"
               transition:slide|local={{ duration: 200 }}
@@ -842,7 +842,7 @@
 
     <div
       class="fixed inset-y-0 right-0 w-72 z-50 flex flex-col overflow-hidden transition-transform duration-300 backdrop-blur-md"
-      style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientMid}95);
+      style="background: linear-gradient(135deg, {$colorsStore.gradientStart}95, {$colorsStore.gradientEnd}95);
              border-left: 1px solid {$colorsStore.primary}30;"
       class:translate-x-0={menuOpen || sidebarOpen}
       class:translate-x-full={!(menuOpen || sidebarOpen)}

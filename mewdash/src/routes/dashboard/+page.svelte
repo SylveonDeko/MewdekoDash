@@ -23,7 +23,7 @@
     Users
   } from "lucide-svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
-  import { colorStore, colorStyleVars } from "$lib/stores/colorStore";
+  import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { browser } from "$app/environment";
 
@@ -57,7 +57,6 @@
 
   // Derived state
   $: musicStatus = $musicStore.status;
-  $: colorVars = $colorStyleVars;
 
   // Track when data is being fetched to prevent duplicate requests
   let fetchingData = false;
@@ -350,7 +349,7 @@
 <!-- Main Dashboard -->
 <div
   class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
-  style="{colorVars} background: radial-gradient(circle at top,
+  style="{colorStore.getCssVars()} background: radial-gradient(circle at top,
     {$colorStore.gradientStart}15 0%,
     {$colorStore.gradientMid}10 50%,
     {$colorStore.gradientEnd}05 100%);"

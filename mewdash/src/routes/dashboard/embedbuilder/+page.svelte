@@ -582,20 +582,29 @@
 
     if (event.key === "%") {
       event.preventDefault();
-      showPlaceholderMenu = true;
       const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+
+      // Set current editing element first to ensure it's available
+      currentEditingElement = target;
+      editingField = embedIndex < 0 ? `${embedIndex}-${field}` : `${embedIndex}-${field}`;
+
+      // Calculate position based on the input element
       const rect = target.getBoundingClientRect();
       placeholderMenuPosition = {
         x: Math.min(rect.left, window.innerWidth - 320),
         y: rect.bottom + window.scrollY
       };
-      currentEditingElement = target;
-      editingField = `${embedIndex}-${field}`;
+
+      // Initialize placeholder menu state
       filteredPlaceholders = placeholders;
       selectedPlaceholderIndex = 0;
+      showPlaceholderMenu = true;
 
+      // Force a DOM update before focusing
       await tick();
-      placeholderInputRef?.focus();
+      if (placeholderInputRef) {
+        placeholderInputRef.focus();
+      }
     }
   }
 
@@ -884,10 +893,14 @@
     return obj;
   }
 
+  // Fix for allowing components-only messages
   $: canCopyJson =
-    ((embeds.length === 0 || embeds.every(validateEmbed)) &&
-      (components.length === 0 || validateComponents()) &&
-      (content.trim().length > 0 || embeds.length > 0));
+    // Allow plaintext-only messages
+    content.trim().length > 0 ||
+    // Allow component and content messages
+    components.length > 0 && content.trim().length > 0 ||
+    // Or if there are valid embeds (all embeds must be valid)
+    (embeds.length > 0 && embeds.every(validateEmbed));
 </script>
 
 <div
@@ -909,7 +922,7 @@
 
     <div class="max-w-7xl mx-auto space-y-8">
       <!-- Header -->
-      <div
+      <section
         class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
@@ -917,10 +930,10 @@
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Discord Embed Builder</h1>
         <p class="mt-2" style="color: {$colorStore.muted}">Create and customize embeds for your Discord
           server</p>
-      </div>
+      </section>
 
       <!-- Content Section -->
-      <div
+      <section
         class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
@@ -945,7 +958,7 @@
                border: 1px solid {$colorStore.primary}30;
                color: {$colorStore.text};"
         />
-      </div>
+      </section>
 
       <!-- Mobile Navigation -->
       <div class="md:hidden mb-4 space-y-4">
@@ -954,6 +967,7 @@
             <button
               class="flex-1 p-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-200"
               on:click={() => currentSection = tab.id}
+              on:keydown={(e) => e.key === 'Enter' && (currentSection = tab.id)}
               aria-pressed={currentSection === tab.id}
               style="background: {currentSection === tab.id ? $colorStore.primary : $colorStore.primary + '20'};
                    color: {currentSection === tab.id ? $colorStore.text : $colorStore.muted};"
@@ -968,6 +982,7 @@
           aria-expanded={showPreview}
           class="w-full p-3 rounded-lg flex items-center justify-between transition-all duration-200"
           on:click={() => showPreview = !showPreview}
+          on:keydown={(e) => e.key === 'Enter' && (showPreview = !showPreview)}
           style="background: {$colorStore.primary}20;
                color: {$colorStore.text};"
         >
@@ -987,7 +1002,7 @@
       <!-- Main Content -->
       <div class="flex flex-col md:flex-row gap-4 md:gap-6">
         <!-- Editor Section -->
-        <div
+        <section
           class={`w-full ${showPreview ? 'hidden md:block md:w-1/2' : 'block'} backdrop-blur-sm rounded-2xl border shadow-2xl overflow-hidden`}
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
      border-color: {$colorStore.primary}30; max-width: 100%;"
@@ -998,6 +1013,8 @@
             {#if errors.length > 0}
               <div
                 class="m-4 p-4 rounded-lg border"
+                role="alert"
+                aria-live="polite"
                 style="background: {$colorStore.accent}10;
                      border-color: {$colorStore.accent}30;"
               >
@@ -1025,6 +1042,7 @@
                 <button
                   class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200"
                   on:click={() => currentSection = tab.id}
+                  on:keydown={(e) => e.key === 'Enter' && (currentSection = tab.id)}
                   aria-pressed={currentSection === tab.id}
                   style="background: {currentSection === tab.id ? $colorStore.primary : $colorStore.primary + '20'};
                        color: {currentSection === tab.id ? $colorStore.text : $colorStore.muted};"
@@ -1046,6 +1064,7 @@
                   <button
                     class="px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     on:click={addEmbed}
+                    on:keydown={(e) => e.key === 'Enter' && addEmbed()}
                     disabled={embeds.length >= 10}
                     aria-label="Add new embed"
                     style="background: {$colorStore.primary};
@@ -1059,6 +1078,7 @@
                   <button
                     class="px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200"
                     on:click={() => removeEmbed(activeEmbedIndex)}
+                    on:keydown={(e) => e.key === 'Enter' && removeEmbed(activeEmbedIndex)}
                     aria-label="Remove current embed"
                     style="background: {$colorStore.accent};
                          color: {$colorStore.text};"
@@ -1073,13 +1093,18 @@
               {#if embeds.length > 1}
                 <div
                   class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar"
+                  role="tablist"
                 >
                   {#each embeds as _, index}
                     <button
                       class="px-3 py-1.5 rounded-lg whitespace-nowrap transition-all duration-200"
                       on:click={() => activeEmbedIndex = index}
-                      aria-label="Switch to embed {index + 1}"
-                      aria-current={activeEmbedIndex === index}
+                      on:keydown={(e) => e.key === 'Enter' && (activeEmbedIndex = index)}
+                      role="tab"
+                      id={`embed-tab-${index}`}
+                      aria-controls={`embed-panel-${index}`}
+                      aria-selected={activeEmbedIndex === index}
+                      tabindex={activeEmbedIndex === index ? 0 : -1}
                       style="background: {activeEmbedIndex === index ? $colorStore.primary : $colorStore.primary + '20'};
                            color: {activeEmbedIndex === index ? $colorStore.text : $colorStore.muted};"
                     >
@@ -1092,13 +1117,19 @@
               <!-- Tab Navigation -->
               <div
                 class="flex border-b overflow-x-auto mb-4"
+                role="tablist"
                 style="border-color: {$colorStore.primary}30;"
               >
                 {#each editorTabs as tab}
                   <button
                     class="px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 border-b-2"
                     on:click={() => activeTab = tab.id}
-                    aria-pressed={activeTab === tab.id}
+                    on:keydown={(e) => e.key === 'Enter' && (activeTab = tab.id)}
+                    role="tab"
+                    id={`editor-tab-${tab.id}`}
+                    aria-controls={`editor-panel-${tab.id}`}
+                    aria-selected={activeTab === tab.id}
+                    tabindex={activeTab === tab.id ? 0 : -1}
                     style="color: {activeTab === tab.id ? $colorStore.text : $colorStore.muted};
                          border-color: {activeTab === tab.id ? $colorStore.primary : 'transparent'};"
                   >
@@ -1111,7 +1142,12 @@
               <!-- Tab Content -->
               <div class="space-y-6">
                 {#if activeTab === 'content'}
-                  <div class="space-y-4">
+                  <div
+                    class="space-y-4"
+                    role="tabpanel"
+                    id="editor-panel-content"
+                    aria-labelledby="editor-tab-content"
+                  >
                     <!-- Embed Title -->
                     <div>
                       <label for="embed-title" class="block text-sm font-medium mb-2"
@@ -1139,6 +1175,7 @@
                              color: {$colorStore.text};"
                         placeholder="Title URL (optional)"
                         on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'url')}
+                        aria-label="Title URL"
                       />
                     </div>
 
@@ -1163,7 +1200,12 @@
                 {/if}
 
                 {#if activeTab === 'appearance'}
-                  <div class="space-y-6">
+                  <div
+                    class="space-y-6"
+                    role="tabpanel"
+                    id="editor-panel-appearance"
+                    aria-labelledby="editor-tab-appearance"
+                  >
                     <!-- Color Picker -->
                     <div>
                       <label for="embed-color" class="block text-sm font-medium mb-2"
@@ -1190,9 +1232,8 @@
                     </div>
 
                     <!-- Author Settings -->
-                    <div>
-                      <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">
-                        Author</h4>
+                    <fieldset>
+                      <legend class="text-sm font-medium mb-3" style="color: {$colorStore.text}">Author</legend>
                       <div class="space-y-3">
                         <input
                           type="text"
@@ -1203,6 +1244,7 @@
                                color: {$colorStore.text};"
                           placeholder="Author name"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'author-name')}
+                          aria-label="Author name"
                         />
                         <input
                           type="text"
@@ -1213,6 +1255,7 @@
                                color: {$colorStore.text};"
                           placeholder="Author URL"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'author-url')}
+                          aria-label="Author URL"
                         />
                         <input
                           type="text"
@@ -1223,14 +1266,14 @@
                                color: {$colorStore.text};"
                           placeholder="Author icon URL"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'author-icon_url')}
+                          aria-label="Author icon URL"
                         />
                       </div>
-                    </div>
+                    </fieldset>
 
                     <!-- Footer Settings -->
-                    <div>
-                      <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">
-                        Footer</h4>
+                    <fieldset>
+                      <legend class="text-sm font-medium mb-3" style="color: {$colorStore.text}">Footer</legend>
                       <div class="space-y-3">
                         <input
                           type="text"
@@ -1241,6 +1284,7 @@
                                color: {$colorStore.text};"
                           placeholder="Footer text"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'footer-text')}
+                          aria-label="Footer text"
                         />
                         <input
                           type="text"
@@ -1251,16 +1295,23 @@
                                color: {$colorStore.text};"
                           placeholder="Footer icon URL"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, 'footer-icon_url')}
+                          aria-label="Footer icon URL"
                         />
                       </div>
-                    </div>
+                    </fieldset>
                   </div>
                 {/if}
                 {#if activeTab === 'fields'}
-                  <div class="space-y-6">
+                  <div
+                    class="space-y-6"
+                    role="tabpanel"
+                    id="editor-panel-fields"
+                    aria-labelledby="editor-tab-fields"
+                  >
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       on:click={() => addField(activeEmbedIndex)}
+                      on:keydown={(e) => e.key === 'Enter' && addField(activeEmbedIndex)}
                       disabled={embeds[activeEmbedIndex].fields.length >= 25}
                       style="background: {$colorStore.primary};
                            color: {$colorStore.text};"
@@ -1280,6 +1331,7 @@
                           style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};"
                           on:click={() => removeField(activeEmbedIndex, fieldIndex)}
+                          on:keydown={(e) => e.key === 'Enter' && removeField(activeEmbedIndex, fieldIndex)}
                           aria-label="Remove field"
                         >
                           <X size={16} />
@@ -1294,6 +1346,7 @@
                                color: {$colorStore.text};"
                           placeholder="Field name"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, `field-${fieldIndex}-name`)}
+                          aria-label={`Field ${fieldIndex + 1} name`}
                         />
                         <textarea
                           bind:value={field.value}
@@ -1304,6 +1357,7 @@
                           placeholder="Field value"
                           rows="3"
                           on:keydown={(e) => handleKeydown(e, activeEmbedIndex, `field-${fieldIndex}-value`)}
+                          aria-label={`Field ${fieldIndex + 1} value`}
                         />
                         <label class="flex items-center gap-3 cursor-pointer">
                           <div
@@ -1314,12 +1368,14 @@
                               type="checkbox"
                               bind:checked={field.inline}
                               class="sr-only peer"
+                              aria-label="Make field inline"
                             />
                             <div
                               class="absolute w-4 h-4 rounded-full top-1 transition-all duration-200"
                               style="background: {$colorStore.text};
                                    left: {field.inline ? '5px' : '1px'};
                                    transform: translateX({field.inline ? '4px' : '0'});"
+                              aria-hidden="true"
                             />
                           </div>
                           <span class="text-sm"
@@ -1331,7 +1387,12 @@
                 {/if}
 
                 {#if activeTab === 'media'}
-                  <div class="space-y-6">
+                  <div
+                    class="space-y-6"
+                    role="tabpanel"
+                    id="editor-panel-media"
+                    aria-labelledby="editor-tab-media"
+                  >
                     <div>
                       <label for="thumbnail-url" class="block text-sm font-medium mb-2"
                              style="color: {$colorStore.text}">
@@ -1379,6 +1440,7 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     on:click={() => showAddComponent = true}
+                    on:keydown={(e) => e.key === 'Enter' && (showAddComponent = true)}
                     disabled={totalComponents >= 25}
                     style="background: {$colorStore.primary};
                          color: {$colorStore.text};"
@@ -1418,6 +1480,8 @@
                               style="background: {$colorStore.secondary}20;
                                    color: {$colorStore.secondary};"
                               on:click={() => startEditingComponent(component)}
+                              on:keydown={(e) => e.key === 'Enter' && startEditingComponent(component)}
+                              aria-label={`Edit ${component.isSelect ? 'select menu' : 'button'}`}
                             >
                               Edit
                             </button>
@@ -1426,6 +1490,8 @@
                               style="background: {$colorStore.accent}20;
                                    color: {$colorStore.accent};"
                               on:click={() => removeComponent(component.componentKey)}
+                              on:keydown={(e) => e.key === 'Enter' && removeComponent(component.componentKey)}
+                              aria-label={`Delete ${component.isSelect ? 'select menu' : 'button'}`}
                             >
                               Delete
                             </button>
@@ -1477,10 +1543,10 @@
               </div>
             {/if}
           </div>
-        </div>
+        </section>
 
         <!-- Preview Section -->
-        <div
+        <section
           class={`w-full ${!showPreview ? 'hidden md:block md:w-1/2' : 'block'} backdrop-blur-sm rounded-2xl border shadow-2xl overflow-hidden`}
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
      border-color: {$colorStore.primary}30; max-width: 100%;"
@@ -1517,7 +1583,7 @@
                     {#if embed.author.name}
                       <div class="flex items-center mb-2">
                         {#if embed.author.icon_url}
-                          <img src={embed.author.icon_url} alt=""
+                          <img src={embed.author.icon_url} alt="Author icon"
                                class="w-6 h-6 rounded-full mr-2" />
                         {/if}
 
@@ -1597,7 +1663,7 @@
                     {#if embed.footer.text || embed.footer.icon_url}
                       <div class="flex items-center mt-4 text-gray-400 text-sm">
                         {#if embed.footer.icon_url}
-                          <img src={embed.footer.icon_url} alt=""
+                          <img src={embed.footer.icon_url} alt="Footer icon"
                                class="w-5 h-5 rounded-full mr-2" />
                         {/if}
                         <span>{embed.footer.text}</span>
@@ -1610,16 +1676,15 @@
               {#if components.length > 0}
                 <div class="mt-4 space-y-4">
                   {#each getComponentRows(components) as row}
-                    <div class="grid grid-cols-5 gap-2">
+                    <div class="flex flex-wrap justify-start gap-2">
                       {#each row as component}
                         {#if component.isSelect}
                           <div class="col-span-5">
-                            <div
-                              class="border border-transparent bg-[#2F3136] text-white font-medium rounded cursor-pointer box-border grid grid-cols-[1fr,auto] items-center"
-                              role="button"
+                            <button
+                              class="border border-transparent bg-[#2F3136] text-white font-medium rounded cursor-pointer box-border grid grid-cols-[1fr,auto] items-center w-full text-left"
                               aria-expanded="false"
                               aria-haspopup="listbox"
-                              tabindex="0"
+                              disabled
                             >
                               <span
                                 class="placeholder px-3 py-2">{component.displayName || "Select an option..."}</span>
@@ -1640,14 +1705,15 @@
                                   />
                                 </svg>
                               </div>
-                            </div>
+                            </button>
                           </div>
                         {:else}
                           <!-- Button -->
                           <button
-                            class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center items-center box-border border-0 rounded px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+                            class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center flex-grow-0 items-center box-border border-0 rounded px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
                             class:col-span-2={component.displayName.length > 10}
                             disabled
+                            aria-label={component.displayName}
                           >
                             <div class="flex items-center justify-center">
                               <div class="flex items-center gap-2">
@@ -1675,6 +1741,7 @@
               class="w-full px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!canCopyJson}
               on:click={copyJson}
+              on:keydown={(e) => e.key === 'Enter' && canCopyJson && copyJson()}
               style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                    color: {$colorStore.text};"
             >
@@ -1682,7 +1749,7 @@
               {jsonCopied ? 'Copied!' : 'Copy JSON'}
             </button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
@@ -1693,26 +1760,34 @@
     <div
       class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50"
       on:click|self={() => showAddComponent = false}
+      on:keydown={(e) => e.key === 'Escape' && (showAddComponent = false)}
       role="dialog"
       aria-labelledby="add-component-title"
+      aria-modal="true"
       transition:fade={{ duration: 200 }}
+      tabindex="-1"
     >
       <div
-        class="rounded-xl p-6 w-full max-w-md"
+        class="rounded-xl p-4 w-80 sm:w-96 mx-auto"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
-             border: 1px solid {$colorStore.primary}30;"
+           border: 1px solid {$colorStore.primary}30;"
       >
-        <h2 id="add-component-title" class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Add
-          Component</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <h2 id="add-component-title" class="text-lg font-bold mb-4" style="color: {$colorStore.text}">Add Component</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
-            class="p-4 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:bg-opacity-30 transform hover:-translate-y-1"
+            class="p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:bg-opacity-30 transform hover:-translate-y-1"
             style="background: {$colorStore.primary}20;
-                 border: 1px solid {$colorStore.primary}30;
-                 color: {$colorStore.text};"
+               border: 1px solid {$colorStore.primary}30;
+               color: {$colorStore.text};"
             on:click={() => {
             addComponent('button');
             showAddComponent = false;
+          }}
+            on:keydown={(e) => {
+            if (e.key === 'Enter') {
+              addComponent('button');
+              showAddComponent = false;
+            }
           }}
           >
             <div
@@ -1726,13 +1801,19 @@
           </button>
 
           <button
-            class="p-4 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:bg-opacity-30 transform hover:-translate-y-1"
+            class="p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:bg-opacity-30 transform hover:-translate-y-1"
             style="background: {$colorStore.secondary}20;
-                 border: 1px solid {$colorStore.secondary}30;
-                 color: {$colorStore.text};"
+               border: 1px solid {$colorStore.secondary}30;
+               color: {$colorStore.text};"
             on:click={() => {
             addComponent('select');
             showAddComponent = false;
+          }}
+            on:keydown={(e) => {
+            if (e.key === 'Enter') {
+              addComponent('select');
+              showAddComponent = false;
+            }
           }}
           >
             <div
@@ -1754,16 +1835,19 @@
     <div
       class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50"
       on:click|self={() => editingComponent = null}
+      on:keydown={(e) => e.key === 'Escape' && (editingComponent = null)}
       role="dialog"
       aria-labelledby="edit-component-title"
+      aria-modal="true"
       transition:fade={{ duration: 200 }}
+      tabindex="-1"
     >
       <div
-        class="rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+        class="rounded-xl p-4 w-80 sm:w-96 mx-auto max-h-[80vh] overflow-y-auto"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
-             border: 1px solid {$colorStore.primary}30;"
+           border: 1px solid {$colorStore.primary}30;"
       >
-        <h2 id="edit-component-title" class="text-xl font-bold mb-6" style="color: {$colorStore.text}">
+        <h2 id="edit-component-title" class="text-lg font-bold mb-4" style="color: {$colorStore.text}">
           Edit {editingComponent.isSelect ? 'Select Menu' : 'Button'}
         </h2>
 
@@ -1772,17 +1856,19 @@
           {#if !editingComponent.isSelect}
             <!-- Button Specific Fields -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="component-display-name" class="block text-sm font-medium mb-2"
+                     style="color: {$colorStore.text}">
                 Display Name
               </label>
               <input
+                id="component-display-name"
                 type="text"
                 bind:value={editingComponent.displayName}
                 maxlength="80"
                 class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                 style="background: {$colorStore.primary}10;
-                     border: 1px solid {$colorStore.primary}30;
-                     color: {$colorStore.text};"
+                   border: 1px solid {$colorStore.primary}30;
+                   color: {$colorStore.text};"
                 placeholder="Display name"
                 on:input={() => {
                 if (editingComponent.displayName.length > 80) {
@@ -1790,18 +1876,24 @@
                 }
               }}
               />
+              {#if editingComponent.displayName.length >= 75}
+                <p class="text-xs mt-1" style="color: {$colorStore.muted}">
+                  {80 - editingComponent.displayName.length} characters remaining
+                </p>
+              {/if}
             </div>
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="component-style" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                 Style
               </label>
               <div class="relative">
                 <select
+                  id="component-style"
                   bind:value={editingComponent.style}
                   class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none appearance-none"
                   style="background-color: {$colorStore.primary}10;
-           border: 1px solid {$colorStore.primary}30;
-           color: {$colorStore.text};"
+                     border: 1px solid {$colorStore.primary}30;
+                     color: {$colorStore.text};"
                 >
                   <option value={1}>Primary</option>
                   <option value={2}>Secondary</option>
@@ -1809,39 +1901,41 @@
                   <option value={4}>Danger</option>
                   <option value={5}>Link</option>
                 </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2" aria-hidden="true">
                   <ChevronDown class="w-5 h-5" style="color: {$colorStore.muted}" />
                 </div>
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="component-emoji" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                 Emoji (optional)
               </label>
               <input
+                id="component-emoji"
                 type="text"
                 bind:value={editingComponent.emoji}
                 class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                 style="background: {$colorStore.primary}10;
-                     border: 1px solid {$colorStore.primary}30;
-                     color: {$colorStore.text};"
+                   border: 1px solid {$colorStore.primary}30;
+                   color: {$colorStore.text};"
                 placeholder="Emoji"
               />
             </div>
 
             {#if editingComponent.style === 5}
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                <label for="component-url" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                   URL
                 </label>
                 <input
+                  id="component-url"
                   type="text"
                   bind:value={editingComponent.url}
                   class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                   style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
+                     border: 1px solid {$colorStore.primary}30;
+                     color: {$colorStore.text};"
                   placeholder="https://"
                 />
               </div>
@@ -1849,11 +1943,18 @@
               <button
                 class="w-full px-4 py-3 rounded-lg font-medium transition-all duration-200"
                 style="background: {$colorStore.primary};
-                     color: {$colorStore.text};"
+                   color: {$colorStore.text};"
                 on:click={() => {
                 currentTriggerComponent = editingComponent;
                 currentEditingOptionIndex = null;
                 showTriggerSelect = true;
+              }}
+                on:keydown={(e) => {
+                if (e.key === 'Enter') {
+                  currentTriggerComponent = editingComponent;
+                  currentEditingOptionIndex = null;
+                  showTriggerSelect = true;
+                }
               }}
               >
                 Select Trigger
@@ -1863,17 +1964,19 @@
             <!-- Select Menu Fields -->
             <div>
               <div class="space-y-3">
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                <label for="select-placeholder" class="block text-sm font-medium mb-2"
+                       style="color: {$colorStore.text}">
                   Placeholder Text
                 </label>
                 <input
+                  id="select-placeholder"
                   type="text"
                   bind:value={editingComponent.displayName}
                   maxlength="150"
                   class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                   style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
+                     border: 1px solid {$colorStore.primary}30;
+                     color: {$colorStore.text};"
                   placeholder="Placeholder text when nothing is selected (optional)"
                   on:input={() => {
                   if (editingComponent.displayName.length > 150) {
@@ -1881,31 +1984,32 @@
                   }
                 }}
                 />
-                {#if editingComponent.displayName && editingComponent.displayName.length > 150}
-                  <p style="color: {$colorStore.accent}">Placeholder text cannot exceed 150
-                    characters.</p>
+                {#if editingComponent.displayName && editingComponent.displayName.length > 120}
+                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">
+                    {150 - editingComponent.displayName.length} characters remaining
+                  </p>
                 {/if}
               </div>
-              <div class="space-y-3 mt-6">
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  Options
-                </label>
+              <fieldset class="space-y-3 mt-6">
+                <legend class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Options</legend>
                 <div class="space-y-4">
                   {#each editingComponent.options as option, index}
                     <div
                       class="p-4 rounded-lg space-y-3 relative"
                       style="background: {$colorStore.primary}10;
-                           border: 1px solid {$colorStore.primary}30;"
+                         border: 1px solid {$colorStore.primary}30;"
                     >
                       <!-- Option Name -->
+                      <label for={`option-name-${index}`} class="sr-only">Option {index + 1} name</label>
                       <input
+                        id={`option-name-${index}`}
                         type="text"
                         bind:value={option.name}
                         maxlength="100"
                         class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                         style="background: {$colorStore.primary}20;
-                             border: 1px solid {$colorStore.primary}30;
-                             color: {$colorStore.text};"
+                           border: 1px solid {$colorStore.primary}30;
+                           color: {$colorStore.text};"
                         placeholder="Option name"
                         on:input={() => {
                         if (option.name.length > 100) {
@@ -1913,28 +2017,35 @@
                         }
                       }}
                       />
-                      {#if option.name.length > 100}
-                        <p class="text-sm" style="color: {$colorStore.accent}">Option name
-                          cannot exceed 100 characters.</p>
+                      {#if option.name.length > 90}
+                        <p class="text-xs" style="color: {$colorStore.muted}">
+                          {100 - option.name.length} characters remaining
+                        </p>
                       {/if}
+
                       <!-- Option Emoji -->
+                      <label for={`option-emoji-${index}`} class="sr-only">Option {index + 1} emoji</label>
                       <input
+                        id={`option-emoji-${index}`}
                         type="text"
                         bind:value={option.emoji}
                         class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                         style="background: {$colorStore.primary}20;
-                             border: 1px solid {$colorStore.primary}30;
-                             color: {$colorStore.text};"
+                           border: 1px solid {$colorStore.primary}30;
+                           color: {$colorStore.text};"
                         placeholder="Option emoji (optional)"
                       />
+
                       <!-- Option Description -->
+                      <label for={`option-description-${index}`} class="sr-only">Option {index + 1} description</label>
                       <textarea
+                        id={`option-description-${index}`}
                         bind:value={option.description}
                         maxlength="100"
                         class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                         style="background: {$colorStore.primary}20;
-                             border: 1px solid {(!option.description || option.description.trim() === '') ? $colorStore.accent + '30' : $colorStore.primary + '30'};
-                             color: {$colorStore.text};"
+                           border: 1px solid {(!option.description || option.description.trim() === '') ? $colorStore.accent + '30' : $colorStore.primary + '30'};
+                           color: {$colorStore.text};"
                         placeholder="Option description (required)"
                         rows="2"
                         required
@@ -1944,38 +2055,54 @@
                         }
                       }}
                       />
-                      {#if option.description.length > 100}
-                        <p class="text-sm" style="color: {$colorStore.accent}">Option
-                          description cannot exceed 100 characters.</p>
+                      {#if option.description.length > 90}
+                        <p class="text-xs" style="color: {$colorStore.muted}">
+                          {100 - option.description.length} characters remaining
+                        </p>
                       {/if}
 
                       <!-- Validation Message -->
                       {#if !option.description || option.description.trim() === ''}
-                        <p class="text-sm" style="color: {$colorStore.accent}">Description is
+                        <p class="text-sm" role="alert" style="color: {$colorStore.accent}">Description is
                           required.</p>
                       {/if}
+
                       <!-- Select Trigger Button -->
                       <button
                         class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200"
                         style="background: {$colorStore.primary};
-                             color: {$colorStore.text};"
+                           color: {$colorStore.text};"
                         on:click={() => {
                         currentTriggerComponent = editingComponent;
                         currentEditingOptionIndex = index;
                         showTriggerSelect = true;
                       }}
+                        on:keydown={(e) => {
+                        if (e.key === 'Enter') {
+                          currentTriggerComponent = editingComponent;
+                          currentEditingOptionIndex = index;
+                          showTriggerSelect = true;
+                        }
+                      }}
                       >
                         Select Trigger
                       </button>
+
                       <!-- Remove Option Button -->
                       {#if editingComponent.options.length > 1}
                         <button
                           class="w-full px-4 py-2 mt-2 rounded-lg font-medium transition-all duration-200"
                           style="background: {$colorStore.accent}20;
-                               color: {$colorStore.accent};"
+                             color: {$colorStore.accent};"
                           on:click={() => {
                           editingComponent.options = editingComponent.options.filter((_, i) => i !== index);
                         }}
+                          on:keydown={(e) => {
+                          if (e.key === 'Enter') {
+                            editingComponent.options = editingComponent.options.filter((_, i) => i !== index);
+                          }
+                        }}
+                          aria-label={`Remove option ${index + 1}`}
                         >
                           Remove Option
                         </button>
@@ -1988,7 +2115,7 @@
                   <button
                     class="w-full px-4 py-2 mt-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
                     style="background: {$colorStore.secondary};
-                         color: {$colorStore.text};"
+                       color: {$colorStore.text};"
                     on:click={() => {
                     editingComponent.options = [
                       ...editingComponent.options,
@@ -2000,29 +2127,43 @@
                       }
                     ];
                   }}
+                    on:keydown={(e) => {
+                    if (e.key === 'Enter') {
+                      editingComponent.options = [
+                        ...editingComponent.options,
+                        {
+                          id: null,
+                          name: `Option ${editingComponent.options.length + 1}`,
+                          emoji: '',
+                          description: ''
+                        }
+                      ];
+                    }
+                  }}
                   >
                     <Plus size={16} />
                     Add Option
                   </button>
                 {/if}
-              </div>
+              </fieldset>
             </div>
 
             <!-- Min and Max Options -->
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                <label for="min-options" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                   Min Options
                 </label>
                 <input
+                  id="min-options"
                   type="number"
                   bind:value={editingComponent.minOptions}
                   min="1"
                   max={editingComponent.options.length}
                   class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                   style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
+                     border: 1px solid {$colorStore.primary}30;
+                     color: {$colorStore.text};"
                   on:input={() => {
                   if (editingComponent.minOptions > editingComponent.options.length) {
                     editingComponent.minOptions = editingComponent.options.length;
@@ -2034,18 +2175,19 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                <label for="max-options" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                   Max Options
                 </label>
                 <input
+                  id="max-options"
                   type="number"
                   bind:value={editingComponent.maxOptions}
                   min={editingComponent.minOptions}
                   max={editingComponent.options.length}
                   class="w-full rounded-lg p-3 transition-all duration-200 focus:outline-none"
                   style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
+                     border: 1px solid {$colorStore.primary}30;
+                     color: {$colorStore.text};"
                   on:input={() => {
                   if (editingComponent.maxOptions < editingComponent.minOptions) {
                     editingComponent.maxOptions = editingComponent.minOptions;
@@ -2060,7 +2202,7 @@
           {/if}
 
           <!-- Validation Messages -->
-          <div class="mt-4">
+          <div class="mt-4" role="alert" aria-live="polite">
             {#if !editingComponent.isSelect && !editingComponent.id && editingComponent.style !== 5}
               <p class="text-sm" style="color: {$colorStore.accent}">Please select a trigger for this
                 button.</p>
@@ -2085,20 +2227,32 @@
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
               style="background: {$colorStore.accent}20;
-                   color: {$colorStore.accent};"
+                 color: {$colorStore.accent};"
               on:click={() => editingComponent = null}
+              on:keydown={(e) => e.key === 'Enter' && (editingComponent = null)}
             >
               Cancel
             </button>
             <button
               class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style="background: {$colorStore.primary};
-                   color: {$colorStore.text};"
+                 color: {$colorStore.text};"
               on:click={() => {
               const index = components.findIndex(c => c.componentKey === editingComponent.componentKey);
               components[index] = editingComponent;
               components = [...components];
               editingComponent = null;
+            }}
+              on:keydown={(e) => {
+              if (e.key === 'Enter' && !(
+                (!editingComponent.isSelect && !editingComponent.id && editingComponent.style !== 5) ||
+                (editingComponent.isSelect && editingComponent.options.some(option => !option.id || !option.description || option.description.trim() === ''))
+              )) {
+                const index = components.findIndex(c => c.componentKey === editingComponent.componentKey);
+                components[index] = editingComponent;
+                components = [...components];
+                editingComponent = null;
+              }
             }}
               disabled={
               (
@@ -2119,82 +2273,18 @@
       </div>
     </div>
   {/if}
-
-  <!-- Trigger Select Modal -->
-  {#if showTriggerSelect}
-    <div
-      class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50"
-      on:click|self={() => showTriggerSelect = false}
-      role="dialog"
-      aria-labelledby="select-trigger-title"
-      transition:fade={{ duration: 200 }}
-    >
-      <div
-        class="rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
-             border: 1px solid {$colorStore.primary}30;"
-      >
-        <h2 id="select-trigger-title" class="text-xl font-bold mb-6" style="color: {$colorStore.text}">
-          Select Trigger
-        </h2>
-
-        <div class="space-y-3">
-          {#if chatTriggers.length === 0}
-            <div
-              class="p-6 text-center rounded-lg border"
-              style="background: {$colorStore.primary}10;
-                   border-color: {$colorStore.primary}30;"
-            >
-              <MessageCircle class="w-12 h-12 mx-auto mb-3" style="color: {$colorStore.muted}" />
-              <p class="mb-2" style="color: {$colorStore.text}">No Triggers Available</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Create chat triggers to use with your
-                components</p>
-            </div>
-          {:else}
-            {#each chatTriggers as trigger}
-              <button
-                class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:bg-opacity-20"
-                style="background: {$colorStore.primary}10;
-                     border-color: {$colorStore.primary}30;
-                     color: {$colorStore.text};"
-                on:click={() => {
-                if (currentTriggerComponent) {
-                  if (currentTriggerComponent.isSelect && currentEditingOptionIndex !== null) {
-                    currentTriggerComponent.options[currentEditingOptionIndex].id = trigger.id.toString();
-                  } else {
-                    currentTriggerComponent.id = trigger.id.toString();
-                  }
-                  if (editingComponent === currentTriggerComponent) {
-                    editingComponent = { ...currentTriggerComponent };
-                  }
-                }
-                showTriggerSelect = false;
-                currentEditingOptionIndex = null;
-                showNotificationMessage("Trigger selected successfully");
-              }}
-              >
-                <div class="font-medium mb-1">{trigger.trigger}</div>
-                <div class="text-sm truncate" style="color: {$colorStore.muted}">
-                  {trigger.response}
-                </div>
-              </button>
-            {/each}
-          {/if}
-        </div>
-      </div>
-    </div>
-  {/if}
-
   <!-- Placeholder Menu -->
   {#if showPlaceholderMenu}
     <div
-      class="fixed backdrop-blur-sm border rounded-xl shadow-lg z-50 max-h-96 w-80 overflow-hidden"
+      class="fixed backdrop-blur-sm border rounded-xl shadow-lg z-50 max-h-96 w-80 overflow-hidden placeholder-menu"
       style="top: {placeholderMenuPosition.y}px; left: {placeholderMenuPosition.x}px;
            background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}30);
            border-color: {$colorStore.primary}30;"
       role="dialog"
       aria-label="Placeholder menu"
       transition:fade={{ duration: 150 }}
+      on:keydown={(e) => e.key === 'Escape' && (showPlaceholderMenu = false)}
+      tabindex="-1"
     >
       <div
         class="p-3 border-b"
@@ -2221,6 +2311,7 @@
             style="background: {index === selectedPlaceholderIndex ? $colorStore.primary + '30' : 'transparent'};
                  color: {$colorStore.text};"
             on:click={() => insertPlaceholder(placeholder)}
+            on:keydown={(e) => e.key === 'Enter' && insertPlaceholder(placeholder)}
             role="option"
             aria-selected={index === selectedPlaceholderIndex}
           >
@@ -2231,35 +2322,128 @@
       </div>
     </div>
   {/if}
+  <!-- Trigger Select Modal -->
+  {#if showTriggerSelect}
+    <div
+      class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50"
+      on:click|self={() => showTriggerSelect = false}
+      on:keydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
+      role="dialog"
+      aria-labelledby="select-trigger-title"
+      aria-modal="true"
+      transition:fade={{ duration: 200 }}
+      tabindex="-1"
+    >
+      <div
+        class="rounded-xl p-4 w-80 sm:w-96 mx-auto max-h-[80vh] overflow-y-auto"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);
+           border: 1px solid {$colorStore.primary}30;"
+      >
+        <h2 id="select-trigger-title" class="text-lg font-bold mb-4" style="color: {$colorStore.text}">
+          Select Trigger
+        </h2>
+
+        <div class="space-y-3" role="listbox" aria-label="Available triggers">
+          {#if chatTriggers.length === 0}
+            <div
+              class="p-6 text-center rounded-lg border"
+              style="background: {$colorStore.primary}10;
+                 border-color: {$colorStore.primary}30;"
+            >
+              <MessageCircle class="w-12 h-12 mx-auto mb-3" style="color: {$colorStore.muted}" />
+              <p class="mb-2" style="color: {$colorStore.text}">No Triggers Available</p>
+              <p class="text-sm" style="color: {$colorStore.muted}">Create chat triggers to use with your
+                components</p>
+            </div>
+          {:else}
+            {#each chatTriggers as trigger}
+              <button
+                class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:bg-opacity-20"
+                style="background: {$colorStore.primary}10;
+                   border-color: {$colorStore.primary}30;
+                   color: {$colorStore.text};"
+                on:click={() => {
+                if (currentTriggerComponent) {
+                  if (currentTriggerComponent.isSelect && currentEditingOptionIndex !== null) {
+                    currentTriggerComponent.options[currentEditingOptionIndex].id = trigger.id.toString();
+                  } else {
+                    currentTriggerComponent.id = trigger.id.toString();
+                  }
+                  if (editingComponent === currentTriggerComponent) {
+                    editingComponent = { ...currentTriggerComponent };
+                  }
+                }
+                showTriggerSelect = false;
+                currentEditingOptionIndex = null;
+                showNotificationMessage("Trigger selected successfully");
+              }}
+                on:keydown={(e) => {
+                if (e.key === 'Enter') {
+                  if (currentTriggerComponent) {
+                    if (currentTriggerComponent.isSelect && currentEditingOptionIndex !== null) {
+                      currentTriggerComponent.options[currentEditingOptionIndex].id = trigger.id.toString();
+                    } else {
+                      currentTriggerComponent.id = trigger.id.toString();
+                    }
+                    if (editingComponent === currentTriggerComponent) {
+                      editingComponent = { ...currentTriggerComponent };
+                    }
+                  }
+                  showTriggerSelect = false;
+                  currentEditingOptionIndex = null;
+                  showNotificationMessage("Trigger selected successfully");
+                }
+              }}
+                role="option"
+                aria-selected="false"
+              >
+                <div class="font-medium mb-1">{trigger.trigger}</div>
+                <div class="text-sm truncate" style="color: {$colorStore.muted}">
+                  {trigger.response}
+                </div>
+              </button>
+            {/each}
+          {/if}
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
-<style lang="postcss">
+
+<style>
+    /* Base styles */
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;
-        @apply overflow-x-hidden w-full;
-        /* Prevent horizontal scrolling */
+        overflow-x: hidden;
+        width: 100%;
     }
 
     /* Fix mobile overflow issues */
     :global(#app) {
-        @apply overflow-x-hidden w-full max-w-full;
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
     }
 
     /* Add overscroll behavior to prevent bounce effects causing layout issues */
     :global(html, body) {
-        @apply overscroll-none;
+        overscroll-behavior: none;
     }
 
     /* Add better responsive handling for modals on mobile */
     @media (max-width: 640px) {
         .fixed.inset-0 {
-            @apply overflow-y-auto;
-            /* Allow scrolling inside modals on mobile */
+            overflow-y: auto;
         }
 
         .fixed.inset-0 > div {
-            @apply max-w-[95vw] max-h-[80vh] overflow-y-auto my-4;
+            max-width: 95vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
         }
     }
 
@@ -2271,24 +2455,6 @@
         }
     }
 
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
     /* Hide scrollbar for Chrome, Safari and Opera */
     .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -2296,212 +2462,146 @@
 
     /* Hide scrollbar for IE, Edge and Firefox */
     .no-scrollbar {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 
+    /* Embed and markdown styling */
     :global(.embed-link) {
-        @apply text-[#00b0f4] no-underline;
+        color: #38b2f8;
+        text-decoration: none;
     }
 
     :global(.embed-link:hover) {
-        @apply underline;
+        text-decoration: underline;
     }
 
     :global(.markdown-content) {
-        @apply text-gray-300;
+        color: #d1d5db;
     }
 
     :global(.markdown-content h1) {
-        @apply text-2xl font-bold my-4;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
     }
 
     :global(.markdown-content h2) {
-        @apply text-xl font-bold my-3;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-top: 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     :global(.markdown-content h3) {
-        @apply text-lg font-bold my-2;
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     :global(.markdown-content p) {
-        @apply my-2;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     :global(.markdown-content ul) {
-        @apply list-disc ml-6;
+        list-style-type: disc;
+        margin-left: 1.5rem;
     }
 
     :global(.markdown-content ol) {
-        @apply list-decimal ml-6;
+        list-style-type: decimal;
+        margin-left: 1.5rem;
     }
 
     :global(.markdown-content blockquote) {
-        @apply border-l-4 border-gray-600 pl-4 my-2;
+        border-left-width: 4px;
+        border-color: #4b5563;
+        padding-left: 1rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     :global(.markdown-content code) {
-        @apply bg-gray-800 px-2 py-1 rounded font-mono text-sm;
+        background-color: #1f2937;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+        font-size: 0.875rem;
     }
 
     :global(.markdown-content pre) {
-        @apply bg-gray-800 p-4 rounded overflow-x-auto my-4;
+        background-color: #1f2937;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        overflow-x: auto;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
     }
 
     :global(.markdown-content pre code) {
-        @apply bg-transparent p-0;
+        background-color: transparent;
+        padding: 0;
     }
 
     :global(.markdown-content a) {
-        @apply text-blue-400 no-underline;
+        color: #60a5fa;
+        text-decoration: none;
     }
 
     :global(.markdown-content a:hover) {
-        @apply underline;
+        text-decoration: underline;
     }
 
     :global(.mention) {
-        @apply bg-opacity-30 bg-blue-500 text-blue-100 rounded px-1 font-medium;
+        background-color: rgba(59, 130, 246, 0.3);
+        color: #bfdbfe;
+        border-radius: 0.25rem;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        font-weight: 500;
     }
 
-    :global(.placeholder) {
-        @apply bg-opacity-30 bg-blue-500 text-blue-100 rounded px-1 font-medium;
-    }
-
+    /* Color input styling */
     input[type="color"] {
         -webkit-appearance: none;
-        @apply border-0 p-0 rounded cursor-pointer;
+        border: 0;
+        padding: 0;
+        border-radius: 0.25rem;
+        cursor: pointer;
     }
 
     input[type="color"]::-webkit-color-swatch-wrapper {
-        @apply p-0;
+        padding: 0;
     }
 
     input[type="color"]::-webkit-color-swatch {
-        @apply border-0 rounded;
+        border: 0;
+        border-radius: 0.25rem;
     }
 
     .inline-emoji {
-        @apply inline-block w-5 h-5 align-text-bottom;
+        display: inline-block;
+        width: 1.25rem;
+        height: 1.25rem;
+        vertical-align: text-bottom;
     }
 
     .emoji {
-        @apply inline-block text-xl leading-none;
-    }
-
-    /* Custom range input styling */
-    input[type="range"] {
-        -webkit-appearance: none;
-        background: transparent;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        background: var(--color-primary);
-        cursor: pointer;
-        margin-top: -6px;
-        transition: transform 0.2s;
-    }
-
-    input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-    }
-
-    input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 4px;
-        border-radius: 2px;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        background: var(--color-primary);
-        cursor: pointer;
-        border: none;
-        transition: transform 0.2s;
-    }
-
-    input[type="range"]::-moz-range-thumb:hover {
-        transform: scale(1.2);
-    }
-
-    input[type="range"]::-moz-range-track {
-        width: 100%;
-        height: 4px;
-        border-radius: 2px;
-    }
-
-    input[type="range"]:focus {
-        outline: none;
-    }
-
-    /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
-
-    /* Add smooth transitions for color changes */
-    [style*="background"],
-    [style*="color"] {
-        @apply transition-colors duration-300;
-    }
-
-    /* Add container queries for better responsive behavior */
-    @container (max-width: 640px) {
-        .controls {
-            @apply flex-col items-stretch;
-        }
-    }
-
-    /* Add better card spacing for mobile */
-    @media (max-width: 640px) {
-        :global(.card-grid) {
-            @apply gap-4;
-        }
-
-        :global(.card) {
-            @apply p-4;
-        }
-    }
-
-    /* Add better responsive behavior for fixed position elements */
-    [style*="position: fixed"],
-    .fixed {
-        max-width: 100vw;
-        overflow-x: hidden;
-    }
-
-    /* Ensure modal content fits within viewport */
-    .fixed.inset-0 .rounded-xl {
-        @apply max-w-full;
-    }
-
-    /* Fix for horizontal scrolling in the preview section */
-    .rounded-lg.p-4.mb-6 {
-        @apply max-w-full overflow-x-auto;
+        display: inline-block;
+        font-size: 1.25rem;
+        line-height: 1;
     }
 
     /* Ensure inputs don't overflow their containers */
     input, textarea, select {
-        @apply max-w-full box-border;
-    }
-
-    /* Fix for preview overflow */
-    .markdown-content img,
-    .markdown-content pre {
-        @apply max-w-full;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     /* Force all content to stay within viewable area */
@@ -2510,27 +2610,16 @@
         overflow-x: hidden;
     }
 
-    /* Ensure form inputs don't overflow their containers */
-    input, textarea, select, button {
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-
     /* Fix for the editor section specifically */
     .backdrop-blur-sm {
         max-width: 100%;
         overflow-x: hidden;
     }
 
-    /* Force all tables and grids to be responsive */
-    .grid {
-        max-width: 100%;
-    }
-
     /* Adjust field layouts on very small screens */
     @media (max-width: 480px) {
         .grid-cols-2, .grid-cols-3, .grid-cols-5 {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
         }
 
         /* Reduce padding on mobile */
@@ -2545,29 +2634,23 @@
         }
     }
 
-    /* Fix the placeholder menu positioning for mobile */
-    @media (max-width: 640px) {
-        div[style*="top"][style*="left"] {
-            max-width: 90vw !important;
-            left: 5vw !important;
-        }
-    }
-
-    /* Fix horizontal scrolling in preview panels */
-    .rounded-lg.p-4.mb-6 {
-        word-break: break-word;
-        overflow-wrap: break-word;
-    }
-
     /* Fix text overflow in various sections */
     .text-lg, .text-xl, .text-2xl, .text-3xl, p, h1, h2, h3, h4 {
         overflow-wrap: break-word;
         word-break: break-word;
     }
 
-    /* Prevent field overflow on mobile */
-    .space-y-6 > div {
-        max-width: 100%;
-        overflow-x: hidden;
+    /* Accessibility focus styles */
+    button:focus,
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.5);
+    }
+
+    /* Ensure proper contrast for placeholder text */
+    ::placeholder {
+        opacity: 0.7;
     }
 </style>

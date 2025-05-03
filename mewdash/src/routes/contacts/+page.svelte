@@ -35,14 +35,14 @@
     </a>
 
     <a
-      href="https://discord.gg/invite/4stkEfZ6As"
+      href="https://discord.gg/Z9DYApMXFN"
       target="_new"
       class="contact-card"
     >
       <DiscordIcon class="w-12 h-12 mb-4 text-mewd-offwhite" />
       <span class="text-lg font-semibold">Join Our Discord</span>
       <span class="text-sm text-mewd-offwhite mt-2"
-        >https://discord.gg/invite/4stkEfZ6As</span
+      >https://discord.gg/Z9DYApMXFN</span
       >
     </a>
   </div>

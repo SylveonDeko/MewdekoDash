@@ -16,33 +16,32 @@
   onMount(async () => {
     if (browser) {
       if (window.location.toString().includes("?loggedin")) {
-        await invalidateAll()
-        await goto("/")
+        await invalidateAll();
+        await goto("/");
       }
       if (window.location.toString().includes("dashboard")) {
         if ($currentInstance)
           await colorStore.extractFromImage($currentInstance.botAvatar);
-      }
-      else {
+      } else {
         try {
           if (data?.user?.avatar) {
             // Extract colors from user avatar
             await colorStore.extractFromImage(
-                    data.user.avatar.startsWith("a_")
-                            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+              data.user.avatar.startsWith("a_")
+                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
             );
           } else {
             // Fallback to default image
             await colorStore.extractFromImage("/img/Mewdeko.png");
           }
         } catch (err) {
-          logger.error('Failed to extract colors:', err);
+          logger.error("Failed to extract colors:", err);
           colorStore.reset(); // Reset to default colors
         }
       }
     }
-  })
+  });
 
   // Main navigation items
   const navItems = [
@@ -54,8 +53,8 @@
       elements: [
         { href: "/partners", title: "Partners" },
         { href: "/contacts", title: "Contact Us" },
-        { href: "/staff", title: "Staff" },
-      ],
+        { href: "/staff", title: "Staff" }
+      ]
     },
     {
       title: "Misc",
@@ -63,11 +62,30 @@
         { href: "/placeholders", title: "Placeholders" },
         { href: "/credguide", title: "Credentials Guide" },
         { title: "Privacy", href: "/privacy" },
-        { title: "Terms", href: "/terms" },
-      ],
+        { title: "Terms", href: "/terms" }
+      ]
     },
     { title: "Reviews", elements: [{ href: "/reviews" }] }
   ];
+
+  $: if (data?.user?.avatar) {
+    try {
+
+      // Extract colors from user avatar
+      colorStore.extractFromImage(
+        data.user.avatar.startsWith("a_")
+          ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+          : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+      );
+    } catch (err) {
+      logger.error("Failed to extract colors:", err);
+      colorStore.extractFromImage("/img/Mewdeko.png");
+    }
+  }
+
+  $: if (!data?.user) {
+    colorStore.extractFromImage("/img/Mewdeko.png");
+  }
 </script>
 
 <svelte:head>
@@ -92,7 +110,7 @@
   />
 </svelte:head>
 
-<UnifiedNav items={navItems} data={data} />
+<UnifiedNav data={data} items={navItems} />
 
 <main class="min-h-screen bg-mewd-dark-grey w-full overflow-x-hidden">
   <slot />
