@@ -112,6 +112,6 @@
 
 <UnifiedNav data={data} items={navItems} />
 
-<main class="min-h-screen bg-mewd-dark-grey w-full overflow-x-hidden">
+<main class="bg-mewd-dark-grey w-full">
   <slot />
 </main>

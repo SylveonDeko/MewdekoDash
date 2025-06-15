@@ -381,26 +381,28 @@
           </div>
         </div>
 
-        <h1 class="text-3xl md:text-4xl font-bold mb-4" style="color: {$colorStore.text}">
-          Hey there!
+        <h1 class="text-2xl md:text-3xl font-semibold mb-3" style="color: {$colorStore.text}">
+          Select a Server
         </h1>
-        <p class="text-lg max-w-2xl mx-auto mb-8" style="color: {$colorStore.muted}">
-          Pick a server from the dropdown to get started.
+        <p class="text-base max-w-xl mx-auto mb-6" style="color: {$colorStore.muted}">
+          Choose a server to start managing your Discord community.
         </p>
 
-        <!-- Module Showcase -->
-        <div class="max-w-4xl w-full mx-auto mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-          {#each ['XP', 'Music', 'Giveaways', 'Starboard', 'MultiGreets', 'ChatTriggers', 'Games', 'Currency'] as module}
-            <div class="p-3 rounded-lg text-center transition-all hover:scale-105"
-                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;">
-              <span style="color: {$colorStore.text}">{module}</span>
-            </div>
-          {/each}
+        <!-- Key Features Preview -->
+        <div class="max-w-2xl w-full mx-auto mt-8">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {#each [{ name: 'Moderation', icon: '🛡️' }, { name: 'Music', icon: '🎵' }, {
+              name: 'Economy',
+              icon: '💰'
+            }, { name: 'Fun', icon: '🎮' }] as feature}
+              <div class="p-4 rounded-xl text-center transition-all duration-200 hover:scale-105 group"
+                   style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">{feature.icon}</div>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">{feature.name}</span>
+              </div>
+            {/each}
+          </div>
         </div>
-
-        <p class="mt-6 text-sm max-w-2xl mx-auto" style="color: {$colorStore.muted}">
-          ...and many more features to customize your server!
-        </p>
 
         <!-- Bot Status if available -->
         {#if botStatus}

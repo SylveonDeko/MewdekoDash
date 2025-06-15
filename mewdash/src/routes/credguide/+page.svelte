@@ -1,467 +1,1015 @@
 <!-- routes/credguide/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { onDestroy, onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
 
   let mounted = false;
+  let currentStep = 0;
+  let completedSteps: Set<number> = new Set();
+  let showAllSteps = false;
+  let selectedOS = "linux"; // 'linux' or 'windows'
+
+  // Step-by-step wizard data
+  const steps = [
+    {
+      id: "overview",
+      title: "Overview",
+      icon: "📋",
+      description: "Understanding credentials setup",
+      required: true,
+      estimatedTime: "2 min",
+      content: {
+        intro: "Welcome to the Mewdeko credentials setup guide. This wizard will walk you through setting up your bot's credentials step by step.",
+        highlights: [
+          "Bot token configuration",
+          "Database setup",
+          "Owner ID configuration",
+          "Optional API keys for enhanced features"
+        ],
+        note: "The credentials_example.json file is located in the Mewdeko/src/Mewdeko folder. You'll need to rename it to credentials.json and configure it."
+      }
+    },
+    {
+      id: "bot-token",
+      title: "Bot Token",
+      icon: "🤖",
+      description: "Get your Discord bot token",
+      required: true,
+      estimatedTime: "5 min",
+      content: {
+        intro: "Your bot token is the unique identifier that allows your bot to connect to Discord.",
+        steps: [
+          "Go to the Discord Developer Portal (https://discord.dev) and log in",
+          "Click on 'New Application'",
+          "Give your application a name and click 'Create'",
+          "Navigate to the 'Bot' tab on the left sidebar",
+          "Click 'Add Bot' and confirm by clicking 'Yes, do it!'",
+          "Under the TOKEN section, click 'Copy' to get your bot token"
+        ],
+        warning: "Never share your bot token with anyone. Treat it like a password!",
+        example: "\"Token\": \"YOUR_BOT_TOKEN_HERE\""
+      }
+    },
+    {
+      id: "database",
+      title: "Database Setup",
+      icon: "🗄️",
+      description: "Configure PostgreSQL database",
+      required: true,
+      estimatedTime: "15 min",
+      content: {
+        intro: "Mewdeko uses PostgreSQL to store server configurations and user data.",
+        linuxSteps: [
+          {
+            step: "Update system packages",
+            command: "sudo apt update && sudo apt upgrade -y"
+          },
+          {
+            step: "Install PostgreSQL and additional components",
+            command: "sudo apt install postgresql postgresql-contrib -y"
+          },
+          {
+            step: "Start and enable PostgreSQL service",
+            command: "sudo systemctl start postgresql\nsudo systemctl enable postgresql"
+          },
+          {
+            step: "Switch to postgres user",
+            command: "sudo -i -u postgres"
+          },
+          {
+            step: "Create a new database user",
+            command: "createuser --interactive --pwprompt mewdeko",
+            note: "When prompted, enter 'y' for superuser, and set a strong password"
+          },
+          {
+            step: "Create the database",
+            command: "createdb -O mewdeko mewdeko_db"
+          },
+          {
+            step: "Exit postgres user",
+            command: "exit"
+          },
+          {
+            step: "Test the connection",
+            command: "psql -U mewdeko -d mewdeko_db -h localhost",
+            note: "Enter the password you set earlier. Use \\q to exit psql."
+          }
+        ],
+        windowsSteps: [
+          {
+            step: "Download PostgreSQL installer",
+            command: "Visit https://www.postgresql.org/download/windows/ and download the latest version"
+          },
+          {
+            step: "Run the installer",
+            command: "Execute the downloaded .exe file",
+            note: "During installation, remember the password you set for the 'postgres' user"
+          },
+          {
+            step: "Open Command Prompt as Administrator",
+            command: "Press Win+X and select 'Windows Terminal (Admin)'"
+          },
+          {
+            step: "Navigate to PostgreSQL bin directory",
+            command: "cd \"C:\\Program Files\\PostgreSQL\\15\\bin\"",
+            note: "Replace '15' with your PostgreSQL version number"
+          },
+          {
+            step: "Connect to PostgreSQL",
+            command: "psql -U postgres"
+          },
+          {
+            step: "Create a new user",
+            command: "CREATE USER mewdeko WITH PASSWORD 'your_secure_password' SUPERUSER;"
+          },
+          {
+            step: "Create the database",
+            command: "CREATE DATABASE mewdeko_db OWNER mewdeko;"
+          },
+          {
+            step: "Exit psql",
+            command: "\\q"
+          },
+          {
+            step: "Test the connection",
+            command: "psql -U mewdeko -d mewdeko_db -h localhost",
+            note: "Enter your password when prompted. Use \\q to exit."
+          }
+        ],
+        connectionExamples: {
+          linux: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko_db;Port=5432;UID=mewdeko;Password=your_secure_password\"",
+          windows: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko_db;Port=5432;UID=mewdeko;Password=your_secure_password\""
+        }
+      }
+    },
+    {
+      id: "owner-id",
+      title: "Owner ID",
+      icon: "👑",
+      description: "Configure bot owner permissions",
+      required: true,
+      estimatedTime: "3 min",
+      content: {
+        intro: "The owner ID gives you full control over your bot. You can have multiple owners.",
+        steps: [
+          "Go to your Discord server",
+          "Type \\@yourusername (with a backslash before the @)",
+          "Send the message - it will show as <@YOUR_USER_ID>",
+          "Copy the numbers (YOUR_USER_ID)",
+          "Add it to your credentials.json file"
+        ],
+        singleOwner: "\"OwnerIds\": [\"YOUR_USER_ID\"]",
+        multipleOwners: "\"OwnerIds\": [\"USER_ID_1\", \"USER_ID_2\", \"USER_ID_3\"]"
+      }
+    },
+    {
+      id: "api-keys",
+      title: "API Keys",
+      icon: "🔑",
+      description: "Optional API keys for enhanced features",
+      required: false,
+      estimatedTime: "10 min",
+      content: {
+        intro: "These API keys are optional but enable additional features like music, games, and more.",
+        keys: [
+          {
+            name: "GoogleApiKey",
+            purpose: "YouTube search, playlist queuing",
+            required: true,
+            priority: "high",
+            steps: [
+              "Go to Google Console (https://console.developers.google.com/)",
+              "Create a new project",
+              "Go to Library → Enable YouTube Data API",
+              "Go to Credentials → Create Credentials → API Key",
+              "Copy the key to your credentials.json"
+            ]
+          },
+          {
+            name: "TwitchClientId & TwitchClientSecret",
+            purpose: "Twitch stream notifications",
+            required: false,
+            priority: "medium",
+            steps: [
+              "Go to Twitch Developer Console",
+              "Create a new application",
+              "Set OAuth redirect URL to http://localhost",
+              "Select 'Chat Bot' category",
+              "Copy Client ID and Client Secret"
+            ]
+          },
+          {
+            name: "MashapeKey",
+            purpose: "Hearthstone cards",
+            required: false,
+            priority: "low",
+            steps: [
+              "Register at https://rapidapi.com",
+              "Go to MyApps → Add New App",
+              "Get Application key"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      id: "final-config",
+      title: "Final Configuration",
+      icon: "✅",
+      description: "Complete your setup",
+      required: true,
+      estimatedTime: "5 min",
+      content: {
+        intro: "Review your final configuration and additional optional settings.",
+        additionalSettings: [
+          {
+            name: "LavalinkUrl",
+            purpose: "Music playback",
+            example: "\"LavalinkUrl\": \"http://localhost:2333\""
+          },
+          {
+            name: "ConfessionReportChannelId",
+            purpose: "Confession reporting",
+            example: "\"ConfessionReportChannelId\": \"YOUR_CHANNEL_ID\""
+          },
+          {
+            name: "ChatSavePath",
+            purpose: "Chat log storage",
+            example: "\"ChatSavePath\": \"/path/to/chatlogs/\""
+          }
+        ],
+        finalExample: `{
+  "Token": "YOUR_BOT_TOKEN_HERE",
+  "OwnerIds": ["YOUR_USER_ID"],
+  "PsqlConnectionString": "Server=localhost;Database=mydatabase;Port=5432;UID=username;Password=password",
+  "GoogleApiKey": "YOUR_GOOGLE_API_KEY",
+  "LavalinkUrl": "http://localhost:2333"
+}`
+      }
+    }
+  ];
+
+  // Navigation functions
+  function nextStep() {
+    if (currentStep < steps.length - 1) {
+      currentStep++;
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 0) {
+      currentStep--;
+    }
+  }
+
+  function goToStep(stepIndex: number) {
+    currentStep = stepIndex;
+  }
+
+  function markStepComplete(stepIndex: number) {
+    completedSteps.add(stepIndex);
+    completedSteps = completedSteps; // Trigger reactivity
+  }
+
+  function markStepIncomplete(stepIndex: number) {
+    completedSteps.delete(stepIndex);
+    completedSteps = completedSteps; // Trigger reactivity
+  }
+
+  // Keyboard navigation
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "ArrowRight" && currentStep < steps.length - 1) {
+      nextStep();
+    } else if (event.key === "ArrowLeft" && currentStep > 0) {
+      prevStep();
+    }
+  }
+
+  // Progress calculation
+  $: progress = ((completedSteps.size) / steps.length) * 100;
+  $: currentStepData = steps[currentStep];
+  $: requiredSteps = steps.filter(step => step.required).length;
+  $: completedRequiredSteps = steps.filter((step, index) => step.required && completedSteps.has(index)).length;
 
   onMount(() => {
     mounted = true;
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", handleKeydown);
+    }
+  });
+
+  onDestroy(() => {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("keydown", handleKeydown);
+    }
   });
 </script>
 
 <svelte:head>
-  <title>Mewdeko - Setting Up Credentials</title>
-  <meta content="Mewdeko - Setting up Credentials" property="og:title" />
-  <meta
-    content="Guide to setting up credentials for Mewdeko Discord bot"
-    name="description"
-  />
-  <meta
-    content="Guide to setting up credentials for Mewdeko Discord bot"
-    property="og:description"
-  />
-  <meta
-    content="Guide to setting up credentials for Mewdeko Discord bot"
-    name="twitter:description"
-  />
+  <title>Mewdeko - Credentials Setup Wizard</title>
+  <meta content="Mewdeko - Interactive Credentials Setup Guide" property="og:title" />
+  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" name="description" />
+  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" property="og:description" />
+  <meta content="Step-by-step guide to setting up credentials for Mewdeko Discord bot" name="twitter:description" />
 </svelte:head>
 
 {#if mounted}
-  <div class="container mx-auto px-4 py-8" in:fade>
-    <h1 class="text-4xl font-bold mb-8">Setting up Your Credentials</h1>
+  <main
+    class="min-h-screen"
+    style="--color-primary: {$colorStore.primary};
+           --color-secondary: {$colorStore.secondary};
+           --color-accent: {$colorStore.accent};
+           --color-text: {$colorStore.text};
+           --color-muted: {$colorStore.muted};
+           background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+    in:fade
+  >
+    <!-- Header -->
+    <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
+      <div class="container mx-auto px-6 sm:px-8 lg:px-4 py-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl lg:text-3xl font-bold mb-2" style="color: {$colorStore.text};">
+              Credentials Setup Wizard
+            </h1>
+            <p class="text-sm lg:text-base" style="color: {$colorStore.muted};">
+              Step-by-step guide to configure your Mewdeko bot
+            </p>
+          </div>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">
-        Setting up credentials_example.json file
-      </h2>
-      <p>
-        The <code class=" p-1 rounded">credentials_example.json</code> file is
-        located in the <code class=" p-1 rounded">Mewdeko/src/Mewdeko</code>
-        folder. Rename and configure it to
-        <code class=" p-1 rounded">credentials.json</code>.
-      </p>
-    </section>
+          <!-- Progress bar -->
+          <div class="flex-shrink-0 lg:max-w-md lg:w-full">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium" style="color: {$colorStore.text};">
+                Progress: {completedRequiredSteps}/{requiredSteps} required steps
+              </span>
+              <span class="text-sm" style="color: {$colorStore.muted};">
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+                 style="background: {$colorStore.primary}20;">
+              <div
+                class="h-2 rounded-full transition-all duration-500 ease-out"
+                style="width: {progress}%; background: linear-gradient(90deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">Getting the Bot's Token</h2>
-      <ol class="list-decimal pl-6">
-        <li>
-          Go to the <a
-            href="https://discord.dev"
-            class="text-blue-600 hover:underline">Discord Developer Portal</a
-          > and log in.
-        </li>
-        <li>Click on <code class=" p-1 rounded">New Application</code>.</li>
-        <li>
-          Give your application a name and click <code class=" p-1 rounded"
-            >Create</code
-          >.
-        </li>
-        <li>
-          Navigate to the <code class=" p-1 rounded">Bot</code> tab on the left sidebar.
-        </li>
-        <li>
-          Click <code class=" p-1 rounded">Add Bot</code> and confirm by
-          clicking <code class=" p-1 rounded">Yes, do it!</code>.
-        </li>
-        <li>
-          Under the <code class=" p-1 rounded">TOKEN</code> section, click
-          <code class=" p-1 rounded">Copy</code> to get your bot token.
-        </li>
-      </ol>
-      <p class="mt-4">
-        Paste your bot token between the quotation marks on the "Token" line of
-        your <code class=" p-1 rounded">credentials.json</code>.
-      </p>
-      <p>It should look like this:</p>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >"Token": "YOUR_BOT_TOKEN_HERE"</code
-        ></pre>
-    </section>
-
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">
-        Setting up a PostgreSQL Database
-      </h2>
-      <h3 class="text-xl font-semibold mb-2">Installing PostgreSQL on Linux</h3>
-      <ol class="list-decimal pl-6">
-        <li>
-          <p><strong>Install PostgreSQL:</strong></p>
-          <pre class=" p-4 rounded-lg overflow-x-auto"><code
-              >sudo apt update
-  sudo apt install postgresql postgresql-contrib</code
-            ></pre>
-        </li>
-        <li>
-          <p><strong>Switch to the postgres user:</strong></p>
-          <pre class=" p-4 rounded-lg overflow-x-auto"><code
-              >sudo -i -u postgres</code
-            ></pre>
-        </li>
-        <li>
-          <p><strong>Create a new PostgreSQL role:</strong></p>
-          <pre class=" p-4 rounded-lg overflow-x-auto"><code
-              >createuser --interactive</code
-            ></pre>
-        </li>
-        <li>
-          <p><strong>Create a new database:</strong></p>
-          <pre class=" p-4 rounded-lg overflow-x-auto"><code
-              >createdb mydatabase</code
-            ></pre>
-        </li>
-        <li>
-          <p><strong>Set a password for the PostgreSQL role:</strong></p>
-          <pre class=" p-4 rounded-lg overflow-x-auto"><code
-              >psql
-  ALTER USER yourusername WITH ENCRYPTED PASSWORD 'yourpassword';
-  \q</code
-            ></pre>
-        </li>
-        <li>
-          <p>
-            <strong
-              >Edit the PostgreSQL configuration to allow password
-              authentication:</strong
-            >
-          </p>
-          <ul class="list-disc pl-6">
-            <li>Open the configuration file:</li>
-            <pre class=" p-4 rounded-lg overflow-x-auto"><code
-                >sudo nano /etc/postgresql/12/main/pg_hba.conf</code
-              ></pre>
-            <li>
-              Find the lines that look like this and change <code
-                class=" p-1 rounded">peer</code
+    <div class="container mx-auto px-6 sm:px-8 lg:px-4 py-8 max-w-7xl">
+      <div class="grid lg:grid-cols-4 gap-6 lg:gap-8">
+        <!-- Step Navigation Sidebar -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-32">
+            <!-- Mobile Step Selector -->
+            <div class="lg:hidden mb-6">
+              <select
+                class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
+                bind:value={currentStep}
               >
-              to <code class=" p-1 rounded">md5</code>:
-            </li>
-            <pre class=" p-4 rounded-lg overflow-x-auto"><code
-                >local   all             postgres                                peer
-  local   all             all                                     peer
-  host    all             all             127.0.0.1/32            md5
-  host    all             all             ::1/128                 md5</code
-              ></pre>
-            <li>Restart PostgreSQL:</li>
-            <pre class=" p-4 rounded-lg overflow-x-auto"><code
-                >sudo systemctl restart postgresql</code
-              ></pre>
-          </ul>
-        </li>
-        <li>
-          <p>
-            <strong
-              >Set up the PostgreSQL connection string in <code
-                class=" p-1 rounded">credentials.json</code
-              >:</strong
-            >
-          </p>
-          <p>
-            Format: <code class=" p-1 rounded"
-              >"PsqlConnectionString":
-              "Server=ServerIp;Database=DatabaseName;Port=PsqlPort;UID=PsqlUser;Password=UserPassword"</code
-            >
-          </p>
-        </li>
-      </ol>
-    </section>
+                {#each steps as step, index}
+                  <option value={index}>
+                    {step.icon} {step.title} {step.required ? '*' : ''}
+                  </option>
+                {/each}
+              </select>
+            </div>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">Getting Owner ID(s)</h2>
-      <ol class="list-decimal pl-6">
-        <li>
-          Go to your Discord server and attempt to mention yourself, but put a
-          backslash at the start (to make it slightly easier, add the backslash
-          after the mention has been typed).
-        </li>
-        <li>
-          For example, the message <code class=" p-1 rounded"
-            >\@yourusername#1234</code
-          >
-          will appear as <code class=" p-1 rounded">&lt;@YOUR_USER_ID&gt;</code>
-          after you send the message.
-        </li>
-        <li>
-          The message will appear as a mention if done correctly. Copy the
-          numbers from it (YOUR_USER_ID) and replace the big number on the
-          OwnerIds section with your user ID.
-        </li>
-        <li>
-          Save the <code class=" p-1 rounded">credentials.json</code> file.
-        </li>
-        <li>
-          If done correctly, you should now be the bot owner. You can add
-          multiple owners by separating each owner ID with a comma within the
-          square brackets.
-        </li>
-      </ol>
-      <p class="mt-4">For a single owner, it should look like this:</p>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >"OwnerIds": ["YOUR_USER_ID"]</code
-        ></pre>
-      <p class="mt-4">
-        For multiple owners, it should look like this (pay attention to the
-        commas, the last ID should never have a comma next to it):
-      </p>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >"OwnerIds": ["USER_ID_1", "USER_ID_2", "USER_ID_3"]</code
-        ></pre>
-    </section>
+            <!-- Desktop Step Navigation -->
+            <div class="hidden lg:block">
+              <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">Setup Steps</h3>
+              <nav class="space-y-2">
+                {#each steps as step, index}
+                  <button
+                    class="w-full text-left p-3 rounded-xl transition-all duration-200 border group"
+                    style="{index === currentStep 
+                      ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}20, ${$colorStore.gradientMid}25); border-color: ${$colorStore.primary}; color: ${$colorStore.text};` 
+                      : `background: ${$colorStore.primary}10; border-color: ${$colorStore.primary}20; color: ${$colorStore.muted};`}"
+                    on:click={() => goToStep(index)}
+                  >
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-3">
+                        <span class="text-xl">{step.icon}</span>
+                        <div>
+                          <div class="font-medium text-sm">
+                            {step.title}
+                            {#if step.required}
+                              <span class="text-red-400 ml-1">*</span>
+                            {/if}
+                          </div>
+                          <div class="text-xs opacity-70">{step.estimatedTime}</div>
+                        </div>
+                      </div>
+                      {#if completedSteps.has(index)}
+                        <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                          <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      {/if}
+                    </div>
+                  </button>
+                {/each}
+              </nav>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">Setting up Your API Keys</h2>
-      <p>
-        This part is completely optional; however, it's necessary for music and
-        a few other features to work properly.
-      </p>
+              <!-- Quick Actions -->
+              <div class="mt-6 p-4 rounded-xl backdrop-blur-sm"
+                   style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
+                <div class="space-y-2">
+                  <button
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                    style="background: {$colorStore.primary}15; color: {$colorStore.text};"
+                    on:click={() => showAllSteps = !showAllSteps}
+                  >
+                    {showAllSteps ? '📋 Show Wizard' : '📜 Show All Steps'}
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                    style="background: {$colorStore.primary}15; color: {$colorStore.text};"
+                    on:click={() => completedSteps = new Set()}
+                  >
+                    🔄 Reset Progress
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">1. GoogleApiKey</h3>
-      <p>
-        (Required for Youtube Song Search, Playlist queuing, and a few more
-        things)
-      </p>
-      <ol class="list-decimal pl-6">
-        <li>
-          Go to <a
-            href="https://console.developers.google.com/"
-            class="text-blue-600 hover:underline">Google Console</a
-          > and log in.
-        </li>
-        <li>Create a new project (name does not matter).</li>
-        <li>Once the project is created, go into Library.</li>
-        <li>Under the YouTube APIs section, enable YouTube Data API.</li>
-        <li>On the left tab, access Credentials.</li>
-        <li>Click the Create Credentials button.</li>
-        <li>Click on API Key.</li>
-        <li>A new window will appear with your Google API key.</li>
-        <li>
-          NOTE: You don't need to click on RESTRICT KEY, just click on CLOSE
-          when you are done.
-        </li>
-        <li>Copy the key.</li>
-        <li>
-          Open up <code class=" p-1 rounded">credentials.json</code> and look for
-          "GoogleApiKey", paste your API key between the quotation marks.
-        </li>
-      </ol>
-      <p>It should look like this:</p>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >"GoogleApiKey": "YOUR_GOOGLE_API_KEY_HERE"</code
-        ></pre>
+        <!-- Main Content -->
+        <div class="lg:col-span-3">
+          {#if showAllSteps}
+            <!-- All Steps View -->
+            <div class="space-y-8" in:fade={{ duration: 300 }}>
+              {#each steps as step, index}
+                <div class="rounded-2xl p-6 backdrop-blur-sm border"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text};">
+                      <span class="text-3xl">{step.icon}</span>
+                      {step.title}
+                      {#if step.required}
+                        <span class="text-red-400">*</span>
+                      {/if}
+                    </h2>
+                    <button
+                      class="px-4 py-2 rounded-lg transition-all"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+                      on:click={() => { goToStep(index); showAllSteps = false; }}
+                    >
+                      Enter Wizard
+                    </button>
+                  </div>
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">2. MashapeKey</h3>
-      <p>(Required for Hearthstone cards)</p>
-      <p>
-        Api key obtained on <a
-          href="https://rapidapi.com"
-          class="text-blue-600 hover:underline">https://rapidapi.com</a
-        > (register -> go to MyApps -> Add New App -> Enter Name -> Application key)
-      </p>
-      <p>
-        Copy the key and paste it into <code class=" p-1 rounded"
-          >credentials.json</code
-        >.
-      </p>
+                  <p class="mb-4" style="color: {$colorStore.muted};">{step.description}</p>
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">3. OsuApiKey</h3>
-      <p>(Required for Osu commands)</p>
-      <p>
-        You can get this key here <a
-          href="https://osu.ppy.sh/p/api"
-          class="text-blue-600 hover:underline">https://osu.ppy.sh/p/api</a
-        >.
-      </p>
+                  <!-- Simplified content for overview -->
+                  {#if step.id === 'overview'}
+                    <ul class="space-y-2">
+                      {#each step.content.highlights as highlight}
+                        <li class="flex items-center gap-2" style="color: {$colorStore.text};">
+                          <span class="text-green-400">✓</span>
+                          {highlight}
+                        </li>
+                      {/each}
+                    </ul>
+                  {:else if step.id === 'bot-token'}
+                    <div class="space-y-2">
+                      <p style="color: {$colorStore.text};">Get your Discord bot token from the Developer Portal</p>
+                      <code class="block p-2 rounded"
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.example}</code>
+                    </div>
+                  {:else if step.id === 'database'}
+                    <div class="space-y-2">
+                      <p style="color: {$colorStore.text};">Configure PostgreSQL for data storage</p>
+                      <code class="block p-2 rounded"
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.connectionString}</code>
+                    </div>
+                  {:else if step.id === 'owner-id'}
+                    <div class="space-y-2">
+                      <p style="color: {$colorStore.text};">Set up bot owner permissions</p>
+                      <code class="block p-2 rounded"
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.singleOwner}</code>
+                    </div>
+                  {:else if step.id === 'api-keys'}
+                    <div class="grid md:grid-cols-2 gap-4">
+                      {#each step.content.keys as key}
+                        <div class="p-3 rounded-lg" style="background: {$colorStore.primary}10;">
+                          <h4 class="font-medium" style="color: {$colorStore.text};">{key.name}</h4>
+                          <p class="text-sm" style="color: {$colorStore.muted};">{key.purpose}</p>
+                        </div>
+                      {/each}
+                    </div>
+                  {:else if step.id === 'final-config'}
+                    <div class="space-y-2">
+                      <p style="color: {$colorStore.text};">Review and finalize your configuration</p>
+                      <pre class="p-3 rounded-lg text-sm overflow-x-auto"
+                           style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.finalExample}</pre>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <!-- Wizard Step View -->
+            <div class="wizard-content" in:fade={{ duration: 300 }}>
+              <div class="rounded-2xl p-6 sm:p-8 backdrop-blur-sm border"
+                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">4. CleverbotApiKey</h3>
-      <p>
-        (Required if you want to use Cleverbot. It's currently a paid service)
-      </p>
-      <p>
-        You can get this key here <a
-          href="http://www.cleverbot.com/api/"
-          class="text-blue-600 hover:underline">http://www.cleverbot.com/api/</a
-        >.
-      </p>
+                <!-- Step Header -->
+                <div class="flex items-center justify-between mb-6">
+                  <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
+                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}40);">
+                      {currentStepData.icon}
+                    </div>
+                    <div>
+                      <h2 class="text-3xl font-bold" style="color: {$colorStore.text};">
+                        {currentStepData.title}
+                        {#if currentStepData.required}
+                          <span class="text-red-400 ml-2">*</span>
+                        {/if}
+                      </h2>
+                      <p class="text-lg" style="color: {$colorStore.muted};">
+                        {currentStepData.description}
+                      </p>
+                      <div class="flex items-center gap-4 mt-2 text-sm" style="color: {$colorStore.muted};">
+                        <span>⏱️ {currentStepData.estimatedTime}</span>
+                        <span>📍 Step {currentStep + 1} of {steps.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    class="px-4 py-2 rounded-lg transition-all hover:scale-105"
+                    style="background: {completedSteps.has(currentStep) ? '#10B981' : $colorStore.primary + '20'}; color: {completedSteps.has(currentStep) ? 'white' : $colorStore.text};"
+                    on:click={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
+                  >
+                    {completedSteps.has(currentStep) ? '✅ Completed' : '⭕ Mark Complete'}
+                  </button>
+                </div>
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">
-        5. TwitchClientId, TwitchClientSecret
-      </h3>
-      <p>(Mandatory for following Twitch streams with .sta)</p>
-      <ol class="list-decimal pl-6">
-        <li>
-          Go to the apps page <a
-            href="https://dev.twitch.tv/console/apps/create"
-            class="text-blue-600 hover:underline"
-            >https://dev.twitch.tv/console/apps/create</a
-          > on Twitch and register your application.
-        </li>
-        <li>You need 2FA enabled on Twitch to create an application.</li>
-        <li>
-          You can set http://localhost as the OAuth Redirect URL (and press Add
-          button).
-        </li>
-        <li>Select Chat Bot from the Category dropdown.</li>
-        <li>
-          Once created, clicking on your application will show a new Client ID
-          field. Make sure to grab the Client Secret as well.
-        </li>
-        <li>
-          Copy it to your <code class=" p-1 rounded">credentials.json</code> as
-          shown below (if you're adding it as the last key inside your
-          <code class=" p-1 rounded">credentials.json</code>, remove the
-          trailing comma from the example below):
-        </li>
-      </ol>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >"TwitchClientId": "YOUR_TWITCH_CLIENT_ID_HERE", "TwitchClientSecret": "YOUR_TWITCH_CLIENT_SECRET_HERE"</code
-        ></pre>
+                <!-- Step Content -->
+                <div class="prose prose-lg max-w-none" style="color: {$colorStore.text};">
+                  {#if currentStepData.id === 'overview'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-xl mb-6">{currentStepData.content.intro}</p>
 
-      <h3 class="text-xl font-semibold mt-4 mb-2">6. CoinmarketcapApiKey</h3>
-      <p>(Optional. Used only for the .crypto command)</p>
-      <p>
-        You can use the crypto command without it, but you might get
-        rate-limited from time to time, as all self-hosters share the default
-        API key. <a
-          href="https://pro.coinmarketcap.com/"
-          class="text-blue-600 hover:underline"
-          >https://pro.coinmarketcap.com/</a
-        >
-      </p>
-    </section>
+                      <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
+                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">What you'll configure:</h3>
+                          <ul class="space-y-2">
+                            {#each currentStepData.content.highlights as highlight}
+                              <li class="flex items-center gap-2">
+                                <span class="text-green-400">✓</span>
+                                {highlight}
+                              </li>
+                            {/each}
+                          </ul>
+                        </div>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">Additional Settings</h2>
-      <ol class="list-decimal pl-6">
-        <li>
-          <p>
-            <strong>PsqlConnectionString</strong> (Required for PostgreSQL database
-            connection)
-          </p>
-          <p>
-            Format: <code class=" p-1 rounded"
-              >"PsqlConnectionString":
-              "Server=ServerIp;Database=DatabaseName;Port=PsqlPort;UID=PsqlUser;Password=UserPassword"</code
-            >
-          </p>
-        </li>
-        <li>
-          <p><strong>LavalinkUrl</strong> (Required for music playback)</p>
-          <p>
-            Format: <code class=" p-1 rounded"
-              >"LavalinkUrl": "http://localhost:2333"</code
-            >
-          </p>
-        </li>
-        <li>
-          <p>
-            <strong>ConfessionReportChannelId</strong> (Optional. Used for reporting
-            confessions)
-          </p>
-          <p>
-            Format: <code class=" p-1 rounded"
-              >"ConfessionReportChannelId": "YOUR_CHANNEL_ID_HERE"</code
-            >
-          </p>
-        </li>
-        <li>
-          <p>
-            <strong>ChatSavePath</strong> (Optional. Path to save chat logs)
-          </p>
-          <p>
-            Format: <code class=" p-1 rounded"
-              >"ChatSavePath": "/path/to/chatlogs/"</code
-            >
-          </p>
-        </li>
-      </ol>
-    </section>
+                        <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
+                          <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">Important Note:</h3>
+                          <p class="text-sm">{currentStepData.content.note}</p>
+                        </div>
+                      </div>
+                    </div>
+                  {:else if currentStepData.id === 'bot-token'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-lg mb-8">{currentStepData.content.intro}</p>
 
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold mb-4">End Result</h2>
-      <p>
-        This is an example of how the <code class=" p-1 rounded"
-          >credentials.json</code
-        > looks like with multiple owners, and all the API keys (also optional):
-      </p>
-      <pre class=" p-4 rounded-lg overflow-x-auto"><code
-          >{JSON.stringify(
-            {
-              Token: "YOUR_BOT_TOKEN_HERE",
-              OwnerIds: ["USER_ID_1", "USER_ID_2"],
-              UseGlobalCurrency: false,
-              SoundCloudClientId: "",
-              RestartCommand: null,
-              CarbonKey: "",
-              RedisConnections: "127.0.0.1:6379",
-              ShardRunCommand: "",
-              ShardRunArguments: "",
-              BotListToken: null,
-              VotesUrl: null,
-              PsqlConnectionString:
-                "Server=ServerIp;Database=DatabaseName;Port=PsqlPort;UID=PsqlUser;Password=UserPassword",
-              CoinmarketcapApiKey: null,
-              DebugGuildId: "843489716674494475",
-              GuildJoinsChannelId: "892789588739891250",
-              GlobalBanReportChannelId: "905109141620682782",
-              PronounAbuseReportChannelId: "970086914826858547",
-              MigrateToPsql: false,
-              LastFmApiKey: null,
-              LastFmApiSecret: null,
-              GeniusKey: null,
-              CfClearance: null,
-              UserAgent: null,
-              CsrfToken: null,
-              LavalinkUrl: "http://localhost:2333",
-              SpotifyClientId: "",
-              SpotifyClientSecret: "",
-              StatcordKey: "",
-              ShardRunPort: "3444",
-              GoogleApiKey: "",
-              MashapeKey: "",
-              OsuApiKey: "",
-              TrovoClientId: "",
-              TwitchClientId: "",
-              CleverbotApiKey: "",
-              TotalShards: 1,
-              TwitchClientSecret: null,
-              VotesToken: null,
-              RedisOptions: null,
-              LocationIqApiKey: null,
-              TimezoneDbApiKey: null,
-              ConfessionReportChannelId: "942825117820530709",
-              ChatSavePath: "/usr/share/nginx/cdn/chatlogs/",
-            },
-            null,
-            2,
-          )}</code
-        ></pre>
-    </section>
-  </div>
+                      <div class="mb-8 p-5 rounded-xl" style="background: #F59E0B20; border: 1px solid #F59E0B40;">
+                        <div class="flex items-start gap-3">
+                          <span class="text-yellow-500 text-xl flex-shrink-0">⚠️</span>
+                          <p class="text-lg"><strong>Security Warning:</strong> {currentStepData.content.warning}</p>
+                        </div>
+                      </div>
+
+                      <div class="space-y-6 mb-10">
+                        {#each currentStepData.content.steps as step, index}
+                          <div class="flex items-start gap-4">
+                            <div
+                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                              {index + 1}
+                            </div>
+                            <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
+                          </div>
+                        {/each}
+                      </div>
+
+                      <div class="p-8 rounded-xl border"
+                           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+                        <h4 class="text-lg font-semibold mb-6" style="color: {$colorStore.text};">Add to
+                          credentials.json:</h4>
+                        <div class="p-5 rounded-xl border"
+                             style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
+                          <code class="block text-sm font-mono" style="color: {$colorStore.text};">
+                            {currentStepData.content.example}
+                          </code>
+                        </div>
+                      </div>
+                    </div>
+                  {:else if currentStepData.id === 'database'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-lg mb-6">{currentStepData.content.intro}</p>
+
+                      <!-- OS Selector -->
+                      <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Select Your Operating
+                          System:</h3>
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                          <button
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+                            style="background: {selectedOS === 'linux' ? `linear-gradient(135deg, ${$colorStore.gradientStart}80, ${$colorStore.gradientMid}90)` : $colorStore.primary + '20'}; color: {selectedOS === 'linux' ? 'white' : $colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                            on:click={() => selectedOS = 'linux'}
+                          >
+                            🐧 Linux (Ubuntu/Debian)
+                          </button>
+                          <button
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+                            style="background: {selectedOS === 'windows' ? `linear-gradient(135deg, ${$colorStore.gradientStart}80, ${$colorStore.gradientMid}90)` : $colorStore.primary + '20'}; color: {selectedOS === 'windows' ? 'white' : $colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                            on:click={() => selectedOS = 'windows'}
+                          >
+                            🪟 Windows
+                          </button>
+                        </div>
+                      </div>
+
+                      {#if selectedOS === 'linux'}
+                        <div class="mb-12" in:fly={{ x: -20, duration: 300 }}>
+                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Linux Installation
+                            Steps:</h3>
+                          <div class="space-y-8">
+                            {#each currentStepData.content.linuxSteps as step, index}
+                              <div class="relative">
+                                <!-- Step Number Badge -->
+                                <div class="flex items-center mb-4">
+                                  <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white mr-4"
+                                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                                    {index + 1}
+                                  </div>
+                                  <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
+                                </div>
+
+                                <!-- Command Block -->
+                                <div class="ml-14">
+                                  <div class="p-4 rounded-xl border"
+                                       style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}25;">
+                                    <code class="block text-sm overflow-x-auto whitespace-pre-wrap font-mono"
+                                          style="color: {$colorStore.text};">
+                                      {step.command}
+                                    </code>
+                                  </div>
+                                  {#if step.note}
+                                    <div class="mt-4 p-3 rounded-lg"
+                                         style="background: #F59E0B15; border: 1px solid #F59E0B30;">
+                                      <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
+                                        <span class="text-yellow-500 flex-shrink-0">💡</span>
+                                        <span>{step.note}</span>
+                                      </p>
+                                    </div>
+                                  {/if}
+                                </div>
+                              </div>
+                            {/each}
+                          </div>
+                        </div>
+                      {:else}
+                        <div class="mb-12" in:fly={{ x: 20, duration: 300 }}>
+                          <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Windows Installation
+                            Steps:</h3>
+                          <div class="space-y-8">
+                            {#each currentStepData.content.windowsSteps as step, index}
+                              <div class="relative">
+                                <!-- Step Number Badge -->
+                                <div class="flex items-center mb-4">
+                                  <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white mr-4"
+                                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                                    {index + 1}
+                                  </div>
+                                  <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
+                                </div>
+
+                                <!-- Command Block -->
+                                <div class="ml-14">
+                                  <div class="p-4 rounded-xl border"
+                                       style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}25;">
+                                    <code class="block text-sm overflow-x-auto whitespace-pre-wrap font-mono"
+                                          style="color: {$colorStore.text};">
+                                      {step.command}
+                                    </code>
+                                  </div>
+                                  {#if step.note}
+                                    <div class="mt-4 p-3 rounded-lg"
+                                         style="background: #F59E0B15; border: 1px solid #F59E0B30;">
+                                      <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
+                                        <span class="text-yellow-500 flex-shrink-0">💡</span>
+                                        <span>{step.note}</span>
+                                      </p>
+                                    </div>
+                                  {/if}
+                                </div>
+                              </div>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+
+                      <div class="p-8 rounded-xl border"
+                           style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+                        <h3 class="text-xl font-semibold mb-6" style="color: {$colorStore.text};">Connection String
+                          Configuration:</h3>
+                        <p class="mb-6 text-lg" style="color: {$colorStore.muted};">Add this to your credentials.json
+                          file:</p>
+                        <div class="p-5 rounded-xl border"
+                             style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
+                          <code class="block text-sm overflow-x-auto font-mono" style="color: {$colorStore.text};">
+                            {currentStepData.content.connectionExamples[selectedOS]}
+                          </code>
+                        </div>
+                        <div class="mt-6 p-4 rounded-lg" style="background: #EF444415; border: 1px solid #EF444430;">
+                          <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
+                            <span class="text-red-400 flex-shrink-0">⚠️</span>
+                            <span>Replace "your_secure_password" with the actual password you set for the mewdeko user.</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  {:else if currentStepData.id === 'owner-id'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-lg mb-8">{currentStepData.content.intro}</p>
+
+                      <div class="space-y-6 mb-10">
+                        {#each currentStepData.content.steps as step, index}
+                          <div class="flex items-start gap-4">
+                            <div
+                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                              {index + 1}
+                            </div>
+                            <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
+                          </div>
+                        {/each}
+                      </div>
+
+                      <div class="grid md:grid-cols-2 gap-8">
+                        <div class="p-6 rounded-xl border"
+                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Single Owner:</h4>
+                          <div class="p-4 rounded-lg border"
+                               style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
+                            <code class="block text-sm font-mono" style="color: {$colorStore.text};">
+                              {currentStepData.content.singleOwner}
+                            </code>
+                          </div>
+                        </div>
+
+                        <div class="p-6 rounded-xl border"
+                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+                          <h4 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Multiple
+                            Owners:</h4>
+                          <div class="p-4 rounded-lg border"
+                               style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30;">
+                            <code class="block text-sm font-mono" style="color: {$colorStore.text};">
+                              {currentStepData.content.multipleOwners}
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {:else if currentStepData.id === 'api-keys'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-lg mb-6">{currentStepData.content.intro}</p>
+
+                      <div class="space-y-6">
+                        {#each currentStepData.content.keys as key}
+                          <div class="p-6 rounded-xl border"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+                            <div class="flex items-center justify-between mb-4">
+                              <h3 class="text-xl font-semibold" style="color: {$colorStore.text};">
+                                {key.name}
+                              </h3>
+                              <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 rounded-full text-xs"
+                                      style="background: {key.priority === 'high' ? '#EF4444' : key.priority === 'medium' ? '#F59E0B' : '#6B7280'}20; color: {key.priority === 'high' ? '#EF4444' : key.priority === 'medium' ? '#F59E0B' : '#6B7280'};">
+                                  {key.priority} priority
+                                </span>
+                                {#if key.required}
+                                  <span class="px-2 py-1 rounded-full text-xs"
+                                        style="background: #EF444420; color: #EF4444;">
+                                    Required
+                                  </span>
+                                {/if}
+                              </div>
+                            </div>
+
+                            <p class="mb-4" style="color: {$colorStore.muted};">
+                              <strong>Purpose:</strong> {key.purpose}
+                            </p>
+
+                            <ol class="space-y-2">
+                              {#each key.steps as step, index}
+                                <li class="flex gap-3">
+                                  <span
+                                    class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                    style="background: {$colorStore.primary};">
+                                    {index + 1}
+                                  </span>
+                                  <p class="text-sm">{step}</p>
+                                </li>
+                              {/each}
+                            </ol>
+                          </div>
+                        {/each}
+                      </div>
+                    </div>
+                  {:else if currentStepData.id === 'final-config'}
+                    <div in:fly={{ y: 20, duration: 300 }}>
+                      <p class="text-lg mb-6">{currentStepData.content.intro}</p>
+
+                      <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Additional
+                          Settings:</h3>
+                        <div class="grid gap-4">
+                          {#each currentStepData.content.additionalSettings as setting}
+                            <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
+                              <h4 class="font-semibold mb-2" style="color: {$colorStore.text};">
+                                {setting.name}
+                              </h4>
+                              <p class="text-sm mb-2" style="color: {$colorStore.muted};">
+                                {setting.purpose}
+                              </p>
+                              <code class="block p-2 rounded text-sm"
+                                    style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                                {setting.example}
+                              </code>
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+
+                      <div class="p-6 rounded-xl" style="background: {$colorStore.primary}10;">
+                        <h3 class="text-xl font-semibold mb-4" style="color: {$colorStore.text};">Final Configuration
+                          Example:</h3>
+                        <pre class="p-4 rounded-lg text-sm overflow-x-auto"
+                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{currentStepData.content.finalExample}</pre>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex items-center justify-between mt-8 pt-6 border-t"
+                     style="border-color: {$colorStore.primary}20;">
+                  <button
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                    disabled={currentStep === 0}
+                    on:click={prevStep}
+                  >
+                    ← Previous
+                  </button>
+
+                  <div class="flex items-center gap-2">
+                    {#each steps as _, index}
+                      <button
+                        class="w-3 h-3 rounded-full transition-all duration-200 hover:scale-125"
+                        style="background: {index === currentStep ? $colorStore.primary : $colorStore.primary + '30'};"
+                        on:click={() => goToStep(index)}
+                        aria-label="Go to step {index + 1}"
+                      ></button>
+                    {/each}
+                  </div>
+
+                  <button
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50;"
+                    disabled={currentStep === steps.length - 1}
+                    on:click={nextStep}
+                  >
+                    {currentStep === steps.length - 1 ? 'Complete' : 'Next →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+  </main>
 {/if}
 
 <style>
-  :global(pre) {
-    background-color: #1f2937; /* dark gray background */
-    color: #e5e7eb; /* light gray text */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    margin-bottom: 1rem;
-  }
+    /* Custom styling for the wizard */
+    .wizard-content {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-  :global(pre code) {
-    font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-    font-size: 0.875rem;
-    line-height: 1.5;
-  }
+    /* Code styling */
+    :global(code) {
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+        font-variant-ligatures: none;
+    }
 
-  :global(code:not(pre code)) {
-    background-color: #374151; /* slightly lighter gray for inline code */
-    color: #e5e7eb;
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-    font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-    font-size: 0.875em;
+    /* Prose styling for dynamic colors */
+    :global(.prose) {
+        color: var(--color-text);
+    }
+
+    :global(.prose h1),
+    :global(.prose h2),
+    :global(.prose h3),
+    :global(.prose h4) {
+        color: var(--color-text);
+    }
+
+    :global(.prose p) {
+        color: var(--color-text);
+    }
+
+    :global(.prose li) {
+        color: var(--color-text);
+    }
+
+    :global(.prose strong) {
+        color: var(--color-text);
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .wizard-content {
+            margin: 0 -1rem;
+        }
+
+        .wizard-content .rounded-2xl {
+            padding: 1.5rem !important;
+            margin: 0.5rem;
+        }
+
+        /* Better mobile code blocks */
+        :global(code) {
+            font-size: 0.875rem;
+            word-break: break-all;
+        }
+
+        /* Improved mobile spacing for step content */
+        .space-y-6 > * + * {
+            margin-top: 1.5rem !important;
+        }
+
+        .space-y-8 > * + * {
+            margin-top: 2rem !important;
+        }
+
+        /* Mobile step layout adjustments */
+        .ml-14 {
+            margin-left: 0 !important;
+            margin-top: 1rem;
+        }
+
+        /* Better mobile padding for containers */
+        .p-6 {
+            padding: 1rem !important;
+        }
+
+        .p-8 {
+            padding: 1.5rem !important;
+        }
+
+        /* Mobile grid improvements */
+        .grid.md\\:grid-cols-2 {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+        }
+
+        /* OS selector buttons on mobile */
+        .flex.flex-col.sm\\:flex-row {
+            flex-direction: column !important;
+        }
+    }
+
+    /* Accessibility improvements */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+        .wizard-content {
+            border-width: 2px;
+        }
   }
 </style>

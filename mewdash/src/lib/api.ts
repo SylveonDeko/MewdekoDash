@@ -16,7 +16,22 @@ import type {
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
-import type { Giveaways, PermissionOverride } from "$lib/types.ts";
+import type {
+  BlacklistedUser,
+  Giveaways,
+  PermissionOverride,
+  Priority,
+  StaffResponseStats,
+  Ticket,
+  TicketActivity,
+  TicketButton,
+  TicketCase,
+  TicketPanel,
+  TicketSelectMenu,
+  TicketStats,
+  TicketTag,
+  UserTicketStats
+} from "$lib/types.ts";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
@@ -600,6 +615,301 @@ export const api = {
   getGuildRoles: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
       `ClientOperations/roles/${guildId}`
+    ),
+
+  getTicketPanels: (guildId: bigint) =>
+    apiRequest<TicketPanel[]>(`ticket/${guildId}/panels`),
+
+  createTicketPanel: (
+    guildId: bigint,
+    panel: {
+      channelId: bigint;
+      embedJson: string;
+      title: string;
+      description: string;
+      color: {
+        rawValue: number;
+      };
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/panels`, "POST", panel),
+
+  deleteTicketPanel: (guildId: bigint, panelId: number) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}`, "DELETE"),
+
+  updateTicketPanelEmbed: (
+    guildId: bigint,
+    panelId: number,
+    embed: {
+      title: string;
+      description: string;
+      color: string;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/embed`, "PUT", embed),
+
+  moveTicketPanel: (
+    guildId: bigint,
+    panelId: number,
+    channelId: bigint
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/move`, "PUT", { channelId }),
+
+  duplicateTicketPanel: (guildId: bigint, panelId: number) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/duplicate`, "POST"),
+
+  recreateTicketPanel: (guildId: bigint, panelId: number) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/recreate`, "POST"),
+
+// Button Management
+  getPanelButtons: (guildId: bigint, panelId: number) =>
+    apiRequest<TicketButton[]>(`ticket/${guildId}/panels/${panelId}/buttons`),
+
+  addPanelButton: (
+    guildId: bigint,
+    panelId: number,
+    button: {
+      label: string;
+      emoji: string;
+      style: number;
+      categoryId: bigint;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/buttons`, "POST", button),
+
+  getButton: (guildId: bigint, buttonId: number) =>
+    apiRequest<TicketButton>(`ticket/${guildId}/buttons/${buttonId}`),
+
+  updateButton: (
+    guildId: bigint,
+    buttonId: number,
+    button: {
+      label: string;
+      emoji: string;
+      style: number;
+      categoryId: bigint;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/buttons/${buttonId}`, "PUT", button),
+
+  deleteButton: (guildId: bigint, buttonId: number) =>
+    apiRequest<void>(`ticket/${guildId}/buttons/${buttonId}`, "DELETE"),
+
+// Select Menu Management
+  getPanelSelectMenus: (guildId: bigint, panelId: number) =>
+    apiRequest<TicketSelectMenu[]>(`ticket/${guildId}/panels/${panelId}/selectmenus`),
+
+  addPanelSelectMenu: (
+    guildId: bigint,
+    panelId: number,
+    menu: {
+      placeholder: string;
+      minValues: number;
+      maxValues: number;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/panels/${panelId}/selectmenus`, "POST", menu),
+
+  updateSelectMenuPlaceholder: (
+    guildId: bigint,
+    menuId: number,
+    placeholder: string
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}/placeholder`, "PUT", placeholder),
+
+  addSelectMenuOption: (
+    guildId: bigint,
+    menuId: number,
+    option: {
+      label: string;
+      description: string;
+      emoji: string;
+      categoryId: bigint;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}/options`, "POST", option),
+
+  deleteSelectMenu: (guildId: bigint, menuId: number) =>
+    apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}`, "DELETE"),
+
+// Ticket Management
+  getTicket: (guildId: bigint, ticketId: number) =>
+    apiRequest<Ticket>(`ticket/${guildId}/tickets/${ticketId}`),
+
+  getTicketByChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<Ticket>(`ticket/${guildId}/tickets/by-channel/${channelId}`),
+
+  claimTicket: (guildId: bigint, channelId: bigint, staffId: bigint) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/claim`, "POST", { staffId }),
+
+  closeTicket: (
+    guildId: bigint,
+    channelId: bigint,
+    reason?: string
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/close`, "POST", { reason }),
+
+  archiveTicket: (guildId: bigint, ticketId: number) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/${ticketId}/archive`, "POST"),
+
+  setTicketPriority: (
+    guildId: bigint,
+    channelId: bigint,
+    priorityId: number
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/priority`, "POST", { priorityId }),
+
+  addTicketTags: (
+    guildId: bigint,
+    channelId: bigint,
+    tagIds: number[]
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/tags`, "POST", { tagIds }),
+
+  addTicketNotes: (
+    guildId: bigint,
+    channelId: bigint,
+    notes: string
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/notes`, "POST", { notes }),
+
+// Case Management
+  getTicketCases: (guildId: bigint) =>
+    apiRequest<TicketCase[]>(`ticket/${guildId}/cases`),
+
+  getTicketCase: (guildId: bigint, caseId: number) =>
+    apiRequest<TicketCase>(`ticket/${guildId}/cases/${caseId}`),
+
+  createTicketCase: (
+    guildId: bigint,
+    ticketCase: {
+      title: string;
+      description: string;
+      priority: number;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/cases`, "POST", ticketCase),
+
+  updateTicketCase: (
+    guildId: bigint,
+    caseId: number,
+    ticketCase: {
+      title: string;
+      description: string;
+      priority: number;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/cases/${caseId}`, "PUT", ticketCase),
+
+  closeTicketCase: (guildId: bigint, caseId: number) =>
+    apiRequest<void>(`ticket/${guildId}/cases/${caseId}/close`, "POST"),
+
+  linkTicketsToCase: (
+    guildId: bigint,
+    caseId: number,
+    ticketIds: number[]
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/cases/${caseId}/link-tickets`, "POST", { ticketIds }),
+
+// Statistics
+  getTicketStats: (guildId: bigint) =>
+    apiRequest<TicketStats>(`ticket/${guildId}/statistics`),
+
+  getUserTicketStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<UserTicketStats>(`ticket/${guildId}/statistics/users/${userId}`),
+
+  getTicketActivity: (guildId: bigint, days?: number) =>
+    apiRequest<TicketActivity>(`ticket/${guildId}/statistics/activity${days ? `?days=${days}` : ""}`),
+
+  getStaffResponseStats: (guildId: bigint) =>
+    apiRequest<StaffResponseStats>(`ticket/${guildId}/statistics/staff-response`),
+
+// Priority Management
+  getTicketPriorities: (guildId: bigint) =>
+    apiRequest<Priority[]>(`ticket/${guildId}/priorities`),
+
+  createTicketPriority: (
+    guildId: bigint,
+    priority: {
+      name: string;
+      color: string;
+      level: number;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/priorities`, "POST", priority),
+
+  deleteTicketPriority: (guildId: bigint, priorityId: number) =>
+    apiRequest<void>(`ticket/${guildId}/priorities/${priorityId}`, "DELETE"),
+
+// Tag Management
+  getTicketTags: (guildId: bigint) =>
+    apiRequest<TicketTag[]>(`ticket/${guildId}/tags`),
+
+  createTicketTag: (
+    guildId: bigint,
+    tag: {
+      name: string;
+      color: string;
+    }
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/tags`, "POST", tag),
+
+  deleteTicketTag: (guildId: bigint, tagId: number) =>
+    apiRequest<void>(`ticket/${guildId}/tags/${tagId}`, "DELETE"),
+
+// Blacklist Management
+  getTicketBlacklist: (guildId: bigint) =>
+    apiRequest<BlacklistedUser[]>(`ticket/${guildId}/blacklist`),
+
+  blacklistUser: (
+    guildId: bigint,
+    userId: bigint,
+    reason: string
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/blacklist/${userId}`, "POST", { reason }),
+
+  unblacklistUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`ticket/${guildId}/blacklist/${userId}`, "DELETE"),
+
+// Batch Operations
+  closeInactiveTickets: (
+    guildId: bigint,
+    inactiveHours: number
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/batch/close-inactive`, "POST", { inactiveHours }),
+
+  moveTicketsBatch: (
+    guildId: bigint,
+    fromCategoryId: bigint,
+    toCategoryId: bigint
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/batch/move-tickets`, "POST", { fromCategoryId, toCategoryId }),
+
+  addRoleBatch: (
+    guildId: bigint,
+    roleId: bigint,
+    viewOnly: boolean
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/batch/add-role`, "POST", { roleId, viewOnly }),
+
+  transferTicketsBatch: (
+    guildId: bigint,
+    fromStaffId: bigint,
+    toStaffId: bigint
+  ) =>
+    apiRequest<void>(`ticket/${guildId}/batch/transfer-tickets`, "POST", { fromStaffId, toStaffId }),
+
+// Settings
+  setTicketTranscriptChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`ticket/${guildId}/settings/transcript-channel`, "PUT", { channelId }),
+
+  setTicketLogChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`ticket/${guildId}/settings/log-channel`, "PUT", { channelId }),
+
+// Additional Helper Methods
+  getGuildCategories: (guildId: bigint) =>
+    apiRequest<Array<{ id: string; name: string }>>(
+      `ClientOperations/categories/${guildId}`
     ),
 
   getBotGuilds: () => apiRequest<Array<bigint>>("ClientOperations/guilds"),

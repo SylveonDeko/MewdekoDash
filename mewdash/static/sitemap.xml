@@ -67,12 +67,32 @@
         <priority>0.8</priority>
     </url>
     <url>
+        <loc>https://mewdeko.tech/dashboard/tickets/+page</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
         <loc>https://mewdeko.tech/dashboard/suggestions/+page</loc>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
+        <loc>https://mewdeko.tech/dashboard/starboard/+page</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
         <loc>https://mewdeko.tech/dashboard/settings/+page</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://mewdeko.tech/dashboard/rolestates/+page</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://mewdeko.tech/dashboard/rolegreets/+page</loc>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -93,6 +113,11 @@
     </url>
     <url>
         <loc>https://mewdeko.tech/dashboard/multigreets/+page</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://mewdeko.tech/dashboard/invites/+page</loc>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>

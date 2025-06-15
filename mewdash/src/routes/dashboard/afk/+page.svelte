@@ -23,17 +23,6 @@
   let notificationType: "success" | "error" = "success";
   let isMobile = false;
 
-  let colors = {
-    primary: "#3b82f6",
-    secondary: "#8b5cf6",
-    accent: "#ec4899",
-    text: "#ffffff",
-    muted: "#9ca3af",
-    gradientStart: "#3b82f6",
-    gradientMid: "#8b5cf6",
-    gradientEnd: "#ec4899"
-  };
-
   let afkUsers: Afk[] = [];
   let expandedUser = null;
   let loading = true;

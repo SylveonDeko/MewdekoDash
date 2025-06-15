@@ -8,6 +8,9 @@
   import { marked } from "marked";
   import DOMPurify from "dompurify";
   import type { DiscordUser } from "$lib/types/discord.ts";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { fade, fly } from "svelte/transition";
 
   export let data: PageData;
 
@@ -16,6 +19,7 @@
   let loading = true;
   let error: string | null = null;
   let previewContent = "";
+  let reviewsWithParsedContent: (BotReviews & { parsedReview?: string })[] = [];
 
   $: user = data.user as DiscordUser | undefined;
   $: userHasReviewed = false;
@@ -33,17 +37,17 @@
     });
   }
 
-  function parseMarkdown(text: string): string {
-    let parsedText = marked.parse(text);
+  async function parseMarkdown(text: string): Promise<string> {
+    let parsedText = await marked.parse(text);
     parsedText = parseEmojis(parsedText);
     parsedText = parseMentions(parsedText);
     return DOMPurify.sanitize(parsedText);
   }
 
-  function handleInput(event: Event) {
+  async function handleInput(event: Event) {
     const target = event.target as HTMLTextAreaElement;
     newReview.review = target.value;
-    previewContent = parseMarkdown(newReview.review);
+    previewContent = await parseMarkdown(newReview.review);
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -56,11 +60,18 @@
     try {
       loading = true;
       reviews = await api.getBotReviews();
+      // Parse markdown for all reviews
+      reviewsWithParsedContent = await Promise.all(
+        reviews.map(async (review) => ({
+          ...review,
+          parsedReview: review.review ? await parseMarkdown(review.review) : ""
+        }))
+      );
       if (user) {
         let review = reviews.find((review) => review.userId === user.id);
         if (review) userHasReviewed = true;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error("Failed to fetch reviews:", err);
       error = "Failed to load reviews. Please try again later.";
     } finally {
@@ -90,7 +101,7 @@
       newReview = { stars: 0, review: "" };
       userHasReviewed = true;
       error = null;
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error("Failed to submit review:", err);
       error = "Failed to submit review. Please try again later.";
     }
@@ -148,24 +159,37 @@
   <meta content="What users think of Mewdeko." name="twitter:description" />
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8 max-w-4xl">
-  <h1 class="text-4xl font-bold mb-8 text-center text-blue-400">Bot Reviews</h1>
+<main
+  class="min-h-screen"
+  style="--color-primary: {$colorStore.primary};
+         --color-secondary: {$colorStore.secondary};
+         --color-accent: {$colorStore.accent};
+         --color-text: {$colorStore.text};
+         --color-muted: {$colorStore.muted};
+         background: linear-gradient(135deg, {$colorStore.primary}10 0%, {$colorStore.secondary}05 100%);"
+>
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <h1 class="text-4xl font-bold mb-8 text-center" in:fade={{ duration: 300 }} style="color: {$colorStore.text}">Bot
+      Reviews</h1>
 
   {#if user && !userHasReviewed && !loading}
-    <div class="bg-gray-800 rounded-lg p-6 mb-8 shadow-lg">
-      <h2 class="text-2xl font-semibold mb-6 text-blue-300">
+    <div class="rounded-2xl p-6 mb-8 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl"
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
+         in:fly={{ y: 20, duration: 300, delay: 100 }}>
+      <h2 class="text-2xl font-semibold mb-6" style="color: {$colorStore.text}">
         Submit Your Review
       </h2>
       <div class="flex items-center mb-6">
         <StarRating bind:value={newReview.stars} />
-        <span class="ml-4 text-gray-400" aria-live="polite"
+        <span class="ml-4" style="color: {$colorStore.muted}" aria-live="polite"
           >{newReview.stars} out of 5 stars</span
         >
       </div>
       <div class="mb-6">
         <label
           for="review-input"
-          class="block text-sm font-medium text-gray-400 mb-2"
+          class="block text-sm font-medium mb-2"
+          style="color: {$colorStore.muted}"
           >Write your review (supports Markdown)</label
         >
         <textarea
@@ -174,37 +198,44 @@
           on:input={handleInput}
           on:keydown={handleKeydown}
           placeholder="Write your review here..."
-          class="w-full p-4 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none min-h-[200px] text-white resize-y"
+          class="w-full p-4 rounded-xl focus:ring-2 focus:outline-none min-h-[200px] resize-y transition-all duration-300 backdrop-blur-sm"
+          style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
           rows="8"
         ></textarea>
       </div>
       <div class="mb-6">
-        <h3 class="text-lg font-medium text-gray-400 mb-2">Preview</h3>
+        <h3 class="text-lg font-medium mb-2" style="color: {$colorStore.muted}">Preview</h3>
         <div
-          class="bg-gray-700 p-4 rounded-lg prose prose-sm max-w-none prose-invert"
+          class="p-4 rounded-xl prose prose-sm max-w-none backdrop-blur-sm transition-all duration-300"
+          style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
         >
           {@html previewContent ||
-            '<p class="text-gray-500">Preview will appear here as you type...</p>'}
+          `<p style="color: ${$colorStore.muted}">Preview will appear here as you type...</p>`}
         </div>
       </div>
       <button
         on:click={submitReview}
-        class="w-full sm:w-auto mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 active:scale-95 backdrop-blur-sm"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; --tw-ring-color: {$colorStore.accent};"
       >
         Submit Review
       </button>
     </div>
   {:else if !user}
     <div
-      class="bg-yellow-800 text-yellow-200 p-6 rounded-lg mb-8 text-center shadow-lg"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
+      style="background: linear-gradient(135deg, #F59E0B20, #D9770630); border: 1px solid #F59E0B40; color: {$colorStore.text};"
       role="alert"
+      in:fly={{ y: 20, duration: 300 }}
     >
       <p class="text-xl font-semibold">Please log in to submit a review.</p>
     </div>
   {:else if userHasReviewed}
     <div
-      class="bg-green-800 text-green-200 p-6 rounded-lg mb-8 text-center shadow-lg"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
+      style="background: linear-gradient(135deg, #10B98120, #059669t30); border: 1px solid #10B98140; color: {$colorStore.text};"
       role="status"
+      in:fly={{ y: 20, duration: 300 }}
     >
       <p class="text-xl font-semibold">Thank you for your review!</p>
     </div>
@@ -212,21 +243,24 @@
 
   {#if error}
     <div
-      class="bg-red-800 text-red-200 p-6 rounded-lg mb-8 text-center shadow-lg"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
+      style="background: linear-gradient(135deg, #DC262620, #B9131930); border: 1px solid #DC262640; color: {$colorStore.text};"
       role="alert"
+      in:fly={{ y: 20, duration: 300 }}
     >
       <p class="text-xl font-semibold">{error}</p>
     </div>
   {/if}
 
   {#if loading}
-    <div class="text-center text-gray-400 p-8" aria-live="polite">
+    <div class="text-center p-8" style="color: {$colorStore.muted}" aria-live="polite" in:fade={{ duration: 300 }}>
       <svg
         class="animate-spin h-12 w-12 mx-auto mb-4"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
         aria-hidden="true"
+        style="color: {$colorStore.primary}"
       >
         <circle
           class="opacity-25"
@@ -246,9 +280,11 @@
     </div>
   {:else}
     <div class="grid grid-cols-1 gap-8">
-      {#each reviews as review}
+      {#each reviewsWithParsedContent as review, index}
         <div
-          class="bg-gray-800 rounded-lg p-6 shadow-lg transition duration-300 ease-in-out hover:shadow-xl"
+          class="rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-105"
+          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
+          in:fly={{ y: 20, duration: 300, delay: index * 100 }}
         >
           <div class="flex items-center mb-4">
             <img
@@ -271,25 +307,44 @@
           </div>
           <div class="mb-4">
             <StarRating value={review.stars} readonly />
-            <span class="ml-2 text-gray-400">{review.stars} out of 5 stars</span
+            <span class="ml-2" style="color: {$colorStore.muted}">{review.stars} out of 5 stars</span
             >
           </div>
           {#if review.review}
-            <div class="mt-4 prose prose-sm max-w-none prose-invert">
-              {@html parseMarkdown(review.review)}
+            <div class="mt-4 prose prose-sm max-w-none" style="color: {$colorStore.text}">
+              {@html review.parsedReview || ""}
             </div>
           {/if}
         </div>
       {/each}
     </div>
   {/if}
-</div>
+  </div>
+</main>
 
 <style>
-  :global(body) {
-    background-color: #111827;
-    color: #f3f4f6;
+    /* Custom prose styling for dynamic colors */
+    :global(.prose) {
+        color: var(--color-text) !important;
+    }
+
+    :global(.prose h1),
+    :global(.prose h2),
+    :global(.prose h3),
+    :global(.prose h4),
+    :global(.prose h5),
+    :global(.prose h6) {
+        color: var(--color-text) !important;
   }
+
+    :global(.prose p) {
+        color: var(--color-text) !important;
+    }
+
+    :global(.prose a) {
+        color: var(--color-primary) !important;
+    }
+  
   :global(.prose) {
     color: #d1d5db;
   }
