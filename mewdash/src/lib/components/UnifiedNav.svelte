@@ -143,7 +143,7 @@
           { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
           { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" },
           { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "💾" },
-          {// title: "Patreon", href: "/dashboard/patreon", icon: "♥️" }
+          //{ title: "Patreon", href: "/dashboard/patreon", icon: "♥️" }
         ]
       }
     ];
