@@ -35,7 +35,6 @@
     children?: { title?: string; href: string; icon?: string }[];
   };
 
-
   // Props
   export let items: NavItem[] = [];
   export let data;
@@ -59,10 +58,29 @@
   let adminGuilds: DiscordGuild[] = [];
   let isFetchingGuilds = false;
   let initialized = false;
+  let checkingInstances = false;
+
+  let instanceStates: Record<string, {
+    loading: boolean;
+    hasMutualGuild: boolean;
+    error: string | null;
+    checked: boolean;
+  }> = {};
 
   // Computed
   $: isDashboard = $page.url.pathname.startsWith("/dashboard");
   $: current = $page.url.pathname;
+
+  // Filter instances to only show those with mutual guilds
+  $: visibleInstances = instances.filter(instance => {
+    const instanceId = instance.botId.toString();
+    const state = instanceStates[instanceId];
+    // Only show instances that have been checked and have mutual guilds
+    return state?.checked && state?.hasMutualGuild;
+  });
+
+  // Track if we're still checking any instances
+  $: stillCheckingInstances = Object.values(instanceStates).some(state => state.loading);
 
   // Derived store for computed items
   const computedItemsStore = derived(
@@ -74,7 +92,6 @@
   );
   $: computedItems = $computedItemsStore;
 
-  // ====== Functions ======
   function debounce(fn: Function, ms: number) {
     let timer: number;
     return (...args: any[]) => {
@@ -105,6 +122,68 @@
 
   function checkMobile() {
     handleResize();
+  }
+
+  async function checkInstanceMutualGuilds(instance: BotInstance) {
+    if (!currentUser?.id) return false;
+
+    const instanceId = instance.botId.toString();
+
+    // Set loading state
+    instanceStates[instanceId] = {
+      loading: true,
+      hasMutualGuild: false,
+      error: null,
+      checked: false
+    };
+    instanceStates = { ...instanceStates }; // Trigger reactivity
+
+    const customHeaders = {
+      "X-Instance-Url": `http://localhost:${instance.port}/botapi`
+    };
+
+    try {
+      console.log(`Nav: Checking mutual guilds for instance ${instance.botName} (${instanceId})`);
+      const mutualGuilds = await api.getMutualGuilds(currentUser.id, undefined, customHeaders);
+      const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
+
+      instanceStates[instanceId] = {
+        loading: false,
+        hasMutualGuild: hasMutual,
+        error: null,
+        checked: true
+      };
+      instanceStates = { ...instanceStates }; // Trigger reactivity
+
+      console.log(`Nav: Instance ${instance.botName}: hasMutualGuild = ${hasMutual}`);
+      return hasMutual;
+    } catch (err: any) {
+      console.log(`Nav: Error checking mutual guilds for instance ${instance.botName}:`, err);
+
+      // Check if it's a 404 error (no mutual guilds found)
+      const is404 = err?.message?.includes("404") || err?.status === 404 || err?.response?.status === 404;
+
+      if (is404) {
+        console.log(`Nav: Instance ${instance.botName}: No mutual guilds (404)`);
+        instanceStates[instanceId] = {
+          loading: false,
+          hasMutualGuild: false,
+          error: null, // 404 is not an error, it means no mutual guilds
+          checked: true
+        };
+      } else {
+        console.error(`Nav: Actual error for instance ${instance.botName}:`, err);
+        instanceStates[instanceId] = {
+          loading: false,
+          hasMutualGuild: false,
+          error: "Failed to check mutual guilds",
+          checked: true
+        };
+      }
+
+      instanceStates = { ...instanceStates }; // Trigger reactivity
+      return false;
+    }
   }
 
   // Dashboard items with icons
@@ -312,42 +391,52 @@
     closeDropdown();
   }
 
-
   async function initializeInstances() {
     instancesLoading = true;
     instancesError = null;
 
     try {
       const response = await api.getBotInstances();
-      instances = response;
+      instances = response || [];
 
-      // Check for stored instance
+      if (instances.length === 0) {
+        instancesLoading = false;
+        return;
+      }
+
+      checkingInstances = true;
+
+      // Check mutual guilds for all instances in parallel
+      await Promise.all(instances.map(checkInstanceMutualGuilds));
+
+      checkingInstances = false;
+
+      // Check for stored instance and validate it has mutual guilds
       if (browser) {
         const storedInstance = localStorage.getItem("selectedInstance");
         if (storedInstance) {
           try {
             const parsedInstance = JSON.parse(storedInstance);
-            const instance = instances.find(i => i.botId === parsedInstance.botId);
+            const instance = visibleInstances.find(i => i.botId === parsedInstance.botId);
             if (instance) {
               logger.debug("Restoring instance:", instance.botName);
               currentInstance.set(instance);
-              // Wait a moment to ensure instance is set before fetching guilds
               setTimeout(fetchGuildsIfReady, 100);
             }
           } catch (err) {
             logger.error("Error parsing stored instance:", err);
           }
-        } else if (instances.length === 1) {
-          // Auto-select if there's only one instance
-          logger.debug("Auto-selecting the only instance:", instances[0].botName);
-          currentInstance.set(instances[0]);
-          // Wait a moment to ensure instance is set before fetching guilds
+        } else if (visibleInstances.length === 1) {
+          // Auto-select if there's only one visible instance
+          logger.debug("Auto-selecting the only visible instance:", visibleInstances[0].botName);
+          currentInstance.set(visibleInstances[0]);
           setTimeout(fetchGuildsIfReady, 100);
         }
       }
     } catch (err) {
       instancesError = "Failed to load instances";
       logger.error("Error loading instances:", err);
+      checkingInstances = false;
     } finally {
       instancesLoading = false;
     }
@@ -573,8 +662,8 @@
         <form action="/api/discord/login" method="GET" data-sveltekit-reload>
           <button type="submit"
                   class="ripple-effect rounded-lg px-4 py-2 font-medium transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg backdrop-blur-sm border"
-                  style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); 
-                         color: {$colorStore.text}; 
+                  style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
+                         color: {$colorStore.text};
                          border-color: {$colorStore.primary}50;
                          box-shadow: 0 2px 8px {$colorStore.primary}30;">
             Login
@@ -678,18 +767,18 @@
               <div class="py-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
                 <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
                 <div class="max-h-48 overflow-y-auto">
-                  {#if instancesLoading}
+                  {#if instancesLoading || stillCheckingInstances}
                     <div class="text-sm px-2 py-1 flex items-center" style="color: {$colorStore.muted};">
                       <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
                            style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                      Loading instances...
+                      {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
                     </div>
                   {:else if instancesError}
                     <div class="text-sm px-2 py-1" style="color: {$colorStore.accent};">{instancesError}</div>
-                  {:else if instances.length === 0}
-                    <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No instances found</div>
+                  {:else if visibleInstances.length === 0}
+                    <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No accessible instances</div>
                   {:else}
-                    {#each instances as instance}
+                    {#each visibleInstances as instance}
                       <button
                         class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
                         style="color: {$colorStore.text};
@@ -760,36 +849,38 @@
           />
         </div>
 
-        <!-- Mobile menu button -->
-        <button
-          aria-controls="mobile-menu"
-          aria-expanded={menuOpen || sidebarOpen}
-          aria-label="Toggle navigation menu"
-          class="inline-flex items-center p-3 rounded-lg border border-transparent hover:bg-opacity-20 transition-all duration-200 ease-in-out md:hidden min-h-[44px] min-w-[44px]"
-          style="hover:background-color: {$colorStore.primary}20; border-color: {$colorStore.primary}30;"
-          on:click={toggleMenu}
-        >
-          <span class="sr-only">Toggle navigation menu</span>
-          <div class="relative w-6 h-6 flex flex-col justify-center">
-            <span
-              class="block w-6 h-0.5 rounded transition-all duration-200 ease-in-out"
-              class:rotate-45={menuOpen || sidebarOpen}
-              class:translate-y-2={menuOpen || sidebarOpen}
-              style="background-color: {$colorStore.text};"
-            ></span>
-            <span
-              class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
-              class:opacity-0={menuOpen || sidebarOpen}
-              style="background-color: {$colorStore.text};"
-            ></span>
-            <span
-              class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
-              class:-rotate-45={menuOpen || sidebarOpen}
-              class:-translate-y-2={menuOpen || sidebarOpen}
-              style="background-color: {$colorStore.text};"
-            ></span>
-          </div>
-        </button>
+        <!-- Mobile menu button - hide in dashboard -->
+        {#if !isDashboard}
+          <button
+            aria-controls="mobile-menu"
+            aria-expanded={menuOpen || sidebarOpen}
+            aria-label="Toggle navigation menu"
+            class="inline-flex items-center p-3 rounded-lg border border-transparent hover:bg-opacity-20 transition-all duration-200 ease-in-out md:hidden min-h-[44px] min-w-[44px]"
+            style="hover:background-color: {$colorStore.primary}20; border-color: {$colorStore.primary}30;"
+            on:click={toggleMenu}
+          >
+            <span class="sr-only">Toggle navigation menu</span>
+            <div class="relative w-6 h-6 flex flex-col justify-center">
+              <span
+                class="block w-6 h-0.5 rounded transition-all duration-200 ease-in-out"
+                class:rotate-45={menuOpen || sidebarOpen}
+                class:translate-y-2={menuOpen || sidebarOpen}
+                style="background-color: {$colorStore.text};"
+              ></span>
+              <span
+                class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
+                class:opacity-0={menuOpen || sidebarOpen}
+                style="background-color: {$colorStore.text};"
+              ></span>
+              <span
+                class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
+                class:-rotate-45={menuOpen || sidebarOpen}
+                class:-translate-y-2={menuOpen || sidebarOpen}
+                style="background-color: {$colorStore.text};"
+              ></span>
+            </div>
+          </button>
+        {/if}
       {/if}
     </div>
   </div>
@@ -856,18 +947,18 @@
         <div class="p-4 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
           <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
           <div class="space-y-2">
-            {#if instancesLoading}
+            {#if instancesLoading || stillCheckingInstances}
               <div class="text-sm flex items-center" style="color: {$colorStore.muted};">
                 <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                Loading instances...
+                {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
               </div>
             {:else if instancesError}
               <div class="text-sm" style="color: {$colorStore.accent};">{instancesError}</div>
-            {:else if instances.length === 0}
-              <div class="text-sm" style="color: {$colorStore.muted};">No instances found</div>
+            {:else if visibleInstances.length === 0}
+              <div class="text-sm" style="color: {$colorStore.muted};">No accessible instances</div>
             {:else}
-              {#each instances as instance}
+              {#each visibleInstances as instance}
                 <button
                   class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
                   style="color: {$colorStore.text};
