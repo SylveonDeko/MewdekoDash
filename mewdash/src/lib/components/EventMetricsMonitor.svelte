@@ -24,32 +24,37 @@
   let sortField: keyof EventMetric = "totalProcessed";
   let sortDirection: "asc" | "desc" = "desc";
 
+  // Ensure eventMetrics is always an array
+  $: safeEventMetrics = Array.isArray(eventMetrics) ? eventMetrics : [];
+
   const fetchEventMetrics = async () => {
     if (!userId || refreshInProgress) return;
 
     try {
       refreshInProgress = true;
       error = null;
-      eventMetrics = await api.getEventMetrics(userId);
-      console.log(eventMetrics);
+      const response = await api.getEventMetrics(userId);
+      eventMetrics = Array.isArray(response) ? response : [];
       sortData();
     } catch (err) {
       logger.error("Error fetching event metrics:", err);
       error = "Failed to load event metrics";
+      eventMetrics = []; // Ensure it's always an array
     } finally {
       loading = false;
       refreshInProgress = false;
     }
   };
 
-  const formatTime = (ms: number) => {
-    if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`;
-    if (ms < 1000) return `${ms.toFixed(2)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
+  const formatTime = (ms: any) => {
+    const num = safeNumber(ms);
+    if (num < 1) return `${(num * 1000).toFixed(2)}μs`;
+    if (num < 1000) return `${num.toFixed(2)}ms`;
+    return `${(num / 1000).toFixed(2)}s`;
   };
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString();
+  const formatNumber = (num: any) => {
+    return safeNumber(num).toLocaleString();
   };
 
   const sortBy = (field: keyof EventMetric) => {
@@ -63,20 +68,32 @@
   };
 
   const sortData = () => {
+    if (!Array.isArray(eventMetrics)) {
+      eventMetrics = [];
+      return;
+    }
+
     eventMetrics = [...eventMetrics].sort((a, b) => {
+      if (!a || !b) return 0;
+
       const aVal = a[sortField];
       const bVal = b[sortField];
 
       if (typeof aVal === "string" && typeof bVal === "string") {
+        const aStr = aVal || "";
+        const bStr = bVal || "";
         return sortDirection === "asc"
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
+          ? aStr.localeCompare(bStr)
+          : bStr.localeCompare(aStr);
       }
 
+      const aNum = safeNumber(aVal);
+      const bNum = safeNumber(bVal);
+
       if (sortDirection === "asc") {
-        return (aVal as number) - (bVal as number);
+        return aNum - bNum;
       }
-      return (bVal as number) - (aVal as number);
+      return bNum - aNum;
     });
   };
 
@@ -86,10 +103,21 @@
   };
 
   const getErrorRateColor = (errorRate: number) => {
-    if (errorRate === 0) return "text-green-400";
-    if (errorRate < 1) return "text-yellow-400";
-    if (errorRate < 5) return "text-orange-400";
+    const rate = Number(errorRate) || 0;
+    if (rate === 0) return "text-green-400";
+    if (rate < 1) return "text-yellow-400";
+    if (rate < 5) return "text-orange-400";
     return "text-red-400";
+  };
+
+  const safeToFixed = (value: any, decimals: number = 2): string => {
+    const num = Number(value);
+    return isNaN(num) ? "0.00" : num.toFixed(decimals);
+  };
+
+  const safeNumber = (value: any): number => {
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
   };
 
   onMount(async () => {
@@ -124,11 +152,11 @@
     </div>
   {/if}
 
-  {#if loading && eventMetrics.length === 0}
+  {#if loading && safeEventMetrics.length === 0}
     <div class="flex justify-center items-center h-64">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-  {:else if eventMetrics.length === 0}
+  {:else if safeEventMetrics.length === 0}
     <div class="text-center p-8 text-gray-400">
       <p>No event metrics available yet.</p>
       <p class="mt-2 text-sm">Event metrics will appear as your bot processes Discord events.</p>
@@ -139,25 +167,26 @@
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Total Events</h3>
         <div class="text-2xl font-bold text-white">
-          {formatNumber(eventMetrics.reduce((sum, metric) => sum + metric.totalProcessed, 0))}
+          {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalProcessed), 0))}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Total Errors</h3>
         <div class="text-2xl font-bold text-red-400">
-          {formatNumber(eventMetrics.reduce((sum, metric) => sum + metric.totalErrors, 0))}
+          {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalErrors), 0))}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Event Types</h3>
         <div class="text-2xl font-bold text-blue-400">
-          {eventMetrics.length}
+          {safeEventMetrics.length}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Avg Error Rate</h3>
         <div class="text-2xl font-bold text-yellow-400">
-          {(eventMetrics.reduce((sum, metric) => sum + metric.errorRate, 0) / eventMetrics.length || 0).toFixed(2)}%
+          {safeToFixed(safeEventMetrics.length > 0 ? safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errorRate), 0) / safeEventMetrics.length : 0)}
+          %
         </div>
       </div>
     </div>
@@ -200,23 +229,25 @@
         </tr>
         </thead>
         <tbody>
-        {#each eventMetrics as metric, i}
-          <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
-            <td class="px-4 py-3 font-mono text-sm">{metric.eventType}</td>
-            <td class="px-4 py-3 text-right">{formatNumber(metric.totalProcessed)}</td>
-            <td class="px-4 py-3 text-right {metric.totalErrors > 0 ? 'text-red-400' : 'text-green-400'}">
-              {formatNumber(metric.totalErrors)}
-            </td>
-            <td class="px-4 py-3 text-right {getErrorRateColor(metric.errorRate)}">
-              {metric.errorRate.toFixed(2)}%
-            </td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(metric.averageExecutionTime)}
-            </td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(metric.totalExecutionTime)}
-            </td>
-          </tr>
+        {#each safeEventMetrics as metric, i}
+          {#if metric}
+            <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
+              <td class="px-4 py-3 font-mono text-sm">{metric.eventType || 'Unknown'}</td>
+              <td class="px-4 py-3 text-right">{formatNumber(safeNumber(metric.totalProcessed))}</td>
+              <td class="px-4 py-3 text-right {safeNumber(metric.totalErrors) > 0 ? 'text-red-400' : 'text-green-400'}">
+                {formatNumber(safeNumber(metric.totalErrors))}
+              </td>
+              <td class="px-4 py-3 text-right {getErrorRateColor(safeNumber(metric.errorRate))}">
+                {safeToFixed(metric.errorRate)}%
+              </td>
+              <td class="px-4 py-3 text-right font-mono">
+                {formatTime(safeNumber(metric.averageExecutionTime))}
+              </td>
+              <td class="px-4 py-3 text-right font-mono">
+                {formatTime(safeNumber(metric.totalExecutionTime))}
+              </td>
+            </tr>
+          {/if}
         {/each}
         </tbody>
       </table>

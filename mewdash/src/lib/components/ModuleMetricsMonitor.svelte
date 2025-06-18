@@ -24,18 +24,22 @@
   let sortField: keyof ModuleMetric = "eventsProcessed";
   let sortDirection: "asc" | "desc" = "desc";
 
+  // Ensure moduleMetrics is always an array
+  $: safeModuleMetrics = Array.isArray(moduleMetrics) ? moduleMetrics : [];
+
   const fetchModuleMetrics = async () => {
     if (!userId || refreshInProgress) return;
 
     try {
       refreshInProgress = true;
       error = null;
-      moduleMetrics = await api.getModuleMetrics(userId);
-      console.log(moduleMetrics);
+      const response = await api.getModuleMetrics(userId);
+      moduleMetrics = Array.isArray(response) ? response : [];
       sortData();
     } catch (err) {
       logger.error("Error fetching module metrics:", err);
       error = "Failed to load module metrics";
+      moduleMetrics = []; // Ensure it's always an array
     } finally {
       loading = false;
       refreshInProgress = false;
@@ -48,8 +52,8 @@
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString();
+  const formatNumber = (num: any) => {
+    return safeNumber(num).toLocaleString();
   };
 
   const sortBy = (field: keyof ModuleMetric) => {
@@ -63,20 +67,32 @@
   };
 
   const sortData = () => {
+    if (!Array.isArray(moduleMetrics)) {
+      moduleMetrics = [];
+      return;
+    }
+
     moduleMetrics = [...moduleMetrics].sort((a, b) => {
+      if (!a || !b) return 0;
+
       const aVal = a[sortField];
       const bVal = b[sortField];
 
       if (typeof aVal === "string" && typeof bVal === "string") {
+        const aStr = aVal || "";
+        const bStr = bVal || "";
         return sortDirection === "asc"
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
+          ? aStr.localeCompare(bStr)
+          : bStr.localeCompare(aStr);
       }
 
+      const aNum = safeNumber(aVal);
+      const bNum = safeNumber(bVal);
+
       if (sortDirection === "asc") {
-        return (aVal as number) - (bVal as number);
+        return aNum - bNum;
       }
-      return (bVal as number) - (aVal as number);
+      return bNum - aNum;
     });
   };
 
@@ -86,10 +102,21 @@
   };
 
   const getErrorRateColor = (errorRate: number) => {
-    if (errorRate === 0) return "text-green-400";
-    if (errorRate < 1) return "text-yellow-400";
-    if (errorRate < 5) return "text-orange-400";
+    const rate = Number(errorRate) || 0;
+    if (rate === 0) return "text-green-400";
+    if (rate < 1) return "text-yellow-400";
+    if (rate < 5) return "text-orange-400";
     return "text-red-400";
+  };
+
+  const safeToFixed = (value: any, decimals: number = 2): string => {
+    const num = Number(value);
+    return isNaN(num) ? "0.00" : num.toFixed(decimals);
+  };
+
+  const safeNumber = (value: any): number => {
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
   };
 
   const getModuleBadgeColor = (moduleName: string) => {
@@ -133,11 +160,11 @@
     </div>
   {/if}
 
-  {#if loading && moduleMetrics.length === 0}
+  {#if loading && safeModuleMetrics.length === 0}
     <div class="flex justify-center items-center h-64">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-  {:else if moduleMetrics.length === 0}
+  {:else if safeModuleMetrics.length === 0}
     <div class="text-center p-8 text-gray-400">
       <p>No module metrics available yet.</p>
       <p class="mt-2 text-sm">Module metrics will appear as your bot modules process events.</p>
@@ -148,25 +175,26 @@
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Active Modules</h3>
         <div class="text-2xl font-bold text-white">
-          {moduleMetrics.length}
+          {safeModuleMetrics.length}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Total Events</h3>
         <div class="text-2xl font-bold text-blue-400">
-          {formatNumber(moduleMetrics.reduce((sum, metric) => sum + metric.eventsProcessed, 0))}
+          {formatNumber(safeModuleMetrics.reduce((sum, metric) => sum + safeNumber(metric?.eventsProcessed), 0))}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Total Errors</h3>
         <div class="text-2xl font-bold text-red-400">
-          {formatNumber(moduleMetrics.reduce((sum, metric) => sum + metric.errors, 0))}
+          {formatNumber(safeModuleMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errors), 0))}
         </div>
       </div>
       <div class="bg-gray-750 p-4 rounded-lg">
         <h3 class="text-sm font-medium text-gray-300 mb-1">Avg Error Rate</h3>
         <div class="text-2xl font-bold text-yellow-400">
-          {(moduleMetrics.reduce((sum, metric) => sum + metric.errorRate, 0) / moduleMetrics.length || 0).toFixed(2)}%
+          {safeToFixed(safeModuleMetrics.length > 0 ? safeModuleMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errorRate), 0) / safeModuleMetrics.length : 0)}
+          %
         </div>
       </div>
     </div>
@@ -209,29 +237,32 @@
         </tr>
         </thead>
         <tbody>
-        {#each moduleMetrics as metric, i}
-          <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
-            <td class="px-4 py-3">
-              <div class="flex items-center space-x-2">
-                  <span class="px-2 py-1 text-xs rounded-full text-white {getModuleBadgeColor(metric.moduleName)}">
-                    {metric.moduleName}
-                  </span>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-right">{formatNumber(metric.eventsProcessed)}</td>
-            <td class="px-4 py-3 text-right {metric.errors > 0 ? 'text-red-400' : 'text-green-400'}">
-              {formatNumber(metric.errors)}
-            </td>
-            <td class="px-4 py-3 text-right {getErrorRateColor(metric.errorRate)}">
-              {metric.errorRate.toFixed(2)}%
-            </td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(metric.averageExecutionTime)}
-            </td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(metric.totalExecutionTime)}
-            </td>
-          </tr>
+        {#each safeModuleMetrics as metric, i}
+          {#if metric}
+            <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
+              <td class="px-4 py-3">
+                <div class="flex items-center space-x-2">
+                    <span
+                      class="px-2 py-1 text-xs rounded-full text-white {getModuleBadgeColor(metric.moduleName || 'Unknown')}">
+                      {metric.moduleName || 'Unknown'}
+                    </span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-right">{formatNumber(safeNumber(metric.eventsProcessed))}</td>
+              <td class="px-4 py-3 text-right {safeNumber(metric.errors) > 0 ? 'text-red-400' : 'text-green-400'}">
+                {formatNumber(safeNumber(metric.errors))}
+              </td>
+              <td class="px-4 py-3 text-right {getErrorRateColor(safeNumber(metric.errorRate))}">
+                {safeToFixed(metric.errorRate)}%
+              </td>
+              <td class="px-4 py-3 text-right font-mono">
+                {formatTime(safeNumber(metric.averageExecutionTime))}
+              </td>
+              <td class="px-4 py-3 text-right font-mono">
+                {formatTime(safeNumber(metric.totalExecutionTime))}
+              </td>
+            </tr>
+          {/if}
         {/each}
         </tbody>
       </table>
