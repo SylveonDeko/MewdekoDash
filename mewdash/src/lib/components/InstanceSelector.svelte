@@ -57,15 +57,30 @@
 
       console.log(`Instance ${instance.botName}: hasMutualGuild = ${hasMutual}`);
       return hasMutual;
-    } catch (err) {
-      console.error(`Error checking mutual guilds for instance ${instance.botName}:`, err);
+    } catch (err: any) {
+      console.log(`Error checking mutual guilds for instance ${instance.botName}:`, err);
 
-      instanceStates[instanceId] = {
-        loading: false,
-        hasMutualGuild: false,
-        error: "Failed to check mutual guilds",
-        checked: true
-      };
+      // Check if it's a 404 error (no mutual guilds found)
+      const is404 = err?.message?.includes("404") || err?.status === 404 || err?.response?.status === 404;
+
+      if (is404) {
+        console.log(`Instance ${instance.botName}: No mutual guilds (404)`);
+        instanceStates[instanceId] = {
+          loading: false,
+          hasMutualGuild: false,
+          error: null, // 404 is not an error, it means no mutual guilds
+          checked: true
+        };
+      } else {
+        console.error(`Actual error for instance ${instance.botName}:`, err);
+        instanceStates[instanceId] = {
+          loading: false,
+          hasMutualGuild: false,
+          error: "Failed to check mutual guilds",
+          checked: true
+        };
+      }
+
       instanceStates = { ...instanceStates }; // Trigger reactivity
       return false;
     }
