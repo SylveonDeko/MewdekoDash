@@ -16,6 +16,7 @@
   import { logger } from "$lib/logger.ts";
   import { goto } from "$app/navigation";
   import { colorStore } from "$lib/stores/colorStore.ts";
+  import { userStore } from "$lib/stores/userStore.ts";
 
   // Types
   type NavItem = {
@@ -41,6 +42,9 @@
 
   // Stores
   const isOwnerStore = writable(false);
+
+  // Derived store for current user (server data takes priority, fallback to user store)
+  $: currentUser = data?.user || $userStore;
 
   // State
   let guildFetchError: string | null = null;
@@ -138,7 +142,8 @@
         items: [
           { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
           { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" },
-          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "💾" }
+          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "💾" },
+          {// title: "Patreon", href: "/dashboard/patreon", icon: "♥️" }
         ]
       }
     ];
@@ -223,10 +228,10 @@
 
   // API and Data Functions
   async function checkOwnership() {
-    if (!data?.user?.id) return;
+    if (!currentUser?.id) return;
 
     try {
-      const isOwner = await api.isOwner(BigInt(data.user.id));
+      const isOwner = await api.isOwner(BigInt(currentUser.id));
       isOwnerStore.set(isOwner);
     } catch (err) {
       logger.error("Error checking owner status:", err);
@@ -261,11 +266,16 @@
       return;
     }
 
+    if (!currentUser) {
+      logger.debug("No current user, skipping guild fetch");
+      return;
+    }
+
     isFetchingGuilds = true;
     guildFetchError = null;
     try {
-      logger.info("Fetching guilds for user:", data.user.id, "and instance:", get(currentInstance).botId);
-      const newGuilds = await api.getMutualGuilds(data.user.id);
+      logger.info("Fetching guilds for user:", currentUser.id, "and instance:", get(currentInstance).botId);
+      const newGuilds = await api.getMutualGuilds(currentUser.id);
       adminGuilds = newGuilds || [];
 
       if (adminGuilds.length === 0) {
@@ -371,7 +381,7 @@
 
     try {
       logger.debug("Initializing navigation component");
-      if (data?.user) {
+      if (currentUser) {
         await checkOwnership();
       }
 
@@ -559,7 +569,7 @@
 
     <!-- Right section -->
     <div class="flex items-center gap-2 w-[200px] justify-end">
-      {#if !data?.user}
+      {#if !currentUser}
         <form action="/api/discord/login" method="GET" data-sveltekit-reload>
           <button type="submit"
                   class="ripple-effect rounded-lg px-4 py-2 font-medium transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg backdrop-blur-sm border"
@@ -586,12 +596,12 @@
           >
             <!-- User Avatar -->
             <img
-              src={data.user.avatar
-                ? (data.user.avatar.startsWith("a_")
-                  ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                  : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+              src={currentUser.avatar
+                ? (currentUser.avatar.startsWith("a_")
+                  ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                  : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
                 : `https://cdn.discordapp.com/embed/avatars/0.png`}
-              alt={data.user.username}
+              alt={currentUser.username}
               class="w-10 h-10 rounded-full"
               style="background: {$colorStore.primary}20;"
             />
@@ -599,7 +609,7 @@
             <!-- Username and instance display -->
             <div class="flex flex-col items-start">
               <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                {data.user.username}
+                {currentUser.username}
               </span>
               {#if $currentInstance}
                 <div class="flex items-center gap-1">
@@ -646,19 +656,19 @@
               <!-- User Info -->
               <div class="flex items-center space-x-3">
                 <img
-                  src={data.user.avatar
-                    ? (data.user.avatar.startsWith("a_")
-                      ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                      : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+                  src={currentUser.avatar
+                    ? (currentUser.avatar.startsWith("a_")
+                      ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                      : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
                     : `https://cdn.discordapp.com/embed/avatars/0.png`}
-                  alt={data.user.username}
+                  alt={currentUser.username}
                   class="w-10 h-10 rounded-full"
                 />
                 <div>
                   <div class="flex items-center space-x-2">
-                    <h2 class="font-bold" style="color: {$colorStore.text};">{data.user.username}</h2>
-                    {#if data.user.discriminator !== "0"}
-                      <span style="color: {$colorStore.muted};">#{data.user.discriminator}</span>
+                    <h2 class="font-bold" style="color: {$colorStore.text};">{currentUser.username}</h2>
+                    {#if currentUser.discriminator !== "0"}
+                      <span style="color: {$colorStore.muted};">#{currentUser.discriminator}</span>
                     {/if}
                   </div>
                 </div>
@@ -688,7 +698,7 @@
                                hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                                hover:border-color: {$colorStore.primary}40;"
                         on:click={() => handleInstanceSelect(instance)}
-                        aria-selected={$currentInstance?.botId === instance.botId}
+                        aria-pressed={$currentInstance?.botId === instance.botId}
                       >
                         <img
                           src={instance.botAvatar}
@@ -739,12 +749,12 @@
         <!-- Mobile User Display -->
         <div class="md:hidden flex items-center gap-2">
           <img
-            src={data.user.avatar
-              ? (data.user.avatar.startsWith("a_")
-                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+            src={currentUser.avatar
+              ? (currentUser.avatar.startsWith("a_")
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
               : `https://cdn.discordapp.com/embed/avatars/0.png`}
-            alt={data.user.username}
+            alt={currentUser.username}
             class="w-8 h-8 rounded-full"
             style="background: {$colorStore.primary}20;"
           />
@@ -808,21 +818,21 @@
       <div class="p-4 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
         <div class="flex justify-between items-center">
           <div id="mobile-menu-title" class="sr-only">Mobile Navigation Menu</div>
-          {#if data?.user}
+          {#if currentUser}
             <div class="flex items-center space-x-3">
               <img
-                src={data.user.avatar
-                  ? (data.user.avatar.startsWith("a_")
-                    ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                    : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`)
+                src={currentUser.avatar
+                  ? (currentUser.avatar.startsWith("a_")
+                    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                    : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
                   : `https://cdn.discordapp.com/embed/avatars/0.png`}
-                alt={data.user.username}
+                alt={currentUser.username}
                 class="w-10 h-10 rounded-full"
               />
               <div>
-                <div class="font-medium" style="color: {$colorStore.text};">{data.user.username}</div>
-                {#if data.user.discriminator !== "0"}
-                  <div style="color: {$colorStore.muted};" class="text-sm">#{data.user.discriminator}</div>
+                <div class="font-medium" style="color: {$colorStore.text};">{currentUser.username}</div>
+                {#if currentUser.discriminator !== "0"}
+                  <div style="color: {$colorStore.muted};" class="text-sm">#{currentUser.discriminator}</div>
                 {/if}
               </div>
             </div>
@@ -869,7 +879,7 @@
                     handleInstanceSelect(instance);
                     closeMobileMenu();
                   }}
-                  aria-selected={$currentInstance?.botId === instance.botId}
+                  aria-pressed={$currentInstance?.botId === instance.botId}
                 >
                   <img
                     src={instance.botAvatar}

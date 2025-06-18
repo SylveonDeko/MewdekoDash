@@ -629,11 +629,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Primary Target Type -->
           <div class="space-y-2">
-            <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+            <label for="primary-target-type" class="flex items-center gap-2 text-sm font-medium"
+                   style="color: {colors.text}">
               <Server class="w-4 h-4" style="color: {colors.primary}" />
               Target Type
             </label>
             <select
+              id="primary-target-type"
               bind:value={selectedPrimaryType}
               class="w-full p-3 rounded-lg border transition-all duration-200"
               style="background: {colors.primary}10;
@@ -651,11 +653,13 @@
           <!-- Target Selection -->
           {#if selectedPrimaryType !== PrimaryPermissionType.Server}
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+              <label for="permission-target" class="flex items-center gap-2 text-sm font-medium"
+                     style="color: {colors.text}">
                 <Hash class="w-4 h-4" style="color: {colors.primary}" />
                 Target
               </label>
               <select
+                id="permission-target"
                 bind:value={selectedTarget}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -674,11 +678,13 @@
 
           <!-- Secondary Type -->
           <div class="space-y-2">
-            <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+            <label for="permission-type" class="flex items-center gap-2 text-sm font-medium"
+                   style="color: {colors.text}">
               <Command class="w-4 h-4" style="color: {colors.secondary}" />
               Permission Type
             </label>
             <select
+              id="permission-type"
               bind:value={selectedSecondaryType}
               class="w-full p-3 rounded-lg border transition-all duration-200"
               style="background: {colors.primary}10;
@@ -694,7 +700,8 @@
           <!-- Command/Module Selection -->
           {#if selectedSecondaryType !== SecondaryPermissionType.AllModules}
             <div class="space-y-2">
-              <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+              <label for="command-module-search" class="flex items-center gap-2 text-sm font-medium"
+                     style="color: {colors.text}">
                 {#if selectedSecondaryType === SecondaryPermissionType.Command}
                   <Command class="w-4 h-4" style="color: {colors.secondary}" />
                   Command
@@ -707,6 +714,7 @@
               <!-- Search input -->
               <div class="relative">
                 <input
+                  id="command-module-search"
                   type="text"
                   bind:value={searchTerm}
                   placeholder={selectedSecondaryType === SecondaryPermissionType.Command ? "Filter commands..." : "Filter modules..."}

@@ -104,7 +104,6 @@
   on:mouseenter={tooltipData.length > 0 ? toggleTooltip : undefined}
   on:mouseleave={tooltipData.length > 0 ? closeTooltip : undefined}
   role={tooltipData.length > 0 ? "button" : "region"}
-  tabindex={tooltipData.length > 0 ? 0 : undefined}
 >
   <div
     class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"

@@ -131,20 +131,13 @@
                   {member.name}
                 </h3>
                 <div class="easter-egg-container">
-                  <p class="description text-base cursor-pointer transition-all duration-200 hover:opacity-70"
+                  <button
+                    class="description text-base cursor-pointer transition-all duration-200 hover:opacity-70 text-left w-full bg-transparent border-none p-0 font-inherit"
                      style="color: {$colorStore.muted};"
                      on:click={(event) => handleEasterEggClick(event, member)}
-                     on:keydown={(e) => {
-                       if (e.key === 'Enter' || e.key === ' ') {
-                         e.preventDefault();
-                         e.currentTarget.click();
-                       }
-                     }}
-                     tabindex="0"
-                     role="button"
                      aria-label="Click to reveal easter egg">
                     {member.description}
-                  </p>
+                  </button>
                 </div>
               </div>
             </div>

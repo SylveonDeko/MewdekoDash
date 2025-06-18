@@ -727,11 +727,12 @@
                     <div class="mt-4">
                       <div class="flex items-center gap-2 mb-2">
                         <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
-                        <label class="font-medium" style="color: {colors.text}">
+                        <label for="test-regex-pattern" class="font-medium" style="color: {colors.text}">
                           Test Regex Pattern
                         </label>
                       </div>
                       <input
+                        id="test-regex-pattern"
                         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                         style="border-color: {colors.accent}30;
                                color: {colors.text};
@@ -819,11 +820,12 @@
         <div>
           <div class="flex items-center gap-2 mb-2">
             <Command class="w-4 h-4" style="color: {colors.primary}" />
-            <label class="font-medium" style="color: {colors.text}">
+            <label class="font-medium" for="trigger-pattern" style="color: {colors.text}">
               Trigger Pattern
             </label>
           </div>
           <input
+            id="trigger-pattern"
             bind:value={newTrigger.trigger}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
             class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
@@ -846,11 +848,12 @@
         <div>
           <div class="flex items-center gap-2 mb-2">
             <MessageCircle class="w-4 h-4" style="color: {colors.secondary}" />
-            <label class="font-medium" style="color: {colors.text}">
+            <label class="font-medium" for="response-message" style="color: {colors.text}">
               Response Message
             </label>
           </div>
           <input
+            id="response-message"
             bind:value={newTrigger.response}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
             style="border-color: {colors.secondary}30;
@@ -864,12 +867,13 @@
         <div>
           <div class="flex items-center gap-2 mb-2">
             <ToggleRight class="w-4 h-4" style="color: {colors.accent}" />
-            <label class="font-medium" style="color: {colors.text}">
+            <label class="font-medium" for="trigger-type" style="color: {colors.text}">
               Trigger Type
             </label>
           </div>
           <div class="relative">
             <select
+              id="trigger-type"
               bind:value={newTrigger.isRegex}
               class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
               style="border-color: {colors.accent}30;
@@ -892,11 +896,12 @@
           <div>
             <div class="flex items-center gap-2 mb-2">
               <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
-              <label class="font-medium" style="color: {colors.text}">
+              <label for="test-regex-pattern-2" class="font-medium" style="color: {colors.text}">
                 Test Regex Pattern
               </label>
             </div>
             <input
+              id="test-regex-pattern-2"
               class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
               style="border-color: {colors.accent}30;
                      color: {colors.text};

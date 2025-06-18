@@ -100,6 +100,7 @@
                style="background: var(--color-primary)10;"></div>
           <div class="relative space-y-1.5">
             <label
+              for="interval-{unit}"
               class="flex items-center gap-1.5 text-xs font-medium ml-1"
               style="color: var(--color-muted)"
             >
@@ -107,6 +108,7 @@
               {label}
             </label>
             <input
+              id="interval-{unit}"
               type="number"
               min="0"
               max={max}
@@ -119,7 +121,6 @@
               style="border-color: var(--color-primary)20;
                      color: var(--color-text);
                      focus:border-color: var(--color-primary);"
-              aria-label={label}
             />
           </div>
         </div>

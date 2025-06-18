@@ -1,12 +1,8 @@
-import type { LayoutServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
+import type { LayoutServerLoad } from "./$types";
 
-export const load: LayoutServerLoad = async ({ locals }) => {
-  if (!locals.user) {
-    throw redirect(302, '/api/discord/login');
-  }
-
+export const load: LayoutServerLoad = async ({ locals, url }) => {
+  // Always allow access - let client-side handle authentication with user store
   return {
-    user: locals.user
+    user: locals.user || null
   };
 };

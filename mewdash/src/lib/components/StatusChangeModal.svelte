@@ -39,6 +39,10 @@
   class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
   transition:fade={{ duration: 200 }}
   on:click|self={onClose}
+  aria-label="Close modal"
+  on:keydown={(e) => e.key === 'Escape' && onClose()}
+  role="button"
+  tabindex="0"
 >
   <div
     class="w-full max-w-md rounded-xl border shadow-xl p-6"
@@ -46,6 +50,7 @@
            border-color: {colors.primary}30;"
     transition:slide={{ duration: 200 }}
     role="dialog"
+    aria-modal="true"
     aria-labelledby="modal-title"
   >
     <h2

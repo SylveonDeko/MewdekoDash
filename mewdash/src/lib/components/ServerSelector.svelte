@@ -41,6 +41,20 @@
     if (browser) {
       hasEverSelectedServer = true;
       localStorage.setItem("hasEverSelectedServer", "true");
+
+      // Save the selected guild to localStorage for persistence across page reloads
+      try {
+        localStorage.setItem("lastSelectedGuild", JSON.stringify({
+          id: guild.id.toString(),
+          name: guild.name,
+          icon: guild.icon,
+          owner: guild.owner,
+          permissions: guild.permissions,
+          features: guild.features
+        }));
+      } catch (err) {
+        console.error("Failed to save guild to localStorage:", err);
+      }
     }
   }
 
@@ -211,6 +225,8 @@
                 ``}
               on:mouseover={(e) => e.currentTarget.style.background = `${$colorStore.primary}20`}
               on:mouseout={(e) => e.currentTarget.style.background = $currentGuild?.id === guild.id ? `${$colorStore.primary}30` : ''}
+              on:focus={(e) => e.currentTarget.style.background = `${$colorStore.primary}20`}
+              on:blur={(e) => e.currentTarget.style.background = $currentGuild?.id === guild.id ? `${$colorStore.primary}30` : ''}
               on:click={() => handleSelect(guild)}
               role="option"
               aria-selected={$currentGuild?.id === guild.id}

@@ -9,12 +9,18 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
+  import { userStore } from "$lib/stores/userStore.ts";
 
 
   export let data: LayoutData;
 
   onMount(async () => {
     if (browser) {
+      // Set user from server data if available
+      if (data?.user) {
+        userStore.set(data.user);
+      }
+      
       if (window.location.toString().includes("?loggedin")) {
         await invalidateAll();
         await goto("/");
@@ -67,6 +73,23 @@
     },
     { title: "Reviews", elements: [{ href: "/reviews" }] }
   ];
+
+  // Keep user store in sync with server data
+  $: if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
+    console.log("Setting user store from server data:", data.user);
+    userStore.set(data.user);
+  }
+
+  // Clear user store if server says no user
+  $: if (browser && !data?.user && $userStore) {
+    console.log("Clearing user store - no server user");
+    userStore.set(null);
+  }
+
+  // Debug logging
+  $: if (browser) {
+    console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
+  }
 
   $: if (data?.user?.avatar) {
     try {

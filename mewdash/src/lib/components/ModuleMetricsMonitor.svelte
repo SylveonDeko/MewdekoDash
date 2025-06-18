@@ -31,6 +31,7 @@
       refreshInProgress = true;
       error = null;
       moduleMetrics = await api.getModuleMetrics(userId);
+      console.log(moduleMetrics);
       sortData();
     } catch (err) {
       logger.error("Error fetching module metrics:", err);

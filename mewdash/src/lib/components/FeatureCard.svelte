@@ -38,8 +38,7 @@
   in:fade={{ delay: animationDelay, duration: 300 }}
   on:click={toggleTooltip}
   on:keydown={(e) => e.key === "Enter" && toggleTooltip()}
-  role={!!href ? "link" : "button"}
-  tabindex={!!href || !isActive ? 0 : -1}
+  role={!!href && isActive ? undefined : !isActive ? "button" : undefined}
 >
   {#if href && isActive}
     <a {href} class="absolute inset-0 z-10" aria-label={title}></a>
@@ -85,6 +84,8 @@
              border-color: {$colorStore.primary}50;"
       transition:scale={{ duration: 200, start: 0.8 }}
       on:mouseleave={closeTooltip}
+      role="tooltip"
+      aria-live="polite"
     >
       <div class="text-sm mb-3" style="color: {$colorStore.text}">{inactiveMessage}</div>
 

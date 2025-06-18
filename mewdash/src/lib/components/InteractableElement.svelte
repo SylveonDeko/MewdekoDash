@@ -13,21 +13,12 @@
 
 <section
   class="group w-full h-max m-6 pt-6 pb-8 max-w-[34rem] grid grid-cols-1 justify-center rounded-2xl backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 cursor-pointer transform transition-all duration-500 ease-out hover:scale-105"
-  on:keydown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      if (cta?.href) {
-        window.open(cta.href, cta.target || '_self');
-      }
-    }
-  }}
   on:mouseenter
   on:mouseleave
   role="article"
   style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
          border: 1px solid {$colorStore.primary}30;
          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);"
-  tabindex="0"
 >
   {#if title}
     <h2

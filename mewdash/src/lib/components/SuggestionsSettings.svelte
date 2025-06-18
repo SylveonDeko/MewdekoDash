@@ -366,10 +366,11 @@
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
-          <label class="block text-sm font-medium mb-2" style="color: {colors.muted}">
+          <label for="accept-message" class="block text-sm font-medium mb-2" style="color: {colors.muted}">
             Accept Message
           </label>
           <textarea
+            id="accept-message"
             class="w-full bg-gray-800 rounded-lg border px-3 py-2 min-h-[120px] resize-y
                    transition-colors duration-200 focus:ring-2"
             style="border-color: {colors.primary}30;
@@ -389,10 +390,11 @@
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
-          <label class="block text-sm font-medium mb-2" style="color: {colors.muted}">
+          <label for="deny-message" class="block text-sm font-medium mb-2" style="color: {colors.muted}">
             Deny Message
           </label>
           <textarea
+            id="deny-message"
             class="w-full bg-gray-800 rounded-lg border px-3 py-2 min-h-[120px] resize-y
                    transition-colors duration-200 focus:ring-2"
             style="border-color: {colors.primary}30;
@@ -412,10 +414,11 @@
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
-          <label class="block text-sm font-medium mb-2" style="color: {colors.muted}">
+          <label for="consider-message" class="block text-sm font-medium mb-2" style="color: {colors.muted}">
             Consider Message
           </label>
           <textarea
+            id="consider-message"
             class="w-full bg-gray-800 rounded-lg border px-3 py-2 min-h-[120px] resize-y
                    transition-colors duration-200 focus:ring-2"
             style="border-color: {colors.primary}30;
@@ -435,10 +438,11 @@
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
-          <label class="block text-sm font-medium mb-2" style="color: {colors.muted}">
+          <label for="implement-message" class="block text-sm font-medium mb-2" style="color: {colors.muted}">
             Implement Message
           </label>
           <textarea
+            id="implement-message"
             class="w-full bg-gray-800 rounded-lg border px-3 py-2 min-h-[120px] resize-y
                    transition-colors duration-200 focus:ring-2"
             style="border-color: {colors.primary}30;
@@ -470,10 +474,11 @@
             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                    border-color: {colors.primary}30;"
           >
-            <label class="block text-sm font-medium mb-2" style="color: {colors.muted}">
+            <label for="{channel.key}-select" class="block text-sm font-medium mb-2" style="color: {colors.muted}">
               {channel.label}
             </label>
             <select
+              id="{channel.key}-select"
               class="w-full bg-gray-800 rounded-lg border px-3 py-2 transition-colors duration-200"
               style="border-color: {colors.primary}30;
                      color: {colors.text};"

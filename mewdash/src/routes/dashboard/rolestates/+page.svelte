@@ -937,10 +937,10 @@
               </div>
 
               <!-- Role Selection -->
-              <div>
-                <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+              <fieldset>
+                <legend class="block text-sm mb-2" style="color: {$colorStore.muted}">
                   Select Roles
-                </label>
+                </legend>
                 <div class="max-h-40 overflow-y-auto p-2 rounded-lg" style="background: {$colorStore.primary}15;">
                   {#if guildRoles.length === 0}
                     <p class="text-sm" style="color: {$colorStore.muted}">No roles available</p>
@@ -961,7 +961,7 @@
                     {/each}
                   {/if}
                 </div>
-              </div>
+              </fieldset>
 
               <!-- Action Buttons -->
               <div class="flex gap-2">

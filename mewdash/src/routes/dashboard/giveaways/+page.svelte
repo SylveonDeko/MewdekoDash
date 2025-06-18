@@ -301,11 +301,13 @@
          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
            <!-- Giveaway Item -->
            <div class="space-y-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-item" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <Gift class="w-4 h-4" style="color: {colors.primary}" />
                Giveaway Item
              </label>
              <input
+               id="giveaway-item"
                bind:value={newGiveaway.item}
                placeholder="Enter the item to be given away"
                class="w-full p-3 rounded-lg border focus:ring-2"
@@ -318,11 +320,13 @@
 
            <!-- Winners Count -->
            <div class="space-y-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-winners" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <Award class="w-4 h-4" style="color: {colors.primary}" />
                Number of Winners
              </label>
              <input
+               id="giveaway-winners"
                type="number"
                bind:value={newGiveaway.winners}
                min="1"
@@ -337,11 +341,13 @@
 
            <!-- Channel ID -->
            <div class="space-y-2 md:col-span-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-channel" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <Hash class="w-4 h-4" style="color: {colors.primary}" />
                Channel
              </label>
              <input
+               id="giveaway-channel"
                bind:value={newGiveaway.channelId}
                placeholder="Enter channel ID"
                class="w-full p-3 rounded-lg border focus:ring-2"
@@ -356,20 +362,23 @@
 
            <!-- Duration -->
            <div class="space-y-2 md:col-span-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-duration" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <Clock class="w-4 h-4" style="color: {colors.primary}" />
                Duration
              </label>
-             <IntervalPicker on:change={handleDurationChange} />
+             <IntervalPicker id="giveaway-duration" on:change={handleDurationChange} />
            </div>
 
            <!-- Required Roles -->
            <div class="space-y-2 md:col-span-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-roles" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <Users class="w-4 h-4" style="color: {colors.primary}" />
                Required Roles
              </label>
              <MultiSelectDropdown
+               id="giveaway-roles"
                options={guildRoles}
                bind:selected={selectedRoles}
                on:change={handleRoleSelection}
@@ -379,11 +388,13 @@
 
            <!-- Message Count Requirement -->
            <div class="space-y-2 md:col-span-2">
-             <label class="flex items-center gap-2 text-sm font-medium" style="color: {colors.text}">
+             <label for="giveaway-message-count" class="flex items-center gap-2 text-sm font-medium"
+                    style="color: {colors.text}">
                <MessageCircle class="w-4 h-4" style="color: {colors.primary}" />
                Required Message Count
              </label>
              <input
+               id="giveaway-message-count"
                type="number"
                bind:value={newGiveaway.messageCountReq}
                min="0"
@@ -400,13 +411,11 @@
 
          <!-- Entry Method -->
          <div class="space-y-4 pt-4 border-t" style="border-color: {colors.primary}20">
-           <label class="block text-sm font-medium" style="color: {colors.text}">
-             <div class="flex items-center gap-2 mb-4">
-               <Target class="w-4 h-4" style="color: {colors.primary}" />
-               Entry Method
-             </div>
-           </label>
-           <div class="flex flex-wrap gap-3">
+           <div id="entry-method-label" class="flex items-center gap-2 mb-4">
+             <Target class="w-4 h-4" style="color: {colors.primary}" />
+             <span class="text-sm font-medium" style="color: {colors.text}">Entry Method</span>
+           </div>
+           <div class="flex flex-wrap gap-3" role="radiogroup" aria-labelledby="entry-method-label">
              {#each [
                { id: 'reaction', label: 'Reaction', icon: Gift },
                { id: 'button', label: 'Button', icon: Target },

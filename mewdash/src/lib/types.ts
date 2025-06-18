@@ -143,3 +143,98 @@ export interface Priority {
   color: string;
   level: number;
 }
+
+export interface PatreonOAuthResponse {
+  authorizationUrl: string;
+  state: string;
+}
+
+export interface PatreonOAuthCallbackResponse {
+  success: boolean;
+  message: string;
+  guildId: bigint;
+  campaignId?: string;
+}
+
+export interface PatreonOAuthStatusResponse {
+  isConfigured: boolean;
+  campaignId?: string;
+  lastSync?: string;
+  tokenExpiry?: string;
+}
+
+export interface PatreonConfigUpdateRequest {
+  channelId?: bigint;
+  message?: string;
+  announcementDay?: number;
+  toggleAnnouncements?: boolean;
+  toggleRoleSync?: boolean;
+}
+
+export interface PatreonOperationRequest {
+  operation: string;
+}
+
+export interface PatreonTierMappingRequest {
+  tierId: string;
+  roleId: bigint;
+}
+
+export interface PatreonConfig {
+  channelId?: bigint;
+  message?: string;
+  announcementDay?: number;
+  announcementsEnabled?: boolean;
+  roleSyncEnabled?: boolean;
+}
+
+export interface PatreonAnalytics {
+  totalSupporters: number;
+  totalRevenue: number;
+  activeTiers: number;
+  recentSupporters: Array<{
+    id: string;
+    name: string;
+    email: string;
+    pledgeCents: number;
+    tierTitle: string;
+    joinedAt: string;
+  }>;
+  monthlyStats: Array<{
+    month: string;
+    supporters: number;
+    revenue: number;
+  }>;
+}
+
+export interface PatreonSupporter {
+  id: string;
+  name: string;
+  email: string;
+  pledgeCents: number;
+  tierTitle: string;
+  discordUserId?: string;
+  joinedAt: string;
+  lastChargeDate?: string;
+  lastChargeStatus?: string;
+}
+
+export interface PatreonTier {
+  id: string;
+  title: string;
+  description?: string;
+  amountCents: number;
+  patronCount: number;
+  published: boolean;
+  imageUrl?: string;
+  discordRoleIds?: string;
+}
+
+export interface PatreonGoal {
+  id: string;
+  title: string;
+  description?: string;
+  amountCents: number;
+  completedPercentage: number;
+  reachedAt?: string;
+}

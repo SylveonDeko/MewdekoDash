@@ -271,11 +271,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Volume2 class="w-4 h-4" style="color: {colors.primary}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="default-volume" class="font-medium" style="color: {colors.text}">
                   Default Volume
                 </label>
               </div>
               <input
+                id="default-volume"
                 type="range"
                 min="0"
                 max="100"
@@ -290,11 +291,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="music-channel" class="font-medium" style="color: {colors.text}">
                   Music Channel
                 </label>
               </div>
               <select
+                id="music-channel"
                 bind:value={settings.musicChannelId}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -312,11 +314,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Users class="w-4 h-4" style="color: {colors.accent}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="dj-role" class="font-medium" style="color: {colors.text}">
                   DJ Role
                 </label>
               </div>
               <select
+                id="dj-role"
                 bind:value={settings.djRoleId}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -334,11 +337,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Clock class="w-4 h-4" style="color: {colors.primary}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="repeat-mode" class="font-medium" style="color: {colors.text}">
                   Repeat Mode
                 </label>
               </div>
               <select
+                id="repeat-mode"
                 bind:value={settings.playerRepeat}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -375,11 +379,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Users class="w-4 h-4" style="color: {colors.primary}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="auto-disconnect" class="font-medium" style="color: {colors.text}">
                   Auto Disconnect
                 </label>
               </div>
               <select
+                id="auto-disconnect"
                 bind:value={settings.autoDisconnect}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -397,11 +402,12 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
-                <label class="font-medium" style="color: {colors.text}">
+                <label for="auto-play" class="font-medium" style="color: {colors.text}">
                   Auto Play Similar
                 </label>
               </div>
               <select
+                id="auto-play"
                 bind:value={settings.autoPlay}
                 class="w-full p-3 rounded-lg border transition-all duration-200"
                 style="background: {colors.primary}10;
@@ -438,11 +444,12 @@
                 <div>
                   <div class="flex items-center gap-2 mb-2">
                     <Settings class="w-4 h-4" style="color: {colors.accent}" />
-                    <label class="font-medium" style="color: {colors.text}">
+                    <label for="vote-skip-threshold" class="font-medium" style="color: {colors.text}">
                       Vote Skip Threshold
                     </label>
                   </div>
                   <input
+                    id="vote-skip-threshold"
                     type="range"
                     min="1"
                     max="100"

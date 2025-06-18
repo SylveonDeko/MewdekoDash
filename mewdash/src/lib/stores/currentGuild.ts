@@ -1,5 +1,5 @@
 // lib/stores/currentGuild.ts
-import { writable } from "svelte/store";
+import { persisted } from "svelte-persisted-store";
 import type { DiscordGuild } from "$lib/types/discordGuild";
 
-export const currentGuild = writable<DiscordGuild | null>(null);
+export const currentGuild = persisted<DiscordGuild | null>("currentGuild", null);

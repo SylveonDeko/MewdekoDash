@@ -1646,7 +1646,7 @@
                     <!-- Image -->
                     {#if embed.image.url}
                       <div class="mt-2 mb-2">
-                        <img src={embed.image.url} alt="Embed image"
+                        <img src={embed.image.url} alt=""
                              class="max-w-full h-auto rounded-lg" />
                       </div>
                     {/if}
@@ -1762,8 +1762,8 @@
       on:click|self={() => showAddComponent = false}
       on:keydown={(e) => e.key === 'Escape' && (showAddComponent = false)}
       role="dialog"
-      aria-labelledby="add-component-title"
       aria-modal="true"
+      aria-labelledby="add-component-title"
       transition:fade={{ duration: 200 }}
       tabindex="-1"
     >
@@ -1837,8 +1837,8 @@
       on:click|self={() => editingComponent = null}
       on:keydown={(e) => e.key === 'Escape' && (editingComponent = null)}
       role="dialog"
-      aria-labelledby="edit-component-title"
       aria-modal="true"
+      aria-labelledby="edit-component-title"
       transition:fade={{ duration: 200 }}
       tabindex="-1"
     >
@@ -2281,6 +2281,7 @@
            background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}30);
            border-color: {$colorStore.primary}30;"
       role="dialog"
+      aria-modal="true"
       aria-label="Placeholder menu"
       transition:fade={{ duration: 150 }}
       on:keydown={(e) => e.key === 'Escape' && (showPlaceholderMenu = false)}
@@ -2329,8 +2330,8 @@
       on:click|self={() => showTriggerSelect = false}
       on:keydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
       role="dialog"
-      aria-labelledby="select-trigger-title"
       aria-modal="true"
+      aria-labelledby="select-trigger-title"
       transition:fade={{ duration: 200 }}
       tabindex="-1"
     >
@@ -2421,11 +2422,6 @@
     }
 
     /* Fix mobile overflow issues */
-    :global(#app) {
-        overflow-x: hidden;
-        width: 100%;
-        max-width: 100%;
-    }
 
     /* Add overscroll behavior to prevent bounce effects causing layout issues */
     :global(html, body) {
@@ -2605,10 +2601,6 @@
     }
 
     /* Force all content to stay within viewable area */
-    :global(body), :global(#app), :global(.w-full) {
-        max-width: 100vw;
-        overflow-x: hidden;
-    }
 
     /* Fix for the editor section specifically */
     .backdrop-blur-sm {
@@ -2618,9 +2610,6 @@
 
     /* Adjust field layouts on very small screens */
     @media (max-width: 480px) {
-        .grid-cols-2, .grid-cols-3, .grid-cols-5 {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-        }
 
         /* Reduce padding on mobile */
         .p-4, .p-6 {
@@ -2635,10 +2624,6 @@
     }
 
     /* Fix text overflow in various sections */
-    .text-lg, .text-xl, .text-2xl, .text-3xl, p, h1, h2, h3, h4 {
-        overflow-wrap: break-word;
-        word-break: break-word;
-    }
 
     /* Accessibility focus styles */
     button:focus,

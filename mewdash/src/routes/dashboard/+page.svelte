@@ -295,7 +295,6 @@
   }
 
   onMount(async () => {
-    if (!currentUser) await goto("/api/discord/login");
     loading = true;
     try {
       await colorStore.extractFromImage($currentInstance?.botAvatar);
@@ -340,6 +339,33 @@
 
   $: if ($currentGuild) {
     fetchAllData();
+  }
+
+  // Watch for userAdminGuilds to be populated and restore saved guild if needed
+  $: if (browser && $userAdminGuilds) {
+    try {
+      const savedGuild = localStorage.getItem("lastSelectedGuild");
+      if (savedGuild) {
+        const guildData = JSON.parse(savedGuild);
+        const restoredGuild = {
+          ...guildData,
+          id: BigInt(guildData.id)
+        };
+
+        // Check if this guild is still in the user's admin guilds
+        const guildExists = $userAdminGuilds.some(guild => guild.id === restoredGuild.id);
+        if (guildExists) {
+          currentGuild.set(restoredGuild);
+          logger.info("Restored saved guild after admin guilds loaded:", restoredGuild.name);
+        } else {
+          // Guild no longer available, clear saved data
+          localStorage.removeItem("lastSelectedGuild");
+        }
+      }
+    } catch (err) {
+      logger.error("Failed to restore saved guild after admin guilds loaded:", err);
+      localStorage.removeItem("lastSelectedGuild");
+    }
   }
 </script>
 

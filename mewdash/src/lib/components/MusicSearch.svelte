@@ -161,18 +161,24 @@
     class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-30 flex items-center justify-center p-4"
     transition:fade={{ duration: 200 }}
     on:click={close}
+    on:keydown={(e) => e.key === 'Escape' && close()}
+    role="button"
+    tabindex="0"
+    aria-label="Close music search dialog"
   >
     <div
       class="w-full max-w-2xl bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
       transition:fly={{ y: 20, duration: 200 }}
-      on:click|stopPropagation={() => {}}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="music-search-title"
       style="background: linear-gradient(135deg, {colors.gradientStart}80, {colors.gradientEnd}80);
            border: 1px solid {colors.foreground}40;"
     >
       <!-- Header with search box -->
       <div class="p-4 border-b" style="border-color: {colors.foreground}20;">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xl font-bold" style="color: {colors.text};">
+          <h2 id="music-search-title" class="text-xl font-bold" style="color: {colors.text};">
             Add Music
           </h2>
           <button

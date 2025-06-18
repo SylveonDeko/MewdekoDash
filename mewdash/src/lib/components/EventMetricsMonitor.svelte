@@ -31,6 +31,7 @@
       refreshInProgress = true;
       error = null;
       eventMetrics = await api.getEventMetrics(userId);
+      console.log(eventMetrics);
       sortData();
     } catch (err) {
       logger.error("Error fetching event metrics:", err);

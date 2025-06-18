@@ -715,10 +715,11 @@
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Length Settings</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="block text-sm" style="color: {$colorStore.muted}">
+                  <label for="min-length" class="block text-sm" style="color: {$colorStore.muted}">
                     Minimum Length
                   </label>
                   <input
+                    id="min-length"
                     type="number"
                     bind:value={minLength}
                     on:input={() => markAsChanged('minLength')}
@@ -729,10 +730,11 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="block text-sm" style="color: {$colorStore.muted}">
+                  <label for="max-length" class="block text-sm" style="color: {$colorStore.muted}">
                     Maximum Length
                   </label>
                   <input
+                    id="max-length"
                     type="number"
                     bind:value={maxLength}
                     on:input={() => markAsChanged('maxLength')}
@@ -748,8 +750,9 @@
             <div class="space-y-4">
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Thread Settings</h3>
               <div class="space-y-2">
-                <label class="block text-sm" style="color: {$colorStore.muted}">Thread Type</label>
+                <label for="thread-type" class="block text-sm" style="color: {$colorStore.muted}">Thread Type</label>
                 <select
+                  id="thread-type"
                   bind:value={threadType}
                   on:change={() => markAsChanged('threadType')}
                   class="w-full p-3 rounded-lg"
@@ -779,8 +782,10 @@
               { label: 'Implement Message', value: implementMessage, key: 'implementMessage' }
             ] as message}
               <div class="space-y-2">
-                <label class="block text-sm" style="color: {$colorStore.muted}">{message.label}</label>
+                <label for="{message.key}-textarea" class="block text-sm"
+                       style="color: {$colorStore.muted}">{message.label}</label>
                 <textarea
+                  id="{message.key}-textarea"
                   bind:value={message.value}
                   on:input={() => markAsChanged(message.key)}
                   class="w-full p-3 rounded-lg min-h-[100px] resize-none"
@@ -811,8 +816,10 @@
               { label: 'Implement Channel', value: implementChannel, key: 'implementChannel' }
             ] as channel}
               <div class="space-y-2">
-                <label class="block text-sm" style="color: {$colorStore.muted}">{channel.label}</label>
+                <label for="{channel.key}-select" class="block text-sm"
+                       style="color: {$colorStore.muted}">{channel.label}</label>
                 <select
+                  id="{channel.key}-select"
                   bind:value={channel.value}
                   on:change={() => markAsChanged(channel.key)}
                   class="w-full p-3 rounded-lg"
@@ -873,8 +880,9 @@
                    border-color: {$colorStore.primary}30;"
           >
             <div class="space-y-2">
-              <label class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
+              <label for="suggest-emotes" class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
               <input
+                id="suggest-emotes"
                 type="text"
                 bind:value={suggestEmotes}
                 on:input={() => markAsChanged('suggestEmotes')}
@@ -893,8 +901,10 @@
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Suggestion Button</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="block text-sm" style="color: {$colorStore.muted}">Button Label</label>
+                  <label for="suggest-button-label" class="block text-sm" style="color: {$colorStore.muted}">Button
+                    Label</label>
                   <input
+                    id="suggest-button-label"
                     type="text"
                     bind:value={suggestButtonLabel}
                     on:input={() => markAsChanged('suggestButtonLabel')}
@@ -906,8 +916,10 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="block text-sm" style="color: {$colorStore.muted}">Button Emote</label>
+                  <label for="suggest-button-emote" class="block text-sm" style="color: {$colorStore.muted}">Button
+                    Emote</label>
                   <input
+                    id="suggest-button-emote"
                     type="text"
                     bind:value={suggestButtonEmote}
                     on:input={() => markAsChanged('suggestButtonEmote')}
@@ -920,8 +932,10 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="block text-sm" style="color: {$colorStore.muted}">Button Message</label>
+                <label for="suggest-button-message" class="block text-sm" style="color: {$colorStore.muted}">Button
+                  Message</label>
                 <textarea
+                  id="suggest-button-message"
                   bind:value={suggestButtonMessage}
                   on:input={() => markAsChanged('suggestButtonMessage')}
                   class="w-full p-3 rounded-lg min-h-[100px] resize-none"

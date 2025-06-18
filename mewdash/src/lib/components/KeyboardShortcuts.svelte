@@ -117,12 +117,15 @@
   <div
     class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
     on:click={closeDialog}
+    on:keydown={(e) => e.key === 'Escape' && closeDialog()}
+    role="button"
+    tabindex="0"
+    aria-label="Close keyboard shortcuts dialog"
     transition:fade={{ duration: 200 }}
   >
     <!-- Dialog -->
     <div
       class="bg-gray-900 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
-      on:click|stopPropagation
       transition:fly={{ y: 20, duration: 300 }}
       role="dialog"
       aria-modal="true"

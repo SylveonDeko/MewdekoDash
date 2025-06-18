@@ -56,10 +56,6 @@
   }
 
   onMount(async () => {
-    if (!data.user) {
-      await goto("/api/discord/login");
-      return;
-    }
 
     try {
       const response = await api.getBotInstances();

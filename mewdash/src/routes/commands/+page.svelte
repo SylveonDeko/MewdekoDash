@@ -280,7 +280,7 @@
 
           <!-- Desktop: Horizontal tabs -->
           <div class="hidden md:block border-b" style="border-color: {$colorStore.primary}30;">
-            <nav
+            <div
               class="-mb-px flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 pb-2"
               role="tablist"
               aria-label="Command modules"
@@ -317,7 +317,7 @@
                   </span>
                 </button>
               {/each}
-            </nav>
+            </div>
           </div>
         </div>
 
@@ -389,8 +389,7 @@
                               class="block text-xs p-2 border rounded-lg font-mono overflow-x-auto whitespace-pre-wrap break-all"
                               style="background: {$colorStore.primary}15;
                                          border-color: {$colorStore.primary}30;
-                                         color: {$colorStore.text};"
-                              tabindex="0">
+                                         color: {$colorStore.text};">
                               {example}
                             </code>
                           {/each}

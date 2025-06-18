@@ -46,6 +46,7 @@
     { label: "Giveaways", icon: Gift, href: "/dashboard/giveaways" },
     { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver" },
     { label: "Invites", icon: Users, href: "/dashboard/invites" }
+    // { label: "Patreon", icon: Heart, href: "/dashboard/patreon" }
   ];
 
   // State

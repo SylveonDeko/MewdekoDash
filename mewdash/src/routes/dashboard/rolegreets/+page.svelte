@@ -482,10 +482,11 @@
                 <div class="space-y-4">
                   <!-- Message -->
                   <div>
-                    <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+                    <label for="greet-message" class="block text-sm mb-2" style="color: {$colorStore.muted}">
                       Greeting Message
                     </label>
                     <textarea
+                      id="greet-message"
                       bind:value={editGreetMessage}
                       class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[100px]"
                       style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -498,10 +499,11 @@
 
                   <!-- Delete Time -->
                   <div>
-                    <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+                    <label for="greet-delete-time" class="block text-sm mb-2" style="color: {$colorStore.muted}">
                       Delete Time (seconds, 0 for never)
                     </label>
                     <input
+                      id="greet-delete-time"
                       type="number"
                       bind:value={editGreetDeleteTime}
                       class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
@@ -512,10 +514,11 @@
 
                   <!-- Webhook URL -->
                   <div>
-                    <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+                    <label for="greet-webhook" class="block text-sm mb-2" style="color: {$colorStore.muted}">
                       Webhook URL (optional)
                     </label>
                     <input
+                      id="greet-webhook"
                       type="text"
                       bind:value={editGreetWebhook}
                       class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"

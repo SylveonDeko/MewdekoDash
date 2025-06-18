@@ -2594,6 +2594,8 @@
                             class:transform-gpu={true}
                             class:scale-105={draggingElement === element}
                             class:outline-dashed={draggingElement === element}
+                            role="button"
+                            tabindex={isDesignMode ? 0 : -1}
                             style="left: {element.getX() * previewScale}px;
                              top: {element.getY() * previewScale}px;
                              width: {element.getWidth() * previewScale}px;
@@ -2608,6 +2610,8 @@
                             on:touchstart={(e) => startDrag(e, element)}
                             on:mouseover={() => isDesignMode && (hoverElement = element)}
                             on:mouseleave={() => isDesignMode && hoverElement === element && (hoverElement = null)}
+                            on:focus={() => isDesignMode && (hoverElement = element)}
+                            on:blur={() => isDesignMode && hoverElement === element && (hoverElement = null)}
                             aria-label={`${element.label} element`}
                           >
                             <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
@@ -4395,15 +4399,6 @@
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
     }
 
-    /* Draggable element styling */
-    [class*="cursor-move"] {
-        cursor: grab;
-    }
-
-    [class*="cursor-move"]:active {
-        cursor: grabbing;
-    }
-
     /* Custom slider styling */
     input[type="range"] {
         -webkit-appearance: none;
@@ -4450,11 +4445,6 @@
         will-change: transform;
     }
 
-    /* Prevent stretch in Safari */
-    input, select, textarea {
-        min-height: 44px;
-    }
-
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
         button, input[type="checkbox"], input[type="radio"] {
@@ -4485,11 +4475,6 @@
         }
     }
 
-    .dragging-active * {
-        transition: none !important;
-        animation: none !important;
-    }
-
     .transform-gpu {
         transform: translate3d(0, 0, 0);
         backface-visibility: hidden;
@@ -4498,12 +4483,5 @@
     }
 
     /* Prevent selection during dragging */
-    .dragging-active {
-        user-select: none;
-        -webkit-user-select: none;
-    }
 
-    .dragging-active .absolute {
-        contain: layout style;
-    }
 </style>
