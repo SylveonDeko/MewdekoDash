@@ -17,18 +17,28 @@ import type {
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
 import type { Giveaways, PermissionOverride } from "$lib/types.ts";
+import type {
+  ChatSaveData,
+  ClientUserInfo,
+  MusicSettings,
+  RoleStateSettings,
+  XpSettings,
+  XpTemplate
+} from "$lib/types/xp.ts";
+import type { MusicStatus, Track } from "$lib/types/music.ts";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import type { DiscordGuild } from "$lib/types/discordGuild.ts";
 
-const ALLOWED_ORIGINS = ["localhost", "127.0.0.1"];
-const ALLOWED_PORTS = new Set(["3000", "5173"]);
+// Reserved for future use - currently unused but kept for potential security checks
+// const ALLOWED_ORIGINS = ["localhost", "127.0.0.1"];
+// const ALLOWED_PORTS = new Set(["3000", "5173"]);
 
 async function apiRequest<T>(
   endpoint: string,
   method: string = "GET",
-  body?: any,
+  body?: unknown,
   headers: HeadersInit = {},
   customFetch: typeof fetch = fetch
 ): Promise<T> {
@@ -42,7 +52,7 @@ async function apiRequest<T>(
       "X-Instance-Url": baseUrl,
       ...headers
     },
-    body: body ? JSONbig.stringify(body) : undefined
+    body: body ? JSONbig.stringify(body) : null
   });
 
   if (!response.ok) {
@@ -140,10 +150,10 @@ export const api = {
 
 // XP Management endpoints
   getXpSettings: (guildId: bigint) =>
-    apiRequest<any>(`xp/${guildId}/settings`),
+    apiRequest<XpSettings>(`xp/${guildId}/settings`),
 
-  updateXpSettings: (guildId: bigint, settings: any) =>
-    apiRequest<any>(`xp/${guildId}/settings`, "POST", settings),
+  updateXpSettings: (guildId: bigint, settings: XpSettings) =>
+    apiRequest<XpSettings>(`xp/${guildId}/settings`, "POST", settings),
 
   getUserXpStats: (guildId: bigint, userId: bigint) =>
     apiRequest<{
@@ -234,9 +244,9 @@ export const api = {
     apiRequest<void>(`xp/${guildId}/excluded/roles/${roleId}`, "DELETE"),
 
   getXpTemplate: (guildId: bigint) =>
-    apiRequest<any>(`xp/${guildId}/template`),
+    apiRequest<XpTemplate>(`xp/${guildId}/template`),
 
-  updateXpTemplate: (guildId: bigint, template: any) =>
+  updateXpTemplate: (guildId: bigint, template: XpTemplate) =>
     apiRequest<void>(`xp/${guildId}/template`, "POST", template),
 
   getXpServerStats: (guildId: bigint) =>
@@ -310,7 +320,7 @@ export const api = {
       timestamp: string;
       createdBy: string;
       messageCount: number;
-      messages: Array<any>;
+      messages: ChatSaveData["messages"];
     }>(
       `Chat/${guildId}/logs/${logId}`
     ),
@@ -319,7 +329,7 @@ export const api = {
     channelId: bigint;
     name: string;
     createdBy: bigint;
-    messages: Array<any>;
+    messages: ChatSaveData["messages"];
   }) =>
     apiRequest<{ id: string }>(
       `Chat/${guildId}/logs`,
@@ -968,10 +978,10 @@ export const api = {
   getBotGuilds: () => apiRequest<Array<bigint>>("ClientOperations/guilds"),
 
   getUser: (guildId: bigint, userId: bigint) =>
-    apiRequest<any>(`ClientOperations/user/${guildId}/${userId}`),
+    apiRequest<ClientUserInfo>(`ClientOperations/user/${guildId}/${userId}`),
 
   getUsers: (guildId: bigint, userIds: bigint[]) =>
-    apiRequest<any[]>(`ClientOperations/users/${guildId}`, "POST", userIds),
+    apiRequest<ClientUserInfo[]>(`ClientOperations/users/${guildId}`, "POST", userIds),
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
@@ -1062,7 +1072,7 @@ export const api = {
     ),
 
   getPlayerStatus: (guildId: bigint, userId: bigint) =>
-    apiRequest<any>(`music/${guildId}/status?userId=${userId}`),
+    apiRequest<MusicStatus>(`music/${guildId}/status?userId=${userId}`),
 
   pauseResume: (guildId: bigint) =>
     apiRequest<void>(`music/${guildId}/pause`, "POST"),
@@ -1102,7 +1112,7 @@ export const api = {
     }
   }) =>
     apiRequest<{
-      track: any;
+      track: Track;
       position: number;
     }>(`Music/${guildId}/play`, "POST", playRequest),
 
@@ -1113,9 +1123,9 @@ export const api = {
     apiRequest<void>(`music/${guildId}/previous`, "POST"),
 
   getMusicSettings: (guildId: bigint) =>
-    apiRequest<any>(`music/${guildId}/settings`),
+    apiRequest<MusicSettings>(`music/${guildId}/settings`),
 
-  updateMusicSettings: (guildId: bigint, settings: any) =>
+  updateMusicSettings: (guildId: bigint, settings: MusicSettings) =>
     apiRequest<void>(`music/${guildId}/settings`, "POST", settings),
 
   clearQueue: (guildId: bigint) =>
@@ -1216,17 +1226,17 @@ export const api = {
   setUserRoles: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
     apiRequest<void>(`RoleStates/${guildId}/user/${userId}/set-roles`, "POST", roleIds),
 
-  toggleClearOnBan: (guildId: bigint, roleStateSettings: any) =>
+  toggleClearOnBan: (guildId: bigint, roleStateSettings: RoleStateSettings) =>
     apiRequest<boolean>(`RoleStates/${guildId}/clear-on-ban`, "POST", {
       clearOnBan: !roleStateSettings.clearOnBan
     }),
 
-  toggleIgnoreBots: (guildId: bigint, roleStateSettings: any) =>
+  toggleIgnoreBots: (guildId: bigint, roleStateSettings: RoleStateSettings) =>
     apiRequest<boolean>(`RoleStates/${guildId}/ignore-bots`, "POST", {
       ignoreBots: !roleStateSettings.ignoreBots
     }),
 
-  updateRoleStateSettings: (guildId: bigint, settings: any) =>
+  updateRoleStateSettings: (guildId: bigint, settings: RoleStateSettings) =>
     apiRequest<void>(`RoleStates/${guildId}/settings`, "POST", settings),
 
   saveAllUserRoleStates: (guildId: bigint) =>

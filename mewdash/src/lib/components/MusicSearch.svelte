@@ -1,4 +1,23 @@
-<!-- src/lib/components/MusicSearch.svelte -->
+<!--
+@component
+A modal music search component for finding and adding tracks to the music queue.
+
+- Supports multiple platforms (YouTube, Spotify, SoundCloud)
+- Provides real-time search with debouncing
+- Shows track details including duration and artwork
+- Integrates with the music player's dynamic color scheme
+- Handles adding tracks to the queue with user feedback
+
+@example
+```svelte
+<MusicSearch 
+  bind:isOpen={searchModalOpen}
+  colors={musicPlayerColors}
+  currentUser={user}
+  on:close={handleSearchClose}
+/>
+```
+-->
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
   import { ExternalLink, Loader, Music, Plus, Search, X } from "lucide-svelte";
@@ -8,14 +27,29 @@
   import { logger } from "$lib/logger";
   import type { Requester } from "$lib/types/music.ts";
 
-  export let colors: any;
+  export let colors: {
+    background: string;
+    foreground: string;
+    accent: string;
+    text: string;
+    gradientStart: string;
+    gradientEnd: string;
+    controlsHighlight: string;
+  };
   export let isOpen = false;
   export let currentUser: Requester;
 
   const dispatch = createEventDispatcher();
 
   let searchQuery = "";
-  let searchResults = [];
+  let searchResults: Array<{
+    title: string;
+    author: string;
+    duration: string;
+    uri: string;
+    artworkUri: string;
+    provider: string;
+  }> = [];
   let isSearching = false;
   let errorMessage = "";
   let selectedPlatform = "youtube";
@@ -23,6 +57,11 @@
   let isAdding = false;
   let addedTrackMessage = "";
   let searchInputElement: HTMLInputElement;
+  let searchRetryCount = 0;
+  let addRetryCount = 0;
+  let lastSearchQuery = "";
+  let isRetrying = false;
+  const MAX_RETRIES = 3;
 
   // Platform options
   const platforms = [
@@ -37,7 +76,7 @@
     }
   });
 
-  function close() {
+  function close(): void {
     isOpen = false;
     searchQuery = "";
     searchResults = [];
@@ -46,8 +85,9 @@
   }
 
   // Debounced search function
-  function handleSearch() {
+  function handleSearch(): void {
     errorMessage = "";
+    searchRetryCount = 0; // Reset retry count for new search
 
     // Clear previous timeout
     if (debounceTimeout) {
@@ -60,49 +100,102 @@
       return;
     }
 
-    isSearching = true;
+    lastSearchQuery = searchQuery;
 
-    // Set new timeout
-    debounceTimeout = setTimeout(async () => {
-      try {
-        // If it looks like a URL, don't modify it
-        const isUrl = searchQuery.startsWith("http") || searchQuery.includes("youtu.be/");
-
-        if (isUrl) {
-          const response = await api.extractTrack($currentGuild.id, searchQuery);
-          searchResults = response ? [response] : [];
-        } else {
-          const query = `${searchQuery}${selectedPlatform === "spotify" ? " spotify" : ""}`;
-          const response = await api.searchTracks($currentGuild.id, query, selectedPlatform, 10);
-          searchResults = response.tracks || [];
-        }
-
-        if (searchResults.length === 0) {
-          errorMessage = "No results found. Try a different search term.";
-        }
-      } catch (err) {
-        logger.error("Search error:", err);
-        errorMessage = "Failed to search. Please try again.";
-        searchResults = [];
-      } finally {
-        isSearching = false;
-      }
+    // Debounce the search
+    debounceTimeout = setTimeout(() => {
+      performSearch();
     }, 500);
   }
 
-  async function addToQueue(track) {
+  // Perform the actual search with retry logic
+  async function performSearch(): Promise<void> {
+    isSearching = true;
+
+    try {
+      // If it looks like a URL, don't modify it
+      const isUrl = lastSearchQuery.startsWith("http") || lastSearchQuery.includes("youtu.be/");
+
+      let response;
+      if (isUrl) {
+        response = await api.extractTrack($currentGuild!.id, lastSearchQuery);
+        searchResults = response ? [response] : [];
+      } else {
+        const query = `${lastSearchQuery}${selectedPlatform === "spotify" ? " spotify" : ""}`;
+        const apiResponse = await api.searchTracks($currentGuild!.id, query, selectedPlatform, 10);
+        searchResults = apiResponse.tracks || [];
+      }
+
+      if (searchResults.length === 0) {
+        errorMessage = "No results found. Try a different search term or platform.";
+      }
+
+      // Reset retry count on success
+      searchRetryCount = 0;
+
+    } catch (err) {
+      logger.error("Search error:", err);
+
+      // Classify error type
+      const isNetworkError = err instanceof TypeError || (err as any)?.message?.includes("fetch");
+      const isServerError = (err as any)?.status >= 500;
+
+      if ((isNetworkError || isServerError) && searchRetryCount < MAX_RETRIES) {
+        searchRetryCount++;
+        errorMessage = `Search failed. Retrying... (${searchRetryCount}/${MAX_RETRIES})`;
+
+        // Exponential backoff
+        const delay = Math.pow(2, searchRetryCount - 1) * 1000;
+        setTimeout(() => {
+          if (lastSearchQuery === searchQuery) { // Only retry if query hasn't changed
+            performSearch();
+          }
+        }, delay);
+      } else {
+        // Max retries reached or non-retryable error
+        if (searchRetryCount >= MAX_RETRIES) {
+          errorMessage = "Search failed after multiple attempts. Please check your connection and try again.";
+        } else {
+          errorMessage = "Search failed. Please try a different search term.";
+        }
+        searchResults = [];
+      }
+    } finally {
+      if (searchRetryCount === 0) {
+        isSearching = false;
+      }
+    }
+  }
+
+  // Retry search function
+  function retrySearch(): void {
+    searchRetryCount = 0;
+    errorMessage = "";
+    performSearch();
+  }
+
+  async function addToQueue(track: any) {
     if (isAdding || !$currentGuild?.id) return;
 
+    addRetryCount = 0;
+    await performAddToQueue(track);
+  }
+
+  async function performAddToQueue(track: any): Promise<void> {
     isAdding = true;
     const trackIndex = searchResults.indexOf(track);
 
     try {
       const playRequest = {
         url: track.uri || track.url,
-        requester: currentUser
+        requester: {
+          Id: BigInt(currentUser?.id || "0"),
+          Username: currentUser?.username || "Unknown",
+          AvatarUrl: currentUser?.avatarUrl || ""
+        }
       };
 
-      await api.playTrack($currentGuild.id, playRequest);
+      await api.playTrack($currentGuild!.id, playRequest);
 
       // Update UI to show the track was added
       addedTrackMessage = `Added "${track.title}" to queue`;
@@ -119,15 +212,48 @@
       // Dispatch an event to notify parent component
       dispatch("trackAdded", { track });
 
+      // Reset retry count on success
+      addRetryCount = 0;
+
     } catch (err) {
       logger.error("Failed to add track:", err);
-      errorMessage = "Failed to add track to queue";
+
+      // Classify error type
+      const isNetworkError = err instanceof TypeError || (err as any)?.message?.includes("fetch");
+      const isServerError = (err as any)?.status >= 500;
+
+      if ((isNetworkError || isServerError) && addRetryCount < MAX_RETRIES) {
+        addRetryCount++;
+        errorMessage = `Failed to add track. Retrying... (${addRetryCount}/${MAX_RETRIES})`;
+
+        // Exponential backoff
+        const delay = Math.pow(2, addRetryCount - 1) * 1000;
+        setTimeout(() => {
+          performAddToQueue(track);
+        }, delay);
+      } else {
+        // Max retries reached or non-retryable error
+        if (addRetryCount >= MAX_RETRIES) {
+          errorMessage = `Failed to add "${track.title}" after multiple attempts. Please try again later.`;
+        } else {
+          errorMessage = `Failed to add "${track.title}". Please try again.`;
+        }
+      }
     } finally {
-      isAdding = false;
+      if (addRetryCount === 0) {
+        isAdding = false;
+      }
     }
   }
 
-  function getFormattedDuration(duration) {
+  // Retry add to queue function
+  function retryAddToQueue(track: any): void {
+    addRetryCount = 0;
+    errorMessage = "";
+    performAddToQueue(track);
+  }
+
+  function getFormattedDuration(duration: any) {
     if (!duration) return "??:??";
 
     const parts = duration.split(":");
@@ -142,7 +268,7 @@
   }
 
   // Listen for Enter key in search box
-  function handleKeydown(event) {
+  function handleKeydown(event: any) {
     if (event.key === "Escape") {
       close();
     } else if (event.key === "Enter" && searchResults.length > 0) {
@@ -248,15 +374,34 @@
           <div
             class="bg-red-500 bg-opacity-20 text-red-400 px-4 py-2 rounded-lg"
             transition:fly={{ y: -10, duration: 200 }}
+            role="alert"
           >
-            {errorMessage}
+            <div class="flex items-center justify-between">
+              <span class="flex-1">{errorMessage}</span>
+              {#if searchRetryCount === 0 && addRetryCount === 0 && !isSearching && !isAdding}
+                <button
+                  class="ml-3 px-3 py-1 text-sm rounded transition-colors"
+                  style="background: {colors.accent}30; color: {colors.text};"
+                  on:click={retrySearch}
+                  aria-label="Retry search"
+                >
+                  Retry
+                </button>
+              {/if}
+            </div>
           </div>
         {/if}
 
         {#if isSearching}
           <div class="flex justify-center items-center py-8">
-            <Loader class="w-8 h-8 animate-spin" style="color: {colors.accent}" />
-            <span class="ml-2">Searching...</span>
+            <Loader class="w-8 h-8 animate-spin" style="color: {colors.accent}" aria-hidden="true" />
+            <span class="ml-2">
+              {#if searchRetryCount > 0}
+                Retrying search... ({searchRetryCount}/{MAX_RETRIES})
+              {:else}
+                Searching...
+              {/if}
+            </span>
           </div>
         {:else if searchResults.length > 0}
           <div class="space-y-2">

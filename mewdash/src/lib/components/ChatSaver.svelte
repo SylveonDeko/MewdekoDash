@@ -103,6 +103,14 @@
   let guildMembers: GuildMember[] = [];
   let guildChannels: Channel[] = [];
 
+  // Error handling state
+  let initializationError: string | null = null;
+  let channelsLoading = false;
+  let membersLoading = false;
+  let logsLoading = false;
+  let retryCount = 0;
+  const MAX_RETRIES = 3;
+
   // Time unit options
   const timeUnits = [
     { value: "minutes", label: "Minutes" },
@@ -111,18 +119,60 @@
   ];
 
   onMount(async () => {
-    if (!$currentGuild) await goto("/dashboard");
-    await Promise.all([
-      loadChannels(),
-      loadGuildMembers(),
-      loadSavedLogs()
-    ]);
+    if (!$currentGuild) {
+      await goto("/dashboard");
+      return;
+    }
+
+    await initializeComponent();
   });
 
+  // Initialize component with proper error handling
+  async function initializeComponent(): Promise<void> {
+    initializationError = null;
+    retryCount = 0;
+
+    try {
+      // Load all data in parallel but handle partial failures
+      const results = await Promise.allSettled([
+        loadChannels(),
+        loadGuildMembers(),
+        loadSavedLogs()
+      ]);
+
+      // Check for any critical failures
+      const channelResult = results[0];
+      const logsResult = results[2];
+
+      let criticalFailures = [];
+      if (channelResult.status === "rejected") {
+        criticalFailures.push("channels");
+      }
+      if (logsResult.status === "rejected") {
+        criticalFailures.push("saved logs");
+      }
+
+      if (criticalFailures.length > 0) {
+        initializationError = `Failed to load ${criticalFailures.join(" and ")}. Some features may not work correctly.`;
+      }
+
+    } catch (err) {
+      logger.error("Component initialization failed:", err);
+      initializationError = "Failed to initialize chat saver. Please try again.";
+    }
+  }
+
+  // Retry initialization
+  async function retryInitialization(): Promise<void> {
+    if (retryCount < MAX_RETRIES) {
+      retryCount++;
+      await initializeComponent();
+    }
+  }
+
   $: if ($currentGuild) {
-    loadChannels();
-    loadGuildMembers();
-    loadSavedLogs();
+    // Reinitialize when guild changes
+    initializeComponent();
   }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success"): void {
@@ -135,23 +185,33 @@
   }
 
   async function loadChannels(): Promise<void> {
+    if (!$currentGuild?.id) return;
+
+    channelsLoading = true;
     try {
-      if (!$currentGuild?.id) return;
       channels = await api.getGuildTextChannels($currentGuild.id);
       guildChannels = channels;
     } catch (err) {
       logger.error("Failed to load channels:", err);
       showNotificationMessage("Failed to load channels", "error");
+      throw err; // Re-throw for Promise.allSettled handling
+    } finally {
+      channelsLoading = false;
     }
   }
 
   async function loadGuildMembers(): Promise<void> {
+    if (!$currentGuild?.id) return;
+
+    membersLoading = true;
     try {
-      if (!$currentGuild?.id) return;
       guildMembers = await api.getGuildMembers($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load guild members:", err);
-      // Not showing error notification as this is not critical
+      // Not critical, but still want to track the error
+      guildMembers = []; // Ensure we have an empty array
+    } finally {
+      membersLoading = false;
     }
   }
 
@@ -174,12 +234,18 @@
   }
 
   async function loadSavedLogs(): Promise<void> {
+    if (!$currentGuild?.id) return;
+
+    logsLoading = true;
     try {
-      if (!$currentGuild?.id) return;
       savedLogs = await api.getChatLogs($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load saved logs:", err);
       showNotificationMessage("Failed to load saved logs", "error");
+      savedLogs = []; // Ensure we have an empty array
+      throw err; // Re-throw for Promise.allSettled handling
+    } finally {
+      logsLoading = false;
     }
   }
 
@@ -881,6 +947,35 @@
       </div>
     {/if}
 
+    <!-- Initialization Error Banner -->
+    {#if initializationError}
+      <div
+        class="bg-red-500 bg-opacity-20 border border-red-500 text-red-400 rounded-lg p-4 mb-6"
+        role="alert"
+        transition:fade
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span>{initializationError}</span>
+          </div>
+          {#if retryCount < MAX_RETRIES}
+            <button
+              class="ml-3 px-3 py-1 text-sm rounded transition-colors bg-red-500 bg-opacity-20 hover:bg-opacity-30"
+              on:click={retryInitialization}
+              aria-label="Retry loading data"
+            >
+              Retry ({retryCount}/{MAX_RETRIES})
+            </button>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
     <!-- Header -->
     <div
       class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
@@ -1146,7 +1241,7 @@
           }
           groups[date].push(message);
           return groups;
-        }, {})).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()) as [date, messagesOnDate], i}
+        }, {})).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()) as [string, any[]], i}
           <div class="mb-6">
             <div
               class="text-center relative mb-4"
@@ -1174,7 +1269,7 @@
             </div>
 
             <div class="space-y-4 ml-1">
-              {#each groupMessagesByAuthor(messagesOnDate.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())) as messageGroup}
+              {#each groupMessagesByAuthor((messagesOnDate as any[]).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())) as messageGroup}
                 <div
                   class="flex gap-3"
                   style="border-top: 1px solid {$colorStore.primary}10;"

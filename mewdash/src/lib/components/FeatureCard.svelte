@@ -18,6 +18,9 @@
   // Local state
   let showTooltip = false;
 
+  // Generate unique ID for ARIA labeling
+  const tooltipId = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
+
   // Toggle tooltip
   function toggleTooltip() {
     if (!isActive) {
@@ -29,19 +32,33 @@
   function closeTooltip() {
     showTooltip = false;
   }
+
+  // Handle keyboard events
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleTooltip();
+    } else if (event.key === "Escape" && showTooltip) {
+      event.preventDefault();
+      closeTooltip();
+    }
+  }
 </script>
 
 <div
   aria-pressed={!isActive && showTooltip ? "true" : undefined}
+  aria-describedby={!isActive && showTooltip ? tooltipId : undefined}
   class="relative group"
   class:cursor-pointer={!!href || !isActive}
   in:fade={{ delay: animationDelay, duration: 300 }}
   on:click={toggleTooltip}
-  on:keydown={(e) => e.key === "Enter" && toggleTooltip()}
+  aria-label={!isActive ? `${title} - ${inactiveMessage}. Press Enter to learn more.` : isActive && !href ? `${title} - Active feature` : undefined}
   role={!!href && isActive ? undefined : !isActive ? "button" : undefined}
+  on:keydown={handleKeydown}
+  tabindex={!isActive || (!!href && isActive) ? 0 : undefined}
 >
   {#if href && isActive}
-    <a {href} class="absolute inset-0 z-10" aria-label={title}></a>
+    <a {href} class="absolute inset-0 z-10" aria-label="{title} - {description || 'Configure this feature'}"></a>
   {/if}
 
   <div
@@ -71,13 +88,14 @@
       <div
         class="absolute bottom-0 left-0 h-1 transition-all duration-300"
         style="background: {$colorStore.primary}; width: 30%;"
-        in:scale={{ origin: 'left', duration: 600, delay: animationDelay + 300 }}
+        in:scale={{ duration: 600, delay: animationDelay + 300 }}
       ></div>
     {/if}
   </div>
 
   {#if !isActive && showTooltip}
     <div
+      id={tooltipId}
       class="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 rounded-lg px-4 py-3 shadow-xl
              w-auto max-w-[200px] min-w-[150px] text-center backdrop-blur-md border"
       style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.9));
@@ -97,6 +115,7 @@
                  color: {$colorStore.text};
                  border: 1px solid {$colorStore.primary}50;
                  hover:background-color: {$colorStore.primary}60;"
+          aria-label="Configure {title}"
         >
           Configure
         </a>
@@ -118,6 +137,8 @@
              group-hover:visible transition-all duration-200 backdrop-blur-md border"
       style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.9));
              border-color: {$colorStore.primary}50;"
+      role="tooltip"
+      aria-live="polite"
     >
       <div class="text-sm" style="color: {$colorStore.text}">{description}</div>
       <div

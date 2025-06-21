@@ -1,5 +1,5 @@
 // src/lib/logger.ts
-import { browser } from '$app/environment';
+import { browser } from "$app/environment";
 
 export class Logger {
   private static instance: Logger;
@@ -28,24 +28,24 @@ export class Logger {
     return new Date().toISOString();
   }
 
-  public debug(...args: any[]): void {
+  public debug(...args: unknown[]): void {
     if (this.debugMode) {
       const timestamp = this.getTimestamp();
       console.debug(`[${timestamp}] [DEBUG]`, ...args);
     }
   }
 
-  public info(...args: any[]): void {
+  public info(...args: unknown[]): void {
     const timestamp = this.getTimestamp();
     console.info(`[${timestamp}] [INFO]`, ...args);
   }
 
-  public warn(...args: any[]): void {
+  public warn(...args: unknown[]): void {
     const timestamp = this.getTimestamp();
     console.warn(`[${timestamp}] [WARN]`, ...args);
   }
 
-  public error(...args: any[]): void {
+  public error(...args: unknown[]): void {
     const timestamp = this.getTimestamp();
     console.error(`[${timestamp}] [ERROR]`, ...args);
   }

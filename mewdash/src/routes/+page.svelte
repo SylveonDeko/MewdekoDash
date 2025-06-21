@@ -19,6 +19,16 @@
   const MAX_GUILD_NAME_LENGTH = 20;
   const MAX_GUILDS_TO_SHOW = 10;
 
+  // Carousel state variables
+  let moderationCurrentIndex = 0;
+  let moderationItemCount = 0;
+  let staffCurrentIndex = 0;
+  let staffItemCount = 0;
+  let responsesCurrentIndex = 0;
+  let responsesItemCount = 0;
+  let customizableCurrentIndex = 0;
+  let customizableItemCount = 0;
+
   // Primary buttons for mobile view
   const primaryButtons = [
     {
@@ -431,6 +441,7 @@
           cta={{
             text: "Invite Me",
             href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303",
+            target: "_blank"
           }}
           description="With Auto Ban words, Anti Spam, Anti Raid, and two different warning systems, Mewdeko can be as flexible as you want!"
           slot="element-1"
@@ -460,6 +471,8 @@
                 },
               },
             ]}
+            bind:currentIndex={moderationCurrentIndex}
+            bind:itemCount={moderationItemCount}
           />
         </Interactable>
 
@@ -467,6 +480,7 @@
           cta={{
             text: "Support Server",
             href: "https://discord.gg/Z9DYApMXFN",
+            target: "_blank"
           }}
           description="With a team that cares about you, we try to help out in the best way possible!"
           slot="element-2"
@@ -496,6 +510,8 @@
                 },
               },
             ]}
+            bind:currentIndex={staffCurrentIndex}
+            bind:itemCount={staffItemCount}
           />
         </Interactable>
 
@@ -503,6 +519,7 @@
           cta={{
             text: "Source Code",
             href: "https://github.com/SylveonDeko/Mewdeko",
+            target: "_blank"
           }}
           description="Our bot is completely open source with an AGPLv3 license (to combat code resellers)! We have self-host guides/scripts on the repo as well!"
           slot="element-3"
@@ -556,6 +573,8 @@
                 },
               },
             ]}
+            bind:currentIndex={responsesCurrentIndex}
+            bind:itemCount={responsesItemCount}
           />
         </Interactable>
 
@@ -588,11 +607,13 @@
                 },
               },
             ]}
+            bind:currentIndex={customizableCurrentIndex}
+            bind:itemCount={customizableItemCount}
           />
         </Interactable>
 
         <Interactable
-          cta={{ text: "Check them out!", href: "/commands" }}
+          cta={{ text: "Check them out!", href: "/commands", target: "_self" }}
           description="With a little over 20 modules, and me coming up with the most niche stuff to add, you definitely won't get bored! (I hope)"
           slot="element-7"
           title="... And Much More!"

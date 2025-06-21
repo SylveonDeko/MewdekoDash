@@ -43,13 +43,13 @@
   let isMobile = false;
   let lastDragUpdate = 0;
   const THROTTLE_MS = 16;
-  let dragAnimationFrameId = null;
-  let currentUserData = null;
+  let dragAnimationFrameId: number | null = null;
+  let currentUserData: any = null;
   let isLoadingUserData = false;
 
   // XP Settings
   let xpSettings = {
-    guildId: $currentGuild.id,
+    guildId: $currentGuild?.id || BigInt(0),
     xpPerMessage: 3,
     messageXpCooldown: 60,
     voiceXpPerMinute: 2,
@@ -346,7 +346,7 @@
     }
   }
 
-  function activateTab(tab) {
+  function activateTab(tab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions") {
     activeTab = tab;
 
     // If switching to template tab, schedule a refresh after DOM update
@@ -447,6 +447,7 @@
 
       const settings = await api.getXpSettings($currentGuild.id);
       xpSettings = {
+        guildId: $currentGuild?.id || BigInt(0),
         xpPerMessage: settings.xpPerMessage || 3,
         messageXpCooldown: settings.messageXpCooldown || 60,
         voiceXpPerMinute: settings.voiceXpPerMinute || 2,
@@ -473,7 +474,14 @@
         throw new Error("No guild selected");
       }
 
-      serverStats = await api.getXpServerStats($currentGuild.id);
+      const stats = await api.getXpServerStats($currentGuild.id);
+      serverStats = {
+        ...stats,
+        recentActivity: stats.recentActivity.map(activity => ({
+          ...activity,
+          userId: activity.userId.toString()
+        }))
+      };
     } catch (err) {
       logger.error("Failed to fetch XP server stats:", err);
       error.stats = err instanceof Error ? err.message : "Failed to fetch XP server stats";
@@ -490,7 +498,12 @@
         throw new Error("No guild selected");
       }
 
-      leaderboard = await api.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
+      const board = await api.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
+      leaderboard = board.map(entry => ({
+        ...entry,
+        userId: entry.userId.toString(),
+        guildId: entry.guildId.toString()
+      }));
     } catch (err) {
       logger.error("Failed to fetch XP leaderboard:", err);
       error.leaderboard = err instanceof Error ? err.message : "Failed to fetch XP leaderboard";
@@ -544,8 +557,15 @@
         api.getXpCurrencyRewards($currentGuild.id)
       ]);
 
-      roleRewards = roles;
-      currencyRewards = currency;
+      roleRewards = roles.map(reward => ({
+        ...reward,
+        guildId: reward.guildId.toString(),
+        roleId: reward.roleId.toString()
+      }));
+      currencyRewards = currency.map(reward => ({
+        ...reward,
+        guildId: reward.guildId.toString()
+      }));
     } catch (err) {
       logger.error("Failed to fetch XP rewards:", err);
       error.rewards = err instanceof Error ? err.message : "Failed to fetch XP rewards";
@@ -567,8 +587,8 @@
         api.getXpExcludedRoles($currentGuild.id)
       ]);
 
-      excludedChannels = channels;
-      excludedRoles = roles;
+      excludedChannels = channels.map(id => id.toString());
+      excludedRoles = roles.map(id => id.toString());
     } catch (err) {
       logger.error("Failed to fetch XP exclusions:", err);
       error.exclusions = err instanceof Error ? err.message : "Failed to fetch XP exclusions";
@@ -838,6 +858,16 @@
     localTemplate = { ...localTemplate };
   }
 
+  // Color input handlers with type safety
+  function handleColorInput(path: string) {
+    return (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target) {
+        handleChange(path, parseColor(target.value));
+      }
+    };
+  }
+
   // Apply snap to grid
   function applySnapToGrid(x: number, y: number) {
     if (!snapToGrid) return { x, y };
@@ -1006,7 +1036,7 @@
   }
 
   // Start dragging an element
-  function startDrag(event, element) {
+  function startDrag(event: MouseEvent | TouchEvent, element: any) {
     if (!isDesignMode) return;
 
     // Prevent default to avoid triggering other events
@@ -1055,7 +1085,7 @@
 
 
   // Handle drag movement
-  function handleDragMove(event) {
+  function handleDragMove(event: MouseEvent | TouchEvent) {
     if (!draggingElement) return;
 
     // Prevent default behaviors
@@ -1154,7 +1184,7 @@
     localTemplate = { ...localTemplate };
   }
 
-  function calculateSimplifiedSnapLines(currentElement, x, y) {
+  function calculateSimplifiedSnapLines(currentElement: any, x: number, y: number) {
     const snapDistance = 5; // Distance in pixels to trigger snapping
     let snapX = null;
     let snapY = null;
@@ -3095,7 +3125,7 @@
                                 id="username-color"
                                 type="text"
                                 value={formatColor(localTemplate.templateUser.textColor)}
-                                on:input={(e) => handleChange('templateUser.textColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateUser.textColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -3105,7 +3135,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.templateUser.textColor)}
-                                on:input={(e) => handleChange('templateUser.textColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateUser.textColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.primary}30;"
                                 aria-labelledby="username-color"
@@ -3324,7 +3354,7 @@
                                 id="bar-color"
                                 type="text"
                                 value={formatColor(localTemplate.templateBar.barColor)}
-                                on:input={(e) => handleChange('templateBar.barColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateBar.barColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -3334,7 +3364,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.templateBar.barColor)}
-                                on:input={(e) => handleChange('templateBar.barColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateBar.barColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.primary}30;"
                                 aria-labelledby="bar-color"
@@ -3527,7 +3557,7 @@
                                 id="guild-level-color"
                                 type="text"
                                 value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                on:input={(e) => handleChange('templateGuild.guildLevelColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateGuild.guildLevelColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -3537,7 +3567,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                on:input={(e) => handleChange('templateGuild.guildLevelColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateGuild.guildLevelColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.primary}30;"
                                 aria-labelledby="guild-level-color"
@@ -3636,7 +3666,7 @@
                                 id="guild-rank-color"
                                 type="text"
                                 value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                on:input={(e) => handleChange('templateGuild.guildRankColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateGuild.guildRankColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
@@ -3646,7 +3676,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                on:input={(e) => handleChange('templateGuild.guildRankColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateGuild.guildRankColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.secondary}30;"
                                 aria-labelledby="guild-rank-color"
@@ -3771,7 +3801,7 @@
                                 id="time-color"
                                 type="text"
                                 value={formatColor(localTemplate.timeOnLevelColor)}
-                                on:input={(e) => handleChange('timeOnLevelColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('timeOnLevelColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -3781,7 +3811,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.timeOnLevelColor)}
-                                on:input={(e) => handleChange('timeOnLevelColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('timeOnLevelColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.primary}30;"
                                 aria-labelledby="time-color"
@@ -3891,7 +3921,7 @@
                                 id="club-name-color"
                                 type="text"
                                 value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                on:input={(e) => handleChange('templateClub.clubNameColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateClub.clubNameColor')}
                                 on:focus={handleInputFocus}
                                 class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -3901,7 +3931,7 @@
                               <input
                                 type="color"
                                 value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                on:input={(e) => handleChange('templateClub.clubNameColor', parseColor(e.target.value))}
+                                on:input={handleColorInput('templateClub.clubNameColor')}
                                 class="w-10 h-10 rounded-lg border cursor-pointer"
                                 style="border-color: {$colorStore.primary}30;"
                                 aria-labelledby="club-name-color"

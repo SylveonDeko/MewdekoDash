@@ -16,6 +16,7 @@ interface InviteStats {
 interface InviteSettings {
   isEnabled: boolean;
   removeOnLeave: boolean;
+  removeInviteOnLeave: boolean;
   minAccountAge: string;
 }
 
@@ -53,14 +54,17 @@ function createInviteStore() {
           topInviters: leaderboard,
           averageJoins
         },
-        settings
+        settings: {
+          ...settings,
+          removeOnLeave: settings.removeInviteOnLeave
+        }
       }));
     } catch (err) {
       logger.error("Failed to fetch invite stats:", err);
       update(state => ({
         ...state,
         loading: false,
-        error: err.message
+        error: err instanceof Error ? err.message : "Unknown error"
       }));
     }
   }
@@ -69,17 +73,17 @@ function createInviteStore() {
     try {
       let updated = false;
 
-      if ("isEnabled" in settings) {
+      if ("isEnabled" in settings && settings.isEnabled !== undefined) {
         await api.toggleInviteTracking(guildId, settings.isEnabled);
         updated = true;
       }
 
-      if ("removeOnLeave" in settings) {
+      if ("removeOnLeave" in settings && settings.removeOnLeave !== undefined) {
         await api.setRemoveOnLeave(guildId, settings.removeOnLeave);
         updated = true;
       }
 
-      if ("minAccountAge" in settings) {
+      if ("minAccountAge" in settings && settings.minAccountAge !== undefined) {
         await api.setMinAccountAge(guildId, settings.minAccountAge);
         updated = true;
       }
@@ -91,7 +95,7 @@ function createInviteStore() {
       logger.error("Failed to update invite settings:", err);
       update(state => ({
         ...state,
-        error: err.message
+        error: err instanceof Error ? err.message : "Unknown error"
       }));
     }
   }

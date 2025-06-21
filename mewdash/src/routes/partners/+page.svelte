@@ -38,18 +38,27 @@
         title="DittoBOT"
       >
         <Carousel
-          images={[
+          items={[
             {
-              title: "Duels!",
-              src: "img/img_1.png",
+              component: null,
+              props: {
+                title: "Duels!",
+                src: "img/img_1.png",
+              }
             },
             {
-              title: "More Duels!",
-              src: "img/img_3.png",
+              component: null,
+              props: {
+                title: "More Duels!",
+                src: "img/img_3.png",
+              }
             },
             {
-              title: "Breeding!",
-              src: "img/img_2.png",
+              component: null,
+              props: {
+                title: "Breeding!",
+                src: "img/img_2.png",
+              }
             },
           ]}
         ></Carousel>

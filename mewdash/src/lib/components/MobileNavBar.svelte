@@ -5,6 +5,7 @@
   import {
     Bell,
     Gift,
+    Heart,
     Home,
     Lightbulb,
     Link,
@@ -28,25 +29,25 @@
 
   // Define navigation items (main visible buttons)
   const navItems = [
-    { label: "Home", icon: Home, href: "/dashboard" },
-    { label: "Settings", icon: Settings, href: "/dashboard/settings" },
-    { label: "Music", icon: Music, href: "/dashboard/music" },
-    { label: "XP", icon: Star, href: "/dashboard/xp" },
-    { label: "Perms", icon: Shield, href: "/dashboard/permissions" },
-    { label: "More", icon: Menu, href: "#", isMore: true }
+    { label: "Home", icon: Home, href: "/dashboard", priority: 1 },
+    { label: "Settings", icon: Settings, href: "/dashboard/settings", priority: 2 },
+    { label: "Music", icon: Music, href: "/dashboard/music", priority: 3 },
+    { label: "XP", icon: Star, href: "/dashboard/xp", priority: 4 },
+    { label: "Perms", icon: Shield, href: "/dashboard/permissions", priority: 5 },
+    { label: "More", icon: Menu, href: "#", isMore: true, priority: 6 }
   ];
 
-  // Secondary items shown in expanded "More" state
+  // Secondary items shown in expanded "More" state - organized by category
   const moreItems = [
-    { label: "AFK", icon: ZapOff, href: "/dashboard/afk" },
-    { label: "Greets", icon: Bell, href: "/dashboard/multigreets" },
-    { label: "Suggestions", icon: Lightbulb, href: "/dashboard/suggestions" },
-    { label: "Triggers", icon: MessageSquare, href: "/dashboard/chat-triggers" },
-    { label: "Embeds", icon: Link, href: "/dashboard/embedbuilder" },
-    { label: "Giveaways", icon: Gift, href: "/dashboard/giveaways" },
-    { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver" },
-    { label: "Invites", icon: Users, href: "/dashboard/invites" }
-    // { label: "Patreon", icon: Heart, href: "/dashboard/patreon" }
+    { label: "AFK", icon: ZapOff, href: "/dashboard/afk", category: "Community" },
+    { label: "Greets", icon: Bell, href: "/dashboard/multigreets", category: "Community" },
+    { label: "Invites", icon: Users, href: "/dashboard/invites", category: "Community" },
+    { label: "Suggestions", icon: Lightbulb, href: "/dashboard/suggestions", category: "Community" },
+    { label: "Triggers", icon: MessageSquare, href: "/dashboard/chat-triggers", category: "Content" },
+    { label: "Embeds", icon: Link, href: "/dashboard/embedbuilder", category: "Content" },
+    { label: "Giveaways", icon: Gift, href: "/dashboard/giveaways", category: "Management" },
+    { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver", category: "Management" },
+    { label: "Patreon", icon: Heart, href: "/dashboard/patreon", category: "Premium" }
   ];
 
   // State
@@ -55,6 +56,8 @@
   let prevScrollPos = 0;
   let visible = true;
   let musicPlaying = false;
+  let lastTapTime = 0;
+  let isAnimating = false;
 
   // Derived state
   $: currentPath = $page.url.pathname;
@@ -73,26 +76,79 @@
   $: moreMenuActive = activeMoreIndex >= 0;
   $: musicPlaying = $musicStore.status?.IsPlaying || false;
 
-  // Show/hide the navbar based on scroll direction
+  // Show/hide the navbar based on scroll direction with debouncing
+  let scrollTimeout: NodeJS.Timeout;
   function handleScroll() {
     if (typeof window !== "undefined") {
-      const currentScrollPos = window.pageYOffset;
+      // Debounce scroll events for better performance
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const currentScrollPos = window.pageYOffset;
+        const scrollDelta = Math.abs(currentScrollPos - prevScrollPos);
 
-      // Always show navbar when near the top
-      if (currentScrollPos < 50) {
-        visible = true;
-      } else {
-        // Hide when scrolling down, show when scrolling up
-        visible = prevScrollPos > currentScrollPos;
-      }
-
-      prevScrollPos = currentScrollPos;
+        // Only update if scroll delta is significant (reduces jitter)
+        if (scrollDelta > 5) {
+          // Always show navbar when near the top
+          if (currentScrollPos < 50) {
+            visible = true;
+          } else {
+            // Hide when scrolling down, show when scrolling up
+            visible = prevScrollPos > currentScrollPos;
+          }
+          prevScrollPos = currentScrollPos;
+        }
+      }, 10);
     }
   }
 
-  // Toggle the more menu
+  // Toggle the more menu with haptic feedback
   function toggleMoreMenu() {
+    if (isAnimating) return;
+    
     showMoreMenu = !showMoreMenu;
+
+    // Add haptic feedback on supported devices
+    if ("vibrate" in navigator && showMoreMenu) {
+      navigator.vibrate(50);
+    }
+  }
+
+  // Handle keyboard navigation for more menu
+  function handleMoreMenuKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleMoreMenu();
+    } else if (event.key === "Escape" && showMoreMenu) {
+      event.preventDefault();
+      showMoreMenu = false;
+    }
+  }
+
+  // Handle keyboard navigation for menu items
+  function handleMenuItemKeydown(event: KeyboardEvent, href: string) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      goto(href);
+      showMoreMenu = false;
+    }
+  }
+
+  // Handle double-tap for quick actions
+  function handleNavItemTap(item: any) {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastTapTime;
+
+    if (timeDiff < 300 && timeDiff > 0) {
+      // Double tap detected - could trigger quick action
+      if (item.href === "/dashboard/music" && musicPlaying) {
+        // Quick action: go directly to music player
+        goto("/dashboard/music");
+        return;
+      }
+    }
+
+    lastTapTime = currentTime;
+    goto(item.href);
   }
 
   // Close the more menu when clicking anywhere else
@@ -132,6 +188,8 @@
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
                border-color: {$colorStore.primary}30;"
         transition:slide={{ duration: 200, axis: 'y' }}
+        role="status"
+        aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
       >
         <div class="flex items-center gap-3">
           <div
@@ -139,7 +197,7 @@
             style="background-image: url('{$musicStore.status?.CurrentTrack?.AlbumArt || '/img/music-placeholder.png'}');"
           >
             <!-- Animated equalizer bars -->
-            <div class="w-full h-full bg-black bg-opacity-50 flex items-end justify-center p-1">
+            <div class="w-full h-full bg-black bg-opacity-50 flex items-end justify-center p-1" aria-hidden="true">
               <div class="bar-1 bg-white w-1 mx-px rounded-t"></div>
               <div class="bar-2 bg-white w-1 mx-px rounded-t"></div>
               <div class="bar-3 bg-white w-1 mx-px rounded-t"></div>
@@ -160,8 +218,9 @@
             href="/dashboard/music"
             class="w-8 h-8 rounded-full flex items-center justify-center"
             style="background: {$colorStore.primary}30"
+            aria-label="Go to music player"
           >
-            <Music size={16} style="color: {$colorStore.primary}" />
+            <Music size={16} style="color: {$colorStore.primary}" aria-hidden="true" />
           </a>
         </div>
       </div>
@@ -174,28 +233,36 @@
       class:translate-y-full={!visible}
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
              border-color: {$colorStore.primary}30;"
+      role="navigation"
+      aria-label="Mobile navigation"
     >
       <div class="flex justify-around">
         {#each navItems as item, i}
           {#if item.isMore}
             <!-- More menu button -->
             <button
-              class="flex flex-col items-center justify-center py-2 px-4 relative more-button"
+              class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-105 active:scale-95"
               on:click|stopPropagation={toggleMoreMenu}
+              on:keydown={handleMoreMenuKeydown}
               style="color: {moreMenuActive || showMoreMenu ? $colorStore.primary : $colorStore.muted}"
               aria-expanded={showMoreMenu}
-              aria-label="More options"
+              aria-haspopup="menu"
+              aria-label="More navigation options"
             >
               <div class="relative">
-                <svelte:component
-                  this={item.icon}
-                  size={24}
-                  strokeWidth={1.5}
-                />
+                <div class="transition-transform duration-200" class:rotate-180={showMoreMenu}>
+                  <svelte:component
+                    this={item.icon}
+                    size={24}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                </div>
 
                 {#if showMoreMenu}
                   <div
-                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full backdrop-blur-md"
+                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
+                    style="background: {$colorStore.primary}"
                   ></div>
                 {/if}
               </div>
@@ -206,26 +273,39 @@
               <!-- More menu dropdown -->
               {#if showMoreMenu}
                 <div
-                  class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 max-w-xs w-screen more-menu rounded-lg shadow-xl backdrop-blur-md"
+                  class="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 max-w-xs w-screen more-menu rounded-xl shadow-2xl backdrop-blur-md"
                   style="max-height: 60vh; overflow-y: auto; margin-left: max(-40vw, -150px);
-           border: 1px solid {$colorStore.primary}30;
-           background: rgba(0, 0, 0, 0.5);"
+           border: 1px solid {$colorStore.primary}40;
+           background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);"
                   transition:scale|local={{
-      duration: 200,
-      start: 0.8,
+      duration: 250,
+      start: 0.85,
       opacity: 0,
       easing: cubicOut
     }}
+                  role="menu"
+                  aria-label="Additional navigation options"
+                  on:introstart={() => isAnimating = true}
+                  on:introend={() => isAnimating = false}
+                  on:outrostart={() => isAnimating = true}
+                  on:outroend={() => isAnimating = false}
                 >
-                  <div class="grid grid-cols-2 gap-1 p-1 backdrop-blur-md" style="background: rgba(0, 0, 0, 0.3);">
+                  <div class="grid grid-cols-2 gap-2 p-3">
                     {#each moreItems as moreItem, j}
                       <a
                         href={moreItem.href}
                         data-sveltekit-preload-data="hover"
                         data-sveltekit-noscroll
-                        class="flex flex-col items-center gap-1 px-2 py-3 hover:bg-opacity-20 transition-colors rounded-lg text-center backdrop-blur-md"
-                        style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};"
-                        in:slide|local={{ delay: j * 50, duration: 200 }}
+                        class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};
+                               background: {currentPath.startsWith(moreItem.href) ? `${$colorStore.primary}20` : 'transparent'};
+                               hover:background: {$colorStore.primary}15;
+                               focus:ring-color: {$colorStore.primary};"
+                        in:slide|local={{ delay: j * 30, duration: 200 }}
+                        role="menuitem"
+                        aria-label="Navigate to {moreItem.label}"
+                        on:keydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
                         on:click|preventDefault={(e) => {
             if ($currentGuild) {
               if (browser) {
@@ -247,8 +327,13 @@
             showMoreMenu = false;
           }}
                       >
-                        <svelte:component this={moreItem.icon} size={20} />
-                        <span class="text-xs whitespace-normal">{moreItem.label}</span>
+                        <svelte:component
+                          this={moreItem.icon}
+                          size={22}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                        />
+                        <span class="text-xs font-medium whitespace-normal leading-tight">{moreItem.label}</span>
                       </a>
                     {/each}
                   </div>
@@ -260,24 +345,50 @@
             <!-- Regular nav item -->
             <a
               href={item.href}
-              class="flex flex-col items-center justify-center py-2 px-4 relative"
+              class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
               aria-current={activeIndex === i ? 'page' : undefined}
-              style="color: {activeIndex === i ? $colorStore.primary : $colorStore.muted}"
+              style="color: {activeIndex === i ? $colorStore.primary : $colorStore.muted};
+                     focus:ring-color: {$colorStore.primary};"
+              aria-label="Navigate to {item.label}"
+              on:click|preventDefault={(e) => {
+                e.preventDefault();
+                handleNavItemTap(item);
+              }}
             >
-              <svelte:component
-                this={item.icon}
-                size={24}
-                strokeWidth={1.5}
-              />
+              <div class="relative">
+                <svelte:component
+                  this={item.icon}
+                  size={24}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+
+                <!-- Active indicator dot -->
+                {#if activeIndex === i}
+                  <div
+                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                    style="background: {$colorStore.primary}"
+                    transition:scale={{ duration: 200 }}
+                  ></div>
+                {/if}
+
+                <!-- Music playing indicator -->
+                {#if item.href === '/dashboard/music' && musicPlaying}
+                  <div
+                    class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
+                    style="background: {$colorStore.accent}"
+                  ></div>
+                {/if}
+              </div>
               {#if showLabels}
                 <span class="text-xs mt-1">{item.label}</span>
               {/if}
 
               {#if activeIndex === i}
                 <div
-                  class="absolute -bottom-px left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-sm"
-                  style="background: {$colorStore.primary}"
-                  in:scale|local={{ duration: 200, start: 0, delay: 100 }}
+                  class="absolute -bottom-px left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-md"
+                  style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary})"
+                  in:scale|local={{ duration: 250, start: 0, delay: 50 }}
                 ></div>
               {/if}
             </a>

@@ -11,9 +11,9 @@ export interface Track {
   Isrc: string | null;
   SourceName: string;
   StartPosition: string | null;
-  ProbeInfo: any | null;
+  ProbeInfo: unknown | null;
   Provider: number;
-  AdditionalInformation: Record<string, any>;
+  AdditionalInformation: Record<string, unknown>;
 }
 
 export interface Requester {

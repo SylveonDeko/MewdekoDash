@@ -6,7 +6,7 @@
   import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
 
-  export let data;
+  export let data: any;
   let instances: BotInstance[] = [];
   let loading = true;
   let error: string | null = null;
@@ -49,7 +49,7 @@
 
       instanceStates[instanceId] = {
         loading: false,
-        hasMutualGuild: hasMutual,
+        hasMutualGuild: hasMutual || false,
         error: null,
         checked: true
       };
@@ -128,6 +128,14 @@
     await goto("/dashboard");
   }
 
+  // Handle keyboard navigation
+  function handleKeydown(event: KeyboardEvent, instance: BotInstance) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleInstanceSelect(instance);
+    }
+  }
+
   // Filter to show only instances with mutual guilds, but only after they've been checked
   $: visibleInstances = instances.filter(instance => {
     const instanceId = instance.botId.toString();
@@ -146,13 +154,16 @@
 
 <div class="container mx-auto px-4 py-6 max-w-4xl">
   <div class="text-center mb-8">
-    <h1 class="text-3xl font-bold mb-2">Select Bot Instance</h1>
+    <h1 class="text-3xl font-bold mb-2" id="instance-selector-title">Select Bot Instance</h1>
     <p class="text-gray-400">Choose a bot instance from servers you're in</p>
   </div>
 
   {#if showLoading}
-    <div class="flex flex-col items-center justify-center py-12">
-      <div class="w-8 h-8 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin mb-4"></div>
+    <div class="flex flex-col items-center justify-center py-12" role="status" aria-live="polite">
+      <div
+        class="w-8 h-8 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin mb-4"
+        aria-hidden="true"
+      ></div>
       <p class="text-gray-400">
         {#if loading}
           Loading bot instances...
@@ -162,16 +173,20 @@
       </p>
     </div>
   {:else if error}
-    <div class="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 rounded-lg p-4">
+    <div
+      class="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 rounded-lg p-4"
+      role="alert"
+      aria-live="assertive"
+    >
       {error}
     </div>
   {:else if instances.length === 0}
-    <div class="text-center py-12">
+    <div class="text-center py-12" role="status">
       <p class="text-xl text-gray-400">No bot instances available</p>
       <p class="mt-2 text-gray-500">Please contact an administrator</p>
     </div>
   {:else if visibleInstances.length === 0}
-    <div class="text-center py-12">
+    <div class="text-center py-12" role="status">
       <p class="text-xl text-gray-400">No bot instances found in your servers</p>
       <p class="mt-2 text-gray-500">Join a server with one of our bots to manage it</p>
 
@@ -187,16 +202,24 @@
       </details>
     </div>
   {:else}
-    <div class="grid gap-4" in:fade>
+    <div
+      class="grid gap-4"
+      in:fade
+      role="list"
+      aria-labelledby="instance-selector-title"
+    >
       {#each visibleInstances as instance (instance.botId)}
         {@const state = instanceStates[instance.botId.toString()]}
         <button
           on:click={() => handleInstanceSelect(instance)}
-          class="flex items-center p-6 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors"
+          on:keydown={(e) => handleKeydown(e, instance)}
+          class="flex items-center p-6 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          role="listitem"
+          aria-label="Select {instance.botName} bot instance - {!instance.isActive ? 'Offline' : 'Available'}"
         >
           <img
             src={instance.botAvatar}
-            alt=""
+            alt="{instance.botName} avatar"
             class="w-16 h-16 rounded-full mr-6"
           />
           <div class="text-left flex-grow">
@@ -207,13 +230,23 @@
             {/if}
           </div>
           {#if state?.loading}
-            <div class="w-5 h-5 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin ml-auto"></div>
+            <div
+              class="w-5 h-5 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin ml-auto"
+              aria-hidden="true"
+            ></div>
+            <span class="sr-only">Loading...</span>
           {:else if !instance.isActive}
-            <span class="ml-auto px-3 py-1 rounded-full bg-red-500 bg-opacity-10 text-red-500 text-sm">
+            <span
+              class="ml-auto px-3 py-1 rounded-full bg-red-500 bg-opacity-10 text-red-500 text-sm"
+              aria-label="Status: Offline"
+            >
               Offline
             </span>
           {:else}
-            <span class="ml-auto px-3 py-1 rounded-full bg-green-500 bg-opacity-10 text-green-500 text-sm">
+            <span
+              class="ml-auto px-3 py-1 rounded-full bg-green-500 bg-opacity-10 text-green-500 text-sm"
+              aria-label="Status: Available"
+            >
               Available
             </span>
           {/if}
@@ -222,3 +255,18 @@
     </div>
   {/if}
 </div>
+
+<style>
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+</style>

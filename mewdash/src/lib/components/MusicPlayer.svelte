@@ -1,4 +1,18 @@
-<!-- src/lib/components/MusicPlayer.svelte -->
+<!--
+@component
+A comprehensive music player component for Discord bot music functionality.
+
+- Displays currently playing track with album artwork and progress
+- Provides playback controls (play/pause, skip, volume, etc.)
+- Shows and manages the music queue
+- Integrates with dynamic color themes based on album artwork
+- Supports search and adding tracks to queue
+
+@example
+```svelte
+<MusicPlayer bind:musicStatus={status} />
+```
+-->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import {
@@ -21,7 +35,7 @@
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { logger } from "$lib/logger";
-  import type { MusicStatus, Requester } from "$lib/types/music";
+  import type { MusicStatus, Requester, TrackInfo } from "$lib/types/music";
   import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
   import MusicSearch from "./MusicSearch.svelte";
 
@@ -44,7 +58,7 @@
   const UPDATE_DEBOUNCE_TIME = 250; // ms - prevents too frequent updates
 
   // Function to determine if a track is currently playing
-  function isCurrentlyPlaying(track) {
+  function isCurrentlyPlaying(track: TrackInfo): boolean {
     if (!musicStatus?.CurrentTrack?.Track) return false;
 
     // Compare by title and author to identify the same track

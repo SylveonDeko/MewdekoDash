@@ -14,6 +14,7 @@ interface MusicPlayerColors {
   gradientStart: string;
   gradientEnd: string;
   controlsHighlight: string; // New: for primary controls like play/pause
+  [key: string]: string; // Index signature for dynamic access
 }
 
 const DEFAULT_COLORS: MusicPlayerColors = {

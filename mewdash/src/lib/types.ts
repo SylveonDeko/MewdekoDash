@@ -137,13 +137,6 @@ export interface BlacklistedUser {
   blacklistedAt: string;
 }
 
-export interface Priority {
-  id: number;
-  name: string;
-  color: string;
-  level: number;
-}
-
 export interface PatreonOAuthResponse {
   authorizationUrl: string;
   state: string;

@@ -1,13 +1,33 @@
-<!-- lib/nav/UnifiedNav.svelte -->
+<!--
+@component
+A unified navigation component that provides responsive navigation with server and guild selection.
+
+- Responsive design that adapts to mobile and desktop
+- Server/guild selection dropdown with search
+- User profile management and authentication state
+- Bot instance switching functionality
+- Dynamic navigation menu with nested items
+- Accessibility-compliant navigation structure
+
+@example
+```svelte
+<UnifiedNav 
+  items={navigationItems}
+  data={{ user: currentUser }}
+/>
+```
+-->
 <script lang="ts">
   import { page } from "$app/stores";
   import { fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
+  import type { ComponentType } from "svelte";
   import { onDestroy, onMount } from "svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
   import type { BotInstance } from "$lib/types/models.ts";
+  import type { DiscordUser } from "$lib/types/discord.ts";
   import { api } from "$lib/api.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { derived, get, writable } from "svelte/store";
@@ -17,6 +37,25 @@
   import { goto } from "$app/navigation";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { userStore } from "$lib/stores/userStore.ts";
+  import {
+    BarChart3,
+    Gift,
+    HandMetal,
+    Heart,
+    Lightbulb,
+    Link,
+    Lock,
+    MessageSquare,
+    Moon,
+    Music,
+    RotateCcw,
+    Save,
+    Settings,
+    Star,
+    Tag,
+    TrendingUp,
+    Users
+  } from "lucide-svelte";
 
   // Types
   type NavItem = {
@@ -31,13 +70,13 @@
     title: string;
     wrapped: boolean;
     href?: string;
-    icon?: string;
-    children?: { title?: string; href: string; icon?: string }[];
+    icon?: string | ComponentType;
+    children?: { title?: string; href: string; icon?: string | ComponentType }[];
   };
 
   // Props
   export let items: NavItem[] = [];
-  export let data;
+  export let data: { user?: DiscordUser } | undefined = undefined;
 
   // Stores
   const isOwnerStore = writable(false);
@@ -92,12 +131,12 @@
   );
   $: computedItems = $computedItemsStore;
 
-  function debounce(fn: Function, ms: number) {
-    let timer: number;
+  function debounce(fn: (...args: any[]) => void, ms: number) {
+    let timer: ReturnType<typeof setTimeout>;
     return (...args: any[]) => {
       if (browser) {
         clearTimeout(timer);
-        timer = window.setTimeout(() => fn(...args), ms);
+        timer = setTimeout(() => fn(...args), ms);
       }
     };
   }
@@ -192,44 +231,45 @@
       {
         category: "Core",
         items: [
-          { title: "Dashboard", href: "/dashboard", icon: "📊" },
-          { title: "Settings", href: "/dashboard/settings", icon: "⚙️" }
+          { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
+          { title: "Settings", href: "/dashboard/settings", icon: Settings }
         ]
       },
       {
         category: "Community",
         items: [
-          { title: "AFK", href: "/dashboard/afk", icon: "💤" },
-          { title: "XP", href: "/dashboard/xp", icon: "⭐" },
-          { title: "Suggestions", href: "/dashboard/suggestions", icon: "💡" },
-          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "👋" },
-          { title: "Invites", href: "/dashboard/invites", icon: "👥" },
-          { title: "Role Greets", href: "/dashboard/rolegreets", icon: "🏷️" },
-          { title: "Role States", href: "/dashboard/rolestates", icon: "🔄" }
+          { title: "AFK", href: "/dashboard/afk", icon: Moon },
+          { title: "XP", href: "/dashboard/xp", icon: Star },
+          { title: "Suggestions", href: "/dashboard/suggestions", icon: Lightbulb },
+          { title: "MultiGreets", href: "/dashboard/multigreets", icon: HandMetal },
+          { title: "Invites", href: "/dashboard/invites", icon: Users },
+          { title: "Role Greets", href: "/dashboard/rolegreets", icon: Tag },
+          { title: "Role States", href: "/dashboard/rolestates", icon: RotateCcw },
+          { title: "Patreon", href: "/dashboard/patreon", icon: Heart }
         ]
       },
       {
         category: "Content",
         items: [
-          { title: "Music", href: "/dashboard/music", icon: "🎵" },
-          { title: "Triggers", href: "/dashboard/chat-triggers", icon: "💬" },
-          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: "🔗" }
+          { title: "Music", href: "/dashboard/music", icon: Music },
+          { title: "Triggers", href: "/dashboard/chat-triggers", icon: MessageSquare },
+          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: Link }
         ]
       },
       {
         category: "Management",
         items: [
-          { title: "Permissions", href: "/dashboard/permissions", icon: "🔒" },
-          { title: "Giveaways", href: "/dashboard/giveaways", icon: "🎁" },
-          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "💾" },
-          //{ title: "Patreon", href: "/dashboard/patreon", icon: "♥️" }
+          { title: "Permissions", href: "/dashboard/permissions", icon: Lock },
+          { title: "Giveaways", href: "/dashboard/giveaways", icon: Gift },
+          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: Save }
+          //{ title: "Patreon", href: "/dashboard/patreon", icon: Heart }
         ]
       }
     ];
 
     if (isOwner) {
       items.find(item => item.category === "Management")?.items.push(
-        { title: "Performance", href: "/dashboard/performance", icon: "📈" }
+        { title: "Performance", href: "/dashboard/performance", icon: TrendingUp }
       );
     }
 
@@ -238,7 +278,7 @@
 
   function buildDashboardItems(isOwner: boolean = false): ProcessedItem[] {
     if (!get(currentGuild)) {
-      return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: "📊" }];
+      return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: BarChart3 }];
     }
 
     const items = getDashboardItems(isOwner);
@@ -489,13 +529,13 @@
     }
   }
 
-  onMount(async () => {
+  onMount(() => {
     if (browser) {
       window.addEventListener("keydown", handleKeyDown);
       window.addEventListener("resize", debouncedResize);
 
       checkMobile();
-      await initialize();
+      initialize();
 
       // Watch for instance changes to refetch guilds
       const unsubscribe = currentInstance.subscribe(value => {
@@ -583,15 +623,16 @@
               >
                 {#each item.children || [] as child}
                   <a
-                    href={child.href}
+                    href={child.href || '#'}
                     data-sveltekit-preload-data="hover"
                     data-sveltekit-noscroll
-                    class="ripple-effect block p-2 hover:bg-opacity-20 transition-colors"
+                    class="ripple-effect flex items-center p-2 hover:bg-opacity-20 transition-colors"
                     style="color: {$colorStore.text}; hover:background-color: {$colorStore.primary}20;"
                     class:bg-opacity-30={current === child.href}
                     style:background-color={current === child.href ? `${$colorStore.primary}30` : 'transparent'}
                     role="menuitem"
                     on:click|preventDefault={(e) => {
+    e.preventDefault();
     if ($currentGuild) {
       if (browser) {
         try {
@@ -608,10 +649,16 @@
         }
       }
     }
-    goto(child.href);
+    goto(child.href || '/');
   }}
                   >
-                    {#if child.icon}<span aria-hidden="true" class="mr-2">{child.icon}</span>{/if}
+                    {#if child.icon}
+                      {#if typeof child.icon === 'string'}
+                        <span aria-hidden="true" class="mr-2">{child.icon}</span>
+                      {:else}
+                        <svelte:component this={child.icon} class="mr-2 w-4 h-4" aria-hidden="true" />
+                      {/if}
+                    {/if}
                     {child.title}
                   </a>
                 {/each}
@@ -619,7 +666,7 @@
             </div>
           {:else}
             <a
-              href={item.href}
+              href={item.href || '#'}
               data-sveltekit-preload-data="hover"
               data-sveltekit-noscroll
               class="ripple-effect flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md hover:bg-opacity-20 transition-all duration-200 ease-in-out min-h-[40px]"
@@ -627,6 +674,7 @@
               class:bg-opacity-30={current === item.href}
               style:background-color={current === item.href ? `${$colorStore.primary}30` : 'transparent'}
               on:click|preventDefault={(e) => {
+    e.preventDefault();
     if ($currentGuild) {
       if (browser) {
         try {
@@ -643,11 +691,15 @@
         }
       }
     }
-    goto(item.href);
+    goto(item.href || '/');
   }}
             >
               {#if item.icon}
-                <span aria-hidden="true">{item.icon}</span>
+                {#if typeof item.icon === 'string'}
+                  <span aria-hidden="true" class="mr-2">{item.icon}</span>
+                {:else}
+                  <svelte:component this={item.icon} class="w-4 h-4 mr-2" aria-hidden="true" />
+                {/if}
               {/if}
               <span>{item.title}</span>
             </a>
@@ -671,7 +723,7 @@
         </form>
       {:else}
         <!-- Desktop User & Instance Display -->
-        <div class="hidden md:flex relative" use:clickOutside on:clickoutside={closeDropdown}>
+        <div class="hidden md:flex relative" use:clickOutside on:clickoutside={() => closeDropdown()}>
           <button
             class="ripple-effect flex items-center gap-2 p-2 pl-3 pr-4 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out backdrop-blur-sm border"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}40);
@@ -1003,8 +1055,8 @@
                   <div class="text-sm font-medium px-2" style="color: {$colorStore.muted};">{item.title}</div>
                   {#each item.children || [] as child}
                     <a
-                      href={child.href}
-                      class="ripple-effect block px-4 py-3 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out min-h-[44px] flex items-center border border-transparent"
+                      href={child.href || '#'}
+                      class="ripple-effect flex items-center px-4 py-3 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out min-h-[44px] border border-transparent"
                       style="color: {$colorStore.text};
                     background: {current === child.href ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
                     border-color: {current === child.href ? $colorStore.primary + '50' : 'transparent'};
@@ -1012,14 +1064,20 @@
                     hover:border-color: {$colorStore.primary}40;"
                       on:click={closeMobileMenu}
                     >
-                      {#if child.icon}<span class="mr-3 text-lg" aria-hidden="true">{child.icon}</span>{/if}
+                      {#if child.icon}
+                        {#if typeof child.icon === 'string'}
+                          <span class="mr-3 text-lg" aria-hidden="true">{child.icon}</span>
+                        {:else}
+                          <svelte:component this={child.icon} class="mr-3 w-5 h-5" aria-hidden="true" />
+                        {/if}
+                      {/if}
                       <span class="font-medium">{child.title}</span>
                     </a>
                   {/each}
                 </div>
               {:else}
                 <a
-                  href={item.href}
+                  href={item.href || '#'}
                   class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out min-h-[44px] border border-transparent"
                   style="color: {$colorStore.text};
                 background: {current === item.href ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
@@ -1029,7 +1087,11 @@
                   on:click={closeMobileMenu}
                 >
                   {#if item.icon}
-                    <span class="text-lg" aria-hidden="true">{item.icon}</span>
+                    {#if typeof item.icon === 'string'}
+                      <span class="text-lg" aria-hidden="true">{item.icon}</span>
+                    {:else}
+                      <svelte:component this={item.icon} class="w-5 h-5" aria-hidden="true" />
+                    {/if}
                   {/if}
                   <span class="font-medium">{item.title}</span>
                 </a>

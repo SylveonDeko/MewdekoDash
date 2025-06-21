@@ -72,6 +72,10 @@
     minutes > 0 ? `${minutes}m` : null,
     seconds > 0 ? `${seconds}s` : null,
   ].filter(Boolean).join(' ') || '0s';
+
+  // Generate unique ID for fieldset
+  const fieldsetId = `interval-picker-${Math.random().toString(36).substr(2, 9)}`;
+  const liveRegionId = `${fieldsetId}-live`;
 </script>
 
 <div
@@ -79,6 +83,8 @@
   style="background: linear-gradient(135deg, var(--color-primary)08, var(--color-secondary)08);
          border-color: var(--color-primary)20;"
   transition:fade
+  aria-labelledby="{fieldsetId}-legend"
+  role="group"
 >
   <!-- Background decoration -->
   <div
@@ -87,8 +93,14 @@
   ></div>
 
   <div class="relative space-y-6">
+    <!-- Live region for duration updates -->
+    <div aria-atomic="true" aria-live="polite" class="sr-only" id="{liveRegionId}">
+      Duration set to {durationText}, ending at {endTime.toLocaleString()}
+    </div>
+
     <!-- Duration units -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <fieldset class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <legend class="sr-only" id="{fieldsetId}-legend">Set duration for timer</legend>
       {#each [
         { label: 'Days', value: days, unit: 'days', icon: Calendar, max: undefined },
         { label: 'Hours', value: hours, unit: 'hours', icon: Clock, max: 23 },
@@ -121,31 +133,43 @@
               style="border-color: var(--color-primary)20;
                      color: var(--color-text);
                      focus:border-color: var(--color-primary);"
+              aria-describedby="{fieldsetId}-description"
+              aria-label="{label}: {value} {unit}"
             />
           </div>
         </div>
       {/each}
+    </fieldset>
+
+    <!-- Instructions for screen readers -->
+    <div class="sr-only" id="{fieldsetId}-description">
+      Use arrow keys or number input to set duration. Maximum values: hours 23, minutes and seconds 59.
     </div>
 
     <!-- Duration summary -->
-    <div class="flex items-center gap-3 p-3 rounded-lg"
-         style="background: var(--color-primary)10;">
+    <div
+      aria-label="Duration summary"
+      class="flex items-center gap-3 p-3 rounded-lg"
+      role="status"
+      style="background: var(--color-primary)10;"
+    >
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
-        <Calendar class="w-4 h-4" style="color: var(--color-primary)" />
+        <Calendar aria-hidden="true" class="w-4 h-4" style="color: var(--color-primary)" />
         <span class="text-sm">Duration:</span>
       </div>
       <div class="flex-1">
-        <span class="text-sm font-medium" style="color: var(--color-text)">
+        <span aria-label="Total duration: {durationText}" class="text-sm font-medium" style="color: var(--color-text)">
           {durationText}
         </span>
       </div>
-      <div class="h-4 w-px" style="background: var(--color-primary)20;"></div>
+      <div aria-hidden="true" class="h-4 w-px" style="background: var(--color-primary)20;"></div>
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
-        <Clock class="w-4 h-4" style="color: var(--color-secondary)" />
+        <Clock aria-hidden="true" class="w-4 h-4" style="color: var(--color-secondary)" />
         <span class="text-sm">Ends:</span>
       </div>
       <div>
-        <span class="text-sm font-medium" style="color: var(--color-text)">
+        <span aria-label="End time: {endTime.toLocaleString()}" class="text-sm font-medium"
+              style="color: var(--color-text)">
           {endTime.toLocaleString()}
         </span>
       </div>
@@ -173,5 +197,18 @@
   /* Input focus effect */
   input:focus {
     box-shadow: 0 0 0 2px var(--color-primary)20;
+  }
+
+  /* Screen reader only content */
+  .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
   }
 </style>
