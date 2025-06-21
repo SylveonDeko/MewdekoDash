@@ -1341,7 +1341,7 @@ export const api = {
       config: Starboard
     }>(`Starboard/${guildId}/${starboardId}/toggle-channel`, "POST", channelId),
 
-  /*// Patreon endpoints
+  // Patreon endpoints
     getPatreonOAuthUrl: (guildId: bigint) =>
       apiRequest<PatreonOAuthResponse>(`patreon/oauth/url?guildId=${guildId}`),
 
@@ -1373,5 +1373,5 @@ export const api = {
       apiRequest<{ message: string }>(`patreon/operations?guildId=${guildId}`, "POST", operation),
 
     mapPatreonTierToRole: (guildId: bigint, mapping: PatreonTierMappingRequest) =>
-      apiRequest<{ message: string }>(`patreon/tiers/map?guildId=${guildId}`, "POST", mapping)*/
+      apiRequest<{ message: string }>(`patreon/tiers/map?guildId=${guildId}`, "POST", mapping)
 };
