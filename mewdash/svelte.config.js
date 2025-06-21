@@ -5,6 +5,12 @@ import { vitePreprocess } from "@sveltejs/kit/vite";
 export default {
   kit: {
     adapter: adapter({ out: "out" }),
+    prerender: {
+      handleHttpError: "warn"
+    },
+    modulePreload: {
+      enabled: false
+    }
   },
   preprocess: vitePreprocess(),
 };
