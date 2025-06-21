@@ -7,9 +7,6 @@ export default {
     adapter: adapter({ out: "out" }),
     prerender: {
       handleHttpError: "warn"
-    },
-    modulePreload: {
-      enabled: false
     }
   },
   preprocess: vitePreprocess(),
