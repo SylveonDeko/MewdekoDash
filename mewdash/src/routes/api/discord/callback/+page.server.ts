@@ -1,21 +1,28 @@
 // src/routes/api/discord/callback/+page.server.ts
-import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { redirect } from "@sveltejs/kit";
+import type { PageServerLoad } from "./$types";
 import { buildSearchParams, getUserData, requestDiscordToken, setCookies } from "../discordAuth";
 import { logger } from "$lib/logger";
 
 // routes/api/discord/callback/+page.server.ts
 export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     const code = url.searchParams.get('code');
+
+    // Get the stored redirect destination
+    const redirectTo = cookies.get("auth_redirect_to") || "/?loggedin";
+
+    // Clean up the redirect cookie
+    cookies.delete("auth_redirect_to", { path: "/" });
+    
     if (!code) {
-        throw redirect(303, "/?loggedin");
+        throw redirect(303, redirectTo);
     }
 
     // Check if we've already processed this code
     const processedCode = cookies.get('processed_oauth_code');
     if (processedCode === code) {
         cookies.delete('processed_oauth_code', { path: '/' });
-        throw redirect(303, "/?loggedin");
+        throw redirect(303, redirectTo);
     }
 
     try {
@@ -36,7 +43,9 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
         const userData = await getUserData(tokens.access_token);
         locals.user = userData;
 
-        throw redirect(303, "/?loggedin");
+        // Redirect to the originally requested page or dashboard if it was a dashboard URL
+        const finalRedirect = redirectTo.startsWith("/dashboard") ? "/dashboard" : redirectTo;
+        throw redirect(303, finalRedirect);
     } catch (error) {
         if (error instanceof Error) {
             logger.error('Callback error details:', {
@@ -49,6 +58,7 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
             logger.error('Callback error details:', { error });
         }
 
-        throw redirect(303, "/?loggedin");
+        // Even on error, try to redirect to the intended destination
+        throw redirect(303, redirectTo);
     }
 };

@@ -23,7 +23,10 @@
       const isPatreonCallback = window.location.pathname === "/dashboard/patreon" &&
         (window.location.search.includes("code=") || window.location.search.includes("error="));
       if (!isPatreonCallback) {
-        goto("/api/discord/login");
+        // Capture current URL for redirect after login
+        const currentUrl = window.location.pathname + window.location.search;
+        const loginUrl = `/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`;
+        goto(loginUrl);
         return;
       }
     }
@@ -52,9 +55,8 @@
       <InstanceSelector data="{data}" />
     {:else}
       <slot />
-      {#if $currentGuild}
-        <MobileNavBar />
-      {/if}
+      <!-- Always show mobile nav when we have an instance - it can handle both guild and instance selection -->
+      <MobileNavBar showInstanceSelector={!$currentGuild} data={data} />
     {/if}
   </div>
 </div>

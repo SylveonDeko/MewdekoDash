@@ -4,7 +4,6 @@ A unified navigation component that provides responsive navigation with server a
 
 - Responsive design that adapts to mobile and desktop
 - Server/guild selection dropdown with search
-- User profile management and authentication state
 - Bot instance switching functionality
 - Dynamic navigation menu with nested items
 - Accessibility-compliant navigation structure
@@ -171,6 +170,10 @@ A unified navigation component that provides responsive navigation with server a
       } else if (current !== "/dashboard") {
         // For other subpages (/dashboard/music, /dashboard/settings, etc.), go to main dashboard
         goto("/dashboard", { replaceState: false });
+      } else if (!get(currentGuild) && get(currentInstance)) {
+        // If we're on main dashboard but no guild selected, this might be helpful to show guild selection
+        // Don't navigate away, just stay on dashboard to allow guild selection
+        console.log("On main dashboard with instance but no guild - staying to allow guild selection");
       }
     }
   }
@@ -402,7 +405,10 @@ A unified navigation component that provides responsive navigation with server a
 
     if (browser) {
       try {
-        localStorage.setItem("lastSelectedGuild", JSON.stringify({
+        const currentInst = get(currentInstance);
+        const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
+
+        localStorage.setItem(storageKey, JSON.stringify({
           id: guild.id.toString(),
           name: guild.name,
           icon: guild.icon,
@@ -458,14 +464,42 @@ A unified navigation component that provides responsive navigation with server a
   }
 
   async function handleInstanceSelect(instance: BotInstance) {
+    // Don't do anything if this is already the current instance
+    if (get(currentInstance)?.botId === instance.botId) {
+      console.log("Same instance selected, no action needed");
+      closeDropdown();
+      return;
+    }
+
+    // Clear current guild when switching instances to prevent stale data
+    currentGuild.set(null);
+
+    // Clear persisted guild data for the current instance when switching instances
+    if (browser) {
+      const currentInst = get(currentInstance);
+      if (currentInst) {
+        const oldStorageKey = `lastSelectedGuild_${currentInst.botId}`;
+        localStorage.removeItem(oldStorageKey);
+      }
+      // Also clear the generic key for backwards compatibility
+      localStorage.removeItem("lastSelectedGuild");
+    }
+
+    // Set the new instance
     currentInstance.set(instance);
+
     if (browser) {
       localStorage.setItem("selectedInstance", JSON.stringify(instance));
 
-      // After setting an instance, fetch the guilds
+      // After setting an instance, fetch the guilds for the new instance
       await fetchGuildsIfReady();
     }
     closeDropdown();
+
+    // If we're in a dashboard subpage, navigate to main dashboard to allow guild selection
+    if (isDashboardSubpage) {
+      goto("/dashboard");
+    }
   }
 
   async function initializeInstances() {
@@ -522,7 +556,10 @@ A unified navigation component that provides responsive navigation with server a
   async function restoreLastGuild() {
     if (!browser) return;
 
-    const stored = localStorage.getItem("lastSelectedGuild");
+    const currentInst = get(currentInstance);
+    const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
+
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         const storedGuild = JSON.parse(stored);
@@ -532,7 +569,7 @@ A unified navigation component that provides responsive navigation with server a
         if (adminGuilds.length > 0) {
           const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
           if (guild) {
-            logger.debug("Restoring last guild:", guild.name);
+            logger.debug("Restoring last guild for instance:", currentInst?.botName, "guild:", guild.name);
             await selectGuild(guild);
           }
         }
@@ -656,9 +693,9 @@ A unified navigation component that provides responsive navigation with server a
           class="hidden md:flex flex-row p-4 space-x-2 lg:space-x-4 text-[16px] font-medium"
           role="navigation"
         >
-          {#each computedItems as item}
+          {#each computedItems as item, i}
             {#if item.wrapped}
-              <div class="relative group">
+              <div class="relative group" in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}>
                 <button
                   class="ripple-effect flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md transition-all duration-200 ease-in-out min-h-[40px]"
                   style="color: {$colorStore.text};"
@@ -692,7 +729,10 @@ A unified navigation component that provides responsive navigation with server a
         if ($currentGuild) {
           if (browser) {
             try {
-              localStorage.setItem("lastSelectedGuild", JSON.stringify({
+              const currentInst = $currentInstance;
+              const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
+              
+              localStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
                 icon: $currentGuild.icon,
@@ -726,6 +766,7 @@ A unified navigation component that provides responsive navigation with server a
                 data-sveltekit-preload-data="hover"
                 data-sveltekit-noscroll
                 class="ripple-effect flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md transition-all duration-200 ease-in-out min-h-[40px] hover:bg-[var(--hover-bg-color)]"
+                in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}
                 style:--hover-bg-color="{$colorStore.primary}20"
                 style:background-color={current === item.href ? `${$colorStore.primary}30` : 'transparent'}
                 on:click|preventDefault={(e) => {
@@ -733,7 +774,10 @@ A unified navigation component that provides responsive navigation with server a
         if ($currentGuild) {
           if (browser) {
             try {
-              localStorage.setItem("lastSelectedGuild", JSON.stringify({
+              const currentInst = $currentInstance;
+              const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
+              
+              localStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
                 icon: $currentGuild.icon,
@@ -896,70 +940,56 @@ A unified navigation component that provides responsive navigation with server a
                 </div>
               </div>
 
-              <!-- Instance Selection -->
-              <div class="py-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
-                <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
-                <div class="max-h-48 overflow-y-auto">
-                  {#if instancesLoading || stillCheckingInstances}
-                    <div class="text-sm px-2 py-1 flex items-center" style="color: {$colorStore.muted};">
-                      <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
-                           style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                      {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
-                    </div>
-                  {:else if instancesError}
-                    <div class="text-sm px-2 py-1" style="color: {$colorStore.accent};">{instancesError}</div>
-                  {:else if visibleInstances.length === 0}
-                    <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No accessible instances</div>
-                  {:else}
-                    {#each visibleInstances as instance}
-                      <button
-                        class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
-                        style="color: {$colorStore.text};
-                               background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
-                               border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
-                               hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
-                               hover:border-color: {$colorStore.primary}40;"
-                        on:click={() => handleInstanceSelect(instance)}
-                        aria-pressed={$currentInstance?.botId === instance.botId}
-                      >
-                        <img
-                          src={instance.botAvatar}
-                          alt=""
-                          class="w-6 h-6 rounded-full"
-                        />
-                        <div class="flex flex-col flex-1 min-w-0">
-                          <span class="text-sm truncate">
-                            {instance.botName}
-                          </span>
-                        </div>
-                        {#if !instance.isActive}
-                          <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
-                                style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
-                            Offline
-                          </span>
-                        {/if}
-                      </button>
-                    {/each}
-                  {/if}
-                </div>
-              </div>
-
-              <!-- Dashboard Actions - only show in minimal mode -->
-              {#if isMinimalMode}
+              <!-- Instance Selection - Only show if more than one instance -->
+              {#if visibleInstances.length > 1 || instancesLoading || stillCheckingInstances}
                 <div class="py-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
-                  <a
-                    href="/"
-                    class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border font-medium"
-                    style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
-                           color: {$colorStore.text};
-                           border-color: {$colorStore.primary}60;
-                           box-shadow: 0 2px 8px {$colorStore.primary}30;
-                           hover:box-shadow: 0 4px 12px {$colorStore.primary}40;"
-                  >
-                    ← Back to Main Site
-                  </a>
+                  <div class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Bot Instances</div>
+                  <div class="max-h-48 overflow-y-auto">
+                    {#if instancesLoading || stillCheckingInstances}
+                      <div class="text-sm px-2 py-1 flex items-center" style="color: {$colorStore.muted};">
+                        <div class="animate-spin mr-2 h-4 w-4 border-2 rounded-full"
+                             style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
+                        {instancesLoading ? 'Loading instances...' : 'Checking server access...'}
+                      </div>
+                    {:else if instancesError}
+                      <div class="text-sm px-2 py-1" style="color: {$colorStore.accent};">{instancesError}</div>
+                    {:else if visibleInstances.length === 0}
+                      <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No accessible instances</div>
+                    {:else}
+                      {#each visibleInstances as instance}
+                        <button
+                          class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
+                          style="color: {$colorStore.text};
+                                 background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
+                                 border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
+                                 hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
+                                 hover:border-color: {$colorStore.primary}40;"
+                          on:click={() => handleInstanceSelect(instance)}
+                          aria-pressed={$currentInstance?.botId === instance.botId}
+                        >
+                          <img
+                            src={instance.botAvatar}
+                            alt=""
+                            class="w-6 h-6 rounded-full"
+                          />
+                          <div class="flex flex-col flex-1 min-w-0">
+                            <span class="text-sm truncate">
+                              {instance.botName}
+                            </span>
+                          </div>
+                          {#if !instance.isActive}
+                            <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
+                                  style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
+                              Offline
+                            </span>
+                          {/if}
+                        </button>
+                      {/each}
+                    {/if}
+                  </div>
                 </div>
               {/if}
+
 
               <!-- Logout -->
               <div class="pt-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
