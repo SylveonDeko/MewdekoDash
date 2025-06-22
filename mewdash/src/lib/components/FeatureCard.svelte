@@ -2,10 +2,10 @@
 <script lang="ts">
   import { fade, scale } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import type { SvelteComponent } from "svelte";
+  import type { ComponentType } from "svelte";
 
   // Props
-  export let icon: typeof SvelteComponent;
+  export let icon: ComponentType;
   export let title: string;
   export let isActive = false;
   export let description: string = "";

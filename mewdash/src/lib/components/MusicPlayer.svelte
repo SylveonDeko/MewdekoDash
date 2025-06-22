@@ -15,6 +15,7 @@ A comprehensive music player component for Discord bot music functionality.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
   import {
     Clock,
     Disc,
@@ -24,7 +25,6 @@ A comprehensive music player component for Discord bot music functionality.
     Play,
     PlusCircle,
     Repeat,
-    Search,
     SkipBack,
     SkipForward,
     Volume,
@@ -43,7 +43,19 @@ A comprehensive music player component for Discord bot music functionality.
 
   let isRotationEnabled = true;
   let selectedQueueItem = -1;
-  let isSearchModalOpen = false; // New state for search modal
+  let isSearchModalOpen = false;
+
+  // Context menu state
+  let contextMenuVisible = false;
+  let contextMenuX = 0;
+  let contextMenuY = 0;
+  let contextMenuTrackIndex = -1;
+  let contextMenuElement: HTMLDivElement;
+
+  // Progress preview state
+  let showProgressPreview = false;
+  let previewTime = "";
+  let previewPosition = 0; // New state for search modal
 
   let progressInterval: number | null = null;
   let currentProgress = 0;
@@ -308,6 +320,65 @@ A comprehensive music player component for Discord bot music functionality.
       event.preventDefault();
       playQueueItem(index);
     }
+  }
+
+  // Context menu functions
+  function showContextMenu(event: MouseEvent, trackIndex: number) {
+    event.preventDefault();
+    contextMenuTrackIndex = trackIndex;
+    contextMenuX = event.clientX;
+    contextMenuY = event.clientY;
+    contextMenuVisible = true;
+  }
+
+  function hideContextMenu() {
+    contextMenuVisible = false;
+    contextMenuTrackIndex = -1;
+  }
+
+  async function removeFromQueue(trackIndex: number) {
+    try {
+      if (!$currentGuild?.id) return;
+      const track = musicStatus.Queue[trackIndex];
+      await api.removeFromQueue($currentGuild.id, track.Index);
+      announceToScreenReader(`Removed ${track.Track.Title} from queue`);
+    } catch (err) {
+      logger.error("Failed to remove track from queue:", err);
+      announceToScreenReader("Failed to remove track from queue");
+    }
+    hideContextMenu();
+  }
+
+  async function moveQueueItem(fromIndex: number, direction: "up" | "down") {
+    try {
+      if (!$currentGuild?.id) return;
+      const track = musicStatus.Queue[fromIndex];
+      const newIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+
+      if (newIndex < 0 || newIndex >= musicStatus.Queue.length) return;
+
+      await api.moveQueueItem($currentGuild.id, track.Index, newIndex);
+      announceToScreenReader(`Moved ${track.Track.Title} ${direction} in queue`);
+    } catch (err) {
+      logger.error("Failed to move track in queue:", err);
+      announceToScreenReader("Failed to move track in queue");
+    }
+    hideContextMenu();
+  }
+
+  // Progress bar hover preview
+  function handleProgressHover(event: MouseEvent) {
+    if (!progressBarElement || !musicStatus?.CurrentTrack?.Track?.Duration) return;
+
+    const rect = progressBarElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const duration = getSeconds(musicStatus.CurrentTrack.Track.Duration);
+    const seekTime = Math.floor(duration * percentage);
+
+    previewTime = formatTime({ RelativePosition: `0:${Math.floor(seekTime / 60)}:${(seekTime % 60).toString().padStart(2, "0")}.000` });
+    previewPosition = percentage * 100;
+    showProgressPreview = true;
   }
 
   // Toggle album rotation
@@ -605,6 +676,11 @@ A comprehensive music player component for Discord bot music functionality.
   // Add and remove global event listeners
   onMount(() => {
     window.addEventListener("keydown", handleGlobalKeydown);
+    window.addEventListener("click", (e) => {
+      if (contextMenuVisible && contextMenuElement && !contextMenuElement.contains(e.target as Node)) {
+        hideContextMenu();
+      }
+    });
 
     // Set up silent audio for MediaSession
     setupSilentAudio();
@@ -788,9 +864,10 @@ A comprehensive music player component for Discord bot music functionality.
     {screenReaderAnnouncement}
   </div>
 
-  <div class="flex flex-col md:flex-row gap-6">
+  <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
     <!-- Album Art -->
-    <div class="relative group w-full md:w-auto md:min-w-[160px] max-w-[220px] mx-auto md:mx-0">
+    <div
+      class="relative group w-32 h-32 sm:w-40 sm:h-40 lg:w-auto lg:min-w-[140px] lg:max-w-[180px] mx-auto lg:mx-0 flex-shrink-0">
       <!-- Rotation Toggle Button -->
       <button
         aria-label={isRotationEnabled ? "Disable rotation" : "Enable rotation"}
@@ -816,7 +893,7 @@ A comprehensive music player component for Discord bot music functionality.
 
         <img
           alt={musicStatus?.CurrentTrack?.Track ? `Album artwork for ${musicStatus.CurrentTrack.Track.Title} by ${musicStatus.CurrentTrack.Track.Author}` : "Album artwork"}
-          class={`w-full lg:w-[160px] h-[160px] object-cover transition-transform duration-300 group-hover:scale-105 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
+          class={`w-full h-full lg:w-[160px] lg:h-[160px] object-cover transition-transform duration-300 group-hover:scale-105 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
           src={musicStatus?.CurrentTrack?.Track?.ArtworkUri || '/default-album.png'}
         />
 
@@ -854,14 +931,14 @@ A comprehensive music player component for Discord bot music functionality.
 
         {#if musicStatus?.CurrentTrack?.Track}
           <h2
-            class="text-xl md:text-2xl font-bold mb-1 truncate max-w-full transition-opacity duration-300"
+            class="text-base sm:text-lg lg:text-xl font-bold mb-1 truncate max-w-full transition-opacity duration-300"
             class:track-text-transition={isTransitioning}
             style="color: var(--music-text)"
           >
             {musicStatus.CurrentTrack.Track.Title}
           </h2>
           <p
-            class="text-sm md:text-base truncate max-w-full transition-opacity duration-300"
+            class="text-xs sm:text-sm truncate max-w-full transition-opacity duration-300"
             class:track-text-transition={isTransitioning}
             style="color: var(--music-text)80"
           >
@@ -877,15 +954,18 @@ A comprehensive music player component for Discord bot music functionality.
             aria-label="Song progress"
             aria-valuemax="100"
             on:click={handleSeek}
+            on:mousemove={handleProgressHover}
+            on:mouseleave={() => showProgressPreview = false}
             aria-valuemin="0"
             aria-valuenow={progressPercentage}
             aria-valuetext={`${formatTime(musicStatus.Position)} of ${formatTime(musicStatus.CurrentTrack.Track.Duration)}`}
             bind:this={progressBarElement}
-            class="relative w-full h-3 rounded-full overflow-hidden group cursor-pointer"
+            class="relative w-full h-3 rounded-full overflow-hidden group cursor-pointer hover:h-4 transition-all duration-200"
             on:keydown={handleSeek}
             role="slider"
             style="background: var(--music-foreground)20;"
             tabindex="0"
+            title="Click to seek or use arrow keys to skip ±5s"
           >
             <div
               class="h-full rounded-full transition-transform duration-75 ease-linear progress-bar-fill liquid-progress"
@@ -903,10 +983,21 @@ A comprehensive music player component for Discord bot music functionality.
 
             <!-- Pulsating position indicator -->
             <div
-              class="absolute top-50% w-3 h-3 rounded-full transform -translate-y-1/2 progress-indicator"
+              class="absolute top-50% w-3 h-3 rounded-full transform -translate-y-1/2 progress-indicator group-hover:w-4 group-hover:h-4 transition-all duration-200"
               style="background: var(--music-accent); left: calc({progressPercentage}% - 6px);
                      box-shadow: 0 0 8px var(--music-accent);"
             ></div>
+
+            <!-- Progress preview tooltip -->
+            {#if showProgressPreview}
+              <div
+                class="absolute -top-8 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none z-10"
+                style="left: calc({previewPosition}% - 25px); border: 1px solid var(--music-accent)50;"
+                in:fade={{ duration: 150 }}
+              >
+                {previewTime}
+              </div>
+            {/if}
           </div>
 
           <div class="flex justify-between text-xs font-medium" style="color: var(--music-text)80">
@@ -918,10 +1009,11 @@ A comprehensive music player component for Discord bot music functionality.
 
       <!-- Controls -->
       {#if musicStatus?.IsInVoiceChannel}
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 w-full">
-          <div class="flex items-center gap-4 justify-center sm:justify-start w-full sm:w-auto">
+        <div class="flex flex-col gap-3 pt-2 w-full">
+          <!-- Main playback controls -->
+          <div class="flex items-center justify-center gap-2 sm:gap-3 w-full">
             <button
-              class="p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--music-foreground)]"
+              class="p-2 sm:p-2.5 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--music-foreground)]"
               style="color: var(--music-text)80;"
               on:mouseover={(e) => {
                 e.currentTarget.style.color = 'var(--music-foreground)';
@@ -941,30 +1033,32 @@ A comprehensive music player component for Discord bot music functionality.
               }}
               on:click={previousTrack}
               aria-label="Previous Track"
+              title="Previous Track (Ctrl+←)"
             >
-              <SkipBack class="w-6 h-6" />
+              <SkipBack class="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
             <button
-              class="p-4 rounded-full transition-all duration-300 transform hover:scale-105 focus:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--music-accent)] relative overflow-hidden control-pulse"
+              class="p-3 sm:p-4 rounded-full transition-all duration-300 transform hover:scale-105 focus:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--music-accent)] relative overflow-hidden control-pulse"
               style="background: var(--music-controls-highlight); color: var(--music-text);"
               on:click={togglePlayPause}
               aria-label={musicStatus?.State === 2 ? 'Pause' : 'Play'}
               aria-pressed={musicStatus?.State === 2}
+              title={musicStatus?.State === 2 ? 'Pause (Space)' : 'Play (Space)'}
             >
               <!-- Button glow effect -->
               <div class="absolute inset-0 opacity-40 rounded-full"
                    style="background: radial-gradient(circle at center, var(--music-foreground)80 0%, transparent 70%);"></div>
 
               {#if musicStatus?.State === 2}
-                <Pause class="w-6 h-6 relative z-10" />
+                <Pause class="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
               {:else}
-                <Play class="w-6 h-6 relative z-10" />
+                <Play class="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
               {/if}
             </button>
 
             <button
-              class="p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2"
+              class="p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2"
               style="color: var(--music-text)80; --ring-color: var(--music-foreground);"
               on:mouseover={(e) => {
                 e.currentTarget.style.color = 'var(--music-foreground)';
@@ -984,26 +1078,18 @@ A comprehensive music player component for Discord bot music functionality.
               }}
               on:click={skipTrack}
               aria-label="Next Track"
+              title="Next Track (Ctrl+→)"
             >
-              <SkipForward class="w-6 h-6" />
+              <SkipForward class="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            <!-- Add Music button -->
-            <button
-              class="flex items-center gap-2 p-3 rounded-full transition-all duration-200 hover:scale-110 focus:scale-110 focus:outline-none focus-visible:ring-2"
-              style="color: var(--music-accent); --ring-color: var(--music-accent);"
-              on:click={openSearchModal}
-              aria-label="Add Music"
-            >
-              <PlusCircle class="w-6 h-6" />
-              <span class="hidden sm:inline text-sm">Add</span>
-            </button>
           </div>
 
-          <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+          <!-- Volume controls -->
+          <div class="flex items-center justify-center gap-2 sm:gap-3 w-full">
             <svelte:component
               this={getVolumeIcon(musicStatus.Volume)}
-              class="w-5 h-5 flex-shrink-0"
+              class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
               style="color: var(--music-foreground)"
               aria-hidden="true"
             />
@@ -1013,7 +1099,7 @@ A comprehensive music player component for Discord bot music functionality.
               min="0"
               max="100"
               value={musicStatus.Volume * 100}
-              class="volume-slider w-full sm:w-24"
+              class="volume-slider flex-1 max-w-xs"
               aria-label="Volume"
               aria-valuemin="0"
               aria-valuemax="100"
@@ -1096,14 +1182,15 @@ A comprehensive music player component for Discord bot music functionality.
           </span>
         </div>
 
-        <!-- Add search button to queue header -->
+        <!-- Add Music button -->
         <button
-          class="p-2 rounded-full transition-colors"
-          style="background: var(--music-accent)20; color: var(--music-accent);"
+          class="flex items-center gap-2 p-2 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2"
+          style="background: var(--music-accent)20; color: var(--music-accent); --ring-color: var(--music-accent);"
           on:click={openSearchModal}
-          aria-label="Add more tracks"
+          aria-label="Add music to queue"
         >
-          <Search class="w-4 h-4" />
+          <PlusCircle class="w-4 h-4" />
+          <span class="text-sm">Add</span>
         </button>
       </div>
 
@@ -1165,15 +1252,16 @@ A comprehensive music player component for Discord bot music functionality.
         aria-label="Upcoming tracks"
       >
         {#each musicStatus.Queue as track, i}
-          <button
-            type="button"
-            class="flex w-full items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item text-left focus:outline-none focus:ring-2"
+          <div
+            class="group relative flex w-full items-center gap-4 p-3 rounded-xl transition-all duration-200 queue-item text-left cursor-pointer hover:scale-[1.01]"
             style="background: {isCurrentlyPlaying(track) ? 'var(--music-accent)40' : selectedQueueItem === i ? 'var(--music-accent)20' : 'var(--music-foreground)10'};
-                   border-left: {isCurrentlyPlaying(track) ? '4px solid var(--music-accent)' : selectedQueueItem === i ? '4px solid var(--music-accent)' : 'none'};
-                   --ring-color: var(--music-accent);"
+                   border-left: {isCurrentlyPlaying(track) ? '4px solid var(--music-accent)' : selectedQueueItem === i ? '4px solid var(--music-accent)' : 'none'};"
             on:click={() => playQueueItem(i)}
+            on:contextmenu={(e) => showContextMenu(e, i)}
             on:keydown={(e) => handleQueueItemKeyDown(e, i)}
             aria-current={isCurrentlyPlaying(track) ? 'true' : undefined}
+            role="button"
+            tabindex="0"
           >
             <div class="w-8 flex-shrink-0">
               <div class="queue-position flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium"
@@ -1197,18 +1285,65 @@ A comprehensive music player component for Discord bot music functionality.
               </p>
             </div>
 
-            <div class="flex items-center gap-2 ml-auto pr-8 flex-shrink-0">
-              <Clock
-                class="w-4 h-4"
-                style="color: var(--music-foreground)"
-                aria-hidden="true"
-              />
-              <span
-                class="text-xs"
-                style="color: var(--music-text)80"
-              >
-                {formatTime(track.Track.Duration)}
-              </span>
+            <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+              <!-- Hover controls -->
+              <div class="hidden group-hover:flex items-center gap-1 mr-2">
+                {#if i > 0}
+                  <button
+                    class="p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors"
+                    on:click|stopPropagation={() => moveQueueItem(i, 'up')}
+                    aria-label="Move up"
+                    title="Move up"
+                  >
+                    <svg class="w-3 h-3" style="color: var(--music-text)80;" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                {/if}
+                {#if i < musicStatus.Queue.length - 1}
+                  <button
+                    class="p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors"
+                    on:click|stopPropagation={() => moveQueueItem(i, 'down')}
+                    aria-label="Move down"
+                    title="Move down"
+                  >
+                    <svg class="w-3 h-3" style="color: var(--music-text)80;" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                {/if}
+                <button
+                  class="p-1 rounded-full hover:bg-red-500 hover:bg-opacity-20 transition-colors"
+                  on:click|stopPropagation={() => removeFromQueue(i)}
+                  aria-label="Remove from queue"
+                  title="Remove from queue"
+                >
+                  <svg class="w-3 h-3" style="color: var(--music-text)80;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Duration -->
+              <div class="flex items-center gap-1 group-hover:opacity-50 transition-opacity">
+                <Clock
+                  class="w-4 h-4"
+                  style="color: var(--music-foreground)"
+                  aria-hidden="true"
+                />
+                <span
+                  class="text-xs"
+                  style="color: var(--music-text)80"
+                >
+                  {formatTime(track.Track.Duration)}
+                </span>
+              </div>
             </div>
 
             {#if isCurrentlyPlaying(track)}
@@ -1220,7 +1355,7 @@ A comprehensive music player component for Discord bot music functionality.
                 </div>
               </div>
             {/if}
-          </button>
+          </div>
         {/each}
       </div>
     </div>
@@ -1229,17 +1364,122 @@ A comprehensive music player component for Discord bot music functionality.
   <!-- Keyboard shortcuts info -->
   <div class="mt-4 pt-4 text-xs" style="color: var(--music-text)60; border-top: 1px solid var(--music-foreground)10;">
     <details>
-      <summary class="cursor-pointer hover:underline focus:outline-none focus-visible:underline">
+      <summary class="cursor-pointer hover:underline focus:outline-none focus-visible:underline transition-colors"
+               style="color: var(--music-accent);">
         Keyboard shortcuts
       </summary>
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <div>Space: Play/Pause</div>
-        <div>Ctrl+←: Previous Track</div>
-        <div>Ctrl+→: Next Track</div>
-        <div>←/→: Seek (when progress bar focused)</div>
+      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-2">
+          <div class="font-medium" style="color: var(--music-text)80;">Playback</div>
+          <div class="flex justify-between">
+            <span>Play/Pause</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">Space</kbd>
+          </div>
+          <div class="flex justify-between">
+            <span>Previous Track</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">Ctrl+←</kbd>
+          </div>
+          <div class="flex justify-between">
+            <span>Next Track</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">Ctrl+→</kbd>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="font-medium" style="color: var(--music-text)80;">Navigation</div>
+          <div class="flex justify-between">
+            <span>Seek ±5s</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">←/→</kbd>
+          </div>
+          <div class="flex justify-between">
+            <span>Volume ±5%</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">↑/↓</kbd>
+          </div>
+          <div class="flex justify-between">
+            <span>Toggle Rotation</span>
+            <kbd class="px-2 py-1 rounded text-xs" style="background: var(--music-foreground)20;">R</kbd>
+          </div>
+        </div>
       </div>
     </details>
   </div>
+
+  <!-- Context Menu -->
+  {#if contextMenuVisible}
+    <div
+      bind:this={contextMenuElement}
+      class="fixed z-50 bg-gray-800 rounded-lg shadow-2xl border py-1 min-w-48"
+      style="left: {contextMenuX}px; top: {contextMenuY}px; 
+             background: linear-gradient(135deg, {colors.gradientStart}90, {colors.gradientEnd}90);
+             border-color: {colors.foreground}40;"
+      in:fly={{ y: -10, duration: 200 }}
+      out:fade={{ duration: 150 }}
+    >
+      {#if contextMenuTrackIndex >= 0 && musicStatus?.Queue?.[contextMenuTrackIndex]}
+        <div class="px-3 py-2 border-b text-sm font-medium"
+             style="border-color: {colors.foreground}20; color: {colors.text};">
+          {musicStatus.Queue[contextMenuTrackIndex].Track.Title}
+        </div>
+
+        <button
+          class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+          style="color: {colors.text};"
+          on:click={() => playQueueItem(contextMenuTrackIndex)}
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                  clip-rule="evenodd" />
+          </svg>
+          Play Now
+        </button>
+
+        {#if contextMenuTrackIndex > 0}
+          <button
+            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+            style="color: {colors.text};"
+            on:click={() => moveQueueItem(contextMenuTrackIndex, 'up')}
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+            Move Up
+          </button>
+        {/if}
+
+        {#if contextMenuTrackIndex < musicStatus.Queue.length - 1}
+          <button
+            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+            style="color: {colors.text};"
+            on:click={() => moveQueueItem(contextMenuTrackIndex, 'down')}
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+            Move Down
+          </button>
+        {/if}
+
+        <div class="border-t my-1" style="border-color: {colors.foreground}20;"></div>
+
+        <button
+          class="w-full px-3 py-2 text-left text-sm hover:bg-red-500 hover:bg-opacity-20 transition-colors flex items-center gap-2 text-red-400"
+          on:click={() => removeFromQueue(contextMenuTrackIndex)}
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
+            <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V7z"
+                  clip-rule="evenodd" />
+          </svg>
+          Remove from Queue
+        </button>
+      {/if}
+    </div>
+  {/if}
 
   <!-- Music Search Modal -->
   <MusicSearch

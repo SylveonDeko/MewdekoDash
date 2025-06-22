@@ -3,8 +3,9 @@
   import { api } from "$lib/api.ts";
   import type { BotInstance } from "$lib/types/models.ts";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { fade } from "svelte/transition";
+  import { fade, fly } from "svelte/transition";
   import { goto } from "$app/navigation";
+  import { colorStore } from "$lib/stores/colorStore";
 
   export let data: any;
   let instances: BotInstance[] = [];
@@ -152,19 +153,39 @@
   $: showLoading = loading || checkingInstances || stillChecking;
 </script>
 
-<div class="container mx-auto px-4 py-6 max-w-4xl">
-  <div class="text-center mb-8">
-    <h1 class="text-3xl font-bold mb-2" id="instance-selector-title">Select Bot Instance</h1>
-    <p class="text-gray-400">Choose a bot instance from servers you're in</p>
-  </div>
+<div
+  class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
+  style="background: radial-gradient(circle at top,
+    {$colorStore.gradientStart}15 0%,
+    {$colorStore.gradientMid}10 50%,
+    {$colorStore.gradientEnd}05 100%);"
+>
+  <div class="max-w-4xl mx-auto space-y-8">
+    <div
+      class="text-center p-8 rounded-2xl backdrop-blur-sm border"
+      in:fly={{ y: 20, duration: 300 }}
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+    >
+      <h1 class="text-3xl font-bold mb-2" id="instance-selector-title" style="color: {$colorStore.text}">Select Bot
+        Instance</h1>
+      <p style="color: {$colorStore.muted}">Choose a bot instance from servers you're in</p>
+    </div>
 
   {#if showLoading}
-    <div class="flex flex-col items-center justify-center py-12" role="status" aria-live="polite">
+    <div
+      class="flex flex-col items-center justify-center py-12 rounded-2xl backdrop-blur-sm border"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+      role="status"
+      aria-live="polite"
+    >
       <div
-        class="w-8 h-8 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin mb-4"
+        class="w-12 h-12 border-4 rounded-full animate-spin mb-4"
+        style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
         aria-hidden="true"
       ></div>
-      <p class="text-gray-400">
+      <p style="color: {$colorStore.text}">
         {#if loading}
           Loading bot instances...
         {:else if checkingInstances || stillChecking}
@@ -174,21 +195,33 @@
     </div>
   {:else if error}
     <div
-      class="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 rounded-lg p-4"
+      class="rounded-2xl border p-6 backdrop-blur-sm"
+      style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.accent}15);
+             border-color: {$colorStore.accent}30;"
       role="alert"
       aria-live="assertive"
     >
-      {error}
+      <p style="color: {$colorStore.accent}">{error}</p>
     </div>
   {:else if instances.length === 0}
-    <div class="text-center py-12" role="status">
-      <p class="text-xl text-gray-400">No bot instances available</p>
-      <p class="mt-2 text-gray-500">Please contact an administrator</p>
+    <div
+      class="text-center py-12 rounded-2xl backdrop-blur-sm border"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+      role="status"
+    >
+      <p class="text-xl" style="color: {$colorStore.text}">No bot instances available</p>
+      <p class="mt-2" style="color: {$colorStore.muted}">Please contact an administrator</p>
     </div>
   {:else if visibleInstances.length === 0}
-    <div class="text-center py-12" role="status">
-      <p class="text-xl text-gray-400">No bot instances found in your servers</p>
-      <p class="mt-2 text-gray-500">Join a server with one of our bots to manage it</p>
+    <div
+      class="text-center py-12 rounded-2xl backdrop-blur-sm border"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+             border-color: {$colorStore.primary}30;"
+      role="status"
+    >
+      <p class="text-xl" style="color: {$colorStore.text}">No bot instances found in your servers</p>
+      <p class="mt-2" style="color: {$colorStore.muted}">Join a server with one of our bots to manage it</p>
 
       <!-- Debug info (remove in production) -->
       <details class="mt-4 text-left bg-gray-800 p-4 rounded">
@@ -213,7 +246,11 @@
         <button
           on:click={() => handleInstanceSelect(instance)}
           on:keydown={(e) => handleKeydown(e, instance)}
-          class="flex items-center p-6 rounded-xl bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          class="flex items-center p-6 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                 border-color: {$colorStore.primary}30;
+                 focus:ring-color: {$colorStore.primary};
+                 focus:ring-offset-color: {$colorStore.gradientStart};"
           role="listitem"
           aria-label="Select {instance.botName} bot instance - {!instance.isActive ? 'Offline' : 'Available'}"
         >
@@ -223,28 +260,31 @@
             class="w-16 h-16 rounded-full mr-6"
           />
           <div class="text-left flex-grow">
-            <h2 class="text-xl font-semibold">{instance.botName}</h2>
-            <p class="text-gray-400">Port: {instance.port}</p>
+            <h2 class="text-xl font-semibold" style="color: {$colorStore.text}">{instance.botName}</h2>
+            <p style="color: {$colorStore.muted}">Port: {instance.port}</p>
             {#if state?.error}
-              <p class="text-red-500 text-sm mt-1">{state.error}</p>
+              <p class="text-sm mt-1" style="color: {$colorStore.accent}">{state.error}</p>
             {/if}
           </div>
           {#if state?.loading}
             <div
-              class="w-5 h-5 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin ml-auto"
+              class="w-5 h-5 border-2 rounded-full animate-spin ml-auto"
+              style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"
               aria-hidden="true"
             ></div>
             <span class="sr-only">Loading...</span>
           {:else if !instance.isActive}
             <span
-              class="ml-auto px-3 py-1 rounded-full bg-red-500 bg-opacity-10 text-red-500 text-sm"
+              class="ml-auto px-3 py-1 rounded-full text-sm"
+              style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
               aria-label="Status: Offline"
             >
               Offline
             </span>
           {:else}
             <span
-              class="ml-auto px-3 py-1 rounded-full bg-green-500 bg-opacity-10 text-green-500 text-sm"
+              class="ml-auto px-3 py-1 rounded-full text-sm"
+              style="background: #22c55e20; color: #22c55e;"
               aria-label="Status: Available"
             >
               Available
@@ -254,6 +294,7 @@
       {/each}
     </div>
   {/if}
+  </div>
 </div>
 
 <style>

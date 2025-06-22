@@ -17,7 +17,7 @@ export interface Track {
 }
 
 export interface Requester {
-  Id: number;
+  Id: bigint;
   Username: string;
   AvatarUrl: string;
 }

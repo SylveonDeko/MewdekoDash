@@ -5,6 +5,8 @@
   import { inviteStore } from "$lib/stores/inviteStore";
   import StatCard from "$lib/components/StatCard.svelte";
 
+  export let animationDelay: number = 0;
+
   $: stats = $inviteStore.stats;
 </script>
 
@@ -27,6 +29,7 @@
         label="Total Invites"
         value={new Intl.NumberFormat().format(stats.totalInvites)}
         iconColor="primary"
+        animationDelay={animationDelay}
       />
 
       <StatCard
@@ -35,6 +38,7 @@
         value={stats.averageJoins}
         subtitle="per day"
         iconColor="secondary"
+        animationDelay={animationDelay + 150}
       />
 
       {#if stats.topInviters.length > 0}
@@ -52,8 +56,8 @@
               icon={Users}
               label={inviter.username}
               value={new Intl.NumberFormat().format(inviter.inviteCount)}
-              valueColor="primary"
               iconColor="primary"
+              animationDelay={animationDelay + 300 + (index * 100)}
             />
           {/each}
         </div>

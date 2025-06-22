@@ -16,7 +16,21 @@ import type {
 } from "$lib/types/models";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
-import type { Giveaways, PermissionOverride } from "$lib/types.ts";
+import type {
+  Giveaways,
+  PatreonAnalytics,
+  PatreonConfig,
+  PatreonConfigUpdateRequest,
+  PatreonGoal,
+  PatreonOAuthCallbackResponse,
+  PatreonOAuthResponse,
+  PatreonOAuthStatusResponse,
+  PatreonOperationRequest,
+  PatreonSupporter,
+  PatreonTier,
+  PatreonTierMappingRequest,
+  PermissionOverride
+} from "$lib/types.ts";
 import type {
   ChatSaveData,
   ClientUserInfo,
@@ -356,6 +370,7 @@ export const api = {
       username: string;
       displayName: string;
       avatarUrl: string;
+      isBot: boolean;
     }>>(
       `ClientOperations/members/${guildId}`
     ),
@@ -1066,6 +1081,10 @@ export const api = {
   deleteBotReview: (reviewId: number) =>
     apiRequest<void>(`reviews/${reviewId}`, "DELETE"),
 
+  // Guild Information
+  getGuildInfo: (guildId: bigint) =>
+    apiRequest<import("$lib/types/discordGuild").GuildInfo>(`guild/${guildId}/info`),
+
   getGuildTextChannels: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
       `ClientOperations/textchannels/${guildId}`
@@ -1106,7 +1125,7 @@ export const api = {
   playTrack: (guildId: bigint, playRequest: {
     url: string;
     requester: {
-      Id: string | bigint;
+      Id: bigint;
       Username: string;
       AvatarUrl: string;
     }
@@ -1341,12 +1360,27 @@ export const api = {
       config: Starboard
     }>(`Starboard/${guildId}/${starboardId}/toggle-channel`, "POST", channelId),
 
-  // Patreon endpoints
-    getPatreonOAuthUrl: (guildId: bigint) =>
-      apiRequest<PatreonOAuthResponse>(`patreon/oauth/url?guildId=${guildId}`),
+  getStarboardHighlights: (guildId: bigint, limit: number = 5) =>
+    apiRequest<Array<{
+      messageId: bigint;
+      channelId: bigint;
+      starCount: number;
+      content: string;
+      authorName: string;
+      authorAvatarUrl?: string;
+      imageUrl?: string;
+      starEmote: string;
+      createdAt: string;
+    }>>(`Starboard/${guildId}/highlights?limit=${limit}`),
 
-    handlePatreonOAuthCallback: (code: string, state: string, error?: string) =>
-      apiRequest<PatreonOAuthCallbackResponse>(`patreon/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}${error ? `&error=${encodeURIComponent(error)}` : ''}`),
+  // Patreon endpoints
+  getPatreonOAuthUrl: (guildId: bigint) => {
+    return apiRequest<PatreonOAuthResponse>(`patreon/oauth/url?guildId=${guildId}`);
+  },
+
+  handlePatreonOAuthCallback: (code: string, state: string, error?: string) => {
+    return apiRequest<PatreonOAuthCallbackResponse>(`patreon/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}${error ? `&error=${encodeURIComponent(error)}` : ""}`);
+  },
 
     getPatreonOAuthStatus: (guildId: bigint) =>
       apiRequest<PatreonOAuthStatusResponse>(`patreon/oauth/status?guildId=${guildId}`),
@@ -1373,5 +1407,189 @@ export const api = {
       apiRequest<{ message: string }>(`patreon/operations?guildId=${guildId}`, "POST", operation),
 
     mapPatreonTierToRole: (guildId: bigint, mapping: PatreonTierMappingRequest) =>
-      apiRequest<{ message: string }>(`patreon/tiers/map?guildId=${guildId}`, "POST", mapping)
+      apiRequest<{ message: string }>(`patreon/tiers/map?guildId=${guildId}`, "POST", mapping),
+
+  // Moderation endpoints
+  getWarnings: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      userId: bigint;
+      reason: string | null;
+      forgiven: boolean;
+      forgivenBy: string | null;
+      moderator: string | null;
+      dateAdded: string | null;
+    }>>(`Moderation/${guildId}/warnings`),
+
+  getUserWarnings: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      userId: bigint;
+      reason: string | null;
+      forgiven: boolean;
+      forgivenBy: string | null;
+      moderator: string | null;
+      dateAdded: string | null;
+    }>>(`Moderation/${guildId}/warnings/user/${userId}`),
+
+  getRecentModerationActivity: (guildId: bigint, limit: number = 20) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      userId: bigint;
+      reason: string | null;
+      forgiven: boolean;
+      forgivenBy: string | null;
+      moderator: string | null;
+      dateAdded: string | null;
+    }>>(`Moderation/${guildId}/recent?limit=${limit}`),
+
+  getWarningPunishments: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      count: number;
+      punishment: number;
+      time: number;
+      roleId: bigint | null;
+    }>>(`Moderation/${guildId}/punishments`),
+
+  getWarnlogChannel: (guildId: bigint) =>
+    apiRequest<{ channelId: bigint }>(`Moderation/${guildId}/warnlog-channel`),
+
+  // Administration endpoints
+  getAutoAssignRoles: (guildId: bigint) =>
+    apiRequest<{
+      normalRoles: bigint[];
+      botRoles: bigint[];
+    }>(`Administration/${guildId}/auto-assign-roles`),
+
+  setAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/normal`, "POST", roleIds),
+
+  setBotAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/bots`, "POST", roleIds),
+
+  toggleAutoAssignRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<bigint[]>(`Administration/${guildId}/auto-assign-roles/normal/${roleId}/toggle`, "POST"),
+
+  toggleBotAutoAssignRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<bigint[]>(`Administration/${guildId}/auto-assign-roles/bots/${roleId}/toggle`, "POST"),
+
+  getProtectionStatus: (guildId: bigint) =>
+    apiRequest<{
+      antiRaid: {
+        enabled: boolean;
+        userThreshold: number;
+        seconds: number;
+        action: number;
+        punishDuration: number;
+        usersCount: number;
+      };
+      antiSpam: {
+        enabled: boolean;
+        messageThreshold: number;
+        action: number;
+        muteTime: number;
+        roleId: bigint;
+        userCount: number;
+      };
+      antiAlt: {
+        enabled: boolean;
+        minAge: string;
+        action: number;
+        actionDuration: number;
+        roleId: bigint;
+        counter: number;
+      };
+      antiMassMention: {
+        enabled: boolean;
+        mentionThreshold: number;
+        maxMentionsInTimeWindow: number;
+        timeWindowSeconds: number;
+        action: number;
+        muteTime: number;
+        roleId: bigint;
+        ignoreBots: boolean;
+        userCount: number;
+      };
+    }>(`Administration/${guildId}/protection/status`),
+
+  startAntiRaid: (guildId: bigint, userThreshold: number, seconds: number, action: number) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-raid/start`, "POST", {
+      userThreshold,
+      seconds,
+      action
+    }),
+
+  stopAntiRaid: (guildId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/protection/anti-raid/stop`, "POST"),
+
+  startAntiSpam: (guildId: bigint, messageCount: number, action: number, roleId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/start`, "POST", {
+      messageCount,
+      action,
+      roleId
+    }),
+
+  stopAntiSpam: (guildId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/protection/anti-spam/stop`, "POST"),
+
+  getSelfAssignableRoles: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      roleId: bigint;
+      group: number;
+    }>>(`Administration/${guildId}/self-assignable-roles`),
+
+  addSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/self-assignable-roles/${roleId}`, "POST"),
+
+  removeSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/self-assignable-roles/${roleId}`, "DELETE"),
+
+  // Message Count endpoints
+  getDailyMessageStats: (guildId: bigint) =>
+    apiRequest<{
+      enabled: boolean;
+      dailyMessages: number;
+      totalMessages: number;
+      lastUpdated: string;
+    }>(`MessageCount/${guildId}/daily`),
+
+  getChannelMessageStats: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{
+      enabled: boolean;
+      channelId: string;
+      channelName: string;
+      totalMessages: number;
+      dailyMessages: number;
+      lastUpdated: string;
+    }>(`MessageCount/${guildId}/channel/${channelId}`),
+
+  getUserMessageStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      enabled: boolean;
+      userId: string;
+      totalMessages: number;
+      dailyMessages: number;
+      lastUpdated: string;
+    }>(`MessageCount/${guildId}/user/${userId}`),
+
+  getMessageLeaderboard: (guildId: bigint, limit: number = 10) =>
+    apiRequest<{
+      enabled: boolean;
+      leaderboard: Array<{
+        userId: string;
+        totalMessages: number;
+        dailyMessages: number;
+      }>;
+      lastUpdated: string;
+    }>(`MessageCount/${guildId}/leaderboard?limit=${limit}`),
+
+  getMessageCountStatus: (guildId: bigint) =>
+    apiRequest<{ enabled: boolean }>(`MessageCount/${guildId}/status`)
 };

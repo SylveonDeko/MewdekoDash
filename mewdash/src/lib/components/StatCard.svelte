@@ -1,13 +1,13 @@
 <!-- lib/components/StatCard.svelte -->
 <script lang="ts">
-  import type { SvelteComponent } from "svelte";
+  import type { ComponentType } from "svelte";
   import { onMount } from "svelte";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { ArrowRight, TrendingDown, TrendingUp } from "lucide-svelte";
 
   // Props
-  export let icon: typeof SvelteComponent;
+  export let icon: ComponentType;
   export let label: string;
   export let value: string | number;
   export let subtitle: string = "";
@@ -18,6 +18,7 @@
   export let isLoading: boolean = false;
   export let animationDelay: number = 0;
   export let tooltipData: Array<{ label: string; value: string | number }> = [];
+  export let clickable: boolean = false; // New prop to control if the card should appear clickable
 
   // State
   let animatedValue: number = 0;
@@ -45,7 +46,9 @@
   }
 
   function toggleTooltip() {
-    showTooltip = !showTooltip;
+    if (tooltipData.length > 0) {
+      showTooltip = !showTooltip;
+    }
   }
 
   function closeTooltip() {
@@ -74,6 +77,11 @@
     }
   });
 
+  // React to value changes after mount
+  $: if (mounted && typeof value === "number" && !isNaN(value)) {
+    animateValue(value as number);
+  }
+
   // Format trend value
   function getTrendColor() {
     if (trend === "up") return $colorStore.accent;
@@ -97,13 +105,14 @@
 <div
   aria-expanded={tooltipData.length > 0 ? (showTooltip ? "true" : "false") : undefined}
   aria-haspopup={tooltipData.length > 0 ? "dialog" : undefined}
-  class="flex items-center justify-center gap-4 p-2 rounded-lg hover:bg-gray-800/50 transition-all duration-300 group relative"
-  class:cursor-pointer={tooltipData.length > 0}
+  class="flex items-center justify-center gap-4 p-2 rounded-lg transition-all duration-300 group relative"
+  class:cursor-pointer={clickable}
+  class:hover-bg-gray={clickable}
   in:fade={{ delay: animationDelay, duration: 300 }}
-  on:keydown={tooltipData.length > 0 ? handleKeyDown : undefined}
+  on:keydown={clickable && tooltipData.length > 0 ? handleKeyDown : undefined}
   on:mouseenter={tooltipData.length > 0 ? toggleTooltip : undefined}
   on:mouseleave={tooltipData.length > 0 ? closeTooltip : undefined}
-  role={tooltipData.length > 0 ? "button" : "region"}
+  role={clickable && tooltipData.length > 0 ? "button" : "region"}
 >
   <div
     class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -116,11 +125,11 @@
     />
   </div>
 
-  <div class="flex-1 min-w-0 text-center">
+  <div class="flex-1 min-w-0 flex flex-col items-center justify-center">
     <div class="text-sm" style="color: {$colorStore.muted}">{label}</div>
 
     {#if isLoading}
-      <div class="h-6 bg-gray-700 animate-pulse rounded w-16 mt-1 mx-auto"></div>
+      <div class="h-6 bg-gray-700 animate-pulse rounded w-16 mt-1"></div>
     {:else}
       <div class="font-semibold text-lg flex items-center justify-center gap-2" style="color: {$colorStore.text}">
         {#if typeof value === 'number' && !isNaN(value) && mounted}
@@ -131,7 +140,7 @@
           <span>{value}</span>
         {/if}
 
-        {#if trend}
+        {#if trend && trend !== "neutral"}
           <div
             class="flex items-center gap-1 text-sm bg-opacity-20 px-1.5 py-0.5 rounded-full"
             style="background: {getTrendColor()}20; color: {getTrendColor()}"
@@ -147,7 +156,7 @@
     {/if}
 
     {#if subtitle}
-      <div class="text-xs mt-1 text-center" style="color: {$colorStore.muted}">{subtitle}</div>
+      <div class="text-xs mt-1" style="color: {$colorStore.muted}">{subtitle}</div>
     {/if}
   </div>
 
@@ -187,3 +196,9 @@
     </div>
   {/if}
 </div>
+
+<style>
+    .hover-bg-gray:hover {
+        background-color: rgba(31, 41, 55, 0.5); /* gray-800/50 */
+    }
+</style>

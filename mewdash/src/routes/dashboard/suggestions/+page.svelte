@@ -428,19 +428,19 @@
 </svelte:head>
 
 <div
-  class="min-h-screen p-4 md:p-6"
+  class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
   style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.primary}15 0%,
-    {$colorStore.secondary}10 50%,
-    {$colorStore.accent}05 100%);"
+    {$colorStore.gradientStart}15 0%,
+    {$colorStore.gradientMid}10 50%,
+    {$colorStore.gradientEnd}05 100%);"
 >
   <div class="max-w-7xl mx-auto space-y-8">
     <!-- Header -->
     <div
-      class="rounded-xl border p-6"
+      class="rounded-2xl border p-6 md:p-8 backdrop-blur-sm"
       style="background: linear-gradient(135deg,
-               {$colorStore.primary}10,
-               {$colorStore.secondary}10);
+               {$colorStore.gradientStart}10,
+               {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
       <h1 class="text-3xl font-bold mb-2" style="color: {$colorStore.text}">Suggestions</h1>
@@ -525,7 +525,7 @@
     <!-- Main Content -->
     {#if activeTab === 'suggestions'}
       <div
-        class="backdrop-blur-sm rounded-xl border p-6"
+        class="backdrop-blur-sm rounded-2xl border p-6"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -584,8 +584,8 @@
           <div class="space-y-4">
             {#each sortedSuggestions as suggestion (suggestion.id)}
               <div
-                class="rounded-lg border overflow-hidden"
-                style="background: {$colorStore.primary}10;
+                class="rounded-xl border overflow-hidden backdrop-blur-sm"
+                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
                 <!-- Suggestion Header -->
@@ -620,7 +620,7 @@
                 <!-- Suggestion Content -->
                 <div class="p-4">
                   <p class="mb-4 break-words" style="color: {$colorStore.text}">
-                    {suggestion.suggestion}
+                    {suggestion.suggestion1}
                   </p>
 
                   <!-- Action Buttons -->
@@ -705,10 +705,10 @@
         <!-- Settings Panels -->
         {#if settingsTab === 'general'}
           <div
-            class="rounded-xl border p-6 space-y-6"
+            class="rounded-2xl border p-6 space-y-6 backdrop-blur-sm"
             style="background: linear-gradient(135deg,
-                     {$colorStore.primary}10,
-                     {$colorStore.secondary}10);
+                     {$colorStore.gradientStart}10,
+                     {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
             <div class="space-y-4">
@@ -771,7 +771,7 @@
 
         {#if settingsTab === 'messages'}
           <div
-            class="backdrop-blur-sm rounded-xl border p-6 space-y-6"
+            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -804,7 +804,7 @@
 
         {#if settingsTab === 'channels'}
           <div
-            class="backdrop-blur-sm rounded-xl border p-6 space-y-6"
+            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -839,7 +839,7 @@
 
         {#if settingsTab === 'archive'}
           <div
-            class="backdrop-blur-sm rounded-xl border p-6 space-y-6"
+            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -875,7 +875,7 @@
 
         {#if settingsTab === 'emotes'}
           <div
-            class="backdrop-blur-sm rounded-xl border p-6 space-y-6"
+            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -950,11 +950,11 @@
         {/if}
 
         {#if hasChanges}
-          <div class="fixed bottom-0 left-0 right-0 p-4 bg-opacity-90 backdrop-blur-sm z-50"
-               style="background: {$colorStore.gradientStart}90;">
+          <div class="fixed bottom-0 left-0 right-0 p-4 bg-opacity-90 backdrop-blur-md z-50"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}85);">
             <div class="max-w-7xl mx-auto flex justify-end">
               <button
-                class="px-6 py-2 rounded-lg font-medium transition-colors"
+                class="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg"
                 style="background: {$colorStore.primary};
                        color: {$colorStore.text};"
                 on:click={saveSettings}

@@ -145,17 +145,20 @@ function createColorStore() {
     return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
   }
 
-  // Improved text color selection for dark UI
+  // Improved text color selection based on background
   function getTextColor(backgroundColor: RGB): string {
     const bgLuminance = getLuminance(...backgroundColor);
 
-    // For dark UI themes, always prefer white text unless the
-    // background is extremely light (ensures good contrast)
-    const isVeryLightBackground = bgLuminance > 0.7;
+    // Calculate contrast ratio for both white and black text
+    const whiteContrast = getContrastRatio(1.0, bgLuminance); // 1.0 is white luminance
+    const blackContrast = getContrastRatio(0.0, bgLuminance); // 0.0 is black luminance
 
-    // On our dark UI, backgrounds are typically semi-transparent,
-    // so we need to account for the dark background showing through
-    return isVeryLightBackground ? "#000000" : "#ffffff";
+    // Choose the color with better contrast
+    if (whiteContrast > blackContrast) {
+      return whiteContrast >= 3.0 ? "#ffffff" : "#f0f0f0"; // Slightly off-white for very edge cases
+    } else {
+      return blackContrast >= 3.0 ? "#000000" : "#1a1a1a"; // Slightly off-black for very edge cases
+    }
   }
 
   // Improved contrast adjustment function for dark UI theme context
@@ -211,19 +214,45 @@ function createColorStore() {
 
   function createMutedColor(color: RGB, textColor: string): string {
     const [h, s, l] = rgbToHsl(...color);
+    const backgroundLuminance = getLuminance(...color);
 
-    // For dark UI, the muted color should be lighter than the background
-    // but less bright than the primary text color
-    if (textColor === '#ffffff') {
-      // For dark backgrounds with white text, create a light gray with color tint
-      const newSaturation = Math.min(s * 0.6, 30); // Slightly more saturation for better visibility
-      const newLightness = 65; // Keep consistent for all themes
+    // Create a muted version that's between the background and text color
+    if (textColor === "#ffffff" || textColor === "#f0f0f0") {
+      // For white text, create a lighter muted color
+      const newSaturation = Math.min(s * 0.6, 30);
+      let newLightness = Math.max(l + 20, 60); // Lighter than background
+
+      // Ensure minimum contrast ratio of 3.0 for muted text against background
+      let attempts = 0;
+      while (attempts < 10) {
+        const testColor = hslToRgb(h, newSaturation, newLightness);
+        const testLuminance = getLuminance(...testColor);
+        const contrast = getContrastRatio(testLuminance, backgroundLuminance);
+
+        if (contrast >= 3.0) break;
+
+        newLightness = Math.min(newLightness + 5, 85);
+        attempts++;
+      }
 
       return hslToString(h, newSaturation, newLightness);
     } else {
-      // For light backgrounds with dark text (rare in dark UI)
-      const newSaturation = Math.min(s * 0.5, 20);
-      const newLightness = Math.max(l - 15, 30);
+      // For black text, create a darker muted color
+      const newSaturation = Math.min(s * 0.5, 25);
+      let newLightness = Math.min(l - 20, 40); // Darker than background
+
+      // Ensure minimum contrast ratio of 3.0 for muted text against background
+      let attempts = 0;
+      while (attempts < 10) {
+        const testColor = hslToRgb(h, newSaturation, newLightness);
+        const testLuminance = getLuminance(...testColor);
+        const contrast = getContrastRatio(testLuminance, backgroundLuminance);
+
+        if (contrast >= 3.0) break;
+
+        newLightness = Math.max(newLightness - 5, 15);
+        attempts++;
+      }
 
       return hslToString(h, newSaturation, newLightness);
     }
@@ -469,8 +498,8 @@ function createColorStore() {
           accent: rgbToHex(...adjustedAccent)
         });
 
-        // Determine text and muted colors
-        const textColor = getTextColor(adjustedPrimary);
+        // For dark UI, always use white text since text sits on dark backgrounds, not on the primary color
+        const textColor = "#ffffff";
         const muted = createMutedColor(adjustedPrimary, textColor);
 
         // Create gradient colors with intentional color separation
@@ -603,7 +632,7 @@ function createColorStore() {
       store.set(DEFAULT_PALETTE);
     },
 
-    // Extract colors from image
+    // Extract colors from image (server icon or fallback to bot avatar)
     async extractFromImage(imageUrl: string): Promise<void> {
       if (!imageUrl) {
         store.set(DEFAULT_PALETTE);
@@ -615,6 +644,22 @@ function createColorStore() {
         store.set(palette);
       } catch (err) {
         logger.error('Failed to extract colors:', err);
+        store.set(DEFAULT_PALETTE);
+      }
+    },
+
+    // Extract colors from server icon specifically
+    async extractFromServerIcon(iconUrl: string | null | undefined): Promise<void> {
+      if (!iconUrl) {
+        store.set(DEFAULT_PALETTE);
+        return;
+      }
+
+      try {
+        const palette = await extractColors(iconUrl);
+        store.set(palette);
+      } catch (err) {
+        logger.error("Failed to extract colors from server icon:", err);
         store.set(DEFAULT_PALETTE);
       }
     }

@@ -273,8 +273,8 @@ export interface BotStatusModel {
 export interface SuggestionsModel {
   id: number;
   guildId: bigint;
-  suggestionId: bigint;
-  suggestion?: string;
+  suggestionId: number;
+  suggestion1?: string;
   messageId: bigint;
   userId: bigint;
   emoteCount1: number;

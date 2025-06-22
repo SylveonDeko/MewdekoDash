@@ -14,8 +14,5 @@ export default defineConfig({
         format: "es"
       }
     }
-  },
-  ssr: {
-    noExternal: ["@sveltekit/adapter-node"]
   }
 });

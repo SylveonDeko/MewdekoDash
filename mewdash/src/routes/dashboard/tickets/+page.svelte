@@ -346,7 +346,11 @@
 
   $: if ($currentGuild) {
     fetchData();
-    if ($currentInstance?.botAvatar) {
+    // Extract colors from server icon if available, otherwise use bot avatar as fallback
+    if ($currentGuild.icon) {
+      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+      colorStore.extractFromServerIcon(serverIconUrl);
+    } else if ($currentInstance?.botAvatar) {
       colorStore.extractFromImage($currentInstance.botAvatar);
     }
   }

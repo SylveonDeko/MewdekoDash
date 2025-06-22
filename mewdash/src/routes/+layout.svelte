@@ -6,7 +6,6 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto, invalidateAll } from "$app/navigation";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
   import { userStore } from "$lib/stores/userStore.ts";
@@ -25,10 +24,10 @@
         await invalidateAll();
         await goto("/");
       }
-      if (window.location.toString().includes("dashboard")) {
-        if ($currentInstance)
-          await colorStore.extractFromImage($currentInstance.botAvatar);
-      } else {
+
+      // Only extract colors for non-dashboard pages
+      // Dashboard pages handle their own theming
+      if (!window.location.toString().includes("dashboard")) {
         try {
           if (data?.user?.avatar) {
             // Extract colors from user avatar
@@ -91,23 +90,23 @@
     console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
   }
 
-  $: if (data?.user?.avatar) {
-    try {
-
-      // Extract colors from user avatar
-      colorStore.extractFromImage(
-        data.user.avatar.startsWith("a_")
-          ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-          : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-      );
-    } catch (err) {
-      logger.error("Failed to extract colors:", err);
+  // Only extract colors for non-dashboard pages
+  $: if (browser && !window.location.pathname.startsWith("/dashboard")) {
+    if (data?.user?.avatar) {
+      try {
+        // Extract colors from user avatar
+        colorStore.extractFromImage(
+          data.user.avatar.startsWith("a_")
+            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
+            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+        );
+      } catch (err) {
+        logger.error("Failed to extract colors:", err);
+        colorStore.extractFromImage("/img/Mewdeko.png");
+      }
+    } else {
       colorStore.extractFromImage("/img/Mewdeko.png");
     }
-  }
-
-  $: if (!data?.user) {
-    colorStore.extractFromImage("/img/Mewdeko.png");
   }
 </script>
 

@@ -45,6 +45,8 @@
     { label: "Suggestions", icon: Lightbulb, href: "/dashboard/suggestions", category: "Community" },
     { label: "Triggers", icon: MessageSquare, href: "/dashboard/chat-triggers", category: "Content" },
     { label: "Embeds", icon: Link, href: "/dashboard/embedbuilder", category: "Content" },
+    { label: "Moderation", icon: Shield, href: "/dashboard/moderation", category: "Management" },
+    { label: "Administration", icon: Settings, href: "/dashboard/administration", category: "Management" },
     { label: "Giveaways", icon: Gift, href: "/dashboard/giveaways", category: "Management" },
     { label: "Chat Saver", icon: Save, href: "/dashboard/chatsaver", category: "Management" },
     { label: "Patreon", icon: Heart, href: "/dashboard/patreon", category: "Premium" }
@@ -58,6 +60,8 @@
   let musicPlaying = false;
   let lastTapTime = 0;
   let isAnimating = false;
+  let isNavigating = false;
+  let navigationLoadingTarget = null;
 
   // Derived state
   $: currentPath = $page.url.pathname;
@@ -133,7 +137,7 @@
     }
   }
 
-  // Handle double-tap for quick actions
+  // Handle double-tap for quick actions with enhanced feedback
   function handleNavItemTap(item: any) {
     const currentTime = Date.now();
     const timeDiff = currentTime - lastTapTime;
@@ -141,14 +145,38 @@
     if (timeDiff < 300 && timeDiff > 0) {
       // Double tap detected - could trigger quick action
       if (item.href === "/dashboard/music" && musicPlaying) {
-        // Quick action: go directly to music player
-        goto("/dashboard/music");
+        // Quick action: go directly to music player with haptic feedback
+        if ("vibrate" in navigator) {
+          navigator.vibrate([50, 50, 50]);
+        }
+        navigateWithLoading(item.href, item.label);
         return;
       }
     }
 
     lastTapTime = currentTime;
-    goto(item.href);
+    navigateWithLoading(item.href, item.label);
+  }
+
+  // Enhanced navigation with loading state
+  function navigateWithLoading(href: string, label: string) {
+    isNavigating = true;
+    navigationLoadingTarget = label;
+
+    // Add haptic feedback
+    if ("vibrate" in navigator) {
+      navigator.vibrate(30);
+    }
+
+    // Navigate with a small delay for visual feedback
+    setTimeout(() => {
+      goto(href);
+      // Reset loading state after navigation
+      setTimeout(() => {
+        isNavigating = false;
+        navigationLoadingTarget = null;
+      }, 500);
+    }, 150);
   }
 
   // Close the more menu when clicking anywhere else
@@ -185,8 +213,8 @@
     {#if musicPlaying}
       <div
         class="fixed bottom-16 left-0 right-0 border-t z-40 py-2 px-3 backdrop-blur-md"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
-               border-color: {$colorStore.primary}30;"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);"
+        style:border-color="{$colorStore.primary}30"
         transition:slide={{ duration: 200, axis: 'y' }}
         role="status"
         aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
@@ -198,18 +226,18 @@
           >
             <!-- Animated equalizer bars -->
             <div class="w-full h-full bg-black bg-opacity-50 flex items-end justify-center p-1" aria-hidden="true">
-              <div class="bar-1 bg-white w-1 mx-px rounded-t"></div>
-              <div class="bar-2 bg-white w-1 mx-px rounded-t"></div>
-              <div class="bar-3 bg-white w-1 mx-px rounded-t"></div>
-              <div class="bar-4 bg-white w-1 mx-px rounded-t"></div>
+              <div class="bar-1 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
+              <div class="bar-2 w-1 mx-px rounded-t" style="background-color: {$colorStore.secondary};"></div>
+              <div class="bar-3 w-1 mx-px rounded-t" style="background-color: {$colorStore.accent};"></div>
+              <div class="bar-4 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
             </div>
           </div>
 
           <div class="flex-1 min-w-0 text-sm">
-            <div class="font-medium truncate" style="color: {$colorStore.text}">
+            <div class="font-medium truncate" style:color={$colorStore.text}>
               {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}
             </div>
-            <div class="text-xs truncate" style="color: {$colorStore.muted}">
+            <div class="text-xs truncate" style:color={$colorStore.muted}>
               {$musicStore.status?.CurrentTrack?.Author || 'Unknown Artist'}
             </div>
           </div>
@@ -217,7 +245,7 @@
           <a
             href="/dashboard/music"
             class="w-8 h-8 rounded-full flex items-center justify-center"
-            style="background: {$colorStore.primary}30"
+            style:background="{$colorStore.primary}30"
             aria-label="Go to music player"
           >
             <Music size={16} style="color: {$colorStore.primary}" aria-hidden="true" />
@@ -228,11 +256,13 @@
 
     <!-- Bottom Navigation Bar -->
     <nav
-      class="fixed bottom-0 left-0 right-0 border-t z-50 transition-transform duration-300 backdrop-blur-md"
+      class="fixed bottom-0 left-0 right-0 border-t z-50 transition-all duration-300 ease-out backdrop-blur-md"
       class:translate-y-0={visible}
       class:translate-y-full={!visible}
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);
-             border-color: {$colorStore.primary}30;"
+      class:opacity-95={isNavigating}
+      class:scale-[0.98]={isNavigating}
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);"
+      style:border-color="{$colorStore.primary}30"
       role="navigation"
       aria-label="Mobile navigation"
     >
@@ -244,7 +274,7 @@
               class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-105 active:scale-95"
               on:click|stopPropagation={toggleMoreMenu}
               on:keydown={handleMoreMenuKeydown}
-              style="color: {moreMenuActive || showMoreMenu ? $colorStore.primary : $colorStore.muted}"
+              style:color={moreMenuActive || showMoreMenu ? $colorStore.primary : $colorStore.muted}
               aria-expanded={showMoreMenu}
               aria-haspopup="menu"
               aria-label="More navigation options"
@@ -262,7 +292,7 @@
                 {#if showMoreMenu}
                   <div
                     class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
-                    style="background: {$colorStore.primary}"
+                    style:background={$colorStore.primary}
                   ></div>
                 {/if}
               </div>
@@ -273,13 +303,13 @@
               <!-- More menu dropdown -->
               {#if showMoreMenu}
                 <div
-                  class="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 max-w-xs w-screen more-menu rounded-xl shadow-2xl backdrop-blur-md"
+                  class="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 max-w-xs w-screen more-menu rounded-xl shadow-2xl backdrop-blur-md border"
                   style="max-height: 60vh; overflow-y: auto; margin-left: max(-40vw, -150px);
-           border: 1px solid {$colorStore.primary}40;
            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);"
+                  style:border-color="{$colorStore.primary}40"
                   transition:scale|local={{
-      duration: 250,
+      duration: 300,
       start: 0.85,
       opacity: 0,
       easing: cubicOut
@@ -297,35 +327,37 @@
                         href={moreItem.href}
                         data-sveltekit-preload-data="hover"
                         data-sveltekit-noscroll
-                        class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                        style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};
-                               background: {currentPath.startsWith(moreItem.href) ? `${$colorStore.primary}20` : 'transparent'};
-                               hover:background: {$colorStore.primary}15;
-                               focus:ring-color: {$colorStore.primary};"
+                        class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:bg-[var(--hover-bg)] focus:ring-color-[var(--focus-ring-color)]"
+                        style="
+    --hover-bg: {$colorStore.primary}15;
+    --focus-ring-color: {$colorStore.primary};
+    color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};
+    background: {currentPath.startsWith(moreItem.href) ? `${$colorStore.primary}20` : 'transparent'};
+  "
                         in:slide|local={{ delay: j * 30, duration: 200 }}
                         role="menuitem"
                         aria-label="Navigate to {moreItem.label}"
                         on:keydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
                         on:click|preventDefault={(e) => {
-            if ($currentGuild) {
-              if (browser) {
-                try {
-                  localStorage.setItem("lastSelectedGuild", JSON.stringify({
-                    id: $currentGuild.id.toString(),
-                    name: $currentGuild.name,
-                    icon: $currentGuild.icon,
-                    owner: $currentGuild.owner,
-                    permissions: $currentGuild.permissions,
-                    features: $currentGuild.features
-                  }));
-                } catch (err) {
-                  console.error("Error storing guild:", err);
-                }
-              }
-            }
-            goto(moreItem.href);
-            showMoreMenu = false;
-          }}
+    if ($currentGuild) {
+      if (browser) {
+        try {
+          localStorage.setItem("lastSelectedGuild", JSON.stringify({
+            id: $currentGuild.id.toString(),
+            name: $currentGuild.name,
+            icon: $currentGuild.icon,
+            owner: $currentGuild.owner,
+            permissions: $currentGuild.permissions,
+            features: $currentGuild.features
+          }));
+        } catch (err) {
+          console.error("Error storing guild:", err);
+        }
+      }
+    }
+    navigateWithLoading(moreItem.href, moreItem.label);
+    showMoreMenu = false;
+  }}
                       >
                         <svelte:component
                           this={moreItem.icon}
@@ -345,10 +377,12 @@
             <!-- Regular nav item -->
             <a
               href={item.href}
-              class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              class:opacity-60={isNavigating && navigationLoadingTarget !== item.label}
+              class:scale-110={isNavigating && navigationLoadingTarget === item.label}
               aria-current={activeIndex === i ? 'page' : undefined}
-              style="color: {activeIndex === i ? $colorStore.primary : $colorStore.muted};
-                     focus:ring-color: {$colorStore.primary};"
+              style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
+              style:focus:ring-color={$colorStore.primary}
               aria-label="Navigate to {item.label}"
               on:click|preventDefault={(e) => {
                 e.preventDefault();
@@ -366,17 +400,30 @@
                 <!-- Active indicator dot -->
                 {#if activeIndex === i}
                   <div
-                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full"
-                    style="background: {$colorStore.primary}"
-                    transition:scale={{ duration: 200 }}
+                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
+                    style:background={$colorStore.primary}
+                    transition:scale={{ duration: 300, easing: cubicOut }}
                   ></div>
+                {/if}
+
+                <!-- Loading indicator -->
+                {#if isNavigating && navigationLoadingTarget === item.label}
+                  <div
+                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg"
+                    transition:fade={{ duration: 150 }}
+                  >
+                    <div
+                      class="w-4 h-4 border-2 rounded-full animate-spin"
+                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"
+                    ></div>
+                  </div>
                 {/if}
 
                 <!-- Music playing indicator -->
                 {#if item.href === '/dashboard/music' && musicPlaying}
                   <div
                     class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
-                    style="background: {$colorStore.accent}"
+                    style:background={$colorStore.accent}
                   ></div>
                 {/if}
               </div>
@@ -388,7 +435,8 @@
                 <div
                   class="absolute -bottom-px left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-md"
                   style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary})"
-                  in:scale|local={{ duration: 250, start: 0, delay: 50 }}
+                  in:scale|local={{ duration: 300, start: 0, delay: 50, easing: cubicOut }}
+                  out:scale|local={{ duration: 200 }}
                 ></div>
               {/if}
             </a>

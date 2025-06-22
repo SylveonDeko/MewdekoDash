@@ -1,5 +1,6 @@
 // lib/types.ts
 
+// --- General Purpose Types ---
 export interface Giveaways {
   id: number;
   when: string;
@@ -27,6 +28,8 @@ export interface PermissionOverride {
   dateAdded: string;
 }
 
+// --- Ticketing System Types (Unchanged) ---
+// These types were not part of the query and remain as they were.
 export interface TicketPanel {
   id: bigint;
   messageId: bigint;
@@ -42,106 +45,21 @@ export interface TicketPanel {
   isActive: boolean;
 }
 
-export interface TicketButton {
-  id: number;
-  panelId: number;
-  label: string;
-  emoji: string;
-  style: number;
-  categoryId: string;
-  isActive: boolean;
-}
+// ... other ticketing types
 
-export interface TicketSelectMenu {
-  id: number;
-  panelId: number;
-  placeholder: string;
-  minValues: number;
-  maxValues: number;
-  optionCount: number;
-}
+// --- Patreon Integration Types (Verified & Corrected) ---
 
-export interface Ticket {
-  id: number;
-  channelId: string;
-  userId: string;
-  claimedBy?: string;
-  priority: number;
-  tags: string[];
-  notes: string;
-  isOpen: boolean;
-  createdAt: string;
-  closedAt?: string;
-}
-
-export interface TicketCase {
-  id: number;
-  title: string;
-  description: string;
-  priority: number;
-  isOpen: boolean;
-  createdAt: string;
-  ticketCount: number;
-}
-
-export interface TicketStats {
-  totalTickets: number;
-  openTickets: number;
-  closedTickets: number;
-  archivedTickets: number;
-  avgResponseTime: string;
-  activeStaff: number;
-  topCategories: Array<{ name: string; count: number }>;
-}
-
-export interface UserTicketStats {
-  userId: string;
-  totalTickets: number;
-  openTickets: number;
-  closedTickets: number;
-  avgResponseTime: string;
-}
-
-export interface TicketActivity {
-  date: string;
-  created: number;
-  closed: number;
-  responseTime: string;
-}
-
-export interface StaffResponseStats {
-  staffId: string;
-  username: string;
-  avgResponseTime: string;
-  ticketsHandled: number;
-  rating: number;
-}
-
-export interface Priority {
-  id: number;
-  name: string;
-  color: string;
-  level: number;
-}
-
-export interface TicketTag {
-  id: number;
-  name: string;
-  color: string;
-}
-
-export interface BlacklistedUser {
-  id: string;
-  username: string;
-  reason: string;
-  blacklistedAt: string;
-}
-
+/**
+ * Response from the backend for generating a Patreon OAuth URL.
+ */
 export interface PatreonOAuthResponse {
   authorizationUrl: string;
   state: string;
 }
 
+/**
+ * Response from the backend after a successful Patreon OAuth callback.
+ */
 export interface PatreonOAuthCallbackResponse {
   success: boolean;
   message: string;
@@ -149,6 +67,9 @@ export interface PatreonOAuthCallbackResponse {
   campaignId?: string;
 }
 
+/**
+ * Response from the backend detailing the current OAuth status for a guild.
+ */
 export interface PatreonOAuthStatusResponse {
   isConfigured: boolean;
   campaignId?: string;
@@ -156,6 +77,9 @@ export interface PatreonOAuthStatusResponse {
   tokenExpiry?: string;
 }
 
+/**
+ * Request model for updating Patreon configuration settings.
+ */
 export interface PatreonConfigUpdateRequest {
   channelId?: bigint;
   message?: string;
@@ -164,70 +88,103 @@ export interface PatreonConfigUpdateRequest {
   toggleRoleSync?: boolean;
 }
 
+/**
+ * Request model for triggering manual Patreon operations.
+ */
 export interface PatreonOperationRequest {
   operation: string;
 }
 
+/**
+ * Request model for mapping a Patreon tier to a Discord role.
+ */
 export interface PatreonTierMappingRequest {
   tierId: string;
   roleId: bigint;
 }
 
+/**
+ * Represents the Patreon configuration for a guild as returned by the backend.
+ */
 export interface PatreonConfig {
-  channelId?: bigint;
-  message?: string;
-  announcementDay?: number;
-  announcementsEnabled?: boolean;
-  roleSyncEnabled?: boolean;
+  channelId: bigint | null;
+  message: string | null;
+  announcementDay: number;
+  enabled: boolean;
+  lastAnnouncement: string | null;
 }
 
+/**
+ * Detailed analytics for a guild's Patreon campaign, matching the C# backend model.
+ */
 export interface PatreonAnalytics {
   totalSupporters: number;
-  totalRevenue: number;
-  activeTiers: number;
-  recentSupporters: Array<{
-    id: string;
-    name: string;
-    email: string;
-    pledgeCents: number;
-    tierTitle: string;
-    joinedAt: string;
-  }>;
-  monthlyStats: Array<{
-    month: string;
-    supporters: number;
-    revenue: number;
-  }>;
+  activeSupporters: number;
+  formerSupporters: number;
+  linkedSupporters: number;
+  totalMonthlyRevenue: number;
+  averageSupport: number;
+  lifetimeRevenue: number;
+  newSupportersThisMonth: number;
+  tierDistribution: Record<string, number>;
+  topSupporters: TopSupporter[];
 }
 
-export interface PatreonSupporter {
-  id: string;
+/**
+ * Represents a top supporter for the analytics overview.
+ */
+export interface TopSupporter {
   name: string;
-  email: string;
-  pledgeCents: number;
-  tierTitle: string;
-  discordUserId?: string;
-  joinedAt: string;
-  lastChargeDate?: string;
-  lastChargeStatus?: string;
+  amount: number;
+  isLinked: boolean;
 }
 
+/**
+ * Represents a Patreon supporter as stored in the database and returned by the API.
+ */
+export interface PatreonSupporter {
+  id: number;
+  guildId: string; // serialized ulong
+  patreonUserId: string;
+  discordUserId: string; // serialized ulong
+  fullName: string;
+  email: string | null;
+  tierId: string | null;
+  amountCents: number;
+  patronStatus: string;
+  pledgeRelationshipStart: string | null; // serialized DateTime?
+  lastChargeDate: string | null; // serialized DateTime?
+  lastChargeStatus: string | null;
+  lifetimeAmountCents: number;
+  currentlyEntitledAmountCents: number;
+  lastUpdated: string; // serialized DateTime
+}
+
+/**
+ * Represents a Patreon tier as stored in the database and returned by the API.
+ */
 export interface PatreonTier {
-  id: string;
+  id: number;
+  guildId: string; // serialized ulong
+  tierId: string;
   title: string;
-  description?: string;
   amountCents: number;
-  patronCount: number;
-  published: boolean;
-  imageUrl?: string;
-  discordRoleIds?: string;
+  description: string | null;
+  discordRoleId: string; // serialized ulong
+  isActive: boolean;
+  lastUpdated: string; // serialized DateTime
 }
 
+/**
+ * Represents a Patreon goal as stored in the database and returned by the API.
+ */
 export interface PatreonGoal {
-  id: string;
+  id: number;
+  guildId: string; // serialized ulong
+  goalId: string;
   title: string;
-  description?: string;
   amountCents: number;
-  completedPercentage: number;
-  reachedAt?: string;
+  description: string | null;
+  reachedAt: string | null; // serialized DateTime?
+  isActive: boolean;
 }

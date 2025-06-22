@@ -32,8 +32,17 @@
     if (savedInstance) {
       currentInstance.set(JSON.parse(savedInstance));
     }
-    colorStore.extractFromImage($currentInstance?.botAvatar);
   });
+
+  // Extract colors from server icon when guild changes, fallback to bot avatar
+  $: if ($currentGuild?.icon) {
+    // Use server icon for server-specific theming
+    const iconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png`;
+    colorStore.extractFromServerIcon(iconUrl);
+  } else if ($currentInstance?.botAvatar) {
+    // Fallback to bot avatar if no server icon
+    colorStore.extractFromImage($currentInstance.botAvatar);
+  }
 </script>
 
 <div class="pt-4 flex w-full">

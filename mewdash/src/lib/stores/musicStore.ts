@@ -15,6 +15,7 @@ interface MusicStoreState {
 }
 
 function createMusicStore() {
+  //logger.debug("Creating music store instance.");
   // Configuration
   const BASE_DELAY = 3000;
   const PAUSED_DELAY = 5000;
@@ -26,6 +27,8 @@ function createMusicStore() {
   let webSocket: WebSocket | null = null;
   let reconnectTimeout: NodeJS.Timeout | null = null;
   let useWebSocket = true; // Try WebSocket first, fallback to polling
+  let activeUserId: bigint | null = null;
+  let lastKnownGuildId: string | undefined = undefined;
 
   const { subscribe, set, update } = writable<MusicStoreState>({
     status: null,
@@ -36,23 +39,45 @@ function createMusicStore() {
     userId: null
   });
 
+  // Subscribe to guild changes to restart polling/websocket
+  currentGuild.subscribe(guild => {
+    const state = get({ subscribe });
+    //logger.debug(`[Guild Subscription] Fired. Current guild: ${guild?.id}, Last known: ${lastKnownGuildId}, Polling: ${state.isPolling}`);
+    // If polling is active and a user is set, check if the guild has actually changed.
+    if (state.isPolling && activeUserId && lastKnownGuildId !== undefined && guild?.id !== lastKnownGuildId) {
+      //logger.info(`[Guild Subscription] Guild changed from ${lastKnownGuildId} to ${guild?.id}. Restarting connection.`);
+      startPolling(activeUserId);
+    }
+    // Always update the last known guild ID. This handles the initial load case.
+    if (lastKnownGuildId === undefined) {
+      lastKnownGuildId = guild?.id;
+    }
+  });
+
+
   // WebSocket Connection
   function connectWebSocket(userId: bigint) {
-    if (!useWebSocket) return; // Skip if WebSockets are disabled
+    //logger.debug(`connectWebSocket called for user: ${userId}`);
+    if (!useWebSocket) {
+      //logger.debug("connectWebSocket skipped: useWebSocket is false.");
+      return; // Skip if WebSockets are disabled
+    }
 
     const guildId = get(currentGuild)?.id;
     const instancePort = get(currentInstance)?.port;
 
     if (!guildId || !userId) {
-      //logger.error("Missing guildId or userId for WebSocket connection", { guildId, userId });
+      //logger.error(`Missing guildId or userId for WebSocket connection. GuildId: ${guildId}, UserId: ${userId}`);
       useWebSocket = false;
+      //logger.info("Falling back to polling due to missing IDs.");
       startPolling(userId);
       return;
     }
 
     if (!instancePort) {
-      //logger.error("Missing instance port for WebSocket connection");
+      //logger.error("Missing instance port for WebSocket connection.");
       useWebSocket = false;
+      //logger.info("Falling back to polling due to missing instance port.");
       startPolling(userId);
       return;
     }
@@ -60,6 +85,7 @@ function createMusicStore() {
     try {
       // Close any existing connection
       if (webSocket) {
+        //logger.debug("Closing existing WebSocket connection before creating a new one.");
         webSocket.close();
         webSocket = null;
       }
@@ -69,13 +95,11 @@ function createMusicStore() {
 
       const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1") ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}` : `${wsProtocol}//127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
 
-      //logger.debug(`Connecting to WebSocket: ${wsUrl}`);
+      //logger.info(`Connecting to WebSocket: ${wsUrl}`);
       webSocket = new WebSocket(wsUrl);
 
       webSocket.onopen = () => {
-        //logger.debug("WebSocket connection established");
-
-        // Reset failure counter on successful connection
+        //logger.info("WebSocket connection established successfully.");
         update(state => ({
           ...state,
           isPolling: true,
@@ -97,6 +121,10 @@ function createMusicStore() {
           // Check if track has changed
           const trackChanged = newTrackId && newTrackId !== prevTrackId;
 
+          if (trackChanged) {
+            //logger.debug(`Track changed from ${prevTrackId} to ${newTrackId}`);
+          }
+
           // Update the store
           update(state => ({
             ...state,
@@ -107,6 +135,7 @@ function createMusicStore() {
 
           // If track has changed, update the artwork colors
           if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
+            //logger.debug("Updating artwork colors due to track change.");
             musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
           }
         } catch (err) {
@@ -125,43 +154,49 @@ function createMusicStore() {
 
         // If this is our first attempt, try again with polling
         if (useWebSocket) {
+          //logger.warn("WebSocket error occurred. Disabling WebSockets and falling back to polling.");
           useWebSocket = false;
           startPolling(userId);
         }
       };
 
       webSocket.onclose = (event) => {
-        ////logger.debug(`WebSocket closed: ${event.code} ${event.reason}`);
+        //logger.debug(`WebSocket closed: Code=${event.code}, Reason='${event.reason}'`);
 
         // Check if this was a normal closure (1000) or an error
         if (event.code !== 1000 && useWebSocket) {
           // Schedule reconnection
+          //logger.info("WebSocket closed unexpectedly. Scheduling reconnection.");
           scheduleReconnect(userId);
         }
       };
     } catch (err) {
       //logger.error("Failed to establish WebSocket connection:", err);
       useWebSocket = false;
+      //logger.info("Falling back to polling due to exception in connectWebSocket.");
       startPolling(userId);
     }
   }
 
   function scheduleReconnect(userId: bigint) {
     if (reconnectTimeout) {
+      //logger.debug("Clearing existing reconnect timeout.");
       clearTimeout(reconnectTimeout);
     }
-
+    //logger.info("Scheduling WebSocket reconnect in 5000ms.");
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;
+      //logger.info("Attempting WebSocket reconnect now.");
       connectWebSocket(userId);
     }, 5000) as unknown as NodeJS.Timeout;
   }
 
   // Fallback polling implementation
   async function fetchStatus(userId: bigint) {
+    //logger.debug(`fetchStatus called for user: ${userId}`);
     const state = get({ subscribe });
     if (state.failedFetchCount >= MAX_RETRIES) {
-      ////logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling`);
+      //logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling.`);
       stopPolling();
       return;
     }
@@ -169,17 +204,23 @@ function createMusicStore() {
     try {
       const guildId = get(currentGuild)?.id;
       if (!guildId) {
-        ////logger.error("Missing guildId for polling", { userId });
+        //logger.error("Missing guildId for polling", { userId });
         return;
       }
 
+      //logger.debug(`Fetching status for guild ${guildId}`);
       const status = await api.getPlayerStatus(guildId, userId);
+      //logger.debug("Successfully fetched status.", { status });
+
 
       // Get the new track ID
       const newTrackId = status?.CurrentTrack?.Index;
 
       // Check for track changes
       const trackChanged = newTrackId && newTrackId !== state.lastTrackId;
+      if (trackChanged) {
+        //logger.debug(`Track changed (polling) from ${state.lastTrackId} to ${newTrackId}`);
+      }
 
       // Update store
       update(state => ({
@@ -192,6 +233,7 @@ function createMusicStore() {
 
       // If track has changed, update the artwork colors
       if (trackChanged && status?.CurrentTrack?.Track?.ArtworkUri) {
+        //logger.debug("Updating artwork colors due to track change (polling).");
         await musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
       }
 
@@ -200,6 +242,7 @@ function createMusicStore() {
 
       // Only change interval if it's significantly different
       if (Math.abs(currentPollDelay - optimalDelay) > 500) {
+        //logger.info(`Adjusting poll delay from ${currentPollDelay} to ${optimalDelay}`);
         currentPollDelay = optimalDelay;
 
         // Reset interval with new delay
@@ -217,6 +260,7 @@ function createMusicStore() {
         const backoffDelay = Math.min(BASE_DELAY * Math.pow(2, newCount - 1), MAX_DELAY);
 
         if (newCount >= MAX_RETRIES) {
+          //logger.error(`Max retries (${MAX_RETRIES}) reached. Stopping polling.`);
           stopPolling();
           return {
             ...state,
@@ -227,12 +271,13 @@ function createMusicStore() {
 
         // Update interval with backoff delay
         if (pollInterval) {
+          //logger.warn(`Fetch failed. Applying backoff. Next poll in ${backoffDelay}ms.`);
           clearInterval(pollInterval);
           pollInterval = setInterval(() => fetchStatus(userId), backoffDelay);
           currentPollDelay = backoffDelay;
         }
 
-        ////logger.debug(`Failed fetch count: ${newCount}, next delay: ${backoffDelay}ms`);
+        //logger.debug(`Failed fetch count: ${newCount}, next delay: ${backoffDelay}ms`);
 
         return {
           ...state,
@@ -244,70 +289,106 @@ function createMusicStore() {
   }
 
   function startPolling(userId: bigint) {
-    // Clean up any existing connections
-    stopPolling();
+    //logger.info(`startPolling called for user: ${userId}`);
 
-    if (!userId) {
-      //logger.error("Cannot start polling without userId");
-      return;
-    }
+    // Defer the execution of polling logic.
+    // This solves a race condition where external UI components might call startPolling()
+    // before Svelte has processed the update to the currentGuild store.
+    // By using setTimeout, we push this logic to the end of the event loop,
+    // ensuring we get the most up-to-date guild ID.
+    setTimeout(() => {
+      const state = get({ subscribe });
+      const currentGuildId = get(currentGuild)?.id;
 
-    const guildId = get(currentGuild)?.id;
-    if (!guildId) {
-      //logger.error("Cannot start polling without guildId");
-      return;
-    }
+      // Idempotency Check: If we're already polling for the correct user/guild, abort.
+      if (state.isPolling && state.userId === userId && lastKnownGuildId === currentGuildId) {
+        //logger.debug(`(Deferred) startPolling call is redundant. Already polling for user ${userId} in guild ${currentGuildId}. Aborting.`);
+        return;
+      }
+
+      //logger.debug("(Deferred) Proceeding with startPolling. Cleaning up any existing connections first.");
+      stopPolling();
+      activeUserId = userId;
+      lastKnownGuildId = currentGuildId;
 
 
-    update(state => ({
-      ...state,
-      isPolling: true,
-      failedFetchCount: 0,
-      error: null,
-      userId
-    }));
+      if (!userId) {
+        //logger.error("(Deferred) Cannot start polling without userId. Aborting.");
+        return;
+      }
+
+      if (!lastKnownGuildId) {
+        //logger.error("(Deferred) Cannot start polling without guildId. Aborting.");
+        return;
+      }
+
+      //logger.info(`(Deferred) Starting polling for user ${userId} in guild ${lastKnownGuildId}`);
+      update(s => ({
+        ...s,
+        isPolling: true,
+        failedFetchCount: 0,
+        error: null,
+        userId
+      }));
 
 
-    // Try WebSocket connection first
-    if (useWebSocket) {
-      connectWebSocket(userId);
-    } else {
-      // Fall back to traditional polling
-      currentPollDelay = BASE_DELAY;
-      fetchStatus(userId);
-      pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
-    }
+      // Try WebSocket connection first
+      if (useWebSocket) {
+        //logger.debug("(Deferred) Attempting to connect via WebSocket.");
+        connectWebSocket(userId);
+      } else {
+        // Fall back to traditional polling
+        //logger.debug("(Deferred) Falling back to traditional HTTP polling.");
+        currentPollDelay = BASE_DELAY;
+        fetchStatus(userId);
+        pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
+      }
+    }, 0);
   }
 
   function stopPolling() {
-    ////logger.debug("Stopping music polling");
+    //logger.info("stopPolling called.");
+    // Do not reset activeUserId here, as deferred calls might need it.
+    // It will be reset by the next successful start polling call.
 
     // Clean up WebSocket
     if (webSocket) {
-      if (webSocket.readyState === WebSocket.OPEN) {
-        webSocket.close(1000, "User disconnected");
+      //logger.debug("Cleaning up WebSocket.");
+      if (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING) {
+        // Remove event listeners to prevent onclose from triggering reconnection logic
+        webSocket.onclose = null;
+        webSocket.onerror = null;
+        webSocket.close(1000, "Client initiated stop");
       }
       webSocket = null;
     }
 
     // Clean up reconnection timer
     if (reconnectTimeout) {
+      //logger.debug("Cleaning up reconnect timeout.");
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
     }
 
     // Clean up polling interval
     if (pollInterval) {
+      //logger.debug("Cleaning up polling interval.");
       clearInterval(pollInterval);
       pollInterval = null;
     }
 
-    update(state => ({ ...state, isPolling: false }));
+    // Only update the polling status if it's currently true
+    if (get({ subscribe }).isPolling) {
+      update(state => ({ ...state, isPolling: false }));
+      //logger.debug("stopPolling finished. isPolling set to false.");
+    }
   }
 
   function reset() {
-    ////logger.debug("Resetting music store");
+    //logger.warn("Resetting music store to initial state.");
     stopPolling();
+    activeUserId = null;
+    lastKnownGuildId = undefined;
     useWebSocket = true; // Reset WebSocket preference
     set({
       status: null,
@@ -320,6 +401,7 @@ function createMusicStore() {
   }
 
   function getDebugInfo() {
+    //logger.debug("getDebugInfo called.");
     const state = get({ subscribe });
     return {
       state,
@@ -338,9 +420,15 @@ function createMusicStore() {
     getDebugInfo,
     // For testing
     forcePolling: () => {
+      //logger.warn("forcePolling called for testing. Disabling WebSockets.");
       useWebSocket = false;
       const userId = get({ subscribe }).userId;
-      if (userId) startPolling(userId);
+      if (userId) {
+        //logger.debug(`Forcing polling for user ${userId}`);
+        startPolling(userId);
+      } else {
+        //logger.error("Cannot force polling, no userId found in store.");
+      }
     }
   };
 }

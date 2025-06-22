@@ -13,7 +13,6 @@
     Award,
     CheckCircle,
     DollarSign,
-    Hash,
     Heart,
     LucideFolderSync,
     MessageCircle,
@@ -28,6 +27,7 @@
   } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
+  // These types now correctly match the backend models from patreon_types_ts
   import type {
     PatreonAnalytics,
     PatreonConfig,
@@ -82,7 +82,7 @@
 
       const urlParams = $page.url.searchParams;
       const success = urlParams.get("success");
-      const error = urlParams.get("error");
+      const errorParam = urlParams.get("error");
       const code = urlParams.get("code");
       const state = urlParams.get("state");
 
@@ -103,9 +103,9 @@
         const cleanUrl = new URL($page.url);
         cleanUrl.searchParams.delete("success");
         goto(cleanUrl.toString(), { replaceState: true });
-      } else if (error) {
+      } else if (errorParam) {
         showNotification = true;
-        notificationMessage = decodeURIComponent(error);
+        notificationMessage = decodeURIComponent(errorParam);
         notificationType = "error";
         const cleanUrl = new URL($page.url);
         cleanUrl.searchParams.delete("error");
@@ -180,9 +180,9 @@
       patreonConfig = await api.getPatreonConfig(BigInt($currentGuild.id));
       // Populate form with current config
       configForm = {
-        channelId: patreonConfig.channelId,
-        message: patreonConfig.message,
-        announcementDay: patreonConfig.announcementDay,
+        channelId: patreonConfig.channelId || undefined,
+        message: patreonConfig.message || undefined,
+        announcementDay: patreonConfig.announcementDay || undefined,
         toggleAnnouncements: undefined,
         toggleRoleSync: undefined
       };
@@ -307,8 +307,10 @@
       notificationType = "success";
 
       // Refresh relevant data after operation
-      if (operation === "sync") {
+      if (operation === "sync" || operation === "sync_all") {
         await loadPatreonSupporters();
+        await loadPatreonTiers();
+        await loadPatreonGoals();
         await loadPatreonAnalytics();
       }
     } catch (err) {
@@ -618,8 +620,9 @@
                   <Users class="w-6 h-6" style="color: {$colorStore.primary};" />
                   <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Supporters</h3>
                 </div>
+                <!-- FIX: Use activeSupporters for the count -->
                 <p class="text-3xl font-bold mb-2"
-                   style="color: {$colorStore.text};">{patreonAnalytics.totalSupporters}</p>
+                   style="color: {$colorStore.text};">{patreonAnalytics.activeSupporters}</p>
                 <p class="text-sm" style="color: {$colorStore.muted};">Active supporters</p>
               </div>
 
@@ -633,7 +636,7 @@
                   <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Revenue</h3>
                 </div>
                 <p class="text-3xl font-bold mb-2"
-                   style="color: {$colorStore.text};">{formatCurrency(patreonAnalytics.totalRevenue)}</p>
+                   style="color: {$colorStore.text};">{formatCurrency(patreonAnalytics.totalMonthlyRevenue)}</p>
                 <p class="text-sm" style="color: {$colorStore.muted};">Monthly recurring</p>
               </div>
             {/if}
@@ -650,11 +653,11 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                on:click={() => triggerOperation("sync")}
+                on:click={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
                 <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
-                Sync Supporters
+                Sync All Data
               </button>
 
               <button
@@ -689,32 +692,6 @@
             </div>
           </div>
 
-          <!-- Recent Supporters -->
-          {#if patreonAnalytics?.recentSupporters?.length}
-            <div
-              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                     border-color: {$colorStore.primary}30;"
-            >
-              <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Recent Supporters</h3>
-              <div class="space-y-3">
-                {#each patreonAnalytics.recentSupporters.slice(0, 5) as supporter}
-                  <div class="flex items-center justify-between p-3 rounded-lg"
-                       style="background: {$colorStore.primary}10;">
-                    <div>
-                      <p class="font-medium" style="color: {$colorStore.text};">{supporter.name}</p>
-                      <p class="text-sm" style="color: {$colorStore.muted};">{supporter.tierTitle}</p>
-                    </div>
-                    <div class="text-right">
-                      <p class="font-medium"
-                         style="color: {$colorStore.text};">{formatCurrency(supporter.pledgeCents)}</p>
-                      <p class="text-sm" style="color: {$colorStore.muted};">{formatDate(supporter.joinedAt)}</p>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
         {:else if activeTab === "supporters"}
           <!-- Supporters Tab -->
           <div
@@ -729,7 +706,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={() => triggerOperation("sync")}
+                on:click={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
                 <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
@@ -748,8 +725,7 @@
                   <thead>
                   <tr class="border-b" style="border-color: {$colorStore.primary}30;">
                     <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Name</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Tier</th>
-                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Amount</th>
+                    <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Pledge</th>
                     <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Joined</th>
                     <th class="text-left py-3 px-4" style="color: {$colorStore.text};">Status</th>
                   </tr>
@@ -759,19 +735,22 @@
                     <tr class="border-b" style="border-color: {$colorStore.primary}20;">
                       <td class="py-3 px-4">
                         <div>
-                          <p class="font-medium" style="color: {$colorStore.text};">{supporter.name}</p>
-                          <p class="text-sm" style="color: {$colorStore.muted};">{supporter.email}</p>
+                          <p class="font-medium" style="color: {$colorStore.text};">{supporter.fullName}</p>
+                          <p class="text-sm" style="color: {$colorStore.muted};">{supporter.email || 'No email'}</p>
                         </div>
                       </td>
-                      <td class="py-3 px-4" style="color: {$colorStore.text};">{supporter.tierTitle}</td>
                       <td class="py-3 px-4"
-                          style="color: {$colorStore.text};">{formatCurrency(supporter.pledgeCents)}</td>
-                      <td class="py-3 px-4" style="color: {$colorStore.text};">{formatDate(supporter.joinedAt)}</td>
+                          style="color: {$colorStore.text};">{formatCurrency(supporter.amountCents)}</td>
+                      <td class="py-3 px-4"
+                          style="color: {$colorStore.text};">{formatDate(supporter.pledgeRelationshipStart)}</td>
                       <td class="py-3 px-4">
                           <span
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <CheckCircle class="w-3 h-3" />
-                            Active
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+                            class:bg-green-100={supporter.patronStatus === 'active_patron'}
+                            class:text-green-800={supporter.patronStatus === 'active_patron'}
+                            class:bg-red-100={supporter.patronStatus !== 'active_patron'}
+                            class:text-red-800={supporter.patronStatus !== 'active_patron'}>
+                            {supporter.patronStatus.replace('_', ' ')}
                           </span>
                       </td>
                     </tr>
@@ -803,7 +782,7 @@
                   >
                     <option value="">Select a tier...</option>
                     {#each patreonTiers as tier}
-                      <option value={tier.id}>{tier.title} - {formatCurrency(tier.amountCents)}</option>
+                      <option value={tier.tierId}>{tier.tierTitle} - {formatCurrency(tier.amountCents)}</option>
                     {/each}
                   </select>
                 </div>
@@ -851,7 +830,7 @@
                 <div class="text-center py-8">
                   <Award class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
                   <p style="color: {$colorStore.muted};">No tiers found. Make sure your Patreon campaign has published
-                    tiers.</p>
+                    tiers. Try clicking "Sync All Data".</p>
                 </div>
               {:else}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -861,22 +840,16 @@
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
                     >
                       <div class="flex items-start justify-between mb-2">
-                        <h4 class="font-semibold" style="color: {$colorStore.text};">{tier.title}</h4>
+                        <h4 class="font-semibold" style="color: {$colorStore.text};">{tier.tierTitle}</h4>
                         <span class="text-sm px-2 py-1 rounded-full"
                               style="background: {$colorStore.primary}20; color: {$colorStore.text};">
-                          {tier.patronCount}
+                          {tier.discordRoleId ? 'Mapped' : 'Unmapped'}
                         </span>
                       </div>
                       <p class="text-lg font-bold mb-2"
                          style="color: {$colorStore.primary};">{formatCurrency(tier.amountCents)}</p>
                       {#if tier.description}
-                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{tier.description}</p>
-                      {/if}
-                      {#if tier.discordRoleIds}
-                        <div class="flex items-center gap-2 text-xs">
-                          <Hash class="w-3 h-3" style="color: {$colorStore.muted};" />
-                          <span style="color: {$colorStore.muted};">Mapped to roles</span>
-                        </div>
+                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{@html tier.description}</p>
                       {/if}
                     </div>
                   {/each}
@@ -897,7 +870,7 @@
               <div class="text-center py-8">
                 <Target class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
                 <p style="color: {$colorStore.muted};">No goals found. Create goals in your Patreon campaign to track
-                  progress.</p>
+                  progress. Try clicking "Sync All Data".</p>
               </div>
             {:else}
               <div class="space-y-4">
@@ -966,12 +939,12 @@
                   </div>
                   <div>
                     <label for="announcement-day" class="block text-sm font-medium mb-2"
-                           style="color: {$colorStore.text};">Announcement Day (1-31)</label>
+                           style="color: {$colorStore.text};">Announcement Day (1-28)</label>
                     <input
                       id="announcement-day"
                       type="number"
                       min="1"
-                      max="31"
+                      max="28"
                       bind:value={configForm.announcementDay}
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
@@ -1032,61 +1005,6 @@
                 </div>
               </form>
             </div>
-
-            <!-- Current Settings Display -->
-            {#if patreonConfig}
-              <div
-                class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                       border-color: {$colorStore.primary}30;"
-              >
-                <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Current Settings</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div
-                    class="rounded-lg p-4"
-                    style="background: {$colorStore.primary}10;"
-                  >
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Announcement Channel</h4>
-                    <p style="color: {$colorStore.text};">
-                      {patreonConfig.channelId ? `#${guildChannels.find(c => c.id === patreonConfig?.channelId?.toString())?.name || 'Unknown'}` : 'Not set'}
-                    </p>
-                  </div>
-                  <div
-                    class="rounded-lg p-4"
-                    style="background: {$colorStore.primary}10;"
-                  >
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Announcement Day</h4>
-                    <p style="color: {$colorStore.text};">{patreonConfig.announcementDay || 'Not set'}</p>
-                  </div>
-                  <div
-                    class="rounded-lg p-4"
-                    style="background: {$colorStore.primary}10;"
-                  >
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Announcements</h4>
-                    <p
-                      style="color: {$colorStore.text};">{patreonConfig.announcementsEnabled ? 'Enabled' : 'Disabled'}</p>
-                  </div>
-                  <div
-                    class="rounded-lg p-4"
-                    style="background: {$colorStore.primary}10;"
-                  >
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Role Sync</h4>
-                    <p style="color: {$colorStore.text};">{patreonConfig.roleSyncEnabled ? 'Enabled' : 'Disabled'}</p>
-                  </div>
-                </div>
-                {#if patreonConfig.message}
-                  <div class="mt-4">
-                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted};">Custom Message</h4>
-                    <div
-                      class="rounded-lg p-4"
-                      style="background: {$colorStore.primary}10;"
-                    >
-                      <p style="color: {$colorStore.text};">{patreonConfig.message}</p>
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            {/if}
           </div>
         {/if}
       </div>
