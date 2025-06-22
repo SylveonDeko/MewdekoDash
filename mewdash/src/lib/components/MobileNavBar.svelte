@@ -1,6 +1,6 @@
 <!-- lib/components/MobileNavBar.svelte -->
 <script lang="ts">
-  import { scale, slide } from "svelte/transition";
+  import { fade, scale, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import {
     Bell,
@@ -108,7 +108,7 @@
   // Toggle the more menu with haptic feedback
   function toggleMoreMenu() {
     if (isAnimating) return;
-    
+
     showMoreMenu = !showMoreMenu;
 
     // Add haptic feedback on supported devices
