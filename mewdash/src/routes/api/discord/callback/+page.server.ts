@@ -43,9 +43,9 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
         const userData = await getUserData(tokens.access_token);
         locals.user = userData;
 
-        // Redirect to the originally requested page or dashboard if it was a dashboard URL
+        // Use 302 redirect to ensure cookies are sent properly
         const finalRedirect = redirectTo.startsWith("/dashboard") ? "/dashboard" : redirectTo;
-        throw redirect(303, finalRedirect);
+        throw redirect(302, finalRedirect);
     } catch (error) {
         if (error instanceof Error) {
             logger.error('Callback error details:', {

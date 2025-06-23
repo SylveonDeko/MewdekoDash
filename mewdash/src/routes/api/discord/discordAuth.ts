@@ -5,7 +5,7 @@ import {
   DISCORD_CLIENT_ID,
   DISCORD_CLIENT_SECRET,
   DISCORD_REDIRECT_URI,
-  DISCORD_SCOPES,
+  DISCORD_SCOPES
 } from "$env/static/private";
 import type { Cookies } from "@sveltejs/kit";
 import CryptoJS from "crypto-js";
@@ -95,13 +95,13 @@ export function setCookies(tokens: Tokens, cookies: Cookies) {
       path: "/",
       expires: tokens.access_valid_until,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax"
     });
     cookies.set(REFRESH_TOKEN_COOKIE, encryptedRefreshToken, {
       path: "/",
       expires: tokens.refresh_valid_until,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax"
     });
   } catch (e) {
     logger.error("could not set cookies:" + e);

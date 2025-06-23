@@ -7,7 +7,6 @@
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userStore } from "$lib/stores/userStore.ts";
   import MobileNavBar from "$lib/components/MobileNavBar.svelte";
-  import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
 
   export let data;
@@ -26,7 +25,7 @@
         // Capture current URL for redirect after login
         const currentUrl = window.location.pathname + window.location.search;
         const loginUrl = `/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`;
-        goto(loginUrl);
+        window.location.href = loginUrl;
         return;
       }
     }
