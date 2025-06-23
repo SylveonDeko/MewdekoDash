@@ -96,17 +96,8 @@
         }
     }
 
-    /* Text shadow for better readability */
-    .text-shadow-lg {
-        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Smooth scale animations */
+    /* Text shadow for better readability *//* Smooth scale animations */
     .group-hover\:scale-102:hover {
-        transform: scale(1.02);
-    }
-
-    .scale-102 {
         transform: scale(1.02);
     }
 

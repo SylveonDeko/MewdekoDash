@@ -783,12 +783,6 @@
         }
     }
 
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200px 100%;
-        animation: skeleton-loading 1.5s infinite;
-    }
-
     /* Improved loading spinner */
     @keyframes spin-smooth {
         0% {
@@ -830,9 +824,6 @@
             border-width: 3px !important;
         }
 
-        button:focus .server-icon {
-            border-width: 4px !important;
-        }
     }
 
     /* Reduced motion support */
@@ -916,9 +907,6 @@
     }
 
     /* Smooth scroll behavior */
-    html {
-        scroll-behavior: smooth;
-    }
 
     /* Enhanced container animations */
     .container {
@@ -938,9 +926,6 @@
 
     /* Parallax scroll effects */
     @media (prefers-reduced-motion: no-preference) {
-        .parallax-element {
-            transform: translateZ(0);
-            will-change: transform;
-        }
+
     }
 </style>

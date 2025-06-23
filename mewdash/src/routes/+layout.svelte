@@ -2,6 +2,7 @@
 <script lang="ts">
   import "../app.css";
   import UnifiedNav from "$lib/components/UnifiedNav.svelte";
+  import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
   import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
@@ -134,6 +135,8 @@
 
 <UnifiedNav data={data} items={navItems} />
 
-<main class="bg-mewd-dark-grey w-full">
-  <slot />
-</main>
+<ErrorBoundary fallback="The page encountered an unexpected error. Please try refreshing." showDetails={true}>
+  <main class="bg-mewd-dark-grey w-full">
+    <slot />
+  </main>
+</ErrorBoundary>

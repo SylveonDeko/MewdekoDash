@@ -694,8 +694,8 @@
     }
 
     /* Add smooth transitions */
-    button, input, select, textarea {
-        @apply transition-all duration-200;
+    button, input, select {
+        transition: all 0.2s ease;
     }
 
     /* Improved touch targets on mobile */
@@ -747,12 +747,7 @@
         -moz-appearance: textfield;
     }
 
-    /* Textarea styling */
-    textarea {
-        @apply resize-y min-h-[120px];
-    }
-
-    /* Custom checkbox styling */
+    /* Textarea styling *//* Custom checkbox styling */
     input[type="checkbox"]:checked + div {
         @apply bg-blue-600;
     }
@@ -767,11 +762,7 @@
 
     /* Improve mobile touch targets */
     @media (max-width: 768px) {
-        button, input, select, textarea {
-            @apply min-h-[48px]; /* Larger touch targets on mobile */
-        }
-
-        input, select {
+        button, input, select, input, select {
             @apply text-base; /* Prevent zoom on iOS */
         }
 

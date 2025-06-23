@@ -1177,10 +1177,6 @@
         transition: all 0.3s ease;
     }
 
-    .hover\:translate-y-\[-2px\] {
-        transition: all 0.3s ease;
-    }
-
     /* Animation for the refresh button */
     @keyframes spin {
         from {

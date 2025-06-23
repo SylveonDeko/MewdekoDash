@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
   import InstanceSelector from "$lib/components/InstanceSelector.svelte";
+  import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userStore } from "$lib/stores/userStore.ts";
@@ -53,7 +54,10 @@
     {#if !$currentInstance}
       <InstanceSelector data="{data}" />
     {:else}
-      <slot />
+      <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
+                     showDetails={true}>
+        <slot />
+      </ErrorBoundary>
       <!-- Always show mobile nav when we have an instance - it can handle both guild and instance selection -->
       <MobileNavBar showInstanceSelector={!$currentGuild} data={data} />
     {/if}

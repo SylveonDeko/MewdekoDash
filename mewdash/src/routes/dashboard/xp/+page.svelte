@@ -4477,7 +4477,7 @@
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
-        button, input[type="checkbox"], input[type="radio"] {
+        button, input[type="checkbox"] {
             min-height: 44px;
             min-width: 44px;
         }
@@ -4498,9 +4498,8 @@
             input[type="time"],
             input[type="url"],
             input[type="week"],
-            select,
-            textarea {
-                font-size: 16px !important;
+            select {
+                font-size: 16px;
             }
         }
     }

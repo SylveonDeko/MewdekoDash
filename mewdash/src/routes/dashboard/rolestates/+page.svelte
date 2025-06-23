@@ -1175,13 +1175,13 @@
     }
 
     /* Prevent stretch in Safari */
-    input, select, textarea {
+    input, select {
         min-height: 44px;
     }
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
-        button, input[type="checkbox"], input[type="radio"] {
+        button, input[type="checkbox"] {
             min-height: 44px;
             min-width: 44px;
         }

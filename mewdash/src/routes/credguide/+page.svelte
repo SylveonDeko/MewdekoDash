@@ -986,15 +986,9 @@
         }
 
         /* Mobile grid improvements */
-        .grid.md\\:grid-cols-2 {
-            grid-template-columns: 1fr !important;
-            gap: 1.5rem !important;
-        }
 
         /* OS selector buttons on mobile */
-        .flex.flex-col.sm\\:flex-row {
-            flex-direction: column !important;
-        }
+
     }
 
     /* Accessibility improvements */

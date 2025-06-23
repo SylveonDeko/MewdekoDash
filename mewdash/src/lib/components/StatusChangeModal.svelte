@@ -109,12 +109,7 @@
   </div>
 </div>
 
-<style lang="postcss">
-    textarea {
-        @apply resize-none;
-    }
-
-    button {
+<style lang="postcss">button {
         @apply focus:outline-none focus:ring-2 focus:ring-opacity-50;
     }
 

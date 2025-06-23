@@ -191,11 +191,11 @@
               Normal Users
             </h3>
 
-            {#if !autoAssignRoles || !autoAssignRoles.normalRoles || autoAssignRoles.normalRoles.length === 0}
+            {#if !autoAssignRoles || !Array.isArray(autoAssignRoles.normalRoles) || autoAssignRoles.normalRoles.length === 0}
               <p class="text-sm" style="color: {$colorStore.muted}">No auto-assign roles configured</p>
             {:else}
               <div class="space-y-2">
-                {#each autoAssignRoles.normalRoles as roleId}
+                {#each autoAssignRoles.normalRoles || [] as roleId}
                   <div
                     class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
@@ -222,11 +222,11 @@
               Bot Users
             </h3>
 
-            {#if !autoAssignRoles || !autoAssignRoles.botRoles || autoAssignRoles.botRoles.length === 0}
+            {#if !autoAssignRoles || !Array.isArray(autoAssignRoles.botRoles) || autoAssignRoles.botRoles.length === 0}
               <p class="text-sm" style="color: {$colorStore.muted}">No bot auto-assign roles configured</p>
             {:else}
               <div class="space-y-2">
-                {#each autoAssignRoles.botRoles as roleId}
+                {#each autoAssignRoles.botRoles || [] as roleId}
                   <div
                     class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
@@ -417,7 +417,7 @@
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Self-Assignable Roles</h2>
         </div>
 
-        {#if !selfAssignableRoles || selfAssignableRoles.length === 0}
+        {#if !Array.isArray(selfAssignableRoles) || selfAssignableRoles.length === 0}
           <div class="text-center py-8">
             <UserCheck class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
             <p class="text-lg font-medium" style="color: {$colorStore.text}">No self-assignable roles configured</p>
@@ -425,7 +425,7 @@
           </div>
         {:else}
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each selfAssignableRoles as role}
+            {#each selfAssignableRoles || [] as role}
               <div
                 class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">

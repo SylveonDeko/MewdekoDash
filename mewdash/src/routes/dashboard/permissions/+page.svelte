@@ -70,7 +70,6 @@
 
   $: colors = $colorStore;
 
-
   // Deduplicate modules and process commands
   function getUniqueModules(modules) {
     const moduleMap = new Map();
@@ -962,11 +961,7 @@
         @apply transition-colors duration-300;
     }
 
-    select, input, textarea {
-        color-scheme: dark;
-    }
-
-    /* Prevent iOS styling */
+    select, input, /* Prevent iOS styling */
     select {
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -981,9 +976,6 @@
     }
 
     /* Improve hover states */
-    .command-dropdown button:hover {
-        @apply bg-opacity-25;
-    }
 
     /* Ensure the container is above other sections */
     .relative {

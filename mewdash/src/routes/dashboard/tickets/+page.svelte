@@ -1086,13 +1086,7 @@
         color: #ffffff;
     }
 
-    select, input, textarea {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
-
-    select:focus, input:focus, textarea:focus {
+    select, input, select:focus, input:focus, textarea:focus {
         -webkit-tap-highlight-color: transparent;
     }
 
