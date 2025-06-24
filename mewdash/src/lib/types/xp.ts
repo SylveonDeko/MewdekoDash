@@ -36,38 +36,6 @@ export interface XpTemplate {
   customText: string | null;
 }
 
-export interface XpUserStats {
-  userId: bigint;
-  guildId: bigint;
-  totalXp: number;
-  level: number;
-  levelXp: number;
-  requiredXp: number;
-  rank: number;
-  bonusXp: number;
-  username: string;
-  avatarUrl: string;
-}
-
-export interface XpLeaderboardEntry {
-  userId: bigint;
-  username: string;
-  discriminator: string;
-  avatarUrl: string;
-  totalXp: number;
-  level: number;
-  rank: number;
-}
-
-export interface XpRoleReward {
-  id: number;
-  guildId: bigint;
-  level: number;
-  roleId: bigint;
-  roleName: string;
-  remove: boolean;
-}
-
 export interface MusicSettings {
   guildId: bigint;
   volume: number;

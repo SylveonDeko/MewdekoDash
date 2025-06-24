@@ -27,11 +27,3 @@ export type GuildInfo = {
   createdAt: string;
 };
 
-export type BasicGuildInfo = {
-  id: bigint;
-  name: string;
-  icon?: string;
-  memberCount: number;
-  isLarge: boolean;
-  features: string[];
-};

@@ -108,38 +108,6 @@ export function setCookies(tokens: Tokens, cookies: Cookies) {
   }
 }
 
-export async function getUserGuilds(
-  cookies: Cookies,
-): Promise<{ status: number; data: any }> {
-  let encryptedToken = cookies?.get("discord_access_token");
-  let token = null;
-
-  if (encryptedToken) {
-    const bytes = CryptoJS.AES.decrypt(
-      encryptedToken,
-      COOKIE_ENCRYPTION_PASSWORD,
-    );
-    token = bytes.toString(CryptoJS.enc.Utf8);
-  }
-
-  if (!token) {
-    return { status: 400, data: "No token provided" };
-  }
-  const response = await fetch("https://discord.com/api/users/@me/guilds", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    return {
-      status: response.status,
-      data: `Failed to fetch user guilds: ${response.statusText}`,
-    };
-  }
-  return { status: 200, data: await response.json() };
-}
-
 export function deleteCookies(cookies: Cookies) {
   cookies.delete(ACCESS_TOKEN_COOKIE, { path: "/" });
   cookies.delete(REFRESH_TOKEN_COOKIE, { path: "/" });

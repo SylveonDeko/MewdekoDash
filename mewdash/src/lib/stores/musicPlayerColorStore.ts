@@ -28,7 +28,7 @@ const DEFAULT_COLORS: MusicPlayerColors = {
 };
 
 // Dark UI constants - representing the music player background
-const DARK_BG: RGB = [26, 26, 26]; // rgb(26, 26, 26) - music player background
+ // rgb(26, 26, 26) - music player background
 const DARK_BG_LUMINANCE = 0.05; // Pre-calculated luminance for performance
 
 function createMusicPlayerColorStore() {
@@ -130,15 +130,6 @@ function createMusicPlayerColorStore() {
       const hex = Math.round(x).toString(16);
       return hex.length === 1 ? "0" + hex : hex;
     }).join("");
-  }
-
-  function hexToRgb(hex: string): RGB {
-    hex = hex.replace(/^#/, "");
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    return [r, g, b];
   }
 
   // For color transitions: Parse hex colors
@@ -714,7 +705,6 @@ function createMusicPlayerColorStore() {
     // Expose methods for animations and color management
     updateFromArtwork,
     skipTransitions,
-    setTransitionDuration,
     cleanup,
     reset: () => {
       currentColors = get(store);

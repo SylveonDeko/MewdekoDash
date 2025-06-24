@@ -391,27 +391,8 @@
     showPreview = !isMobile;
   }
 
-  function toggleDropdown() {
-    dropdownOpen = !dropdownOpen;
-  }
-
   function closeDropdown() {
     dropdownOpen = false;
-  }
-
-  function handleGuildKeydown(event: KeyboardEvent, guild: DiscordGuild) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      selectGuild(guild);
-    }
-  }
-
-  function getGuildIconUrl(guild: DiscordGuild) {
-    if (guild.icon) {
-      const extension = guild.icon.startsWith("a_") ? "gif" : "png";
-      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${extension}`;
-    }
-    return "https://cdn.discordapp.com/embed/avatars/0.png";
   }
 
   async function selectGuild(guild: DiscordGuild) {
@@ -714,41 +695,6 @@
     }
 
     return rows;
-  }
-
-  function validateComponents(): boolean {
-    for (const component of components) {
-      if (component.isSelect) {
-        if (!component.id) {
-          return false;
-        }
-        if (component.minOptions > component.options.length) {
-          return false;
-        }
-        if (component.maxOptions < component.minOptions) {
-          return false;
-        }
-        for (const option of component.options) {
-          if (
-            !option.id ||
-            !option.description ||
-            option.description.trim() === "" ||
-            option.name.length > 100 ||
-            option.description.length > 100
-          ) {
-            return false;
-          }
-        }
-      } else {
-        if (!component.id) {
-          return false;
-        }
-        if (component.displayName.length > (component.isSelect ? 150 : 80)) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 
   $: totalComponents = components.reduce((count, component) => {

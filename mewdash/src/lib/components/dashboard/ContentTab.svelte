@@ -13,7 +13,7 @@
   import FeatureCard from "$lib/components/FeatureCard.svelte";
 
   // Props from parent
-  export let guildFeatures: any;
+
 
   // Derived state
   $: musicStatus = $musicStore.status;

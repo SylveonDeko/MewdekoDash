@@ -54,43 +54,6 @@
   }
 
   // Helper functions for mobile music display
-  function formatTrackTitle(title: string, compact: boolean = true): string {
-    if (!title) return "";
-    const maxLength = compact ? 35 : 60;
-    return title.length > maxLength ? title.substring(0, maxLength - 3) + "..." : title;
-  }
-
-  function formatArtist(artist: string, compact: boolean = true): string {
-    if (!artist) return "";
-    const maxLength = compact ? 30 : 50;
-    return artist.length > maxLength ? artist.substring(0, maxLength - 3) + "..." : artist;
-  }
-
-  function formatDuration(duration: any): string {
-    if (!duration) return "--:--";
-
-    // Handle different duration formats like the main player
-    if (typeof duration === "string") {
-      const parts = duration.split(":");
-      if (parts.length === 3) {
-        const hours = parseInt(parts[0]);
-        const minutes = parseInt(parts[1]);
-        const seconds = parseInt(parts[2]);
-        return `${hours * 60 + minutes}:${seconds.toString().padStart(2, "0")}`;
-      } else if (parts.length === 2) {
-        return duration;
-      }
-    }
-
-    // If it's a number (seconds), convert normally
-    if (typeof duration === "number") {
-      const mins = Math.floor(duration / 60);
-      const secs = Math.floor(duration % 60);
-      return `${mins}:${secs.toString().padStart(2, "0")}`;
-    }
-
-    return "--:--";
-  }
 
   function getCurrentPosition(): number {
     if (!musicStatus?.Position?.RelativePosition) return 0;
@@ -121,9 +84,6 @@
       : 0;
   }
 
-  function openMusicDashboard() {
-    window.location.href = "/dashboard/music";
-  }
 </script>
 
 <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>

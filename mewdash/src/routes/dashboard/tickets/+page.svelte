@@ -55,7 +55,7 @@
   // Modal states
   let showCreatePanel = false;
   let showCreateCase = false;
-  let showEditPanel: TicketPanel | null = null;
+
   let showPanelButtons: TicketPanel | null = null;
   let showSettings = false;
 

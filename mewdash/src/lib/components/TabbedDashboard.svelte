@@ -256,7 +256,7 @@
   function handleSwipe() {
     const swipeThreshold = 80; // Increased threshold to prevent accidental swipes
     const maxSwipeTime = 300; // Maximum time for a valid swipe
-    const minHorizontalDistance = 50;
+
 
     const diffX = touchStartX - touchEndX;
     const diffY = Math.abs(touchStartY - touchEndY);
@@ -281,7 +281,7 @@
   $: currentTabData = tabs.find(tab => tab.id === activeTab) || tabs[0];
 
   // Handle browser back/forward buttons
-  function handlePopState(event: PopStateEvent) {
+  function handlePopState() {
     const tabFromUrl = getTabFromUrl();
     if (tabFromUrl !== activeTab) {
       // Don't add to history when handling popstate

@@ -143,7 +143,7 @@ function createMusicStore() {
         }
       };
 
-      webSocket.onerror = (error) => {
+      webSocket.onerror = () => {
         //logger.error("WebSocket error:", error);
 
         // Track connection errors
@@ -416,20 +416,7 @@ function createMusicStore() {
     subscribe,
     startPolling,
     stopPolling,
-    reset,
-    getDebugInfo,
-    // For testing
-    forcePolling: () => {
-      //logger.warn("forcePolling called for testing. Disabling WebSockets.");
-      useWebSocket = false;
-      const userId = get({ subscribe }).userId;
-      if (userId) {
-        //logger.debug(`Forcing polling for user ${userId}`);
-        startPolling(userId);
-      } else {
-        //logger.error("Cannot force polling, no userId found in store.");
-      }
-    }
+    reset
   };
 }
 

@@ -227,7 +227,7 @@
     }
 
     /* High contrast mode */
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
         .rounded-2xl {
             border-width: 2px;
         }

@@ -1001,7 +1001,7 @@
     }
 
     /* High contrast mode */
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
         .wizard-content {
             border-width: 2px;
         }

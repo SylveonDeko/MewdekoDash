@@ -211,24 +211,6 @@
   }
 
   // Add missing API functions to match original music player
-  async function seek(position: number) {
-    try {
-      if (!$currentGuild?.id) return;
-      const seekRequest = { Position: position };
-      await api.seek($currentGuild.id, seekRequest);
-    } catch (err) {
-      logger.error("Failed to seek:", err);
-    }
-  }
-
-  async function setVolume(volume: number) {
-    try {
-      if (!$currentGuild?.id) return;
-      await api.setVolume($currentGuild.id, volume);
-    } catch (err) {
-      logger.error("Failed to set volume:", err);
-    }
-  }
 
   async function toggleShuffle() {
     try {

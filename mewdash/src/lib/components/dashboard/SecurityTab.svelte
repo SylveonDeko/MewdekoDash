@@ -12,7 +12,7 @@
   import FeatureCard from "$lib/components/FeatureCard.svelte";
 
   // Props from parent
-  export let guildFeatures: any;
+
 
   // Security data
   let moderationStats = {

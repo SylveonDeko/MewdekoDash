@@ -424,52 +424,6 @@ A comprehensive music player component for Discord bot music functionality.
   let lastCheckedStatus = null;
   const RAPID_CHANGE_THRESHOLD = 400; // milliseconds
 
-  function checkTrackChanged(force = false) {
-    // Skip if no track data is available
-    if (!musicStatus?.CurrentTrack?.Track) return false;
-
-    // Skip redundant checks for the same status update
-    const currentStatusJSON = JSON.stringify(musicStatus.CurrentTrack);
-    if (!force && currentStatusJSON === lastCheckedStatus) return false;
-    lastCheckedStatus = currentStatusJSON;
-
-    // Create a unique ID for the current track
-    const currentTrackId = `${musicStatus.CurrentTrack.Track.Title}-${musicStatus.CurrentTrack.Track.Author}`;
-
-    // Only consider it changed if the track ID changed
-    if (lastTrackId && lastTrackId !== currentTrackId) {
-      const now = performance.now();
-      const timeSinceLastChange = now - lastSongChangeTime;
-
-      if (timeSinceLastChange < RAPID_CHANGE_THRESHOLD) {
-        // If songs are being changed rapidly, skip the transitions
-        musicPlayerColors.skipTransitions(500); // Skip transitions for 500ms
-        logger.debug("Rapid track change detected, skipping color transition");
-      } else {
-        // Start transition animation
-        isTransitioning = true;
-        setTimeout(() => {
-          isTransitioning = false;
-        }, 500);
-      }
-
-      lastSongChangeTime = now;
-      lastTrackId = currentTrackId;
-
-      // Announce track change to screen readers
-      announceToScreenReader(`Now playing: ${musicStatus.CurrentTrack.Track.Title} by ${musicStatus.CurrentTrack.Track.Author}`);
-
-      return true; // Track changed
-    }
-
-    // Update the last track ID if it wasn't set
-    if (!lastTrackId) {
-      lastTrackId = currentTrackId;
-    }
-
-    return false; // Track didn't change
-  }
-
   // Accessible screen reader announcements
   let screenReaderAnnouncement = "";
 

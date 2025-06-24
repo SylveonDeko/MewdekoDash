@@ -1,6 +1,7 @@
 declare module "colorthief" {
   export type RGBColor = [number, number, number]
-  export default class ColorThief {
+
+  class ColorThief {
     getColor: (
       img: HTMLImageElement | null,
       quality: number = 10

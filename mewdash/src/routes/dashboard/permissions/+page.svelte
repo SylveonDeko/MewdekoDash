@@ -4,14 +4,7 @@
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
-  import type {
-    BotStatusModel,
-    CommandInfo,
-    Module,
-    Permission,
-    PermissionCache,
-    Permissionv2
-  } from "$lib/types/models";
+  import type { BotStatusModel, Module, Permission, PermissionCache, Permissionv2 } from "$lib/types/models";
   import { PrimaryPermissionType, SecondaryPermissionType } from "$lib/types/models";
   import { goto } from "$app/navigation";
   import Notification from "$lib/components/Notification.svelte";
@@ -48,7 +41,7 @@
   let moduleList: Module[] = [];
   let searchTerm = "";
   let showCommandDropdown = false;
-  let commandDropdownRef: HTMLDivElement;
+
   let commandInputRect: DOMRect | null = null;
 
   // New permission form state
@@ -59,14 +52,12 @@
   let enableState = true;
 
   // Available options
-  let availableCommands: CommandInfo[] = [];
-  let availableModules: string[] = [];
+
+
   let guildRoles: Array<{ id: bigint; name: string }> = [];
   let guildChannels: Array<{ id: bigint; name: string }> = [];
   let guildCategories: Array<{ id: bigint; name: string }> = [];
 
-  let editingPermission: Permission | null = null;
-  let showPermissionDropdown = false;
 
   $: colors = $colorStore;
 
@@ -99,16 +90,6 @@
   }
 
   // Safe filter function
-  function safeFilter(item, searchTerm) {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-
-    if (typeof item === "string") {
-      return item.toLowerCase().includes(term);
-    }
-
-    return false;
-  }
 
   function handleSelect(value) {
     selectedCommandOrModule = value;
@@ -361,48 +342,6 @@
     }
 
     return `${permission.state ? "Enabled" : "Disabled"} ${targetType} ${permission.secondaryTargetName} for ${targetName}`;
-  }
-
-  function getFilteredItems() {
-    if (selectedSecondaryType === SecondaryPermissionType.AllModules) {
-      return [];
-    }
-
-    const searchLower = searchTerm.toLowerCase();
-
-    if (selectedSecondaryType === SecondaryPermissionType.Module) {
-      return moduleList
-        .filter(m => m.name.toLowerCase().includes(searchLower))
-        .map(m => ({
-          name: m.name,
-          description: `${m.commands.length} commands`
-        }));
-    }
-
-    return moduleList
-      .flatMap(m => m.commands
-        .filter(c =>
-          c.commandName.toLowerCase().includes(searchLower) ||
-          c.description.toLowerCase().includes(searchLower)
-        )
-        .map(c => ({
-          name: c.commandName,
-          description: c.description,
-          module: m.name
-        }))
-      );
-  }
-
-  function handleCommandSelect(item: { name: string; description: string }) {
-    selectedCommandOrModule = item.name;
-    showCommandDropdown = false;
-    searchTerm = item.name;
-  }
-
-  function handleInputFocus(event: FocusEvent) {
-    const input = event.target as HTMLInputElement;
-    commandInputRect = input.getBoundingClientRect();
-    showCommandDropdown = true;
   }
 
   function handleClickOutside(event: MouseEvent) {

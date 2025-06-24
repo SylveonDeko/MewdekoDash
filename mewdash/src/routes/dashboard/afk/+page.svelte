@@ -182,13 +182,6 @@
     expandedUser = expandedUser === userId ? null : userId;
   }
 
-  function handleUserKeydown(event: KeyboardEvent, userId: string) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      toggleUserExpand(userId);
-    }
-  }
-
   $: colorVars = `
     --color-primary: ${$colorStore.primary};
     --color-secondary: ${$colorStore.secondary};

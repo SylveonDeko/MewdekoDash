@@ -82,11 +82,6 @@
     messageCount: number;
   }
 
-  interface SavedLogDetails extends SavedLog {
-    guildId: string;
-    messages: Message[];
-  }
-
   let channels: Channel[] = [];
   let selectedChannelId: string = "";
   let timeAmount: number = 1;

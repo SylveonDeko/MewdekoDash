@@ -141,7 +141,7 @@ A unified navigation component that provides responsive navigation with server a
   // Derived store for computed items
   const computedItemsStore = derived(
     [page, currentGuild, isOwnerStore],
-    ([$page, $currentGuild, $isOwner]) => {
+    ([, , $isOwner]) => {
       const isDashboard = $page.url.pathname.startsWith("/dashboard");
       return isDashboard ? buildDashboardItems($isOwner) : buildMainItems(items);
     }
@@ -675,9 +675,9 @@ A unified navigation component that provides responsive navigation with server a
           <img
             alt="Mewdeko's Avatar"
             class="h-12 mr-3"
-            height="48"
+            height="1024"
             src="/img/Mewdeko.png"
-            width="48"
+            width="1024"
           />
           <span class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">
             Mewdeko

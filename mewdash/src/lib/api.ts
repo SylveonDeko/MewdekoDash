@@ -28,8 +28,7 @@ import type {
   PatreonOperationRequest,
   PatreonSupporter,
   PatreonTier,
-  PatreonTierMappingRequest,
-  PermissionOverride
+  PatreonTierMappingRequest
 } from "$lib/types.ts";
 import type {
   ChatSaveData,
@@ -40,6 +39,13 @@ import type {
   XpTemplate
 } from "$lib/types/xp.ts";
 import type { MusicStatus, Track } from "$lib/types/music.ts";
+import type {
+  BirthdayConfig,
+  BirthdayConfigRequest,
+  BirthdayFeatures,
+  BirthdayStats,
+  BirthdayUser
+} from "$lib/types/birthday.ts";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
@@ -115,54 +121,7 @@ export const api = {
       errorRate: number;
     }>>(`Performance/modules?userId=${userId}`),
 
-  getPerformanceOverview: (userId: bigint) =>
-    apiRequest<{
-      summary: {
-        totalEvents: number;
-        totalEventErrors: number;
-        totalModules: number;
-        activeEventTypes: number;
-      };
-      topMethods: Array<{
-        methodName: string;
-        callCount: number;
-        avgExecutionTime: number;
-      }>;
-      topEvents: Array<{
-        eventType: string;
-        totalProcessed: number;
-        averageExecutionTime: number;
-        errorRate: number;
-      }>;
-      topModules: Array<{
-        moduleName: string;
-        eventsProcessed: number;
-        averageExecutionTime: number;
-        errorRate: number;
-      }>;
-    }>(`Performance/overview?userId=${userId}`),
-
-  getEventMetric: (eventType: string, userId: bigint) =>
-    apiRequest<{
-      eventType: string;
-      totalProcessed: number;
-      totalErrors: number;
-      totalExecutionTime: number;
-      averageExecutionTime: number;
-      errorRate: number;
-    }>(`Performance/events/${encodeURIComponent(eventType)}?userId=${userId}`),
-
-  getModuleMetric: (moduleName: string, userId: bigint) =>
-    apiRequest<{
-      moduleName: string;
-      eventsProcessed: number;
-      errors: number;
-      totalExecutionTime: number;
-      averageExecutionTime: number;
-      errorRate: number;
-    }>(`Performance/modules/${encodeURIComponent(moduleName)}?userId=${userId}`),
-
-// XP Management endpoints
+  // XP Management endpoints
   getXpSettings: (guildId: bigint) =>
     apiRequest<XpSettings>(`xp/${guildId}/settings`),
 
@@ -187,15 +146,6 @@ export const api = {
         minutes: number;
       };
     }>(`xp/${guildId}/user/${userId}`),
-
-  addUserXp: (guildId: bigint, userId: bigint, amount: number) =>
-    apiRequest<void>(`xp/${guildId}/user/${userId}/add`, "POST", amount),
-
-  resetUserXp: (guildId: bigint, userId: bigint, resetBonusXp: boolean = false) =>
-    apiRequest<void>(`xp/${guildId}/user/${userId}/reset`, "POST", resetBonusXp),
-
-  setUserXp: (guildId: bigint, userId: bigint, amount: number) =>
-    apiRequest<void>(`xp/${guildId}/user/${userId}/set`, "POST", amount),
 
   getXpLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 10) =>
     apiRequest<Array<{
@@ -403,10 +353,6 @@ export const api = {
 
   setPermissionRole: (guildId: bigint, roleId: string | null) =>
     apiRequest<void>(`Permissions/regular/${guildId}/role`, "POST", roleId),
-  getAfkStatus: (guildId: bigint, userId: string) =>
-    apiRequest<{ message: string }>(`afk/${guildId}/${userId}`),
-  setAfkStatus: (guildId: bigint, userId: bigint, message: string) =>
-    apiRequest<void>(`afk/${guildId}/${userId}`, "POST", message),
   deleteAfkStatus: (guildId: bigint, userId: bigint) =>
     apiRequest<void>(`afk/${guildId}/${userId}`, "DELETE"),
   getAllAfkStatus: (guildId: bigint) =>
@@ -445,8 +391,6 @@ export const api = {
     apiRequest<void>(`afk/${guildId}/timeout`, "POST", timeout),
   getDisabledAfkChannels: (guildId: bigint) =>
     apiRequest<string | null>(`afk/${guildId}/disabled-channels`),
-  afkDisabledSet: (guildId: bigint, channels: string) =>
-    apiRequest<void>(`afk/${guildId}/disabled-channels`, "POST", { channels }),
   getCustomAfkMessage: (guildId: bigint) =>
     apiRequest<string>(`afk/${guildId}/custom-message`),
   setCustomAfkMessage: (guildId: bigint, message: string) =>
@@ -454,12 +398,6 @@ export const api = {
 
   getBotInstances: () =>
     apiRequest<BotInstance[]>("InstanceManagement"),
-
-  addBotInstance: (port: number) =>
-    apiRequest<void>(`InstanceManagement/${port}`, "POST"),
-
-  removeBotInstance: (port: number) =>
-    apiRequest<void>(`InstanceManagement/${port}`, "DELETE"),
 
   deleteChatTrigger: (guildId: bigint, triggerId: number) =>
     apiRequest<void>(`chattriggers/${guildId}/${triggerId}`, "DELETE"),
@@ -990,13 +928,8 @@ export const api = {
       `ClientOperations/categories/${guildId}`
     ),
 
-  getBotGuilds: () => apiRequest<Array<bigint>>("ClientOperations/guilds"),
-
   getUser: (guildId: bigint, userId: bigint) =>
     apiRequest<ClientUserInfo>(`ClientOperations/user/${guildId}/${userId}`),
-
-  getUsers: (guildId: bigint, userIds: bigint[]) =>
-    apiRequest<ClientUserInfo[]>(`ClientOperations/users/${guildId}`, "POST", userIds),
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
@@ -1038,22 +971,6 @@ export const api = {
       }>;
     }>(`SystemInfo?userId=${userId}`),
 
-  getPermissionOverrides: (guildId: bigint) =>
-    apiRequest<PermissionOverride[]>(`Permissions/dpo/${guildId}`),
-
-  addPermissionOverride: (
-    guildId: bigint,
-    override: { command: string; permissions: bigint }
-  ) =>
-    apiRequest<PermissionOverride>(
-      `Permissions/dpo/${guildId}`,
-      "POST",
-      override
-    ),
-
-  deletePermissionOverride: (guildId: bigint, command: string) =>
-    apiRequest<void>(`Permissions/dpo/${guildId}`, "DELETE", command),
-
   enterGiveaway: (data: {
     guildId: bigint;
     giveawayId: number;
@@ -1077,9 +994,6 @@ export const api = {
     apiRequest<BotReviews>("reviews", "POST", review),
 
   getBotReviews: () => apiRequest<BotReviews[]>("reviews"),
-
-  deleteBotReview: (reviewId: number) =>
-    apiRequest<void>(`reviews/${reviewId}`, "DELETE"),
 
   // Guild Information
   getGuildInfo: (guildId: bigint) =>
@@ -1147,15 +1061,6 @@ export const api = {
   updateMusicSettings: (guildId: bigint, settings: MusicSettings) =>
     apiRequest<void>(`music/${guildId}/settings`, "POST", settings),
 
-  clearQueue: (guildId: bigint) =>
-    apiRequest<void>(`music/${guildId}/queue`, "DELETE"),
-
-  shuffleQueue: (guildId: bigint) =>
-    apiRequest<void>(`music/${guildId}/shuffle`, "POST"),
-
-  setRepeatMode: (guildId: bigint, mode: string) =>
-    apiRequest<void>(`music/${guildId}/repeat/${mode}`, "POST"),
-
   getInviteSettings: (guildId: bigint) =>
     apiRequest<{
       isEnabled: boolean;
@@ -1171,9 +1076,6 @@ export const api = {
 
   setMinAccountAge: (guildId: bigint, minAge: string) =>
     apiRequest<string>(`InviteTracking/${guildId}/min-age`, "POST", minAge),
-
-  getInviteCount: (guildId: bigint, userId: bigint) =>
-    apiRequest<number>(`InviteTracking/${guildId}/count/${userId}`),
 
   getInviter: (guildId: bigint, userId: bigint) =>
     apiRequest<{
@@ -1242,9 +1144,6 @@ export const api = {
   applyRoleState: (guildId: bigint, sourceUserId: bigint, targetUserId: bigint) =>
     apiRequest<void>(`RoleStates/${guildId}/user/${sourceUserId}/apply/${targetUserId}`, "POST"),
 
-  setUserRoles: (guildId: bigint, userId: bigint, roleIds: bigint[]) =>
-    apiRequest<void>(`RoleStates/${guildId}/user/${userId}/set-roles`, "POST", roleIds),
-
   toggleClearOnBan: (guildId: bigint, roleStateSettings: RoleStateSettings) =>
     apiRequest<boolean>(`RoleStates/${guildId}/clear-on-ban`, "POST", {
       clearOnBan: !roleStateSettings.clearOnBan
@@ -1265,19 +1164,6 @@ export const api = {
     }>(`RoleStates/${guildId}/save-all`, "POST"),
 
 // Role Greet endpoints
-  getRoleGreets: (guildId: bigint, roleId: bigint) =>
-    apiRequest<Array<{
-      id: number;
-      guildId: bigint;
-      roleId: bigint;
-      channelId: bigint;
-      message: string;
-      deleteTime: number;
-      webhookUrl: string | null;
-      greetBots: boolean;
-      disabled: boolean;
-    }>>(`RoleGreet/${guildId}/role/${roleId}`),
-
   getAllRoleGreets: (guildId: bigint) =>
     apiRequest<Array<{
       id: number;
@@ -1317,12 +1203,6 @@ export const api = {
 
   getLeaveStats: (guildId: bigint) =>
     apiRequest<GraphStatsResponse>(`JoinLeave/${guildId}/leave-stats`),
-
-  setJoinColor: (guildId: bigint, color: number) =>
-    apiRequest<void>(`JoinLeave/${guildId}/join-color`, "POST", color),
-
-  setLeaveColor: (guildId: bigint, color: number) =>
-    apiRequest<void>(`JoinLeave/${guildId}/leave-color`, "POST", color),
 
   getStarboards: (guildId: bigint) =>
     apiRequest<Array<Starboard>>(`Starboard/${guildId}/all`),
@@ -1422,18 +1302,6 @@ export const api = {
       dateAdded: string | null;
     }>>(`Moderation/${guildId}/warnings`),
 
-  getUserWarnings: (guildId: bigint, userId: bigint) =>
-    apiRequest<Array<{
-      id: number;
-      guildId: bigint;
-      userId: bigint;
-      reason: string | null;
-      forgiven: boolean;
-      forgivenBy: string | null;
-      moderator: string | null;
-      dateAdded: string | null;
-    }>>(`Moderation/${guildId}/warnings/user/${userId}`),
-
   getRecentModerationActivity: (guildId: bigint, limit: number = 20) =>
     apiRequest<Array<{
       id: number;
@@ -1446,31 +1314,12 @@ export const api = {
       dateAdded: string | null;
     }>>(`Moderation/${guildId}/recent?limit=${limit}`),
 
-  getWarningPunishments: (guildId: bigint) =>
-    apiRequest<Array<{
-      id: number;
-      guildId: bigint;
-      count: number;
-      punishment: number;
-      time: number;
-      roleId: bigint | null;
-    }>>(`Moderation/${guildId}/punishments`),
-
-  getWarnlogChannel: (guildId: bigint) =>
-    apiRequest<{ channelId: bigint }>(`Moderation/${guildId}/warnlog-channel`),
-
   // Administration endpoints
   getAutoAssignRoles: (guildId: bigint) =>
     apiRequest<{
       normalRoles: bigint[];
       botRoles: bigint[];
     }>(`Administration/${guildId}/auto-assign-roles`),
-
-  setAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
-    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/normal`, "POST", roleIds),
-
-  setBotAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
-    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/bots`, "POST", roleIds),
 
   toggleAutoAssignRole: (guildId: bigint, roleId: bigint) =>
     apiRequest<bigint[]>(`Administration/${guildId}/auto-assign-roles/normal/${roleId}/toggle`, "POST"),
@@ -1545,9 +1394,6 @@ export const api = {
       group: number;
     }>>(`Administration/${guildId}/self-assignable-roles`),
 
-  addSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
-    apiRequest<{ success: boolean }>(`Administration/${guildId}/self-assignable-roles/${roleId}`, "POST"),
-
   removeSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
     apiRequest<{ success: boolean }>(`Administration/${guildId}/self-assignable-roles/${roleId}`, "DELETE"),
 
@@ -1560,36 +1406,34 @@ export const api = {
       lastUpdated: string;
     }>(`MessageCount/${guildId}/daily`),
 
-  getChannelMessageStats: (guildId: bigint, channelId: bigint) =>
-    apiRequest<{
-      enabled: boolean;
-      channelId: string;
-      channelName: string;
-      totalMessages: number;
-      dailyMessages: number;
-      lastUpdated: string;
-    }>(`MessageCount/${guildId}/channel/${channelId}`),
+  // Birthday System endpoints
+  getBirthdayConfig: (guildId: bigint) =>
+    apiRequest<BirthdayConfig>(`birthday/${guildId}/config`),
 
-  getUserMessageStats: (guildId: bigint, userId: bigint) =>
-    apiRequest<{
-      enabled: boolean;
-      userId: string;
-      totalMessages: number;
-      dailyMessages: number;
-      lastUpdated: string;
-    }>(`MessageCount/${guildId}/user/${userId}`),
+  updateBirthdayConfig: (guildId: bigint, config: BirthdayConfigRequest) =>
+    apiRequest<BirthdayConfig>(`birthday/${guildId}/config`, "PUT", config),
 
-  getMessageLeaderboard: (guildId: bigint, limit: number = 10) =>
-    apiRequest<{
-      enabled: boolean;
-      leaderboard: Array<{
-        userId: string;
-        totalMessages: number;
-        dailyMessages: number;
-      }>;
-      lastUpdated: string;
-    }>(`MessageCount/${guildId}/leaderboard?limit=${limit}`),
+  resetBirthdayConfig: (guildId: bigint) =>
+    apiRequest<BirthdayConfig>(`birthday/${guildId}/config/reset`, "POST"),
 
-  getMessageCountStatus: (guildId: bigint) =>
-    apiRequest<{ enabled: boolean }>(`MessageCount/${guildId}/status`)
+  getBirthdayUpcoming: (guildId: bigint, days: number = 7) =>
+    apiRequest<BirthdayUser[]>(`birthday/${guildId}/upcoming?days=${days}`),
+
+  getBirthdayToday: (guildId: bigint) =>
+    apiRequest<BirthdayUser[]>(`birthday/${guildId}/today`),
+
+  getBirthdayUsers: (guildId: bigint) =>
+    apiRequest<BirthdayUser[]>(`birthday/${guildId}/users`),
+
+  enableBirthdayFeature: (guildId: bigint, feature: BirthdayFeatures) =>
+    apiRequest<{ success: boolean }>(`birthday/${guildId}/features/${feature}/enable`, "POST"),
+
+  disableBirthdayFeature: (guildId: bigint, feature: BirthdayFeatures) =>
+    apiRequest<{ success: boolean }>(`birthday/${guildId}/features/${feature}/disable`, "POST"),
+
+  getBirthdayFeatures: (guildId: bigint) =>
+    apiRequest<{ features: BirthdayFeatures }>(`birthday/${guildId}/features`),
+
+  getBirthdayStats: (guildId: bigint) =>
+    apiRequest<BirthdayStats>(`birthday/${guildId}/stats`)
 };

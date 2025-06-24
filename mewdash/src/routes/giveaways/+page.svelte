@@ -437,7 +437,7 @@
     }
 
     /* High contrast mode */
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
         .backdrop-blur-sm {
             border-width: 2px;
         }

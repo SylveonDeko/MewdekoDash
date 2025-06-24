@@ -12,7 +12,7 @@
 
   let sortBy: "dateAdded" | "currentState" = "dateAdded";
   let sortDirection: "asc" | "desc" = "desc";
-  let expandedSuggestion: number | null = null;
+
 
   $: sortedSuggestions = [...suggestions].sort((a, b) => {
     if (sortBy === "dateAdded") {

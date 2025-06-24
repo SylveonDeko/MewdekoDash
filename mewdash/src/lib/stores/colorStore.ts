@@ -29,23 +29,10 @@ const DEFAULT_PALETTE: ColorPalette = {
 };
 
 // Dark UI constants - representing the background color of your UI
-const DARK_BG: RGB = [18, 24, 40]; // rgb(18, 24, 40) - your dark UI background
+ // rgb(18, 24, 40) - your dark UI background
 const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
 let currentPalette = DEFAULT_PALETTE;
 
-
-function getCssVars(): string {
-  return `
-    --color-primary: ${currentPalette.primary};
-    --color-secondary: ${currentPalette.secondary};
-    --color-accent: ${currentPalette.accent};
-    --color-text: ${currentPalette.text};
-    --color-muted: ${currentPalette.muted};
-    --gradient-start: ${currentPalette.gradientStart};
-    --gradient-mid: ${currentPalette.gradientMid};
-    --gradient-end: ${currentPalette.gradientEnd};
-  `.trim();
-}
 
 function createColorStore() {
   const store = writable<ColorPalette>(DEFAULT_PALETTE);
@@ -132,34 +119,11 @@ function createColorStore() {
     }).join('');
   }
 
-  function hexToRgb(hex: string): RGB {
-    hex = hex.replace(/^#/, '');
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    return [r, g, b];
-  }
-
   function hslToString(h: number, s: number, l: number): string {
     return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
   }
 
   // Improved text color selection based on background
-  function getTextColor(backgroundColor: RGB): string {
-    const bgLuminance = getLuminance(...backgroundColor);
-
-    // Calculate contrast ratio for both white and black text
-    const whiteContrast = getContrastRatio(1.0, bgLuminance); // 1.0 is white luminance
-    const blackContrast = getContrastRatio(0.0, bgLuminance); // 0.0 is black luminance
-
-    // Choose the color with better contrast
-    if (whiteContrast > blackContrast) {
-      return whiteContrast >= 3.0 ? "#ffffff" : "#f0f0f0"; // Slightly off-white for very edge cases
-    } else {
-      return blackContrast >= 3.0 ? "#000000" : "#1a1a1a"; // Slightly off-black for very edge cases
-    }
-  }
 
   // Improved contrast adjustment function for dark UI theme context
   function adjustForContrast(color: RGB, minContrast = 4.5): RGB {
@@ -353,28 +317,6 @@ function createColorStore() {
   }
 
   // Create optimized cartoon-friendly colors
-  function createCartoonFriendlyColors(dominantHue: number): {
-    primary: RGB;
-    secondary: RGB;
-    accent: RGB;
-  } {
-    // For cartoon/anime images, use a harmonious color scheme based on the dominant hue
-
-    // Create a balanced triad with the dominant hue
-    const primaryHue = dominantHue;
-    const secondaryHue = (dominantHue + 120) % 360;
-    const accentHue = (dominantHue + 240) % 360;
-
-    // Use high saturation and appropriate lightness for visibility on dark backgrounds
-    const saturation = 85;
-    const lightness = 60;
-
-    return {
-      primary: hslToRgb(primaryHue, saturation, lightness),
-      secondary: hslToRgb(secondaryHue, saturation, lightness),
-      accent: hslToRgb(accentHue, saturation, lightness)
-    };
-  }
 
   // Enhanced color extraction with improved accent handling for anime/cartoon avatars
   async function extractColors(imageUrl: string): Promise<ColorPalette> {
@@ -597,22 +539,8 @@ function createColorStore() {
     },
 
     // Get individual colors synchronously
-    getColor(key: keyof ColorPalette): string {
-      return currentPalette[key];
-    },
-
     // Set a specific color
-    setColor(key: keyof ColorPalette, value: string): void {
-      const newPalette = { ...currentPalette, [key]: value };
-      store.set(newPalette);
-    },
-
     // Set multiple colors at once
-    setColors(colors: Partial<ColorPalette>): void {
-      const newPalette = { ...currentPalette, ...colors };
-      store.set(newPalette);
-    },
-
     // Get CSS variables string
     getCssVars(): string {
       return `

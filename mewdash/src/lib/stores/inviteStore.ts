@@ -102,8 +102,7 @@ function createInviteStore() {
 
   return {
     subscribe,
-    fetchStats: fetchInviteStats,
-    updateSettings
+    fetchStats: fetchInviteStats
   };
 }
 

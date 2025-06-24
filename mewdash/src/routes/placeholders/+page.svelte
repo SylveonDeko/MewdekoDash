@@ -454,7 +454,7 @@
   }
 
     /* High contrast mode */
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
         .placeholder-card {
             border-width: 2px;
         }

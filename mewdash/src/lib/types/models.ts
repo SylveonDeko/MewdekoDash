@@ -202,33 +202,22 @@ export interface ChatTriggers {
 export enum RequirePrefixType {
   None,
   Global,
-  GuildOrGlobal,
-  GuildOrNone,
   Custom,
 }
 
 export enum CtRoleGrantType {
-  Sender,
-  Mentioned,
-  Both,
+
 }
 
 export enum ChatTriggerType {
   Message = 1,
-  Interaction = 2,
   Button = 4,
 }
 
 export enum CtApplicationCommandType {
   None,
-  Slash,
   Message,
   User,
-}
-
-export enum WarnExpireAction {
-  Clear,
-  Warn,
 }
 
 export interface Afk {
@@ -297,14 +286,6 @@ export interface MultiGreet {
   webhookUrl: string | null;
   greetBots: boolean;
   disabled: boolean;
-}
-
-export interface MultiGreetDisplay
-  extends Omit<MultiGreet, "guildId" | "channelId"> {
-  guildId: string;
-  channelId: string;
-  channelName: string | null;
-  channelMention: string | null;
 }
 
 export enum MultiGreetType {
@@ -386,18 +367,6 @@ export interface BotInstance {
     isActive: boolean;
 }
 
-export interface MusicSettings {
-    maxVolume: number;
-    defaultVolume: number;
-    autoPlay: boolean;
-    autoShuffle: boolean;
-    announceNowPlaying: boolean;
-    djEnabled: boolean;
-    djOnlyMode: boolean;
-    djRole: string;
-    defaultRepeatMode: 'None' | 'Track' | 'Queue';
-}
-
 export enum PrimaryPermissionType {
   User = 0,
   Channel = 1,
@@ -428,13 +397,6 @@ export interface PermissionCache {
   permRole: bigint | null;
 }
 
-export interface PermissionOverride {
-  id: number;
-  guildId: bigint;
-  command: string;
-  discordPermission: bigint;
-}
-
 export interface CommandInfo {
   name: string;
   module: string;
@@ -460,28 +422,6 @@ export interface QueueItem {
     };
 }
 
-export interface PlayerStatus {
-    currentTrack: QueueItem | null;
-    queue: QueueItem[];
-    state: 'Playing' | 'Paused' | 'Stopped';
-    volume: number;
-    position: {
-        relativePosition: string;
-    };
-    filters: {
-        bassBoost: boolean;
-        nightcore: boolean;
-        vaporwave: boolean;
-        karaoke: boolean;
-        tremolo: boolean;
-        vibrato: boolean;
-        rotation: boolean;
-        distortion: boolean;
-        channelMix: boolean;
-    };
-    isInVoiceChannel: boolean;
-}
-
 export interface Permissionv2 {
   guildConfigId?: number;
   primaryTarget: PrimaryPermissionType;
@@ -494,31 +434,6 @@ export interface Permissionv2 {
 }
 
 // Add interfaces for other types used in GuildConfig
-export interface WarningPunishment2 {}
-export interface AntiAltSetting {}
-export interface LogSetting {}
-export interface FollowedStream {}
-export interface CommandCooldown {}
-export interface FilterInvitesChannelIds {}
-export interface FilterLinksChannelId {}
-export interface FilteredWord {}
-export interface FilterWordsChannelIds {}
-export interface MutedUserId {}
-export interface Repeater {}
-export interface AntiRaidSetting {}
-export interface AntiSpamSetting {}
-export interface UnmuteTimer {}
-export interface UnbanTimer {}
-export interface UnroleTimer {}
-export interface VcRoleInfo {}
-export interface CommandAlias {}
-export interface WarningPunishment {}
-export interface NsfwBlacklitedTag {}
-export interface StreamRoleSettings {}
-export interface XpSettings {}
-export interface FeedSub {}
-export interface ReactionRoleMessage {}
-export interface GroupName {}
 
 
 export interface GraphStatsResponse {

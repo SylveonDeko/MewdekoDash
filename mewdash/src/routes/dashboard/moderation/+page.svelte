@@ -52,10 +52,6 @@
     return new Date(dateString).toLocaleString();
   }
 
-  function getUserDisplay(userId: bigint): string {
-    return `<@${userId}>`;
-  }
-
   onMount(() => {
     fetchModerationData();
   });

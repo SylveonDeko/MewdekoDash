@@ -20,10 +20,6 @@ export class Logger {
     return Logger.instance;
   }
 
-  public setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
-  }
-
   private getTimestamp(): string {
     return new Date().toISOString();
   }
@@ -38,11 +34,6 @@ export class Logger {
   public info(...args: unknown[]): void {
     const timestamp = this.getTimestamp();
     console.info(`[${timestamp}] [INFO]`, ...args);
-  }
-
-  public warn(...args: unknown[]): void {
-    const timestamp = this.getTimestamp();
-    console.warn(`[${timestamp}] [WARN]`, ...args);
   }
 
   public error(...args: unknown[]): void {

@@ -165,7 +165,7 @@
   let showRealDataPreview = false;
   let undoStack: string[] = [];
   let redoStack: string[] = [];
-  let showSavedConfirmation = false;
+
   let showCoordinateOverlay = false;
   let showTooltips = true;
   let isDragging = false;
@@ -782,21 +782,6 @@
     fetchLeaderboard();
   }
 
-  function getCurveTypeName(type: number): string {
-    switch (type) {
-      case 0:
-        return "Default";
-      case 1:
-        return "Linear";
-      case 2:
-        return "Quadratic";
-      case 3:
-        return "Exponential";
-      default:
-        return "Unknown";
-    }
-  }
-
   // Save current state for undo functionality
   function saveStateForUndo() {
     undoStack.push(JSON.stringify(localTemplate));
@@ -821,17 +806,6 @@
   }
 
   // Redo last undone change
-  function redo() {
-    if (redoStack.length > 0) {
-      // Save current state for undo
-      undoStack.push(JSON.stringify(localTemplate));
-
-      // Pop the next state from redo stack
-      const nextState = redoStack.pop() as string;
-      localTemplate = JSON.parse(nextState);
-      markAsChanged("template");
-    }
-  }
 
   // Handle changes to the template
   function handleChange(path: string, value: any) {
@@ -976,64 +950,6 @@
   }
 
   // Calculate potential snap lines based on element positions
-  function calculateSnapLines(currentElement: any, x: number, y: number) {
-    const snapDistance = 5; // Distance in pixels to trigger snapping
-    let snapX = null;
-    let snapY = null;
-
-    // Center lines of the canvas
-    const canvasCenterX = localTemplate.outputSizeX / 2;
-    const canvasCenterY = localTemplate.outputSizeY / 2;
-
-    // Check for center alignment with canvas
-    if (Math.abs(x - canvasCenterX) < snapDistance) {
-      snapX = canvasCenterX;
-    }
-
-    if (Math.abs(y - canvasCenterY) < snapDistance) {
-      snapY = canvasCenterY;
-    }
-
-    // Edges of the canvas
-    if (Math.abs(x) < snapDistance) snapX = 0;
-    if (Math.abs(y) < snapDistance) snapY = 0;
-    if (Math.abs(x - localTemplate.outputSizeX) < snapDistance) snapX = localTemplate.outputSizeX;
-    if (Math.abs(y - localTemplate.outputSizeY) < snapDistance) snapY = localTemplate.outputSizeY;
-
-    // Check for alignment with other elements
-    draggableElements.forEach(element => {
-      if (element !== currentElement && element.isVisible()) {
-        const elementX = element.getX();
-        const elementY = element.getY();
-
-        // Center alignment with other elements
-        if (Math.abs(x - elementX) < snapDistance) {
-          snapX = elementX;
-        }
-
-        if (Math.abs(y - elementY) < snapDistance) {
-          snapY = elementY;
-        }
-
-        // Edge alignment with other elements
-        const elementWidth = element.getWidth();
-        const elementHeight = element.getHeight();
-
-        const rightEdge = elementX + elementWidth;
-        const bottomEdge = elementY + elementHeight;
-
-        if (Math.abs(x - rightEdge) < snapDistance) {
-          snapX = rightEdge;
-        }
-
-        if (Math.abs(y - bottomEdge) < snapDistance) {
-          snapY = bottomEdge;
-        }
-      }
-    });
-
-    return { snapX, snapY };
-  }
 
   // Start dragging an element
   function startDrag(event: MouseEvent | TouchEvent, element: any) {
@@ -1310,9 +1226,6 @@
   }
 
   // Toggle editor view on mobile
-  function toggleEditorMobileView() {
-    editorMobileView = editorMobileView === "preview" ? "controls" : "preview";
-  }
 
   // After mounting
   function handleInputFocus(event: FocusEvent) {

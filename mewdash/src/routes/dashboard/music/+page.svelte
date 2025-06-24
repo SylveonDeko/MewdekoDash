@@ -51,9 +51,7 @@
     None = 0,
     Track = 1,
     Queue = 2,
-    Song = 1,
-    All = 2,
-    Off = 0
+    All = 2
   }
 
   // Function to convert RGB to HSL

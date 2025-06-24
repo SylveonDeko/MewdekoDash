@@ -24,8 +24,6 @@ function createDashboardStore() {
     setLastUpdated: (date: Date) => update(state => ({ ...state, lastUpdated: date })),
 
     // Toggle customization mode
-    toggleCustomizing: () => update(state => ({ ...state, isCustomizing: !state.isCustomizing })),
-
     // Reset the store state
     reset: () => update(() => initialState)
   };

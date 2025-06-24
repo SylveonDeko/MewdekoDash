@@ -597,7 +597,7 @@
                           role="menuitem"
                           aria-label="Navigate to {moreItem.label}"
                           on:keydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
-                          on:click|preventDefault={(e) => {
+                          on:click|preventDefault={() => {
       if ($currentGuild) {
         if (browser) {
           try {

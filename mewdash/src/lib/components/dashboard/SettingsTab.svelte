@@ -12,7 +12,7 @@
   import StatCard from "$lib/components/StatCard.svelte";
 
   // Props from parent
-  export let guildFeatures: any;
+
 
   // Settings data
   let guildConfig: any = {};

@@ -5,7 +5,7 @@
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
-  import { type GuildConfig, type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
+  import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
   import Notification from "$lib/components/Notification.svelte";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
@@ -45,14 +45,14 @@
   let statusChangeReason = "";
   let selectedSuggestion: SuggestionsModel | null = null;
   let selectedStatus: SuggestionState | null = null;
-  let expandedSuggestion: number | null = null;
+
   let sortBy: "dateAdded" | "currentState" = "dateAdded";
   let sortDirection: "asc" | "desc" = "desc";
 
   // Data
   let suggestions: SuggestionsModel[] = [];
   let channels: Array<{ id: string; name: string }> = [];
-  let guildConfig: GuildConfig;
+
 
   // Settings
   let minLength = 0;

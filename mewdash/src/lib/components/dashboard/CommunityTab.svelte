@@ -6,7 +6,18 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Award, Heart, Lightbulb, MessageSquare, Star, Target, TrendingUp, Users } from "lucide-svelte";
+  import {
+    Award,
+    Cake,
+    Calendar,
+    Heart,
+    Lightbulb,
+    MessageSquare,
+    Star,
+    Target,
+    TrendingUp,
+    Users
+  } from "lucide-svelte";
 
   import InviteStats from "$lib/components/InviteStats.svelte";
   import FeatureCard from "$lib/components/FeatureCard.svelte";
@@ -32,12 +43,17 @@
   let patreonGoals: any[] = [];
   let patreonAnalytics: any = null;
 
+  // Birthday data
+  let birthdayStats: any = null;
+  let todaysBirthdays: any[] = [];
+  let upcomingBirthdays: any[] = [];
+
   async function fetchCommunityData() {
     if (!$currentGuild?.id) return;
 
     try {
       // Fetch all data in parallel for better performance
-      const [leaderboardData, xpStats, suggestionsData, messageStats, patreonStatus, patreonSupportersData, patreonGoalsData, patreonAnalyticsData] = await Promise.all([
+      const [leaderboardData, xpStats, suggestionsData, messageStats, patreonStatus, patreonSupportersData, patreonGoalsData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData] = await Promise.all([
         api.getXpLeaderboard($currentGuild.id, 1, 5),
         api.getXpServerStats($currentGuild.id),
         api.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
@@ -45,7 +61,10 @@
         api.getPatreonOAuthStatus($currentGuild.id).catch(() => ({ isConfigured: false })),
         api.getPatreonSupporters($currentGuild.id).catch(() => []),
         api.getPatreonGoals($currentGuild.id).catch(() => []),
-        api.getPatreonAnalytics($currentGuild.id).catch(() => null)
+        api.getPatreonAnalytics($currentGuild.id).catch(() => null),
+        api.getBirthdayStats($currentGuild.id).catch(() => null),
+        api.getBirthdayToday($currentGuild.id).catch(() => []),
+        api.getBirthdayUpcoming($currentGuild.id, 7).catch(() => [])
       ]);
 
       // Process XP leaderboard data
@@ -75,6 +94,11 @@
       patreonSupporters = patreonSupportersData?.length || 0;
       patreonGoals = patreonGoalsData || [];
       patreonAnalytics = patreonAnalyticsData;
+
+      // Process Birthday data
+      birthdayStats = birthdayStatsData;
+      todaysBirthdays = todaysBirthdaysData || [];
+      upcomingBirthdays = upcomingBirthdaysData?.slice(0, 5) || []; // Show top 5 upcoming
 
       // Fetch starboard highlights
       try {
@@ -110,7 +134,8 @@
     inviteTracking: "Track who invited users to your server",
     suggestions: "Let users submit and vote on suggestions",
     starboard: "Highlight popular messages in a dedicated channel",
-    xp: "Experience points and leveling system for engagement"
+    xp: "Experience points and leveling system for engagement",
+    birthday: "Celebrate member birthdays with announcements and roles"
   };
 </script>
 
@@ -262,6 +287,75 @@
         </div>
       </div>
 
+      <!-- Birthday Celebrations -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Birthday Celebrations</h3>
+        <div class="space-y-3">
+          {#if todaysBirthdays.length > 0}
+            <!-- Today's Birthdays -->
+            <div class="p-3 rounded-xl"
+                 style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}15);">
+              <div class="flex items-center gap-2 mb-3">
+                <Cake class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <span class="font-medium" style="color: {$colorStore.text}">🎉 Today's Birthdays</span>
+              </div>
+              <div class="space-y-2">
+                {#each todaysBirthdays.slice(0, 3) as user}
+                  <div class="flex items-center gap-3">
+                    <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
+                         alt="" class="w-8 h-8 rounded-full" />
+                    <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                      {user.displayName || user.username}
+                    </span>
+                  </div>
+                {/each}
+                {#if todaysBirthdays.length > 3}
+                  <div class="text-xs" style="color: {$colorStore.muted}">
+                    +{todaysBirthdays.length - 3} more
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/if}
+
+          {#if upcomingBirthdays.length > 0}
+            <!-- Upcoming Birthdays -->
+            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+              <div class="flex items-center gap-2 mb-3">
+                <Calendar class="w-5 h-5" style="color: {$colorStore.primary}" />
+                <span class="font-medium" style="color: {$colorStore.text}">Upcoming This Week</span>
+              </div>
+              <div class="space-y-2">
+                {#each upcomingBirthdays.slice(0, 3) as user}
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
+                           alt="" class="w-8 h-8 rounded-full" />
+                      <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                        {user.displayName || user.username}
+                      </span>
+                    </div>
+                    <span class="text-xs" style="color: {$colorStore.muted}">
+                      {user.daysUntilBirthday === 1 ? 'Tomorrow' : `${user.daysUntilBirthday} days`}
+                    </span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
+          {#if todaysBirthdays.length === 0 && upcomingBirthdays.length === 0}
+            <!-- Empty state -->
+            <div class="text-center py-6">
+              <Cake class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+              <p class="text-sm" style="color: {$colorStore.muted}">
+                No birthdays this week. Check the birthday dashboard for more info.
+              </p>
+            </div>
+          {/if}
+        </div>
+      </div>
+
       <!-- Starboard Highlights -->
       <div>
         <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Starboard Highlights</h3>
@@ -361,6 +455,15 @@
             subtitle={messageCountEnabled ? "Last 24 hours" : "Message tracking disabled"}
             value={messageCountEnabled ? dailyMessages.toLocaleString() : "N/A"}
           />
+
+          <StatCard
+            animationDelay={200}
+            icon={Cake}
+            iconColor="accent"
+            label="Birthdays Set"
+            subtitle={birthdayStats?.percentageWithBirthdays ? `${birthdayStats.percentageWithBirthdays.toFixed(1)}% of members` : "No data"}
+            value={birthdayStats ? birthdayStats.usersWithBirthdays : "N/A"}
+          />
         </div>
       </div>
 
@@ -376,7 +479,6 @@
           <!-- XP System -->
           <FeatureCard
             animationDelay={0}
-            compact={true}
             description={featureDescriptions.xp}
             href="/dashboard/xp"
             icon={Star}
@@ -387,7 +489,6 @@
           <!-- Suggestions -->
           <FeatureCard
             animationDelay={50}
-            compact={true}
             description={featureDescriptions.suggestions}
             href="/dashboard/suggestions"
             icon={Lightbulb}
@@ -398,12 +499,21 @@
           <!-- Starboard -->
           <FeatureCard
             animationDelay={100}
-            compact={true}
             description={featureDescriptions.starboard}
             href="/dashboard/starboard"
             icon={Star}
             isActive={guildFeatures.starboard}
             title="Starboard"
+          />
+
+          <!-- Birthday System -->
+          <FeatureCard
+            animationDelay={150}
+            description={featureDescriptions.birthday}
+            href="/dashboard/birthday"
+            icon={Cake}
+            isActive={birthdayStats !== null && birthdayStats.usersWithBirthdays > 0}
+            title="Birthdays"
           />
         </div>
       </div>
@@ -461,7 +571,6 @@
               description="Support the community and unlock exclusive features"
               href="/dashboard/patreon"
               animationDelay={150}
-              compact={true}
             />
           {:else}
             <div class="text-center py-6">
@@ -476,7 +585,6 @@
                 description="Set up Patreon integration for community support"
                 href="/dashboard/patreon"
                 animationDelay={0}
-                compact={true}
               />
             </div>
           {/if}

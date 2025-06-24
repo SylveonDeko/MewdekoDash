@@ -74,7 +74,7 @@
   let loadingStarboards = true;
   let errorStarboards: string | null = null;
   let creatingStarboard = false;
-  let editingSettings = false;
+
 
   // Edit thresholds
   let editStarThreshold = 0;

@@ -60,7 +60,7 @@ A modal music search component for finding and adding tracks to the music queue.
   let searchRetryCount = 0;
   let addRetryCount = 0;
   let lastSearchQuery = "";
-  let isRetrying = false;
+
   const MAX_RETRIES = 3;
 
   // Platform options
@@ -247,11 +247,6 @@ A modal music search component for finding and adding tracks to the music queue.
   }
 
   // Retry add to queue function
-  function retryAddToQueue(track: any): void {
-    addRetryCount = 0;
-    errorMessage = "";
-    performAddToQueue(track);
-  }
 
   function getFormattedDuration(duration: any) {
     if (!duration) return "??:??";

@@ -86,16 +86,7 @@
   };
 
   // Description for features
-  const featureDescriptions = {
-    inviteTracking: "Track who invited users to your server",
-    roleStates: "Save and restore user roles when they leave and rejoin",
-    roleGreets: "Custom greetings based on user roles",
-    multiGreets: "Multiple greeting channels and messages",
-    starboard: "Highlight popular messages in a dedicated channel",
-    suggestions: "Let users submit and vote on suggestions",
-    musicEnabled: "Play music in voice channels",
-    giveawaysEnabled: "Host giveaways with automatic winner selection"
-  };
+
 
   // Tooltip data for stats
   $: memberTooltipData = [
@@ -223,25 +214,8 @@
   }
 
   // Format numbers nicely
-  function formatNumber(num: number): string {
-    return new Intl.NumberFormat().format(num);
-  }
 
   // Calculate role trend
-  function calculateRoleTrend(): { trend: "up" | "down" | "neutral", value: string } {
-    const current = roleStats.totalRoles;
-    const previous = roleStats.previousTotalRoles;
-
-    if (previous === 0) return { trend: "neutral", value: "" };
-
-    const diff = current - previous;
-    const percentage = Math.round((diff / previous) * 100);
-
-    if (diff > 0) return { trend: "up", value: `+${percentage}%` };
-    if (diff < 0) return { trend: "down", value: `${percentage}%` };
-
-    return { trend: "neutral", value: "" };
-  }
 
   // Unified data fetch
   async function fetchAllData() {

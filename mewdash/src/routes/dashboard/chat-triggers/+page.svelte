@@ -373,41 +373,6 @@
     );
   }
 
-  function handleDropdownKeydown(event: KeyboardEvent, key: string) {
-    if (event.key === "Escape") {
-      closeDropdown();
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const options = Array.from(
-        dropdownRef.querySelectorAll(
-          `[data-dropdown="${key}"] [role="option"]`,
-        ),
-      );
-      const currentIndex = options.findIndex(
-        (option) => option === document.activeElement,
-      );
-      let nextIndex;
-      if (event.key === "ArrowDown") {
-        nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
-      } else {
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
-      }
-      (options[nextIndex] as HTMLElement).focus();
-    }
-  }
-
-  function handleOptionKeydown(
-    event: KeyboardEvent,
-    option: string,
-    key: string,
-    trigger: ChatTriggers,
-  ) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      toggleOption(option, key, trigger);
-    }
-  }
-
   function toggleOption(option: string, key: string, trigger: ChatTriggers) {
     if (isEnum(key)) {
       (trigger as any)[key] = getEnumOptions(key)[option];
@@ -423,17 +388,8 @@
     }
   }
 
-  function toggleDropdown(key: string) {
-    activeDropdown = activeDropdown === key ? null : key;
-  }
-
   function closeDropdown() {
     activeDropdown = null;
-  }
-
-  function getEnumDisplayValue(enumObj: object, value: any): string {
-    const entry = Object.entries(enumObj).find(([key, val]) => val === value);
-    return entry ? entry[0] : "Unknown";
   }
 
   function getDescriptiveLabel(key: string): string {

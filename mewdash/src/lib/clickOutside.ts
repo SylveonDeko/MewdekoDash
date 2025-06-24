@@ -14,18 +14,11 @@ export const clickOutside: Action<HTMLElement, void> = (node) => {
 
   document.addEventListener("click", handleClick, true);
 
-  return {
-    destroy() {
-      document.removeEventListener("click", handleClick, true);
-    },
-  };
+  return {};
 };
 
 // Add this type declaration
 declare global {
   namespace svelte.JSX {
-    interface HTMLAttributes<T> {
-      onclickoutside?: (event: CustomEvent) => void;
-    }
   }
 }
