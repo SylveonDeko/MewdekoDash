@@ -7,7 +7,7 @@
   import { fade } from "svelte/transition";
   import type { BotStatusModel, GuildConfig } from "$lib/types/models";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
   import { browser } from "$app/environment";
   import {
     AlertTriangle,
@@ -26,6 +26,8 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { writable } from "svelte/store";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
   export let data: PageData;
   let guildConfig: GuildConfig | null = null;
@@ -189,57 +191,49 @@
     if (browser) window.removeEventListener("resize", checkMobile);
   });
 
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `;
 </script>
 
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Guild Settings" 
+  subtitle="Configure your server's bot settings and preferences" 
+  icon={Settings}
+  guildName={$currentGuild?.name || "Dashboard"}
+  actionButtons={[
+    {
+      label: "Save Changes",
+      icon: Settings,
+      action: updateSettings,
+      disabled: $changedSettings.size === 0,
+      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+    }
+  ]}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
+  </svelte:fragment>
 
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Guild Settings</h1>
-      <p class="mt-2" style="color: {$colorStore.muted}">Configure your server's bot settings and preferences</p>
-    </div>
-
-    {#if loading}
-      <div class="flex justify-center items-center min-h-[200px]">
-        <div
-          class="w-12 h-12 border-4 rounded-full animate-spin"
-          style="border-color: {$colorStore.primary}20;
-                 border-top-color: {$colorStore.primary};">
-        </div>
-      </div>
-    {:else if error}
+  {#if loading}
+    <div class="flex justify-center items-center min-h-[200px]">
       <div
-        class="rounded-xl p-4 flex items-center gap-3"
-        style="background: {$colorStore.accent}10;"
-        role="alert"
-      >
-        <AlertTriangle class="w-5 h-5" style="color: {$colorStore.accent}" />
-        <p style="color: {$colorStore.accent}">{error}</p>
+        class="w-12 h-12 border-4 rounded-full animate-spin"
+        style="border-color: {$colorStore.primary}20;
+               border-top-color: {$colorStore.primary};">
       </div>
-    {:else}
+    </div>
+  {:else if error}
+    <div
+      class="rounded-xl p-4 flex items-center gap-3"
+      style="background: {$colorStore.accent}10;"
+      role="alert"
+    >
+      <AlertTriangle class="w-5 h-5" style="color: {$colorStore.accent}" />
+      <p style="color: {$colorStore.accent}">{error}</p>
+    </div>
+  {:else}
       <!-- Basic Settings -->
       <div
         class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
@@ -267,13 +261,16 @@
               <Shell class="w-5 h-5" style="color: {$colorStore.primary}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Command Prefix</h3>
             </div>
+            <label for="prefix-input" class="sr-only">Command Prefix</label>
             <input
+              id="prefix-input"
               type="text"
               bind:value={settings.prefix}
               class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
               on:input={() => markAsChanged("prefix")}
               style="border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
+              aria-label="Command prefix for bot commands"
             />
           </div>
 
@@ -286,18 +283,16 @@
               <Hash class="w-5 h-5" style="color: {$colorStore.secondary}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Command Log Channel</h3>
             </div>
-            <select
-              bind:value={settings.commandLogChannel}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:change={() => markAsChanged("commandLogChannel")}
-              style="border-color: {$colorStore.secondary}30;
-                     color: {$colorStore.text};"
-            >
-              <option value="0">No Channel</option>
-              {#each channels as channel}
-                <option value={channel.id}>{channel.name}</option>
-              {/each}
-            </select>
+            <DiscordSelector
+              type="channel"
+              options={channels}
+              selected={settings.commandLogChannel === "0" ? null : settings.commandLogChannel}
+              placeholder="Select command log channel"
+              on:change={(e) => {
+                settings.commandLogChannel = e.detail || "0";
+                markAsChanged("commandLogChannel");
+              }}
+            />
           </div>
 
           <!-- Currency Settings -->
@@ -310,7 +305,9 @@
               <h3 class="font-semibold" style="color: {$colorStore.text}">Currency Settings</h3>
             </div>
             <div class="grid grid-cols-2 gap-4">
+              <label for="currency-name" class="sr-only">Currency Name</label>
               <input
+                id="currency-name"
                 type="text"
                 bind:value={settings.currencyName}
                 placeholder="Currency Name"
@@ -318,8 +315,11 @@
                 on:input={() => markAsChanged("currency")}
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
+                aria-label="Name for server currency"
               />
+              <label for="currency-emoji" class="sr-only">Currency Emoji</label>
               <input
+                id="currency-emoji"
                 type="text"
                 bind:value={settings.currencyEmoji}
                 placeholder="Currency Emoji"
@@ -327,6 +327,7 @@
                 on:input={() => markAsChanged("currency")}
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
+                aria-label="Emoji for server currency"
               />
             </div>
           </div>
@@ -341,26 +342,31 @@
               <h3 class="font-semibold" style="color: {$colorStore.text}">Message Settings</h3>
             </div>
             <div class="space-y-4">
-              <label class="flex items-center gap-3">
+              <label class="flex items-center gap-3" for="message-count-toggle">
                 <div
                   class="relative w-11 h-6 rounded-full transition-all duration-200"
                   style="background: {settings.useMessageCount ? $colorStore.primary : $colorStore.primary + '30'};"
                 >
                   <input
+                    id="message-count-toggle"
                     type="checkbox"
                     bind:checked={settings.useMessageCount}
                     on:change={() => markAsChanged("messageCount")}
                     class="sr-only peer"
+                    aria-label="Enable message count tracking"
                   />
                   <div
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {$colorStore.text};
                            transform: translateX({settings.useMessageCount ? '20px' : '0'});"
+                    aria-hidden="true"
                   />
                 </div>
                 <span style="color: {$colorStore.text}">Enable Message Count</span>
               </label>
+              <label for="min-message-length" class="sr-only">Minimum Message Length</label>
               <input
+                id="min-message-length"
                 type="number"
                 bind:value={settings.minMessageLength}
                 placeholder="Minimum Message Length"
@@ -368,6 +374,7 @@
                 on:input={() => markAsChanged("minMessageLength")}
                 style="border-color: {$colorStore.secondary}30;
                        color: {$colorStore.text};"
+                aria-label="Minimum message length for XP gain"
               />
             </div>
           </div>
@@ -401,18 +408,16 @@
               <Lock class="w-5 h-5" style="color: {$colorStore.primary}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Staff Role</h3>
             </div>
-            <select
-              bind:value={settings.staffRole}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:change={() => markAsChanged("staffRole")}
-              style="border-color: {$colorStore.primary}30;
-                     color: {$colorStore.text};"
-            >
-              <option value="0">No Role</option>
-              {#each roles as role}
-                <option value={role.id}>{role.name}</option>
-              {/each}
-            </select>
+            <DiscordSelector
+              type="role"
+              options={roles}
+              selected={settings.staffRole === "0" ? null : settings.staffRole}
+              placeholder="Select staff role"
+              on:change={(e) => {
+                settings.staffRole = e.detail || "0";
+                markAsChanged("staffRole");
+              }}
+            />
           </div>
 
           <!-- Game Master Role -->
@@ -424,18 +429,16 @@
               <User class="w-5 h-5" style="color: {$colorStore.secondary}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Game Master Role</h3>
             </div>
-            <select
-              bind:value={settings.gameMasterRole}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:change={() => markAsChanged("gameMasterRole")}
-              style="border-color: {$colorStore.secondary}30;
-                     color: {$colorStore.text};"
-            >
-              <option value="0">No Role</option>
-              {#each roles as role}
-                <option value={role.id}>{role.name}</option>
-              {/each}
-            </select>
+            <DiscordSelector
+              type="role"
+              options={roles}
+              selected={settings.gameMasterRole === "0" ? null : settings.gameMasterRole}
+              placeholder="Select game master role"
+              on:change={(e) => {
+                settings.gameMasterRole = e.detail || "0";
+                markAsChanged("gameMasterRole");
+              }}
+            />
           </div>
 
           <!-- Member Role -->
@@ -447,18 +450,16 @@
               <Users class="w-5 h-5" style="color: {$colorStore.accent}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Member Role</h3>
             </div>
-            <select
-              bind:value={settings.memberRole}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:change={() => markAsChanged("memberRole")}
-              style="border-color: {$colorStore.accent}30;
-                     color: {$colorStore.text};"
-            >
-              <option value="0">No Role</option>
-              {#each roles as role}
-                <option value={role.id}>{role.name}</option>
-              {/each}
-            </select>
+            <DiscordSelector
+              type="role"
+              options={roles}
+              selected={settings.memberRole === "0" ? null : settings.memberRole}
+              placeholder="Select member role"
+              on:change={(e) => {
+                settings.memberRole = e.detail || "0";
+                markAsChanged("memberRole");
+              }}
+            />
           </div>
 
           <!-- Auto Assign Role -->
@@ -470,18 +471,16 @@
               <Bot class="w-5 h-5" style="color: {$colorStore.primary}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Auto Assign Role</h3>
             </div>
-            <select
-              bind:value={settings.autoAssignRoleId}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:change={() => markAsChanged("autoAssignRole")}
-              style="border-color: {$colorStore.primary}30;
-                     color: {$colorStore.text};"
-            >
-              <option value={null}>No Auto Role</option>
-              {#each roles as role}
-                <option value={role.id}>{role.name}</option>
-              {/each}
-            </select>
+            <DiscordSelector
+              type="role"
+              options={roles}
+              selected={settings.autoAssignRoleId}
+              placeholder="Select auto assign role"
+              on:change={(e) => {
+                settings.autoAssignRoleId = e.detail;
+                markAsChanged("autoAssignRole");
+              }}
+            />
           </div>
         </div>
       </div>
@@ -514,20 +513,20 @@
               <h3 class="font-semibold" style="color: {$colorStore.text}">Starboard Settings</h3>
             </div>
             <div class="space-y-4">
-              <select
-                bind:value={settings.starboardChannel}
-                class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                on:change={() => markAsChanged("starboard")}
-                style="border-color: {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              >
-                <option value="0">No Starboard Channel</option>
-                {#each channels as channel}
-                  <option value={channel.id}>{channel.name}</option>
-                {/each}
-              </select>
+              <DiscordSelector
+                type="channel"
+                options={channels}
+                selected={settings.starboardChannel === "0" ? null : settings.starboardChannel}
+                placeholder="Select starboard channel"
+                on:change={(e) => {
+                  settings.starboardChannel = e.detail || "0";
+                  markAsChanged("starboard");
+                }}
+              />
               <div class="flex items-center gap-2">
+                <label for="starboard-threshold" class="sr-only">Starboard Threshold</label>
                 <input
+                  id="starboard-threshold"
                   type="number"
                   bind:value={settings.starboardThreshold}
                   min="1"
@@ -535,6 +534,7 @@
                   on:input={() => markAsChanged("starboard")}
                   style="border-color: {$colorStore.primary}30;
                          color: {$colorStore.text};"
+                  aria-label="Number of stars required for starboard"
                 />
                 <span class="text-sm whitespace-nowrap" style="color: {$colorStore.muted}">
                   stars required
@@ -553,27 +553,32 @@
               <h3 class="font-semibold" style="color: {$colorStore.text}">Warning Settings</h3>
             </div>
             <div class="space-y-4">
-              <label class="flex items-center gap-3">
+              <label class="flex items-center gap-3" for="warnings-toggle">
                 <div
                   class="relative w-11 h-6 rounded-full transition-all duration-200"
                   style="background: {settings.warningsEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
                 >
                   <input
+                    id="warnings-toggle"
                     type="checkbox"
                     bind:checked={settings.warningsEnabled}
                     on:change={() => markAsChanged("warnings")}
                     class="sr-only peer"
+                    aria-label="Enable warning system"
                   />
                   <div
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {$colorStore.text};
                            transform: translateX({settings.warningsEnabled ? '20px' : '0'});"
+                    aria-hidden="true"
                   />
                 </div>
                 <span style="color: {$colorStore.text}">Enable Warnings</span>
               </label>
               {#if settings.warningsEnabled}
+                <label for="warn-expire-hours" class="sr-only">Warning Expiry Hours</label>
                 <input
+                  id="warn-expire-hours"
                   type="number"
                   bind:value={settings.warnExpireHours}
                   min="0"
@@ -582,6 +587,7 @@
                   on:input={() => markAsChanged("warnings")}
                   style="border-color: {$colorStore.secondary}30;
                          color: {$colorStore.text};"
+                  aria-label="Hours until warnings expire (0 for never)"
                 />
               {/if}
             </div>
@@ -589,22 +595,8 @@
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="flex justify-end mt-8">
-        <button
-          class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                 color: {$colorStore.text};
-                 box-shadow: 0 0 20px {$colorStore.primary}20;"
-          disabled={changedSettings.size === 0}
-          on:click={updateSettings}
-        >
-          Save Changes
-        </button>
-      </div>
-    {/if}
-  </div>
-</div>
+  {/if}
+</DashboardPageLayout>
 
 <style lang="postcss">
     :global(body) {

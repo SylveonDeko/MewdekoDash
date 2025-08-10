@@ -84,6 +84,6 @@ module.exports = {
     }]
   },
   settings: {
-    "svelte3/typescript": true
+    "svelte4/typescript": true
   }
 };

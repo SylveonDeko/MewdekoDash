@@ -5,11 +5,13 @@
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
-  import type { Priority, TicketCase, TicketPanel, TicketStats, TicketTag } from "$lib/types.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
   import {
     AlertTriangle,
     BarChart3,
@@ -27,23 +29,32 @@
     Tag,
     Ticket,
     Trash2,
-    Users
+    Users,
+    RefreshCw
   } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
+  import type {
+    BlacklistedUserResponse,
+    GuildStatistics,
+    TicketCase,
+    TicketPanel,
+    TicketPriority,
+    TicketTag
+  } from "$lib/types/tickets.ts";
 
   export let data: PageData;
 
   // State
-  let activeTab: "overview" | "panels" | "tickets" | "cases" | "settings" = "overview";
+  let activeTab: "overview" | "panels" | "tickets" | "cases" | "settings" | string = "overview";
   let channels: Array<{ id: string; name: string }> = [];
   let categories: Array<{ id: string; name: string }> = [];
   let roles: Array<{ id: string; name: string }> = [];
   let panels: TicketPanel[] = [];
   let cases: TicketCase[] = [];
-  let stats: TicketStats | null = null;
-  let priorities: Priority[] = [];
+  let stats: GuildStatistics | null = null;
+  let priorities: TicketPriority[] = [];
   let tags: TicketTag[] = [];
-  let blacklistedUsers: Array<{ id: string; username: string; reason: string }> = [];
+  let blacklistedUsers: Array<BlacklistedUserResponse> = [];
 
   let loading = true;
   let error: string | null = null;
@@ -101,10 +112,11 @@
   async function fetchData() {
     if (!$currentGuild?.id) return;
 
-    try {
-      loading = true;
-      error = null;
-      const guildId = BigInt($currentGuild.id);
+    return await loadingStore.wrap("fetch-ticket-data", async () => {
+      try {
+        loading = true;
+        error = null;
+        const guildId = BigInt($currentGuild.id);
 
       const [
         panelsResult,
@@ -117,16 +129,15 @@
         tagsResult,
         blacklistResult
       ] = await Promise.allSettled([
-        // Note: These API methods need to be implemented in api.ts
-        Promise.resolve([]), // api.getTicketPanels(guildId),
-        Promise.resolve([]), // api.getTicketCases(guildId),
-        Promise.resolve(null), // api.getTicketStats(guildId),
+        api.getTicketPanels(guildId),
+        api.getTicketCases(guildId),
+        api.getTicketStats(guildId),
         api.getGuildTextChannels(guildId),
         api.getGuildCategories(guildId),
         api.getGuildRoles(guildId),
-        Promise.resolve([]), // api.getTicketPriorities(guildId),
-        Promise.resolve([]), // api.getTicketTags(guildId),
-        Promise.resolve([]) // api.getTicketBlacklist(guildId)
+        api.getTicketPriorities(guildId),
+        api.getTicketTags(guildId),
+        api.getTicketBlacklist(guildId)
       ]);
 
       if (panelsResult.status === "fulfilled") panels = panelsResult.value;
@@ -139,12 +150,13 @@
       if (tagsResult.status === "fulfilled") tags = tagsResult.value;
       if (blacklistResult.status === "fulfilled") blacklistedUsers = blacklistResult.value;
 
-    } catch (err) {
-      logger.error("Failed to fetch ticket data:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch data";
-    } finally {
-      loading = false;
-    }
+      } catch (err) {
+        logger.error("Failed to fetch ticket data:", err);
+        error = err instanceof Error ? err.message : "Failed to fetch data";
+      } finally {
+        loading = false;
+      }
+    }, "api", "Loading ticket data...");
   }
 
   async function createPanel() {
@@ -168,11 +180,9 @@
 
       console.log("Sending panel data:", requestData);
 
-      // Note: createTicketPanel API method needs to be implemented in api.ts
-      console.log("Would create panel with data:", requestData);
-      // await api.createTicketPanel(BigInt($currentGuild.id), requestData);
+      await api.createTicketPanel(BigInt($currentGuild.id), requestData);
 
-      showNotificationMessage("Panel creation feature coming soon");
+      showNotificationMessage("Panel created successfully");
       showCreatePanel = false;
       newPanelData = {
         channelId: "",
@@ -182,7 +192,7 @@
         embedDescription: "",
         color: "#5865F2"
       };
-      // await fetchData();
+      await fetchData();
     } catch (error) {
       console.error("Create panel error:", error);
       showNotificationMessage(
@@ -195,11 +205,9 @@
   async function deletePanel(panelId: bigint) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      // Note: deleteTicketPanel API method needs to be implemented in api.ts
-      console.log(`Would delete panel ${panelId} in guild ${$currentGuild.id}`);
-      // await api.deleteTicketPanel(BigInt($currentGuild.id), panelId);
-      showNotificationMessage("Panel deletion feature coming soon");
-      // await fetchData();
+      await api.deleteTicketPanel(BigInt($currentGuild.id), panelId);
+      showNotificationMessage("Panel deleted successfully");
+      await fetchData();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to delete panel",
@@ -211,7 +219,6 @@
   async function duplicatePanel(panelId: bigint) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      // Note: duplicateTicketPanel API method needs to be implemented in api.ts
       console.log(`Would duplicate panel ${panelId} in guild ${$currentGuild.id}`);
       showNotificationMessage("Panel duplication feature coming soon");
       // await api.duplicateTicketPanel(BigInt($currentGuild.id), panelId);
@@ -230,26 +237,20 @@
         throw new Error("Missing required fields");
       }
 
-      // Note: createTicketCase API method needs to be implemented in api.ts
-      console.log("Would create case with data:", {
+      await api.createTicketCase(BigInt($currentGuild.id), {
         title: newCaseData.title,
         description: newCaseData.description,
-        priority: newCaseData.priority
+        creatorId: BigInt(data.user?.id || "0") // Using the current user as creator
       });
-      // await api.createTicketCase(BigInt($currentGuild.id), {
-      //   title: newCaseData.title,
-      //   description: newCaseData.description,
-      //   priority: newCaseData.priority
-      // });
 
-      showNotificationMessage("Case creation feature coming soon");
+      showNotificationMessage("Case created successfully");
       showCreateCase = false;
       newCaseData = {
         title: "",
         description: "",
         priority: 1
       };
-      // await fetchData();
+      await fetchData();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to create case",
@@ -261,11 +262,9 @@
   async function closeCase(caseId: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      // Note: closeTicketCase API method needs to be implemented in api.ts
-      console.log(`Would close case ${caseId} in guild ${$currentGuild.id}`);
-      showNotificationMessage("Case closing feature coming soon");
-      // await api.closeTicketCase(BigInt($currentGuild.id), caseId);
-      // await fetchData();
+      await api.closeTicketCase(BigInt($currentGuild.id), caseId);
+      showNotificationMessage("Case closed successfully");
+      await fetchData();
     } catch (error) {
       showNotificationMessage(
         error instanceof Error ? error.message : "Failed to close case",
@@ -282,19 +281,15 @@
       const promises = [];
 
       if (settingsData.transcriptChannelId) {
-        // Note: setTicketTranscriptChannel API method needs to be implemented in api.ts
-        console.log(`Would set transcript channel ${settingsData.transcriptChannelId} for guild ${guildId}`);
-        // promises.push(api.setTicketTranscriptChannel(guildId, BigInt(settingsData.transcriptChannelId)));
+        promises.push(api.setTicketTranscriptChannel(guildId, BigInt(settingsData.transcriptChannelId)));
       }
 
       if (settingsData.logChannelId) {
-        // Note: setTicketLogChannel API method needs to be implemented in api.ts
-        console.log(`Would set log channel ${settingsData.logChannelId} for guild ${guildId}`);
-        // promises.push(api.setTicketLogChannel(guildId, BigInt(settingsData.logChannelId)));
+        promises.push(api.setTicketLogChannel(guildId, BigInt(settingsData.logChannelId)));
       }
 
       await Promise.all(promises);
-      showNotificationMessage("Settings feature coming soon");
+      showNotificationMessage("Settings saved successfully");
       showSettings = false;
     } catch (error) {
       showNotificationMessage(
@@ -355,6 +350,48 @@
     }
   }
 
+  // Tab configuration
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "panels", label: "Panels", icon: MessageCircle },
+    { id: "tickets", label: "Tickets", icon: Ticket },
+    { id: "cases", label: "Cases", icon: FileText },
+    { id: "settings", label: "Settings", icon: Settings }
+  ];
+
+  // Action buttons configuration
+  $: actionButtons = [
+    {
+      label: "Refresh",
+      icon: RefreshCw,
+      action: fetchData,
+      loading: loading
+    },
+    {
+      label: "New Panel",
+      icon: Plus,
+      action: () => showCreatePanel = true,
+      loading: false
+    },
+    {
+      label: "New Case",
+      icon: FileText,
+      action: () => showCreateCase = true,
+      loading: false
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      action: () => showSettings = true,
+      loading: false
+    }
+  ];
+
+  // Handle tab change
+  function handleTabChange(event: CustomEvent) {
+    activeTab = event.detail.tabId;
+  }
+
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
     await fetchData();
@@ -367,73 +404,25 @@
   });
 </script>
 
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Tickets Management"
+  subtitle="Manage support tickets and help desk"
+  icon={Ticket}
+  {tabs}
+  {activeTab}
+  {actionButtons}
+  guildName={$currentGuild?.name || "Dashboard"}
+  on:tabChange={handleTabChange}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">
-        Tickets Management
-      </h1>
-
-      <div class="flex flex-wrap gap-2">
-        <button
-          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-75"
-          on:click={() => showCreatePanel = true}
-          style="background: {$colorStore.primary}; color: {$colorStore.text}"
-        >
-          <Plus class="h-4 w-4" />
-          New Panel
-        </button>
-        <button
-          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-75"
-          on:click={() => showCreateCase = true}
-          style="background: {$colorStore.secondary}; color: {$colorStore.text}"
-        >
-          <FileText class="h-4 w-4" />
-          New Case
-        </button>
-        <button
-          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-75"
-          on:click={() => showSettings = true}
-          style="background: {$colorStore.accent}20; color: {$colorStore.text}"
-        >
-          <Settings class="h-4 w-4" />
-          Settings
-        </button>
-      </div>
-    </div>
-
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade={{ duration: 150 }}>
+      <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
+  </svelte:fragment>
 
-    <!-- Tab Navigation -->
-    <div class="flex overflow-x-auto border-b" style="border-color: {$colorStore.primary}30">
-      {#each [
-        { id: 'overview', label: 'Overview', icon: BarChart3 },
-        { id: 'panels', label: 'Panels', icon: MessageCircle },
-        { id: 'tickets', label: 'Active Tickets', icon: Ticket },
-        { id: 'cases', label: 'Cases', icon: FileText },
-        { id: 'settings', label: 'Settings', icon: Settings }
-      ] as tab}
-        <button
-          class="flex items-center gap-2 px-6 py-4 font-medium whitespace-nowrap transition-all duration-75"
-          class:border-b-2={activeTab === tab.id}
-          style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted}; border-color: {activeTab === tab.id ? $colorStore.primary : 'transparent'}"
-          on:click={() => activeTab = tab.id}
-        >
-          <svelte:component this={tab.icon} class="h-4 w-4" />
-          {tab.label}
-        </button>
-      {/each}
-    </div>
+  <div class="space-y-8">
 
     {#if loading}
       <div class="flex justify-center items-center min-h-[400px]">
@@ -480,7 +469,7 @@
                 { label: 'Active Staff', value: stats?.activeStaff ?? 0, icon: Users, color: '#10b981' }
               ] as stat}
                 <div
-                  class="p-6 rounded-xl backdrop-blur-sm border"
+                  class="p-6 rounded-xl  border"
                   style="background: linear-gradient(135deg, {stat.color}10, {stat.color}05);
                          border-color: {stat.color}30;"
                 >
@@ -507,7 +496,7 @@
             <!-- Response Time & Categories -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div
-                class="p-6 rounded-xl backdrop-blur-sm border"
+                class="p-6 rounded-xl  border"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -524,7 +513,7 @@
               </div>
 
               <div
-                class="p-6 rounded-xl backdrop-blur-sm border"
+                class="p-6 rounded-xl  border"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -568,7 +557,7 @@
         <div class="space-y-6" transition:fade={{ duration: 100 }}>
           {#if !panels.length}
             <div
-              class="text-center p-8 backdrop-blur-sm rounded-xl border"
+              class="text-center p-8  rounded-xl border"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -582,7 +571,7 @@
             <div class="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
               {#each panels as panel (panel.id)}
                 <div
-                  class="backdrop-blur-sm rounded-xl border shadow-lg overflow-hidden"
+                  class=" rounded-xl border shadow-lg overflow-hidden"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                          border-color: {$colorStore.primary}30;"
                   transition:fade={{ duration: 100 }}
@@ -670,7 +659,7 @@
         <div class="space-y-6" transition:fade={{ duration: 100 }}>
           {#if !cases.length}
             <div
-              class="text-center p-8 backdrop-blur-sm rounded-xl border"
+              class="text-center p-8  rounded-xl border"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -684,7 +673,7 @@
             <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
               {#each cases as ticketCase (ticketCase.id)}
                 <div
-                  class="backdrop-blur-sm rounded-xl border shadow-lg overflow-hidden"
+                  class=" rounded-xl border shadow-lg overflow-hidden"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                          border-color: {$colorStore.primary}30;"
                   transition:fade={{ duration: 100 }}
@@ -751,7 +740,7 @@
           <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
             <!-- Priorities -->
             <div
-              class="p-6 backdrop-blur-sm rounded-xl border"
+              class="p-6  rounded-xl border"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -780,7 +769,7 @@
 
             <!-- Tags -->
             <div
-              class="p-6 backdrop-blur-sm rounded-xl border"
+              class="p-6  rounded-xl border"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -806,7 +795,7 @@
 
             <!-- Blacklisted Users -->
             <div
-              class="p-6 backdrop-blur-sm rounded-xl border lg:col-span-2"
+              class="p-6  rounded-xl border lg:col-span-2"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -839,7 +828,7 @@
       {/if}
     {/if}
   </div>
-</div>
+</DashboardPageLayout>
 
 <!-- Create Panel Modal -->
 {#if showCreatePanel}
@@ -858,17 +847,12 @@
           <label for="panel-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Channel
           </label>
-          <select
-            id="panel-channel"
-            bind:value={newPanelData.channelId}
-            class="w-full p-3 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-          >
-            <option value="">Select a channel</option>
-            {#each channels as channel}
-              <option value={channel.id}>{channel.name}</option>
-            {/each}
-          </select>
+          <DiscordSelector
+            type="channel"
+            options={channels}
+            placeholder="Select a channel"
+            bind:selectedId={newPanelData.channelId}
+          />
         </div>
 
         <div>
@@ -978,17 +962,21 @@
           <label for="case-priority" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Priority
           </label>
-          <select
-            id="case-priority"
-            bind:value={newCaseData.priority}
-            class="w-full p-3 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-          >
-            <option value={1}>Low</option>
-            <option value={2}>Medium</option>
-            <option value={3}>High</option>
-            <option value={4}>Critical</option>
-          </select>
+          <DiscordSelector
+            type="custom"
+            options={[
+              { id: "1", name: "Low" },
+              { id: "2", name: "Medium" },
+              { id: "3", name: "High" },
+              { id: "4", name: "Critical" }
+            ]}
+            customIcon={Flag}
+            placeholder="Select priority"
+            selectedId={newCaseData.priority.toString()}
+            on:change={(e) => {
+              newCaseData.priority = parseInt(e.detail.selected);
+            }}
+          />
         </div>
       </div>
 
@@ -1029,34 +1017,24 @@
           <label for="transcript-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Transcript Channel
           </label>
-          <select
-            id="transcript-channel"
-            bind:value={settingsData.transcriptChannelId}
-            class="w-full p-3 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-          >
-            <option value="">None</option>
-            {#each channels as channel}
-              <option value={channel.id}>{channel.name}</option>
-            {/each}
-          </select>
+          <DiscordSelector
+            type="channel"
+            options={channels}
+            placeholder="None"
+            bind:selectedId={settingsData.transcriptChannelId}
+          />
         </div>
 
         <div>
           <label for="log-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Log Channel
           </label>
-          <select
-            id="log-channel"
-            bind:value={settingsData.logChannelId}
-            class="w-full p-3 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-          >
-            <option value="">None</option>
-            {#each channels as channel}
-              <option value={channel.id}>{channel.name}</option>
-            {/each}
-          </select>
+          <DiscordSelector
+            type="channel"
+            options={channels}
+            placeholder="None"
+            bind:selectedId={settingsData.logChannelId}
+          />
         </div>
       </div>
 

@@ -138,7 +138,7 @@
   <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%);
               border-color: {$colorStore.primary}30;">
-    <div class="container mx-auto px-4 lg:px-6 py-6">
+    <div class="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
           <h1
@@ -164,7 +164,7 @@
             <input
               aria-label="Search commands and modules"
               bind:value={searchValue}
-              class="block w-full pl-12 pr-12 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+              class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
               id="search"
               on:blur={handleSearchBlur}
               on:focus={handleSearchFocus}

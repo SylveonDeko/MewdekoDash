@@ -6,10 +6,10 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Bell, Database, Globe, MessageSquare, Palette, RotateCcw, Settings, Shield, Users } from "lucide-svelte";
+  import { Bell, Database, Globe, MessageSquare, Palette, RotateCcw, Settings, Shield, Users, FileText, Ticket } from "lucide-svelte";
 
-  import FeatureCard from "$lib/components/FeatureCard.svelte";
-  import StatCard from "$lib/components/StatCard.svelte";
+  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
 
   // Props from parent
 
@@ -29,6 +29,12 @@
     apiKeysCount: 0
   };
 
+  let loggingConfig: any = null;
+  let ticketStats = {
+    totalPanels: 0,
+    totalTickets: 0,
+    openTickets: 0
+  };
   let loading = true;
 
   async function fetchSettingsData() {
@@ -41,13 +47,19 @@
         autoAssignData,
         selfAssignData,
         roleStatesData,
-        roleGreetsData
+        roleGreetsData,
+        loggingConfigData,
+        ticketPanelsData,
+        ticketStatsData
       ] = await Promise.all([
         api.getGuildConfig($currentGuild.id).catch(() => ({})),
         api.getAutoAssignRoles($currentGuild.id).catch(() => ({ normalRoles: [], botRoles: [] })),
         api.getSelfAssignableRoles($currentGuild.id).catch(() => []),
         api.getAllRoleStates($currentGuild.id).catch(() => []),
-        api.getAllRoleGreets($currentGuild.id).catch(() => [])
+        api.getAllRoleGreets($currentGuild.id).catch(() => []),
+        api.getLoggingConfig($currentGuild.id).catch(() => null),
+        api.getTicketPanels(BigInt($currentGuild.id)).catch(() => []),
+        api.getTicketStats(BigInt($currentGuild.id)).catch(() => null)
       ]);
 
       // Process guild config
@@ -68,6 +80,9 @@
         apiKeysCount: 0   // Would need API keys endpoint
       };
 
+      // Process logging config
+      loggingConfig = loggingConfigData;
+
     } catch (err) {
       logger.error("Failed to fetch settings data:", err);
       // Reset to safe defaults
@@ -79,6 +94,7 @@
         roleGreets: 0
       };
       integrationSettings = { patreonEnabled: false, webhooksCount: 0, apiKeysCount: 0 };
+      loggingConfig = null;
     } finally {
       loading = false;
     }
@@ -103,6 +119,8 @@
         return !!guildConfig.sugchan;
       case "afk":
         return !!guildConfig.AfkChannel;
+      case "logging":
+        return loggingConfig?.isEnabled || false;
       default:
         return false;
     }
@@ -133,11 +151,10 @@
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">General Settings</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Multi Greets -->
           <FeatureCard
             animationDelay={0}
-            compact={true}
             description="Multiple greeting channels and messages"
             href="/dashboard/multigreets"
             icon={Bell}
@@ -148,7 +165,6 @@
           <!-- Starboard -->
           <FeatureCard
             animationDelay={50}
-            compact={true}
             description="Highlight popular messages"
             href="/dashboard/starboard"
             icon={Palette}
@@ -159,7 +175,6 @@
           <!-- Suggestions -->
           <FeatureCard
             animationDelay={100}
-            compact={true}
             description="User suggestion voting system"
             href="/dashboard/suggestions"
             icon={MessageSquare}
@@ -167,10 +182,19 @@
             title="Suggestions"
           />
 
-          <!-- AFK System -->
+          <!-- Logging System -->
           <FeatureCard
             animationDelay={150}
-            compact={true}
+            description="Event logging and audit trails"
+            href="/dashboard/logging"
+            icon={FileText}
+            isActive={getFeatureStatus('logging')}
+            title="Logging"
+          />
+
+          <!-- AFK System -->
+          <FeatureCard
+            animationDelay={200}
             description="Away from keyboard status"
             href="/dashboard/afk"
             icon={Globe}
@@ -272,7 +296,6 @@
           <!-- Patreon Integration -->
           <FeatureCard
             animationDelay={0}
-            compact={true}
             description="Supporter tier management"
             href="/dashboard/patreon"
             icon={Database}
@@ -283,7 +306,6 @@
           <!-- Bot Settings -->
           <FeatureCard
             animationDelay={50}
-            compact={true}
             description="Core bot settings"
             href="/dashboard/settings"
             icon={Settings}
@@ -374,7 +396,7 @@
           </a>
 
           <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-105"
-             href="/dashboard/permissions"
+             href="/dashboard/administration"
              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
             Permissions
           </a>

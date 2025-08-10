@@ -6,7 +6,9 @@
   import { fade } from "svelte/transition";
   import type { BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import {
     AlertCircle,
     ExternalLink,
@@ -368,17 +370,6 @@
     }
   });
 
-  // Color handling
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-    --color-primary-rgb: ${hexToRgb($colorStore.primary)};
-    --color-secondary-rgb: ${hexToRgb($colorStore.secondary)};
-    --color-accent-rgb: ${hexToRgb($colorStore.accent)};
-  `;
 
   // Convert hex color to rgb values
   function hexToRgb(hex: string) {
@@ -406,29 +397,29 @@
   <title>Starboard - Dashboard</title>
 </svelte:head>
 
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Starboard" 
+  subtitle="Showcase your server's best messages in dedicated channels" 
+  icon={Star}
+  guildName={$currentGuild?.name || "Dashboard"}
+  actionButtons={[
+    {
+      label: "Create Starboard",
+      icon: MessageSquarePlus,
+      action: createStarboard,
+      loading: creatingStarboard,
+      disabled: !newStarboard.channelId || creatingStarboard,
+      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+    }
+  ]}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Starboard</h1>
-      <p class="mt-2" style="color: {$colorStore.muted}">Showcase your server's best messages in dedicated channels</p>
-    </div>
+  </svelte:fragment>
 
     <!-- Create New Starboard Section -->
     <div
@@ -450,20 +441,18 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <!-- Channel Selection -->
         <div>
-          <label class="block text-sm mb-2" for="starboard-channel" style="color: {$colorStore.muted}">
+          <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
             Starboard Channel
           </label>
-          <select
-            bind:value={newStarboard.channelId}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            id="starboard-channel"
-            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-          >
-            <option value="">Select a channel</option>
-            {#each guildTextChannels as channel}
-              <option value={channel.id}>#{channel.name}</option>
-            {/each}
-          </select>
+          <DiscordSelector
+            type="channel"
+            options={guildTextChannels}
+            selected={newStarboard.channelId}
+            placeholder="Select a channel"
+            on:change={(e) => {
+              newStarboard.channelId = e.detail.selected || "";
+            }}
+          />
         </div>
 
         <!-- Emote Selection -->
@@ -747,7 +736,6 @@
         </div>
       {/if}
     </div>
-  </div>
 
   <!-- Delete Confirmation Modal -->
   {#if showDeleteModal}
@@ -1023,21 +1011,21 @@
         <div class="space-y-4">
           <!-- Add Channel -->
           <div>
-            <label for="channel-select" class="block text-sm mb-2" style="color: {$colorStore.muted}">
+            <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
               Add/Remove Channel
             </label>
             <div class="flex gap-2">
-              <select
-                id="channel-select"
-                bind:value={selectedChannelId}
-                class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              >
-                <option value="">Select a channel</option>
-                {#each guildTextChannels as channel}
-                  <option value={channel.id}>#{channel.name}</option>
-                {/each}
-              </select>
+              <div class="flex-1">
+                <DiscordSelector
+                  type="channel"
+                  options={guildTextChannels}
+                  selected={selectedChannelId}
+                  placeholder="Select a channel"
+                  on:change={(e) => {
+                    selectedChannelId = e.detail.selected || "";
+                  }}
+                />
+              </div>
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
                 on:click={toggleChannelInList}
@@ -1101,7 +1089,7 @@
       </div>
     </div>
   {/if}
-</div>
+</DashboardPageLayout>
 
 <style lang="postcss">
     /* Custom styling for options */

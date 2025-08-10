@@ -10,19 +10,23 @@
     Award,
     Cake,
     Calendar,
+    Clock,
+    Hash,
     Heart,
     Lightbulb,
     MessageSquare,
     Star,
     Target,
+    Ticket,
     TrendingUp,
     Users
   } from "lucide-svelte";
 
-  import InviteStats from "$lib/components/InviteStats.svelte";
-  import FeatureCard from "$lib/components/FeatureCard.svelte";
-  import StatCard from "$lib/components/StatCard.svelte";
+  import InviteStats from "$lib/components/monitoring/InviteStats.svelte";
+  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import type { SuggestionsModel } from "$lib/types/models.ts";
+  import type { MessageStatsResponse, DailyMessageStats } from "$lib/types/messagestats.ts";
 
   // Props from parent
   export let guildFeatures: any;
@@ -37,10 +41,14 @@
   let messageCountEnabled = false;
   let activeMembers = 0;
 
+  // Enhanced message stats
+  let messageStatsData: MessageStatsResponse | null = null;
+  let topActiveUsers: any[] = [];
+  let topChannels: any[] = [];
+
   // Patreon data
   let patreonConnected = false;
   let patreonSupporters = 0;
-  let patreonGoals: any[] = [];
   let patreonAnalytics: any = null;
 
   // Birthday data
@@ -48,23 +56,36 @@
   let todaysBirthdays: any[] = [];
   let upcomingBirthdays: any[] = [];
 
+  // Tickets data
+  let ticketStats = {
+    totalTickets: 0,
+    openTickets: 0,
+    closedToday: 0,
+    activeStaff: 0
+  };
+  let recentTickets: any[] = [];
+  let ticketPanels: any[] = [];
+
   async function fetchCommunityData() {
     if (!$currentGuild?.id) return;
 
     try {
       // Fetch all data in parallel for better performance
-      const [leaderboardData, xpStats, suggestionsData, messageStats, patreonStatus, patreonSupportersData, patreonGoalsData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData] = await Promise.all([
-        api.getXpLeaderboard($currentGuild.id, 1, 5),
+      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData] = await Promise.all([
+        api.getXpLeaderboard($currentGuild.id, 1, 3),
         api.getXpServerStats($currentGuild.id),
         api.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
         api.getDailyMessageStats($currentGuild.id).catch(() => ({ enabled: false, dailyMessages: 0 })), // Handle case where message count isn't enabled
+        api.getMessageStats($currentGuild.id).catch(() => null), // Enhanced message stats
+        api.getGuildMembers($currentGuild.id).catch(() => []), // Guild members for user enrichment
         api.getPatreonOAuthStatus($currentGuild.id).catch(() => ({ isConfigured: false })),
         api.getPatreonSupporters($currentGuild.id).catch(() => []),
-        api.getPatreonGoals($currentGuild.id).catch(() => []),
         api.getPatreonAnalytics($currentGuild.id).catch(() => null),
         api.getBirthdayStats($currentGuild.id).catch(() => null),
         api.getBirthdayToday($currentGuild.id).catch(() => []),
-        api.getBirthdayUpcoming($currentGuild.id, 7).catch(() => [])
+        api.getBirthdayUpcoming($currentGuild.id, 7).catch(() => []),
+        api.getTicketStats($currentGuild.id).catch(() => ({ totalTickets: 0, openTickets: 0, closedTickets: 0, activeStaff: 0 })),
+        api.getTicketPanels($currentGuild.id).catch(() => [])
       ]);
 
       // Process XP leaderboard data
@@ -89,16 +110,46 @@
       messageCountEnabled = messageStats.enabled;
       dailyMessages = messageStats.dailyMessages || 0;
 
+      // Process enhanced message stats
+      messageStatsData = messageStatsDetailed;
+      if (messageStatsData) {
+        // Enhance topActiveUsers with user data from guild members
+        topActiveUsers = (messageStatsData.topUsers || []).slice(0, 5).map((messageUser, index) => {
+          const member = guildMembers?.find(m => m?.id?.toString() === messageUser.userId);
+          return {
+            ...messageUser,
+            username: member?.username || 'Unknown User',
+            discriminator: '0000', // Discord no longer uses discriminators for most users
+            avatarUrl: member?.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`
+          };
+        });
+        topChannels = (messageStatsData.topChannels || []).slice(0, 3);
+        
+        // Update daily messages with more detailed data if available
+        if (messageStatsData.dailyStats?.enabled) {
+          dailyMessages = messageStatsData.dailyStats.dailyMessages || dailyMessages;
+          messageCountEnabled = messageStatsData.dailyStats.enabled;
+        }
+      }
+
       // Process Patreon data
       patreonConnected = patreonStatus.isConfigured || false;
       patreonSupporters = patreonSupportersData?.length || 0;
-      patreonGoals = patreonGoalsData || [];
       patreonAnalytics = patreonAnalyticsData;
 
       // Process Birthday data
       birthdayStats = birthdayStatsData;
       todaysBirthdays = todaysBirthdaysData || [];
       upcomingBirthdays = upcomingBirthdaysData?.slice(0, 5) || []; // Show top 5 upcoming
+
+      // Process Tickets data
+      ticketStats = {
+        totalTickets: ticketStatsData?.totalTickets || 0,
+        openTickets: ticketStatsData?.openTickets || 0,
+        closedToday: ticketStatsData?.closedTickets || 0,
+        activeStaff: ticketStatsData?.activeStaff || 0
+      };
+      ticketPanels = (ticketPanelsData || []).slice(0, 3); // Show recent 3 panels
 
       // Fetch starboard highlights
       try {
@@ -135,30 +186,34 @@
     suggestions: "Let users submit and vote on suggestions",
     starboard: "Highlight popular messages in a dedicated channel",
     xp: "Experience points and leveling system for engagement",
-    birthday: "Celebrate member birthdays with announcements and roles"
+    birthday: "Celebrate member birthdays with announcements and roles",
+    tickets: "Support ticket system for community help and assistance",
+    messageStats: "Track message activity and user engagement"
   };
 </script>
 
 <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- 3-Column Layout: Leaderboards | Activity Feed | Metrics -->
+  <!-- Row 1: Main Content -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- XP Leaderboards (40% - 5 columns) -->
-    <div
-      class="lg:col-span-5 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Star class="w-6 h-6" style="color: {$colorStore.primary}" />
+    
+    <!-- Column 1: XP & Activity (6 columns) -->
+    <div class="lg:col-span-6 space-y-6">
+      <!-- XP Leaderboard -->
+      <div
+        class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-3 rounded-xl"
+               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+            <Star class="w-6 h-6" style="color: {$colorStore.primary}" />
+          </div>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
-      </div>
 
       <div class="space-y-3">
         {#if loading}
           <!-- Loading state -->
-          {#each Array(5).fill(0) as _, index}
+          {#each Array(3).fill(0) as _, index}
             <div class="flex items-center gap-4 p-3 rounded-xl animate-pulse"
                  style="background: {$colorStore.primary}08;">
               <div class="w-8 h-8 rounded-full" style="background: {$colorStore.primary}20;"></div>
@@ -223,259 +278,256 @@
       </a>
     </div>
 
-    <!-- Activity Feed (35% - 4 columns) -->
-    <div
-      class="lg:col-span-4 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <MessageSquare class="w-6 h-6" style="color: {$colorStore.primary}" />
-        </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Community Activity</h2>
-      </div>
+      <!-- Community Activity Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-      <!-- Recent Suggestions -->
-      <div class="mb-6">
-        <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Recent Suggestions</h3>
-        <div class="space-y-3">
-          {#if loading}
-            <!-- Loading state -->
-            {#each Array(3).fill(0) as _}
-              <div class="p-3 rounded-xl animate-pulse" style="background: {$colorStore.primary}08;">
-                <div class="space-y-2">
-                  <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 85%;"></div>
-                  <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 60%;"></div>
-                  <div class="flex items-center gap-2 mt-2">
-                    <div class="w-4 h-4 rounded" style="background: {$colorStore.primary}20;"></div>
-                    <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 40%;"></div>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          {:else if recentSuggestions.length === 0}
-            <!-- Empty state -->
-            <div class="text-center py-6">
-              <Lightbulb class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.primary}50" />
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                No suggestions yet. Enable suggestions to see activity here.
-              </p>
-            </div>
-          {:else}
-            {#each recentSuggestions.slice(0, 3) as suggestion}
-              <div class="p-3 rounded-xl transition-all hover:scale-[1.02]"
-                   style="background: {$colorStore.primary}08;">
-                <div class="flex items-start justify-between mb-2">
-                  <p class="text-sm flex-1" style="color: {$colorStore.text}">
-                    {suggestion.suggestion1 }
-                  </p>
-                  <span class="ml-2 px-2 py-1 rounded text-xs"
-                        style="background: {suggestion.currentState === 1 ? '#10b98120' : $colorStore.muted + '20'};
-                               color: {suggestion.currentState === 1 ? '#10b981' : $colorStore.muted};">
-                    {suggestion.currentState === 1 ? 'Approved' : suggestion.currentState === 2 ? 'Denied' : 'Pending'}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <Lightbulb size={14} style="color: {$colorStore.accent}" />
-                  <span class="text-xs" style="color: {$colorStore.muted}">
-                    ID: {suggestion.suggestionId}
-                  </span>
-                </div>
-              </div>
-            {/each}
-          {/if}
+        <!-- Birthday Celebrations Card -->
+        <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Birthdays</h3>
+          <a href="/dashboard/birthday" class="text-xs" style="color: {$colorStore.primary}">View all</a>
         </div>
-      </div>
 
-      <!-- Birthday Celebrations -->
-      <div class="mb-6">
-        <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Birthday Celebrations</h3>
-        <div class="space-y-3">
-          {#if todaysBirthdays.length > 0}
-            <!-- Today's Birthdays -->
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}15);">
-              <div class="flex items-center gap-2 mb-3">
-                <Cake class="w-5 h-5" style="color: {$colorStore.accent}" />
-                <span class="font-medium" style="color: {$colorStore.text}">🎉 Today's Birthdays</span>
+        {#if todaysBirthdays.length > 0 || upcomingBirthdays.length > 0}
+          <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+            {#if todaysBirthdays.length > 0}
+              <!-- Today's Birthdays (Compact) -->
+              <div class="flex items-center gap-2 mb-2">
+                <Cake size={16} style="color: {$colorStore.accent}" />
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Today</span>
               </div>
-              <div class="space-y-2">
+              <div class="flex flex-wrap gap-2 mb-3">
                 {#each todaysBirthdays.slice(0, 3) as user}
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2 px-2 py-1 rounded-lg" 
+                       style="background: {$colorStore.accent}15;">
                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
-                         alt="" class="w-8 h-8 rounded-full" />
-                    <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                         alt="" class="w-5 h-5 rounded-full" />
+                    <span class="text-xs font-medium" style="color: {$colorStore.text}">
                       {user.displayName || user.username}
                     </span>
                   </div>
                 {/each}
                 {#if todaysBirthdays.length > 3}
-                  <div class="text-xs" style="color: {$colorStore.muted}">
-                    +{todaysBirthdays.length - 3} more
-                  </div>
+                  <span class="text-xs px-2 py-1" style="color: {$colorStore.muted}">
+                    +{todaysBirthdays.length - 3}
+                  </span>
                 {/if}
               </div>
-            </div>
-          {/if}
-
-          {#if upcomingBirthdays.length > 0}
-            <!-- Upcoming Birthdays -->
-            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
-              <div class="flex items-center gap-2 mb-3">
-                <Calendar class="w-5 h-5" style="color: {$colorStore.primary}" />
-                <span class="font-medium" style="color: {$colorStore.text}">Upcoming This Week</span>
-              </div>
-              <div class="space-y-2">
-                {#each upcomingBirthdays.slice(0, 3) as user}
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
-                           alt="" class="w-8 h-8 rounded-full" />
-                      <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                        {user.displayName || user.username}
-                      </span>
-                    </div>
-                    <span class="text-xs" style="color: {$colorStore.muted}">
-                      {user.daysUntilBirthday === 1 ? 'Tomorrow' : `${user.daysUntilBirthday} days`}
-                    </span>
-                  </div>
+            {/if}
+            
+            {#if upcomingBirthdays.length > 0}
+              <!-- Upcoming (Ultra Compact) -->
+              <div class="text-xs" style="color: {$colorStore.muted}">
+                <span class="font-medium">Coming up:</span>
+                {#each upcomingBirthdays.slice(0, 2) as user, index}
+                  <span>{user.displayName || user.username} ({user.daysUntilBirthday}d){index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
                 {/each}
+                {#if upcomingBirthdays.length > 2}
+                  <span> +{upcomingBirthdays.length - 2} more</span>
+                {/if}
               </div>
-            </div>
-          {/if}
+            {/if}
+          </div>
+        {:else}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">No birthdays this week</p>
+          </div>
+        {/if}
+        </div>
 
-          {#if todaysBirthdays.length === 0 && upcomingBirthdays.length === 0}
-            <!-- Empty state -->
-            <div class="text-center py-6">
-              <Cake class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.primary}50" />
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                No birthdays this week. Check the birthday dashboard for more info.
-              </p>
-            </div>
+        <!-- Message Activity Card -->
+        <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Message Activity</h3>
+          {#if messageCountEnabled}
+            <a href="/dashboard/messagestats" class="text-xs" style="color: {$colorStore.primary}">Details</a>
           {/if}
         </div>
-      </div>
-
-      <!-- Starboard Highlights -->
-      <div>
-        <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Starboard Highlights</h3>
-        <div class="space-y-3">
-          {#if loading}
-            <!-- Loading state -->
-            {#each Array(3).fill(0) as _}
-              <div class="p-3 rounded-xl animate-pulse" style="background: {$colorStore.primary}08;">
-                <div class="space-y-2">
-                  <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 90%;"></div>
-                  <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 70%;"></div>
-                  <div class="flex items-center justify-between mt-2">
-                    <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 30%;"></div>
-                    <div class="flex items-center gap-1">
-                      <div class="w-3 h-3 rounded" style="background: {$colorStore.primary}20;"></div>
-                      <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 20px;"></div>
+        
+        {#if !messageCountEnabled}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">Message tracking disabled</p>
+          </div>
+        {:else}
+          <!-- Compact Stats Card -->
+          <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <div class="text-lg font-bold" style="color: {$colorStore.primary}">
+                  {dailyMessages.toLocaleString()}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Today</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold" style="color: {$colorStore.secondary}">
+                  {messageStatsData?.dailyStats?.averagePerHour || 0}/hr
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Average</div>
+              </div>
+            </div>
+            
+            {#if topActiveUsers.length > 0}
+              <!-- Most Active (Ultra Compact) -->
+              <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
+                <div class="text-xs font-medium mb-1" style="color: {$colorStore.text}">Top Active</div>
+                <div class="flex flex-wrap gap-1">
+                  {#each topActiveUsers.slice(0, 3) as user}
+                    <div class="flex items-center gap-1 px-2 py-1 rounded" 
+                         style="background: {$colorStore.primary}10;">
+                      <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
+                           alt="" class="w-4 h-4 rounded-full" />
+                      <span class="text-xs" style="color: {$colorStore.text}">
+                        {user.username?.length > 10 ? user.username.slice(0, 10) + '...' : user.username || 'Unknown User'}
+                      </span>
                     </div>
-                  </div>
+                  {/each}
                 </div>
               </div>
-            {/each}
-          {:else if starboardHighlights.length === 0}
-            <!-- Empty state -->
-            <div class="text-center py-6">
-              <Star class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.primary}50" />
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                No starboard highlights yet. Enable starboard to see popular messages here.
-              </p>
-            </div>
-          {:else}
-            {#each starboardHighlights as highlight}
-              <div class="p-3 rounded-xl transition-all hover:scale-[1.02]"
-                   style="background: {$colorStore.primary}08;">
+            {/if}
+            
+            {#if messageStatsData?.dailyStats?.peakHour}
+              <div class="text-xs mt-2" style="color: {$colorStore.muted}">
+                Peak: {messageStatsData.dailyStats.peakHour}:00 ({messageStatsData.dailyStats.peakHourCount} msgs)
+              </div>
+            {/if}
+          </div>
+        {/if}
+        </div>
 
-                <!-- Author info -->
-                <div class="flex items-center gap-2 mb-2">
+        <!-- Support Tickets Card -->
+        <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Support Tickets</h3>
+          {#if ticketStats.totalTickets > 0}
+            <a href="/dashboard/tickets" class="text-xs" style="color: {$colorStore.primary}">Manage</a>
+          {/if}
+        </div>
+        
+        {#if ticketStats.totalTickets === 0}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">No tickets yet</p>
+          </div>
+        {:else}
+          <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div>
+                  <div class="text-lg font-bold" style="color: {$colorStore.primary}">
+                    {ticketStats.openTickets}
+                  </div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">Open</div>
+                </div>
+                <div>
+                  <div class="text-lg font-bold" style="color: {$colorStore.secondary}">
+                    {ticketStats.closedToday}
+                  </div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">Closed today</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">
+                  {ticketStats.activeStaff}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Active staff</div>
+              </div>
+            </div>
+          </div>
+        {/if}
+        </div>
+
+        <!-- Starboard Highlights Card -->
+        <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Starboard</h3>
+          {#if starboardHighlights.length > 0}
+            <a href="/dashboard/starboard" class="text-xs" style="color: {$colorStore.primary}">View all</a>
+          {/if}
+        </div>
+        
+        {#if starboardHighlights.length === 0}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">No starred messages yet</p>
+          </div>
+        {:else}
+          <div class="space-y-2">
+            {#each starboardHighlights.slice(0, 2) as highlight}
+              <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+                <div class="flex items-center gap-2 mb-1">
                   <img src={highlight.authorAvatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
-                       alt="" class="w-6 h-6 rounded-full" />
-                  <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                       alt="" class="w-5 h-5 rounded-full" />
+                  <span class="text-xs font-medium" style="color: {$colorStore.text}">
                     {highlight.authorName}
                   </span>
+                  <div class="ml-auto flex items-center gap-1">
+                    <span class="text-xs">{highlight.starEmote || '⭐'}</span>
+                    <span class="text-xs font-medium" style="color: {$colorStore.accent}">{highlight.starCount}</span>
+                  </div>
                 </div>
-
-                <!-- Message content -->
-                <p class="text-sm mb-2" style="color: {$colorStore.text}">
-                  {highlight.content.length > 100 ? highlight.content.substring(0, 100) + '...' : highlight.content}
+                <p class="text-xs line-clamp-2" style="color: {$colorStore.muted}">
+                  {highlight.content}
                 </p>
-
-                <!-- Image if present -->
-                {#if highlight.imageUrl}
-                  <div class="mb-2">
-                    <img src={highlight.imageUrl} alt="Starboard image"
-                         class="rounded-lg max-h-20 object-cover" />
-                  </div>
-                {/if}
-
-                <!-- Star count and timestamp -->
-                <div class="flex items-center justify-between text-xs" style="color: {$colorStore.muted}">
-                  <span>{new Date(highlight.createdAt).toLocaleDateString()}</span>
-                  <div class="flex items-center gap-1">
-                    <span class="text-sm">{highlight.starEmote || '⭐'}</span>
-                    <span class="font-medium">{highlight.starCount}</span>
-                  </div>
-                </div>
               </div>
             {/each}
-          {/if}
+          </div>
+        {/if}
         </div>
       </div>
     </div>
 
-    <!-- Engagement Metrics (25% - 3 columns) -->
-    <div class="lg:col-span-3 space-y-6">
-      <!-- Member Engagement -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Engagement</h3>
-        </div>
+    <!-- Column 2: Metrics & Features (6 columns) -->
+    <div class="lg:col-span-6 space-y-6">
+      <!-- Quick Stats Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard
+          animationDelay={0}
+          icon={Users}
+          iconColor="primary"
+          label="Active Members"
+          subtitle={memberStats?.totalMembers > 0 ? `${Math.round((activeMembers / memberStats.totalMembers) * 100)}% rate` : "No data"}
+          value={activeMembers}
+        />
 
-        <div class="space-y-3">
-          <StatCard
-            animationDelay={0}
-            icon={Users}
-            iconColor="primary"
-            label="Active Members"
-            subtitle={memberStats?.totalMembers > 0 ? `${Math.round((activeMembers / memberStats.totalMembers) * 100)}% engagement rate` : "No data"}
-            value={activeMembers}
-          />
+        <StatCard
+          animationDelay={100}
+          icon={MessageSquare}
+          iconColor="secondary"
+          label="Daily Messages"
+          subtitle={messageCountEnabled ? "24 hours" : "Disabled"}
+          value={messageCountEnabled ? dailyMessages.toLocaleString() : "N/A"}
+        />
 
-          <StatCard
-            animationDelay={100}
-            icon={MessageSquare}
-            iconColor="secondary"
-            label="Daily Messages"
-            subtitle={messageCountEnabled ? "Last 24 hours" : "Message tracking disabled"}
-            value={messageCountEnabled ? dailyMessages.toLocaleString() : "N/A"}
-          />
+        <StatCard
+          animationDelay={200}
+          icon={Cake}
+          iconColor="accent"
+          label="Birthdays Set"
+          subtitle={birthdayStats?.percentageWithBirthdays ? `${birthdayStats.percentageWithBirthdays.toFixed(1)}%` : "No data"}
+          value={birthdayStats ? birthdayStats.usersWithBirthdays : "N/A"}
+        />
 
-          <StatCard
-            animationDelay={200}
-            icon={Cake}
-            iconColor="accent"
-            label="Birthdays Set"
-            subtitle={birthdayStats?.percentageWithBirthdays ? `${birthdayStats.percentageWithBirthdays.toFixed(1)}% of members` : "No data"}
-            value={birthdayStats ? birthdayStats.usersWithBirthdays : "N/A"}
-          />
-        </div>
+        <StatCard
+          animationDelay={400}
+          icon={Ticket}
+          iconColor="accent"
+          label="Support Tickets"
+          subtitle={ticketStats.openTickets > 0 ? `${ticketStats.openTickets} open` : "All resolved"}
+          value={ticketStats.totalTickets}
+        />
       </div>
 
-      <!-- Feature Status -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+      <!-- Active Features Grid -->
+      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
         <div class="flex items-center gap-3 mb-4">
           <Award class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Features</h3>
+          <h3 class="font-semibold" style="color: {$colorStore.text}">Active Features</h3>
         </div>
 
-        <div class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <!-- XP System -->
           <FeatureCard
             animationDelay={0}
@@ -515,74 +567,80 @@
             isActive={birthdayStats !== null && birthdayStats.usersWithBirthdays > 0}
             title="Birthdays"
           />
+
+          <!-- Tickets System -->
+          <FeatureCard
+            animationDelay={200}
+            description={featureDescriptions.tickets}
+            href="/dashboard/tickets"
+            icon={Ticket}
+            isActive={ticketStats.totalTickets > 0}
+            title="Tickets"
+          />
+
+          <!-- Message Stats -->
+          <FeatureCard
+            animationDelay={250}
+            description={featureDescriptions.messageStats}
+            href="/dashboard/messagestats"
+            icon={MessageSquare}
+            isActive={messageCountEnabled}
+            title="Message Stats"
+          />
         </div>
       </div>
 
-      <!-- Community Support -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+    </div>
+  </div>
+
+  <!-- Row 2: Invite Stats & Community Support -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Invite Stats (8 columns) -->
+    <div class="lg:col-span-8">
+      <InviteStats animationDelay={300} />
+    </div>
+
+    <!-- Community Support (4 columns) -->
+    <div class="lg:col-span-4">
+      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl h-full"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
         <div class="flex items-center gap-3 mb-4">
           <Heart class="w-5 h-5" style="color: {$colorStore.accent}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Support</h3>
+          <h3 class="font-semibold" style="color: {$colorStore.text}">Community Support</h3>
         </div>
 
         <div class="space-y-3">
           {#if patreonConnected}
-            <StatCard
-              icon={Heart}
-              label="Supporters"
-              value={patreonSupporters}
-              subtitle={patreonSupporters === 1 ? "patron" : "patrons"}
-              iconColor="accent"
-              animationDelay={0}
-            />
-
-            {#if patreonGoals.length > 0}
-              {#each patreonGoals.slice(0, 2) as goal}
-                <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <Target size={16} style="color: {$colorStore.accent}" />
-                      <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                        {goal.title}
-                      </span>
-                    </div>
-                    <span class="text-xs px-2 py-1 rounded-full"
-                          style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
-                      {Math.round((goal.currentAmount / goal.amountCents) * 100)}%
-                    </span>
-                  </div>
-                  <div class="w-full bg-gray-700 rounded-full h-2">
-                    <div class="h-2 rounded-full transition-all duration-1000"
-                         style="background: {$colorStore.accent}; width: {Math.min((goal.currentAmount / goal.amountCents) * 100, 100)}%">
-                    </div>
-                  </div>
-                  <div class="text-xs mt-1" style="color: {$colorStore.muted}">
-                    ${(goal.currentAmount / 100).toFixed(2)} / ${(goal.amountCents / 100).toFixed(2)}
-                  </div>
-                </div>
-              {/each}
-            {/if}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <StatCard
+                icon={Heart}
+                label="Supporters"
+                value={patreonSupporters}
+                subtitle="patrons"
+                iconColor="accent"
+                animationDelay={0}
+              />
+            </div>
 
             <FeatureCard
               icon={Heart}
-              title="Patreon"
+              title="View Patreon Dashboard"
               isActive={true}
-              description="Support the community and unlock exclusive features"
+              description="Manage supporter features and goals"
               href="/dashboard/patreon"
               animationDelay={150}
             />
           {:else}
-            <div class="text-center py-6">
+            <div class="text-center py-4">
               <Heart class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.accent}50" />
               <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-                Patreon not connected. Enable supporter features and track community goals.
+                Connect Patreon to enable supporter features
               </p>
               <FeatureCard
                 icon={Heart}
                 title="Connect Patreon"
                 isActive={false}
-                description="Set up Patreon integration for community support"
+                description="Set up Patreon integration"
                 href="/dashboard/patreon"
                 animationDelay={0}
               />
@@ -591,10 +649,5 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Invite Stats - Full Width -->
-  <div class="w-full">
-    <InviteStats animationDelay={300} />
   </div>
 </div>

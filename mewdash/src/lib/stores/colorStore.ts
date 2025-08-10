@@ -12,6 +12,8 @@ interface ColorPalette {
   accent: string;
   text: string;
   muted: string;
+  background: string;
+  success: string;
   gradientStart: string;
   gradientMid: string;
   gradientEnd: string;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ChatSaver from "$lib/components/ChatSaver.svelte";
+  import ChatSaver from "$lib/components/specialized/ChatSaver.svelte";
 
   export let data;
 </script>

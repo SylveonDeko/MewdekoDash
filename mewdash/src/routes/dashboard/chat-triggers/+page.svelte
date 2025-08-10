@@ -3,10 +3,11 @@
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade, slide } from "svelte/transition";
-  import MultiSelectDropdown from "$lib/components/MultiSelectDropdown.svelte";
+  import { fade, slide, fly } from "svelte/transition";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Tooltip from "$lib/components/ui/Tooltip.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
   import { get } from "svelte/store";
   import type { ChatTriggers } from "$lib/types/models";
   import type { PageData } from "./$types";
@@ -15,16 +16,19 @@
     Check,
     ChevronDown,
     ChevronUp,
+    ChevronRight,
     Command,
-    Delete,
+    Crown,
     Edit,
     MessageCircle,
     Plus,
+    Save,
     Settings,
     Sparkles,
-    ToggleRight,
+    Trash,
     Users,
-    X
+    X,
+    Zap
   } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { logger } from "$lib/logger.ts";
@@ -36,32 +40,6 @@
   let showNotification = false;
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
-
-  // Data variables
-  let triggers: ChatTriggers[] = [];
-  let newTrigger: Partial<ChatTriggers> & { isValidRegex: boolean } = {
-    trigger: "",
-    response: "",
-    grantedRoles: "",
-    removedRoles: "",
-    isRegex: false,
-    isValidRegex: true,
-  };
-  let guildRoles: Array<{ id: string; name: string }> = [];
-
-  // UI state variables
-  let newTriggerRegexTestString = "";
-  let newTriggerRegexTestResult = "";
-  let newTriggerRegexHighlightedString = "";
-  let expandedTriggerId: number | null = null;
-  let loading = true;
-  let error: string | null = null;
-  let regexTestString = "";
-  let regexTestResult = "";
-  let regexHighlightedString = "";
-  let dropdownRef: HTMLDivElement;
-  let activeDropdown: string | null = null;
-  let isMobile = false;
 
   // Enums
   const RequirePrefixType = {
@@ -79,9 +57,10 @@
   };
 
   const ChatTriggerType = {
-    Message: 1,
-    Interaction: 2,
-    Button: 4,
+    Message: 1,      // 0b0001
+    Interaction: 2,  // 0b0010
+    Button: 4,       // 0b0100
+    Reactions: 8,    // 0b1000
   };
 
   const CtApplicationCommandType = {
@@ -90,6 +69,67 @@
     Message: 2,
     User: 3,
   };
+
+  // Data variables  
+  let triggers: ChatTriggers[] = [];
+  let newTrigger: Partial<ChatTriggers> & { 
+    isValidRegex: boolean; 
+    grantedRoles: string[] | string | null; 
+    removedRoles: string[] | string | null;
+    validTriggerTypesMessage: boolean;
+    validTriggerTypesInteraction: boolean;
+    validTriggerTypesButton: boolean;
+    validTriggerTypesReactions: boolean;
+  } = {
+    trigger: "",
+    response: "",
+    grantedRoles: [],
+    removedRoles: [],
+    isRegex: false,
+    isValidRegex: true,
+    validTriggerTypesMessage: true,
+    validTriggerTypesInteraction: false,
+    validTriggerTypesButton: false,
+    validTriggerTypesReactions: false,
+    // Initialize other properties with sensible defaults
+    autoDeleteTrigger: false,
+    reactToTrigger: false,
+    dmResponse: false,
+    containsAnywhere: false,
+    allowTarget: false,
+    noRespond: false,
+    ownerOnly: false,
+    applicationCommandType: CtApplicationCommandType.None,
+    prefixType: RequirePrefixType.None,
+    roleGrantType: CtRoleGrantType.Sender,
+  };
+  let guildRoles: Array<{ id: string; name: string }> = [];
+
+  // UI state variables - Dual Mode Interface
+  let activeTab: "simple" | "advanced" = "simple";
+  let expandedTriggerId: number | null = null;
+  let loading = true;
+  let error: string | null = null;
+  let isMobile = false;
+  
+  // Accessibility state
+  let statusMessage = "";
+  let errorMessage = "";
+  let focusedCardIndex = -1;
+  
+  // Simple mode state
+  let quickTriggerText = "";
+  let quickResponseText = "";
+  let showAdvancedOptions = false;
+  
+  // Advanced mode state
+  let newTriggerRegexTestString = "";
+  let newTriggerRegexTestResult = "";
+  let newTriggerRegexHighlightedString = "";
+  let regexTestString = "";
+  let regexTestResult = "";
+  let regexHighlightedString = "";
+  let activeDropdown: string | null = null;
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -110,8 +150,13 @@
         grantedRoles: roleStringToArray(trigger.grantedRoles),
         removedRoles: roleStringToArray(trigger.removedRoles),
         isRegex: trigger.isRegex || false,
-        isValidRegex: trigger.isRegex ? validateRegex(trigger.trigger) : true,
-      }));
+        isValidRegex: trigger.isRegex && trigger.trigger ? validateRegex(trigger.trigger) : true,
+        // Add frontend-only boolean properties for trigger types
+        validTriggerTypesMessage: !!(trigger.validTriggerTypes & ChatTriggerType.Message),
+        validTriggerTypesInteraction: !!(trigger.validTriggerTypes & ChatTriggerType.Interaction),
+        validTriggerTypesButton: !!(trigger.validTriggerTypes & ChatTriggerType.Button),
+        validTriggerTypesReactions: !!(trigger.validTriggerTypes & ChatTriggerType.Reactions),
+      } as any));
     } catch (err: any) {
       logger.error("Failed to fetch chat triggers:", err);
       error = err.message || "Failed to fetch chat triggers";
@@ -150,9 +195,25 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
+      
+      // Convert boolean trigger types to bitwise integer
+      let validTriggerTypes = 0;
+      if (newTrigger.validTriggerTypesMessage) validTriggerTypes |= ChatTriggerType.Message;
+      if (newTrigger.validTriggerTypesInteraction) validTriggerTypes |= ChatTriggerType.Interaction;
+      if (newTrigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
+      if (newTrigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
+      
+      const triggerData = {
+        ...newTrigger,
+        validTriggerTypes,
+        guildId: guild.id,
+        grantedRoles: roleArrayToString(newTrigger.grantedRoles),
+        removedRoles: roleArrayToString(newTrigger.removedRoles),
+      };
+      
       const addedTrigger = await api.addChatTrigger(
         guild.id,
-        newTrigger as ChatTriggers,
+        triggerData as ChatTriggers,
       );
       triggers = [...triggers, addedTrigger];
       showNotificationMessage("Trigger added successfully", "success");
@@ -177,8 +238,8 @@
   }
 
   // Function to update a trigger
-  async function updateTrigger(trigger: ChatTriggers) {
-    if (!trigger.trigger.trim() || !trigger.response.trim()) {
+  async function updateTrigger(trigger: any) {
+    if (!trigger.trigger?.trim() || !trigger.response?.trim()) {
       showNotificationMessage("Trigger and Response are required", "error");
       return;
     }
@@ -193,8 +254,19 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
+      // Convert boolean trigger types to bitwise integer if they exist
+      let validTriggerTypes = trigger.validTriggerTypes;
+      if (trigger.validTriggerTypesMessage !== undefined) {
+        validTriggerTypes = 0;
+        if (trigger.validTriggerTypesMessage) validTriggerTypes |= ChatTriggerType.Message;
+        if (trigger.validTriggerTypesInteraction) validTriggerTypes |= ChatTriggerType.Interaction;
+        if (trigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
+        if (trigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
+      }
+      
       const updatedTrigger = {
         ...trigger,
+        validTriggerTypes,
         grantedRoles: roleArrayToString(trigger.grantedRoles),
         removedRoles: roleArrayToString(trigger.removedRoles),
         guildId: guild.id,
@@ -210,9 +282,13 @@
     }
   }
 
-  // Function to delete a trigger
+  // Function to delete a trigger - Enhanced with accessibility
   async function deleteTrigger(triggerId: number) {
-    if (!confirm("Are you sure you want to delete this trigger?")) {
+    const trigger = triggers.find(t => t.id === triggerId);
+    const triggerName = trigger?.trigger || 'trigger';
+    
+    if (!confirm(`Are you sure you want to delete the trigger "${triggerName}"?`)) {
+      announceAction('Delete cancelled');
       return;
     }
 
@@ -223,12 +299,14 @@
       }
       await api.deleteChatTrigger(guild.id, triggerId);
       showNotificationMessage("Trigger deleted successfully", "success");
+      announceAction(`Trigger ${triggerName} deleted`);
       await loadTriggers();
     } catch (error: any) {
       showNotificationMessage(
         "Failed to delete trigger: " + error.message,
         "error",
       );
+      announceError('Failed to delete trigger');
     }
   }
 
@@ -271,15 +349,15 @@
   }
 
   // Function to handle regex validation for existing triggers
-  function handleRegexChange(trigger: ChatTriggers) {
-    if (trigger.isRegex) {
+  function handleRegexChange(trigger: any) {
+    if (trigger.isRegex && trigger.trigger) {
       trigger.isValidRegex = validateRegex(trigger.trigger);
     }
   }
 
   // Function to test regex for existing triggers
-  function testRegex(trigger: ChatTriggers) {
-    if (trigger.isRegex && trigger.isValidRegex) {
+  function testRegex(trigger: any) {
+    if (trigger.isRegex && trigger.isValidRegex && trigger.trigger) {
       try {
         const regex = new RegExp(trigger.trigger, "g");
         const matches = regexTestString.match(regex);
@@ -300,9 +378,20 @@
     }
   }
 
-  // Helper functions
+  // Helper functions - Enhanced with accessibility
   function toggleExpand(triggerId: number) {
-    expandedTriggerId = expandedTriggerId === triggerId ? null : triggerId;
+    const wasExpanded = expandedTriggerId === triggerId;
+    expandedTriggerId = wasExpanded ? null : triggerId;
+    
+    if (!wasExpanded) {
+      // Small delay to ensure DOM is updated before focusing
+      setTimeout(() => {
+        const firstInput = document.querySelector(`#trigger-${triggerId} input`);
+        if (firstInput) {
+          (firstInput as HTMLElement).focus();
+        }
+      }, 100);
+    }
   }
 
   function isBoolean(value: any): value is boolean {
@@ -355,7 +444,7 @@
     } else {
       return [];
     }
-    }
+  }
 
   function validateRegex(regex: string): boolean {
     try {
@@ -390,6 +479,49 @@
 
   function closeDropdown() {
     activeDropdown = null;
+  }
+
+  // Format data for DiscordSelector
+  $: roleOptions = guildRoles.map(role => ({
+    id: role.id,
+    name: role.name
+  }));
+
+  // Boolean options for DiscordSelector
+  $: booleanOptions = [
+    { id: "true", name: "Yes" },
+    { id: "false", name: "No" }
+  ];
+
+  // Pattern type options for DiscordSelector
+  $: triggerTypeOptions = [
+    { id: "false", name: "Normal Text Pattern" },
+    { id: "true", name: "Regular Expression Pattern" }
+  ];
+
+  // Format enum options for DiscordSelector
+  function getEnumOptionsForSelector(key: string) {
+    const enumOptions = getEnumOptions(key);
+    return Object.entries(enumOptions).map(([optionKey, optionValue]) => ({
+      id: String(optionValue),
+      name: optionKey
+    }));
+  }
+
+  // Handle boolean selection change
+  function handleBooleanChange(trigger: ChatTriggers, key: string, event: CustomEvent) {
+    (trigger as any)[key] = event.detail.selected === "true";
+  }
+
+  // Handle enum selection change
+  function handleEnumChange(trigger: any, key: string, event: CustomEvent) {
+    trigger[key] = parseInt(event.detail.selected);
+  }
+
+  // Handle trigger type change
+  function handleTriggerTypeChange(event: CustomEvent) {
+    newTrigger.isRegex = event.detail.selected === "true";
+    handleNewTriggerRegexChange();
   }
 
   function getDescriptiveLabel(key: string): string {
@@ -456,7 +588,7 @@
     }
   });
 
-    // Watch for guild changes
+  // Watch for guild changes
   $: if ($currentGuild) {
     loadTriggers()
     loadGuildRoles()
@@ -475,501 +607,1280 @@
     --color-text: ${colors.text};
     --color-muted: ${colors.muted};
   `;
+  
+  // Tabs configuration following birthday pattern
+  const tabs = [
+    { id: "simple", label: "Simple Mode", icon: Zap },
+    { id: "advanced", label: "Advanced Mode", icon: Settings }
+  ];
+
+  // Action buttons configuration
+  $: actionButtons = [];
+
+  // Handle tab change
+  function handleTabChange(event: CustomEvent) {
+    activeTab = event.detail.tabId;
+    announceAction(`Switched to ${activeTab === 'simple' ? 'Simple Mode' : 'Advanced Mode'}`);
+  }
+  
+  // Accessibility functions
+  function announceAction(message: string) {
+    statusMessage = message;
+    setTimeout(() => statusMessage = "", 1000);
+  }
+  
+  function announceError(message: string) {
+    errorMessage = message;
+    setTimeout(() => errorMessage = "", 5000);
+  }
+  
+  // Quick trigger creation for Simple Mode
+  async function createQuickTrigger() {
+    if (!quickTriggerText.trim() || !quickResponseText.trim()) {
+      showNotificationMessage("Both trigger text and response are required", "error");
+      announceError("Both trigger text and response are required");
+      return;
+    }
+    
+    try {
+      const guild = get(currentGuild);
+      if (!guild?.id) {
+        throw new Error("No guild selected");
+      }
+      
+      const triggerData = {
+        trigger: quickTriggerText.trim(),
+        response: quickResponseText.trim(),
+        isRegex: false,
+        guildId: guild.id,
+        validTriggerTypes: ChatTriggerType.Message, // Use integer, not array
+      };
+      
+      const addedTrigger = await api.addChatTrigger(guild.id, triggerData as ChatTriggers);
+      triggers = [...triggers, addedTrigger];
+      
+      // Reset form
+      quickTriggerText = "";
+      quickResponseText = "";
+      
+      showNotificationMessage("Trigger created successfully!", "success");
+      announceAction("Trigger created successfully");
+    } catch (error: any) {
+      showNotificationMessage("Failed to create trigger: " + error.message, "error");
+      announceError("Failed to create trigger");
+    }
+  }
+  
+  // Template usage functions
+  function useTemplate(templateType: string) {
+    switch (templateType) {
+      case 'simple':
+        quickTriggerText = "hello";
+        quickResponseText = "Hello there! 👋";
+        break;
+      case 'role':
+        activeTab = "advanced";
+        newTrigger.trigger = "getrole";
+        newTrigger.response = "Role assigned!";
+        newTrigger.validTriggerTypesMessage = true;
+        newTrigger.validTriggerTypesInteraction = false;
+        newTrigger.validTriggerTypesButton = false;
+        newTrigger.validTriggerTypesReactions = false;
+        break;
+      case 'slash':
+        activeTab = "advanced";
+        newTrigger.trigger = "info";
+        newTrigger.response = "Server information: %server.name%";
+        newTrigger.validTriggerTypesMessage = false;
+        newTrigger.validTriggerTypesInteraction = true;
+        newTrigger.validTriggerTypesButton = false;
+        newTrigger.validTriggerTypesReactions = false;
+        // Set application command properties for slash command
+        newTrigger.applicationCommandType = CtApplicationCommandType.Slash;
+        newTrigger.applicationCommandName = "info";
+        newTrigger.applicationCommandDescription = "Get server information";
+        break;
+      case 'embed':
+        activeTab = "advanced";
+        newTrigger.trigger = "welcome";
+        newTrigger.response = JSON.stringify({
+          "content": "Welcome to the server!",
+          "embed": {
+            "title": "Welcome!",
+            "description": "Thanks for joining %server.name%!",
+            "color": "0x5865F2",
+            "thumbnail": {
+              "url": "%user.avatar%"
+            },
+            "footer": {
+              "text": "Enjoy your stay!"
+            }
+          }
+        }, null, 2);
+        newTrigger.validTriggerTypesMessage = true;
+        break;
+    }
+    announceAction(`${templateType} template applied`);
+  }
+  
+  // Validation functions
+  function validateTriggerOptions() {
+    // Auto delete trigger and react to trigger are mutually exclusive
+    if (newTrigger.autoDeleteTrigger && newTrigger.reactToTrigger) {
+      newTrigger.reactToTrigger = false;
+      announceAction("React to trigger disabled - cannot be used with auto-delete");
+    }
+    
+    // React to trigger and auto delete trigger are mutually exclusive
+    if (newTrigger.reactToTrigger && newTrigger.autoDeleteTrigger) {
+      newTrigger.autoDeleteTrigger = false;
+      announceAction("Auto-delete disabled - cannot be used with react to trigger");
+    }
+    
+    // If no trigger types are selected, default to message
+    if (!newTrigger.validTriggerTypesMessage && 
+        !newTrigger.validTriggerTypesInteraction && 
+        !newTrigger.validTriggerTypesButton && 
+        !newTrigger.validTriggerTypesReactions) {
+      newTrigger.validTriggerTypesMessage = true;
+      announceAction("Message triggers enabled - at least one trigger type is required");
+    }
+    
+    // Slash commands require interaction trigger type
+    if (newTrigger.applicationCommandType === CtApplicationCommandType.Slash && 
+        !newTrigger.validTriggerTypesInteraction) {
+      newTrigger.validTriggerTypesInteraction = true;
+      announceAction("Interaction triggers enabled for slash command");
+    }
+    
+    // Reaction triggers should use emoji-like patterns
+    if (newTrigger.validTriggerTypesReactions && newTrigger.trigger && 
+        !newTrigger.trigger.match(/^[👍👎❤️😂😢😮😡💯]|:\w+:$/)) {
+      // This is just a warning, not enforcement
+      console.log("Consider using emoji names or Unicode emojis for reaction triggers");
+    }
+  }
+  
+
+  // Enhanced keyboard navigation
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    // Global shortcuts
+    if (event.ctrlKey || event.metaKey) {
+      switch (event.key) {
+        case 'n':
+        case 'N':
+          event.preventDefault();
+          if (activeTab === 'simple') {
+            document.getElementById('quick-trigger')?.focus();
+          }
+          announceAction('Create new trigger focused');
+          break;
+        case 's':
+        case 'S':
+          event.preventDefault();
+          if (activeTab === 'simple') {
+            createQuickTrigger();
+          }
+          break;
+      }
+    }
+    
+    // Tab navigation
+    if (event.key === 'Escape') {
+      expandedTriggerId = null;
+      announceAction('Collapsed all cards');
+    }
+  }
+  
+  function handleCardKeydown(event: KeyboardEvent, triggerId: number) {
+    switch(event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        toggleExpand(triggerId);
+        announceAction(`Trigger ${expandedTriggerId === triggerId ? 'expanded' : 'collapsed'}`);
+        break;
+      case 'e':
+      case 'E':
+        if (!event.ctrlKey) {
+          event.preventDefault();
+          // Focus first input in expanded card or expand if collapsed
+          if (expandedTriggerId !== triggerId) {
+            toggleExpand(triggerId);
+          }
+          announceAction('Edit mode activated');
+        }
+        break;
+      case 'd':
+      case 'D':
+        if (!event.ctrlKey) {
+          event.preventDefault();
+          deleteTrigger(triggerId);
+        }
+        break;
+    }
+  }
+  
+  
 </script>
 
-<svelte:head>
-  <title>Chat Triggers - Dashboard</title>
-</svelte:head>
+<!-- Global keyboard event handler -->
+<svelte:window on:keydown={handleGlobalKeydown} />
 
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {colors.gradientStart}15 0%,
-    {colors.gradientMid}10 50%,
-    {colors.gradientEnd}05 100%);"
->
-  <div class="max-w-7xl mx-auto space-y-8">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification {notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-             border-color: {colors.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {colors.text}">Chat Triggers</h1>
-      <p style="color: {colors.muted}" class="mt-2">Create and manage automated responses to messages</p>
-    </div>
-
-    {#if loading}
-      <div class="flex justify-center items-center min-h-[200px]">
-        <div
-          class="w-12 h-12 border-4 rounded-full animate-spin"
-          style="border-color: {colors.primary}20;
-                 border-top-color: {colors.primary};">
-        </div>
-      </div>
-    {:else if error}
-      <div
-        class="rounded-xl p-4 flex items-center gap-3"
-        style="background: {colors.accent}10;"
-        role="alert"
-      >
-        <AlertTriangle class="w-5 h-5" style="color: {colors.accent}" />
-        <p style="color: {colors.accent}">{error}</p>
-      </div>
-    {:else if triggers.length === 0}
-      <div
-        class="text-center py-12 backdrop-blur-sm rounded-2xl border shadow-2xl"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-               border-color: {colors.primary}30;"
-        transition:fade
-      >
-        <MessageCircle class="w-12 h-12 mx-auto mb-4" style="color: {colors.muted}" />
-        <p style="color: {colors.muted}">No chat triggers found</p>
-      </div>
-    {:else}
-      <!-- Existing Triggers List -->
-      <div class="space-y-4">
-        {#each triggers as trigger (trigger.id)}
-          <div
-            class="backdrop-blur-sm rounded-2xl border shadow-2xl overflow-hidden transition-all duration-200"
-            style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-                   border-color: {colors.primary}30;
-                   hover:border-color: {colors.primary}50;"
-          >
-            <div class="p-4">
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex-grow">
-                  <div class="flex items-center gap-2">
-                    <Command class="w-5 h-5" style="color: {colors.primary}" />
-                    <span class="font-medium break-all" style="color: {colors.text}">
-                      {trigger.trigger}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 mt-2">
-                    <MessageCircle class="w-4 h-4" style="color: {colors.muted}" />
-                    <span class="text-sm break-all" style="color: {colors.muted}">
-                      {trigger.response}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button
-                    class="p-2 rounded-lg transition-colors duration-200"
-                    style="background: {colors.primary}10;
-                           hover:background: {colors.primary}20;"
-                    on:click={() => toggleExpand(trigger.id)}
-                    aria-expanded={expandedTriggerId === trigger.id}
-                  >
-                    <svelte:component
-                      this={expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
-                      class="w-5 h-5"
-                      style="color: {colors.primary}"
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {#if expandedTriggerId === trigger.id}
-                <div
-                  transition:slide
-                  class="mt-4 space-y-4 border-t"
-                  style="border-color: {colors.primary}20;"
-                >
-                  {#each Object.entries(trigger) as [key, value]}
-                    {#if !["id", "dateAdded", "guildId", "isValidRegex", "useCount", "applicationCommandId"].includes(key)}
-                      <div class="mt-4">
-                        <div class="flex items-center gap-2 mb-2">
-                          <svelte:component
-                            this={key.includes('role') ? Users : key === 'trigger' ? Command : key === 'response' ? MessageCircle : Settings}
-                            class="w-4 h-4"
-                            style="color: {colors.secondary}"
-                          />
-                          <label
-                            for={`${trigger.id}-${key}`}
-                            class="font-medium"
-                            style="color: {colors.text}"
-                          >
-                            {getDescriptiveLabel(key)}
-                          </label>
-                        </div>
-
-                        {#if key === "trigger"}
-                          <div>
-                            <input
-                              id={`${trigger.id}-${key}`}
-                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                              class:border-red-500={trigger.isRegex && !trigger.isValidRegex}
-                              style="border-color: {colors.primary}30;
-                                     color: {colors.text};
-                                     background: {colors.primary}10;"
-                              bind:value={trigger[key]}
-                              on:input={() => handleRegexChange(trigger)}
-                            />
-                            {#if trigger.isRegex && !trigger.isValidRegex}
-                              <p class="mt-1 flex items-center gap-2" style="color: {colors.accent}">
-                                <AlertTriangle class="w-4 h-4" />
-                                <span>Invalid regex syntax</span>
-                              </p>
-                            {/if}
-                          </div>
-                        {:else if isBoolean(value)}
-                          <div class="relative">
-                            <select
-                              id={`${trigger.id}-${key}`}
-                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
-                              style="border-color: {colors.secondary}30;
-                                     color: {colors.text};
-                                     background: {colors.primary}10;"
-                              bind:value={trigger[key]}
-                            >
-                              <option value={true}>Yes</option>
-                              <option value={false}>No</option>
-                            </select>
-                            <ChevronDown
-                              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                              style="color: {colors.muted}"
-                            />
-                          </div>
-                        {:else if isEnum(key)}
-                          <div class="relative">
-                            <select
-                              id={`${trigger.id}-${key}`}
-                              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
-                              style="border-color: {colors.secondary}30;
-                                     color: {colors.text};
-                                     background: {colors.primary}10;"
-                              bind:value={trigger[key]}
-                            >
-                              {#each Object.entries(getEnumOptions(key)) as [optionKey, optionValue]}
-                                <option value={optionValue}>{optionKey}</option>
-                              {/each}
-                            </select>
-                            <ChevronDown
-                              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                              style="color: {colors.muted}"
-                            />
-                          </div>
-                        {:else if isRoleSelection(key)}
-                          <MultiSelectDropdown
-                            id={`${trigger.id}-${key}`}
-                            options={guildRoles}
-                            bind:selected={trigger[key]}
-                            placeholder="Select roles"
-                            on:change={(e) => {
-                              trigger[key] = e.detail;
-                            }}
-                          />
-                        {:else}
-                          <input
-                            id={`${trigger.id}-${key}`}
-                            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                            style="border-color: {colors.primary}30;
-                                   color: {colors.text};
-                                   background: {colors.primary}10;"
-                            bind:value={trigger[key]}
-                          />
-                        {/if}
-                      </div>
-                    {/if}
-                  {/each}
-
-                  {#if trigger.isRegex && trigger.isValidRegex}
-                    <div class="mt-4">
-                      <div class="flex items-center gap-2 mb-2">
-                        <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
-                        <label for="test-regex-pattern" class="font-medium" style="color: {colors.text}">
-                          Test Regex Pattern
-                        </label>
-                      </div>
-                      <input
-                        id="test-regex-pattern"
-                        class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                        style="border-color: {colors.accent}30;
-                               color: {colors.text};
-                               background: {colors.primary}10;"
-                        bind:value={regexTestString}
-                        placeholder="Enter text to test your regex pattern"
-                        on:input={() => testRegex(trigger)}
-                      />
-                      {#if regexTestResult}
-                        <p
-                          class="mt-2 flex items-center gap-2"
-                          style="color: {regexTestResult !== 'No matches' ? colors.primary : colors.accent}"
-                        >
-                          <svelte:component
-                            this={regexTestResult !== 'No matches' ? Check : X}
-                            class="w-4 h-4"
-                          />
-                          <span>{regexTestResult}</span>
-                        </p>
-                        {#if regexHighlightedString}
-                          <div
-                            class="mt-2 p-3 rounded-lg"
-                            style="background: {colors.primary}10;"
-                          >
-                            {@html regexHighlightedString}
-                          </div>
-                        {/if}
-                      {/if}
-                    </div>
-                  {/if}
-
-                  <div class="flex justify-between gap-4 pt-4 mt-4" style="border-top: 1px solid {colors.primary}20;">
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
-                      style="background: {colors.primary}15;
-                             color: {colors.primary};
-                             hover:background: {colors.primary}25;"
-                      on:click={() => updateTrigger(trigger)}
-                    >
-                      <div class="flex items-center gap-2">
-                        <Edit class="w-4 h-4" />
-                        <span>Update</span>
-                      </div>
-                    </button>
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
-                      style="background: {colors.accent}15;
-                             color: {colors.accent};
-                             hover:background: {colors.accent}25;"
-                      on:click={() => deleteTrigger(trigger.id)}
-                    >
-                      <div class="flex items-center gap-2">
-                        <Delete class="w-4 h-4" />
-                        <span>Delete</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- Add New Trigger Section -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-             border-color: {colors.primary}30;"
-    >
-      <div class="flex items-center gap-3 mb-6">
-        <div
-          class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
-                 color: {colors.primary};"
-        >
-          <Plus class="w-6 h-6" />
-        </div>
-        <h2 class="text-xl font-bold" style="color: {colors.text}">Add New Trigger</h2>
-      </div>
-
-      <div class="space-y-4">
-        <!-- Trigger Input -->
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <Command class="w-4 h-4" style="color: {colors.primary}" />
-            <label class="font-medium" for="trigger-pattern" style="color: {colors.text}">
-              Trigger Pattern
-            </label>
-          </div>
-          <input
-            id="trigger-pattern"
-            bind:value={newTrigger.trigger}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            class:border-red-500={newTrigger.isRegex && !newTrigger.isValidRegex}
-            style="border-color: {colors.primary}30;
-                   color: {colors.text};
-                   background: {colors.primary}10;"
-            placeholder="Enter trigger text or pattern"
-            on:input={handleNewTriggerRegexChange}
-            aria-invalid={newTrigger.isRegex && !newTrigger.isValidRegex}
-          />
-          {#if newTrigger.isRegex && !newTrigger.isValidRegex}
-            <p class="mt-1 flex items-center gap-2" style="color: {colors.accent}">
-              <AlertTriangle class="w-4 h-4" />
-              <span>Invalid regex syntax</span>
-            </p>
-          {/if}
-        </div>
-
-        <!-- Response Input -->
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <MessageCircle class="w-4 h-4" style="color: {colors.secondary}" />
-            <label class="font-medium" for="response-message" style="color: {colors.text}">
-              Response Message
-            </label>
-          </div>
-          <input
-            id="response-message"
-            bind:value={newTrigger.response}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            style="border-color: {colors.secondary}30;
-                   color: {colors.text};
-                   background: {colors.primary}10;"
-            placeholder="Enter response message"
-          />
-        </div>
-
-        <!-- Trigger Type -->
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <ToggleRight class="w-4 h-4" style="color: {colors.accent}" />
-            <label class="font-medium" for="trigger-type" style="color: {colors.text}">
-              Trigger Type
-            </label>
-          </div>
-          <div class="relative">
-            <select
-              id="trigger-type"
-              bind:value={newTrigger.isRegex}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 appearance-none"
-              style="border-color: {colors.accent}30;
-                     color: {colors.text};
-                     background: {colors.primary}10;"
-              on:change={handleNewTriggerRegexChange}
-            >
-              <option value={false}>Normal Trigger</option>
-              <option value={true}>Regular Expression</option>
-            </select>
-            <ChevronDown
-              class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              style="color: {colors.muted}"
-            />
-          </div>
-        </div>
-
-        <!-- Regex Test Area -->
-        {#if newTrigger.isRegex && newTrigger.isValidRegex}
-          <div>
-            <div class="flex items-center gap-2 mb-2">
-              <Sparkles class="w-4 h-4" style="color: {colors.accent}" />
-              <label for="test-regex-pattern-2" class="font-medium" style="color: {colors.text}">
-                Test Regex Pattern
-              </label>
-            </div>
-            <input
-              id="test-regex-pattern-2"
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              style="border-color: {colors.accent}30;
-                     color: {colors.text};
-                     background: {colors.primary}10;"
-              bind:value={newTriggerRegexTestString}
-              placeholder="Enter text to test your regex pattern"
-              on:input={testNewTriggerRegex}
-            />
-            {#if newTriggerRegexTestResult}
-              <p
-                class="mt-2 flex items-center gap-2"
-                style="color: {newTriggerRegexTestResult !== 'No matches' ? colors.primary : colors.accent}"
-              >
-                <svelte:component
-                  this={newTriggerRegexTestResult !== 'No matches' ? Check : X}
-                  class="w-4 h-4"
-                />
-                <span>{newTriggerRegexTestResult}</span>
-              </p>
-              {#if newTriggerRegexHighlightedString}
-                <div
-                  class="mt-2 p-3 rounded-lg"
-                  style="background: {colors.primary}10;"
-                >
-                  {@html newTriggerRegexHighlightedString}
-                </div>
-              {/if}
-            {/if}
-          </div>
-        {/if}
-
-        <!-- Add Button -->
-        <div class="flex justify-end mt-6">
-          <button
-            class="px-6 py-3 rounded-lg font-medium transition-all duration-200"
-            style="background: linear-gradient(to right, {colors.primary}, {colors.secondary});
-                   color: {colors.text};
-                   hover:opacity: 0.9;"
-            on:click={addTrigger}
-          >
-            <div class="flex items-center gap-2">
-              <Plus class="w-5 h-5" />
-              <span>Add Trigger</span>
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- Accessibility live regions -->
+<div aria-live="polite" aria-atomic="true" class="sr-only">
+  {statusMessage}
+</div>
+<div aria-live="assertive" aria-atomic="true" class="sr-only">
+  {errorMessage}
 </div>
 
+<DashboardPageLayout 
+  title="Chat Triggers"
+  subtitle="Create and manage automated responses to messages"
+  icon={MessageCircle}
+  {tabs}
+  {activeTab}
+  {actionButtons}
+  guildName="Dashboard"
+  on:tabChange={handleTabChange}
+>
+  <svelte:fragment slot="status-messages">
+    <!-- Notifications -->
+    {#if showNotification}
+      <div class="fixed top-4 right-4 z-50" transition:fade>
+        <div class="p-4 rounded-xl shadow-2xl border max-w-md"
+             style="background: {notificationType === 'success' ? '#10b98120' : '#ef444420'};
+                    border-color: {notificationType === 'success' ? '#10b981' : '#ef4444'}30;">
+          <div class="flex items-center gap-3">
+            {#if notificationType === 'success'}
+              <Check class="w-5 h-5" style="color: #10b981" />
+            {:else}
+              <AlertTriangle class="w-5 h-5" style="color: #ef4444" />
+            {/if}
+            <span style="color: {notificationType === 'success' ? '#10b981' : '#ef4444'}">{notificationMessage}</span>
+          </div>
+        </div>
+      </div>
+    {/if}
+  </svelte:fragment>
+
+
+  <!-- Loading State -->
+  {#if loading}
+    <div class="flex justify-center items-center min-h-[200px]">
+      <div class="w-12 h-12 border-4 rounded-full animate-spin"
+           style="border-color: {colors.primary}20; border-top-color: {colors.primary};">
+      </div>
+    </div>
+  {:else if error}
+    <div class="rounded-xl p-4 flex items-center gap-3"
+         style="background: {colors.accent}10;" role="alert">
+      <AlertTriangle class="w-5 h-5" style="color: {colors.accent}" />
+      <p style="color: {colors.accent}">{error}</p>
+    </div>
+  {:else}
+    <!-- Tab Content -->
+    {#if activeTab === 'simple'}
+      <div class="w-full space-y-6" in:fade={{ duration: 200 }}
+           role="tabpanel" id="simple-panel" aria-labelledby="simple-tab" tabindex="0">
+        
+        <!-- Quick Setup Card -->
+        <div class="rounded-2xl border p-6 shadow-2xl relative z-10"
+             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                    border-color: {colors.primary}30;">
+          
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-3 rounded-xl"
+                 style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);">
+              <Plus class="w-6 h-6" style="color: {colors.primary}" />
+            </div>
+            <h2 class="text-xl font-bold" style="color: {colors.text}">Quick Setup</h2>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Trigger Input -->
+            <div>
+              <label for="quick-trigger" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                When someone types:
+                <abbr title="required" aria-label="required">*</abbr>
+              </label>
+              <input 
+                id="quick-trigger"
+                class="w-full p-3 rounded-lg border transition-all duration-200"
+                style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                placeholder="hello"
+                bind:value={quickTriggerText}
+                aria-describedby="trigger-help"
+                aria-required="true"
+              />
+              <div id="trigger-help" class="text-xs mt-1" style="color: {colors.muted}">
+                Simple text that will trigger the response
+              </div>
+            </div>
+
+            <!-- Response Input -->
+            <div>
+              <label for="quick-response" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                Bot responds with:
+                <abbr title="required" aria-label="required">*</abbr>
+              </label>
+              <textarea 
+                id="quick-response"
+                class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
+                style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                placeholder="Hello there! 👋 (Supports plain text, embeds, and interactive components)"
+                rows="3"
+                bind:value={quickResponseText}
+                aria-required="true"
+              ></textarea>
+              <div class="text-xs mt-1" style="color: {colors.muted}">
+                💡 Tip: For rich embeds and interactive components, try the "Rich Embeds" template or use Advanced Mode
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button 
+                class="flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-200 min-h-[52px] disabled:opacity-50 hover:brightness-110"
+                style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
+                on:click={createQuickTrigger}
+                disabled={!quickTriggerText.trim() || !quickResponseText.trim()}
+                aria-describedby="create-help"
+              >
+                <div class="flex items-center justify-center gap-2">
+                  <Plus class="w-5 h-5" />
+                  <span>Create Trigger</span>
+                </div>
+              </button>
+              
+              <button 
+                type="button"
+                class="px-4 py-3 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
+                style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
+                on:click={() => activeTab = 'advanced'}
+              >
+                More Options →
+              </button>
+            </div>
+            
+            <div id="create-help" class="text-xs" style="color: {colors.muted}">
+              Creates a simple trigger that responds when users type your trigger text
+            </div>
+          </div>
+        </div>
+
+        <!-- Template Selection -->
+        <div class="rounded-2xl border p-6 shadow-2xl relative z-5"
+             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                    border-color: {colors.primary}30;">
+          
+          <h3 class="text-lg font-semibold mb-4" style="color: {colors.text}">
+            Or choose a template:
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button 
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+              style="border-color: {colors.primary}30; background: linear-gradient(135deg, {colors.primary}10, {colors.secondary}10);"
+              on:click={() => useTemplate('simple')}
+              role="button"
+              aria-describedby="template-simple-desc"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <MessageCircle class="w-5 h-5" style="color: {colors.primary}" />
+                <span class="font-medium" style="color: {colors.text}">Simple Response</span>
+              </div>
+              <p id="template-simple-desc" class="text-sm" style="color: {colors.muted}">
+                Bot says X when users type Y
+              </p>
+            </button>
+
+            <button 
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+              style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.secondary}15, {colors.primary}10);"
+              on:click={() => useTemplate('role')}
+              role="button"
+              aria-describedby="template-role-desc"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <Crown class="w-5 h-5" style="color: {colors.secondary}" />
+                <span class="font-medium" style="color: {colors.text}">Role Actions</span>
+              </div>
+              <p id="template-role-desc" class="text-sm" style="color: {colors.muted}">
+                Give/remove roles when triggered
+              </p>
+            </button>
+
+            <button 
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+              style="border-color: {colors.accent}30; background: linear-gradient(135deg, {colors.accent}15, {colors.secondary}10);"
+              on:click={() => useTemplate('slash')}
+              role="button"
+              aria-describedby="template-slash-desc"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <Command class="w-5 h-5" style="color: {colors.accent}" />
+                <span class="font-medium" style="color: {colors.text}">Slash Commands</span>
+              </div>
+              <p id="template-slash-desc" class="text-sm" style="color: {colors.muted}">
+                Create custom slash commands
+              </p>
+            </button>
+
+            <button 
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+              style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.gradientStart}15, {colors.gradientMid}10);"
+              on:click={() => useTemplate('embed')}
+              role="button"
+              aria-describedby="template-embed-desc"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <Sparkles class="w-5 h-5" style="color: {colors.secondary}" />
+                <span class="font-medium" style="color: {colors.text}">Rich Embeds</span>
+              </div>
+              <p id="template-embed-desc" class="text-sm" style="color: {colors.muted}">
+                Rich embeds with images, fields, and components
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Existing Triggers (Simple View) -->
+        {#if triggers.length === 0}
+          <div class="text-center py-12 rounded-2xl border shadow-2xl"
+               style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                      border-color: {colors.primary}30;"
+               transition:fade>
+            <MessageCircle class="w-12 h-12 mx-auto mb-4" style="color: {colors.muted}" />
+            <h3 class="text-lg font-semibold mb-2" style="color: {colors.text}">No Chat Triggers Found</h3>
+            <p style="color: {colors.muted}">Create your first trigger using the quick setup above</p>
+          </div>
+        {:else}
+          <div class="space-y-4">
+            {#each triggers as trigger (trigger.id)}
+              <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
+                   style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                          border-color: {colors.primary}30;
+                          z-index: {expandedTriggerId === trigger.id ? 15 : 5};"
+                   role="article"
+                   aria-labelledby="trigger-{trigger.id}-title"
+                   id="trigger-{trigger.id}">
+                
+                <div class="p-4">
+                  <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                      <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1" style="color: {colors.text}">
+                        "{trigger.trigger}" → "{trigger.response}"
+                      </h3>
+                      <div class="text-sm" style="color: {colors.muted}">
+                        Used {trigger.useCount || 0} times
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                      <button
+                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
+                        on:click={() => deleteTrigger(trigger.id)}
+                        aria-label="Delete trigger {trigger.trigger}"
+                      >
+                        <Trash class="w-4 h-4" style="color: {colors.accent}" />
+                      </button>
+                      
+                      <button
+                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
+                        on:click={() => toggleExpand(trigger.id)}
+                        aria-expanded={expandedTriggerId === trigger.id}
+                        aria-label="{expandedTriggerId === trigger.id ? 'Collapse' : 'Expand'} trigger settings"
+                      >
+                        <svelte:component
+                          this={expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
+                          class="w-4 h-4"
+                          style="color: {colors.secondary}"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {#if expandedTriggerId === trigger.id}
+                    <div transition:slide={{ duration: 200 }} class="mt-4 pt-4 border-t space-y-4"
+                         style="border-color: {colors.primary}20;"
+                         role="region"
+                         aria-label="Advanced settings for {trigger.trigger}">
+                      
+                      <!-- Basic Editing -->
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label for="edit-trigger-{trigger.id}" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                            Trigger Text
+                          </label>
+                          <input
+                            id="edit-trigger-{trigger.id}"
+                            class="w-full p-3 rounded-lg border transition-all duration-200"
+                            style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                            bind:value={trigger.trigger}
+                            aria-describedby="edit-trigger-help-{trigger.id}"
+                          />
+                          <div id="edit-trigger-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
+                            Text that will trigger this response
+                          </div>
+                        </div>
+
+                        <div>
+                          <label for="edit-response-{trigger.id}" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                            Response Message
+                          </label>
+                          <textarea
+                            id="edit-response-{trigger.id}"
+                            class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
+                            style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                            bind:value={trigger.response}
+                            rows="2"
+                          ></textarea>
+                        </div>
+                      </div>
+
+                      <!-- Quick Settings -->
+                      <div class="space-y-3">
+                        <h4 class="font-medium" style="color: {colors.text}">Quick Settings</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
+                            <input type="checkbox" 
+                                   bind:checked={trigger.autoDeleteTrigger}
+                                   class="sr-only peer"
+                                   aria-describedby="auto-delete-desc-{trigger.id}" />
+                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                                 style="peer-checked:bg-color: {colors.primary}; {trigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
+                            <span style="color: {colors.text}">Delete trigger message</span>
+                          </label>
+                          <div id="auto-delete-desc-{trigger.id}" class="text-xs" style="color: {colors.muted}">
+                            Automatically delete the user's message that triggered this response
+                          </div>
+
+                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
+                            <input type="checkbox" 
+                                   bind:checked={trigger.dmResponse}
+                                   class="sr-only peer" />
+                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                                 style="peer-checked:bg-color: {colors.primary}; {trigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
+                            <span style="color: {colors.text}">Send as DM</span>
+                          </label>
+
+                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
+                            <input type="checkbox" 
+                                   bind:checked={trigger.containsAnywhere}
+                                   class="sr-only peer" />
+                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                                 style="peer-checked:bg-color: {colors.primary}; {trigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
+                            <span style="color: {colors.text}">Match anywhere in message</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Role Settings -->
+                      <div class="space-y-3">
+                        <h4 class="font-medium" style="color: {colors.text}">Role Management</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <span class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                              Roles to Grant
+                            </span>
+                            <DiscordSelector
+                              type="role"
+                              options={roleOptions}
+                              multiple={true}
+                              selected={trigger.grantedRoles}
+                              placeholder="No roles to grant"
+                              on:change={(e) => trigger.grantedRoles = e.detail.selected}
+                              aria-label="Select roles to grant for this trigger"
+                              aria-describedby="roles-grant-help-{trigger.id}"
+                            />
+                            <div id="roles-grant-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
+                              Users will receive these roles when the trigger is activated
+                            </div>
+                          </div>
+
+                          <div>
+                            <span class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                              Roles to Remove  
+                            </span>
+                            <DiscordSelector
+                              type="role"
+                              options={roleOptions}
+                              multiple={true}
+                              selected={trigger.removedRoles}
+                              placeholder="No roles to remove"
+                              on:change={(e) => trigger.removedRoles = e.detail.selected}
+                              aria-label="Select roles to remove for this trigger"
+                              aria-describedby="roles-remove-help-{trigger.id}"
+                            />
+                            <div id="roles-remove-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
+                              Users will lose these roles when the trigger is activated
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Save Button -->
+                      <div class="flex justify-end pt-3">
+                        <button
+                          class="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
+                          style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
+                          on:click={() => updateTrigger(trigger)}
+                        >
+                          <div class="flex items-center gap-2">
+                            <Save class="w-4 h-4" />
+                            <span>Save Changes</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+    {:else if activeTab === 'advanced'}
+      <div class="w-full space-y-6" in:fade={{ duration: 200 }}
+           role="tabpanel" id="advanced-panel" aria-labelledby="advanced-tab" tabindex="0">
+        
+        <!-- Advanced Creation Form -->
+        <div class="rounded-2xl border p-6 shadow-2xl relative z-30"
+             style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                    border-color: {colors.primary}30;">
+          
+          <h2 class="text-xl font-bold mb-6" style="color: {colors.text}">Advanced Trigger Creation</h2>
+          
+          <!-- Basic Trigger Configuration -->
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Trigger Text -->
+              <div>
+                <label for="new-trigger" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                  Trigger Text or Pattern
+                  <abbr title="required" aria-label="required">*</abbr>
+                </label>
+                <input
+                  id="new-trigger"
+                  class="w-full p-3 rounded-lg border transition-all duration-200"
+                  style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                  bind:value={newTrigger.trigger}
+                  on:input={handleNewTriggerRegexChange}
+                  placeholder="Enter trigger text or regex pattern"
+                  aria-required="true"
+                  aria-describedby="trigger-validity"
+                />
+                {#if newTrigger.isRegex && !newTrigger.isValidRegex}
+                  <div id="trigger-validity" class="text-xs mt-1" style="color: {colors.accent}" role="alert">
+                    Invalid regular expression syntax
+                  </div>
+                {/if}
+              </div>
+
+              <!-- Response Message -->
+              <div>
+                <label for="new-response" class="flex items-center gap-2 text-sm font-medium mb-2" style="color: {colors.text}">
+                  Response Message
+                  <abbr title="required" aria-label="required">*</abbr>
+                  <Tooltip 
+                    placement="bottom" 
+                    text="Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!" />
+                </label>
+                <textarea
+                  id="new-response"
+                  class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
+                  style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                  bind:value={newTrigger.response}
+                  placeholder="Bot's response message or JSON for rich embeds/components"
+                  rows="3"
+                  aria-required="true"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Pattern Type (Regex vs Normal) -->
+            <div class="space-y-3">
+              <h3 class="text-lg font-semibold" style="color: {colors.text}">Pattern Type</h3>
+              <div class="flex items-center gap-4">
+                <DiscordSelector
+                  type="custom"
+                  options={triggerTypeOptions}
+                  selected={newTrigger.isRegex ? "true" : "false"}
+                  placeholder="Select pattern type"
+                  on:change={handleTriggerTypeChange}
+                  aria-label="Pattern type selector"
+                />
+              </div>
+            </div>
+
+            <!-- Valid Trigger Types -->
+            <div class="space-y-3">
+              <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
+                Valid Trigger Types
+                <Tooltip 
+                  placement="bottom" 
+                  text="Choose how this trigger activates: Messages (regular chat), Slash Commands (requires setup), Buttons (interactive), or Reactions (emoji responses). Multiple types can be enabled." />
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.validTriggerTypesMessage}
+                         on:change={validateTriggerOptions}
+                         class="sr-only peer" />
+                  <div class="w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.validTriggerTypesMessage ? colors.primary : `${colors.primary}20`};">
+                  </div>
+                  <span style="color: {colors.text}">Message triggers</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.validTriggerTypesInteraction}
+                         on:change={validateTriggerOptions}
+                         class="sr-only peer" />
+                  <div class="w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.validTriggerTypesInteraction ? colors.primary : `${colors.primary}20`};">
+                  </div>
+                  <span style="color: {colors.text}">Slash command interactions</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.validTriggerTypesButton}
+                         on:change={validateTriggerOptions}
+                         class="sr-only peer" />
+                  <div class="w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.validTriggerTypesButton ? colors.primary : `${colors.primary}20`};">
+                  </div>
+                  <span style="color: {colors.text}">Button interactions</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.validTriggerTypesReactions}
+                         on:change={validateTriggerOptions}
+                         class="sr-only peer" />
+                  <div class="w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.validTriggerTypesReactions ? colors.primary : `${colors.primary}20`};">
+                  </div>
+                  <span style="color: {colors.text}">Reaction triggers</span>
+                </label>
+              </div>
+              <div class="text-xs" style="color: {colors.muted}">
+                Select which types of interactions can trigger this response
+              </div>
+            </div>
+
+            <!-- Regex Testing (shown when regex is enabled) -->
+            {#if newTrigger.isRegex}
+              <div class="space-y-3" transition:slide>
+                <h4 class="font-semibold flex items-center gap-2" style="color: {colors.text}">
+                  Regular Expression Testing
+                  <Tooltip 
+                    placement="bottom" 
+                    text="Test your regex pattern against sample text to ensure it matches correctly and prevents unexpected behavior." />
+                </h4>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <label for="regex-test-input" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                      Test String
+                    </label>
+                    <input
+                      id="regex-test-input"
+                      class="w-full p-3 rounded-lg border"
+                      style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}10;"
+                      bind:value={newTriggerRegexTestString}
+                      on:input={testNewTriggerRegex}
+                      placeholder="Enter text to test against your regex"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                      Test Result
+                    </label>
+                    <div class="p-3 rounded-lg" style="background: {colors.accent}10; color: {colors.text};">
+                      {newTriggerRegexTestResult || 'Enter test string to see results'}
+                    </div>
+                  </div>
+                </div>
+                {#if newTriggerRegexHighlightedString}
+                  <div>
+                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                      Highlighted Matches
+                    </label>
+                    <div class="p-3 rounded-lg" style="background: {colors.primary}10; color: {colors.text};">
+                      {@html newTriggerRegexHighlightedString}
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+
+            <!-- Role Management -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
+                Role Management
+                <Tooltip 
+                  placement="bottom" 
+                  text="Grant or remove Discord roles when triggered. Useful for role reactions, access controls, and rewards." />
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                    Roles to Grant
+                  </label>
+                  <DiscordSelector
+                    type="role"
+                    options={roleOptions}
+                    multiple={true}
+                    selected={newTrigger.grantedRoles}
+                    placeholder="Select roles to grant"
+                    on:change={(e) => newTrigger.grantedRoles = e.detail.selected}
+                    aria-label="Roles to grant selector"
+                    aria-describedby="new-roles-grant-help"
+                  />
+                  <div id="new-roles-grant-help" class="text-xs mt-1" style="color: {colors.muted}">
+                    Users will receive these roles when the trigger is activated
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                    Roles to Remove
+                  </label>
+                  <DiscordSelector
+                    type="role"
+                    options={roleOptions}
+                    multiple={true}
+                    selected={newTrigger.removedRoles}
+                    placeholder="Select roles to remove"
+                    on:change={(e) => newTrigger.removedRoles = e.detail.selected}
+                    aria-label="Roles to remove selector"
+                    aria-describedby="new-roles-remove-help"
+                  />
+                  <div id="new-roles-remove-help" class="text-xs mt-1" style="color: {colors.muted}">
+                    Users will lose these roles when the trigger is activated
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Basic Options -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold" style="color: {colors.text}">Basic Options</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" 
+                       style="background: {colors.primary}08; opacity: {newTrigger.reactToTrigger ? '0.5' : '1'};">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.autoDeleteTrigger}
+                         on:change={validateTriggerOptions}
+                         disabled={newTrigger.reactToTrigger}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.autoDeleteTrigger ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">Auto-delete trigger message</span>
+                  <div class="ml-auto">
+                    <Tooltip 
+                      placement="top" 
+                      text="Automatically deletes the user's message that triggered this response. Cannot be used with 'React to trigger'." />
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.dmResponse}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.dmResponse ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">Send response as DM</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.containsAnywhere}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.containsAnywhere ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">Match anywhere in message</span>
+                  <div class="ml-auto">
+                    <Tooltip 
+                      placement="top" 
+                      text="When enabled, the trigger can be found anywhere within a message. When disabled, the message must start with the trigger text." />
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" 
+                       style="background: {colors.primary}08; opacity: {newTrigger.autoDeleteTrigger ? '0.5' : '1'};">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.reactToTrigger}
+                         on:change={validateTriggerOptions}
+                         disabled={newTrigger.autoDeleteTrigger}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.reactToTrigger ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.reactToTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">React to trigger message</span>
+                  <div class="ml-auto">
+                    <Tooltip 
+                      placement="top" 
+                      text="Adds reaction emojis to the user's message instead of the bot's response. Cannot be used with 'Auto-delete trigger'." />
+                  </div>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.noRespond}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.noRespond ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.noRespond ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">Don't send response message</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox" 
+                         bind:checked={newTrigger.ownerOnly}
+                         class="sr-only peer" />
+                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.ownerOnly ? colors.primary : `${colors.primary}20`};
+                              {newTrigger.ownerOnly ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                  </div>
+                  <span style="color: {colors.text}">Owner only</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Advanced Configuration (Collapsible) -->
+            <div class="space-y-4">
+              <button 
+                class="flex items-center gap-2 text-lg font-semibold transition-colors duration-200"
+                style="color: {colors.text}"
+                on:click={() => showAdvancedOptions = !showAdvancedOptions}
+                aria-expanded={showAdvancedOptions}
+                aria-controls="advanced-options"
+              >
+                <svelte:component 
+                  this={showAdvancedOptions ? ChevronUp : ChevronRight} 
+                  class="w-5 h-5" 
+                />
+                Advanced Configuration
+                <Tooltip 
+                  placement="bottom" 
+                  text="Advanced options for prefix requirements, role targeting, and interaction commands. Most users won't need these." />
+              </button>
+
+              {#if showAdvancedOptions}
+                <div id="advanced-options" transition:slide class="space-y-6">
+                  <!-- Prefix Configuration -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                        Prefix Requirement
+                      </label>
+                      <DiscordSelector
+                        type="custom"
+                        options={getEnumOptionsForSelector('prefixType')}
+                        selected={newTrigger.prefixType?.toString() || "0"}
+                        placeholder="Select prefix type"
+                        on:change={(e) => handleEnumChange(newTrigger, 'prefixType', e)}
+                        aria-label="Prefix requirement selector"
+                      />
+                    </div>
+
+                    {#if newTrigger.prefixType === RequirePrefixType.Custom}
+                      <div transition:slide>
+                        <label for="custom-prefix" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                          Custom Prefix
+                        </label>
+                        <input
+                          id="custom-prefix"
+                          class="w-full p-3 rounded-lg border"
+                          style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}10;"
+                          bind:value={newTrigger.customPrefix}
+                          placeholder="!"
+                        />
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Role Grant Type -->
+                  <div>
+                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                      Role Grant Target
+                    </label>
+                    <DiscordSelector
+                      type="custom"
+                      options={getEnumOptionsForSelector('roleGrantType')}
+                      selected={newTrigger.roleGrantType?.toString() || "0"}
+                      placeholder="Who gets the roles"
+                      on:change={(e) => handleEnumChange(newTrigger, 'roleGrantType', e)}
+                      aria-label="Role grant target selector"
+                    />
+                  </div>
+
+                  <!-- Additional Options -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label for="reactions" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                        Reactions (emojis)
+                      </label>
+                      <input
+                        id="reactions"
+                        class="w-full p-3 rounded-lg border"
+                        style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                        bind:value={newTrigger.reactions}
+                        placeholder="👍 ✅ 🎉"
+                      />
+                    </div>
+
+                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
+                      <label class="flex items-center gap-3">
+                        <input type="checkbox" 
+                               bind:checked={newTrigger.allowTarget}
+                               class="sr-only peer" />
+                        <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
+                                  after:content-[''] after:absolute after:top-[2px]
+                                  after:left-[2px] after:bg-white after:rounded-full
+                                  after:h-5 after:w-5 after:transition-all
+                                  peer-checked:after:translate-x-full relative"
+                             style="background: {newTrigger.allowTarget ? colors.primary : `${colors.primary}20`};
+                                    {newTrigger.allowTarget ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
+                        </div>
+                        <span style="color: {colors.text}">Allow targeting</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Create Button -->
+            <div class="flex justify-end pt-6">
+              <button
+                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105"
+                style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
+                on:click={addTrigger}
+                disabled={!newTrigger.trigger?.trim() || !newTrigger.response?.trim() || (newTrigger.isRegex && !newTrigger.isValidRegex)}
+                aria-describedby="create-help"
+              >
+                <div class="flex items-center gap-2">
+                  <Plus class="w-5 h-5" />
+                  <span>Create Advanced Trigger</span>
+                </div>
+              </button>
+            </div>
+            <div id="create-help" class="text-xs text-right" style="color: {colors.muted}">
+              All required fields must be filled with valid data
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
+  {/if}
+
+</DashboardPageLayout>
+
 <style lang="postcss">
-  :global(body) {
-    background-color: #1a202c;
-    color: #ffffff;
-  }
-
-  :global(select),
-  :global(input),
-  :global(textarea) {
-    color-scheme: dark;
-  }
-
-  /* Custom scrollbar */
-  :global(*::-webkit-scrollbar) {
-    @apply w-2;
-  }
-
-  :global(*::-webkit-scrollbar-track) {
-    background: var(--color-primary)10;
-    @apply rounded-full;
-  }
-
-  :global(*::-webkit-scrollbar-thumb) {
-    background: var(--color-primary)30;
-    @apply rounded-full;
-  }
-
-  :global(*::-webkit-scrollbar-thumb:hover) {
-    background: var(--color-primary)50;
-  }
-
-  /* Prevent iOS styling */
-  select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-  }
-
-  /* Prevent blue highlight on iOS */
-  select:focus {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Custom styling for options */
-  option {
-    background-color: #374151;
-    color: white;
-    padding: 0.5rem;
-  }
-
-  /* Animation for loading spinner */
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
+    :global(body) {
+        background-color: #1a202c;
+        color: #ffffff;
     }
-    to {
-      transform: rotate(360deg);
-    }
-  }
 
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
+    :global(select),
+    :global(input),
+    :global(textarea) {
+        color-scheme: dark;
+    }
+
+    /* Custom scrollbar */
+    :global(*::-webkit-scrollbar) {
+        @apply w-2;
+    }
+
+    :global(*::-webkit-scrollbar-track) {
+        background: var(--color-primary)10;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb) {
+        background: var(--color-primary)30;
+        @apply rounded-full;
+    }
+
+    :global(*::-webkit-scrollbar-thumb:hover) {
+        background: var(--color-primary)50;
+    }
+
+    /* Prevent iOS styling */
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    /* Prevent blue highlight on iOS */
+    select:focus {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom styling for options */
+    option {
+        background-color: #374151;
+        color: white;
+        padding: 0.5rem;
+    }
+
+    /* Animation for loading spinner */
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Toggle switch styles */
+    .peer:checked ~ div {
+        background-color: var(--color-primary);
+    }
+
+    /* Focus styles for accessibility */
+    .trigger-card:focus {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .template-card:focus {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Progressive enhancement for reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .transition-all {
+            transition: none;
+        }
+        
+        .animate-spin {
+            animation: none;
+        }
+        
+        /* Provide alternative loading indicator */
+        .animate-spin::after {
+            content: "Loading...";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .trigger-card {
+            border: 2px solid;
+        }
+        
+        .template-card {
+            border: 2px solid;
+        }
+        
+        button:focus {
+            outline: 3px solid Highlight;
+        }
+    }
+
+    /* Touch target optimization */
+    @media (hover: none) {
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+    }
+
+    /* Switch shine effect for active state */
+    @media (prefers-reduced-motion: no-preference) {
+        .switch-toggle {
+            transition: box-shadow 0.3s ease;
+        }
+    }
+
+    /* Disable shine for users who prefer reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .switch-toggle {
+            box-shadow: none !important;
+        }
+    }
 </style>

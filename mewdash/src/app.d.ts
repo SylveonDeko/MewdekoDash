@@ -3,6 +3,11 @@ import type { DiscordUser } from "$lib/types/discord";
 declare global {
   namespace App {
 
+    interface Locals {
+      user: User | null;
+    }
+
+
     interface PageData {
       user: DiscordUser | null;
     }
@@ -10,6 +15,13 @@ declare global {
     interface Error {
       message: string;
     }
+  }
+}
+
+declare namespace svelteHTML {
+  // Enhance all HTMLAttributes events
+  interface HTMLAttributes<T> {
+    'on:clickoutside'?: (event: CustomEvent<any> & { target: EventTarget & T }) => any;
   }
 }
 

@@ -4,7 +4,7 @@
   import { api } from "$lib/api";
   import type { BotReviews } from "$lib/types/models";
   import type { PageData } from "./$types";
-  import StarRating from "$lib/components/StarRating.svelte";
+  import StarRating from "$lib/components/display/StarRating.svelte";
   import { marked } from "marked";
   import DOMPurify from "dompurify";
   import type { DiscordUser } from "$lib/types/discord.ts";

@@ -6,10 +6,13 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade } from "svelte/transition";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import type { OptionType } from "$lib/components/forms/DiscordSelector.svelte";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore.ts";
-  import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2 } from "lucide-svelte";
+  import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2, Save } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
   export let data: PageData;
@@ -18,13 +21,24 @@
   let showNotification = false;
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
-  let channels: Array<{ id: string; name: string }> = [];
-  let roles: Array<{ id: string; name: string }> = [];
+  let channels: OptionType[] = [];
+  let roles: OptionType[] = [];
   let musicStatus: any = null;
   let musicInterval: NodeJS.Timeout;
   let isMobile = false;
 
   $: colors = $colorStore;
+
+  // Action buttons for the layout
+  $: actionButtons = [
+    {
+      label: "Save Changes",
+      icon: Save,
+      action: updateSettings,
+      loading: false,
+      style: `background: linear-gradient(to right, ${colors.primary}, ${colors.secondary}); color: ${colors.text}; box-shadow: 0 0 20px ${colors.primary}20;`
+    }
+  ];
 
   // Settings based on your MusicPlayerSettings model
   let settings = {
@@ -82,7 +96,8 @@
   async function fetchChannels() {
     try {
       if (!$currentGuild?.id) return;
-      channels = await api.getGuildTextChannels(BigInt($currentGuild.id));
+      const channelData = await api.getGuildTextChannels(BigInt($currentGuild.id));
+      channels = channelData.map(ch => ({ id: ch.id, name: ch.name }));
     } catch (err) {
       logger.error("Failed to fetch channels:", err);
     }
@@ -91,7 +106,12 @@
   async function fetchRoles() {
     try {
       if (!$currentGuild?.id) return;
-      roles = await api.getGuildRoles(BigInt($currentGuild.id));
+      const roleData = await api.getGuildRoles(BigInt($currentGuild.id));
+      roles = roleData.map(role => ({ 
+        id: role.id, 
+        name: role.name,
+        color: role.color || undefined
+      }));
     } catch (err) {
       logger.error("Failed to fetch roles:", err);
     }
@@ -149,42 +169,22 @@
     if (browser) window.removeEventListener("resize", checkMobile);
   });
 
-  $: colorVars = `
-    --color-primary: ${colors.primary};
-    --color-secondary: ${colors.secondary};
-    --color-accent: ${colors.accent};
-    --color-text: ${colors.text};
-    --color-muted: ${colors.muted};
-  `;
 </script>
 
-<svelte:head>
-  <title>Music Settings - Dashboard</title>
-</svelte:head>
-
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {colors.gradientStart}15 0%,
-    {colors.gradientMid}10 50%,
-    {colors.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Music Player Settings" 
+  subtitle="Configure music playback settings and controls"
+  icon={Music2}
+  {actionButtons}
+  guildName={$currentGuild?.name || "Dashboard"}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
+      <div class="mb-6" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
-             border-color: {colors.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {colors.text}">Music Settings</h1>
-      <p class="mt-2" style="color: {colors.muted}">Configure music playback preferences and permissions</p>
-    </div>
+  </svelte:fragment>
 
     {#if loading}
       <div class="flex justify-center items-center min-h-[200px]">
@@ -207,7 +207,7 @@
       <!-- Current Playback Section -->
       {#if musicStatus?.currentTrack}
         <div
-          class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+          class="rounded-2xl border p-6 shadow-2xl"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
           transition:fade
@@ -249,7 +249,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- General Settings -->
         <div
-          class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+          class="rounded-2xl border p-6 shadow-2xl"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -289,75 +289,68 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
-                <label for="music-channel" class="font-medium" style="color: {colors.text}">
+                <label class="font-medium" style="color: {colors.text}">
                   Music Channel
                 </label>
               </div>
-              <select
-                id="music-channel"
-                bind:value={settings.musicChannelId}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
-                       border-color: {colors.secondary}30;
-                       color: {colors.text};"
-              >
-                <option value={null}>No Channel (All Channels)</option>
-                {#each channels as channel}
-                  <option value={channel.id}>{channel.name}</option>
-                {/each}
-              </select>
+              <DiscordSelector
+                type="channel"
+                options={[{id: 'null', name: 'All Channels'}, ...channels]}
+                selected={settings.musicChannelId === null ? 'null' : settings.musicChannelId}
+                placeholder="Select music channel..."
+                on:change={(e) => {
+                  settings.musicChannelId = e.detail.selected === 'null' ? null : e.detail.selected;
+                }}
+              />
             </div>
 
             <!-- DJ Role -->
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Users class="w-4 h-4" style="color: {colors.accent}" />
-                <label for="dj-role" class="font-medium" style="color: {colors.text}">
+                <label class="font-medium" style="color: {colors.text}">
                   DJ Role
                 </label>
               </div>
-              <select
-                id="dj-role"
-                bind:value={settings.djRoleId}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
-                       border-color: {colors.accent}30;
-                       color: {colors.text};"
-              >
-                <option value={null}>No DJ Role</option>
-                {#each roles as role}
-                  <option value={role.id}>{role.name}</option>
-                {/each}
-              </select>
+              <DiscordSelector
+                type="role"
+                options={[{id: 'null', name: 'No DJ Role'}, ...roles]}
+                selected={settings.djRoleId === null ? 'null' : settings.djRoleId}
+                placeholder="Select DJ role..."
+                on:change={(e) => {
+                  settings.djRoleId = e.detail.selected === 'null' ? null : e.detail.selected;
+                }}
+              />
             </div>
 
             <!-- Player Repeat -->
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Clock class="w-4 h-4" style="color: {colors.primary}" />
-                <label for="repeat-mode" class="font-medium" style="color: {colors.text}">
+                <label class="font-medium" style="color: {colors.text}">
                   Repeat Mode
                 </label>
               </div>
-              <select
-                id="repeat-mode"
-                bind:value={settings.playerRepeat}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
-                       border-color: {colors.primary}30;
-                       color: {colors.text};"
-              >
-                <option value={PlayerRepeatType.None}>None</option>
-                <option value={PlayerRepeatType.Track}>Single Track</option>
-                <option value={PlayerRepeatType.Queue}>Queue</option>
-              </select>
+              <DiscordSelector
+                type="custom"
+                options={[
+                  {id: PlayerRepeatType.None.toString(), name: 'None'},
+                  {id: PlayerRepeatType.Track.toString(), name: 'Single Track'},
+                  {id: PlayerRepeatType.Queue.toString(), name: 'Queue'}
+                ]}
+                selected={settings.playerRepeat.toString()}
+                placeholder="Select repeat mode..."
+                on:change={(e) => {
+                  settings.playerRepeat = parseInt(e.detail.selected);
+                }}
+              />
             </div>
           </div>
         </div>
 
         <!-- Advanced Settings -->
         <div
-          class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+          class="rounded-2xl border p-6 shadow-2xl"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -377,44 +370,46 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Users class="w-4 h-4" style="color: {colors.primary}" />
-                <label for="auto-disconnect" class="font-medium" style="color: {colors.text}">
+                <label class="font-medium" style="color: {colors.text}">
                   Auto Disconnect
                 </label>
               </div>
-              <select
-                id="auto-disconnect"
-                bind:value={settings.autoDisconnect}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
-                       border-color: {colors.primary}30;
-                       color: {colors.text};"
-              >
-                <option value={AutoDisconnect.None}>Never</option>
-                <option value={AutoDisconnect.Voice}>When Voice Empty</option>
-                <option value={AutoDisconnect.Queue}>When Queue Empty</option>
-                <option value={AutoDisconnect.Either}>Either Condition</option>
-              </select>
+              <DiscordSelector
+                type="custom"
+                options={[
+                  {id: AutoDisconnect.None.toString(), name: 'Never'},
+                  {id: AutoDisconnect.Voice.toString(), name: 'When Voice Empty'},
+                  {id: AutoDisconnect.Queue.toString(), name: 'When Queue Empty'},
+                  {id: AutoDisconnect.Either.toString(), name: 'Either Condition'}
+                ]}
+                selected={settings.autoDisconnect.toString()}
+                placeholder="Select auto disconnect..."
+                on:change={(e) => {
+                  settings.autoDisconnect = parseInt(e.detail.selected);
+                }}
+              />
             </div>
 
             <!-- Auto Play -->
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
-                <label for="auto-play" class="font-medium" style="color: {colors.text}">
+                <label class="font-medium" style="color: {colors.text}">
                   Auto Play Similar
                 </label>
               </div>
-              <select
-                id="auto-play"
-                bind:value={settings.autoPlay}
-                class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="background: {colors.primary}10;
-                       border-color: {colors.secondary}30;
-                       color: {colors.text};"
-              >
-                <option value={0}>Disabled</option>
-                <option value={1}>Enabled</option>
-              </select>
+              <DiscordSelector
+                type="custom"
+                options={[
+                  {id: '0', name: 'Disabled'},
+                  {id: '1', name: 'Enabled'}
+                ]}
+                selected={settings.autoPlay.toString()}
+                placeholder="Select auto play..."
+                on:change={(e) => {
+                  settings.autoPlay = parseInt(e.detail.selected);
+                }}
+              />
             </div>
 
             <!-- Vote Skip Settings -->
@@ -465,21 +460,8 @@
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="mt-8 flex justify-end">
-        <button
-          class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm"
-          style="background: linear-gradient(to right, {colors.primary}, {colors.secondary});
-                 color: {colors.text};
-                 box-shadow: 0 0 20px {colors.primary}20;"
-          on:click={updateSettings}
-        >
-          Save Changes
-        </button>
-      </div>
     {/if}
-  </div>
-</div>
+</DashboardPageLayout>
 
 <style lang="postcss">
     :global(body) {

@@ -2,15 +2,28 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
-  import InstanceSelector from "$lib/components/InstanceSelector.svelte";
-  import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
+  import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
+  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userStore } from "$lib/stores/userStore.ts";
-  import MobileNavBar from "$lib/components/MobileNavBar.svelte";
+  import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
   import { browser } from "$app/environment";
 
   export let data;
+
+  // Load saved instance immediately when browser is available to prevent flash
+  if (browser) {
+    const savedInstance = localStorage.getItem("selectedInstance");
+    if (savedInstance) {
+      try {
+        currentInstance.set(JSON.parse(savedInstance));
+      } catch (err) {
+        console.error("Failed to parse saved instance:", err);
+        localStorage.removeItem("selectedInstance");
+      }
+    }
+  }
 
   onMount(() => {
     // Set user from server data if available
@@ -29,11 +42,6 @@
         window.location.href = loginUrl;
         return;
       }
-    }
-
-    const savedInstance = localStorage.getItem("selectedInstance");
-    if (savedInstance) {
-      currentInstance.set(JSON.parse(savedInstance));
     }
   });
 

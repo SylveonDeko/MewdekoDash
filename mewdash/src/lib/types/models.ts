@@ -170,13 +170,13 @@ export interface Starboard {
 
 export interface ChatTriggers {
   id: number;
-  useCount: string;
+  useCount: bigint;
   isRegex: boolean;
-  isValidRegex: boolean;
+  isValidRegex?: boolean; // Frontend only property
   ownerOnly: boolean;
   guildId: bigint | null;
-  response: string;
-  trigger: string;
+  response: string | null;
+  trigger: string | null;
   prefixType: RequirePrefixType;
   customPrefix: string | null;
   autoDeleteTrigger: boolean;
@@ -190,34 +190,42 @@ export interface ChatTriggers {
   removedRoles: string | null;
   roleGrantType: CtRoleGrantType;
   validTriggerTypes: ChatTriggerType;
-  applicationCommandId: string;
+  applicationCommandId: bigint;
   applicationCommandName: string | null;
   applicationCommandDescription: string | null;
-  applicationType: CtApplicationCommandType;
+  applicationCommandType: CtApplicationCommandType;
   ephemeralResponse: boolean;
-  crosspostingChannelId: string;
+  crosspostingChannelId: bigint;
   crosspostingWebhookUrl: string | null;
+  dateAdded?: Date | null;
 }
 
 export enum RequirePrefixType {
-  None,
-  Global,
-  Custom,
+  None = 0,
+  Global = 1,
+  GuildOrGlobal = 2,
+  GuildOrNone = 3,
+  Custom = 4,
 }
 
 export enum CtRoleGrantType {
-
+  Sender = 0,
+  Mentioned = 1,
+  Both = 2,
 }
 
 export enum ChatTriggerType {
-  Message = 1,
-  Button = 4,
+  Message = 1,      // 0b0001
+  Interaction = 2,  // 0b0010
+  Button = 4,       // 0b0100
+  Reactions = 8,    // 0b1000
 }
 
 export enum CtApplicationCommandType {
-  None,
-  Message,
-  User,
+  None = 0,
+  Slash = 1,
+  Message = 2,
+  User = 3,
 }
 
 export interface Afk {
@@ -432,8 +440,6 @@ export interface Permissionv2 {
   state: boolean;
   index: number;
 }
-
-// Add interfaces for other types used in GuildConfig
 
 
 export interface GraphStatsResponse {

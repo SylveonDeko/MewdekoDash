@@ -6,12 +6,15 @@
   import { fade } from "svelte/transition";
   import type { BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { AlertCircle, Award, Clock, FileSpreadsheet, Settings, User, UserPlus, Users } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
   import type { PageData } from "./$types";
 
   export let data: PageData;
@@ -21,8 +24,17 @@
   let showNotification = false;
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
-  let activeTab: "settings" | "stats" | "leaderboard" | "inviter" | "invited" = "settings";
+  let activeTab = "settings";
   let isMobile = false;
+  
+  // Layout configuration
+  const tabs = [
+    { id: "settings", label: "Settings", icon: Settings },
+    { id: "stats", label: "Statistics", icon: FileSpreadsheet },
+    { id: "leaderboard", label: "Leaderboard", icon: Award },
+    { id: "inviter", label: "Find Inviter", icon: User },
+    { id: "invited", label: "Invited Users", icon: UserPlus }
+  ];
 
   // Invite Settings
   let inviteSettings = {
@@ -136,14 +148,15 @@
   }
 
   async function fetchInviteSettings() {
-    try {
-      loading.settings = true;
-      error.settings = null;
-      if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
-      }
+    return await loadingStore.wrap("fetch-invite-settings", async () => {
+      try {
+        loading.settings = true;
+        error.settings = null;
+        if (!$currentGuild?.id) {
+          throw new Error("No guild selected");
+        }
 
-      inviteSettings = await api.getInviteSettings($currentGuild.id);
+        inviteSettings = await api.getInviteSettings($currentGuild.id);
 
       // Parse the TimeSpan format for min account age
       const timeSpanRegex = /^(\d+)\:(\d+)\:(\d+)(?:\.(\d+))?$/;
@@ -154,29 +167,32 @@
         minAgeHours = parseInt(match[1]) % 24;
         minAgeMinutes = parseInt(match[2]);
       }
-    } catch (err) {
-      logger.error("Failed to fetch invite settings:", err);
-      error.settings = err instanceof Error ? err.message : "Failed to fetch invite settings";
-    } finally {
-      loading.settings = false;
-    }
+      } catch (err) {
+        logger.error("Failed to fetch invite settings:", err);
+        error.settings = err instanceof Error ? err.message : "Failed to fetch invite settings";
+      } finally {
+        loading.settings = false;
+      }
+    }, "api", "Loading invite settings...");
   }
 
   async function fetchLeaderboard() {
-    try {
-      loading.leaderboard = true;
-      error.leaderboard = null;
-      if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
-      }
+    return await loadingStore.wrap("fetch-leaderboard", async () => {
+      try {
+        loading.leaderboard = true;
+        error.leaderboard = null;
+        if (!$currentGuild?.id) {
+          throw new Error("No guild selected");
+        }
 
-      leaderboard = await api.getInviteLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
-    } catch (err) {
-      logger.error("Failed to fetch invite leaderboard:", err);
-      error.leaderboard = err instanceof Error ? err.message : "Failed to fetch invite leaderboard";
-    } finally {
-      loading.leaderboard = false;
-    }
+        leaderboard = await api.getInviteLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
+      } catch (err) {
+        logger.error("Failed to fetch invite leaderboard:", err);
+        error.leaderboard = err instanceof Error ? err.message : "Failed to fetch invite leaderboard";
+      } finally {
+        loading.leaderboard = false;
+      }
+    }, "api", "Loading leaderboard...");
   }
 
   async function fetchGuildMembers() {
@@ -334,26 +350,6 @@
     }
   });
 
-  // Color handling
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-    --color-primary-rgb: ${hexToRgb($colorStore.primary)};
-    --color-secondary-rgb: ${hexToRgb($colorStore.secondary)};
-    --color-accent-rgb: ${hexToRgb($colorStore.accent)};
-  `;
-
-  // Convert hex color to rgb values
-  function hexToRgb(hex: string) {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
 
   // Reactive declarations for guild changes
   $: if ($currentGuild) {
@@ -381,202 +377,25 @@
   }
 </script>
 
-<svelte:head>
-  <title>Invite Tracking - Dashboard</title>
-</svelte:head>
-
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Invite Tracking" 
+  subtitle="Monitor and manage server invites and user referrals" 
+  icon={UserPlus}
+  guildName={$currentGuild?.name || "Dashboard"}
+  tabs={tabs}
+  bind:activeTab
+  on:tabChange={(e) => activeTab = e.detail.tabId}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Invite Tracking</h1>
-      <p class="mt-2" style="color: {$colorStore.muted}">Monitor and manage server invites and user referrals</p>
-    </div>
-
-    <!-- Tabs Navigation -->
-    <div
-      aria-label="Invite Tracking Options"
-      class="backdrop-blur-sm rounded-2xl border overflow-hidden p-2 md:p-4 shadow-2xl"
-      role="tablist"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-       border-color: {$colorStore.primary}30;"
-    >
-      <!-- Desktop horizontal tabs -->
-      <div class="hidden md:flex space-x-4 overflow-x-auto">
-        <button
-          aria-controls="settings-panel"
-          aria-selected={activeTab === 'settings'}
-          class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-base {activeTab === 'settings' ? 'font-medium' : 'opacity-70'}"
-          id="settings-tab"
-          on:click={() => activeTab = 'settings'}
-          role="tab"
-          style="background: {activeTab === 'settings' ? $colorStore.primary + '20' : 'transparent'};
-             color: {$colorStore.text};"
-        >
-          <Settings aria-hidden="true" class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <span>Settings</span>
-        </button>
-
-        <button
-          aria-controls="stats-panel"
-          aria-selected={activeTab === 'stats'}
-          class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-base {activeTab === 'stats' ? 'font-medium' : 'opacity-70'}"
-          id="stats-tab"
-          on:click={() => activeTab = 'stats'}
-          role="tab"
-          style="background: {activeTab === 'stats' ? $colorStore.primary + '20' : 'transparent'};
-             color: {$colorStore.text};"
-        >
-          <FileSpreadsheet aria-hidden="true" class="w-5 h-5" style="color: {$colorStore.secondary}" />
-          <span>Stats</span>
-        </button>
-
-        <button
-          aria-controls="leaderboard-panel"
-          aria-selected={activeTab === 'leaderboard'}
-          class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-base {activeTab === 'leaderboard' ? 'font-medium' : 'opacity-70'}"
-          id="leaderboard-tab"
-          on:click={() => activeTab = 'leaderboard'}
-          role="tab"
-          style="background: {activeTab === 'leaderboard' ? $colorStore.primary + '20' : 'transparent'};
-             color: {$colorStore.text};"
-        >
-          <Award aria-hidden="true" class="w-5 h-5" style="color: {$colorStore.accent}" />
-          <span>Leaderboard</span>
-        </button>
-
-        <button
-          aria-controls="inviter-panel"
-          aria-selected={activeTab === 'inviter'}
-          class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-base {activeTab === 'inviter' ? 'font-medium' : 'opacity-70'}"
-          id="inviter-tab"
-          on:click={() => activeTab = 'inviter'}
-          role="tab"
-          style="background: {activeTab === 'inviter' ? $colorStore.primary + '20' : 'transparent'};
-             color: {$colorStore.text};"
-        >
-          <User aria-hidden="true" class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <span>Find Inviter</span>
-        </button>
-
-        <button
-          aria-controls="invited-panel"
-          aria-selected={activeTab === 'invited'}
-          class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-base {activeTab === 'invited' ? 'font-medium' : 'opacity-70'}"
-          id="invited-tab"
-          on:click={() => activeTab = 'invited'}
-          role="tab"
-          style="background: {activeTab === 'invited' ? $colorStore.primary + '20' : 'transparent'};
-             color: {$colorStore.text};"
-        >
-          <UserPlus aria-hidden="true" class="w-5 h-5" style="color: {$colorStore.secondary}" />
-          <span>Invited Users</span>
-        </button>
-      </div>
-
-      <!-- Mobile grid layout tabs -->
-      <div class="grid grid-cols-3 gap-2 md:hidden">
-        <button
-          aria-controls="settings-panel"
-          aria-selected={activeTab === 'settings'}
-          class="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 {activeTab === 'settings' ? 'font-medium' : 'opacity-80'}"
-          id="settings-tab-mobile"
-          on:click={() => activeTab = 'settings'}
-          role="tab"
-          style="background: {activeTab === 'settings' ? $colorStore.primary + '20' : $colorStore.primary + '10'};
-             color: {$colorStore.text};"
-        >
-          <Settings aria-hidden="true" class="w-6 h-6 mb-1" style="color: {$colorStore.primary}" />
-          <span class="text-xs">Settings</span>
-        </button>
-
-        <button
-          aria-controls="stats-panel"
-          aria-selected={activeTab === 'stats'}
-          class="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 {activeTab === 'stats' ? 'font-medium' : 'opacity-80'}"
-          id="stats-tab-mobile"
-          on:click={() => activeTab = 'stats'}
-          role="tab"
-          style="background: {activeTab === 'stats' ? $colorStore.primary + '20' : $colorStore.primary + '10'};
-             color: {$colorStore.text};"
-        >
-          <FileSpreadsheet aria-hidden="true" class="w-6 h-6 mb-1" style="color: {$colorStore.secondary}" />
-          <span class="text-xs">Stats</span>
-        </button>
-
-        <button
-          aria-controls="leaderboard-panel"
-          aria-selected={activeTab === 'leaderboard'}
-          class="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 {activeTab === 'leaderboard' ? 'font-medium' : 'opacity-80'}"
-          id="leaderboard-tab-mobile"
-          on:click={() => activeTab = 'leaderboard'}
-          role="tab"
-          style="background: {activeTab === 'leaderboard' ? $colorStore.primary + '20' : $colorStore.primary + '10'};
-             color: {$colorStore.text};"
-        >
-          <Award aria-hidden="true" class="w-6 h-6 mb-1" style="color: {$colorStore.accent}" />
-          <span class="text-xs">Top</span>
-        </button>
-
-        <button
-          aria-controls="inviter-panel"
-          aria-selected={activeTab === 'inviter'}
-          class="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 {activeTab === 'inviter' ? 'font-medium' : 'opacity-80'}"
-          id="inviter-tab-mobile"
-          on:click={() => activeTab = 'inviter'}
-          role="tab"
-          style="background: {activeTab === 'inviter' ? $colorStore.primary + '20' : $colorStore.primary + '10'};
-             color: {$colorStore.text};"
-        >
-          <User aria-hidden="true" class="w-6 h-6 mb-1" style="color: {$colorStore.primary}" />
-          <span class="text-xs">Inviter</span>
-        </button>
-
-        <button
-          aria-controls="invited-panel"
-          aria-selected={activeTab === 'invited'}
-          class="flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 {activeTab === 'invited' ? 'font-medium' : 'opacity-80'}"
-          id="invited-tab-mobile"
-          on:click={() => activeTab = 'invited'}
-          role="tab"
-          style="background: {activeTab === 'invited' ? $colorStore.primary + '20' : $colorStore.primary + '10'};
-             color: {$colorStore.text};"
-        >
-          <UserPlus aria-hidden="true" class="w-6 h-6 mb-1" style="color: {$colorStore.secondary}" />
-          <span class="text-xs">Invited</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Tab Content -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <!-- Settings Panel -->
-      <div
-        aria-labelledby="settings-tab"
-        class:hidden={activeTab !== 'settings'}
-        id="settings-panel"
-        role="tabpanel"
-      >
+  </svelte:fragment>
+  {#if activeTab === 'settings'}
+    <!-- Settings Panel -->
+    <section>
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
@@ -748,15 +567,12 @@
             </div>
           </div>
         {/if}
-      </div>
+    </section>
+  {/if}
 
-      <!-- Stats Panel -->
-      <div
-        aria-labelledby="stats-tab"
-        class:hidden={activeTab !== 'stats'}
-        id="stats-panel"
-        role="tabpanel"
-      >
+  {#if activeTab === 'stats'}
+    <!-- Stats Panel -->
+    <section>
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
@@ -855,15 +671,12 @@
             </ul>
           </div>
         {/if}
-      </div>
+    </section>
+  {/if}
 
-      <!-- Leaderboard Panel -->
-      <div
-        aria-labelledby="leaderboard-tab"
-        class:hidden={activeTab !== 'leaderboard'}
-        id="leaderboard-panel"
-        role="tabpanel"
-      >
+  {#if activeTab === 'leaderboard'}
+    <!-- Leaderboard Panel -->
+    <section>
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
@@ -965,15 +778,12 @@
             </div>
           {/if}
         {/if}
-      </div>
+    </section>
+  {/if}
 
-      <!-- Inviter Panel -->
-      <div
-        aria-labelledby="inviter-tab"
-        class:hidden={activeTab !== 'inviter'}
-        id="inviter-panel"
-        role="tabpanel"
-      >
+  {#if activeTab === 'inviter'}
+    <!-- Inviter Panel -->
+    <section>
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
@@ -993,19 +803,18 @@
           >
             <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Select User</h3>
             <div class="flex flex-col md:flex-row gap-3">
-              <select
+              <DiscordSelector
+                type="custom"
+                options={guildMembers.map(member => ({
+                  id: member.id,
+                  name: member.username,
+                  avatarUrl: member.avatarUrl
+                }))}
+                customIcon={User}
+                placeholder="Select a User"
+                bind:selectedId={selectedUserId}
                 aria-label="Select a user to find their inviter"
-                bind:value={selectedUserId}
-                class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                id="inviter-user-select"
-                style="border-color: {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              >
-                <option value="">Select a User</option>
-                {#each guildMembers as member}
-                  <option value={member.id}>{member.username}</option>
-                {/each}
-              </select>
+              />
               <button
                 aria-label="Find inviter"
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
@@ -1064,15 +873,12 @@
             </div>
           {/if}
         </div>
-      </div>
+    </section>
+  {/if}
 
-      <!-- Invited Users Panel -->
-      <div
-        aria-labelledby="invited-tab"
-        class:hidden={activeTab !== 'invited'}
-        id="invited-panel"
-        role="tabpanel"
-      >
+  {#if activeTab === 'invited'}
+    <!-- Invited Users Panel -->
+    <section>
         <div class="flex items-center gap-3 mb-6">
           <div
             class="p-3 rounded-xl"
@@ -1092,19 +898,18 @@
           >
             <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Select Inviter</h3>
             <div class="flex flex-col md:flex-row gap-3">
-              <select
+              <DiscordSelector
+                type="custom"
+                options={guildMembers.map(member => ({
+                  id: member.id,
+                  name: member.username,
+                  avatarUrl: member.avatarUrl
+                }))}
+                customIcon={UserPlus}
+                placeholder="Select a User"
+                bind:selectedId={selectedUserId}
                 aria-label="Select a user to find who they invited"
-                bind:value={selectedUserId}
-                class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                id="invited-user-select"
-                style="border-color: {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              >
-                <option value="">Select a User</option>
-                {#each guildMembers as member}
-                  <option value={member.id}>{member.username}</option>
-                {/each}
-              </select>
+              />
               <button
                 aria-label="Find invited users"
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
@@ -1175,10 +980,9 @@
             </div>
           {/if}
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </section>
+  {/if}
+</DashboardPageLayout>
 
 <style lang="postcss">
     /* Custom styling for options */

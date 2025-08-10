@@ -8,7 +8,9 @@
   import type { MultiGreet } from "$lib/types/models.ts";
   import { MultiGreetType } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore.ts"; // Import the global colorStore
@@ -46,7 +48,6 @@
   let isMobile = false;
 
   $: sortedGreets = [...greets].sort((a, b) => a.id - b.id);
-  $: colorVars = $colorStore; // Use colorStore's CSS vars
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -252,25 +253,32 @@
   });
 </script>
 
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="MultiGreets Configuration" 
+  subtitle="Configure multiple greeting messages for your server" 
+  icon={MessageCircle}
+  guildName={$currentGuild?.name || "Dashboard"}
+  actionButtons={[
+    {
+      label: "Add Greet",
+      icon: Plus,
+      action: addGreet,
+      disabled: !selectedChannel,
+      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+    }
+  ]}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
-    <h1 class="text-3xl font-bold mb-8" style="color: {$colorStore.text}">MultiGreets Configuration</h1>
-
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
+  </svelte:fragment>
 
     <!-- Greet Type Section -->
     <section
-      class="mb-8 backdrop-blur-sm rounded-xl border p-6"
+      class="mb-8 rounded-xl border p-6"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       transition:fade
@@ -332,7 +340,7 @@
     {:else}
       <!-- Add New Greet Section -->
       <section
-        class="mb-8 backdrop-blur-sm rounded-xl border p-6"
+        class="mb-8 rounded-xl border p-6"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -341,44 +349,24 @@
           Add New Greet
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">
-          <div class="relative flex-grow group">
-            <select
-              bind:value={selectedChannel}
-              class="w-full h-12 appearance-none rounded-lg border px-4 py-2 pr-10 text-base
-                     focus:outline-none focus:ring-2 transition-all duration-200"
-              style="background: {$colorStore.primary}10;
-                     border-color: {$colorStore.primary}30;
-                     color: {$colorStore.text}"
-            >
-              <option value="" disabled>Select a channel</option>
-              {#each channels as channel}
-                <option class="bg-gray-800 text-white py-2" value={channel.id}>
-                  {channel.name}
-                </option>
-              {/each}
-            </select>
-            <ChevronDown
-              class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              style="color: {$colorStore.muted}"
+          <div class="flex-grow">
+            <DiscordSelector
+              type="channel"
+              options={channels}
+              selected={selectedChannel}
+              placeholder="Select a channel"
+              on:change={(e) => {
+                selectedChannel = e.detail.selected;
+              }}
             />
           </div>
-          <button
-            class="h-12 px-6 rounded-lg font-medium transition-all duration-200
-                   disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            style="background: {$colorStore.primary}; color: {$colorStore.text}"
-            disabled={!selectedChannel}
-            on:click={addGreet}
-          >
-            <Plus class="h-5 w-5" />
-            Add Greet
-          </button>
         </div>
       </section>
 
       <!-- Greets List -->
       {#if !greets.length}
         <div
-          class="text-center p-8 backdrop-blur-sm rounded-xl border"
+          class="text-center p-8 rounded-xl border"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;"
           transition:fade
@@ -396,7 +384,7 @@
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {#each sortedGreets as greet (greet.id)}
             <div
-              class="backdrop-blur-sm rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
+              class="rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
               transition:fade
@@ -431,13 +419,16 @@
                 <div class="space-y-3">
                   {#if editMessage?.id === greet.id}
                     <div class="space-y-3">
+                      <label for="edit-greeting-message-{greet.id}" class="sr-only">Edit Greeting Message</label>
                       <textarea
+                        id="edit-greeting-message-{greet.id}"
                         bind:value={editMessage.message}
                         class="w-full min-h-[120px] p-3 rounded-lg border resize-none focus:ring-2"
                         style="background: {$colorStore.primary}10;
                                border-color: {$colorStore.primary}30;
                                color: {$colorStore.text}"
                         placeholder="Enter greeting message..."
+                        aria-label="Edit greeting message for greet {greet.id}"
                       />
                       <div class="flex gap-2">
                         <button
@@ -697,8 +688,7 @@
         </div>
       {/if}
     {/if}
-  </div>
-</div>
+</DashboardPageLayout>
 
 <style lang="postcss">
     :global(body) {

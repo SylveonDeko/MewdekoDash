@@ -31,7 +31,11 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
           cookies
         );
 
-        setCookies(tokens, cookies);
+        const userData = await getUserData(tokens.access_token);
+        locals.user = userData;
+        
+        // Set cookies with user data for session creation
+        await setCookies(tokens, cookies, userData);
 
         // Mark this code as processed
         cookies.set('processed_oauth_code', code, {
@@ -39,9 +43,6 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
             maxAge: 60, // Only keep for 1 minute
             httpOnly: true
         });
-
-        const userData = await getUserData(tokens.access_token);
-        locals.user = userData;
 
         // Use 302 redirect to ensure cookies are sent properly
         const finalRedirect = redirectTo.startsWith("/dashboard") ? "/dashboard" : redirectTo;

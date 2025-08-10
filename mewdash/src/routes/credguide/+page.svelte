@@ -328,7 +328,7 @@
     <!-- Header -->
     <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
-      <div class="container mx-auto px-6 sm:px-8 lg:px-4 py-6">
+      <div class="container mx-auto px-3 sm:px-4 lg:px-4 py-3 sm:py-4 lg:py-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 class="text-2xl lg:text-3xl font-bold mb-2" style="color: {$colorStore.text};">

@@ -1,7 +1,7 @@
 <!-- routes/dashboard/birthday/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fly } from "svelte/transition";
+  import { fly, fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
@@ -27,8 +27,9 @@
     XCircle
   } from "lucide-svelte";
 
-  import StatCard from "$lib/components/StatCard.svelte";
-  import DiscordSelector from "$lib/components/DiscordSelector.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import type { BirthdayConfig, BirthdayFeatures, BirthdayStats, BirthdayUser } from "$lib/types/birthday";
   import {
     BirthdayFeatures as BirthdayFeaturesEnum,
@@ -265,6 +266,19 @@
     return role ? `@${role.name}` : "Unknown role";
   }
 
+  // Day options for DiscordSelector
+  $: dayOptions = [
+    { id: "7", name: "Next 7 days" },
+    { id: "14", name: "Next 14 days" },
+    { id: "30", name: "Next 30 days" }
+  ];
+
+  // Handle day selection change
+  function handleDayChange(event: CustomEvent) {
+    upcomingDays = parseInt(event.detail.selected);
+    loadBirthdayData();
+  }
+
   onMount(() => {
     loadAllBirthdayData();
   });
@@ -275,121 +289,81 @@
     { id: "users", label: "Users", icon: Users },
     { id: "stats", label: "Statistics", icon: BarChart3 }
   ];
+
+  // Action buttons configuration
+  $: actionButtons = [
+    {
+      label: "Refresh",
+      icon: RefreshCw,
+      action: loadAllBirthdayData,
+      loading: loading
+    }
+  ];
+
+  // Handle tab change
+  function handleTabChange(event: CustomEvent) {
+    activeTab = event.detail.tabId;
+  }
 </script>
 
-<svelte:head>
-  <title>Birthday Management - {$currentGuild?.name || "Dashboard"}</title>
-</svelte:head>
+<DashboardPageLayout 
+  title="Birthday Management"
+  subtitle="Configure birthday announcements and celebrations"
+  icon={Cake}
+  {tabs}
+  {activeTab}
+  {actionButtons}
+  guildName={$currentGuild?.name || "Dashboard"}
+  on:tabChange={handleTabChange}
+>
 
-<div class="container mx-auto px-4 py-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- Page Header -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-    <div class="flex items-center gap-4">
-      <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        <Cake class="w-6 h-6 sm:w-8 sm:h-8" style="color: {$colorStore.primary}" />
+  <svelte:fragment slot="status-messages">
+    <!-- Status Message -->
+    {#if message}
+      <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+           style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
+                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
+           in:fly={{ x: 20, duration: 300 }}>
+        {#if messageType === 'success'}
+          <CheckCircle class="w-5 h-5" style="color: #10b981" />
+        {:else if messageType === 'error'}
+          <XCircle class="w-5 h-5" style="color: #ef4444" />
+        {:else}
+          <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+        {/if}
+        <span
+          style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
       </div>
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-bold" style="color: {$colorStore.text}">Birthday Management</h1>
-        <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">
-          Configure birthday announcements and celebrations
-        </p>
+    {/if}
+
+    <!-- Today's Birthdays Alert -->
+    {#if todaysBirthdays.length > 0}
+      <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
+           style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
+           in:fly={{ x: -20, duration: 300 }}>
+        <Gift class="w-5 h-5" style="color: {$colorStore.accent}" />
+        <span style="color: {$colorStore.text}">
+          🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
+        </span>
       </div>
-    </div>
+    {/if}
+  </svelte:fragment>
 
-    <div class="flex items-center gap-3 w-full sm:w-auto">
-      <button
-        class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all hover:scale-105 min-h-[44px] w-full sm:w-auto"
-        disabled={loading}
-        on:click={loadAllBirthdayData}
-        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-      >
-        <RefreshCw class="w-4 h-4 {loading ? 'animate-spin' : ''}" />
-        <span class="sm:inline">Refresh</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Status Message -->
-  {#if message}
-    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-         style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-         in:fly={{ x: 20, duration: 300 }}>
-      {#if messageType === 'success'}
-        <CheckCircle class="w-5 h-5" style="color: #10b981" />
-      {:else if messageType === 'error'}
-        <XCircle class="w-5 h-5" style="color: #ef4444" />
-      {:else}
-        <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
-      {/if}
-      <span
-        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-    </div>
-  {/if}
-
-  <!-- Today's Birthdays Alert -->
-  {#if todaysBirthdays.length > 0}
-    <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
-         style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
-         in:fly={{ x: -20, duration: 300 }}>
-      <Gift class="w-5 h-5" style="color: {$colorStore.accent}" />
-      <span style="color: {$colorStore.text}">
-        🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
-      </span>
-    </div>
-  {/if}
-
-  <!-- Main Content -->
-  <!-- Tab Navigation -->
-  <div class="mb-6 sm:mb-8">
-    <!-- Mobile Tab Dropdown -->
-    <div class="block sm:hidden mb-4">
-      <select
-        bind:value={activeTab}
-        class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
-        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-      >
-        {#each tabs as tab}
-          <option value={tab.id}>{tab.label}</option>
-        {/each}
-      </select>
-    </div>
-
-    <!-- Desktop Tab Navigation -->
-    <div class="hidden sm:block">
-      <div class="flex items-center space-x-1 p-1 rounded-xl"
-           style="background: {$colorStore.primary}10;">
-        {#each tabs as tab}
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium min-h-[44px]"
-            class:active={activeTab === tab.id}
-            style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
-                   background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};"
-            on:click={() => activeTab = tab.id}
-          >
-            <svelte:component this={tab.icon} size={18} />
-            <span class="hidden md:inline">{tab.label}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
-  </div>
 
   <!-- Tab Content -->
   {#if activeTab === 'config'}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8" in:fly={{ x: 20, duration: 300 }}>
+    <div class="w-full" in:fade={{ duration: 200 }}>
       <!-- Configuration Form -->
-      <div class="space-y-4 sm:space-y-6">
+      <div class="space-y-6 md:space-y-8">
         <!-- Basic Settings -->
-        <div class="relative z-10 rounded-2xl p-6 shadow-2xl"
+        <div class="relative z-20 rounded-2xl p-6 md:p-8 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3 mb-6">
             <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
           </div>
 
-          <div class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <!-- Channel Selection -->
             <div>
               <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
@@ -495,8 +469,9 @@
         </div>
 
         <!-- Custom Message -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl z-0"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="relative z-10 rounded-2xl p-6 md:p-8 shadow-2xl border"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+                    border-color: {$colorStore.primary}20;">
           <div class="flex items-center gap-3 mb-6">
             <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Message</h2>
@@ -521,24 +496,24 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center gap-4">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
           <button
-            class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
             style="background: {$colorStore.primary}; color: white;"
             on:click={saveConfig}
             disabled={saving}
           >
-            <Save class="w-4 h-4" />
+            <Save class="w-5 h-5" />
             {saving ? "Saving..." : "Save Configuration"}
           </button>
 
           <button
-            class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             on:click={resetConfig}
             disabled={saving}
           >
-            <RefreshCw class="w-4 h-4" />
+            <RefreshCw class="w-5 h-5" />
             Reset to Default
           </button>
         </div>
@@ -547,7 +522,7 @@
       <!-- Feature Toggles & Preview -->
       <div class="space-y-6">
         <!-- Feature Controls -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+        <div class="rounded-2xl p-6 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3 mb-6">
             <Gift class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -673,7 +648,7 @@
         </div>
 
         <!-- Configuration Preview -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+        <div class="rounded-2xl p-6 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3 mb-6">
             <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -709,26 +684,25 @@
     </div>
 
   {:else if activeTab === 'users'}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" in:fly={{ x: 20, duration: 300 }}>
-      <!-- Upcoming Birthdays -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+    <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
+        <!-- Upcoming Birthdays -->
+        <div class="rounded-2xl p-6 md:p-8 shadow-2xl relative z-20"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
             <Calendar class="w-5 h-5" style="color: {$colorStore.primary}" />
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Upcoming Birthdays</h2>
           </div>
-          <div class="flex items-center gap-2">
-            <select
-              bind:value={upcomingDays}
-              on:change={loadBirthdayData}
-              class="px-3 py-1 rounded-lg border text-sm"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            >
-              <option value={7}>Next 7 days</option>
-              <option value={14}>Next 14 days</option>
-              <option value={30}>Next 30 days</option>
-            </select>
+          <div class="min-w-[140px]">
+            <DiscordSelector
+              type="custom"
+              options={dayOptions}
+              selected={upcomingDays.toString()}
+              placeholder="Select period"
+              on:change={handleDayChange}
+              searchable={false}
+            />
           </div>
         </div>
 
@@ -766,7 +740,7 @@
                     {user.displayName || user.username}
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {formatDate(user.birthday)} • {user.timezone}
+                    {user.announcementsEnabled ? formatDate(user.birthday) : 'Private'} • {user.timezone}
                   </div>
                 </div>
                 <div class="text-right">
@@ -786,7 +760,7 @@
       </div>
 
       <!-- All Users with Birthdays -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+      <div class="rounded-2xl p-6 md:p-8 shadow-2xl relative z-10"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
         <div class="flex items-center gap-3 mb-6">
           <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -813,7 +787,7 @@
                     {user.displayName || user.username}
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    {formatDate(user.birthday)} • {user.timezone}
+                    {user.announcementsEnabled ? formatDate(user.birthday) : 'Private'} • {user.timezone}
                   </div>
                 </div>
                 <div class="text-xs px-2 py-1 rounded-lg"
@@ -826,10 +800,12 @@
           {/if}
         </div>
       </div>
+      </div>
     </div>
 
   {:else if activeTab === 'stats'}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" in:fly={{ x: 20, duration: 300 }}>
+    <div class="w-full" in:fade={{ duration: 200 }}>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
       {#if birthdayStats}
         <StatCard
           icon={Users}
@@ -875,9 +851,10 @@
           </p>
         </div>
       {/if}
+      </div>
     </div>
   {/if}
-</div>
+</DashboardPageLayout>
 
 <style>
     .peer:checked ~ div {

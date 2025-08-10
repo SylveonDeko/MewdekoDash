@@ -6,7 +6,9 @@
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
   import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
   import {
@@ -26,14 +28,15 @@
   } from "lucide-svelte";
   import { goto } from "$app/navigation";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
 
   export let data: PageData;
 
   let currentUser = data.user;
 
   // States
-  let activeTab: "suggestions" | "settings" = "suggestions";
-  let settingsTab = "general";
+  let activeTab = "suggestions";
+  let activeSubTab = "general";
   let isMobile = false;
   let loading = true;
   let error: string | null = null;
@@ -91,13 +94,6 @@
     }
   });
 
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `;
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -156,11 +152,12 @@
 
   // API Functions
   async function fetchSuggestions() {
-    try {
-      loading = true;
-      error = null;
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      const fetched = await api.getSuggestions($currentGuild.id);
+    return await loadingStore.wrap("fetch-suggestions", async () => {
+      try {
+        loading = true;
+        error = null;
+        if (!$currentGuild?.id) throw new Error("No guild selected");
+        const fetched = await api.getSuggestions($currentGuild.id);
 
       if (fetched === null || fetched.length === 0) {
         suggestions = [];
@@ -189,17 +186,19 @@
         })
       );
 
-      suggestions = suggestionsWithUsers;
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to fetch suggestions";
-    } finally {
-      loading = false;
-    }
+        suggestions = suggestionsWithUsers;
+      } catch (err) {
+        error = err instanceof Error ? err.message : "Failed to fetch suggestions";
+      } finally {
+        loading = false;
+      }
+    }, "api", "Loading suggestions...");
   }
 
   async function loadSettings() {
     if (!$currentGuild?.id) return;
-    try {
+    return await loadingStore.wrap("load-settings", async () => {
+      try {
       const [
         fetchedMinLength,
         fetchedMaxLength,
@@ -266,10 +265,11 @@
       suggestButtonMessage = fetchedButtonMessage || "";
       suggestButtonLabel = fetchedButtonLabel || "";
       suggestButtonEmote = fetchedButtonEmote || "";
-      suggestButtonChannel = fetchedButtonChannel;
-    } catch (err) {
-      showNotificationMessage("Failed to load settings", "error");
-    }
+        suggestButtonChannel = fetchedButtonChannel;
+      } catch (err) {
+        showNotificationMessage("Failed to load settings", "error");
+      }
+    }, "api", "Loading settings...");
   }
 
   async function fetchChannels() {
@@ -284,7 +284,8 @@
   async function saveSettings() {
     if (!$currentGuild?.id || changedSettings.size === 0) return;
 
-    try {
+    return await loadingStore.wrap("save-settings", async () => {
+      try {
       const updatePromises = [];
 
       if (changedSettings.has("minLength")) {
@@ -351,41 +352,46 @@
         updatePromises.push(api.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel));
       }
 
-      await Promise.all(updatePromises);
-      changedSettings.clear();
-      showNotificationMessage("Settings saved successfully");
-    } catch (err) {
-      showNotificationMessage("Failed to save settings", "error");
-    }
+        await Promise.all(updatePromises);
+        changedSettings.clear();
+        showNotificationMessage("Settings saved successfully");
+      } catch (err) {
+        showNotificationMessage("Failed to save settings", "error");
+      }
+    }, "operation", "Saving settings...");
   }
 
   async function confirmStatusChange() {
     if (!selectedSuggestion || selectedStatus === null || !$currentGuild?.id) return;
 
-    try {
+    return await loadingStore.wrap("update-status", async () => {
+      try {
       await api.updateSuggestionStatus($currentGuild.id, selectedSuggestion.suggestionId, {
         state: selectedStatus,
         reason: statusChangeReason || null,
         userId: currentUser.id
       });
 
-      await fetchSuggestions();
-      showNotificationMessage("Status updated successfully");
-      closeStatusModal();
-    } catch (err) {
-      showNotificationMessage("Failed to update status", "error");
-    }
+        await fetchSuggestions();
+        showNotificationMessage("Status updated successfully");
+        closeStatusModal();
+      } catch (err) {
+        showNotificationMessage("Failed to update status", "error");
+      }
+    }, "operation", "Updating status...");
   }
 
   async function deleteSuggestion(id: number) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      await api.deleteSuggestion($currentGuild.id, id);
-      await fetchSuggestions();
-      showNotificationMessage("Suggestion deleted successfully");
-    } catch (err) {
-      showNotificationMessage("Failed to delete suggestion", "error");
-    }
+    return await loadingStore.wrap("delete-suggestion", async () => {
+      try {
+        if (!$currentGuild?.id) throw new Error("No guild selected");
+        await api.deleteSuggestion($currentGuild.id, id);
+        await fetchSuggestions();
+        showNotificationMessage("Suggestion deleted successfully");
+      } catch (err) {
+        showNotificationMessage("Failed to delete suggestion", "error");
+      }
+    }, "operation", "Deleting suggestion...");
   }
 
   onMount(async () => {
@@ -423,64 +429,56 @@
 
 </script>
 
-<svelte:head>
-  <title>Suggestions - Dashboard</title>
-</svelte:head>
 
-<div
-  class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Suggestions" 
+  subtitle="Manage and configure server suggestions" 
+  icon={MessageCircle}
+  guildName={$currentGuild?.name || "Dashboard"}
+  tabs={[
+    { id: "suggestions", label: "Suggestions", icon: Inbox },
+    { id: "settings", label: "Settings", icon: Settings }
+  ]}
+  bind:activeTab
+  subTabs={[
+    { id: "general", label: "General", parentTab: "settings" },
+    { id: "messages", label: "Messages", parentTab: "settings" },
+    { id: "channels", label: "Channels", parentTab: "settings" },
+    { id: "archive", label: "Archive", parentTab: "settings" },
+    { id: "emotes", label: "Emotes", parentTab: "settings" }
+  ]}
+  bind:activeSubTab
+  on:tabChange={(e) => {
+    if (e.detail.tabId === 'suggestions') {
+      activeSubTab = '';
+    } else if (e.detail.tabId === 'settings' && !activeSubTab) {
+      activeSubTab = 'general';
+    }
+  }}
+  on:subTabChange={(e) => {
+    activeSubTab = e.detail.tabId;
+  }}
+  actionButtons={hasChanges ? [
+    {
+      label: "Save Settings",
+      icon: Check,
+      action: saveSettings,
+      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+    }
+  ] : []}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
-    <!-- Header -->
-    <div
-      class="rounded-2xl border p-6 md:p-8 backdrop-blur-sm"
-      style="background: linear-gradient(135deg,
-               {$colorStore.gradientStart}10,
-               {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold mb-2" style="color: {$colorStore.text}">Suggestions</h1>
-      <p style="color: {$colorStore.muted}">Manage and configure server suggestions</p>
-    </div>
-
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-
-    <!-- Tab Navigation -->
-    <div class="flex flex-wrap gap-2">
-      <button
-        class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        class:active={activeTab === 'suggestions'}
-        style="background: {activeTab === 'suggestions' ? $colorStore.primary : `${$colorStore.primary}20`};
-               color: {activeTab === 'suggestions' ? $colorStore.text : $colorStore.muted};"
-        on:click={() => activeTab = 'suggestions'}
-      >
-        <Inbox class="w-5 h-5" />
-        <span>Suggestions</span>
-      </button>
-      <button
-        class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        class:active={activeTab === 'settings'}
-        style="background: {activeTab === 'settings' ? $colorStore.primary : `${$colorStore.primary}20`};
-               color: {activeTab === 'settings' ? $colorStore.text : $colorStore.muted};"
-        on:click={() => activeTab = 'settings'}
-      >
-        <Settings class="w-5 h-5" />
-        <span>Settings</span>
-      </button>
-    </div>
+  </svelte:fragment>
 
     <!-- Status Change Modal -->
     {#if showStatusModal}
       <div
-        class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         transition:fade
       >
         <div
@@ -525,7 +523,7 @@
     <!-- Main Content -->
     {#if activeTab === 'suggestions'}
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6"
+        class="rounded-2xl border p-6"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -556,15 +554,17 @@
         {:else}
           <!-- Sort Controls -->
           <div class="flex flex-wrap gap-2 mb-6">
-            <select
-              bind:value={sortBy}
-              class="bg-transparent rounded-lg px-3 py-2 border"
-              style="color: {$colorStore.text};
-                     border-color: {$colorStore.primary}30;"
-            >
-              <option value="dateAdded">Sort by Date</option>
-              <option value="currentState">Sort by Status</option>
-            </select>
+            <DiscordSelector
+              type="custom"
+              options={[
+                { id: "dateAdded", name: "Sort by Date", label: "Sort by Date" },
+                { id: "currentState", name: "Sort by Status", label: "Sort by Status" }
+              ]}
+              selected={sortBy}
+              searchable={false}
+              placeholder="Sort by..."
+              on:change={(e) => sortBy = e.detail.selected}
+            />
             <button
               class="px-3 py-2 rounded-lg border flex items-center gap-2"
               style="border-color: {$colorStore.primary}30;
@@ -584,7 +584,7 @@
           <div class="space-y-4">
             {#each sortedSuggestions as suggestion (suggestion.id)}
               <div
-                class="rounded-xl border overflow-hidden backdrop-blur-sm"
+                class="rounded-xl border overflow-hidden "
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -680,32 +680,10 @@
     {:else}
       <!-- Settings Content -->
       <div class="space-y-6">
-        <!-- Settings Navigation -->
-        <div class="flex flex-wrap gap-2">
-          {#each [
-            { id: 'general', label: 'General', icon: Settings },
-            { id: 'messages', label: 'Messages', icon: MessageSquare },
-            { id: 'channels', label: 'Channels', icon: Hash },
-            { id: 'archive', label: 'Archive', icon: Archive },
-            { id: 'emotes', label: 'Emotes', icon: Smile }
-          ] as tab}
-            <button
-              class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-              class:active={settingsTab === tab.id}
-              style="background: {settingsTab === tab.id ? $colorStore.primary : `${$colorStore.primary}20`};
-                     color: {settingsTab === tab.id ? $colorStore.text : $colorStore.muted};"
-              on:click={() => settingsTab = tab.id}
-            >
-              <svelte:component this={tab.icon} class="w-5 h-5" />
-              <span>{tab.label}</span>
-            </button>
-          {/each}
-        </div>
-
         <!-- Settings Panels -->
-        {#if settingsTab === 'general'}
+        {#if activeSubTab === 'general'}
           <div
-            class="rounded-2xl border p-6 space-y-6 backdrop-blur-sm"
+            class="rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg,
                      {$colorStore.gradientStart}10,
                      {$colorStore.gradientMid}15);
@@ -750,28 +728,30 @@
             <div class="space-y-4">
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Thread Settings</h3>
               <div class="space-y-2">
-                <label for="thread-type" class="block text-sm" style="color: {$colorStore.muted}">Thread Type</label>
-                <select
-                  id="thread-type"
-                  bind:value={threadType}
-                  on:change={() => markAsChanged('threadType')}
-                  class="w-full p-3 rounded-lg"
-                  style="background: {$colorStore.primary}10;
-                         border: 1px solid {$colorStore.primary}30;
-                         color: {$colorStore.text};"
-                >
-                  <option value={0}>No Threads</option>
-                  <option value={1}>Regular Threads</option>
-                  <option value={2}>Private Threads</option>
-                </select>
+                <label class="block text-sm" style="color: {$colorStore.muted}">Thread Type</label>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                    { id: "0", name: "No Threads", label: "No Threads" },
+                    { id: "1", name: "Regular Threads", label: "Regular Threads" },
+                    { id: "2", name: "Private Threads", label: "Private Threads" }
+                  ]}
+                  selected={threadType.toString()}
+                  searchable={false}
+                  placeholder="Select thread type..."
+                  on:change={(e) => {
+                    threadType = parseInt(e.detail.selected);
+                    markAsChanged('threadType');
+                  }}
+                />
               </div>
             </div>
           </div>
         {/if}
 
-        {#if settingsTab === 'messages'}
+        {#if activeSubTab === 'messages'}
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
+            class="rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -802,44 +782,85 @@
           </div>
         {/if}
 
-        {#if settingsTab === 'channels'}
+        {#if activeSubTab === 'channels'}
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
+            class="rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
-            {#each [
-              { label: 'Suggest Channel', value: suggestChannel, key: 'suggestChannel' },
-              { label: 'Accept Channel', value: acceptChannel, key: 'acceptChannel' },
-              { label: 'Deny Channel', value: denyChannel, key: 'denyChannel' },
-              { label: 'Consider Channel', value: considerChannel, key: 'considerChannel' },
-              { label: 'Implement Channel', value: implementChannel, key: 'implementChannel' }
-            ] as channel}
+            <div class="space-y-4">
               <div class="space-y-2">
-                <label for="{channel.key}-select" class="block text-sm"
-                       style="color: {$colorStore.muted}">{channel.label}</label>
-                <select
-                  id="{channel.key}-select"
-                  bind:value={channel.value}
-                  on:change={() => markAsChanged(channel.key)}
-                  class="w-full p-3 rounded-lg"
-                  style="background: {$colorStore.primary}10;
-                         border: 1px solid {$colorStore.primary}30;
-                         color: {$colorStore.text};"
-                >
-                  <option value="">Select Channel</option>
-                  {#each channels as ch}
-                    <option value={ch.id}>#{ch.name}</option>
-                  {/each}
-                </select>
+                <label class="block text-sm" style="color: {$colorStore.muted}">Suggest Channel</label>
+                <DiscordSelector
+                  type="channel"
+                  options={channels}
+                  selected={suggestChannel}
+                  placeholder="Select suggest channel..."
+                  on:change={(e) => {
+                    suggestChannel = e.detail.selected;
+                    markAsChanged('suggestChannel');
+                  }}
+                />
               </div>
-            {/each}
+              <div class="space-y-2">
+                <label class="block text-sm" style="color: {$colorStore.muted}">Accept Channel</label>
+                <DiscordSelector
+                  type="channel"
+                  options={channels}
+                  selected={acceptChannel}
+                  placeholder="Select accept channel..."
+                  on:change={(e) => {
+                    acceptChannel = e.detail.selected;
+                    markAsChanged('acceptChannel');
+                  }}
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm" style="color: {$colorStore.muted}">Deny Channel</label>
+                <DiscordSelector
+                  type="channel"
+                  options={channels}
+                  selected={denyChannel}
+                  placeholder="Select deny channel..."
+                  on:change={(e) => {
+                    denyChannel = e.detail.selected;
+                    markAsChanged('denyChannel');
+                  }}
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm" style="color: {$colorStore.muted}">Consider Channel</label>
+                <DiscordSelector
+                  type="channel"
+                  options={channels}
+                  selected={considerChannel}
+                  placeholder="Select consider channel..."
+                  on:change={(e) => {
+                    considerChannel = e.detail.selected;
+                    markAsChanged('considerChannel');
+                  }}
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-sm" style="color: {$colorStore.muted}">Implement Channel</label>
+                <DiscordSelector
+                  type="channel"
+                  options={channels}
+                  selected={implementChannel}
+                  placeholder="Select implement channel..."
+                  on:change={(e) => {
+                    implementChannel = e.detail.selected;
+                    markAsChanged('implementChannel');
+                  }}
+                />
+              </div>
+            </div>
           </div>
         {/if}
 
-        {#if settingsTab === 'archive'}
+        {#if activeSubTab === 'archive'}
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
+            class="rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -873,9 +894,9 @@
           </div>
         {/if}
 
-        {#if settingsTab === 'emotes'}
+        {#if activeSubTab === 'emotes'}
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 space-y-6"
+            class="rounded-2xl border p-6 space-y-6"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -949,25 +970,9 @@
           </div>
         {/if}
 
-        {#if hasChanges}
-          <div class="fixed bottom-0 left-0 right-0 p-4 bg-opacity-90 backdrop-blur-md z-50"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}85);">
-            <div class="max-w-7xl mx-auto flex justify-end">
-              <button
-                class="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg"
-                style="background: {$colorStore.primary};
-                       color: {$colorStore.text};"
-                on:click={saveSettings}
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        {/if}
       </div>
     {/if}
-  </div>
-</div>
+</DashboardPageLayout>
 
 <style lang="postcss">
     :global(body) {

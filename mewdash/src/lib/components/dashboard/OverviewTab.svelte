@@ -6,9 +6,9 @@
   import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
   import { BarChart3, Bot, ChartBar, Code, Library, Music, RefreshCw, Shield, Users } from "lucide-svelte";
 
-  import StatCard from "$lib/components/StatCard.svelte";
-  import CompactMusicPlayer from "$lib/components/CompactMusicPlayer.svelte";
-  import StatsGraph from "$lib/components/StatsGraph.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
+  import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
 
   // Props from parent
   export let botStatus: any;

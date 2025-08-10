@@ -7,7 +7,8 @@
   import { fade, fly } from "svelte/transition";
   import { goto, invalidateAll } from "$app/navigation";
   import { page } from "$app/stores";
-  import Notification from "$lib/components/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { browser } from "$app/environment";
   import {
     Award,
@@ -20,19 +21,17 @@
     RefreshCw,
     Save,
     Settings,
-    Target,
-    TrendingUp,
+    Unlink,
     Users,
     XCircle
   } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
-  // These types now correctly match the backend models from patreon_types_ts
   import type {
     PatreonAnalytics,
     PatreonConfig,
     PatreonConfigUpdateRequest,
-    PatreonGoal,
+    PatreonCreator,
     PatreonOAuthStatusResponse,
     PatreonSupporter,
     PatreonTier
@@ -43,19 +42,22 @@
 
   let loading = true;
   let error: string | null = null;
-  let showNotification = false;
   let notificationMessage = "";
   let notificationType: "success" | "error" = "success";
   let patreonStatus: PatreonOAuthStatusResponse | null = null;
+
+  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
+    notificationMessage = message;
+    notificationType = type;
+  }
   let patreonAnalytics: PatreonAnalytics | null = null;
   let patreonSupporters: PatreonSupporter[] = [];
   let patreonConfig: PatreonConfig | null = null;
   let patreonTiers: PatreonTier[] = [];
-  let patreonGoals: PatreonGoal[] = [];
+  let patreonCreator: PatreonCreator | null = null;
   let guildRoles: Array<{ id: string; name: string }> = [];
   let guildChannels: Array<{ id: string; name: string }> = [];
   let isConnecting = false;
-  let activeTab = "overview";
   let isRefreshing = false;
   let isSyncing = false;
   let isUpdatingConfig = false;
@@ -73,6 +75,16 @@
   let selectedTierId = "";
   let selectedRoleId = "";
   let isMappingTier = false;
+  
+  // Layout state
+  let activeTab = "overview";
+  
+  const tabs = [
+    { id: "overview", label: "Overview", icon: Heart },
+    { id: "supporters", label: "Supporters", icon: Users },
+    { id: "tiers", label: "Tier Mapping", icon: Award },
+    { id: "config", label: "Configuration", icon: Settings }
+  ];
 
   // Handle URL parameters for success/error messages
   onMount(async () => {
@@ -91,25 +103,21 @@
         const cleanUrl = new URL($page.url);
         cleanUrl.searchParams.delete("code");
         cleanUrl.searchParams.delete("state");
-        goto(cleanUrl.toString(), { replaceState: true });
+        await goto(cleanUrl.toString(), { replaceState: true });
         await loadAllData();
         return;
       }
 
       if (success === "true") {
-        showNotification = true;
-        notificationMessage = "Patreon integration configured successfully!";
-        notificationType = "success";
+        showNotificationMessage("Patreon integration configured successfully!", "success");
         const cleanUrl = new URL($page.url);
         cleanUrl.searchParams.delete("success");
-        goto(cleanUrl.toString(), { replaceState: true });
+        await goto(cleanUrl.toString(), { replaceState: true });
       } else if (errorParam) {
-        showNotification = true;
-        notificationMessage = decodeURIComponent(errorParam);
-        notificationType = "error";
+        showNotificationMessage(decodeURIComponent(errorParam), "error");
         const cleanUrl = new URL($page.url);
         cleanUrl.searchParams.delete("error");
-        goto(cleanUrl.toString(), { replaceState: true });
+        await goto(cleanUrl.toString(), { replaceState: true });
       }
 
       await loadAllData();
@@ -140,7 +148,7 @@
           loadPatreonSupporters(),
           loadPatreonConfig(),
           loadPatreonTiers(),
-          loadPatreonGoals()
+          loadPatreonCreator()
         ]);
       }
     } catch (err) {
@@ -200,14 +208,15 @@
     }
   }
 
-  async function loadPatreonGoals() {
+  async function loadPatreonCreator() {
     if (!$currentGuild) return;
     try {
-      patreonGoals = await api.getPatreonGoals(BigInt($currentGuild.id));
+      patreonCreator = await api.getPatreonCreator(BigInt($currentGuild.id));
     } catch (err) {
-      logger.error("Failed to load goals:", err);
+      logger.error("Failed to load creator:", err);
     }
   }
+
 
   async function loadGuildRoles() {
     if (!$currentGuild) return;
@@ -232,9 +241,7 @@
     const guildId = stateParts[0];
 
     if (!guildId) {
-      showNotification = true;
-      notificationMessage = "Invalid OAuth state - missing guild ID";
-      notificationType = "error";
+      showNotificationMessage("Invalid OAuth state - missing guild ID", "error");
       return;
     }
 
@@ -242,18 +249,14 @@
       isConnecting = true;
       const result = await api.handlePatreonOAuthCallback(code, state);
 
-      showNotification = true;
-      notificationMessage = result.message || "Patreon integration configured successfully!";
-      notificationType = "success";
+      showNotificationMessage(result.message || "Patreon integration configured successfully!", "success");
 
       if ($currentGuild) {
         await loadAllData();
       }
     } catch (err) {
       logger.error("OAuth callback failed:", err);
-      showNotification = true;
-      notificationMessage = err instanceof Error ? err.message : "Failed to configure Patreon integration";
-      notificationType = "error";
+      showNotificationMessage(err instanceof Error ? err.message : "Failed to configure Patreon integration", "error");
     } finally {
       isConnecting = false;
     }
@@ -261,9 +264,7 @@
 
   async function connectPatreon() {
     if (!$currentGuild) {
-      showNotification = true;
-      notificationMessage = "Please select a server first";
-      notificationType = "error";
+      showNotificationMessage("Please select a server first", "error");
       return;
     }
 
@@ -273,9 +274,7 @@
       window.location.href = oauthData.authorizationUrl;
     } catch (err) {
       logger.error("Failed to get OAuth URL:", err);
-      showNotification = true;
-      notificationMessage = err instanceof Error ? err.message : "Failed to start OAuth flow";
-      notificationType = "error";
+      showNotificationMessage(err instanceof Error ? err.message : "Failed to start OAuth flow", "error");
       isConnecting = false;
     }
   }
@@ -284,13 +283,9 @@
     isRefreshing = true;
     try {
       await loadAllData();
-      showNotification = true;
-      notificationMessage = "Data refreshed successfully!";
-      notificationType = "success";
+      showNotificationMessage("Data refreshed successfully!", "success");
     } catch (err) {
-      showNotification = true;
-      notificationMessage = "Failed to refresh data";
-      notificationType = "error";
+      showNotificationMessage("Failed to refresh data", "error");
     } finally {
       isRefreshing = false;
     }
@@ -302,22 +297,18 @@
     try {
       isSyncing = true;
       const result = await api.triggerPatreonOperation(BigInt($currentGuild.id), { operation });
-      showNotification = true;
-      notificationMessage = result.message;
-      notificationType = "success";
+      showNotificationMessage(result.message, "success");
 
       // Refresh relevant data after operation
       if (operation === "sync" || operation === "sync_all") {
         await loadPatreonSupporters();
         await loadPatreonTiers();
-        await loadPatreonGoals();
         await loadPatreonAnalytics();
+        await loadPatreonCreator();
       }
     } catch (err) {
       logger.error(`Failed to trigger ${operation}:`, err);
-      showNotification = true;
-      notificationMessage = `Failed to ${operation}`;
-      notificationType = "error";
+      showNotificationMessage(`Failed to ${operation}`, "error");
     } finally {
       isSyncing = false;
     }
@@ -328,16 +319,11 @@
 
     try {
       isUpdatingConfig = true;
-      const result = await api.updatePatreonConfig(BigInt($currentGuild.id), configForm);
-      patreonConfig = result;
-      showNotification = true;
-      notificationMessage = "Configuration updated successfully!";
-      notificationType = "success";
+      patreonConfig = await api.updatePatreonConfig(BigInt($currentGuild.id), configForm);
+      showNotificationMessage("Configuration updated successfully!", "success");
     } catch (err) {
       logger.error("Failed to update config:", err);
-      showNotification = true;
-      notificationMessage = "Failed to update configuration";
-      notificationType = "error";
+      showNotificationMessage("Failed to update configuration", "error");
     } finally {
       isUpdatingConfig = false;
     }
@@ -353,9 +339,7 @@
         roleId: BigInt(selectedRoleId)
       });
 
-      showNotification = true;
-      notificationMessage = result.message;
-      notificationType = "success";
+      showNotificationMessage(result.message, "success");
 
       selectedTierId = "";
       selectedRoleId = "";
@@ -363,9 +347,7 @@
       await loadPatreonTiers();
     } catch (err) {
       logger.error("Failed to map tier to role:", err);
-      showNotification = true;
-      notificationMessage = "Failed to map tier to role";
-      notificationType = "error";
+      showNotificationMessage("Failed to map tier to role", "error");
     } finally {
       isMappingTier = false;
     }
@@ -378,9 +360,27 @@
     }).format(cents / 100);
   }
 
-  function formatDate(dateString?: string) {
+  function formatDate(dateString?: string | null) {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleDateString();
+  }
+
+  async function disconnectPatreon() {
+    if (!$currentGuild) return;
+
+    try {
+      isConnecting = true;
+      const result = await api.disconnectPatreon(BigInt($currentGuild.id));
+      showNotificationMessage(result.message, "success");
+
+      // Reload data to show disconnected state
+      await loadAllData();
+    } catch (err) {
+      logger.error("Failed to disconnect Patreon:", err);
+      showNotificationMessage(err instanceof Error ? err.message : "Failed to disconnect Patreon", "error");
+    } finally {
+      isConnecting = false;
+    }
   }
 </script>
 
@@ -388,60 +388,31 @@
   <title>Patreon Integration - {$currentGuild?.name || 'Mewdeko Dashboard'}</title>
 </svelte:head>
 
-{#if showNotification}
-  <Notification
-    message={notificationMessage}
-    type={notificationType}
-    on:close={() => (showNotification = false)}
-  />
-{/if}
-
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Patreon Integration" 
+  subtitle="Connect your Patreon campaign to automatically sync supporters and manage perks" 
+  icon={Heart}
+  guildName={$currentGuild?.name || "Dashboard"}
+  tabs={tabs}
+  bind:activeTab
+  on:tabChange={(e) => activeTab = e.detail.tabId}
+  bind:notificationMessage
+  bind:notificationType
+  actionButtons={patreonStatus?.isConfigured ? [
+    {
+      label: "Refresh Data",
+      icon: RefreshCw,
+      action: refreshData,
+      loading: isRefreshing
+    },
+    {
+      label: "Sync Supporters",
+      icon: LucideFolderSync,
+      action: () => triggerOperation("sync_all"),
+      loading: isSyncing
+    }
+  ] : []}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      in:fade
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);"
-          >
-            <Heart class="w-6 h-6" style="color: {$colorStore.primary};" />
-          </div>
-          <div>
-            <h1 class="text-3xl font-bold" style="color: {$colorStore.text};">Patreon Integration</h1>
-            <p style="color: {$colorStore.muted};">
-              Connect your Patreon campaign to automatically sync supporters and manage perks.
-            </p>
-          </div>
-        </div>
-
-        {#if patreonStatus?.isConfigured}
-          <div class="flex items-center gap-2">
-            <button
-              class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-              style="background: {$colorStore.primary}; color: white;"
-              on:click={refreshData}
-              disabled={isRefreshing}
-            >
-              <RefreshCw class="w-4 h-4 {isRefreshing ? 'animate-spin' : ''}" />
-              Refresh
-            </button>
-          </div>
-        {/if}
-      </div>
-    </div>
 
     {#if loading}
       <div
@@ -550,33 +521,6 @@
         </div>
       </div>
     {:else}
-      <!-- Tabs Navigation -->
-      <div
-        class="backdrop-blur-sm rounded-2xl border shadow-2xl overflow-hidden"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-               border-color: {$colorStore.primary}30;"
-        in:fade
-      >
-        <div class="flex overflow-x-auto">
-          {#each [
-            { id: "overview", label: "Overview", icon: TrendingUp },
-            { id: "supporters", label: "Supporters", icon: Users },
-            { id: "tiers", label: "Tiers & Roles", icon: Award },
-            { id: "goals", label: "Goals", icon: Target },
-            { id: "settings", label: "Settings", icon: Settings }
-          ] as tab}
-            <button
-              class="flex items-center gap-2 px-6 py-4 whitespace-nowrap transition-colors border-b-2 {activeTab === tab.id ? 'border-current' : 'border-transparent'}"
-              style="color: {activeTab === tab.id ? $colorStore.text : $colorStore.muted};"
-              on:click={() => activeTab = tab.id}
-            >
-              <svelte:component this={tab.icon} class="w-4 h-4" />
-              {tab.label}
-            </button>
-          {/each}
-        </div>
-      </div>
-
       <!-- Tab Content -->
       <div class="space-y-6">
         {#if activeTab === "overview"}
@@ -640,6 +584,88 @@
                 <p class="text-sm" style="color: {$colorStore.muted};">Monthly recurring</p>
               </div>
             {/if}
+
+            <!-- Creator Card -->
+            {#if patreonCreator}
+              <div
+                class="backdrop-blur-sm rounded-2xl border p-4 md:p-6 shadow-2xl col-span-1 md:col-span-2 lg:col-span-1"
+                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                       border-color: {$colorStore.primary}30;"
+              >
+                <div class="flex items-center gap-3 mb-4">
+                  <Heart class="w-5 h-5 md:w-6 md:h-6" style="color: {$colorStore.primary};" />
+                  <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">Campaign Creator</h3>
+                </div>
+                
+                <!-- Mobile-first layout -->
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3">
+                    {#if patreonCreator.attributes?.image_url}
+                      <img 
+                        src={patreonCreator.attributes.image_url} 
+                        alt="Creator avatar" 
+                        class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+                      />
+                    {:else}
+                      <div 
+                        class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                        style="background: {$colorStore.primary}20;"
+                      >
+                        <Heart class="w-6 h-6 md:w-7 md:h-7" style="color: {$colorStore.primary};" />
+                      </div>
+                    {/if}
+                    
+                    <div class="flex-1 min-w-0">
+                      <p class="font-semibold text-sm md:text-base truncate" style="color: {$colorStore.text};">
+                        {patreonCreator.attributes?.full_name || patreonCreator.attributes?.first_name || 'Unknown Creator'}
+                      </p>
+                      
+                      {#if patreonCreator.attributes?.is_creator}
+                        <div class="flex items-center gap-1 mt-1">
+                          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span class="text-xs" style="color: {$colorStore.muted};">Verified Creator</span>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                  
+                  <!-- Creator info -->
+                  <div class="space-y-2 text-xs md:text-sm">
+                    {#if patreonCreator.attributes?.created}
+                      <div class="flex justify-between">
+                        <span style="color: {$colorStore.muted};">Member since:</span>
+                        <span style="color: {$colorStore.text};">
+                          {new Date(patreonCreator.attributes.created).getFullYear()}
+                        </span>
+                      </div>
+                    {/if}
+                    
+                    {#if patreonCreator.relationships?.memberships?.data}
+                      <div class="flex justify-between">
+                        <span style="color: {$colorStore.muted};">Memberships:</span>
+                        <span style="color: {$colorStore.text};">
+                          {patreonCreator.relationships.memberships.data.length}
+                        </span>
+                      </div>
+                    {/if}
+                  </div>
+                  
+                  <!-- Action button -->
+                  {#if patreonCreator.attributes?.url}
+                    <a 
+                      href={patreonCreator.attributes.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors w-full justify-center"
+                      style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                    >
+                      <Heart class="w-3 h-3 md:w-4 md:h-4" />
+                      View Patreon Profile
+                    </a>
+                  {/if}
+                </div>
+              </div>
+            {/if}
           </div>
 
           <!-- Quick Actions -->
@@ -688,6 +714,16 @@
               >
                 <RefreshCw class="w-4 h-4" />
                 Refresh Token
+              </button>
+
+              <button
+                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+                on:click={disconnectPatreon}
+                disabled={isConnecting}
+              >
+                <Unlink class="w-4 h-4" />
+                Re-login
               </button>
             </div>
           </div>
@@ -774,32 +810,29 @@
                 <div>
                   <label for="patreon-tier" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">Patreon
                     Tier</label>
-                  <select
-                    id="patreon-tier"
-                    bind:value={selectedTierId}
-                    class="w-full px-3 py-2 rounded-lg border"
-                    style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                  >
-                    <option value="">Select a tier...</option>
-                    {#each patreonTiers as tier}
-                      <option value={tier.tierId}>{tier.tierTitle} - {formatCurrency(tier.amountCents)}</option>
-                    {/each}
-                  </select>
+                  <DiscordSelector
+                    type="custom"
+                    options={patreonTiers.map(tier => ({
+                      id: tier.tierId,
+                      name: `${tier.tierTitle} - ${formatCurrency(tier.amountCents)}`,
+                      label: `${tier.tierTitle} - ${formatCurrency(tier.amountCents)}`
+                    }))}
+                    selected={selectedTierId}
+                    placeholder="Select a tier..."
+                    customIcon={Award}
+                    on:change={(e) => selectedTierId = e.detail.selected}
+                  />
                 </div>
                 <div>
                   <label for="discord-role" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">Discord
                     Role</label>
-                  <select
-                    id="discord-role"
-                    bind:value={selectedRoleId}
-                    class="w-full px-3 py-2 rounded-lg border"
-                    style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                  >
-                    <option value="">Select a role...</option>
-                    {#each guildRoles as role}
-                      <option value={role.id}>{role.name}</option>
-                    {/each}
-                  </select>
+                  <DiscordSelector
+                    type="role"
+                    options={guildRoles}
+                    selected={selectedRoleId}
+                    placeholder="Select a role..."
+                    on:change={(e) => selectedRoleId = e.detail.selected}
+                  />
                 </div>
                 <div>
                   <button
@@ -857,60 +890,6 @@
               {/if}
             </div>
           </div>
-        {:else if activeTab === "goals"}
-          <!-- Goals Tab -->
-          <div
-            class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                   border-color: {$colorStore.primary}30;"
-            in:fly={{ y: 20, duration: 300 }}
-          >
-            <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Patreon Goals</h3>
-            {#if patreonGoals.length === 0}
-              <div class="text-center py-8">
-                <Target class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
-                <p style="color: {$colorStore.muted};">No goals found. Create goals in your Patreon campaign to track
-                  progress. Try clicking "Sync All Data".</p>
-              </div>
-            {:else}
-              <div class="space-y-4">
-                {#each patreonGoals as goal}
-                  <div
-                    class="rounded-lg p-4 border"
-                    style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
-                  >
-                    <div class="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 class="font-semibold" style="color: {$colorStore.text};">{goal.title}</h4>
-                        {#if goal.description}
-                          <p class="text-sm mt-1" style="color: {$colorStore.muted};">{goal.description}</p>
-                        {/if}
-                      </div>
-                      <div class="text-right">
-                        <p class="font-bold"
-                           style="color: {$colorStore.primary};">{formatCurrency(goal.amountCents)}</p>
-                        {#if goal.reachedAt}
-                          <p class="text-xs text-green-400">Reached {formatDate(goal.reachedAt)}</p>
-                        {/if}
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm">
-                        <span style="color: {$colorStore.muted};">Progress</span>
-                        <span style="color: {$colorStore.text};">{goal.completedPercentage}%</span>
-                      </div>
-                      <div class="w-full bg-gray-600 rounded-full h-2">
-                        <div
-                          class="h-2 rounded-full transition-all duration-300"
-                          style="background: {$colorStore.primary}; width: {goal.completedPercentage}%;"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
         {:else if activeTab === "settings"}
           <!-- Settings Tab -->
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
@@ -925,17 +904,13 @@
                   <div>
                     <label for="announcement-channel" class="block text-sm font-medium mb-2"
                            style="color: {$colorStore.text};">Announcement Channel</label>
-                    <select
-                      id="announcement-channel"
-                      bind:value={configForm.channelId}
-                      class="w-full px-3 py-2 rounded-lg border"
-                      style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                    >
-                      <option value={undefined}>Select a channel...</option>
-                      {#each guildChannels as channel}
-                        <option value={BigInt(channel.id)}>#{channel.name}</option>
-                      {/each}
-                    </select>
+                    <DiscordSelector
+                      type="channel"
+                      options={guildChannels}
+                      selected={configForm.channelId ? configForm.channelId.toString() : ""}
+                      placeholder="Select a channel..."
+                      on:change={(e) => configForm.channelId = e.detail.selected ? BigInt(e.detail.selected) : undefined}
+                    />
                   </div>
                   <div>
                     <label for="announcement-day" class="block text-sm font-medium mb-2"
@@ -1009,5 +984,4 @@
         {/if}
       </div>
     {/if}
-  </div>
-</div>
+</DashboardPageLayout>

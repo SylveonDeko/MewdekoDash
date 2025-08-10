@@ -14,6 +14,24 @@ import type {
   Starboard,
   SuggestionsModel
 } from "$lib/types/models";
+import type {
+  ProtectionStats,
+  AntiRaidSettings,
+  AntiSpamSettings,
+  AntiAltSettings,
+  AntiMassMentionSettings
+} from "$lib/types/protection";
+import type {
+  TodoList,
+  TodoItem,
+  TodoListPermission,
+  CreateTodoListRequest,
+  AddTodoItemRequest,
+  UpdateTodoItemRequest,
+  SetDueDateRequest,
+  TagRequest,
+  GrantPermissionRequest
+} from "$lib/types/todo";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
 import type {
@@ -21,15 +39,14 @@ import type {
   PatreonAnalytics,
   PatreonConfig,
   PatreonConfigUpdateRequest,
-  PatreonGoal,
+  PatreonCreator,
   PatreonOAuthCallbackResponse,
   PatreonOAuthResponse,
   PatreonOAuthStatusResponse,
   PatreonOperationRequest,
   PatreonSupporter,
   PatreonTier,
-  PatreonTierMappingRequest
-} from "$lib/types.ts";
+  PatreonTierMappingRequest} from "$lib/types.ts";
 import type {
   ChatSaveData,
   ClientUserInfo,
@@ -46,10 +63,51 @@ import type {
   BirthdayStats,
   BirthdayUser
 } from "$lib/types/birthday.ts";
+import type {
+  CustomVoiceConfigurationResponse,
+  CustomVoiceConfigurationRequest,
+  CustomVoiceChannelResponse,
+  UpdateCustomVoiceChannelRequest,
+  CustomVoiceUserPreference
+} from "$lib/types/customvoice.ts";
+import type {
+  LoggingConfigurationResponse,
+  BulkUpdateLogChannelsRequest,
+  SetIgnoredChannelsRequest,
+  LogType
+} from "$lib/types/logging.ts";
+import type {
+  AutomodRule,
+  CreateAutomodRuleRequest,
+  FilterStats
+} from "$lib/types/filter.ts";
+import type {
+  UserMessageStats,
+  ChannelMessageStats,
+  HourlyMessageStats,
+  MessageStatsResponse,
+  MessageCountExportRequest
+} from "$lib/types/messagestats.ts";
+import type {
+  SystemMetrics,
+  PerformanceData,
+  DatabaseMetrics,
+  SystemHealthStatus
+} from "$lib/types/system.ts";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import type { DiscordGuild } from "$lib/types/discordGuild.ts";
+import type {
+  AddButtonRequest, AddSelectMenuRequest, AddSelectOptionRequest, AddTagsRequest,
+  BatchAddRoleRequest, BatchMoveTicketsRequest, BatchTransferTicketsRequest,
+  BlacklistUserRequest, BlacklistedUserResponse, ClaimTicketRequest, CreateCaseRequest,
+  CreatePanelRequest, CreatePriorityRequest, CreateTagRequest, GuildStatistics,
+  PanelButton, PanelSelectMenu, PanelStatus, RecreateAllPanelsResponse, RemoveTagsRequest,
+  SetChannelRequest, SetPriorityRequest, StaffResponseStats, Ticket, TicketActivity, 
+  TicketCase, TicketPanel, TicketPriority, TicketTag, UpdateButtonRequest, UpdateCaseRequest, 
+  UpdateEmbedRequest, UpdatePlaceholderRequest, UserStatistics
+} from "$lib/types/tickets.ts";
 
 // Reserved for future use - currently unused but kept for potential security checks
 // const ALLOWED_ORIGINS = ["localhost", "127.0.0.1"];
@@ -325,8 +383,6 @@ export const api = {
       `ClientOperations/members/${guildId}`
     ),
 
-  getCommandsAndModules: () =>
-    apiRequest<Module[]>("Permissions/commands"),
 
   getPermissions: (guildId: bigint) =>
     apiRequest<PermissionCache>(`Permissions/regular/${guildId}`),
@@ -351,8 +407,6 @@ export const api = {
   setVerbose: (guildId: bigint, verbose: boolean) =>
     apiRequest<void>(`Permissions/regular/${guildId}/verbose`, "POST", { verbose }),
 
-  setPermissionRole: (guildId: bigint, roleId: string | null) =>
-    apiRequest<void>(`Permissions/regular/${guildId}/role`, "POST", roleId),
   deleteAfkStatus: (guildId: bigint, userId: bigint) =>
     apiRequest<void>(`afk/${guildId}/${userId}`, "DELETE"),
   getAllAfkStatus: (guildId: bigint) =>
@@ -387,10 +441,12 @@ export const api = {
     apiRequest<void>(`afk/${guildId}/type`, "POST", type),
   getAfkTimeout: (guildId: bigint) =>
     apiRequest<number>(`afk/${guildId}/timeout`),
-  afkTimeoutSet: (guildId: bigint, timeout: number) =>
+  afkTimeoutSet: (guildId: bigint, timeout: string) =>
     apiRequest<void>(`afk/${guildId}/timeout`, "POST", timeout),
   getDisabledAfkChannels: (guildId: bigint) =>
     apiRequest<string | null>(`afk/${guildId}/disabled-channels`),
+  setDisabledAfkChannels: (guildId: bigint, channels: string) =>
+    apiRequest<void>(`afk/${guildId}/disabled-channels`, "POST", channels),
   getCustomAfkMessage: (guildId: bigint) =>
     apiRequest<string>(`afk/${guildId}/custom-message`),
   setCustomAfkMessage: (guildId: bigint, message: string) =>
@@ -633,34 +689,27 @@ export const api = {
       `ClientOperations/roles/${guildId}`
     ),
 
-  /*  getTicketPanels: (guildId: bigint) =>
+  getGuildChannels: (guildId: bigint, type?: number | undefined) =>
+    apiRequest<Array<{ id: string; name: string; type: number }>>(
+      `ClientOperations/channels/${guildId}/${!type ? 4 : type}`
+    ),
+
+  getTicketPanels: (guildId: bigint) =>
       apiRequest<TicketPanel[]>(`ticket/${guildId}/panels`),
 
     createTicketPanel: (
       guildId: bigint,
-      panel: {
-        channelId: bigint;
-        embedJson: string;
-        title: string;
-        description: string;
-        color: {
-          rawValue: number;
-        };
-      }
+      panel: CreatePanelRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/panels`, "POST", panel),
 
-    deleteTicketPanel: (guildId: bigint, panelId: number) =>
+    deleteTicketPanel: (guildId: bigint, panelId: bigint) =>
       apiRequest<void>(`ticket/${guildId}/panels/${panelId}`, "DELETE"),
 
     updateTicketPanelEmbed: (
       guildId: bigint,
       panelId: number,
-      embed: {
-        title: string;
-        description: string;
-        color: string;
-      }
+      embed: UpdateEmbedRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/panels/${panelId}/embed`, "PUT", embed),
 
@@ -677,34 +726,30 @@ export const api = {
     recreateTicketPanel: (guildId: bigint, panelId: number) =>
       apiRequest<void>(`ticket/${guildId}/panels/${panelId}/recreate`, "POST"),
 
+    getPanelStatus: (guildId: bigint) =>
+      apiRequest<PanelStatus[]>(`ticket/${guildId}/panels/status`),
+
+    recreateAllPanels: (guildId: bigint) =>
+      apiRequest<RecreateAllPanelsResponse>(`ticket/${guildId}/panels/recreate-all`, "POST"),
+
   // Button Management
     getPanelButtons: (guildId: bigint, panelId: number) =>
-      apiRequest<TicketButton[]>(`ticket/${guildId}/panels/${panelId}/buttons`),
+      apiRequest<PanelButton[]>(`ticket/${guildId}/panels/${panelId}/buttons`),
 
     addPanelButton: (
       guildId: bigint,
       panelId: number,
-      button: {
-        label: string;
-        emoji: string;
-        style: number;
-        categoryId: bigint;
-      }
+      button: AddButtonRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/panels/${panelId}/buttons`, "POST", button),
 
     getButton: (guildId: bigint, buttonId: number) =>
-      apiRequest<TicketButton>(`ticket/${guildId}/buttons/${buttonId}`),
+      apiRequest<PanelButton>(`ticket/${guildId}/buttons/${buttonId}`),
 
     updateButton: (
       guildId: bigint,
       buttonId: number,
-      button: {
-        label: string;
-        emoji: string;
-        style: number;
-        categoryId: bigint;
-      }
+      button: UpdateButtonRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/buttons/${buttonId}`, "PUT", button),
 
@@ -713,40 +758,34 @@ export const api = {
 
   // Select Menu Management
     getPanelSelectMenus: (guildId: bigint, panelId: number) =>
-      apiRequest<TicketSelectMenu[]>(`ticket/${guildId}/panels/${panelId}/selectmenus`),
+      apiRequest<PanelSelectMenu[]>(`ticket/${guildId}/panels/${panelId}/selectmenus`),
 
     addPanelSelectMenu: (
       guildId: bigint,
       panelId: number,
-      menu: {
-        placeholder: string;
-        minValues: number;
-        maxValues: number;
-      }
+      menu: AddSelectMenuRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/panels/${panelId}/selectmenus`, "POST", menu),
 
     updateSelectMenuPlaceholder: (
       guildId: bigint,
       menuId: number,
-      placeholder: string
+      request: UpdatePlaceholderRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}/placeholder`, "PUT", placeholder),
+      apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}/placeholder`, "PUT", request),
 
     addSelectMenuOption: (
       guildId: bigint,
       menuId: number,
-      option: {
-        label: string;
-        description: string;
-        emoji: string;
-        categoryId: bigint;
-      }
+      option: AddSelectOptionRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}/options`, "POST", option),
 
     deleteSelectMenu: (guildId: bigint, menuId: number) =>
       apiRequest<void>(`ticket/${guildId}/selectmenus/${menuId}`, "DELETE"),
+
+    deleteSelectMenuOption: (guildId: bigint, optionId: number) =>
+      apiRequest<void>(`ticket/${guildId}/selectmenus/options/${optionId}`, "DELETE"),
 
   // Ticket Management
     getTicket: (guildId: bigint, ticketId: number) =>
@@ -755,8 +794,11 @@ export const api = {
     getTicketByChannel: (guildId: bigint, channelId: bigint) =>
       apiRequest<Ticket>(`ticket/${guildId}/tickets/by-channel/${channelId}`),
 
-    claimTicket: (guildId: bigint, channelId: bigint, staffId: bigint) =>
-      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/claim`, "POST", { staffId }),
+    claimTicket: (guildId: bigint, channelId: bigint, request: ClaimTicketRequest) =>
+      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/claim`, "POST", request),
+
+    unclaimTicket: (guildId: bigint, channelId: bigint) =>
+      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/unclaim`, "POST"),
 
     closeTicket: (
       guildId: bigint,
@@ -771,16 +813,23 @@ export const api = {
     setTicketPriority: (
       guildId: bigint,
       channelId: bigint,
-      priorityId: number
+      request: SetPriorityRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/priority`, "POST", { priorityId }),
+      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/priority`, "POST", request),
 
     addTicketTags: (
       guildId: bigint,
       channelId: bigint,
-      tagIds: number[]
+      request: AddTagsRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/tags`, "POST", { tagIds }),
+      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/tags`, "POST", request),
+
+    removeTicketTags: (
+      guildId: bigint,
+      channelId: bigint,
+      request: RemoveTagsRequest
+    ) =>
+      apiRequest<void>(`ticket/${guildId}/tickets/by-channel/${channelId}/tags`, "DELETE", request),
 
     addTicketNotes: (
       guildId: bigint,
@@ -798,27 +847,22 @@ export const api = {
 
     createTicketCase: (
       guildId: bigint,
-      ticketCase: {
-        title: string;
-        description: string;
-        priority: number;
-      }
+      ticketCase: CreateCaseRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/cases`, "POST", ticketCase),
 
     updateTicketCase: (
       guildId: bigint,
       caseId: number,
-      ticketCase: {
-        title: string;
-        description: string;
-        priority: number;
-      }
+      ticketCase: UpdateCaseRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/cases/${caseId}`, "PUT", ticketCase),
 
     closeTicketCase: (guildId: bigint, caseId: number) =>
       apiRequest<void>(`ticket/${guildId}/cases/${caseId}/close`, "POST"),
+
+    reopenTicketCase: (guildId: bigint, caseId: number) =>
+      apiRequest<void>(`ticket/${guildId}/cases/${caseId}/reopen`, "POST"),
 
     linkTicketsToCase: (
       guildId: bigint,
@@ -827,30 +871,39 @@ export const api = {
     ) =>
       apiRequest<void>(`ticket/${guildId}/cases/${caseId}/link-tickets`, "POST", { ticketIds }),
 
+    unlinkTickets: (
+      guildId: bigint,
+      ticketIds: number[]
+    ) =>
+      apiRequest<void>(`ticket/${guildId}/unlink-tickets`, "POST", { ticketIds }),
+
+    addCaseNotes: (
+      guildId: bigint,
+      caseId: number,
+      notes: string
+    ) =>
+      apiRequest<void>(`ticket/${guildId}/cases/${caseId}/notes`, "POST", { notes }),
+
   // Statistics
     getTicketStats: (guildId: bigint) =>
-      apiRequest<TicketStats>(`ticket/${guildId}/statistics`),
+      apiRequest<GuildStatistics>(`ticket/${guildId}/statistics`),
 
     getUserTicketStats: (guildId: bigint, userId: bigint) =>
-      apiRequest<UserTicketStats>(`ticket/${guildId}/statistics/users/${userId}`),
+      apiRequest<UserStatistics>(`ticket/${guildId}/statistics/users/${userId}`),
 
     getTicketActivity: (guildId: bigint, days?: number) =>
-      apiRequest<TicketActivity>(`ticket/${guildId}/statistics/activity${days ? `?days=${days}` : ""}`),
+      apiRequest<TicketActivity[]>(`ticket/${guildId}/statistics/activity${days ? `?days=${days}` : ""}`),
 
     getStaffResponseStats: (guildId: bigint) =>
-      apiRequest<StaffResponseStats>(`ticket/${guildId}/statistics/staff-response`),
+      apiRequest<StaffResponseStats[]>(`ticket/${guildId}/statistics/staff-response`),
 
   // Priority Management
     getTicketPriorities: (guildId: bigint) =>
-      apiRequest<Priority[]>(`ticket/${guildId}/priorities`),
+      apiRequest<TicketPriority[]>(`ticket/${guildId}/priorities`),
 
     createTicketPriority: (
       guildId: bigint,
-      priority: {
-        name: string;
-        color: string;
-        level: number;
-      }
+      priority: CreatePriorityRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/priorities`, "POST", priority),
 
@@ -863,10 +916,7 @@ export const api = {
 
     createTicketTag: (
       guildId: bigint,
-      tag: {
-        name: string;
-        color: string;
-      }
+      tag: CreateTagRequest
     ) =>
       apiRequest<void>(`ticket/${guildId}/tags`, "POST", tag),
 
@@ -875,14 +925,14 @@ export const api = {
 
   // Blacklist Management
     getTicketBlacklist: (guildId: bigint) =>
-      apiRequest<BlacklistedUser[]>(`ticket/${guildId}/blacklist`),
+      apiRequest<BlacklistedUserResponse[]>(`ticket/${guildId}/blacklist`),
 
     blacklistUser: (
       guildId: bigint,
       userId: bigint,
-      reason: string
+      request: BlacklistUserRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/blacklist/${userId}`, "POST", { reason }),
+      apiRequest<void>(`ticket/${guildId}/blacklist/${userId}`, "POST", request),
 
     unblacklistUser: (guildId: bigint, userId: bigint) =>
       apiRequest<void>(`ticket/${guildId}/blacklist/${userId}`, "DELETE"),
@@ -896,31 +946,28 @@ export const api = {
 
     moveTicketsBatch: (
       guildId: bigint,
-      fromCategoryId: bigint,
-      toCategoryId: bigint
+      request: BatchMoveTicketsRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/batch/move-tickets`, "POST", { fromCategoryId, toCategoryId }),
+      apiRequest<void>(`ticket/${guildId}/batch/move-tickets`, "POST", request),
 
     addRoleBatch: (
       guildId: bigint,
-      roleId: bigint,
-      viewOnly: boolean
+      request: BatchAddRoleRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/batch/add-role`, "POST", { roleId, viewOnly }),
+      apiRequest<void>(`ticket/${guildId}/batch/add-role`, "POST", request),
 
     transferTicketsBatch: (
       guildId: bigint,
-      fromStaffId: bigint,
-      toStaffId: bigint
+      request: BatchTransferTicketsRequest
     ) =>
-      apiRequest<void>(`ticket/${guildId}/batch/transfer-tickets`, "POST", { fromStaffId, toStaffId }),
+      apiRequest<void>(`ticket/${guildId}/batch/transfer-tickets`, "POST", request),
 
   // Settings
-    setTicketTranscriptChannel: (guildId: bigint, channelId: bigint) =>
-      apiRequest<void>(`ticket/${guildId}/settings/transcript-channel`, "PUT", { channelId }),
+    setTicketTranscriptChannel: (guildId: bigint, request: SetChannelRequest) =>
+      apiRequest<void>(`ticket/${guildId}/settings/transcript-channel`, "PUT", request),
 
-    setTicketLogChannel: (guildId: bigint, channelId: bigint) =>
-      apiRequest<void>(`ticket/${guildId}/settings/log-channel`, "PUT", { channelId }),*/
+    setTicketLogChannel: (guildId: bigint, request: SetChannelRequest) =>
+      apiRequest<void>(`ticket/${guildId}/settings/log-channel`, "PUT", request),
 
 // Additional Helper Methods
   getGuildCategories: (guildId: bigint) =>
@@ -1002,6 +1049,16 @@ export const api = {
   getGuildTextChannels: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
       `ClientOperations/textchannels/${guildId}`
+    ),
+
+  getGuildVoiceChannels: (guildId: bigint) =>
+    apiRequest<Array<{ id: string; name: string }>>(
+      `ClientOperations/channels/${guildId}/2`
+    ),
+
+  getGuildChannelsByType: (guildId: bigint, channelType: number) =>
+    apiRequest<Array<{ id: string; name: string }>>(
+      `ClientOperations/channels/${guildId}/${channelType}`
     ),
 
   getPlayerStatus: (guildId: bigint, userId: bigint) =>
@@ -1280,14 +1337,18 @@ export const api = {
     getPatreonTiers: (guildId: bigint) =>
       apiRequest<PatreonTier[]>(`patreon/tiers?guildId=${guildId}`),
 
-    getPatreonGoals: (guildId: bigint) =>
-      apiRequest<PatreonGoal[]>(`patreon/goals?guildId=${guildId}`),
+    getPatreonCreator: (guildId: bigint) =>
+      apiRequest<PatreonCreator>(`patreon/creator?guildId=${guildId}`),
+
 
     triggerPatreonOperation: (guildId: bigint, operation: PatreonOperationRequest) =>
       apiRequest<{ message: string }>(`patreon/operations?guildId=${guildId}`, "POST", operation),
 
     mapPatreonTierToRole: (guildId: bigint, mapping: PatreonTierMappingRequest) =>
       apiRequest<{ message: string }>(`patreon/tiers/map?guildId=${guildId}`, "POST", mapping),
+
+    disconnectPatreon: (guildId: bigint) =>
+      apiRequest<{ message: string }>(`patreon/oauth/disconnect?guildId=${guildId}`, "DELETE"),
 
   // Moderation endpoints
   getWarnings: (guildId: bigint) =>
@@ -1320,6 +1381,12 @@ export const api = {
       normalRoles: bigint[];
       botRoles: bigint[];
     }>(`Administration/${guildId}/auto-assign-roles`),
+
+  setAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/normal`, "POST", roleIds),
+
+  setBotAutoAssignRoles: (guildId: bigint, roleIds: bigint[]) =>
+    apiRequest<void>(`Administration/${guildId}/auto-assign-roles/bots`, "POST", roleIds),
 
   toggleAutoAssignRole: (guildId: bigint, roleId: bigint) =>
     apiRequest<bigint[]>(`Administration/${guildId}/auto-assign-roles/normal/${roleId}/toggle`, "POST"),
@@ -1386,27 +1453,199 @@ export const api = {
   stopAntiSpam: (guildId: bigint) =>
     apiRequest<{ success: boolean }>(`Administration/${guildId}/protection/anti-spam/stop`, "POST"),
 
-  getSelfAssignableRoles: (guildId: bigint) =>
-    apiRequest<Array<{
-      id: number;
-      guildId: bigint;
-      roleId: bigint;
-      group: number;
-    }>>(`Administration/${guildId}/self-assignable-roles`),
+  // Enhanced Protection API endpoints
+  updateAntiRaidSettings: (guildId: bigint, settings: Partial<AntiRaidSettings>) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-raid/settings`, "PUT", settings),
 
-  removeSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
-    apiRequest<{ success: boolean }>(`Administration/${guildId}/self-assignable-roles/${roleId}`, "DELETE"),
+  updateAntiSpamSettings: (guildId: bigint, settings: Partial<AntiSpamSettings>) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/settings`, "PUT", settings),
 
-  // Message Count endpoints
+  updateAntiAltSettings: (guildId: bigint, settings: Partial<AntiAltSettings>) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-alt/settings`, "PUT", settings),
+
+  updateAntiMassMentionSettings: (guildId: bigint, settings: Partial<AntiMassMentionSettings>) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-mass-mention/settings`, "PUT", settings),
+
+  getProtectionStats: (guildId: bigint) =>
+    apiRequest<ProtectionStats>(`Administration/${guildId}/protection/stats`),
+
+  addAntiSpamIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/ignored-channels`, "POST", { channelId }),
+
+  removeAntiSpamIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/ignored-channels/${channelId}`, "DELETE"),
+
+  addAntiSpamIgnoredUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/ignored-users`, "POST", { userId }),
+
+  removeAntiSpamIgnoredUser: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam/ignored-users/${userId}`, "DELETE"),
+
+  startAntiAlt: (guildId: bigint, minAge: string, action: number, actionDuration: number, roleId?: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-alt/start`, "POST", {
+      minAge,
+      action,
+      actionDuration,
+      roleId
+    }),
+
+  stopAntiAlt: (guildId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/protection/anti-alt/stop`, "POST"),
+
+  startAntiMassMention: (guildId: bigint, mentionThreshold: number, timeWindowSeconds: number, action: number, muteTime?: number, roleId?: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-mass-mention/start`, "POST", {
+      mentionThreshold,
+      timeWindowSeconds,
+      action,
+      muteTime,
+      roleId
+    }),
+
+  stopAntiMassMention: (guildId: bigint) =>
+    apiRequest<{ success: boolean }>(`Administration/${guildId}/protection/anti-mass-mention/stop`, "POST"),
+
+  // New Protection Controller endpoints
+  configureProtection: (guildId: bigint, protectionType: string, config: any) =>
+    apiRequest<any>(`Protection/${guildId}/${protectionType}`, "PUT", config),
+
+  toggleAntiSpamIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ added: boolean; ignoredChannels: bigint[] }>(`Protection/${guildId}/anti-spam/ignored-channels/${channelId}`, "POST"),
+
+  getProtectionStatistics: (guildId: bigint) =>
+    apiRequest<ProtectionStats>(`Protection/${guildId}/statistics`),
+
+  // New Administration Controller Protection Endpoints
+  configureAntiRaid: (guildId: bigint, config: {
+    enabled: boolean;
+    userThreshold?: number;
+    seconds?: number;
+    action?: string;
+    punishDuration?: number;
+  }) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-raid`, "PUT", {
+      Enabled: config.enabled,
+      UserThreshold: config.userThreshold,
+      Seconds: config.seconds,
+      Action: config.action,
+      PunishDuration: config.punishDuration
+    }),
+
+  configureAntiSpam: (guildId: bigint, config: {
+    enabled: boolean;
+    messageThreshold?: number;
+    action?: string;
+    muteTime?: number;
+    roleId?: bigint;
+  }) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-spam`, "PUT", {
+      Enabled: config.enabled,
+      MessageThreshold: config.messageThreshold,
+      Action: config.action,
+      MuteTime: config.muteTime,
+      RoleId: config.roleId
+    }),
+
+  configureAntiAlt: (guildId: bigint, config: {
+    enabled: boolean;
+    minAgeMinutes: number;
+    action: string;
+    actionDurationMinutes: number;
+    roleId?: bigint;
+  }) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-alt`, "PUT", {
+      Enabled: config.enabled,
+      MinAgeMinutes: config.minAgeMinutes,
+      Action: config.action,
+      ActionDurationMinutes: config.actionDurationMinutes,
+      RoleId: config.roleId
+    }),
+
+  configureAntiMassMention: (guildId: bigint, config: {
+    enabled: boolean;
+    mentionThreshold: number;
+    timeWindowSeconds: number;
+    maxMentionsInTimeWindow: number;
+    ignoreBots: boolean;
+    action: string;
+    muteTime: number;
+    roleId?: bigint;
+  }) =>
+    apiRequest<void>(`Administration/${guildId}/protection/anti-mass-mention`, "PUT", {
+      Enabled: config.enabled,
+      MentionThreshold: config.mentionThreshold,
+      TimeWindowSeconds: config.timeWindowSeconds,
+      MaxMentionsInTimeWindow: config.maxMentionsInTimeWindow,
+      IgnoreBots: config.ignoreBots,
+      Action: config.action,
+      MuteTime: config.muteTime,
+      RoleId: config.roleId
+    }),
+
+  resetPermissionOverrides: (guildId: bigint) =>
+    apiRequest<void>(`Administration/${guildId}/permissions/overrides/reset`, "POST"),
+
+  setPermissionRole: (guildId: bigint, roleId: string) =>
+    apiRequest<void>(`Administration/${guildId}/permissions/role`, "POST", roleId),
+
+  getCommandsAndModules: () =>
+    apiRequest<Array<{ name: string; commands: Array<{ commandName: string; description: string; example: string[]; guildUserPermissions: string; channelUserPermissions: string; guildBotPermissions: string; channelBotPermissions: string; isDragon: boolean }> }>>(`Administration/0/commands`),
+
+  massBan: (guildId: bigint, userIds: bigint[], reason?: string) =>
+    apiRequest<{ succeeded: number; failed: number }>(`Administration/${guildId}/mass-ban`, "POST", { userIds, reason }),
+
+  getCommandCooldowns: (guildId: bigint) =>
+    apiRequest<Array<{ commandName: string; seconds: number }>>(`Administration/${guildId}/command-cooldowns`),
+
+  setCommandCooldown: (guildId: bigint, commandName: string, seconds: number) =>
+    apiRequest<void>(`Administration/${guildId}/command-cooldowns/${commandName}`, "PUT", seconds),
+
+  removeCommandCooldown: (guildId: bigint, commandName: string) =>
+    apiRequest<void>(`Administration/${guildId}/command-cooldowns/${commandName}`, "DELETE"),
+
+  getFilterSettings: (guildId: bigint) =>
+    apiRequest<any>(`Filter/${guildId}/settings`),
+
+  updateServerFilterSettings: (guildId: bigint, settings: { filterWords: boolean; filterInvites: boolean; filterLinks: boolean }) =>
+    apiRequest<{ success: boolean }>(`Filter/${guildId}/server-settings`, "PUT", settings),
+
+  toggleFilteredWord: (guildId: bigint, word: string) =>
+    apiRequest<{ added: boolean; word: string }>(`Filter/${guildId}/words/${encodeURIComponent(word)}`, "POST"),
+
+  getFilteredWords: (guildId: bigint) =>
+    apiRequest<{ words: string[] }>(`Filter/${guildId}/words`),
+
+  clearFilteredWords: (guildId: bigint) =>
+    apiRequest<{ success: boolean; clearedCount: number }>(`Filter/${guildId}/words`, "DELETE"),
+
+  toggleAutoBanWord: (guildId: bigint, word: string) =>
+    apiRequest<{ added: boolean; word: string }>(`Filter/${guildId}/autoban-words/${encodeURIComponent(word)}`, "POST"),
+
+  getAutoBanWords: (guildId: bigint) =>
+    apiRequest<{ words: string[] }>(`Filter/${guildId}/autoban-words`),
+
+  updateFilterWarnings: (guildId: bigint, settings: { warnOnFilteredWord?: boolean; warnOnInvite?: boolean }) =>
+    apiRequest<{ success: boolean }>(`Filter/${guildId}/warnings`, "PUT", settings),
+
+  toggleChannelFilter: (guildId: bigint, channelId: bigint, filterType: "word" | "invite" | "link") =>
+    apiRequest<{ enabled: boolean; channelId: bigint }>(`Filter/${guildId}/channels/${channelId}/${filterType}-filter`, "POST"),
+
+  updateTicketPanel: (guildId: bigint, panelId: number, data: any) =>
+    apiRequest<void>(`Ticket/${guildId}/panels/${panelId}/embed`, "PUT", data),
+
+  updatePanelButton: (guildId: bigint, buttonId: number, data: any) =>
+    apiRequest<void>(`Ticket/${guildId}/buttons/${buttonId}`, "PUT", data),
+
+  deletePanelButton: (guildId: bigint, buttonId: number) =>
+    apiRequest<void>(`Ticket/${guildId}/buttons/${buttonId}`, "DELETE"),
+
   getDailyMessageStats: (guildId: bigint) =>
     apiRequest<{
       enabled: boolean;
       dailyMessages: number;
       totalMessages: number;
       lastUpdated: string;
-    }>(`MessageCount/${guildId}/daily`),
+    }>(`messagecount/${guildId}/daily`),
 
-  // Birthday System endpoints
   getBirthdayConfig: (guildId: bigint) =>
     apiRequest<BirthdayConfig>(`birthday/${guildId}/config`),
 
@@ -1435,5 +1674,326 @@ export const api = {
     apiRequest<{ features: BirthdayFeatures }>(`birthday/${guildId}/features`),
 
   getBirthdayStats: (guildId: bigint) =>
-    apiRequest<BirthdayStats>(`birthday/${guildId}/stats`)
+    apiRequest<BirthdayStats>(`birthday/${guildId}/stats`),
+
+  getTodoLists: (guildId: bigint, userId: bigint) =>
+    apiRequest<TodoList[]>(`todo/${guildId}/lists/${userId}`),
+
+  getTodoList: (guildId: bigint, listId: number, userId: bigint) =>
+    apiRequest<TodoList>(`todo/${guildId}/lists/${listId}/${userId}`),
+
+  createTodoList: (guildId: bigint, request: CreateTodoListRequest) =>
+    apiRequest<TodoList>(`todo/${guildId}/lists`, "POST", request),
+
+  deleteTodoList: (guildId: bigint, listId: number, userId: bigint) =>
+    apiRequest<void>(`todo/${guildId}/lists/${listId}/${userId}`, "DELETE"),
+
+  getTodoItems: (guildId: bigint, listId: number, userId: bigint, includeCompleted: boolean = false) =>
+    apiRequest<TodoItem[]>(`todo/${guildId}/lists/${listId}/items/${userId}?includeCompleted=${includeCompleted}`),
+
+  addTodoItem: (guildId: bigint, listId: number, request: AddTodoItemRequest) =>
+    apiRequest<TodoItem>(`todo/${guildId}/lists/${listId}/items`, "POST", request),
+
+  updateTodoItem: (guildId: bigint, itemId: number, request: UpdateTodoItemRequest) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}`, "PUT", request),
+
+  completeTodoItem: (guildId: bigint, itemId: number, userId: bigint) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}/complete/${userId}`, "PUT"),
+
+  deleteTodoItem: (guildId: bigint, itemId: number, userId: bigint) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}/${userId}`, "DELETE"),
+
+  setTodoItemDueDate: (guildId: bigint, itemId: number, request: SetDueDateRequest) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}/duedate`, "PUT", request),
+
+  addTodoItemTag: (guildId: bigint, itemId: number, request: TagRequest) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}/tags`, "POST", request),
+
+  removeTodoItemTag: (guildId: bigint, itemId: number, request: TagRequest) =>
+    apiRequest<void>(`todo/${guildId}/items/${itemId}/tags`, "DELETE", request),
+
+  getTodoListPermissions: (guildId: bigint, listId: number, userId: bigint) =>
+    apiRequest<TodoListPermission[]>(`todo/${guildId}/lists/${listId}/permissions/${userId}`),
+
+  grantTodoListPermissions: (guildId: bigint, listId: number, request: GrantPermissionRequest) =>
+    apiRequest<void>(`todo/${guildId}/lists/${listId}/permissions`, "POST", request),
+
+  revokeTodoListPermissions: (guildId: bigint, listId: number, targetUserId: bigint, requestingUserId: bigint) =>
+    apiRequest<void>(`todo/${guildId}/lists/${listId}/permissions/${targetUserId}/${requestingUserId}`, "DELETE"),
+
+  getCustomVoiceConfig: (guildId: bigint) =>
+    apiRequest<CustomVoiceConfigurationResponse>(`customvoice/${guildId}/configuration`),
+
+  updateCustomVoiceConfig: (guildId: bigint, config: CustomVoiceConfigurationRequest) =>
+    apiRequest<void>(`customvoice/${guildId}/configuration`, "PUT", config),
+
+  getActiveCustomVoiceChannels: (guildId: bigint) =>
+    apiRequest<CustomVoiceChannelResponse[]>(`customvoice/${guildId}/channels`),
+
+  updateCustomVoiceChannel: (guildId: bigint, channelId: bigint, update: UpdateCustomVoiceChannelRequest) =>
+    apiRequest<void>(`customvoice/${guildId}/channels/${channelId}`, "PUT", update),
+
+  deleteCustomVoiceChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`customvoice/${guildId}/channels/${channelId}`, "DELETE"),
+
+  getCustomVoiceUserPreferences: (guildId: bigint, userId: bigint) =>
+    apiRequest<CustomVoiceUserPreference>(`customvoice/${guildId}/user-preferences/${userId}`),
+
+  updateCustomVoiceUserPreferences: (guildId: bigint, userId: bigint, preferences: Partial<CustomVoiceUserPreference>) =>
+    apiRequest<void>(`customvoice/${guildId}/user-preferences/${userId}`, "PUT", preferences),
+
+  // Logging endpoints
+  getLoggingConfig: (guildId: bigint) =>
+    apiRequest<LoggingConfigurationResponse>(`logging/${guildId}/configuration`),
+
+  updateLoggingConfig: (guildId: bigint, config: Partial<LoggingConfigurationResponse>) =>
+    apiRequest<void>(`logging/${guildId}/configuration`, "PUT", config),
+
+  bulkUpdateLogChannels: (guildId: bigint, updates: BulkUpdateLogChannelsRequest) =>
+    apiRequest<void>(`logging/${guildId}/channels/bulk`, "PUT", updates),
+
+  setLogChannel: (guildId: bigint, logType: LogType, channelId: bigint | null) =>
+    apiRequest<void>(`logging/${guildId}/channels/${logType}`, "POST", { channelId }),
+
+  setIgnoredChannels: (guildId: bigint, request: SetIgnoredChannelsRequest) =>
+    apiRequest<void>(`logging/${guildId}/ignored-channels`, "PUT", request),
+
+  addIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`logging/${guildId}/ignored-channels`, "POST", { channelId }),
+
+  removeIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`logging/${guildId}/ignored-channels/${channelId}`, "DELETE"),
+
+  // Enhanced Filter endpoints
+  getAutomodRules: (guildId: bigint) =>
+    apiRequest<AutomodRule[]>(`filter/${guildId}/automod-rules`),
+
+  createAutomodRule: (guildId: bigint, rule: CreateAutomodRuleRequest) =>
+    apiRequest<AutomodRule>(`filter/${guildId}/automod-rules`, "POST", rule),
+
+  updateAutomodRule: (guildId: bigint, ruleId: number, rule: Partial<CreateAutomodRuleRequest>) =>
+    apiRequest<void>(`filter/${guildId}/automod-rules/${ruleId}`, "PUT", rule),
+
+  deleteAutomodRule: (guildId: bigint, ruleId: number) =>
+    apiRequest<void>(`filter/${guildId}/automod-rules/${ruleId}`, "DELETE"),
+
+  toggleAutomodRule: (guildId: bigint, ruleId: number) =>
+    apiRequest<boolean>(`filter/${guildId}/automod-rules/${ruleId}/toggle`, "POST"),
+
+  getFilterStats: (guildId: bigint) =>
+    apiRequest<FilterStats>(`filter/${guildId}/stats`),
+
+  testAutomodRule: (guildId: bigint, ruleId: number, testMessage: string) =>
+    apiRequest<{ triggered: boolean; reason?: string }>(`filter/${guildId}/automod-rules/${ruleId}/test`, "POST", { message: testMessage }),
+
+  getMessageStats: (guildId: bigint) =>
+    apiRequest<MessageStatsResponse>(`messagecount/${guildId}/stats`),
+
+  getUserMessageStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<UserMessageStats>(`messagecount/${guildId}/user/${userId}`),
+
+  getChannelMessageStats: (guildId: bigint, channelId: bigint) =>
+    apiRequest<ChannelMessageStats>(`messagecount/${guildId}/channel/${channelId}`),
+
+  getHourlyMessageStats: (guildId: bigint, days: number = 7) =>
+    apiRequest<HourlyMessageStats[]>(`messagecount/${guildId}/hourly?days=${days}`),
+
+  exportMessageStats: (guildId: bigint, request: MessageCountExportRequest) =>
+    apiRequest<{ downloadUrl: string }>(`messagecount/${guildId}/export`, "POST", request),
+
+  toggleMessageCount: (guildId: bigint) =>
+    apiRequest<{ enabled: boolean; message: string }>(`messagecount/${guildId}/toggle`, "POST"),
+
+  resetMessageCounts: (guildId: bigint, userId?: bigint, channelId?: bigint) => {
+    let endpoint = `messagecount/${guildId}/reset`;
+    const params = new URLSearchParams();
+    if (userId) params.append('userId', userId.toString());
+    if (channelId) params.append('channelId', channelId.toString());
+    if (params.toString()) endpoint += `?${params.toString()}`;
+    return apiRequest<{ message: string }>(endpoint, "POST");
+  },
+
+  getSystemHealth: (userId: bigint) =>
+    apiRequest<SystemHealthStatus>(`systeminfo/health?userId=${userId}`),
+
+  getSystemMetrics: (userId: bigint, hours: number = 24) =>
+    apiRequest<SystemMetrics[]>(`systeminfo/metrics?userId=${userId}&hours=${hours}`),
+
+  getDatabaseMetrics: (userId: bigint) =>
+    apiRequest<DatabaseMetrics>(`systeminfo/database?userId=${userId}`),
+
+  getDetailedPerformanceData: (userId: bigint, moduleName?: string) =>
+    apiRequest<PerformanceData[]>(`performance/detailed?userId=${userId}${moduleName ? `&module=${moduleName}` : ""}`),
+
+  getInviteStats: (guildId: bigint) =>
+    apiRequest<{
+      totalInvites: number;
+      activeInviters: number;
+      todayJoins: number;
+      weeklyJoins: number;
+      topInviters: Array<{ userId: bigint; username: string; inviteCount: number; }>;
+    }>(`InviteTracking/${guildId}/stats`),
+
+  getInviteGraph: (guildId: bigint, days: number = 7) =>
+    apiRequest<GraphStatsResponse>(`InviteTracking/${guildId}/graph?days=${days}`),
+
+  getInviteAnalytics: (guildId: bigint) =>
+    apiRequest<{
+      conversionRate: number;
+      averageInvitesPerUser: number;
+      retentionRate: number;
+      inviteSource: Array<{ source: string; count: number; }>;
+    }>(`InviteTracking/${guildId}/analytics`),
+
+  getStaffRole: (guildId: bigint) =>
+    apiRequest<bigint>(`administration/${guildId}/staff-role`),
+
+  setStaffRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`administration/${guildId}/staff-role`, "POST", roleId),
+
+  getMemberRole: (guildId: bigint) =>
+    apiRequest<bigint>(`administration/${guildId}/member-role`),
+
+  setMemberRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`administration/${guildId}/member-role`, "POST", roleId),
+
+  getDeleteMessageOnCommand: (guildId: bigint) =>
+    apiRequest<{ enabled: boolean; channels: Array<{ channelId: bigint; state: boolean; }> }>(`administration/${guildId}/delete-message-on-command`),
+
+  toggleDeleteMessageOnCommand: (guildId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/delete-message-on-command/toggle`, "POST"),
+
+  setDeleteMessageOnCommandState: (guildId: bigint, channelId: bigint, state: "enable" | "disable" | "inherit") =>
+    apiRequest<void>(`administration/${guildId}/delete-message-on-command/channel`, "POST", { channelId, state }),
+
+  toggleStatsOptOut: (guildId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/stats-opt-out/toggle`, "POST"),
+
+  deleteStatsData: (guildId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/stats-data`, "DELETE"),
+
+  getAutoBanRoles: (guildId: bigint) =>
+    apiRequest<Array<{ roleId: bigint; roleName: string; }>>(`administration/${guildId}/auto-ban-roles`),
+
+  addAutoBanRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/auto-ban-roles`, "POST", roleId),
+
+  removeAutoBanRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/auto-ban-roles/${roleId}`, "DELETE"),
+
+  getVoiceChannelRoles: (guildId: bigint) =>
+    apiRequest<Array<{ channelId: bigint; channelName: string; roleId: bigint; roleName: string; }>>(`administration/${guildId}/voice-channel-roles`),
+
+  addVoiceChannelRole: (guildId: bigint, channelId: bigint, roleId: bigint) =>
+    apiRequest<void>(`administration/${guildId}/voice-channel-roles`, "POST", { channelId, roleId }),
+
+  removeVoiceChannelRole: (guildId: bigint, channelId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/voice-channel-roles/${channelId}`, "DELETE"),
+
+  getSelfAssignableRoles: (guildId: bigint) =>
+    apiRequest<{
+      exclusive: boolean;
+      roles: Array<{
+        model: {
+          id: number;
+          guildId: bigint;
+          roleId: bigint;
+          group: number;
+          levelRequirement: number;
+        };
+        role: {
+          id: bigint;
+          name: string;
+          color: number;
+        } | null;
+      }>;
+      groups: Record<number, string>;
+    }>(`administration/${guildId}/self-assignable-roles`),
+
+  addSelfAssignableRole: (guildId: bigint, roleId: bigint, group: number = 0) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles`, "POST", { roleId, group }),
+
+  removeSelfAssignableRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles/${roleId}`, "DELETE"),
+
+  setSelfAssignableRoleGroup: (guildId: bigint, group: number, name: string | null) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles/groups`, "POST", { group, name }),
+
+  toggleSelfAssignableRolesExclusive: (guildId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles/exclusive/toggle`, "POST"),
+
+  setSelfAssignableRoleLevelRequirement: (guildId: bigint, roleId: bigint, level: number) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles/${roleId}/level`, "POST", level),
+
+  toggleAutoDeleteSelfAssign: (guildId: bigint) =>
+    apiRequest<boolean>(`administration/${guildId}/self-assignable-roles/auto-delete/toggle`, "POST"),
+
+  // Reaction Roles
+  getReactionRoles: (guildId: bigint) =>
+    apiRequest<{
+      success: boolean;
+      reactionRoles: Array<{
+        index: number;
+        messageId: bigint;
+        channelId: bigint;
+        exclusive: boolean;
+        reactionRoles: Array<{
+          emoteName: string;
+          roleId: bigint;
+        }>;
+      }>;
+    }>(`administration/${guildId}/reaction-roles`),
+
+  addReactionRoles: (guildId: bigint, messageId: bigint | null, exclusive: boolean, roles: Array<{ emoteName: string; roleId: bigint; }>) =>
+    apiRequest<boolean>(`administration/${guildId}/reaction-roles`, "POST", { messageId, exclusive, roles }),
+
+  removeReactionRole: (guildId: bigint, index: number) =>
+    apiRequest<void>(`administration/${guildId}/reaction-roles/${index}`, "DELETE"),
+
+
+  getAvailableTimezones: (guildId: bigint) =>
+    apiRequest<Array<{ id: string; displayName: string; offset: string; }>>(`administration/${guildId}/timezones`),
+
+  getGuildTimezone: (guildId: bigint) =>
+    apiRequest<{ data: string } | string>(`administration/${guildId}/timezone`),
+
+  setGuildTimezone: (guildId: bigint, timezoneId: string) =>
+    apiRequest<void>(`administration/${guildId}/timezone`, "POST", { timezoneId }),
+
+  // Permission Overrides
+  getPermissionOverrides: (guildId: bigint) =>
+    apiRequest<Array<{ command: string; permission: string; }>>(`administration/${guildId}/permission-overrides`),
+
+  addPermissionOverride: (guildId: bigint, command: string, permission: string) =>
+    apiRequest<void>(`administration/${guildId}/permission-overrides`, "POST", { command, permission }),
+
+  removePermissionOverride: (guildId: bigint, command: string) =>
+    apiRequest<void>(`administration/${guildId}/permission-overrides/${command}`, "DELETE"),
+
+  clearAllPermissionOverrides: (guildId: bigint) =>
+    apiRequest<void>(`administration/${guildId}/permission-overrides`, "DELETE"),
+
+  // Game Voice Channels
+  getGameVoiceChannel: (guildId: bigint) =>
+    apiRequest<bigint | null>(`administration/${guildId}/game-voice-channel`),
+
+  toggleGameVoiceChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<bigint | null>(`administration/${guildId}/game-voice-channel/toggle`, "POST", { channelId }),
+
+  // Bot Ban Message Management
+  setBanMessage: (guildId: bigint, message: string) =>
+    apiRequest<void>(`administration/${guildId}/ban-message`, "POST", { message }),
+
+  getBanMessage: (guildId: bigint) =>
+    apiRequest<string>(`administration/${guildId}/ban-message`),
+
+  massRename: (guildId: bigint, pattern: string) =>
+    apiRequest<{ renamed: number; }>(`administration/${guildId}/mass-rename`, "POST", { pattern }),
+
+  // Prune Operations
+  pruneUsers: (guildId: bigint, days: number, reason?: string) =>
+    apiRequest<{ pruned: number; }>(`administration/${guildId}/prune`, "POST", { days, reason }),
+
+  pruneToMessage: (guildId: bigint, channelId: bigint, messageId: bigint) =>
+    apiRequest<{ deleted: number; }>(`administration/${guildId}/prune-to`, "POST", { channelId, messageId })
 };

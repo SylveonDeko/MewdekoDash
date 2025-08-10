@@ -14,16 +14,19 @@
   import { clickOutside } from "$lib/clickOutside.ts";
 
   // Import  components
-  import TabbedDashboard from "$lib/components/TabbedDashboard.svelte";
-  import StatCard from "$lib/components/StatCard.svelte";
-  import SkeletonLoader from "$lib/components/SkeletonLoader.svelte";
-  import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
+  import TabbedDashboard from "$lib/components/layout/TabbedDashboard.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+  import KeyboardShortcuts from "$lib/components/specialized/KeyboardShortcuts.svelte";
 
   // Import stores
   import { musicStore } from "$lib/stores/musicStore";
   import { inviteStore } from "$lib/stores/inviteStore";
   import { dashboardStore } from "$lib/stores/dashboardStore";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
+
+  // Import search component
+  import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
 
   export let data;
 
@@ -40,8 +43,8 @@
   // Derived state
   $: musicStatus = $musicStore.status;
 
-  // Tab state for mini player
-  let currentActiveTab = "overview";
+  // Tab state for mini player - let TabbedDashboard handle its own initialization
+  let currentActiveTab;
 
   // Track when data is being fetched to prevent duplicate requests
   let fetchingData = false;
@@ -532,17 +535,27 @@
         <!-- Prominent Server Selection Button -->
         <div class="mb-8">
           {#if $userAdminGuilds && $userAdminGuilds.length > 0}
-            <button
-              class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105 shadow-lg hover:shadow-xl"
-              style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
-              on:click={toggleServerDropdown}
-              use:clickOutside
-              on:clickoutside={closeServerDropdown}
-            >
-              <Server size={24} />
-              {showServerDropdown ? 'Close Server List' : 'Select Your Server'}
-              <ChevronDown size={20} class="transition-transform {showServerDropdown ? 'rotate-180' : ''}" />
-            </button>
+            <div class="flex flex-col items-center gap-4">
+              <button
+                class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105 shadow-lg hover:shadow-xl"
+                style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
+                on:click={toggleServerDropdown}
+                use:clickOutside
+                on:clickoutside={closeServerDropdown}
+              >
+                <Server size={24} />
+                {showServerDropdown ? 'Close Server List' : 'Select Your Server'}
+                <ChevronDown size={20} class="transition-transform {showServerDropdown ? 'rotate-180' : ''}" />
+              </button>
+              
+              <!-- Search Features -->
+              <div class="text-center">
+                <p class="text-sm mb-3" style="color: {$colorStore.muted}">
+                  Or search for specific features and settings
+                </p>
+                <SearchTrigger variant="button" />
+              </div>
+            </div>
           {:else if $userAdminGuilds && $userAdminGuilds.length === 0}
             <div class="p-6 rounded-lg"
                  style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}30;">
@@ -569,6 +582,10 @@
             in:fade={{ duration: 200 }}
             out:fade={{ duration: 150 }}
             on:click={closeServerDropdown}
+            on:keydown={(e) => e.key === 'Escape' && closeServerDropdown()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Server selection dropdown"
           >
             <div
               class="w-96 max-w-[90vw] bg-gray-900 rounded-xl shadow-2xl border overflow-hidden"

@@ -6,28 +6,31 @@
   import { fade } from "svelte/transition";
   import type { BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import {
-    AlertCircle,
-    ExternalLink,
-    Eye,
-    ListMinus,
-    Plus,
-    Save,
-    Settings,
-    ShieldOff,
-    ToggleLeft,
-    ToggleRight,
-    Trash,
-    UserMinus,
-    UserPlus,
-    Users,
-    UserX
+      AlertCircle,
+      ExternalLink,
+      Eye,
+      ListMinus,
+      Plus, RefreshCw,
+      Save,
+      Settings,
+      ShieldOff,
+      ToggleLeft,
+      ToggleRight,
+      Trash,
+      UserMinus,
+      UserPlus,
+      Users,
+      UserX
   } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
   import type { PageData } from "./$types";
 
   export let data: PageData;
@@ -96,6 +99,15 @@
 
   // Active tab for settings
   let settingsTab: "general" | "denied" = "general";
+  
+  // Layout state
+  let activeTab = "settings";
+  
+  const tabs = [
+    { id: "settings", label: "Settings", icon: Settings },
+    { id: "management", label: "Management", icon: Users },
+    { id: "states", label: "Role States", icon: UserPlus }
+  ];
 
   // Fetch bot status
   async function fetchBotStatus() {
@@ -130,14 +142,15 @@
   }
 
   async function fetchRoleStateSettings() {
-    try {
-      loadingSettings = true;
-      errorSettings = null;
-      if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
-      }
+    return await loadingStore.wrap("fetch-role-settings", async () => {
+      try {
+        loadingSettings = true;
+        errorSettings = null;
+        if (!$currentGuild?.id) {
+          throw new Error("No guild selected");
+        }
 
-      roleStateSettings = await api.getRoleStateSettings($currentGuild.id);
+        roleStateSettings = await api.getRoleStateSettings($currentGuild.id);
       if (!roleStateSettings) {
         roleStateSettings = {
           guildId: $currentGuild.id.toString(),
@@ -149,14 +162,15 @@
         };
       }
 
-      // Parse denied lists
-      parseDeniedLists();
-    } catch (err) {
-      logger.error("Failed to fetch role state settings:", err);
-      errorSettings = err instanceof Error ? err.message : "Failed to fetch role state settings";
-    } finally {
-      loadingSettings = false;
-    }
+        // Parse denied lists
+        parseDeniedLists();
+      } catch (err) {
+        logger.error("Failed to fetch role state settings:", err);
+        errorSettings = err instanceof Error ? err.message : "Failed to fetch role state settings";
+      } finally {
+        loadingSettings = false;
+      }
+    }, "api", "Loading settings...");
   }
 
   function parseDeniedLists() {
@@ -490,26 +504,6 @@
     }
   });
 
-  // Color handling
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-    --color-primary-rgb: ${hexToRgb($colorStore.primary)};
-    --color-secondary-rgb: ${hexToRgb($colorStore.secondary)};
-    --color-accent-rgb: ${hexToRgb($colorStore.accent)};
-  `;
-
-  // Convert hex color to rgb values
-  function hexToRgb(hex: string) {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
 
   // Reactive declarations for guild changes
   $: if ($currentGuild) {
@@ -528,37 +522,45 @@
   }
 </script>
 
-<svelte:head>
-  <title>Role States - Dashboard</title>
-</svelte:head>
-
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Role States" 
+  subtitle="Save user roles when they leave and restore them when they return" 
+  icon={Users}
+  {tabs}
+  bind:activeTab
+  actionButtons={[
+    {
+      label: "Save All States",
+      icon: Save,
+      action: saveAllUserRoleStates,
+      loading: savingAllStates
+    },
+    {
+      label: "Refresh",
+      icon: RefreshCw,
+      action: () => {
+        fetchRoleStateSettings();
+        fetchRoleStates();
+        fetchGuildRoles();
+        fetchGuildMembers();
+      },
+      loading: loadingSettings || loadingStates
+    }
+  ]}
+  guildName={$currentGuild?.name || "Dashboard"}
+  on:tabChange={(e) => activeTab = e.detail.tabId}
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
+  </svelte:fragment>
 
-    <!-- Header -->
-    <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Role States</h1>
-      <p class="mt-2" style="color: {$colorStore.muted}">Save user roles when they leave and restore them when they
-        return</p>
-    </div>
-
+  {#if activeTab === 'settings'}
     <!-- Settings Section -->
-    <div
+    <section
       class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
@@ -888,7 +890,25 @@
           </div>
         </div>
       {/if}
-    </div>
+    </section>
+  {/if}
+
+  {#if activeTab === 'management'}
+    <!-- Management Section would go here -->
+    <section class="text-center py-12">
+      <UserPlus class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+      <p style="color: {$colorStore.muted}">Role management functionality</p>
+    </section>
+  {/if}
+  
+  {#if activeTab === 'states'}
+    <!-- Role States List would go here -->
+    <section class="text-center py-12">
+      <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+      <p style="color: {$colorStore.muted}">Role states list functionality</p>
+    </section>
+  {/if}
+</DashboardPageLayout>
 
     <!-- Role States Management -->
     <div
@@ -1154,8 +1174,6 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
 
 <style lang="postcss">
     /* Custom styling for options */

@@ -6,9 +6,10 @@
   import { fade, slide } from "svelte/transition";
   import type { Giveaways } from "$lib/types";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
-  import MultiSelectDropdown from "$lib/components/MultiSelectDropdown.svelte";
-  import IntervalPicker from "$lib/components/IntervalPicker.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import IntervalPicker from "$lib/components/forms/IntervalPicker.svelte";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import {
@@ -23,21 +24,32 @@
     Target,
     Trophy,
     Users,
-    X
+    X,
+    Plus
   } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
 
-  let giveaways: Giveaways[] = [];
- let expandedGiveaway: number | null = null;
- let loading = true;
- let error: string | null = null;
- let showNotification = false;
- let notificationMessage = "";
- let notificationType: "success" | "error" = "success";
- let guildRoles: Array<{ id: string; name: string }> = [];
- let selectedRoles: string[] = [];
- let entryMethod: "reaction" | "button" | "captcha" = "reaction";
- let isMobile = false;
+   let giveaways: Giveaways[] = [];
+  let expandedGiveaway: number | null = null;
+  let loading = true;
+  let error: string | null = null;
+  let showNotification = false;
+  let notificationMessage = "";
+  let notificationType: "success" | "error" = "success";
+  let guildRoles: Array<{ id: string; name: string }> = [];
+  let selectedRoles: string[] = [];
+  let entryMethod: "reaction" | "button" | "captcha" = "reaction";
+  let isMobile = false;
+  
+  // Layout state
+  let activeTab = "active";
+  
+  const tabs = [
+    { id: "active", label: "Active Giveaways", icon: Gift },
+    { id: "create", label: "Create Giveaway", icon: Plus },
+    { id: "ended", label: "Ended Giveaways", icon: Trophy }
+  ];
 
  let newGiveaway: Partial<Giveaways> = {
    item: "",
@@ -94,19 +106,21 @@
    newGiveaway.useCaptcha = method === "captcha";
  }
 
- async function fetchGiveaways() {
-   try {
-     loading = true;
-     error = null;
+  async function fetchGiveaways() {
+    return await loadingStore.wrap("fetch-giveaways", async () => {
+      try {
+        loading = true;
+        error = null;
      if (!$currentGuild?.id) throw new Error("No guild selected");
      giveaways = await api.getGiveaways($currentGuild.id);
-   } catch (err) {
-     logger.error("Failed to fetch giveaways:", err);
-     error = (err as Error).message || "Failed to fetch giveaways";
-   } finally {
-     loading = false;
-   }
- }
+      } catch (err) {
+        logger.error("Failed to fetch giveaways:", err);
+        error = (err as Error).message || "Failed to fetch giveaways";
+      } finally {
+        loading = false;
+      }
+    }, "api", "Loading giveaways...");
+  }
 
  async function loadGuildRoles() {
    try {
@@ -181,8 +195,8 @@
    }, 3000);
  }
 
- function handleRoleSelection(event: CustomEvent<string[]>) {
-   selectedRoles = event.detail;
+ function handleRoleSelection(event: CustomEvent<{selected: string[]}>) {
+   selectedRoles = event.detail.selected;
    newGiveaway.restrictTo = selectedRoles.join(" ");
  }
 
@@ -239,26 +253,22 @@
  });
 </script>
 
-<div
- class="min-h-screen p-4 md:p-6"
- style="{colorVars} background: radial-gradient(circle at top,
-   {colors.gradientStart}15 0%,
-   {colors.gradientMid}10 50%,
-   {colors.gradientEnd}05 100%);"
+<DashboardPageLayout 
+  title="Giveaways" 
+  subtitle="Manage server giveaways and prizes" 
+  icon={Gift}
+  guildName={$currentGuild?.name || "Dashboard"}
+  tabs={tabs}
+  bind:activeTab
+  on:tabChange={(e) => activeTab = e.detail.tabId}
 >
- <div class="max-w-7xl mx-auto space-y-8">
-   <h1 class="text-3xl font-bold mb-8" style="color: {colors.text}">
-     <div class="flex items-center gap-3 justify-center">
-       <Gift class="w-8 h-8" style="color: {colors.primary}" />
-       Giveaways
-     </div>
-   </h1>
-
-   {#if showNotification}
-     <div class="fixed top-4 right-4 z-50" transition:fade>
-       <Notification message={notificationMessage} type={notificationType} />
-     </div>
-   {/if}
+  <svelte:fragment slot="status-messages">
+    {#if showNotification}
+      <div class="fixed top-4 right-4 z-50" transition:fade>
+        <Notification message={notificationMessage} type={notificationType} />
+      </div>
+    {/if}
+  </svelte:fragment>
 
    {#if loading}
      <div class="flex justify-center items-center min-h-[400px]">
@@ -284,9 +294,10 @@
          </div>
        </div>
      </div>
-   {:else}
-     <!-- Create New Giveaway Section -->
-     <section
+  {:else}
+    {#if activeTab === 'create'}
+      <!-- Create New Giveaway Section -->
+      <section
        class="backdrop-blur-sm rounded-xl border p-6 mb-8"
        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
@@ -377,10 +388,11 @@
                <Users class="w-4 h-4" style="color: {colors.primary}" />
                Required Roles
              </label>
-             <MultiSelectDropdown
-               id="giveaway-roles"
+             <DiscordSelector
+               type="role"
                options={guildRoles}
                bind:selected={selectedRoles}
+               multiple={true}
                on:change={handleRoleSelection}
                placeholder="Select required roles"
              />
@@ -446,10 +458,12 @@
            Create Giveaway
          </button>
        </form>
-     </section>
+      </section>
+    {/if}
 
-     <!-- Active Giveaways -->
-     <section
+    {#if activeTab === 'active'}
+      <!-- Active Giveaways -->
+      <section
        class="backdrop-blur-sm rounded-xl border p-6"
        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
@@ -552,11 +566,29 @@
              </div>
            {/each}
          </div>
-       {/if}
-     </section>
-   {/if}
- </div>
-</div>
+        {/if}
+      </section>
+    {/if}
+
+    {#if activeTab === 'ended'}
+      <!-- Ended Giveaways would go here -->
+      <section
+        class="backdrop-blur-sm rounded-xl border p-6"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+               border-color: {colors.primary}30;"
+      >
+        <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
+          <Trophy class="h-6 w-6" style="color: {colors.primary}" />
+          Ended Giveaways
+        </h2>
+        <div class="text-center py-12" style="color: {colors.muted}">
+          <Trophy class="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p class="text-lg">No ended giveaways to display</p>
+        </div>
+      </section>
+    {/if}
+  {/if}
+</DashboardPageLayout>
 
 <style>
  /* Hide number input spinners */

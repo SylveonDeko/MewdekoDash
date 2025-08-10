@@ -1,8 +1,8 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
   import "../app.css";
-  import UnifiedNav from "$lib/components/UnifiedNav.svelte";
-  import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
+  import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
+  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
   import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
@@ -10,9 +10,33 @@
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
   import { userStore } from "$lib/stores/userStore.ts";
+  import { initAuthRefresh } from "$lib/authRefresh";
 
 
   export let data: LayoutData;
+
+  async function extractColors(user: any) {
+    if (!browser || window.location.pathname.startsWith("/dashboard")) {
+      return;
+    }
+    
+    try {
+      if (user?.avatar) {
+        // Extract colors from user avatar
+        await colorStore.extractFromImage(
+          user.avatar.startsWith("a_")
+            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.gif`
+            : `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+        );
+      } else {
+        // Fallback to default image
+        await colorStore.extractFromImage("/img/Mewdeko.png");
+      }
+    } catch (err) {
+      logger.error("Failed to extract colors:", err);
+      colorStore.reset(); // Reset to default colors
+    }
+  }
 
   onMount(async () => {
     if (browser) {
@@ -21,31 +45,16 @@
         userStore.set(data.user);
       }
       
+      // Initialize auth refresh system
+      initAuthRefresh();
+      
       if (window.location.toString().includes("?loggedin")) {
         await invalidateAll();
         await goto("/");
       }
 
-      // Only extract colors for non-dashboard pages
-      // Dashboard pages handle their own theming
-      if (!window.location.toString().includes("dashboard")) {
-        try {
-          if (data?.user?.avatar) {
-            // Extract colors from user avatar
-            await colorStore.extractFromImage(
-              data.user.avatar.startsWith("a_")
-                ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-                : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-            );
-          } else {
-            // Fallback to default image
-            await colorStore.extractFromImage("/img/Mewdeko.png");
-          }
-        } catch (err) {
-          logger.error("Failed to extract colors:", err);
-          colorStore.reset(); // Reset to default colors
-        }
-      }
+      // Extract colors once on mount
+      await extractColors(data?.user);
     }
   });
 
@@ -57,7 +66,6 @@
     {
       title: "About",
       elements: [
-        { href: "/partners", title: "Partners" },
         { href: "/contacts", title: "Contact Us" },
         { href: "/staff", title: "Staff" }
       ]
@@ -91,23 +99,9 @@
     console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
   }
 
-  // Only extract colors for non-dashboard pages
-  $: if (browser && !window.location.pathname.startsWith("/dashboard")) {
-    if (data?.user?.avatar) {
-      try {
-        // Extract colors from user avatar
-        colorStore.extractFromImage(
-          data.user.avatar.startsWith("a_")
-            ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.gif`
-            : `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
-        );
-      } catch (err) {
-        logger.error("Failed to extract colors:", err);
-        colorStore.extractFromImage("/img/Mewdeko.png");
-      }
-    } else {
-      colorStore.extractFromImage("/img/Mewdeko.png");
-    }
+  // Extract colors when user data changes
+  $: if (browser && data?.user) {
+    extractColors(data.user);
   }
 </script>
 

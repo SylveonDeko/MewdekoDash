@@ -6,10 +6,11 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Activity, AlertTriangle, Clock, Lock, MessageSquareWarning, Shield, Users, UserX } from "lucide-svelte";
+  import { Activity, AlertTriangle, Clock, FileText, Lock, MessageSquareWarning, Shield, Users, UserX, Database } from "lucide-svelte";
 
-  import StatCard from "$lib/components/StatCard.svelte";
-  import FeatureCard from "$lib/components/FeatureCard.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
+  import type { LoggingConfigurationResponse, LogType } from "$lib/types/logging.ts";
 
   // Props from parent
 
@@ -32,15 +33,26 @@
   let recentModerationActions: any[] = [];
   let loading = true;
 
+  // Logging data
+  let loggingConfig: LoggingConfigurationResponse | null = null;
+  let loggingStats = {
+    configuredChannels: 0,
+    ignoredChannels: 0,
+    ignoredUsers: 0,
+    totalLogTypes: 0
+  };
+  let recentLoggingActivity: any[] = [];
+
   async function fetchSecurityData() {
     if (!$currentGuild?.id) return;
 
     try {
       // Fetch all security data in parallel
-      const [warningsData, protectionData, moderationData] = await Promise.all([
+      const [warningsData, protectionData, moderationData, loggingConfigData] = await Promise.all([
         api.getWarnings($currentGuild.id).catch(() => []),
         api.getProtectionStatus($currentGuild.id).catch(() => ({})),
-        api.getRecentModerationActivity($currentGuild.id).catch(() => [])
+        api.getRecentModerationActivity($currentGuild.id).catch(() => []),
+        api.getLoggingConfig($currentGuild.id).catch(() => null)
       ]);
 
       // Process warnings data
@@ -67,6 +79,20 @@
         .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
         .slice(0, 5);
 
+      // Process logging configuration data
+      loggingConfig = loggingConfigData;
+      if (loggingConfig) {
+        const logChannels = loggingConfig.logChannels || loggingConfig.logTypes || {};
+        loggingStats = {
+          configuredChannels: Object.values(logChannels).filter(channelId => channelId && channelId !== BigInt(0)).length,
+          ignoredChannels: (loggingConfig.ignoredChannels || []).length,
+          ignoredUsers: (loggingConfig.ignoredUsers || []).length,
+          totalLogTypes: Object.keys(logChannels).length
+        };
+      } else {
+        loggingStats = { configuredChannels: 0, ignoredChannels: 0, ignoredUsers: 0, totalLogTypes: 0 };
+      }
+
     } catch (err) {
       logger.error("Failed to fetch security data:", err);
       // Reset to safe defaults
@@ -78,6 +104,8 @@
         antiMassMention: { enabled: false }
       };
       recentModerationActions = [];
+      loggingConfig = null;
+      loggingStats = { configuredChannels: 0, ignoredChannels: 0, ignoredUsers: 0, totalLogTypes: 0 };
     } finally {
       loading = false;
     }
@@ -339,6 +367,92 @@
         </div>
       </div>
 
+      <!-- Logging System -->
+      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center gap-3 mb-4">
+          <FileText class="w-5 h-5" style="color: {$colorStore.secondary}" />
+          <h3 class="font-semibold" style="color: {$colorStore.text}">Event Logging</h3>
+        </div>
+
+        <div class="space-y-3">
+          {#if loading}
+            <!-- Loading state -->
+            {#each Array(3).fill(0) as _}
+              <div class="animate-pulse">
+                <div class="h-4 rounded mb-2" style="background: {$colorStore.primary}20; width: 80%;"></div>
+                <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 60%;"></div>
+              </div>
+            {/each}
+          {:else if !(loggingConfig?.isEnabled || loggingConfig?.enabled)}
+            <!-- Disabled state -->
+            <div class="text-center py-4">
+              <FileText class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.secondary}50" />
+              <p class="text-sm" style="color: {$colorStore.muted}">
+                Logging is disabled. Enable it to track server events.
+              </p>
+            </div>
+          {:else}
+            <!-- Logging Stats -->
+            <div class="space-y-3">
+              <StatCard
+                animationDelay={0}
+                icon={FileText}
+                iconColor="secondary"
+                label="Log Channels"
+                subtitle={`${loggingStats.totalLogTypes} event types`}
+                value={loggingStats.configuredChannels}
+              />
+
+              <StatCard
+                animationDelay={100}
+                icon={Users}
+                iconColor="accent"
+                label="Ignored Users"
+                subtitle="Excluded from logs"
+                value={loggingStats.ignoredUsers}
+              />
+
+              <StatCard
+                animationDelay={200}
+                icon={Lock}
+                iconColor="primary"
+                label="Ignored Channels"
+                subtitle="Private channels"
+                value={loggingStats.ignoredChannels}
+              />
+            </div>
+
+            <!-- Log Configuration Summary -->
+            {#if loggingConfig}
+              <div class="mt-4 p-3 rounded-xl" style="background: {$colorStore.secondary}08;">
+                <div class="text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  Active Log Types
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  {#each Object.entries(loggingConfig.logChannels || loggingConfig.logTypes || {}) as [logType, channelId]}
+                    {#if channelId && channelId !== BigInt(0)}
+                      <span class="px-2 py-1 rounded text-xs"
+                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                        {logType.replace('_', ' ')}
+                      </span>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/if}
+        </div>
+
+        <!-- Logging Dashboard Link -->
+        <a class="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-all hover:scale-105"
+           href="/dashboard/logging"
+           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
+          <FileText size={16} />
+          Logging Settings
+        </a>
+      </div>
+
       <!-- Security Features -->
       <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
@@ -351,7 +465,6 @@
           <!-- Moderation -->
           <FeatureCard
             animationDelay={0}
-            compact={true}
             description="User warnings and punishments"
             href="/dashboard/moderation"
             icon={Shield}
@@ -362,9 +475,8 @@
           <!-- Permissions -->
           <FeatureCard
             animationDelay={50}
-            compact={true}
             description="Command access control"
-            href="/dashboard/permissions"
+            href="/dashboard/administration"
             icon={Lock}
             isActive={true}
             title="Permissions"
@@ -373,12 +485,31 @@
           <!-- Administration -->
           <FeatureCard
             animationDelay={100}
-            compact={true}
             description="Server protection and roles"
             href="/dashboard/administration"
             icon={Users}
             isActive={activeProtections > 0}
             title="Administration"
+          />
+
+          <!-- Event Logging -->
+          <FeatureCard
+            animationDelay={150}
+            description="Track server events and activities"
+            href="/dashboard/logging"
+            icon={FileText}
+            isActive={(loggingConfig?.isEnabled || loggingConfig?.enabled) && loggingStats.configuredChannels > 0}
+            title="Event Logging"
+          />
+
+          <!-- Chat Saver -->
+          <FeatureCard
+            animationDelay={200}
+            description="Audit trails and message history"
+            href="/dashboard/chatsaver"
+            icon={Database}
+            isActive={true}
+            title="Chat Saver"
           />
         </div>
       </div>

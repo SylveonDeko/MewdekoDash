@@ -1,7 +1,7 @@
 <!-- routes/contacts/+page.svelte -->
 <script lang="ts">
-  import MailIcon from "$lib/components/Mail.svelte";
-  import DiscordIcon from "$lib/components/Discord.svelte";
+  import MailIcon from "$lib/components/icons/Mail.svelte";
+  import DiscordIcon from "$lib/components/icons/Discord.svelte";
 </script>
 
 <svelte:head>

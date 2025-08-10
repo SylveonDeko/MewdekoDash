@@ -104,6 +104,38 @@ export interface PatreonTierMappingRequest {
 }
 
 /**
+ * Patreon Creator Identity information from the API
+ */
+export interface PatreonCreator {
+  id: string;
+  type: string;
+  attributes: {
+    can_see_nsfw?: boolean;
+    created?: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    hide_pledges?: boolean;
+    image_url?: string;
+    is_email_verified?: boolean;
+    is_creator?: boolean;
+    like_count?: number;
+    social_connections?: any;
+    thumb_url?: string;
+    url?: string;
+  };
+  relationships?: {
+    memberships?: {
+      data?: Array<{
+        id: string;
+        type: string;
+      }>;
+    };
+  };
+}
+
+/**
  * Represents the Patreon configuration for a guild as returned by the backend.
  */
 export interface PatreonConfig {
@@ -167,24 +199,11 @@ export interface PatreonTier {
   id: number;
   guildId: string; // serialized ulong
   tierId: string;
-  title: string;
+  tierTitle: string;
   amountCents: number;
   description: string | null;
   discordRoleId: string; // serialized ulong
   isActive: boolean;
-  lastUpdated: string; // serialized DateTime
+  dateAdded: string; // serialized DateTime
 }
 
-/**
- * Represents a Patreon goal as stored in the database and returned by the API.
- */
-export interface PatreonGoal {
-  id: number;
-  guildId: string; // serialized ulong
-  goalId: string;
-  title: string;
-  amountCents: number;
-  description: string | null;
-  reachedAt: string | null; // serialized DateTime?
-  isActive: boolean;
-}

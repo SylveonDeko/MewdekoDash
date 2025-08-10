@@ -6,7 +6,7 @@
   import { fade } from "svelte/transition";
   import type { BotStatusModel } from "$lib/types/models.ts";
   import { goto } from "$app/navigation";
-  import Notification from "$lib/components/Notification.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
   import { AlertCircle, Bot, Clock, Edit, Globe, MessageSquare, Plus, Power } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";

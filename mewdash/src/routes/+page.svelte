@@ -2,12 +2,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import FluidContainer from "$lib/components/FluidContainer.svelte";
-  import Interactable from "$lib/components/InteractableElement.svelte";
-  import Carousel from "$lib/components/Carousel.svelte";
-  import ImageWrapper from "$lib/components/ImageWrapper.svelte";
+  import FluidContainer from "$lib/components/display/FluidContainer.svelte";
+  import Interactable from "$lib/components/display/InteractableElement.svelte";
+  import Carousel from "$lib/components/display/Carousel.svelte";
+  import ImageWrapper from "$lib/components/display/ImageWrapper.svelte";
   import type { RedisGuild } from "$lib/types/redisGuild";
-  import MultiButton from "$lib/components/MultiButton.svelte";
+  import MultiButton from "$lib/components/display/MultiButton.svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
 
@@ -152,7 +152,7 @@
          --color-muted: {$colorStore.muted};"
 >
   <header
-    class="py-12 sm:py-16 px-4 sm:px-12 flex flex-col items-center relative backdrop-blur-sm"
+    class="py-12 sm:py-16 px-4 sm:px-12 flex flex-col items-center relative backdrop-blur-md"
     in:fade={{ duration: 300 }}
     style="background: radial-gradient(circle at top,
       {$colorStore.gradientStart}15 0%,
@@ -285,11 +285,11 @@
 
                   <!-- Enhanced mobile tooltip -->
                   <div
-                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-3 py-2 text-xs rounded-lg shadow-xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-3 backdrop-blur-md animate-in fade-in duration-200"
+                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-3 py-2 text-xs rounded-lg shadow-xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-3 backdrop-blur-lg animate-in fade-in duration-200"
                     role="tooltip"
                     id="tooltip-mobile-{index}"
-                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientEnd}90);
-                           border: 1px solid {$colorStore.primary}40;
+                    style="background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75)), linear-gradient(135deg, {$colorStore.gradientStart}60, {$colorStore.gradientEnd}60);
+                           border: 1px solid {$colorStore.primary}60;
                            box-shadow: 0 10px 40px rgba(0,0,0,0.3);"
                   >
                     <p class="font-bold text-center" style="color: {$colorStore.text}">
@@ -299,7 +299,7 @@
                       👥 {guild.MemberCount.toLocaleString()} members
                     </p>
                     <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 rotate-45"
-                         style="background: {$colorStore.gradientStart}90; border-bottom: 1px solid {$colorStore.primary}40; border-right: 1px solid {$colorStore.primary}40;"></div>
+                         style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
                   </div>
                 </div>
               {/each}
@@ -339,11 +339,11 @@
 
                   <!-- Enhanced desktop tooltip -->
                   <div
-                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-4 py-3 text-sm rounded-xl shadow-2xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-4 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300"
+                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-4 py-3 text-sm rounded-xl shadow-2xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-4 backdrop-blur-lg animate-in fade-in slide-in-from-bottom-2 duration-300"
                     role="tooltip"
                     id="tooltip-desktop-{index}"
-                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientEnd}90);
-                           border: 1px solid {$colorStore.primary}50;
+                    style="background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75)), linear-gradient(135deg, {$colorStore.gradientStart}60, {$colorStore.gradientEnd}60);
+                           border: 1px solid {$colorStore.primary}60;
                            box-shadow: 0 20px 60px rgba(0,0,0,0.4);"
                   >
                     <p class="font-bold text-center mb-1" style="color: {$colorStore.text}">
@@ -353,7 +353,7 @@
                       👥 {guild.MemberCount.toLocaleString()} members active
                     </p>
                     <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-3 h-3 rotate-45"
-                         style="background: {$colorStore.gradientStart}90; border-bottom: 1px solid {$colorStore.primary}50; border-right: 1px solid {$colorStore.primary}50;"></div>
+                         style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
                   </div>
                 </li>
               {/each}
