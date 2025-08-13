@@ -1,23 +1,33 @@
 // lib/types/birthday.ts
 export interface BirthdayConfig {
-  guildId: bigint;
-  channelId?: bigint | null;
-  roleId?: bigint | null;
-  message?: string | null;
-  pingRoleId?: bigint | null;
-  reminderDays: number;
-  timezone: string;
-  features: BirthdayFeatures;
+  birthdayChannelId?: bigint | null;
+  birthdayRoleId?: bigint | null;
+  birthdayMessage?: string | null;
+  birthdayPingRoleId?: bigint | null;
+  birthdayReminderDays: number;
+  defaultTimezone: string;
+  enabledFeatures: BirthdayFeatures;
 }
 
 export interface BirthdayConfigRequest {
-  channelId?: bigint | null;
-  roleId?: bigint | null;
-  message?: string | null;
-  pingRoleId?: bigint | null;
-  reminderDays?: number;
-  timezone?: string;
-  features?: BirthdayFeatures;
+  birthdayChannelId?: bigint | null;
+  birthdayRoleId?: bigint | null;
+  birthdayMessage?: string | null;
+  birthdayPingRoleId?: bigint | null;
+  birthdayReminderDays?: number;
+  defaultTimezone?: string;
+}
+
+export interface BirthdayConfigResponse {
+  birthdayChannelId?: bigint | null;
+  birthdayRoleId?: bigint | null;
+  birthdayMessage: string;
+  birthdayPingRoleId?: bigint | null;
+  birthdayReminderDays: number;
+  defaultTimezone: string;
+  enabledFeatures: number;
+  dateAdded?: Date | null;
+  dateModified?: Date | null;
 }
 
 export enum BirthdayFeatures {
@@ -31,23 +41,42 @@ export enum BirthdayFeatures {
 
 export interface BirthdayUser {
   userId: bigint;
-  guildId: bigint;
   birthday: string; // ISO date string
   timezone: string;
   announcementsEnabled: boolean;
   username?: string;
+  nickName?: string;
   displayName?: string;
   avatarUrl?: string;
   daysUntilBirthday?: number;
 }
 
+export interface BirthdayUserResponse {
+  userId: bigint;
+  username: string;
+  nickname?: string | null;
+  avatarUrl: string;
+  birthday?: Date | null;
+  birthdayDisplayMode: number;
+  birthdayAnnouncementsEnabled: boolean;
+  birthdayTimezone?: string | null;
+  daysUntil?: number | null;
+}
+
 export interface BirthdayStats {
-  guildId: bigint;
   totalUsers: number;
   usersWithBirthdays: number;
-  usersWithAnnouncements: number;
+  usersWithAnnouncementsEnabled: number;
   todaysBirthdayCount: number;
-  percentageWithBirthdays: number;
+  birthdaySetPercentage: number;
+}
+
+export interface BirthdayStatsResponse {
+  totalUsers: number;
+  usersWithBirthdays: number;
+  usersWithAnnouncementsEnabled: number;
+  todaysBirthdayCount: number;
+  birthdaySetPercentage: number;
 }
 
 export interface BirthdayUpcomingRequest {
@@ -154,4 +183,3 @@ export const hasBirthdayFeature = (features: BirthdayFeatures | bigint | any, fe
   }
   return (featuresNum & feature) === feature;
 };
-
