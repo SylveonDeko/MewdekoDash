@@ -75,6 +75,7 @@
   let leaderboard: CountingUserStatsResponse[] = [];
   let savePoints: SavePointResponse[] = [];
   let textChannels: Array<{ id: string; name: string }> = [];
+  let guildRoles: Array<{ id: string; name: string; color?: number }> = [];
 
   // Form data for new channel setup
   let setupChannelId: string | null = null;
@@ -84,8 +85,8 @@
   // Config form data
   let allowRepeatedUsers = false;
   let cooldown = 0;
-  let requiredRoles = "";
-  let bannedRoles = "";
+  let requiredRoles: string[] = [];
+  let bannedRoles: string[] = [];
   let maxNumber = 0;
   let resetOnError = true;
   let deleteWrongMessages = true;
@@ -179,13 +180,15 @@
     textChannels = [];
 
     try {
-      const [channelsData, textChannelsData] = await Promise.all([
+      const [channelsData, textChannelsData, rolesData] = await Promise.all([
         api.getCountingChannels($currentGuild.id),
-        api.getGuildTextChannels($currentGuild.id)
+        api.getGuildTextChannels($currentGuild.id),
+        api.getGuildRoles($currentGuild.id)
       ]);
 
       countingChannels = channelsData || [];
       textChannels = textChannelsData || [];
+      guildRoles = rolesData || [];
 
       // Load config and stats for selected channel
       if (selectedChannel) {
@@ -219,8 +222,8 @@
       if (channelConfig) {
         allowRepeatedUsers = channelConfig.allowRepeatedUsers;
         cooldown = channelConfig.cooldown;
-        requiredRoles = channelConfig.requiredRoles || "";
-        bannedRoles = channelConfig.bannedRoles || "";
+        requiredRoles = channelConfig.requiredRoles ? channelConfig.requiredRoles.split(',').map(r => r.trim()).filter(r => r) : [];
+        bannedRoles = channelConfig.bannedRoles ? channelConfig.bannedRoles.split(',').map(r => r.trim()).filter(r => r) : [];
         maxNumber = channelConfig.maxNumber;
         resetOnError = channelConfig.resetOnError;
         deleteWrongMessages = channelConfig.deleteWrongMessages;
@@ -292,8 +295,8 @@
       const request: UpdateCountingConfigRequest = {
         allowRepeatedUsers,
         cooldown,
-        requiredRoles: requiredRoles || undefined,
-        bannedRoles: bannedRoles || undefined,
+        requiredRoles: requiredRoles.length > 0 ? requiredRoles.join(',') : undefined,
+        bannedRoles: bannedRoles.length > 0 ? bannedRoles.join(',') : undefined,
         maxNumber: maxNumber || undefined,
         resetOnError,
         deleteWrongMessages,
@@ -547,34 +550,46 @@
               }}
               transition:slide
             >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-2">
+              <div class="space-y-3">
+                <!-- Header Row -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 min-w-0 flex-1">
                     <Hash size={20} style="color: {$colorStore.primary}" />
-                    <h3 class="font-medium" style="color: {$colorStore.text}">{channel.channelName}</h3>
-                    <span class="px-2 py-1 rounded-full text-xs" style="background: {getChannelStatus(channel).color}20; color: {getChannelStatus(channel).color};">
+                    <h3 class="font-medium truncate" style="color: {$colorStore.text}">{channel.channelName}</h3>
+                    <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap" style="background: {getChannelStatus(channel).color}20; color: {getChannelStatus(channel).color};">
                       {getChannelStatus(channel).text}
                     </span>
                   </div>
                   
-                  <div class="flex items-center gap-4 text-sm" style="color: {$colorStore.muted}">
-                    <span>Current: {formatNumber(channel.currentNumber)}</span>
-                    <span>Highest: {formatNumber(channel.highestNumber)}</span>
-                    <span>Total: {formatNumber(channel.totalCounts)}</span>
-                    {#if channel.lastUsername}
-                      <span>Last: {channel.lastUsername}</span>
-                    {/if}
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
                   <button
-                    class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20"
+                    class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 flex-shrink-0"
                     on:click|stopPropagation={() => disableChannel(channel)}
                     title="Disable channel"
                   >
                     <Trash2 size={16} />
                   </button>
+                </div>
+                
+                <!-- Stats Grid - Responsive -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm" style="color: {$colorStore.muted}">
+                  <div>
+                    <span class="font-medium" style="color: {$colorStore.text}">Current</span>
+                    <div>{formatNumber(channel.currentNumber)}</div>
+                  </div>
+                  <div>
+                    <span class="font-medium" style="color: {$colorStore.text}">Highest</span>
+                    <div>{formatNumber(channel.highestNumber)}</div>
+                  </div>
+                  <div>
+                    <span class="font-medium" style="color: {$colorStore.text}">Total</span>
+                    <div>{formatNumber(channel.totalCounts)}</div>
+                  </div>
+                  {#if channel.lastUsername}
+                    <div class="col-span-2 sm:col-span-1">
+                      <span class="font-medium" style="color: {$colorStore.text}">Last by</span>
+                      <div class="truncate">{channel.lastUsername}</div>
+                    </div>
+                  {/if}
                 </div>
               </div>
             </div>
@@ -749,26 +764,26 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label class="block mb-2" style="color: {$colorStore.text}">Required Roles</label>
-            <input
-              type="text"
-              bind:value={requiredRoles}
-              on:input={markAsChanged}
-              placeholder="Comma-separated role IDs"
-              class="w-full p-3 rounded-lg border"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+            <DiscordSelector
+              type="role"
+              options={guildRoles}
+              bind:selected={requiredRoles}
+              placeholder="Select required roles..."
+              multiple={true}
+              on:change={markAsChanged}
             />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users must have one of these roles</p>
           </div>
 
           <div>
             <label class="block mb-2" style="color: {$colorStore.text}">Banned Roles</label>
-            <input
-              type="text"
-              bind:value={bannedRoles}
-              on:input={markAsChanged}
-              placeholder="Comma-separated role IDs"
-              class="w-full p-3 rounded-lg border"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+            <DiscordSelector
+              type="role"
+              options={guildRoles}
+              bind:selected={bannedRoles}
+              placeholder="Select banned roles..."
+              multiple={true}
+              on:change={markAsChanged}
             />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users with these roles cannot count</p>
           </div>
