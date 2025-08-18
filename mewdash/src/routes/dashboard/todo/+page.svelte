@@ -210,7 +210,7 @@
       }
 
       // List owner has all permissions
-      if (list.ownerId.toString() === $userStore.id) {
+      if (list.ownerId === $userStore.id) {
         return {
           canView: true,
           canAdd: true,
@@ -308,7 +308,7 @@
       };
 
       await api.createTodoList($currentGuild.id, request);
-      
+
       // Reset form and reload lists
       newListName = "";
       newListDescription = "";
@@ -982,7 +982,7 @@
   }
 
   /* Focus styles for accessibility */
-  button:focus, input:focus, textarea:focus, select:focus {
+  button:focus, input:focus, textarea:focus {
     outline: 2px solid var(--focus-color, #3b82f6);
     outline-offset: 2px;
   }

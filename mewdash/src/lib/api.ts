@@ -108,6 +108,25 @@ import type {
   TicketCase, TicketPanel, TicketPriority, TicketTag, UpdateButtonRequest, UpdateCaseRequest, 
   UpdateEmbedRequest, UpdatePlaceholderRequest, UserStatistics
 } from "$lib/types/tickets.ts";
+import type {
+  CountingChannelResponse,
+  CountingConfigResponse,
+  CountingStatsResponse,
+  CountingUserStatsResponse,
+  SavePointResponse,
+  LeaderboardResponse,
+  SetupCountingChannelRequest,
+  UpdateCountingConfigRequest,
+  ResetCountingChannelRequest,
+  CreateSavePointRequest,
+  RestoreSavePointRequest,
+  BanUserRequest,
+  UnbanUserRequest,
+  SetCustomMessageRequest,
+  SetMilestonesRequest,
+  PurgeChannelRequest,
+} from "$lib/types/counting.ts";
+import { LeaderboardType } from "$lib/types/counting.ts";
 
 // Reserved for future use - currently unused but kept for potential security checks
 // const ALLOWED_ORIGINS = ["localhost", "127.0.0.1"];
@@ -1995,5 +2014,64 @@ export const api = {
     apiRequest<{ pruned: number; }>(`administration/${guildId}/prune`, "POST", { days, reason }),
 
   pruneToMessage: (guildId: bigint, channelId: bigint, messageId: bigint) =>
-    apiRequest<{ deleted: number; }>(`administration/${guildId}/prune-to`, "POST", { channelId, messageId })
+    apiRequest<{ deleted: number; }>(`administration/${guildId}/prune-to`, "POST", { channelId, messageId }),
+
+  // Counting endpoints
+  getCountingChannels: (guildId: bigint) =>
+    apiRequest<CountingChannelResponse[]>(`Counting/${guildId}/channels`),
+  setupCountingChannel: (guildId: bigint, channelId: bigint, request: SetupCountingChannelRequest) =>
+    apiRequest<CountingChannelResponse>(`Counting/${guildId}/channels/${channelId}/setup`, "POST", request),
+  getCountingChannelStatus: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ Channel: CountingChannelResponse; Statistics: any }>(`Counting/${guildId}/channels/${channelId}/status`),
+  disableCountingChannel: (guildId: bigint, channelId: bigint, userId: bigint, reason?: string) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}?userId=${userId}${reason ? `&reason=${encodeURIComponent(reason)}` : ""}`, "DELETE"),
+  
+  getCountingChannelConfig: (guildId: bigint, channelId: bigint) =>
+    apiRequest<CountingConfigResponse>(`Counting/${guildId}/channels/${channelId}/config`),
+  updateCountingChannelConfig: (guildId: bigint, channelId: bigint, request: UpdateCountingConfigRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/config`, "PUT", request),
+  
+  getCountingChannelStats: (guildId: bigint, channelId: bigint) =>
+    apiRequest<CountingStatsResponse>(`Counting/${guildId}/channels/${channelId}/stats`),
+  getCountingChannelLeaderboard: (guildId: bigint, channelId: bigint, type: LeaderboardType = LeaderboardType.Contributions, limit: number = 20) =>
+    apiRequest<LeaderboardResponse>(`Counting/${guildId}/channels/${channelId}/leaderboard?type=${type}&limit=${limit}`),
+  getUserCountingStats: (guildId: bigint, channelId: bigint, userId: bigint) =>
+    apiRequest<CountingUserStatsResponse>(`Counting/${guildId}/channels/${channelId}/users/${userId}/stats`),
+  
+  resetCountingChannel: (guildId: bigint, channelId: bigint, request: ResetCountingChannelRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/reset`, "POST", request),
+  createCountingSavePoint: (guildId: bigint, channelId: bigint, request: CreateSavePointRequest) =>
+    apiRequest<SavePointResponse>(`Counting/${guildId}/channels/${channelId}/saves`, "POST", request),
+  restoreCountingSavePoint: (guildId: bigint, channelId: bigint, request: RestoreSavePointRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/restore`, "POST", request),
+  
+  banUserFromCounting: (guildId: bigint, channelId: bigint, userId: bigint, request: BanUserRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/users/${userId}/ban`, "POST", request),
+  unbanUserFromCounting: (guildId: bigint, channelId: bigint, userId: bigint, request: UnbanUserRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/users/${userId}/ban`, "DELETE", request),
+  getCountingViolationStats: (guildId: bigint, channelId: bigint, hours: number = 24) =>
+    apiRequest<any>(`Counting/${guildId}/channels/${channelId}/violations?hours=${hours}`),
+  getUserCountingWrongCount: (guildId: bigint, channelId: bigint, userId: bigint) =>
+    apiRequest<{ UserId: bigint; WrongCount: number }>(`Counting/${guildId}/channels/${channelId}/users/${userId}/wrongcount`),
+  clearUserCountingWrongCount: (guildId: bigint, channelId: bigint, userId: bigint, moderatorId: bigint) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/users/${userId}/wrongcount?moderatorId=${moderatorId}`, "DELETE"),
+  
+  getCountingSavePoints: (guildId: bigint, channelId: bigint) =>
+    apiRequest<SavePointResponse[]>(`Counting/${guildId}/channels/${channelId}/saves`),
+  deleteCountingSavePoint: (guildId: bigint, channelId: bigint, saveId: number, userId: bigint) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/saves/${saveId}?userId=${userId}`, "DELETE"),
+  
+  setCountingSuccessMessage: (guildId: bigint, channelId: bigint, request: SetCustomMessageRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/messages/success`, "PUT", request),
+  setCountingFailureMessage: (guildId: bigint, channelId: bigint, request: SetCustomMessageRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/messages/failure`, "PUT", request),
+  setCountingMilestoneMessage: (guildId: bigint, channelId: bigint, request: SetCustomMessageRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/messages/milestone`, "PUT", request),
+  setCountingMilestones: (guildId: bigint, channelId: bigint, request: SetMilestonesRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/milestones`, "PUT", request),
+  getCountingMilestones: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ Milestones: number[] }>(`Counting/${guildId}/channels/${channelId}/milestones`),
+  
+  purgeCountingChannel: (guildId: bigint, channelId: bigint, request: PurgeChannelRequest) =>
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/purge`, "DELETE", request)
 };
