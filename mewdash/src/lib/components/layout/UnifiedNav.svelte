@@ -141,11 +141,13 @@ A unified navigation component that provides responsive navigation with server a
   // Derived store for computed items - only use page store in browser
   const computedItemsStore = derived(
     [page, currentGuild, isOwnerStore],
-    ([$page, , $isOwner]) => {
+    ([$page, $isOwner]) => {
       if (!browser) {
         // During SSR, return empty items to avoid page store access
         return [];
       }
+      if (!$page || !$page.url)
+          return [];
       const isDashboard = $page.url.pathname.startsWith("/dashboard");
       return isDashboard ? buildDashboardItems($isOwner) : buildMainItems(items);
     }

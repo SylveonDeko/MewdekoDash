@@ -66,12 +66,17 @@
   let recentTickets: any[] = [];
   let ticketPanels: any[] = [];
 
+  // Counting data
+  let countingChannels: any[] = [];
+  let countingStats: any = null;
+  let topCountingChannel: any = null;
+
   async function fetchCommunityData() {
     if (!$currentGuild?.id) return;
 
     try {
       // Fetch all data in parallel for better performance
-      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData] = await Promise.all([
+      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData, countingChannelsData, countingStatsData] = await Promise.all([
         api.getXpLeaderboard($currentGuild.id, 1, 3),
         api.getXpServerStats($currentGuild.id),
         api.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
@@ -85,7 +90,9 @@
         api.getBirthdayToday($currentGuild.id).catch(() => []),
         api.getBirthdayUpcoming($currentGuild.id, 7).catch(() => []),
         api.getTicketStats($currentGuild.id).catch(() => ({ totalTickets: 0, openTickets: 0, closedTickets: 0, activeStaff: 0 })),
-        api.getTicketPanels($currentGuild.id).catch(() => [])
+        api.getTicketPanels($currentGuild.id).catch(() => []),
+        api.getCountingChannels($currentGuild.id).catch(() => []), // Counting channels
+        api.getCountingChannelStats($currentGuild.id, null).catch(() => null) // Aggregate counting stats
       ]);
 
       // Process XP leaderboard data
@@ -150,6 +157,17 @@
         activeStaff: ticketStatsData?.activeStaff || 0
       };
       ticketPanels = (ticketPanelsData || []).slice(0, 3); // Show recent 3 panels
+
+      // Process Counting data
+      countingChannels = countingChannelsData || [];
+      countingStats = countingStatsData;
+      
+      // Find the most active counting channel
+      if (countingChannels.length > 0) {
+        topCountingChannel = countingChannels
+          .filter(channel => channel.isActive)
+          .sort((a, b) => b.currentNumber - a.currentNumber)[0] || countingChannels[0];
+      }
 
       // Fetch starboard highlights
       try {
@@ -475,6 +493,68 @@
           </div>
         {/if}
         </div>
+
+        <!-- Counting Activity Card -->
+        <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Counting Games</h3>
+          {#if countingChannels.length > 0}
+            <a href="/dashboard/counting" class="text-xs" style="color: {$colorStore.primary}">Manage</a>
+          {/if}
+        </div>
+        
+        {#if countingChannels.length === 0}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">No counting channels setup</p>
+          </div>
+        {:else if !topCountingChannel}
+          <div class="p-3 rounded-xl text-center" style="background: {$colorStore.primary}08;">
+            <p class="text-xs" style="color: {$colorStore.muted}">No active counting channels</p>
+          </div>
+        {:else}
+          <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+            <div class="flex items-center gap-2 mb-2">
+              <Hash size={16} style="color: {$colorStore.primary}" />
+              <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                #{topCountingChannel.channelName}
+              </span>
+              {#if topCountingChannel.isActive}
+                <span class="px-2 py-1 rounded-full text-xs" style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};">
+                  Active
+                </span>
+              {/if}
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-2">
+              <div>
+                <div class="text-lg font-bold" style="color: {$colorStore.primary}">
+                  {topCountingChannel.currentNumber?.toLocaleString() || 0}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Current</div>
+              </div>
+              <div>
+                <div class="text-lg font-bold" style="color: {$colorStore.secondary}">
+                  {topCountingChannel.highestNumber?.toLocaleString() || 0}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Record</div>
+              </div>
+            </div>
+            
+            {#if topCountingChannel.lastUsername}
+              <div class="pt-2 border-t text-xs" style="border-color: {$colorStore.primary}15; color: {$colorStore.muted}">
+                Last count by <span style="color: {$colorStore.text}">{topCountingChannel.lastUsername}</span>
+              </div>
+            {/if}
+            
+            {#if countingChannels.length > 1}
+              <div class="text-xs mt-2" style="color: {$colorStore.muted}">
+                +{countingChannels.length - 1} other channel{countingChannels.length > 2 ? 's' : ''}
+              </div>
+            {/if}
+          </div>
+        {/if}
+        </div>
       </div>
     </div>
 
@@ -516,6 +596,15 @@
           label="Support Tickets"
           subtitle={ticketStats.openTickets > 0 ? `${ticketStats.openTickets} open` : "All resolved"}
           value={ticketStats.totalTickets}
+        />
+
+        <StatCard
+          animationDelay={500}
+          icon={Hash}
+          iconColor="secondary"
+          label="Counting Channels"
+          subtitle={countingChannels.filter(c => c.isActive).length > 0 ? `${countingChannels.filter(c => c.isActive).length} active` : "None active"}
+          value={countingChannels.length}
         />
       </div>
 
@@ -586,6 +675,16 @@
             icon={MessageSquare}
             isActive={messageCountEnabled}
             title="Message Stats"
+          />
+
+          <!-- Counting Games -->
+          <FeatureCard
+            animationDelay={300}
+            description="Interactive counting games and competitions"
+            href="/dashboard/counting"
+            icon={Hash}
+            isActive={countingChannels.length > 0 && countingChannels.some(c => c.isActive)}
+            title="Counting Games"
           />
         </div>
       </div>
