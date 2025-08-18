@@ -6,18 +6,17 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, slide } from "svelte/transition";
   import type { PageData } from "./$types";
-  import type { 
-    CountingChannelResponse,
-    CountingConfigResponse,
-    CountingStatsResponse,
-    CountingUserStatsResponse,
-    SavePointResponse,
-    SetupCountingChannelRequest,
-    UpdateCountingConfigRequest,
-    CountingPattern,
-    LeaderboardType,
-    ResetCountingChannelRequest,
-    CreateSavePointRequest
+  import {
+      type CountingChannelResponse,
+      type CountingConfigResponse,
+      type CountingStatsResponse,
+      type CountingUserStatsResponse,
+      type SavePointResponse,
+      type SetupCountingChannelRequest,
+      type UpdateCountingConfigRequest,
+      type LeaderboardType,
+      type ResetCountingChannelRequest,
+      type CreateSavePointRequest, CountingPattern
   } from "$lib/types/counting";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
