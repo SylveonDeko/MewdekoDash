@@ -322,20 +322,24 @@
            --color-accent: {$colorStore.accent};
            --color-text: {$colorStore.text};
            --color-muted: {$colorStore.muted};
-           background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+           background: radial-gradient(circle at center,
+             {$colorStore.gradientStart}15 0%,
+             {$colorStore.gradientEnd}10 50%,
+             {$colorStore.gradientEnd}05 100%
+           );"
     in:fade
   >
     <!-- Header -->
-    <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
+    <div class="py-4 backdrop-blur-lg border-b shadow-lg"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
-      <div class="container mx-auto px-3 sm:px-4 lg:px-4 py-3 sm:py-4 lg:py-6">
+      <div class="container mx-auto px-3 sm:px-4 lg:px-4 py-2 sm:py-3">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 class="text-2xl lg:text-3xl font-bold mb-2" style="color: {$colorStore.text};">
+            <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">
               Credentials Setup Wizard
             </h1>
-            <p class="text-sm lg:text-base" style="color: {$colorStore.muted};">
-              Step-by-step guide to configure your Mewdeko bot
+            <p class="text-sm" style="color: {$colorStore.muted};">
+              Configure your Mewdeko bot step by step
             </p>
           </div>
 
@@ -400,15 +404,15 @@
                           <div class="font-medium text-sm">
                             {step.title}
                             {#if step.required}
-                              <span class="text-red-400 ml-1">*</span>
+                              <span class="ml-1" style="color: {$colorStore.accent};">*</span>
                             {/if}
                           </div>
                           <div class="text-xs opacity-70">{step.estimatedTime}</div>
                         </div>
                       </div>
                       {#if completedSteps.has(index)}
-                        <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                          <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: {$colorStore.secondary};">
+                          <svg class="w-3 h-3" style="color: {$colorStore.text};" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -456,7 +460,7 @@
                       <span class="text-3xl">{step.icon}</span>
                       {step.title}
                       {#if step.required}
-                        <span class="text-red-400">*</span>
+                        <span style="color: {$colorStore.accent};">*</span>
                       {/if}
                     </h2>
                     <button
@@ -475,7 +479,7 @@
                     <ul class="space-y-2">
                       {#each step.content.highlights as highlight}
                         <li class="flex items-center gap-2" style="color: {$colorStore.text};">
-                          <span class="text-green-400">✓</span>
+                          <span style="color: {$colorStore.secondary};">✓</span>
                           {highlight}
                         </li>
                       {/each}
@@ -534,7 +538,7 @@
                       <h2 class="text-3xl font-bold" style="color: {$colorStore.text};">
                         {currentStepData.title}
                         {#if currentStepData.required}
-                          <span class="text-red-400 ml-2">*</span>
+                          <span class="ml-2" style="color: {$colorStore.accent};">*</span>
                         {/if}
                       </h2>
                       <p class="text-lg" style="color: {$colorStore.muted};">
@@ -548,7 +552,7 @@
                   </div>
                   <button
                     class="px-4 py-2 rounded-lg transition-all hover:scale-105"
-                    style="background: {completedSteps.has(currentStep) ? '#10B981' : $colorStore.primary + '20'}; color: {completedSteps.has(currentStep) ? 'white' : $colorStore.text};"
+                    style="background: {completedSteps.has(currentStep) ? $colorStore.secondary : $colorStore.primary + '20'}; color: {$colorStore.text};"
                     on:click={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
                     {completedSteps.has(currentStep) ? '✅ Completed' : '⭕ Mark Complete'}
@@ -567,7 +571,7 @@
                           <ul class="space-y-2">
                             {#each currentStepData.content.highlights as highlight}
                               <li class="flex items-center gap-2">
-                                <span class="text-green-400">✓</span>
+                                <span style="color: {$colorStore.secondary};">✓</span>
                                 {highlight}
                               </li>
                             {/each}
@@ -584,9 +588,9 @@
                     <div in:fly={{ y: 20, duration: 300 }}>
                       <p class="text-lg mb-8">{currentStepData.content.intro}</p>
 
-                      <div class="mb-8 p-5 rounded-xl" style="background: #F59E0B20; border: 1px solid #F59E0B40;">
+                      <div class="mb-8 p-5 rounded-xl" style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40;">
                         <div class="flex items-start gap-3">
-                          <span class="text-yellow-500 text-xl flex-shrink-0">⚠️</span>
+                          <span class="text-xl flex-shrink-0" style="color: {$colorStore.accent};">⚠️</span>
                           <p class="text-lg"><strong>Security Warning:</strong> {currentStepData.content.warning}</p>
                         </div>
                       </div>
@@ -595,8 +599,8 @@
                         {#each currentStepData.content.steps as step, index}
                           <div class="flex items-start gap-4">
                             <div
-                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid})">
+                              
                               {index + 1}
                             </div>
                             <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
@@ -627,14 +631,14 @@
                         <div class="flex flex-col sm:flex-row gap-4 mb-6">
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
-                            style="background: {selectedOS === 'linux' ? `linear-gradient(135deg, ${$colorStore.gradientStart}80, ${$colorStore.gradientMid}90)` : $colorStore.primary + '20'}; color: {selectedOS === 'linux' ? 'white' : $colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                            style="background: {selectedOS === 'linux' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             on:click={() => selectedOS = 'linux'}
                           >
                             🐧 Linux (Ubuntu/Debian)
                           </button>
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
-                            style="background: {selectedOS === 'windows' ? `linear-gradient(135deg, ${$colorStore.gradientStart}80, ${$colorStore.gradientMid}90)` : $colorStore.primary + '20'}; color: {selectedOS === 'windows' ? 'white' : $colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                            style="background: {selectedOS === 'windows' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             on:click={() => selectedOS = 'windows'}
                           >
                             🪟 Windows
@@ -652,8 +656,7 @@
                                 <!-- Step Number Badge -->
                                 <div class="flex items-center mb-4">
                                   <div
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white mr-4"
-                                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
                                     {index + 1}
                                   </div>
                                   <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
@@ -670,9 +673,9 @@
                                   </div>
                                   {#if step.note}
                                     <div class="mt-4 p-3 rounded-lg"
-                                         style="background: #F59E0B15; border: 1px solid #F59E0B30;">
+                                         style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="text-yellow-500 flex-shrink-0">💡</span>
+                                        <span class="flex-shrink-0" style="color: {$colorStore.accent};">💡</span>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
@@ -692,8 +695,7 @@
                                 <!-- Step Number Badge -->
                                 <div class="flex items-center mb-4">
                                   <div
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white mr-4"
-                                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
                                     {index + 1}
                                   </div>
                                   <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
@@ -710,9 +712,9 @@
                                   </div>
                                   {#if step.note}
                                     <div class="mt-4 p-3 rounded-lg"
-                                         style="background: #F59E0B15; border: 1px solid #F59E0B30;">
+                                         style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="text-yellow-500 flex-shrink-0">💡</span>
+                                        <span class="flex-shrink-0" style="color: {$colorStore.accent};">💡</span>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
@@ -736,9 +738,9 @@
                             {currentStepData.content.connectionExamples[selectedOS]}
                           </code>
                         </div>
-                        <div class="mt-6 p-4 rounded-lg" style="background: #EF444415; border: 1px solid #EF444430;">
+                        <div class="mt-6 p-4 rounded-lg" style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                           <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                            <span class="text-red-400 flex-shrink-0">⚠️</span>
+                            <span class="flex-shrink-0" style="color: {$colorStore.accent};">⚠️</span>
                             <span>Replace "your_secure_password" with the actual password you set for the mewdeko user.</span>
                           </p>
                         </div>
@@ -752,8 +754,7 @@
                         {#each currentStepData.content.steps as step, index}
                           <div class="flex items-start gap-4">
                             <div
-                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
                               {index + 1}
                             </div>
                             <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
@@ -800,12 +801,12 @@
                               </h3>
                               <div class="flex items-center gap-2">
                                 <span class="px-2 py-1 rounded-full text-xs"
-                                      style="background: {key.priority === 'high' ? '#EF4444' : key.priority === 'medium' ? '#F59E0B' : '#6B7280'}20; color: {key.priority === 'high' ? '#EF4444' : key.priority === 'medium' ? '#F59E0B' : '#6B7280'};">
+                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                                   {key.priority} priority
                                 </span>
                                 {#if key.required}
                                   <span class="px-2 py-1 rounded-full text-xs"
-                                        style="background: #EF444420; color: #EF4444;">
+                                        style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                                     Required
                                   </span>
                                 {/if}
@@ -820,8 +821,7 @@
                               {#each key.steps as step, index}
                                 <li class="flex gap-3">
                                   <span
-                                    class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                                    style="background: {$colorStore.primary};">
+                                    class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style="color: {$colorStore.text}; background: {$colorStore.primary};">
                                     {index + 1}
                                   </span>
                                   <p class="text-sm">{step}</p>
@@ -892,7 +892,7 @@
 
                   <button
                     class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === steps.length - 1}
                     on:click={nextStep}
                   >

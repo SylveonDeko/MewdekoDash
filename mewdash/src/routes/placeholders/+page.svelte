@@ -307,20 +307,24 @@
            --color-accent: {$colorStore.accent};
            --color-text: {$colorStore.text};
            --color-muted: {$colorStore.muted};
-           background: linear-gradient(135deg, {$colorStore.primary}08 0%, {$colorStore.secondary}05 100%);"
+           background: radial-gradient(circle at center,
+             {$colorStore.gradientStart}15 0%,
+             {$colorStore.gradientEnd}10 50%,
+             {$colorStore.gradientEnd}05 100%
+           );"
     in:fade
   >
     <!-- Header Section -->
-    <div class="sticky top-0 backdrop-blur-lg border-b shadow-lg z-10"
+    <div class="py-4 backdrop-blur-lg border-b shadow-lg"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
-      <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4 lg:py-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl lg:text-4xl font-bold mb-2" style="color: {$colorStore.text};">
+            <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">
               Placeholders Reference
             </h1>
-            <p class="text-lg" style="color: {$colorStore.muted};">
-              Dynamic content for your embeds, messages, and commands
+            <p class="text-sm" style="color: {$colorStore.muted};">
+              Dynamic content for embeds and messages
             </p>
           </div>
 
@@ -418,10 +422,10 @@
       <!-- Important Note -->
       <div class="max-w-4xl mx-auto mb-8">
         <div class="rounded-xl p-4 backdrop-blur-sm"
-             style="background: linear-gradient(135deg, #F59E0B20, #D9770630); border: 1px solid #F59E0B40;">
+             style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40;">
           <div class="flex items-start gap-3">
             <div class="flex-shrink-0">
-              <svg class="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-6 h-6" style="color: {$colorStore.accent};" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15c-.77.833.192 2.5 1.732 2.5z" />
               </svg>

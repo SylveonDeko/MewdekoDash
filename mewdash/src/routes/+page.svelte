@@ -22,12 +22,13 @@
   // Carousel state variables
   let moderationCurrentIndex = 0;
   let moderationItemCount = 0;
-  let staffCurrentIndex = 0;
-  let staffItemCount = 0;
   let responsesCurrentIndex = 0;
   let responsesItemCount = 0;
-  let customizableCurrentIndex = 0;
-  let customizableItemCount = 0;
+  let suggestionsCurrentIndex = 0;
+  let suggestionsItemCount = 0;
+  
+  // Feature expansion state
+  let showAllFeatures = false;
 
   // Primary buttons for mobile view
   const primaryButtons = [
@@ -127,19 +128,19 @@
     property="og:title"
   />
   <meta
-    content="Discover Mewdeko, the ultimate customizable and open-source Discord bot. Packed with features like Auto Ban, antispam, and custom responses. Join 11077 servers using Mewdeko today!"
+    content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     name="description"
   />
   <meta
-    content="Discover Mewdeko, the ultimate customizable and open-source Discord bot. Packed with features like Auto Ban, antispam, and custom responses. Join 11077 servers using Mewdeko today!"
+    content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     property="og:description"
   />
   <meta
-    content="Discover Mewdeko, the ultimate customizable and open-source Discord bot. Packed with features like Auto Ban, antispam, and custom responses. Join 11077 servers using Mewdeko today!"
+    content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     name="twitter:description"
   />
   <meta
-    content="Mewdeko, free Discord bot, open source Discord bot, customizable Discord bot, Discord music bot, Discord moderation bot, server management, role management, AFK bot, Discord greets, starboard, custom commands, multi-purpose bot"
+    content="Mewdeko, free Discord bot, open source Discord bot, XP leveling bot, Discord economy bot, Discord music bot, Discord moderation bot, ticket system, giveaway bot, suggestion bot, starboard, custom commands, multi-purpose bot, Discord reputation system"
     name="keywords"
   />
 </svelte:head>
@@ -217,7 +218,6 @@
           style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
         >
           <span class="flex items-center gap-2">
-            <span class="text-base">💬</span>
             Discord
           </span>
         </a>
@@ -228,7 +228,6 @@
           style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
         >
           <span class="flex items-center gap-2">
-            <span class="text-base">❤️</span>
             Donate
           </span>
         </a>
@@ -296,7 +295,7 @@
                       {truncateStringToLength(guild.Name, 18)}
                     </p>
                     <p class="text-center mt-1" style="color: {$colorStore.muted}">
-                      👥 {guild.MemberCount.toLocaleString()} members
+                      {guild.MemberCount.toLocaleString()} members
                     </p>
                     <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 rotate-45"
                          style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
@@ -350,7 +349,7 @@
                       {truncateStringToLength(guild.Name, MAX_GUILD_NAME_LENGTH)}
                     </p>
                     <p class="text-center text-xs" style="color: {$colorStore.muted}">
-                      👥 {guild.MemberCount.toLocaleString()} members active
+                      {guild.MemberCount.toLocaleString()} members active
                     </p>
                     <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-3 h-3 rotate-45"
                          style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
@@ -391,7 +390,6 @@
           </div>
         {:else}
           <div class="text-center py-8">
-            <div class="text-4xl mb-4">😔</div>
             <p style="color: {$colorStore.muted}">
               No communities to display right now.
             </p>
@@ -432,500 +430,276 @@
         <div class="w-24 h-1 mx-auto rounded-full mb-6"
              style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});"></div>
         <p class="text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed" style="color: {$colorStore.muted}">
-          Discover the powerful features that make Mewdeko the ultimate <span class="font-bold text-green-400">FREE & Open Source</span>
-          Discord bot for your community.
+          Discover why thousands are switching from premium bots to Mewdeko. Everything you need, <span class="font-bold text-green-400">completely free</span>, with <span class="font-bold text-green-400">zero limitations</span>.
         </p>
       </div>
-      <FluidContainer breakpoints={["md", "xl"]}>
-        <Interactable
-          cta={{
-            text: "Invite Me",
-            href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&scope=bot&permissions=66186303",
-            target: "_blank"
-          }}
-          description="With Auto Ban words, Anti Spam, Anti Raid, and two different warning systems, Mewdeko can be as flexible as you want!"
-          slot="element-1"
-          title="Moderation"
-        >
-          <Carousel
-            items={[
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Auto Ban Words feature screenshot",
-                  src: "img/AutoBan.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Moderation Commands feature screenshot",
-                  src: "img/Moderation.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Anti Raid Protection feature screenshot",
-                  src: "img/AntiRaid.webp",
-                },
-              },
-            ]}
-            bind:currentIndex={moderationCurrentIndex}
-            bind:itemCount={moderationItemCount}
-          />
-        </Interactable>
-
-        <Interactable
-          cta={{
-            text: "Support Server",
-            href: "https://discord.gg/Z9DYApMXFN",
-            target: "_blank"
-          }}
-          description="With a team that cares about you, we try to help out in the best way possible!"
-          slot="element-2"
-          title="Helpful and Friendly Staff"
-        >
-          <Carousel
-            items={[
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Staff helping with hosting a bot",
-                  src: "img/FriendlyStaff1.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Staff demonstrating help command",
-                  src: "img/FriendlyStaff2.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Staff walking the dog, showcasing friendliness",
-                  src: "img/FriendlyStaff3.webp",
-                },
-              },
-            ]}
-            bind:currentIndex={staffCurrentIndex}
-            bind:itemCount={staffItemCount}
-          />
-        </Interactable>
-
-        <Interactable
-          cta={{
-            text: "Source Code",
-            href: "https://github.com/SylveonDeko/Mewdeko",
-            target: "_blank"
-          }}
-          description="Our bot is completely open source with an AGPLv3 license (to combat code resellers)! We have self-host guides/scripts on the repo as well!"
-          slot="element-3"
-          title="Open Source"
-        >
-          <img
-            alt="Screenshot of Mewdeko Github Repository"
-            class="w-full overflow-hidden rounded-xl"
-            src="img/clipboard-image.webp"
-          />
-        </Interactable>
-
-        <Interactable
-          description="Create up to 30 MultiGreets in one server!"
-          slot="element-4"
-          title="MultiGreets"
-        >
-          <img
-            alt="Screenshot showcasing MultiGreets feature"
-            class="w-full overflow-hidden rounded-xl"
-            src="img/img.webp"
-          />
-        </Interactable>
-
-        <Interactable
-          description="You can create custom text and slash commands using the embed builder and variables, both are optional!<br><br>Go to Resources at the top for links to the embed builder and placeholders!"
-          slot="element-5"
-          title="Custom Responses"
-        >
-          <Carousel
-            items={[
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Creating Custom Response screenshot",
-                  src: "img/ChatTriggers1.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Editing Custom Response screenshot",
-                  src: "img/ChatTriggers2.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Custom Command In Action screenshot",
-                  src: "img/ChatTriggers3.webp",
-                },
-              },
-            ]}
-            bind:currentIndex={responsesCurrentIndex}
-            bind:itemCount={responsesItemCount}
-          />
-        </Interactable>
-
-        <Interactable
-          description="After spending hours on end making sure this works properly, you can customize many, many aspects of the bot to your liking! It's overkill sometimes honestly."
-          slot="element-6"
-          title="Customizable"
-        >
-          <Carousel
-            items={[
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Suggestion Commands customization screenshot",
-                  src: "img/Customizeable1.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "Starboard Commands customization screenshot",
-                  src: "img/Customizeable2.webp",
-                },
-              },
-              {
-                component: ImageWrapper,
-                props: {
-                  alt: "AFK Commands customization screenshot",
-                  src: "img/Customizeable3.webp",
-                },
-              },
-            ]}
-            bind:currentIndex={customizableCurrentIndex}
-            bind:itemCount={customizableItemCount}
-          />
-        </Interactable>
-
-        <Interactable
-          cta={{ text: "Check them out!", href: "/commands", target: "_self" }}
-          description="With a little over 20 modules, and me coming up with the most niche stuff to add, you definitely won't get bored! (I hope)"
-          slot="element-7"
-          title="... And Much More!"
-        >
-          <img
-            alt="Screenshot of Mewdeko Modules List"
-            class="w-full overflow-hidden rounded-xl"
-            src="img/Modules1.webp"
-          />
-        </Interactable>
-      </FluidContainer>
+      
+      <!-- Simple Premium Bot Callout -->
+      <div class="mb-16 px-4">
+        <div class="rounded-2xl border p-6 sm:p-8 max-w-4xl mx-auto text-center"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                    border-color: {$colorStore.accent}30;">
+          <div class="inline-block px-4 py-2 rounded-full mb-4"
+               style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
+            <span class="text-sm font-semibold" style="color: {$colorStore.accent}">Why pay for basic features?</span>
+          </div>
+          <h3 class="text-2xl sm:text-3xl font-bold mb-4" style="color: {$colorStore.text}">
+            Premium bots charge <span style="color: {$colorStore.accent}">$12+/month</span> for what Mewdeko gives you <span style="color: {$colorStore.secondary}">free</span>
+          </h3>
+          <p class="text-lg mb-6" style="color: {$colorStore.muted}">
+            <span class="font-bold" style="color: {$colorStore.secondary}">Absolutely Free.</span>
+            <span class="font-bold" style="color: {$colorStore.primary}">Absolutely Overkill.</span>
+            <span style="color: {$colorStore.muted}">No Compromises.</span>
+          </p>
+        </div>
+      </div>
+      
+      <!-- Top 4 Core Features -->
+      <div class="px-4 mb-16">
+        <div class="max-w-6xl mx-auto">
+          <div class="text-center mb-12">
+            <h3 class="text-3xl sm:text-4xl font-bold mb-4" style="color: {$colorStore.text}">
+              Core Features
+            </h3>
+            <p class="text-lg sm:text-xl" style="color: {$colorStore.muted}">
+              Everything you need to run a Discord server
+            </p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+            <!-- XP & Leveling -->
+            <div class="rounded-2xl border p-8 shadow-lg transition-all hover:scale-[1.02]"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                        border-color: {$colorStore.primary}30;">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold"
+                     style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30; color: {$colorStore.primary};">XP</div>
+                <div>
+                  <h3 class="text-2xl font-bold" style="color: {$colorStore.text}">Leveling System</h3>
+                  <p class="text-base" style="color: {$colorStore.muted}">Keep members engaged and active</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>XP competitions with rewards</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>Voice channel XP tracking</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>Custom level-up messages</span>
+                </div>
+              </div>
+            </div>
+        
+            <!-- Economy & Games -->
+            <div class="rounded-2xl border p-8 shadow-lg transition-all hover:scale-[1.02]"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                        border-color: {$colorStore.secondary}30;">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold"
+                     style="background: {$colorStore.secondary}15; border: 1px solid {$colorStore.secondary}30; color: {$colorStore.secondary};">20+</div>
+                <div>
+                  <h3 class="text-2xl font-bold" style="color: {$colorStore.text}">Economy Games</h3>
+                  <p class="text-base" style="color: {$colorStore.muted}">Boost activity with gambling & rewards</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary};"></div>
+                  <span>Blackjack, Roulette, Slots, Horse Racing</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary};"></div>
+                  <span>Daily challenges & leaderboards</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.secondary};"></div>
+                  <span>User balance & transaction tracking</span>
+                </div>
+              </div>
+            </div>
+        
+            <!-- Moderation -->
+            <div class="rounded-2xl border p-8 shadow-lg transition-all hover:scale-[1.02]"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                        border-color: {$colorStore.accent}30;">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold"
+                     style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30; color: {$colorStore.accent};">MD</div>
+                <div>
+                  <h3 class="text-2xl font-bold" style="color: {$colorStore.text}">Auto Moderation</h3>
+                  <p class="text-base" style="color: {$colorStore.muted}">Keep your server safe automatically</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.accent};"></div>
+                  <span>Auto-ban words & anti-spam protection</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.accent};"></div>
+                  <span>Warning systems & user punishment</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.accent};"></div>
+                  <span>Bulk moderation tools</span>
+                </div>
+              </div>
+            </div>
+        
+            <!-- Music Bot -->
+            <div class="rounded-2xl border p-8 shadow-lg transition-all hover:scale-[1.02]"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                        border-color: {$colorStore.primary}30;">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold"
+                     style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30; color: {$colorStore.primary};">MX</div>
+                <div>
+                  <h3 class="text-2xl font-bold" style="color: {$colorStore.text}">Music Bot</h3>
+                  <p class="text-base" style="color: {$colorStore.muted}">High-quality audio streaming</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>Lavalink-powered audio quality</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>Queue & playlist management</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.text}">
+                  <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                  <span>Music effects & filters</span>
+                </div>
+              </div>
+            </div>
+        
+          </div>
+        </div>
+      </div>
+      
+      
+      <!-- Show More Features Section -->
+      <div class="px-4 mb-16">
+        <div class="max-w-6xl mx-auto text-center">
+          <button 
+            on:click={() => showAllFeatures = !showAllFeatures}
+            class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 mb-8"
+            style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border: 2px solid {$colorStore.accent}30;">
+            {showAllFeatures ? 'Hide' : 'Show All'} 25+ Additional Features
+            <span class="transform transition-transform {showAllFeatures ? 'rotate-180' : ''}">↓</span>
+          </button>
+          
+          {#if showAllFeatures}
+            <div class="rounded-2xl border p-8 shadow-lg" 
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}06, {$colorStore.gradientMid}10);
+                        border-color: {$colorStore.primary}20;"
+                 in:fly={{ y: 20, duration: 300 }}>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Support Tickets</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Professional help desk system</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Giveaways</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Contest management & prizes</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Suggestions</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Community feedback with voting</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Starboard</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Highlight popular messages</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Multi-Greets</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">30 welcome messages per server</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Todo Lists</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Task management with permissions</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Birthday Tracking</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Automatic celebrations</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Reputation System</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">User reputation tracking</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Highlights</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Word notification alerts</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Games</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Trivia, hangman, tic-tac-toe</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Confessions</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Anonymous messaging</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Role States</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Persistent role management</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Custom Voice</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Voice channel automation</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">Counting Games</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Interactive counting with rules</div>
+                </div>
+                <div class="p-4 rounded-lg" style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
+                  <div class="font-bold text-base mb-2" style="color: {$colorStore.text}">AFK System</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">Away status management</div>
+                </div>
+              </div>
+              
+              <div class="text-center mt-8">
+                <a href="/commands" 
+                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
+                   style="background: {$colorStore.secondary}; color: {$colorStore.text}; box-shadow: 0 8px 32px {$colorStore.secondary}40;">
+                  View Complete Feature List
+                </a>
+              </div>
+            </div>
+          {/if}
+        </div>
+      </div>
+      
+      <!-- Community CTA Section -->
+      <div class="text-center py-16 px-4">
+        <div class="max-w-4xl mx-auto">
+          <div class="backdrop-blur-sm rounded-2xl border p-8 shadow-lg"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                      border-color: {$colorStore.primary}20;">
+            <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
+              Questions? Suggestions? Missing Features?
+            </h3>
+            <p class="text-lg mb-6 leading-relaxed" style="color: {$colorStore.muted}">
+              Notice something missing or have a feature request? Got questions about setup or usage? 
+              Join our Discord community - we're always happy to help and hear your ideas!
+            </p>
+            <a href="https://discord.gg/Z9DYApMXFN"
+               target="_blank"
+               class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
+               style="background: {$colorStore.primary}; color: {$colorStore.text}; box-shadow: 0 8px 32px {$colorStore.primary}40;">
+              Join Our Discord Community
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
 
-<style lang="postcss">
-    :global(body) {
-        @apply text-mewd-white;
-        background: var(--color-primary);
-    }
-
-    /* Add smooth transitions for color changes */
-    [style*="background"],
-    [style*="color"] {
-        @apply transition-colors duration-300;
-    }
-
-    /* Improve gradient transitions */
-    .backdrop-blur-sm {
-        @apply transition-all duration-300;
-    }
-
-    /* Consistent border styling */
-    [class*="border"] {
-        @apply transition-colors duration-300;
-    }
-
-    /* Ensure proper gradient overlays */
-    [style*="gradient"] {
-        @apply transition-all duration-300;
-    }
-
-    /* Hero animations */
-    @keyframes pulse-subtle {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.9;
-        }
-    }
-
-    .animate-pulse-subtle {
-        animation: pulse-subtle 4s ease-in-out infinite;
-    }
-
-    /* Button hover effects */
-    .group:hover .absolute {
-        @apply transition-transform duration-700;
-    }
-
-    /* Mobile touch improvements */
-    @media (max-width: 640px) {
-        .group:active {
-            @apply scale-95;
-        }
-    }
-
-    /* Custom scrollbar styling */
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Image hover effects */
-    img {
-        @apply transition-transform duration-300;
-    }
-
-    .group:hover img {
-        @apply scale-110 rotate-2;
-    }
-
-    /* Enhanced server icon animations */
-    .server-icon {
-        @apply transition-all duration-300 ease-out;
-        filter: brightness(1.0) saturate(1.0) contrast(1.0);
-    }
-
-    .server-icon:hover {
-        @apply scale-125;
-        filter: brightness(1.15) saturate(1.3) contrast(1.1);
-        transform: scale(1.25) rotate(5deg);
-    }
-
-    .server-icon-mobile .server-icon:hover {
-        @apply scale-110;
-        transform: scale(1.1) rotate(3deg);
-    }
-
-    .server-icon-desktop .server-icon:hover {
-        @apply scale-125;
-        transform: scale(1.25) rotate(8deg);
-    }
-
-    /* Tooltip animations */
-    @keyframes fade-in {
-        from {
-            opacity: 0;
-            transform: translateY(10px) translateX(-50%);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) translateX(-50%);
-        }
-    }
-
-    .animate-in {
-        animation: fade-in 0.3s ease-out;
-    }
-
-    /* Grid layout improvements for mobile */
-    .server-icon-mobile {
-        @apply relative;
-    }
-
-    .server-icon-mobile:nth-child(n+6) {
-        @apply mt-2;
-    }
-
-    /* Status indicator pulse */
-    @keyframes status-pulse {
-        0%, 100% {
-            opacity: 0.9;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-    }
-
-    .animate-pulse {
-        animation: status-pulse 2s ease-in-out infinite;
-    }
-
-    /* Loading skeleton animations */
-    @keyframes skeleton-loading {
-        0% {
-            background-position: -200px 0;
-        }
-        100% {
-            background-position: calc(200px + 100%) 0;
-        }
-    }
-
-    /* Improved loading spinner */
-    @keyframes spin-smooth {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .animate-spin {
-        animation: spin-smooth 1s linear infinite;
-    }
-
-    /* Focus styles for accessibility */
-    .focus-within\:ring-2:focus-within {
-        --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-        --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-        box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-    }
-
-    .focus-within\:ring-4:focus-within {
-        --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-        --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-        box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-    }
-
-    .focus-within\:ring-offset-2:focus-within {
-        --tw-ring-offset-width: 2px;
-    }
-
-    .focus-within\:ring-offset-4:focus-within {
-        --tw-ring-offset-width: 4px;
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: more) {
-        .server-icon {
-            border-width: 3px !important;
-        }
-
-    }
-
-    /* Reduced motion support */
-    @media (prefers-reduced-motion: reduce) {
-        .server-icon,
-        .animate-pulse,
-        .animate-spin,
-        [class*="transition"],
-        [class*="animate"] {
-            animation: none !important;
-            transition: none !important;
-        }
-    }
-
-    /* Better tooltip visibility */
-    .group-focus-within\:block:focus-within {
-        display: block !important;
-    }
-
-    /* Floating animations for background elements */
-    @keyframes float {
-        0%, 100% {
-            transform: translateY(0px) translateX(0px) rotate(0deg);
-        }
-        25% {
-            transform: translateY(-20px) translateX(10px) rotate(1deg);
-        }
-        50% {
-            transform: translateY(-10px) translateX(-5px) rotate(-1deg);
-        }
-        75% {
-            transform: translateY(-30px) translateX(15px) rotate(2deg);
-        }
-    }
-
-    @keyframes float-slow {
-        0%, 100% {
-            transform: translateY(0px) translateX(0px) rotate(0deg);
-        }
-        25% {
-            transform: translateY(-15px) translateX(-8px) rotate(-1deg);
-        }
-        50% {
-            transform: translateY(-25px) translateX(12px) rotate(1deg);
-        }
-        75% {
-            transform: translateY(-5px) translateX(-15px) rotate(-2deg);
-        }
-    }
-
-    @keyframes float-slower {
-        0%, 100% {
-            transform: translateY(0px) translateX(0px) rotate(0deg);
-        }
-        33% {
-            transform: translateY(-10px) translateX(8px) rotate(1deg);
-        }
-        66% {
-            transform: translateY(-20px) translateX(-12px) rotate(-1deg);
-        }
-    }
-
-    .animate-float {
-        animation: float 6s ease-in-out infinite;
-    }
-
-    .animate-float-slow {
-        animation: float-slow 8s ease-in-out infinite;
-    }
-
-    .animate-float-slower {
-        animation: float-slower 10s ease-in-out infinite;
-    }
-
-    /* Enhanced text gradients */
-    .bg-gradient-to-r {
-        background: linear-gradient(135deg, var(--color-text), var(--color-primary), var(--color-secondary));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Smooth scroll behavior */
-
-    /* Enhanced container animations */
-    .container {
-        animation: fadeInUp 0.8s ease-out;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Parallax scroll effects */
-    @media (prefers-reduced-motion: no-preference) {
-
-    }
-</style>

@@ -132,24 +132,28 @@
          --color-accent: {$colorStore.accent};
          --color-text: {$colorStore.text};
          --color-muted: {$colorStore.muted};
-         background: linear-gradient(135deg, {$colorStore.primary}15 0%, {$colorStore.secondary}10 100%);"
+         background: radial-gradient(circle at center,
+           {$colorStore.gradientStart}15 0%,
+           {$colorStore.gradientEnd}10 50%,
+           {$colorStore.gradientEnd}05 100%
+         );"
 >
   <!-- Header and Search Section -->
-  <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
+  <div class="py-4 backdrop-blur-lg border-b shadow-lg"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%);
               border-color: {$colorStore.primary}30;">
-    <div class="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    <div class="container mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1
-            class="text-2xl lg:text-3xl font-bold mb-2"
+            class="text-lg lg:text-xl font-bold mb-1"
             in:fade={{ duration: 300 }}
             style="color: {$colorStore.text};"
           >
             Command Reference
           </h1>
-          <p class="text-sm lg:text-base opacity-80" style="color: {$colorStore.text};">
-            Explore all available Mewdeko commands and modules
+          <p class="text-sm opacity-80" style="color: {$colorStore.text};">
+            Explore all available commands and modules
           </p>
         </div>
         <div class="flex-shrink-0 lg:max-w-md lg:w-full">
@@ -338,7 +342,7 @@
                     class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm"
                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}50);
                               border: 1px solid {$colorStore.primary}30;">
-                    <span class="text-xl font-bold text-white">
+                    <span class="text-xl font-bold" style="color: {$colorStore.text}">
                       {activeModule.Name?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
@@ -520,12 +524,14 @@
     }
 
     :global(*::-webkit-scrollbar-thumb) {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--color-primary);
+        opacity: 0.2;
         @apply rounded-full;
     }
 
     :global(*::-webkit-scrollbar-thumb:hover) {
-        background: rgba(255, 255, 255, 0.3);
+        background: var(--color-primary);
+        opacity: 0.3;
     }
 
     /* Tab focus indicators */
@@ -577,11 +583,12 @@
     /* High contrast mode support */
     @media (prefers-contrast: more) {
         .command-card {
-            @apply border-2 border-white;
+            border: 2px solid var(--color-text);
         }
 
         .tab-button[aria-selected="true"] {
-            @apply bg-white text-black;
+            background: var(--color-text);
+            color: var(--color-primary);
         }
     }
 

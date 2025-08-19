@@ -166,11 +166,23 @@
          --color-accent: {$colorStore.accent};
          --color-text: {$colorStore.text};
          --color-muted: {$colorStore.muted};
-         background: linear-gradient(135deg, {$colorStore.primary}10 0%, {$colorStore.secondary}05 100%);"
+         background: radial-gradient(circle at center,
+           {$colorStore.gradientStart}15 0%,
+           {$colorStore.gradientEnd}10 50%,
+           {$colorStore.gradientEnd}05 100%
+         );"
 >
   <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <h1 class="text-4xl font-bold mb-8 text-center" in:fade={{ duration: 300 }} style="color: {$colorStore.text}">Bot
-      Reviews</h1>
+    <!-- Header Section -->
+    <div class="py-4 backdrop-blur-lg border-b shadow-lg mb-8"
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
+      <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+        <div class="text-center">
+          <h1 class="text-lg lg:text-xl font-bold mb-1" style="color: {$colorStore.text};">Bot Reviews</h1>
+          <p class="text-sm" style="color: {$colorStore.muted};">What our community thinks about Mewdeko</p>
+        </div>
+      </div>
+    </div>
 
   {#if user && !userHasReviewed && !loading}
     <div class="rounded-2xl p-6 mb-8 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl"
@@ -216,7 +228,7 @@
       <button
         on:click={submitReview}
         class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 active:scale-95 backdrop-blur-sm"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; --tw-ring-color: {$colorStore.accent};"
+        style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
         Submit Review
       </button>
@@ -224,7 +236,7 @@
   {:else if !user}
     <div
       class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
-      style="background: linear-gradient(135deg, #F59E0B20, #D9770630); border: 1px solid #F59E0B40; color: {$colorStore.text};"
+      style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -233,7 +245,7 @@
   {:else if userHasReviewed}
     <div
       class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
-      style="background: linear-gradient(135deg, #10B98120, #059669t30); border: 1px solid #10B98140; color: {$colorStore.text};"
+      style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.secondary}30); border: 1px solid {$colorStore.secondary}40; color: {$colorStore.text};"
       role="status"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -244,7 +256,7 @@
   {#if error}
     <div
       class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-sm transition-all duration-300"
-      style="background: linear-gradient(135deg, #DC262620, #B9131930); border: 1px solid #DC262640; color: {$colorStore.text};"
+      style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
     >
@@ -290,13 +302,14 @@
             <img
               src={review.avatarUrl}
               alt=""
-              class="w-12 h-12 rounded-full mr-4 border-2 border-blue-400"
+              class="w-12 h-12 rounded-full mr-4 border-2"
+              style="border-color: {$colorStore.primary};"
             />
             <div>
-              <h3 class="font-semibold text-xl text-blue-300">
+              <h3 class="font-semibold text-xl" style="color: {$colorStore.text};">
                 {review.username}
               </h3>
-              <p class="text-gray-400 text-sm">
+              <p class="text-sm" style="color: {$colorStore.muted};">
                 {new Date(review.dateAdded).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "long",
