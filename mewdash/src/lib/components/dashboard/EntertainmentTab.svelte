@@ -62,22 +62,22 @@
   }
 </script>
 
-<div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- 2-Column Layout: Music Player (60%) | Content Management (40%) -->
-  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+<div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
+  <!-- 2-Column Layout: Music Player | Entertainment Features -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-    <!-- Music Player Section (60% - 3 columns) -->
-    <div class="xl:col-span-3 space-y-6">
+    <!-- Column 1: Music Player (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
 
       <!-- Main Music Player -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="p-3 rounded-xl"
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Music class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <Music class="w-5 h-5" style="color: {$colorStore.primary}" />
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Music Player</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Music Player</h2>
         </div>
 
         {#if hasActiveMusic}
@@ -107,22 +107,22 @@
 
       <!-- Music Queue Preview (if music is playing) -->
       {#if hasActiveMusic && musicStatus?.Queue?.length > 0}
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+        <div class="backdrop-blur-sm rounded-lg p-4 shadow-md"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-          <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text}">Coming Up</h3>
-          <div class="space-y-3">
+          <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Coming Up</h3>
+          <div class="space-y-2">
             {#each musicStatus.Queue.slice(0, 3) as track, index}
-              <div class="flex items-center gap-3 p-3 rounded-xl"
+              <div class="flex items-center gap-3 p-2 rounded-lg"
                    style="background: {$colorStore.primary}08;">
-                <div class="w-8 h-8 rounded flex items-center justify-center text-sm font-semibold"
+                <div class="w-6 h-6 rounded flex items-center justify-center text-xs font-semibold"
                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                   {index + 1}
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="font-medium truncate" style="color: {$colorStore.text}">
+                  <div class="font-medium truncate text-sm" style="color: {$colorStore.text}">
                     {track.Title}
                   </div>
-                  <div class="text-sm" style="color: {$colorStore.muted}">
+                  <div class="text-xs" style="color: {$colorStore.muted}">
                     {track.Author} • {formatDuration(track.Duration)}
                   </div>
                 </div>
@@ -141,70 +141,71 @@
       {/if}
     </div>
 
-    <!-- Content Management Section (40% - 2 columns) -->
-    <div class="xl:col-span-2 space-y-6">
+    <!-- Column 2: Entertainment Features (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
 
       <!-- Entertainment Features -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <!-- Custom Voice Channels -->
-        <a href="/dashboard/customvoice" 
-           class="block backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-1px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: {customVoiceConfig?.enabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};">
-                <Mic class="w-6 h-6" style="color: {customVoiceConfig?.enabled ? $colorStore.primary : $colorStore.muted}" />
-              </div>
-              <div>
-                <h3 class="font-semibold" style="color: {$colorStore.text}">Custom Voice</h3>
-                <p class="text-sm" style="color: {$colorStore.muted}">Temporary voice channels</p>
-              </div>
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Mic class="w-5 h-5" style="color: {$colorStore.primary}" />
             </div>
-            <div class="text-sm font-medium px-3 py-1 rounded-full"
-                 style="background: {customVoiceConfig?.enabled ? '#10b98120' : $colorStore.muted + '20'};
-                        color: {customVoiceConfig?.enabled ? '#10b981' : $colorStore.muted};">
-              {customVoiceConfig?.enabled ? 'Active' : 'Inactive'}
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">
+                  {customVoiceConfig?.enabled ? 'Active' : 'Inactive'}
+                </span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Custom Voice</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Temporary voice channels</div>
             </div>
+            <a href="/dashboard/customvoice" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Configure
+            </a>
           </div>
-        </a>
+        </div>
 
         <!-- Giveaways -->
-        <a href="/dashboard/giveaways"
-           class="block backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-1px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: {giveaways.length > 0 ? $colorStore.accent + '20' : $colorStore.muted + '20'};">
-                <Gift class="w-6 h-6" style="color: {giveaways.length > 0 ? $colorStore.accent : $colorStore.muted}" />
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <Gift class="w-5 h-5" style="color: {$colorStore.accent}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{giveaways.length}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Active Giveaways</span>
               </div>
-              <div>
-                <h3 class="font-semibold" style="color: {$colorStore.text}">Giveaways</h3>
-                <p class="text-sm" style="color: {$colorStore.muted}">
-                  {giveaways.length > 0 ? `${giveaways.length} active` : 'Host contests & prizes'}
-                </p>
+              <div class="text-xs" style="color: {$colorStore.muted}">
+                {giveaways.length > 0 ? `${giveaways[0]?.participants || 0} participants` : 'Host contests & prizes'}
               </div>
             </div>
-            {#if giveaways.length > 0}
-              <div class="text-sm font-medium" style="color: {$colorStore.accent}">
-                {giveaways[0].participants || 0} participants
-              </div>
-            {/if}
+            <a href="/dashboard/giveaways" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
+            </a>
           </div>
-        </a>
+        </div>
       </div>
 
-
-      <!-- Active Giveaways -->
+      <!-- Active Giveaways Details -->
       {#if giveaways.length > 0}
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
+        <div class="backdrop-blur-sm rounded-lg p-4 shadow-md"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-          <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text}">Active Giveaways</h3>
+          <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">Active Giveaways</h3>
 
-          <div class="space-y-3">
+          <div class="space-y-2">
             {#each giveaways as giveaway}
-              <div class="p-3 rounded-xl" style="background: {$colorStore.primary}08;">
+              <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
                 <div class="font-medium text-sm" style="color: {$colorStore.text}">
                   {giveaway.prize || giveaway.title}
                 </div>
@@ -213,13 +214,6 @@
                 </div>
               </div>
             {/each}
-          </div>
-
-          <div class="mt-4 text-center">
-            <a href="/dashboard/giveaways"
-               class="text-sm" style="color: {$colorStore.primary}">
-              Manage giveaways →
-            </a>
           </div>
         </div>
       {/if}

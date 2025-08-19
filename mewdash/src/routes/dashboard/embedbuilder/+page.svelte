@@ -433,15 +433,69 @@
     });
   }
 
+  // Clean up empty embed properties
+  function cleanEmbed(embed: Embed) {
+    const cleaned: any = {};
+    
+    // Only include non-empty string properties
+    if (embed.title.trim()) cleaned.title = embed.title;
+    if (embed.description.trim()) cleaned.description = embed.description;
+    if (embed.color) cleaned.color = embed.color;
+    if (embed.url.trim()) cleaned.url = embed.url;
+    
+    // Only include author if any field is populated
+    if (embed.author.name.trim() || embed.author.url.trim() || embed.author.icon_url.trim()) {
+      cleaned.author = {};
+      if (embed.author.name.trim()) cleaned.author.name = embed.author.name;
+      if (embed.author.url.trim()) cleaned.author.url = embed.author.url;
+      if (embed.author.icon_url.trim()) cleaned.author.icon_url = embed.author.icon_url;
+    }
+    
+    // Only include footer if any field is populated
+    if (embed.footer.text.trim() || embed.footer.icon_url.trim()) {
+      cleaned.footer = {};
+      if (embed.footer.text.trim()) cleaned.footer.text = embed.footer.text;
+      if (embed.footer.icon_url.trim()) cleaned.footer.icon_url = embed.footer.icon_url;
+    }
+    
+    // Only include thumbnail/image if URL is populated
+    if (embed.thumbnail.url.trim()) {
+      cleaned.thumbnail = { url: embed.thumbnail.url };
+    }
+    if (embed.image.url.trim()) {
+      cleaned.image = { url: embed.image.url };
+    }
+    
+    // Only include fields if there are any
+    if (embed.fields.length > 0) {
+      cleaned.fields = embed.fields;
+    }
+    
+    return cleaned;
+  }
+
   // JSON export
   async function copyJson() {
-    const exportData = {
-      content: content.trim() || undefined,
-      embeds: embeds.filter(embed => 
-        embed.title || embed.description || embed.fields.length > 0
-      ),
-      components: components.length > 0 ? components : undefined
-    };
+    const cleanedEmbeds = embeds
+      .filter(embed => embed.title || embed.description || embed.fields.length > 0)
+      .map(cleanEmbed);
+    
+    const exportData: any = {};
+    
+    // Only include content if it's not empty
+    if (content.trim()) {
+      exportData.content = content.trim();
+    }
+    
+    // Only include embeds if there are any
+    if (cleanedEmbeds.length > 0) {
+      exportData.embeds = cleanedEmbeds;
+    }
+    
+    // Only include components if there are any
+    if (components.length > 0) {
+      exportData.components = components;
+    }
 
     try {
       await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));

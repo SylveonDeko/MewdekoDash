@@ -121,54 +121,56 @@
   }
 </script>
 
-<div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- 3-Column Layout: Recent Activity | Feature Status | Actions Metrics -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
+  <!-- 2-Column Layout: Recent Activity & Features | Actions Stats -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-    <!-- Recent Activity (4 columns) -->
-    <div
-      class="lg:col-span-4 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Activity class="w-6 h-6" style="color: {$colorStore.primary}" />
+    <!-- Column 1: Recent Activity & Features (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
+      <!-- Recent Activity -->
+      <div
+        class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg"
+               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+            <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+          </div>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Activity</h2>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent Activity</h2>
-      </div>
 
-      <div class="space-y-3">
+        <div class="space-y-2">
         {#if loading}
           <!-- Loading state -->
           {#each Array(3).fill(0) as _}
-            <div class="flex items-center gap-3 p-3 rounded-xl animate-pulse"
+            <div class="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                  style="background: {$colorStore.primary}08;">
-              <div class="w-8 h-8 rounded-full" style="background: {$colorStore.primary}20;"></div>
+              <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
               <div class="flex-1 space-y-1">
                 <div class="h-3 rounded" style="background: {$colorStore.primary}20; width: 70%;"></div>
                 <div class="h-2 rounded" style="background: {$colorStore.primary}15; width: 50%;"></div>
               </div>
-              <div class="w-12 h-4 rounded" style="background: {$colorStore.primary}20;"></div>
+              <div class="w-10 h-3 rounded" style="background: {$colorStore.primary}20;"></div>
             </div>
           {/each}
         {:else if recentGreetings.length === 0}
           <!-- Empty state -->
-          <div class="text-center py-8">
-            <Bell class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Recent Activity</h3>
-            <p class="text-sm" style="color: {$colorStore.muted}">
+          <div class="text-center py-6">
+            <Bell class="w-10 h-10 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">No Recent Activity</h3>
+            <p class="text-xs" style="color: {$colorStore.muted}">
               Set up greetings and role actions to see activity here.
             </p>
           </div>
         {:else}
           {#each recentGreetings as greeting}
-            <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02]"
+            <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}08;">
 
               <!-- Action Icon -->
-              <div class="w-8 h-8 rounded-full flex items-center justify-center"
+              <div class="w-6 h-6 rounded-full flex items-center justify-center"
                    style="background: {greeting.isEnabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};">
-                <Bell size={16} style="color: {greeting.isEnabled ? $colorStore.primary : $colorStore.muted}" />
+                <Bell size={14} style="color: {greeting.isEnabled ? $colorStore.primary : $colorStore.muted}" />
               </div>
 
               <!-- Greeting Details -->
@@ -190,90 +192,88 @@
           {/each}
 
           <!-- View More Button -->
-          <a class="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-all hover:scale-105"
+          <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
              href="/dashboard/rolegreets"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            <UserCheck size={16} />
+            <UserCheck size={14} />
             Manage Role Greets
           </a>
         {/if}
-      </div>
-    </div>
-
-    <!-- Feature Status (4 columns) -->
-    <div
-      class="lg:col-span-4 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Sparkles class="w-6 h-6" style="color: {$colorStore.primary}" />
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Active Features</h2>
       </div>
 
-      <div class="space-y-4">
+      <!-- Feature Status List -->
+      <div class="space-y-3">
         <!-- Multi Greets Status -->
-        <div class="p-3 rounded-xl"
-             style="background: {actionsStats.activeGreets > 0 ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 rounded-full"
-                   style="background: {actionsStats.activeGreets > 0 ? '#10b981' : $colorStore.muted};"></div>
-              <div>
-                <div class="font-medium text-sm" style="color: {$colorStore.text}">Multi Greets</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">
-                  {actionsStats.activeGreets} active greetings
-                </div>
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Bell class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.activeGreets}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Multi Greets</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">
+                {actionsStats.activeGreets > 0 ? `${actionsStats.activeGreets} active greetings` : 'No greetings configured'}
               </div>
             </div>
             <a href="/dashboard/multigreets" 
-               class="text-xs px-2 py-1 rounded" 
-               style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>
           </div>
         </div>
 
         <!-- Role States Status -->
-        <div class="p-3 rounded-xl"
-             style="background: {actionsStats.totalRoleStates > 0 ? $colorStore.secondary + '15' : $colorStore.secondary + '08'};">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 rounded-full"
-                   style="background: {actionsStats.totalRoleStates > 0 ? '#10b981' : $colorStore.muted};"></div>
-              <div>
-                <div class="font-medium text-sm" style="color: {$colorStore.text}">Role States</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">
-                  {actionsStats.totalRoleStates} configured states
-                </div>
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <RotateCcw class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.totalRoleStates}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Role States</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">
+                {actionsStats.totalRoleStates > 0 ? `${actionsStats.totalRoleStates} configured states` : 'No states configured'}
               </div>
             </div>
             <a href="/dashboard/rolestates" 
-               class="text-xs px-2 py-1 rounded" 
-               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
             </a>
           </div>
         </div>
 
         <!-- AFK System Status -->
-        <div class="p-3 rounded-xl"
-             style="background: {actionsStats.afkEnabled ? $colorStore.accent + '15' : $colorStore.accent + '08'};">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 rounded-full"
-                   style="background: {actionsStats.afkEnabled ? '#10b981' : $colorStore.muted};"></div>
-              <div>
-                <div class="font-medium text-sm" style="color: {$colorStore.text}">AFK System</div>
-                <div class="text-xs" style="color: {$colorStore.muted}">
-                  {actionsStats.afkEnabled ? 'Channel configured' : 'Not configured'}
-                </div>
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <ToggleLeft class="w-5 h-5" style="color: {$colorStore.accent}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{actionsStats.afkEnabled ? "ON" : "OFF"}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">AFK System</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">
+                {actionsStats.afkEnabled ? 'Channel configured' : 'Not configured'}
               </div>
             </div>
             <a href="/dashboard/afk" 
-               class="text-xs px-2 py-1 rounded" 
-               style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Configure
             </a>
           </div>
@@ -281,85 +281,54 @@
       </div>
     </div>
 
-    <!-- Actions Metrics (4 columns) -->
-    <div class="lg:col-span-4 space-y-6">
-
-      <!-- Quick Stats -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <Zap class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Actions Summary</h3>
-        </div>
-
-        <div class="space-y-3">
-          {#if loading}
-            <!-- Loading state -->
-            {#each Array(3).fill(0) as _}
-              <div class="animate-pulse">
-                <div class="h-4 rounded mb-2" style="background: {$colorStore.primary}20; width: 80%;"></div>
-                <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 60%;"></div>
-              </div>
-            {/each}
-          {:else}
-            <StatCard
-              animationDelay={0}
-              icon={Bell}
-              iconColor="primary"
-              label="Active Greets"
-              subtitle={`${roleGreets.length} total configured`}
-              value={actionsStats.activeGreets}
-            />
-
-            <StatCard
-              animationDelay={100}
-              icon={RotateCcw}
-              iconColor="secondary"
-              label="Role States"
-              subtitle="Persistent role memory"
-              value={actionsStats.totalRoleStates}
-            />
-
-            <StatCard
-              animationDelay={200}
-              icon={ToggleLeft}
-              iconColor="accent"
-              label="AFK System"
-              subtitle={actionsStats.afkEnabled ? "Active" : "Inactive"}
-              value={actionsStats.afkEnabled ? "ON" : "OFF"}
-            />
-          {/if}
-        </div>
-      </div>
-
+    <!-- Column 2: Actions Stats & Tools (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
       <!-- Action Tools -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <Code class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Action Tools</h3>
+      <div class="space-y-3">
+        <!-- Chat Triggers -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Chat Triggers</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Automated responses and reactions</div>
+            </div>
+            <a href="/dashboard/chat-triggers" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Manage
+            </a>
+          </div>
         </div>
 
-        <div class="space-y-3">
-          <!-- Chat Triggers -->
-          <FeatureCard
-            animationDelay={0}
-            description="Automated responses and reactions"
-            href="/dashboard/chat-triggers"
-            icon={MessageSquare}
-            isActive={true}
-            title="Chat Triggers"
-          />
-
-          <!-- Embed Builder -->
-          <FeatureCard
-            animationDelay={50}
-            description="Create custom embeds"
-            href="/dashboard/embedbuilder"
-            icon={Code}
-            isActive={true}
-            title="Embed Builder"
-          />
+        <!-- Embed Builder -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <Code class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Ready</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Embed Builder</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Create custom embeds</div>
+            </div>
+            <a href="/dashboard/embedbuilder" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Open
+            </a>
+          </div>
         </div>
       </div>
     </div>

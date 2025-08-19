@@ -6,14 +6,9 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Activity, AlertTriangle, Clock, FileText, Lock, MessageSquareWarning, Shield, Users, UserX, Database } from "lucide-svelte";
+  import { Activity, AlertTriangle, Clock, FileText, MessageSquareWarning, Shield, UserX } from "lucide-svelte";
 
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
-  import type { LoggingConfigurationResponse, LogType } from "$lib/types/logging.ts";
-
-  // Props from parent
-
+  import type { LoggingConfigurationResponse } from "$lib/types/logging.ts";
 
   // Security data
   let moderationStats = {
@@ -41,7 +36,6 @@
     ignoredUsers: 0,
     totalLogTypes: 0
   };
-  let recentLoggingActivity: any[] = [];
 
   async function fetchSecurityData() {
     if (!$currentGuild?.id) return;
@@ -59,6 +53,7 @@
       const warnings = warningsData || [];
       moderationStats.totalWarnings = warnings.length;
       moderationStats.recentActions = warnings.filter(w => {
+        if (!w.dateAdded) return false;
         const warningDate = new Date(w.dateAdded);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -66,7 +61,7 @@
       }).length;
 
       // Process protection status
-      protectionStatus = protectionData || {
+      protectionStatus = protectionData && Object.keys(protectionData).length > 0 ? protectionData : {
         antiRaid: { enabled: false },
         antiSpam: { enabled: false },
         antiAlt: { enabled: false },
@@ -82,7 +77,7 @@
       // Process logging configuration data
       loggingConfig = loggingConfigData;
       if (loggingConfig) {
-        const logChannels = loggingConfig.logChannels || loggingConfig.logTypes || {};
+        const logChannels = loggingConfig.logChannels || {};
         loggingStats = {
           configuredChannels: Object.values(logChannels).filter(channelId => channelId && channelId !== BigInt(0)).length,
           ignoredChannels: (loggingConfig.ignoredChannels || []).length,
@@ -167,55 +162,57 @@
   $: activeProtections = Object.values(protectionStatus).filter(p => p.enabled).length;
 </script>
 
-<div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- 3-Column Layout: Recent Actions | Protection Status | Security Metrics -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
+  <!-- 2-Column Layout: Recent Actions & Protection | Security Stats -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-    <!-- Recent Moderation Actions (35% - 4 columns) -->
-    <div
-      class="lg:col-span-4 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Activity class="w-6 h-6" style="color: {$colorStore.primary}" />
+    <!-- Column 1: Recent Actions & Protection (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
+      <!-- Recent Moderation Actions -->
+      <div
+        class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg"
+               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+            <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+          </div>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Actions</h2>
         </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent Actions</h2>
-      </div>
 
-      <div class="space-y-3">
+        <div class="space-y-2">
         {#if loading}
           <!-- Loading state -->
           {#each Array(5).fill(0) as _}
-            <div class="flex items-center gap-3 p-3 rounded-xl animate-pulse"
+            <div class="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                  style="background: {$colorStore.primary}08;">
-              <div class="w-8 h-8 rounded-full" style="background: {$colorStore.primary}20;"></div>
+              <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
               <div class="flex-1 space-y-1">
                 <div class="h-3 rounded" style="background: {$colorStore.primary}20; width: 70%;"></div>
                 <div class="h-2 rounded" style="background: {$colorStore.primary}15; width: 50%;"></div>
               </div>
-              <div class="w-12 h-4 rounded" style="background: {$colorStore.primary}20;"></div>
+              <div class="w-10 h-3 rounded" style="background: {$colorStore.primary}20;"></div>
             </div>
           {/each}
         {:else if recentModerationActions.length === 0}
           <!-- Empty state -->
-          <div class="text-center py-8">
-            <Shield class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-            <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">All Clear</h3>
-            <p class="text-sm" style="color: {$colorStore.muted}">
+          <div class="text-center py-6">
+            <Shield class="w-10 h-10 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+            <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">All Clear</h3>
+            <p class="text-xs" style="color: {$colorStore.muted}">
               No recent moderation actions. Your server is running smoothly!
             </p>
           </div>
         {:else}
           {#each recentModerationActions as action}
-            <div class="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02]"
+            <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}08;">
 
               <!-- Action Icon -->
-              <div class="w-8 h-8 rounded-full flex items-center justify-center"
+              <div class="w-6 h-6 rounded-full flex items-center justify-center"
                    style="background: {getActionColor(action.punishment || action.action)}20;">
                 <svelte:component this={getActionIcon(action.punishment || action.action)}
-                                  size={16}
+                                  size={14}
                                   style="color: {getActionColor(action.punishment || action.action)}" />
               </div>
 
@@ -237,280 +234,190 @@
             </div>
           {/each}
         {/if}
+        </div>
+
+        <!-- View More Button -->
+        <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
+           href="/dashboard/moderation"
+           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
+          <Shield size={14} />
+          Full Moderation Dashboard
+        </a>
       </div>
 
-      <!-- View More Button -->
-      <a class="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-all hover:scale-105"
-         href="/dashboard/moderation"
-         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-        <Shield size={16} />
-        Full Moderation Dashboard
-      </a>
-    </div>
-
-    <!-- Protection Status (30% - 4 columns) -->
-    <div
-      class="lg:col-span-4 backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="p-3 rounded-xl"
-             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Shield class="w-6 h-6" style="color: {$colorStore.primary}" />
-        </div>
-        <div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server Protection</h2>
-          <p class="text-sm" style="color: {$colorStore.muted}">
-            {activeProtections}/4 protections active
-          </p>
-        </div>
-      </div>
-
-      <div class="space-y-4">
+      <!-- Protection Status List -->
+      <div class="space-y-3">
         <!-- Anti-Raid -->
-        <div class="flex items-center justify-between p-3 rounded-xl"
-             style="background: {protectionStatus.antiRaid?.enabled ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiRaid?.enabled ? '#10b981' : $colorStore.muted};"></div>
-            <div>
+            <div class="flex-1">
               <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Raid</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
                 {protectionStatus.antiRaid?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Configure
+            </a>
           </div>
         </div>
 
         <!-- Anti-Spam -->
-        <div class="flex items-center justify-between p-3 rounded-xl"
-             style="background: {protectionStatus.antiSpam?.enabled ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiSpam?.enabled ? '#10b981' : $colorStore.muted};"></div>
-            <div>
+            <div class="flex-1">
               <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Spam</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
                 {protectionStatus.antiSpam?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Configure
+            </a>
           </div>
         </div>
 
         <!-- Anti-Alt -->
-        <div class="flex items-center justify-between p-3 rounded-xl"
-             style="background: {protectionStatus.antiAlt?.enabled ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiAlt?.enabled ? '#10b981' : $colorStore.muted};"></div>
-            <div>
+            <div class="flex-1">
               <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Alt</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
                 {protectionStatus.antiAlt?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Configure
+            </a>
           </div>
         </div>
 
         <!-- Anti-Mass Mention -->
-        <div class="flex items-center justify-between p-3 rounded-xl"
-             style="background: {protectionStatus.antiMassMention?.enabled ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiMassMention?.enabled ? '#10b981' : $colorStore.muted};"></div>
-            <div>
+            <div class="flex-1">
               <div class="font-medium text-sm" style="color: {$colorStore.text}">Anti-Mass Mention</div>
               <div class="text-xs" style="color: {$colorStore.muted}">
                 {protectionStatus.antiMassMention?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Configure
+            </a>
           </div>
         </div>
       </div>
-
-      <!-- Protection Dashboard Link -->
-      <a class="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-all hover:scale-105"
-         href="/dashboard/administration"
-         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
-        <Lock size={16} />
-        Protection Settings
-      </a>
     </div>
 
-    <!-- Security Metrics (35% - 4 columns) -->
-    <div class="lg:col-span-4 space-y-6">
-
-      <!-- Moderation Stats -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <MessageSquareWarning class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Moderation Stats</h3>
-        </div>
-
-        <div class="space-y-3">
-          <StatCard
-            animationDelay={0}
-            icon={MessageSquareWarning}
-            iconColor="accent"
-            label="Total Warnings"
-            value={moderationStats.totalWarnings}
-          />
-
-          <StatCard
-            animationDelay={100}
-            icon={Activity}
-            iconColor="primary"
-            label="This Week"
-            subtitle="Recent actions"
-            value={moderationStats.recentActions}
-          />
-        </div>
-      </div>
-
-      <!-- Logging System -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <FileText class="w-5 h-5" style="color: {$colorStore.secondary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Event Logging</h3>
-        </div>
-
-        <div class="space-y-3">
-          {#if loading}
-            <!-- Loading state -->
-            {#each Array(3).fill(0) as _}
-              <div class="animate-pulse">
-                <div class="h-4 rounded mb-2" style="background: {$colorStore.primary}20; width: 80%;"></div>
-                <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 60%;"></div>
-              </div>
-            {/each}
-          {:else if !(loggingConfig?.isEnabled || loggingConfig?.enabled)}
-            <!-- Disabled state -->
-            <div class="text-center py-4">
-              <FileText class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.secondary}50" />
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Logging is disabled. Enable it to track server events.
-              </p>
+    <!-- Column 2: Security Stats (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
+      <!-- Security Stats List -->
+      <div class="space-y-3">
+        <!-- Total Warnings -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <MessageSquareWarning class="w-5 h-5" style="color: {$colorStore.accent}" />
             </div>
-          {:else}
-            <!-- Logging Stats -->
-            <div class="space-y-3">
-              <StatCard
-                animationDelay={0}
-                icon={FileText}
-                iconColor="secondary"
-                label="Log Channels"
-                subtitle={`${loggingStats.totalLogTypes} event types`}
-                value={loggingStats.configuredChannels}
-              />
-
-              <StatCard
-                animationDelay={100}
-                icon={Users}
-                iconColor="accent"
-                label="Ignored Users"
-                subtitle="Excluded from logs"
-                value={loggingStats.ignoredUsers}
-              />
-
-              <StatCard
-                animationDelay={200}
-                icon={Lock}
-                iconColor="primary"
-                label="Ignored Channels"
-                subtitle="Private channels"
-                value={loggingStats.ignoredChannels}
-              />
-            </div>
-
-            <!-- Log Configuration Summary -->
-            {#if loggingConfig}
-              <div class="mt-4 p-3 rounded-xl" style="background: {$colorStore.secondary}08;">
-                <div class="text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  Active Log Types
-                </div>
-                <div class="flex flex-wrap gap-1">
-                  {#each Object.entries(loggingConfig.logChannels || loggingConfig.logTypes || {}) as [logType, channelId]}
-                    {#if channelId && channelId !== BigInt(0)}
-                      <span class="px-2 py-1 rounded text-xs"
-                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                        {logType.replace('_', ' ')}
-                      </span>
-                    {/if}
-                  {/each}
-                </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{moderationStats.totalWarnings}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Total Warnings</span>
               </div>
-            {/if}
-          {/if}
+              <div class="text-xs" style="color: {$colorStore.muted}">All time moderation actions</div>
+            </div>
+            <a href="/dashboard/moderation" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
+            </a>
+          </div>
         </div>
 
-        <!-- Logging Dashboard Link -->
-        <a class="w-full mt-4 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-all hover:scale-105"
-           href="/dashboard/logging"
-           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
-          <FileText size={16} />
-          Logging Settings
-        </a>
-      </div>
-
-      <!-- Security Features -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <Lock class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Security Tools</h3>
+        <!-- Recent Actions -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{moderationStats.recentActions}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">This Week</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Recent moderation actions</div>
+            </div>
+          </div>
         </div>
 
-        <div class="space-y-3">
-          <!-- Moderation -->
-          <FeatureCard
-            animationDelay={0}
-            description="User warnings and punishments"
-            href="/dashboard/moderation"
-            icon={Shield}
-            isActive={moderationStats.totalWarnings > 0}
-            title="Moderation"
-          />
+        <!-- Log Channels -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <FileText class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{loggingStats.configuredChannels}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Log Channels</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{loggingStats.totalLogTypes} event types</div>
+            </div>
+            <a href="/dashboard/logging" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Configure
+            </a>
+          </div>
+        </div>
 
-          <!-- Permissions -->
-          <FeatureCard
-            animationDelay={50}
-            description="Command access control"
-            href="/dashboard/administration"
-            icon={Lock}
-            isActive={true}
-            title="Permissions"
-          />
-
-          <!-- Administration -->
-          <FeatureCard
-            animationDelay={100}
-            description="Server protection and roles"
-            href="/dashboard/administration"
-            icon={Users}
-            isActive={activeProtections > 0}
-            title="Administration"
-          />
-
-          <!-- Event Logging -->
-          <FeatureCard
-            animationDelay={150}
-            description="Track server events and activities"
-            href="/dashboard/logging"
-            icon={FileText}
-            isActive={(loggingConfig?.isEnabled || loggingConfig?.enabled) && loggingStats.configuredChannels > 0}
-            title="Event Logging"
-          />
-
-          <!-- Chat Saver -->
-          <FeatureCard
-            animationDelay={200}
-            description="Audit trails and message history"
-            href="/dashboard/chatsaver"
-            icon={Database}
-            isActive={true}
-            title="Chat Saver"
-          />
+        <!-- Active Protections -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{activeProtections}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Active Protections</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{activeProtections}/4 protections enabled</div>
+            </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Configure
+            </a>
+          </div>
         </div>
       </div>
     </div>

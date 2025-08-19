@@ -133,25 +133,25 @@
   $: totalSelfAssignRoles = roleSettings.selfAssignableRoles?.length || 0;
 </script>
 
-<div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
-  <!-- 2-Column Layout: Settings Panels (70%) | Status/Preview (30%) -->
-  <div class="grid grid-cols-1 xl:grid-cols-10 gap-6">
+<div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
+  <!-- 2-Column Layout: Settings Panels | Configuration Stats -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-    <!-- Settings Panels (70% - 7 columns) -->
-    <div class="xl:col-span-7 space-y-6">
+    <!-- Column 1: Settings Panels (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
 
       <!-- General Server Settings -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="p-3 rounded-xl"
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Settings class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">General Settings</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">General Settings</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- Multi Greets -->
           <FeatureCard
             animationDelay={0}
@@ -205,17 +205,17 @@
       </div>
 
       <!-- Role Management -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
+      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="p-3 rounded-xl"
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Users class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Management</h2>
+          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Role Management</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-3">
           <!-- Auto-Assign Roles -->
           <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
@@ -316,61 +316,96 @@
       </div>
     </div>
 
-    <!-- Status and Preview (30% - 3 columns) -->
-    <div class="xl:col-span-3 space-y-6">
+    <!-- Column 2: Configuration Stats (6 columns) -->
+    <div class="lg:col-span-6 space-y-4">
 
       <!-- Configuration Summary -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-4">
-          <Database class="w-5 h-5" style="color: {$colorStore.primary}" />
-          <h3 class="font-semibold" style="color: {$colorStore.text}">Configuration</h3>
+      <div class="space-y-3">
+        <!-- Auto-Assign Roles -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalAutoAssignRoles}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Auto-Assign Roles</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Roles given to new members</div>
+            </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Configure
+            </a>
+          </div>
         </div>
 
-        <div class="space-y-3">
-          {#if loading}
-            <!-- Loading state -->
-            {#each Array(4).fill(0) as _}
-              <div class="animate-pulse">
-                <div class="h-4 rounded mb-2" style="background: {$colorStore.primary}20; width: 80%;"></div>
-                <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 60%;"></div>
+        <!-- Self-Assign Roles -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalSelfAssignRoles}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Self-Assign Roles</span>
               </div>
-            {/each}
-          {:else}
-            <StatCard
-              icon={Shield}
-              label="Auto-Assign Roles"
-              value={totalAutoAssignRoles}
-              iconColor="primary"
-              animationDelay={0}
-            />
+              <div class="text-xs" style="color: {$colorStore.muted}">Roles users can assign themselves</div>
+            </div>
+            <a href="/dashboard/administration" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Configure
+            </a>
+          </div>
+        </div>
 
-            <StatCard
-              icon={Users}
-              label="Self-Assign Roles"
-              value={totalSelfAssignRoles}
-              iconColor="secondary"
-              animationDelay={100}
-            />
+        <!-- Role Features -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <RotateCcw class="w-5 h-5" style="color: {$colorStore.accent}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{totalRoleFeatures}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Role Features</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{roleSettings.roleStates} states, {roleSettings.roleGreets} greets</div>
+            </div>
+          </div>
+        </div>
 
-            <StatCard
-              icon={RotateCcw}
-              label="Role Features"
-              value={totalRoleFeatures}
-              subtitle={`${roleSettings.roleStates} states, ${roleSettings.roleGreets} greets`}
-              iconColor="accent"
-              animationDelay={200}
-            />
-
-            <StatCard
-              icon={Database}
-              label="Integrations"
-              value={integrationSettings.patreonEnabled ? 1 : 0}
-              subtitle={integrationSettings.patreonEnabled ? "Patreon active" : "None active"}
-              iconColor="primary"
-              animationDelay={300}
-            />
-          {/if}
+        <!-- Integrations -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <Database class="w-5 h-5" style="color: {$colorStore.primary}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">{integrationSettings.patreonEnabled ? 1 : 0}</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Integrations</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? "Patreon active" : "None active"}</div>
+            </div>
+            <a href="/dashboard/patreon" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Manage
+            </a>
+          </div>
         </div>
       </div>
 
@@ -410,24 +445,24 @@
           <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Server Info</h3>
 
           <div class="space-y-2 text-sm">
-            {#if guildConfig.Prefix}
+            {#if guildConfig.prefix}
               <div class="flex justify-between">
                 <span style="color: {$colorStore.muted}">Prefix:</span>
-                <span style="color: {$colorStore.text}" class="font-mono">{guildConfig.Prefix}</span>
+                <span style="color: {$colorStore.text}" class="font-mono">{guildConfig.prefix}</span>
               </div>
             {/if}
 
-            {#if guildConfig.Locale}
+            {#if guildConfig.locale}
               <div class="flex justify-between">
                 <span style="color: {$colorStore.muted}">Language:</span>
-                <span style="color: {$colorStore.text}">{guildConfig.Locale}</span>
+                <span style="color: {$colorStore.text}">{guildConfig.locale}</span>
               </div>
             {/if}
 
-            {#if guildConfig.TimeZone}
+            {#if guildConfig.timeZone}
               <div class="flex justify-between">
                 <span style="color: {$colorStore.muted}">Timezone:</span>
-                <span style="color: {$colorStore.text}">{guildConfig.TimeZone}</span>
+                <span style="color: {$colorStore.text}">{guildConfig.timeZone}</span>
               </div>
             {/if}
           </div>
