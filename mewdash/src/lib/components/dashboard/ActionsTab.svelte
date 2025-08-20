@@ -11,6 +11,7 @@
     Bell, 
     Code, 
     MessageSquare, 
+    RepeatIcon,
     RotateCcw, 
     Sparkles, 
     ToggleLeft, 
@@ -327,6 +328,29 @@
                class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Open
+            </a>
+          </div>
+        </div>
+
+        <!-- Message Repeaters -->
+        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <RepeatIcon class="w-5 h-5" style="color: {$colorStore.accent}" />
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Repeaters</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Automated recurring messages</div>
+            </div>
+            <a href="/dashboard/repeaters" 
+               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
             </a>
           </div>
         </div>

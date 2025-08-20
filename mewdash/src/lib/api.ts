@@ -1070,6 +1070,74 @@ export const api = {
       `ClientOperations/textchannels/${guildId}`
     ),
 
+  getForumChannels: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: bigint;
+      name: string;
+      topic: string | null;
+      requiresTags: boolean;
+      maxActiveThreads: number | null;
+      defaultAutoArchiveDuration: number;
+      tags: Array<{
+        id: bigint;
+        name: string;
+        emoji: string | null;
+        isModerated: boolean;
+      }>;
+      activeThreads: Array<{
+        id: bigint;
+        name: string;
+        appliedTags: bigint[];
+        creatorId: bigint;
+        createdAt: string;
+        messageCount: number;
+        isArchived: boolean;
+        isLocked: boolean;
+      }>;
+      totalThreadCount: number;
+    }>>(
+      `ClientOperations/forumchannels/${guildId}`
+    ),
+
+  getForumChannel: (guildId: bigint, forumId: bigint) =>
+    apiRequest<{
+      id: bigint;
+      name: string;
+      topic: string | null;
+      requiresTags: boolean;
+      maxActiveThreads: number | null;
+      defaultAutoArchiveDuration: number;
+      tags: Array<{
+        id: bigint;
+        name: string;
+        emoji: string | null;
+        isModerated: boolean;
+      }>;
+      activeThreads: Array<{
+        id: bigint;
+        name: string;
+        appliedTags: bigint[];
+        creatorId: bigint;
+        createdAt: string;
+        messageCount: number;
+        isArchived: boolean;
+        isLocked: boolean;
+      }>;
+      totalThreadCount: number;
+    }>(`ClientOperations/forumchannel/${guildId}/${forumId}`),
+
+  getForumThreads: (guildId: bigint, forumId: bigint, includeArchived: boolean = false) =>
+    apiRequest<Array<{
+      id: bigint;
+      name: string;
+      appliedTags: bigint[];
+      creatorId: bigint;
+      createdAt: string;
+      messageCount: number;
+      isArchived: boolean;
+      isLocked: boolean;
+    }>>(`ClientOperations/forumthreads/${guildId}/${forumId}?includeArchived=${includeArchived}`),
+
   getGuildVoiceChannels: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
       `ClientOperations/channels/${guildId}/2`
@@ -2073,5 +2141,227 @@ export const api = {
     apiRequest<{ Milestones: number[] }>(`Counting/${guildId}/channels/${channelId}/milestones`),
   
   purgeCountingChannel: (guildId: bigint, channelId: bigint, request: PurgeChannelRequest) =>
-    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/purge`, "DELETE", request)
+    apiRequest<string>(`Counting/${guildId}/channels/${channelId}/purge`, "DELETE", request),
+
+  // Repeater endpoints
+  getRepeaters: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      channelId: bigint;
+      message: string;
+      interval: string;
+      startTimeOfDay: string | null;
+      noRedundant: boolean;
+      isEnabled: boolean;
+      triggerMode: number;
+      activityThreshold: number;
+      activityTimeWindow: string;
+      conversationDetection: boolean;
+      conversationThreshold: number;
+      priority: number;
+      queuePosition: number;
+      timeConditions: string | null;
+      maxAge: number | null;
+      maxTriggers: number | null;
+      threadAutoSticky: boolean;
+      threadOnlyMode: boolean;
+      forumTagConditions: string | null;
+      threadStickyMessages: string | null;
+      displayCount: number;
+      lastDisplayed: string | null;
+      dateAdded: string;
+      nextExecution: string | null;
+      guildTimezone: string;
+      requiresTimezone: boolean;
+    }>>(`Repeaters/${guildId}`),
+
+  getRepeater: (guildId: bigint, repeaterId: number) =>
+    apiRequest<{
+      id: number;
+      channelId: bigint;
+      message: string;
+      interval: string;
+      startTimeOfDay: string | null;
+      noRedundant: boolean;
+      isEnabled: boolean;
+      triggerMode: number;
+      activityThreshold: number;
+      activityTimeWindow: string;
+      conversationDetection: boolean;
+      conversationThreshold: number;
+      priority: number;
+      queuePosition: number;
+      timeConditions: string | null;
+      maxAge: number | null;
+      maxTriggers: number | null;
+      threadAutoSticky: boolean;
+      threadOnlyMode: boolean;
+      forumTagConditions: string | null;
+      threadStickyMessages: string | null;
+      displayCount: number;
+      lastDisplayed: string | null;
+      dateAdded: string;
+      nextExecution: string | null;
+      guildTimezone: string;
+      requiresTimezone: boolean;
+    }>(`Repeaters/${guildId}/${repeaterId}`),
+
+  createRepeater: (guildId: bigint, request: {
+    channelId: bigint;
+    interval: string;
+    message: string;
+    startTimeOfDay?: string;
+    allowMentions?: boolean;
+    triggerMode: number;
+    activityThreshold: number;
+    activityTimeWindow: string;
+    conversationDetection: boolean;
+    priority: number;
+    timeSchedulePreset?: string;
+    timeConditions?: string;
+  }) =>
+    apiRequest<{
+      id: number;
+      channelId: bigint;
+      message: string;
+      interval: string;
+      startTimeOfDay: string | null;
+      noRedundant: boolean;
+      isEnabled: boolean;
+      triggerMode: number;
+      activityThreshold: number;
+      activityTimeWindow: string;
+      conversationDetection: boolean;
+      conversationThreshold: number;
+      priority: number;
+      queuePosition: number;
+      timeConditions: string | null;
+      maxAge: number | null;
+      maxTriggers: number | null;
+      threadAutoSticky: boolean;
+      threadOnlyMode: boolean;
+      forumTagConditions: string | null;
+      threadStickyMessages: string | null;
+      displayCount: number;
+      lastDisplayed: string | null;
+      dateAdded: string;
+      nextExecution: string | null;
+      guildTimezone: string;
+      requiresTimezone: boolean;
+    }>(`Repeaters/${guildId}`, "POST", request),
+
+  updateRepeater: (guildId: bigint, repeaterId: number, request: {
+    message?: string;
+    channelId?: bigint;
+    interval?: string;
+    triggerMode?: number;
+    activityThreshold?: number;
+    activityTimeWindow?: string;
+    priority?: number;
+    queuePosition?: number;
+    conversationDetection?: boolean;
+    conversationThreshold?: number;
+    noRedundant?: boolean;
+    isEnabled?: boolean;
+    timeConditions?: string;
+    maxAge?: string;
+    maxTriggers?: number;
+    threadAutoSticky?: boolean;
+    threadOnlyMode?: boolean;
+    forumTagConditions?: string;
+    allowMentions?: boolean;
+  }) =>
+    apiRequest<{
+      id: number;
+      channelId: bigint;
+      message: string;
+      interval: string;
+      startTimeOfDay: string | null;
+      noRedundant: boolean;
+      isEnabled: boolean;
+      triggerMode: number;
+      activityThreshold: number;
+      activityTimeWindow: string;
+      conversationDetection: boolean;
+      conversationThreshold: number;
+      priority: number;
+      queuePosition: number;
+      timeConditions: string | null;
+      maxAge: number | null;
+      maxTriggers: number | null;
+      threadAutoSticky: boolean;
+      threadOnlyMode: boolean;
+      forumTagConditions: string | null;
+      threadStickyMessages: string | null;
+      displayCount: number;
+      lastDisplayed: string | null;
+      dateAdded: string;
+      nextExecution: string | null;
+      guildTimezone: string;
+      requiresTimezone: boolean;
+    }>(`Repeaters/${guildId}/${repeaterId}`, "PATCH", request),
+
+  deleteRepeater: (guildId: bigint, repeaterId: number) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}`, "DELETE"),
+
+  triggerRepeater: (guildId: bigint, repeaterId: number) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/trigger`, "POST"),
+
+  getRepeaterStatistics: (guildId: bigint) =>
+    apiRequest<{
+      totalRepeaters: number;
+      activeRepeaters: number;
+      disabledRepeaters: number;
+      totalDisplays: number;
+      timeScheduledRepeaters: number;
+      conversationAwareRepeaters: number;
+      triggerModeDistribution: Record<string, number>;
+      mostActiveRepeater: {
+        id: number;
+        channelId: bigint;
+        message: string;
+        displayCount: number;
+        triggerMode: number;
+        priority: number;
+      } | null;
+    }>(`Repeaters/${guildId}/statistics`),
+
+  bulkToggleRepeaters: (guildId: bigint, repeaterIds: number[], enable: boolean = true) =>
+    apiRequest<{ results: Array<{ repeaterId: number; success: boolean; message?: string; error?: string; }> }>(`Repeaters/${guildId}/bulk-toggle?enable=${enable}`, "PATCH", repeaterIds),
+
+  getMessageCountingStatus: (guildId: bigint) =>
+    apiRequest<{ enabled: boolean; available: boolean; message?: string }>(`Repeaters/${guildId}/message-counting-status`),
+
+  // Forum tag management endpoints
+  updateRepeaterForumTags: (guildId: bigint, repeaterId: number, action: 'add' | 'remove' | 'clear' | 'list', tagType?: 'required' | 'excluded', tagIds?: bigint[]) => {
+    const params = new URLSearchParams();
+    if (tagType) params.set('tagType', tagType);
+    if (action) params.set('action', action);
+    
+    const body = tagIds ? tagIds.map(id => id.toString()) : [];
+    const url = `Repeaters/${guildId}/${repeaterId}/forum-tags?${params.toString()}`;
+    
+    return apiRequest<{ success: boolean; message?: string; conditions?: string }>
+      (url, action === 'list' ? "GET" : "PATCH", action !== 'list' ? body : undefined);
+  },
+
+  // Individual update methods for specific properties
+  updateRepeaterInterval: (guildId: bigint, repeaterId: number, interval: string) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/interval`, "PATCH", { interval }),
+
+  updateRepeaterQueuePosition: (guildId: bigint, repeaterId: number, queuePosition: number) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/queue-position`, "PATCH", { queuePosition }),
+
+  updateRepeaterStartTime: (guildId: bigint, repeaterId: number, startTimeOfDay: string | null) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/start-time`, "PATCH", { startTimeOfDay }),
+
+  updateRepeaterConversationThreshold: (guildId: bigint, repeaterId: number, conversationThreshold: number) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/conversation-threshold`, "PATCH", { conversationThreshold }),
+
+  updateRepeaterExpiry: (guildId: bigint, repeaterId: number, maxAge?: string | null, maxTriggers?: number | null) =>
+    apiRequest<{ success: boolean; message: string }>(`Repeaters/${guildId}/${repeaterId}/expiry`, "PATCH", { maxAge, maxTriggers }),
+
+  // Get thread sticky messages for a repeater
+  getRepeaterThreadMessages: (guildId: bigint, repeaterId: number) =>
+    apiRequest<Array<{ threadId: bigint; messageId: bigint; threadName: string; isActive: boolean }>>(`Repeaters/${guildId}/${repeaterId}/thread-messages`)
 };

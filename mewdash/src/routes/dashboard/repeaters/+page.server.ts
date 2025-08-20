@@ -1,4 +1,4 @@
-// routes/dashboard/rolegreets/+page.server.ts
+// routes/dashboard/repeaters/+page.server.ts
 import type { PageServerLoad } from "./$types";
 import type { DiscordUser } from "$lib/types/discord";
 
