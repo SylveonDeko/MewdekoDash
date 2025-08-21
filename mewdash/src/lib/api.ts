@@ -1668,6 +1668,75 @@ export const api = {
       RoleId: config.roleId
     }),
 
+  // Anti-Pattern Protection endpoints
+  configureAntiPattern: (guildId: bigint, config: {
+    enabled: boolean;
+    action?: number;
+    punishDuration?: number;
+    roleId?: bigint;
+    checkAccountAge?: boolean;
+    maxAccountAgeMonths?: number;
+    checkJoinTiming?: boolean;
+    maxJoinHours?: number;
+    checkBatchCreation?: boolean;
+    checkOfflineStatus?: boolean;
+    checkNewAccounts?: boolean;
+    newAccountDays?: number;
+    minimumScore?: number;
+  }) =>
+    apiRequest<any>(`Protection/${guildId}/anti-pattern`, "PUT", {
+      Enabled: config.enabled,
+      Action: config.action,
+      PunishDuration: config.punishDuration,
+      RoleId: config.roleId,
+      CheckAccountAge: config.checkAccountAge,
+      MaxAccountAgeMonths: config.maxAccountAgeMonths,
+      CheckJoinTiming: config.checkJoinTiming,
+      MaxJoinHours: config.maxJoinHours,
+      CheckBatchCreation: config.checkBatchCreation,
+      CheckOfflineStatus: config.checkOfflineStatus,
+      CheckNewAccounts: config.checkNewAccounts,
+      NewAccountDays: config.newAccountDays,
+      MinimumScore: config.minimumScore
+    }),
+
+  addAntiPatternPattern: (guildId: bigint, pattern: string, name: string, checkUsername: boolean, checkDisplayName: boolean) =>
+    apiRequest<{ success: boolean }>(`Protection/${guildId}/anti-pattern/patterns`, "POST", {
+      pattern,
+      name,
+      checkUsername,
+      checkDisplayName
+    }),
+
+  removeAntiPatternPattern: (guildId: bigint, patternId: number) =>
+    apiRequest<{ success: boolean }>(`Protection/${guildId}/anti-pattern/patterns/${patternId}`, "DELETE"),
+
+  updateAntiPatternConfig: (guildId: bigint, config: {
+    checkAccountAge?: boolean;
+    maxAccountAgeMonths?: number;
+    checkJoinTiming?: boolean;
+    maxJoinHours?: number;
+    checkBatchCreation?: boolean;
+    checkOfflineStatus?: boolean;
+    checkNewAccounts?: boolean;
+    newAccountDays?: number;
+    minimumScore?: number;
+  }) =>
+    apiRequest<{ success: boolean }>(`Protection/${guildId}/anti-pattern/config`, "PATCH", {
+      CheckAccountAge: config.checkAccountAge,
+      MaxAccountAgeMonths: config.maxAccountAgeMonths,
+      CheckJoinTiming: config.checkJoinTiming,
+      MaxJoinHours: config.maxJoinHours,
+      CheckBatchCreation: config.checkBatchCreation,
+      CheckOfflineStatus: config.checkOfflineStatus,
+      CheckNewAccounts: config.checkNewAccounts,
+      NewAccountDays: config.newAccountDays,
+      MinimumScore: config.minimumScore
+    }),
+
+  getAntiPatternPatterns: (guildId: bigint) =>
+    apiRequest<Array<{ id: number; name: string; pattern: string; checkUsername: boolean; checkDisplayName: boolean; }>>(`Protection/${guildId}/anti-pattern/patterns`),
+
   resetPermissionOverrides: (guildId: bigint) =>
     apiRequest<void>(`Administration/${guildId}/permissions/overrides/reset`, "POST"),
 
