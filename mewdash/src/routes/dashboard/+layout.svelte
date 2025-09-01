@@ -8,9 +8,69 @@
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userStore } from "$lib/stores/userStore.ts";
   import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
+  import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
   import { browser } from "$app/environment";
+  import { api } from "$lib/api.ts";
+  import { logger } from "$lib/logger.ts";
 
   export let data;
+
+  // Setup suggestion banner state
+  let showSetupSuggestion = false;
+  let setupSuggestionContext: any = null;
+
+  // Check for wizard or setup suggestion when guild changes
+  async function checkWizardOrSuggestion() {
+    if (!$currentGuild || !$userStore || !browser) return;
+    
+    console.log('Dashboard layout: Checking wizard for guild:', $currentGuild.name, 'user:', $userStore.id);
+    
+    try {
+      // Don't check if we're already on wizard page
+      if (window.location.pathname.startsWith('/wizard')) {
+        console.log('Already on wizard page, skipping check');
+        return;
+      }
+      
+      console.log('Making API call to shouldShowWizard...');
+      const wizardDecision = await api.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
+      console.log('Wizard decision received:', wizardDecision);
+      
+      if (wizardDecision.showWizard) {
+        // Convert numeric wizard type to string
+        const wizardTypeString = wizardDecision.wizardType === 1 ? 'first-time' : 'quick-setup';
+        logger.info(`Dashboard triggering ${wizardTypeString} wizard for guild ${$currentGuild.name}: ${wizardDecision.reason}`);
+        window.location.href = `/wizard?guild=${$currentGuild.id}&type=${wizardTypeString}`;
+      } else if (wizardDecision.showSuggestion) {
+        showSetupSuggestion = true;
+        setupSuggestionContext = wizardDecision.context;
+        logger.debug("Showing setup suggestion for guild:", $currentGuild.name);
+      } else {
+        showSetupSuggestion = false;
+        setupSuggestionContext = null;
+        logger.debug("No wizard or suggestion needed for guild:", $currentGuild.name);
+      }
+    } catch (err) {
+      logger.error("Error checking wizard/suggestion:", err);
+      showSetupSuggestion = false;
+    }
+  }
+
+  function dismissSetupSuggestion() {
+    showSetupSuggestion = false;
+    setupSuggestionContext = null;
+  }
+
+  function startQuickSetup() {
+    if ($currentGuild && browser) {
+      window.location.href = `/wizard?guild=${$currentGuild.id}&type=quick-setup`;
+    }
+  }
+
+  // Watch for guild changes to check wizard or setup suggestion
+  $: if (browser && $currentGuild && $userStore) {
+    checkWizardOrSuggestion();
+  }
 
   // Load saved instance immediately when browser is available to prevent flash
   if (browser) {
@@ -64,6 +124,19 @@
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>
+        <!-- Setup suggestion banner (only show on dashboard pages with selected guild) -->
+        {#if $currentGuild && showSetupSuggestion && setupSuggestionContext}
+          <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <SetupSuggestionBanner
+              guild={$currentGuild}
+              context={setupSuggestionContext}
+              visible={showSetupSuggestion}
+              on:dismiss={dismissSetupSuggestion}
+              on:startSetup={startQuickSetup}
+            />
+          </div>
+        {/if}
+        
         <slot />
       </ErrorBoundary>
       <!-- Always show mobile nav when we have an instance - it can handle both guild and instance selection -->

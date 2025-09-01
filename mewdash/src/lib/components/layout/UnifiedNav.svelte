@@ -38,6 +38,7 @@ A unified navigation component that provides responsive navigation with server a
   import { userStore } from "$lib/stores/userStore.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
+  import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
   import {
     ArrowLeft,
     Badge,
@@ -422,9 +423,64 @@ A unified navigation component that provides responsive navigation with server a
           permissions: guild.permissions,
           features: guild.features
         }));
+
+        // Check if wizard should be shown for this guild
+        await checkWizardForGuild(guild);
       } catch (err) {
         logger.error("Failed to save guild to localStorage:", err);
       }
+    }
+  }
+
+  async function checkWizardForGuild(guild: DiscordGuild) {
+    if (!currentUser || !browser) return;
+    
+    try {
+      // Don't check wizard if we're already on wizard page
+      if (current.startsWith('/wizard')) return;
+      
+      logger.debug("Checking wizard state for guild:", guild.name);
+      
+      const wizardDecision = await api.shouldShowWizard(BigInt(currentUser.id), guild.id);
+      
+      if (wizardDecision.showWizard) {
+        // Convert numeric wizard type to string
+        const wizardTypeString = wizardDecision.wizardType === 1 ? 'first-time' : 'quick-setup';
+        logger.info(`Triggering ${wizardTypeString} wizard for guild ${guild.name}: ${wizardDecision.reason}`);
+        goto(`/wizard?guild=${guild.id}&type=${wizardTypeString}`);
+      } else if (wizardDecision.showSuggestion && !current.startsWith('/dashboard')) {
+        // Show setup suggestion banner (will be implemented next)
+        logger.debug(`Showing setup suggestion for guild ${guild.name}: ${wizardDecision.reason}`);
+        showSetupSuggestion(guild, wizardDecision.context);
+      } else {
+        logger.debug(`No wizard needed for guild ${guild.name}: ${wizardDecision.reason}`);
+      }
+    } catch (err) {
+      logger.error("Error checking wizard state for guild:", guild.name, err);
+      // Fail gracefully - don't block normal dashboard access
+    }
+  }
+
+  // Setup suggestion state
+  let setupSuggestionVisible = false;
+  let setupSuggestionGuild: DiscordGuild | null = null;
+  let setupSuggestionContext: any = null;
+
+  function showSetupSuggestion(guild: DiscordGuild, context: any) {
+    setupSuggestionGuild = guild;
+    setupSuggestionContext = context;
+    setupSuggestionVisible = true;
+  }
+
+  function dismissSetupSuggestion() {
+    setupSuggestionVisible = false;
+    setupSuggestionGuild = null;
+    setupSuggestionContext = null;
+  }
+
+  function startQuickSetup() {
+    if (setupSuggestionGuild && browser) {
+      goto(`/wizard?guild=${setupSuggestionGuild.id}&type=quick-setup`);
     }
   }
 
@@ -860,13 +916,14 @@ A unified navigation component that provides responsive navigation with server a
         <!-- Desktop User & Instance Display -->
         <div class="hidden md:flex relative" use:clickOutside on:clickoutside={() => closeDropdown()}>
           <button
-            class="ripple-effect flex items-center gap-2 p-2 pl-3 pr-4 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-sm border"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}40);
-                   border-color: {$colorStore.primary}30;"
+            class="ripple-effect flex items-center gap-2 p-2 pl-3 pr-4 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-sm border hover:scale-[1.02] shadow-lg hover:shadow-xl"
+            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
+                   border-color: {$colorStore.primary}40;
+                   box-shadow: 0 2px 8px {$colorStore.primary}15;"
             on:click={toggleDropdown}
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
-            aria-label="Toggle user menu"
+            aria-label="User menu"
           >
             <!-- User Avatar -->
             <img
@@ -919,30 +976,56 @@ A unified navigation component that provides responsive navigation with server a
 
           <!-- Desktop Dropdown -->
           {#if dropdownOpen}
+            <!-- Dropdown arrow -->
+            <div class="absolute right-4 top-full w-0 h-0 z-40"
+                 style="border-left: 8px solid transparent;
+                        border-right: 8px solid transparent;
+                        border-bottom: 8px solid {$colorStore.primary}50;
+                        margin-top: -1px;"></div>
+            
             <div
-              class="absolute right-0 mt-2 w-72 rounded-lg p-4 flex flex-col space-y-4 shadow-2xl z-50 backdrop-blur-lg border"
-              style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
+              class="absolute right-0 top-full mt-1 w-80 rounded-xl p-4 flex flex-col space-y-4 shadow-2xl z-50 backdrop-blur-lg border"
+              style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)), linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25, {$colorStore.gradientEnd}20);
                     border-color: {$colorStore.primary}50;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;"
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);"
               role="menu"
               transition:slide|local={{ duration: 200 }}
             >
-              <!-- User Info -->
-              <div class="flex items-center space-x-3">
-                <img
-                  src={currentUser.avatar
-                    ? (currentUser.avatar.startsWith("a_")
-                      ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
-                      : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
-                    : `https://cdn.discordapp.com/embed/avatars/0.png`}
-                  alt={currentUser.username}
-                  class="w-10 h-10 rounded-full"
-                />
-                <div>
-                  <div class="flex items-center space-x-2">
-                    <h2 class="font-bold" style="color: {$colorStore.text};">{currentUser.username}</h2>
-                    {#if currentUser.discriminator !== "0"}
-                      <span style="color: {$colorStore.muted};">#{currentUser.discriminator}</span>
+              <!-- Enhanced User Info -->
+              <div class="p-4 rounded-xl mb-4 border backdrop-blur-sm"
+                   style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
+                          border-color: {$colorStore.primary}40;">
+                <div class="flex items-center space-x-3">
+                  <div class="relative">
+                    <img
+                      src={currentUser.avatar
+                        ? (currentUser.avatar.startsWith("a_")
+                          ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                          : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
+                        : `https://cdn.discordapp.com/embed/avatars/0.png`}
+                      alt={currentUser.username}
+                      class="w-12 h-12 rounded-xl border-2"
+                      style="border-color: {$colorStore.primary}50;"
+                    />
+                    <!-- Online indicator -->
+                    <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black"
+                         style="background: #10b981;"></div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                      <h2 class="font-bold text-lg truncate" style="color: {$colorStore.text};">{currentUser.username}</h2>
+                      {#if currentUser.discriminator !== "0"}
+                        <span class="text-sm" style="color: {$colorStore.muted};">#{currentUser.discriminator}</span>
+                      {/if}
+                    </div>
+                    {#if $currentInstance}
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="w-2 h-2 rounded-full"
+                              style="background: {$currentInstance.isActive ? '#10B981' : $colorStore.accent};"></span>
+                        <span class="text-xs truncate" style="color: {$colorStore.muted};">
+                          {$currentInstance.botName}
+                        </span>
+                      </div>
                     {/if}
                   </div>
                 </div>
@@ -999,6 +1082,29 @@ A unified navigation component that provides responsive navigation with server a
               {/if}
 
 
+              <!-- Prominent My Settings Link -->
+              <div class="mb-4">
+                <a
+                  href="/me"
+                  class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium w-full group"
+                  style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
+                         color: {$colorStore.text};
+                         border-color: {$colorStore.primary}50;
+                         box-shadow: 0 4px 12px {$colorStore.primary}20;"
+                  role="menuitem"
+                >
+                  <div class="p-2 rounded-lg transition-all group-hover:scale-110"
+                       style="background: {$colorStore.primary}30;">
+                    <Settings class="w-4 h-4" style="color: {$colorStore.primary};" />
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-semibold">My Settings</div>
+                    <div class="text-xs" style="color: {$colorStore.muted};">Profile, privacy & preferences</div>
+                  </div>
+                  <div class="text-lg opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</div>
+                </a>
+              </div>
+              
               <!-- Logout -->
               <div class="pt-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
                 <form

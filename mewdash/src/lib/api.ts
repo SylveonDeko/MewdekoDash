@@ -224,7 +224,7 @@ export const api = {
       };
     }>(`xp/${guildId}/user/${userId}`),
 
-  getXpLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 10) =>
+  getXpLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 10, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
     apiRequest<Array<{
       userId: bigint;
       guildId: bigint;
@@ -235,7 +235,7 @@ export const api = {
       rank: number;
       username: string;
       avatarUrl: string;
-    }>>(`xp/${guildId}/leaderboard?page=${page}&pageSize=${pageSize}`),
+    }>>(`xp/${guildId}/leaderboard?page=${page}&pageSize=${pageSize}`, "GET", undefined, additionalHeaders, customFetch),
 
   getXpRoleRewards: (guildId: bigint) =>
     apiRequest<Array<{
@@ -290,7 +290,7 @@ export const api = {
   updateXpTemplate: (guildId: bigint, template: XpTemplate) =>
     apiRequest<void>(`xp/${guildId}/template`, "POST", template),
 
-  getXpServerStats: (guildId: bigint) =>
+  getXpServerStats: (guildId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
     apiRequest<{
       totalUsers: number;
       totalXp: number;
@@ -302,7 +302,7 @@ export const api = {
         avatarUrl: string;
         timestamp: string;
       }>;
-    }>(`xp/${guildId}/stats`),
+    }>(`xp/${guildId}/stats`, "GET", undefined, additionalHeaders, customFetch),
 
   playTrackAt: (guildId: bigint, index: number) =>
     apiRequest<void>(`music/${guildId}/play-track/${index}`, "POST"),
@@ -999,9 +999,9 @@ export const api = {
 
   getBotStatus: () => apiRequest<BotStatusModel>("BotStatus"),
 
-  getMutualGuilds: (userId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
+  getMutualGuilds: (userId: bigint, adminOnly: boolean = true, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
     apiRequest<DiscordGuild[] | undefined | null>(
-      `ClientOperations/mutualguilds/${userId}`,
+      `ClientOperations/mutualguilds/${userId}?adminOnly=${adminOnly}`,
       "GET",
       undefined,
       additionalHeaders,
@@ -1906,10 +1906,10 @@ export const api = {
     apiRequest<void>(`logging/${guildId}/configuration`, "PUT", config),
 
   bulkUpdateLogChannels: (guildId: bigint, updates: BulkUpdateLogChannelsRequest) =>
-    apiRequest<void>(`logging/${guildId}/channels/bulk`, "PUT", updates),
+    apiRequest<void>(`logging/${guildId}/bulk-update`, "PUT", updates),
 
   setLogChannel: (guildId: bigint, logType: LogType, channelId: bigint | null) =>
-    apiRequest<void>(`logging/${guildId}/channels/${logType}`, "POST", { channelId }),
+    apiRequest<void>(`logging/${guildId}/log-type/${logType}`, "PUT", { channelId }),
 
   setIgnoredChannels: (guildId: bigint, request: SetIgnoredChannelsRequest) =>
     apiRequest<void>(`logging/${guildId}/ignored-channels`, "PUT", request),
@@ -2432,5 +2432,372 @@ export const api = {
 
   // Get thread sticky messages for a repeater
   getRepeaterThreadMessages: (guildId: bigint, repeaterId: number) =>
-    apiRequest<Array<{ threadId: bigint; messageId: bigint; threadName: string; isActive: boolean }>>(`Repeaters/${guildId}/${repeaterId}/thread-messages`)
+    apiRequest<Array<{ threadId: bigint; messageId: bigint; threadName: string; isActive: boolean }>>(`Repeaters/${guildId}/${repeaterId}/thread-messages`),
+
+  // Wizard endpoints
+  shouldShowWizard: (userId: bigint, guildId: bigint) =>
+    apiRequest<{
+      showWizard: boolean;
+      showSuggestion: boolean;
+      wizardType: string;
+      reason: string;
+      context: {
+        experienceLevel: number;
+        isFirstDashboardAccess: boolean;
+        completedWizardCount: number;
+        guildHasBasicSetup: boolean;
+      };
+    }>(`wizard/should-show/${userId}/${guildId}`),
+
+  getGuildWizardState: (guildId: bigint) =>
+    apiRequest<{
+      guildId: bigint;
+      completed: boolean;
+      skipped: boolean;
+      completedAt?: string;
+      completedByUserId?: bigint;
+      hasBasicSetup: boolean;
+      currentStep: number;
+      configuredFeatures: string[];
+    }>(`wizard/state/${guildId}`),
+
+  updateWizardState: (guildId: bigint, update: {
+    currentStep: number;
+    configuredFeatures: string[];
+    markCompleted: boolean;
+    markSkipped: boolean;
+    userId: bigint;
+  }) =>
+    apiRequest<void>(`wizard/state/${guildId}`, "POST", update),
+
+  completeWizard: (userId: bigint, guildId: bigint, configuredFeatures: string[]) =>
+    apiRequest<{
+      success: boolean;
+      guildId: bigint;
+      userId: bigint;
+      configuredFeatures: string[];
+      failedFeatures: Array<{
+        featureId: string;
+        featureName: string;
+        success: boolean;
+        errorMessage?: string;
+        configurationApplied: Record<string, any>;
+      }>;
+      completedAt: string;
+      newExperienceLevel: number;
+      wasFirstWizard: boolean;
+      nextSteps: string[];
+      errorMessage?: string;
+    }>(`wizard/complete/${userId}/${guildId}`, "POST", configuredFeatures),
+
+  skipWizard: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`wizard/skip/${guildId}`, "POST", userId),
+
+  checkBotPermissions: (guildId: bigint) =>
+    apiRequest<{
+      guildId: bigint;
+      botId: bigint;
+      hasAllRequiredPermissions: boolean;
+      permissionResults: Array<{
+        permission: string;
+        permissionName: string;
+        hasPermission: boolean;
+        importance: string;
+        description: string;
+        requiredForFeatures: string[];
+      }>;
+      missingCriticalPermissions: string[];
+      missingRecommendedPermissions: string[];
+      suggestedInviteUrl?: string;
+      canFunction: boolean;
+      healthStatus: string;
+    }>(`wizard/permissions/${guildId}`),
+
+  updateUserWizardPreferences: (userId: bigint, preferences: {
+    prefersGuidedSetup: boolean;
+    preferredExperienceLevel?: number;
+  }) =>
+    apiRequest<{
+      userId: bigint;
+      prefersGuidedSetup: boolean;
+      experienceLevel: number;
+      hasCompletedAnyWizard: boolean;
+      wizardCompletedCount: number;
+      firstDashboardAccess?: string;
+    }>(`wizard/user-preferences/${userId}`, "POST", preferences),
+
+  setupWelcomeFeature: (request: {
+    guildId: bigint;
+    userId: bigint;
+    featureId: string;
+    channelId: bigint;
+    welcomeMessage: string;
+    sendDmGreeting: boolean;
+    dmGreetingMessage: string;
+    autoDelete: boolean;
+    autoDeleteTimer: number;
+  }) =>
+    apiRequest<{
+      featureId: string;
+      featureName: string;
+      success: boolean;
+      errorMessage?: string;
+      configurationApplied: Record<string, any>;
+    }>(`wizard/setup/welcome`, "POST", request),
+
+  setupModerationFeature: (request: {
+    guildId: bigint;
+    userId: bigint;
+    featureId: string;
+    filterInvites: boolean;
+    filterLinks: boolean;
+    filterWords: boolean;
+    customFilteredWords: string[];
+    muteRoleId?: bigint;
+    logChannelId?: bigint;
+  }) =>
+    apiRequest<{
+      featureId: string;
+      featureName: string;
+      success: boolean;
+      errorMessage?: string;
+      configurationApplied: Record<string, any>;
+    }>(`wizard/setup/moderation`, "POST", request),
+
+  // User Settings endpoints (using /me with existing API key auth)
+  getUserHighlights: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      word: string;
+      dateAdded: string;
+    }>>(`me/${guildId}/${userId}/highlights`),
+
+  addUserHighlight: (guildId: bigint, userId: bigint, word: string) =>
+    apiRequest<{
+      word: string;
+      dateAdded: string;
+    }>(`me/${guildId}/${userId}/highlights`, "POST", word),
+
+  removeUserHighlight: (guildId: bigint, userId: bigint, highlightId: number) =>
+    apiRequest<void>(`me/${guildId}/${userId}/highlights/${highlightId}`, "DELETE"),
+
+  getUserHighlightSettings: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      highlightsEnabled: boolean;
+      ignoredChannels: string[];
+      ignoredUsers: string[];
+    }>(`me/${guildId}/${userId}/highlights/settings`),
+
+  updateUserHighlightSettings: (guildId: bigint, userId: bigint, settings: { highlightsEnabled: boolean }) =>
+    apiRequest<void>(`me/${guildId}/${userId}/highlights/settings`, "PUT", settings),
+
+  getUserAfkStatus: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      isAfk: boolean;
+      message: string;
+      when: string | null;
+      wasTimed: boolean;
+    }>(`me/${guildId}/${userId}/afk`),
+
+  setUserAfkStatus: (guildId: bigint, userId: bigint, request: {
+    message?: string;
+    isTimed: boolean;
+    until?: string;
+  }) =>
+    apiRequest<void>(`me/${guildId}/${userId}/afk`, "POST", request),
+
+  removeUserAfkStatus: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`me/${guildId}/${userId}/afk`, "DELETE"),
+
+  getUserReputation: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      totalRep: number;
+      rank: number;
+      totalGiven: number;
+      totalReceived: number;
+      currentStreak: number;
+      longestStreak: number;
+      lastGivenAt?: string;
+      lastReceivedAt?: string;
+    }>(`me/${guildId}/${userId}/reputation`),
+
+  // Global user preferences (not guild-specific)
+  getUserPreferences: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      levelUpPingsDisabled: boolean;
+      pronounsDisabled: boolean;
+      prefersGuidedSetup: boolean;
+      dashboardExperienceLevel: number;
+      hasCompletedAnyWizard: boolean;
+    }>(`me/${guildId}/${userId}/preferences`),
+
+  updateUserPreferences: (guildId: bigint, userId: bigint, preferences: any) =>
+    apiRequest<void>(`me/${guildId}/${userId}/preferences`, "PUT", preferences),
+
+  // User profile endpoints
+  getUserProfile: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      bio: string;
+      zodiacSign: string;
+      profilePrivacy: number;
+      birthdayDisplayMode: number;
+      greetDmsOptOut: boolean;
+      statsOptOut: boolean;
+      birthday: string | null;
+      birthdayTimezone: string;
+      birthdayAnnouncementsEnabled: boolean;
+      profileColor: number | null;
+      profileImageUrl: string;
+      switchFriendCode: string;
+      pronouns: string;
+    }>(`me/${guildId}/${userId}/profile`),
+
+  updateUserProfile: (guildId: bigint, userId: bigint, profile: any) =>
+    apiRequest<void>(`me/${guildId}/${userId}/profile`, "PUT", profile),
+
+  // User activity/analytics endpoints
+  getUserSuggestions: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      suggestionId: bigint;
+      suggestion1: string;
+      currentState: number;
+      stateName: string;
+      dateAdded: string;
+      emoteCount1: number;
+      emoteCount2: number;
+      emoteCount3: number;
+      emoteCount4: number;
+      emoteCount5: number;
+    }>>(`me/${guildId}/${userId}/suggestions`),
+
+  getUserCurrency: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      balance: number;
+      recentTransactions: Array<{
+        id: number;
+        amount: number;
+        description: string;
+        dateAdded: string;
+      }>;
+    }>(`me/${guildId}/${userId}/currency`),
+
+  getUserGiveaways: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      item: string;
+      winners: string;
+      winnerCount: number;
+      startedAt: string;
+      endedAt: string;
+      ended: boolean;
+      won: boolean;
+    }>>(`me/${guildId}/${userId}/giveaways`),
+
+  getUserReminders: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      message: string;
+      when: string;
+      dateAdded: string;
+      channelId: bigint;
+      serverId: bigint;
+      isExpired: boolean;
+    }>>(`me/${guildId}/${userId}/reminders`),
+
+  getUserAnalytics: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      totalMessages: number;
+      inviteCount: number;
+      activityTimeline: {
+        firstXpGain?: string;
+        lastXpGain?: string;
+        firstSuggestion?: string;
+        lastSuggestion?: string;
+      };
+      featureUsage: {
+        totalSuggestions: number;
+        acceptedSuggestions: number;
+        totalHighlights: number;
+        totalTransactions: number;
+        giveawayEntries: number;
+      };
+    }>(`me/${guildId}/${userId}/analytics`),
+
+  getUserInvites: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      inviteCount: number;
+      invitedUsers: Array<{
+        id: bigint;
+        username: string;
+        displayName: string;
+        joinedAt: string;
+      }>;
+    }>(`me/${guildId}/${userId}/invites`),
+
+  getUserMessages: (guildId: bigint, userId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
+    apiRequest<{
+      totalMessages: number;
+      enabled: boolean;
+      channelBreakdown: Array<{
+        channelId: bigint;
+        channelName: string;
+        count: number;
+        lastActivity: string;
+      }>;
+    }>(`me/${guildId}/${userId}/messages`, "GET", undefined, additionalHeaders, customFetch),
+
+  getUserStarboard: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      messagesStarred: number;
+      starsReceived: number;
+      starsGiven: number;
+      topStarredPosts: Array<any>;
+      mostStarredUsers: Array<any>;
+      topFans: Array<any>;
+    } | null>(`me/${guildId}/${userId}/starboard`),
+
+  // Privacy toggle endpoints using service methods
+  toggleUserGreetDms: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ greetDmsOptOut: boolean }>(`me/${guildId}/${userId}/profile/toggle-greet-dms`, "POST"),
+
+  toggleUserStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ statsOptOut: boolean }>(`me/${guildId}/${userId}/profile/toggle-stats`, "POST"),
+
+  toggleUserBirthdayAnnouncements: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ birthdayAnnouncementsEnabled: boolean }>(`me/${guildId}/${userId}/profile/toggle-birthday-announcements`, "POST"),
+
+  // Additional preference toggles
+  toggleUserLevelUpPings: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ levelUpPingsDisabled: boolean }>(`me/${guildId}/${userId}/preferences/toggle-levelup-pings`, "POST"),
+
+  toggleUserPronouns: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ pronounsDisabled: boolean }>(`me/${guildId}/${userId}/preferences/toggle-pronouns`, "POST"),
+
+  toggleUserGuidedSetup: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ prefersGuidedSetup: boolean }>(`me/${guildId}/${userId}/preferences/toggle-guided-setup`, "POST"),
+
+  // Wizard reset endpoints
+  resetUserWizard: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      hasCompletedAnyWizard: boolean;
+      wizardCompletedGuilds: string | null;
+      prefersGuidedSetup: boolean;
+    }>(`me/${guildId}/${userId}/wizard/reset`, "POST"),
+
+  resetGuildWizard: (guildId: bigint, userId: bigint, resetGuildId: bigint) =>
+    apiRequest<{
+      resetGuildId: bigint;
+      hasCompletedAnyWizard: boolean;
+      wizardCompletedGuilds: string | null;
+    }>(`me/${guildId}/${userId}/wizard/reset/${resetGuildId}`, "POST"),
+
+  // Public/instance detection endpoints
+  checkInstanceHasGuild: (guildId: bigint, customFetch: typeof fetch = fetch, additionalHeaders: HeadersInit = {}) =>
+    apiRequest<{
+      hasGuild: boolean;
+      guildName?: string;
+      memberCount?: number;
+      iconUrl?: string;
+    }>(`ClientOperations/hasguild/${guildId}`, "GET", undefined, additionalHeaders, customFetch)
 };
