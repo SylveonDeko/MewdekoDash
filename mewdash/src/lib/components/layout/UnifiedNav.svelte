@@ -227,7 +227,7 @@ A unified navigation component that provides responsive navigation with server a
 
     try {
       console.log(`Nav: Checking mutual guilds for instance ${instance.botName} (${instanceId})`);
-      const mutualGuilds = await api.getMutualGuilds(currentUser.id, undefined, customHeaders);
+      const mutualGuilds = await api.getMutualGuilds(currentUser.id, true, fetch, customHeaders);
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
 
       instanceStates[instanceId] = {
