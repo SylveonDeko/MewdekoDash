@@ -579,10 +579,14 @@ Main wizard page component that orchestrates the entire setup flow
 
     try {
       wizardLoading = true;
+      console.log('Skipping wizard for:', { guildId: data.guildId, userId: data.user.id });
       await api.skipWizard(BigInt(data.guildId), BigInt(data.user.id));
+      console.log('Wizard skip successful, redirecting...');
       goto(`/dashboard?guild=${data.guildId}`);
     } catch (error) {
       console.error('Error skipping wizard:', error);
+      // Add user feedback for skip errors
+      alert('Failed to skip wizard: ' + (error.message || 'Unknown error'));
     } finally {
       wizardLoading = false;
       skipConfirmation = false;

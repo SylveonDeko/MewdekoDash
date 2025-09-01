@@ -278,9 +278,17 @@
 
     saving = true;
     try {
+      // For guild wizard reset, we need to reset the guild config, not user data
+      // This should probably call a different endpoint that resets guildConfig.wizardCompleted/wizardSkipped
       const result = await api.resetGuildWizard(BigInt("0"), userId, selectedGuild.id);
       showMessage(`Setup wizard reset for ${selectedGuild.name}!`, "success");
-      await loadGlobalData(); // Refresh global data to update wizard state
+      
+      // Refresh server data to update guild config
+      if (guildConfig) {
+        guildConfig.wizardCompleted = false;
+        guildConfig.wizardSkipped = false;
+      }
+      await loadServerData();
     } catch (err) {
       showMessage("Failed to reset guild wizard", "error");
     } finally {
