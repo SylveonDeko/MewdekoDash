@@ -1,5 +1,7 @@
 <!-- routes/dashboard/customvoice/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -35,59 +37,63 @@
   } from "lucide-svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   let currentUser = data.user;
   
   // States
-  let activeTab: "config" | "channels" | "preferences" = "config";
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let activeTab: "config" | "channels" | "preferences" = $state("config");
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
   // Data
-  let config: CustomVoiceConfigurationResponse | null = null;
-  let activeChannels: CustomVoiceChannelResponse[] = [];
-  let voiceChannels: Array<{ id: string; name: string }> = [];
-  let categories: Array<{ id: string; name: string }> = [];
-  let hasChanges = false;
+    let config: CustomVoiceConfigurationResponse | null = $state(null);
+    let activeChannels: CustomVoiceChannelResponse[] = $state([]);
+    let voiceChannels: Array<{ id: string; name: string }> = $state([]);
+    let categories: Array<{ id: string; name: string }> = $state([]);
+    let hasChanges = $state(false);
 
   // Form data
-  let hubChannelId: string | null = null;
-  let categoryId: string | null = null;
-  let defaultNameFormat = "{username}'s Channel";
-  let defaultUserLimit = 0;
-  let defaultBitrate = 64000;
-  let deleteWhenEmpty = true;
-  let emptyChannelTimeout = 60;
-  let allowMultipleChannels = false;
-  let allowNameCustomization = true;
-  let allowUserLimitCustomization = true;
-  let allowBitrateCustomization = false;
-  let allowLocking = true;
-  let allowUserManagement = true;
+    let hubChannelId: string | null = $state(null);
+    let categoryId: string | null = $state(null);
+    let defaultNameFormat = $state("{username}'s Channel");
+    let defaultUserLimit = $state(0);
+    let defaultBitrate = $state(64000);
+    let deleteWhenEmpty = $state(true);
+    let emptyChannelTimeout = $state(60);
+    let allowMultipleChannels = $state(false);
+    let allowNameCustomization = $state(true);
+    let allowUserLimitCustomization = $state(true);
+    let allowBitrateCustomization = $state(false);
+    let allowLocking = $state(true);
+    let allowUserManagement = $state(true);
   let maxUserLimit = 99;
   let maxBitrate = 384000;
-  let persistUserPreferences = true;
-  let autoPermission = true;
+    let persistUserPreferences = $state(true);
+    let autoPermission = $state(true);
   let customVoiceAdminRoleId: string | null = null;
 
   // Computed values
-  $: colorVars = `
+    let colorVars = $derived(`
     --color-primary: ${$colorStore.primary};
     --color-secondary: ${$colorStore.secondary};
     --color-accent: ${$colorStore.accent};
     --color-text: ${$colorStore.text};
     --color-muted: ${$colorStore.muted};
-  `;
+  `);
 
-  $: tabStyle = (isActive: boolean) => `
+    let tabStyle = $derived((isActive: boolean) => `
     background: ${isActive ? $colorStore.primary : `${$colorStore.primary}20`};
     color: ${isActive ? $colorStore.text : $colorStore.muted};
-  `;
+  `);
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -269,13 +275,17 @@
     };
   });
 
-  $: if ($currentInstance) {
-    loadData();
-  }
+    run(() => {
+        if ($currentInstance) {
+            loadData();
+        }
+    });
 
-  $: if ($currentGuild) {
-    loadData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            loadData();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -302,6 +312,7 @@
     }
   ] : []}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
 
     {#if showNotification}
@@ -384,7 +395,7 @@
               <input
                 type="text"
                 bind:value={defaultNameFormat}
-                on:input={markAsChanged}
+                oninput={markAsChanged}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="&#123;username&#125;'s Channel"
@@ -399,7 +410,7 @@
               <input
                 type="number"
                 bind:value={defaultUserLimit}
-                on:input={markAsChanged}
+                oninput={markAsChanged}
                 min="0"
                 max="99"
                 class="w-full p-3 rounded-lg border"
@@ -444,7 +455,7 @@
                 <input
                   type="checkbox"
                   bind:checked={deleteWhenEmpty}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Delete channels when empty</span>
@@ -456,7 +467,7 @@
                   <input
                     type="number"
                     bind:value={emptyChannelTimeout}
-                    on:input={markAsChanged}
+                    oninput={markAsChanged}
                     min="5"
                     max="300"
                     class="w-32 p-2 rounded-lg border"
@@ -469,7 +480,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowMultipleChannels}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow multiple channels per user</span>
@@ -479,7 +490,7 @@
                 <input
                   type="checkbox"
                   bind:checked={persistUserPreferences}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Remember user preferences</span>
@@ -489,7 +500,7 @@
                 <input
                   type="checkbox"
                   bind:checked={autoPermission}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Auto-manage channel permissions</span>
@@ -501,7 +512,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowNameCustomization}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow name customization</span>
@@ -511,7 +522,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowUserLimitCustomization}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow user limit customization</span>
@@ -521,7 +532,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowBitrateCustomization}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow bitrate customization</span>
@@ -531,7 +542,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowLocking}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow channel locking</span>
@@ -541,7 +552,7 @@
                 <input
                   type="checkbox"
                   bind:checked={allowUserManagement}
-                  on:change={markAsChanged}
+                  onchange={markAsChanged}
                   class="w-4 h-4"
                 />
                 <span style="color: {$colorStore.text}">Allow user management</span>
@@ -590,7 +601,7 @@
                   <button
                     class="p-2 rounded-lg transition-colors"
                     style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}20;"
-                    on:click={() => lockChannel(channel.id, !channel.isLocked)}
+                    onclick={() => lockChannel(channel.id, !channel.isLocked)}
                     title={channel.isLocked ? "Unlock channel" : "Lock channel"}
                   >
                     {#if channel.isLocked}
@@ -602,7 +613,7 @@
                   
                   <button
                     class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20"
-                    on:click={() => deleteChannel(channel.id)}
+                    onclick={() => deleteChannel(channel.id)}
                     title="Delete channel"
                   >
                     <Trash2 size={16} />

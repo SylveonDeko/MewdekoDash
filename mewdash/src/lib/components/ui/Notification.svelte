@@ -6,23 +6,23 @@
   import { CheckCircle, AlertCircle, X } from "lucide-svelte";
   import { onMount, onDestroy } from "svelte";
 
-  export let message: string;
-  export let type: "success" | "error" = "success";
-  export let timeout: number = 5000;
-  export let onDismiss: (() => void) | undefined = undefined;
+  interface Props {
+    message: string;
+    type?: "success" | "error";
+    timeout?: number;
+    onDismiss?: (() => void) | undefined;
+  }
+
+  let {
+    message,
+    type = "success",
+    timeout = 5000,
+    onDismiss = undefined
+  }: Props = $props();
 
   let timeoutId: NodeJS.Timeout;
 
-  // Calculate dynamic colors based on bot's theme with appropriate tinting
-  $: successColor = $colorStore.primary ? 
-    // Blend the primary color with green
-    blendColors($colorStore.primary, '#10B981', 0.3) : 
-    '#10B981';
     
-  $: errorColor = $colorStore.primary ? 
-    // Blend the primary color with red
-    blendColors($colorStore.primary, '#EF4444', 0.3) : 
-    '#EF4444';
 
   // Function to blend two hex colors
   function blendColors(color1: string, color2: string, ratio: number): string {
@@ -63,6 +63,15 @@
   onDestroy(() => {
     if (timeoutId) clearTimeout(timeoutId);
   });
+  // Calculate dynamic colors based on bot's theme with appropriate tinting
+  let successColor = $derived($colorStore.primary ? 
+    // Blend the primary color with green
+    blendColors($colorStore.primary, '#10B981', 0.3) : 
+    '#10B981');
+  let errorColor = $derived($colorStore.primary ? 
+    // Blend the primary color with red
+    blendColors($colorStore.primary, '#EF4444', 0.3) : 
+    '#EF4444');
 </script>
 
 <div
@@ -121,7 +130,7 @@
         style="color: {$colorStore.muted}; 
                hover:background-color: {type === 'success' ? successColor : errorColor}20;
                hover:color: {$colorStore.text};"
-        on:click={handleDismiss}
+        onclick={handleDismiss}
         aria-label="Dismiss notification"
       >
         <X size={16} />

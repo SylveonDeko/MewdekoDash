@@ -1,5 +1,7 @@
 <!-- lib/components/MobileNavBar.svelte -->
 <script lang="ts">
+  import { run, stopPropagation, preventDefault } from 'svelte/legacy';
+
   import { fade, scale, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import {
@@ -34,9 +36,14 @@
   import { api } from "$lib/api";
   import type { BotInstance } from "$lib/types/models";
 
-  // Props
-  export let showInstanceSelector = false;
-  export let data: any = undefined;
+  
+  interface Props {
+    // Props
+    showInstanceSelector?: boolean;
+    data?: any;
+  }
+
+  let { showInstanceSelector = false, data = undefined }: Props = $props();
 
   // Define navigation items (main visible buttons)
   const navItems = [
@@ -70,54 +77,56 @@
 
   // State
   let showLabels = true;
-  let showMoreMenu = false;
-  let showInstanceMenu = false;
+  let showMoreMenu = $state(false);
+  let showInstanceMenu = $state(false);
   let prevScrollPos = 0;
-  let visible = true;
-  let musicPlaying = false;
+  let visible = $state(true);
+  let musicPlaying = $state(false);
   let lastTapTime = 0;
-  let isAnimating = false;
-  let isNavigating = false;
-  let navigationLoadingTarget = null;
+  let isAnimating = $state(false);
+  let isNavigating = $state(false);
+  let navigationLoadingTarget = $state(null);
 
   // Instance selection state
-  let instances: BotInstance[] = [];
-  let instancesLoading = true;
-  let instancesError: string | null = null;
+  let instances: BotInstance[] = $state([]);
+  let instancesLoading = $state(true);
+  let instancesError: string | null = $state(null);
   let instanceStates: Record<string, {
     loading: boolean;
     hasMutualGuild: boolean;
     error: string | null;
     checked: boolean;
-  }> = {};
+  }> = $state({});
 
   // Derived state
-  $: currentPath = $page.url.pathname;
-  $: activeIndex = navItems.findIndex(item =>
+  let currentPath = $derived($page.url.pathname);
+  let activeIndex = $derived(navItems.findIndex(item =>
       !item.isMore && (
         currentPath === item.href ||
         currentPath === `${item.href}/` ||
         (item.href !== "/dashboard" && currentPath.startsWith(item.href + "/"))
       )
-  );
-  $: activeMoreIndex = moreItems.findIndex(item =>
+  ));
+  let activeMoreIndex = $derived(moreItems.findIndex(item =>
     currentPath === item.href ||
     currentPath === `${item.href}/` ||
     currentPath.startsWith(item.href + "/")
-  );
-  $: moreMenuActive = activeMoreIndex >= 0;
-  $: musicPlaying = $musicStore.status?.IsPlaying || false;
+  ));
+  let moreMenuActive = $derived(activeMoreIndex >= 0);
+  run(() => {
+    musicPlaying = $musicStore.status?.IsPlaying || false;
+  });
 
   // Instance selection derived state
-  $: visibleInstances = instances.filter(instance => {
+  let visibleInstances = $derived(instances.filter(instance => {
     const instanceId = instance.botId.toString();
     const state = instanceStates[instanceId];
     return state?.checked && state?.hasMutualGuild;
-  });
-  $: stillCheckingInstances = Object.values(instanceStates).some(state => state.loading);
+  }));
+  let stillCheckingInstances = $derived(Object.values(instanceStates).some(state => state.loading));
 
   // Modify nav items when in instance selector mode or filter out instance selector if only one instance
-  $: effectiveNavItems = showInstanceSelector ? (
+  let effectiveNavItems = $derived(showInstanceSelector ? (
     // In instance selector mode, only show the selector if there's more than one instance
     visibleInstances.length > 1 || instancesLoading || stillCheckingInstances ? [
       { label: "Instances", icon: Server, href: "#", isInstanceSelector: true, priority: 1 },
@@ -131,7 +140,7 @@
       return false;
     }
     return true;
-  });
+  }));
 
   // Show/hide the navbar based on scroll direction with debouncing
   let scrollTimeout: NodeJS.Timeout;
@@ -459,8 +468,8 @@
             <!-- More menu / Instance selector button -->
             <button
               class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-105 active:scale-95"
-              on:click|stopPropagation={item.isInstanceSelector ? toggleInstanceMenu : toggleMoreMenu}
-              on:keydown={item.isInstanceSelector ? handleInstanceMenuKeydown : handleMoreMenuKeydown}
+              onclick={stopPropagation(item.isInstanceSelector ? toggleInstanceMenu : toggleMoreMenu)}
+              onkeydown={item.isInstanceSelector ? handleInstanceMenuKeydown : handleMoreMenuKeydown}
               style:color={moreMenuActive || showMoreMenu || showInstanceMenu || (item.isInstanceSelector && $currentInstance) ? $colorStore.primary : $colorStore.muted}
               aria-expanded={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}
               aria-haspopup="menu"
@@ -469,8 +478,7 @@
               <div class="relative">
                 <div class="transition-transform duration-200"
                      class:rotate-180={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}>
-                  <svelte:component
-                    this={item.icon}
+                  <item.icon
                     size={24}
                     strokeWidth={1.5}
                     aria-hidden="true"
@@ -516,10 +524,10 @@
     }}
                   role="menu"
                   aria-label="{item.isInstanceSelector ? 'Instance selection' : 'Additional navigation options'}"
-                  on:introstart={() => isAnimating = true}
-                  on:introend={() => isAnimating = false}
-                  on:outrostart={() => isAnimating = true}
-                  on:outroend={() => isAnimating = false}
+                  onintrostart={() => isAnimating = true}
+                  onintroend={() => isAnimating = false}
+                  onoutrostart={() => isAnimating = true}
+                  onoutroend={() => isAnimating = false}
                 >
                   {#if item.isInstanceSelector}
                     <!-- Instance Selection Menu -->
@@ -557,7 +565,7 @@
                                      background: {$currentInstance?.botId === instance.botId ? `${$colorStore.primary}30` : 'transparent'};
                                      border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
                                      hover:background: ${$colorStore.primary}15;"
-                              on:click={() => {
+                              onclick={() => {
                                 handleInstanceSelect(instance);
                                 showInstanceMenu = false;
                               }}
@@ -601,8 +609,8 @@
                           in:slide|local={{ delay: j * 30, duration: 200 }}
                           role="menuitem"
                           aria-label="Navigate to {moreItem.label}"
-                          on:keydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
-                          on:click|preventDefault={() => {
+                          onkeydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
+                          onclick={preventDefault(() => {
       if ($currentGuild) {
         if (browser) {
           try {
@@ -624,10 +632,9 @@
       }
       navigateWithLoading(moreItem.href, moreItem.label);
       showMoreMenu = false;
-    }}
+    })}
                         >
-                          <svelte:component
-                            this={moreItem.icon}
+                          <moreItem.icon
                             size={22}
                             strokeWidth={1.5}
                             aria-hidden="true"
@@ -652,7 +659,7 @@
               style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
               style:focus:ring-color={$colorStore.primary}
               aria-label="Navigate to {item.label}"
-              on:click|preventDefault={(e) => {
+              onclick={preventDefault((e) => {
                 e.preventDefault();
                 if ($currentGuild && !item.isInstanceSelector) {
                   if (browser) {
@@ -674,11 +681,10 @@
                   }
                 }
                 handleNavItemTap(item);
-              }}
+              })}
             >
               <div class="relative">
-                <svelte:component
-                  this={item.icon}
+                <item.icon
                   size={24}
                   strokeWidth={1.5}
                   aria-hidden="true"

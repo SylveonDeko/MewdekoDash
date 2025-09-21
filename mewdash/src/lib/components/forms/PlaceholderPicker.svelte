@@ -1,5 +1,7 @@
 <!-- PlaceholderPicker.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
@@ -28,13 +30,25 @@
     width: number;
   }
 
-  // Props
-  export let visible: boolean = false;
-  export let position: Position = { x: 0, y: 0 };
-  export let placeholders: Placeholder[] = [];
-  export let searchTerm: string = "";
-  export let inline: boolean = false;
-  export let inputElement: HTMLInputElement | HTMLTextAreaElement | null = null;
+  
+  interface Props {
+    // Props
+    visible?: boolean;
+    position?: Position;
+    placeholders?: Placeholder[];
+    searchTerm?: string;
+    inline?: boolean;
+    inputElement?: HTMLInputElement | HTMLTextAreaElement | null;
+  }
+
+  let {
+    visible = false,
+    position = { x: 0, y: 0 },
+    placeholders = [],
+    searchTerm = $bindable(""),
+    inline = false,
+    inputElement = $bindable(null)
+  }: Props = $props();
   
   // Events
   const dispatch = createEventDispatcher<{
@@ -44,10 +58,10 @@
   }>();
 
   // Internal state
-  let selectedIndex = 0;
-  let searchInputRef: HTMLInputElement;
-  let containerRef: HTMLDivElement;
-  let filteredPlaceholders: Placeholder[] = [];
+  let selectedIndex = $state(0);
+  let searchInputRef: HTMLInputElement = $state();
+  let containerRef: HTMLDivElement = $state();
+  let filteredPlaceholders: Placeholder[] = $state([]);
 
   // Category icons mapping
   const categoryIcons: Record<string, ComponentType> = {
@@ -65,7 +79,7 @@
   };
 
   // Filter placeholders based on search term
-  $: {
+  run(() => {
     if (searchTerm.trim() === '') {
       filteredPlaceholders = placeholders;
     } else {
@@ -77,17 +91,17 @@
       );
     }
     selectedIndex = 0; // Reset selection when filtering
-  }
+  });
 
   // Group placeholders by category
-  $: groupedPlaceholders = filteredPlaceholders.reduce((groups, placeholder) => {
+  let groupedPlaceholders = $derived(filteredPlaceholders.reduce((groups, placeholder) => {
     const category = placeholder.category || 'Other';
     if (!groups[category]) {
       groups[category] = [];
     }
     groups[category].push(placeholder);
     return groups;
-  }, {} as Record<string, Placeholder[]>);
+  }, {} as Record<string, Placeholder[]>));
 
   // Get icon for category
   function getCategoryIcon(category: string): ComponentType {
@@ -220,14 +234,18 @@
   });
 
   // Update focus when visibility changes
-  $: if (visible && searchInputRef) {
-    focusSearchInput();
-  }
+  run(() => {
+    if (visible && searchInputRef) {
+      focusSearchInput();
+    }
+  });
 
   // Update selection announcement
-  $: if (visible && filteredPlaceholders[selectedIndex]) {
-    announceSelection(filteredPlaceholders[selectedIndex]);
-  }
+  run(() => {
+    if (visible && filteredPlaceholders[selectedIndex]) {
+      announceSelection(filteredPlaceholders[selectedIndex]);
+    }
+  });
 
 
   // Smart positioning for inline mode
@@ -301,19 +319,19 @@
     return { x, y };
   }
 
-  $: clampedPosition = getClampedPosition();
-  $: inlinePosition = getInlinePosition();
+  let clampedPosition = $derived(getClampedPosition());
+  let inlinePosition = $derived(getInlinePosition());
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if visible}
   {#if !inline}
     <!-- Backdrop for fixed mode -->
     <button
       class="fixed inset-0 z-40 bg-transparent border-none cursor-default"
-      on:click={close}
-      on:keydown={(e) => e.key === 'Escape' && close()}
+      onclick={close}
+      onkeydown={(e) => e.key === 'Escape' && close()}
       aria-label="Close placeholder picker"
       tabindex="-1"
     ></button>
@@ -325,7 +343,7 @@
       <div
         bind:this={containerRef}
         use:clickOutside
-        on:clickoutside={() => close()}
+        onclickoutside={() => close()}
         class="fixed border rounded-xl shadow-2xl max-h-96 overflow-hidden placeholder-menu backdrop-blur-md"
         style="top: {inlinePosition.y}px;
                left: {inlinePosition.x}px;
@@ -358,7 +376,7 @@
                      focus:ring-color: {$colorStore.primary}50;"
               placeholder="Search placeholders..."
               value={searchTerm}
-              on:input={handleSearch}
+              oninput={handleSearch}
               aria-label="Search placeholders"
             />
           </div>
@@ -379,10 +397,10 @@
             <!-- Group by Categories -->
             {#each Object.entries(groupedPlaceholders) as [category, categoryPlaceholders]}
               <!-- Category Header -->
+              {@const SvelteComponent = getCategoryIcon(category)}
               <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
                 <div class="flex items-center gap-2">
-                  <svelte:component 
-                    this={getCategoryIcon(category)} 
+                  <SvelteComponent 
                     size={14} 
                     style="color: {$colorStore.primary};" 
                   />
@@ -404,8 +422,8 @@
                   style="background: {flatIndex === selectedIndex ? $colorStore.primary + '20' : 'transparent'};
                          border-color: {flatIndex === selectedIndex ? $colorStore.primary : 'transparent'};
                          color: {$colorStore.text};"
-                  on:click={() => selectPlaceholder(placeholder)}
-                  on:keydown={(e) => e.key === 'Enter' && selectPlaceholder(placeholder)}
+                  onclick={() => selectPlaceholder(placeholder)}
+                  onkeydown={(e) => e.key === 'Enter' && selectPlaceholder(placeholder)}
                   role="option"
                   aria-selected={flatIndex === selectedIndex}
                   data-index={flatIndex}
@@ -462,7 +480,7 @@
     <div
       bind:this={containerRef}
       use:clickOutside
-      on:clickoutside={() => close()}
+      onclickoutside={() => close()}
       class="fixed border rounded-xl shadow-2xl max-h-96 w-80 overflow-hidden placeholder-menu backdrop-blur-md"
       style="top: {clampedPosition.y}px;
              left: {clampedPosition.x}px;
@@ -493,7 +511,7 @@
                    focus:ring-color: {$colorStore.primary}50;"
             placeholder="Search placeholders..."
             value={searchTerm}
-            on:input={handleSearch}
+            oninput={handleSearch}
             aria-label="Search placeholders"
           />
         </div>
@@ -514,10 +532,10 @@
           <!-- Group by Categories -->
           {#each Object.entries(groupedPlaceholders) as [category, categoryPlaceholders]}
             <!-- Category Header -->
+            {@const SvelteComponent_1 = getCategoryIcon(category)}
             <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
               <div class="flex items-center gap-2">
-                <svelte:component 
-                  this={getCategoryIcon(category)} 
+                <SvelteComponent_1 
                   size={14} 
                   style="color: {$colorStore.primary};" 
                 />
@@ -539,8 +557,8 @@
                 style="background: {flatIndex === selectedIndex ? $colorStore.primary + '20' : 'transparent'};
                        border-color: {flatIndex === selectedIndex ? $colorStore.primary : 'transparent'};
                        color: {$colorStore.text};"
-                on:click={() => selectPlaceholder(placeholder)}
-                on:keydown={(e) => e.key === 'Enter' && selectPlaceholder(placeholder)}
+                onclick={() => selectPlaceholder(placeholder)}
+                onkeydown={(e) => e.key === 'Enter' && selectPlaceholder(placeholder)}
                 role="option"
                 aria-selected={flatIndex === selectedIndex}
                 data-index={flatIndex}

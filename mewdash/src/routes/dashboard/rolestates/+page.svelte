@@ -1,5 +1,7 @@
 <!-- routes/dashboard/rolestates/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -33,28 +35,32 @@
   import { loadingStore } from "$lib/stores/loadingStore";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State management
   let botStatus: BotStatusModel | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
   // Role States Settings
-  let roleStateSettings = {
+    let roleStateSettings = $state({
     guildId: "",
     enabled: false,
     clearOnBan: false,
     ignoreBots: false,
     deniedRoles: "",
     deniedUsers: ""
-  };
+    });
 
   // Parsed denied items
-  let deniedRolesList: string[] = [];
-  let deniedUsersList: string[] = [];
+    let deniedRolesList: string[] = $state([]);
+    let deniedUsersList: string[] = $state([]);
 
   // Role States
   let roleStates: Array<{
@@ -63,45 +69,45 @@
     guildId: string;
     savedRoles: string;
     userName: string;
-  }> = [];
+  }> = $state([]);
 
   // Guild roles and users
   let guildRoles: Array<{
     id: string;
     name: string;
-  }> = [];
+  }> = $state([]);
 
   let guildMembers: Array<{
     id: string;
     username: string;
     displayName: string;
     avatarUrl: string;
-  }> = [];
+  }> = $state([]);
 
   // Role management states
-  let selectedUserId = "";
-  let sourceUserId = "";
-  let targetUserId = "";
-  let selectedRoleIds: string[] = [];
-  let selectedUserRoles: string[] = [];
-  let viewingUserId: string | null = null;
+    let selectedUserId = $state("");
+    let sourceUserId = $state("");
+    let targetUserId = $state("");
+    let selectedRoleIds: string[] = $state([]);
+    let selectedUserRoles: string[] = $state([]);
+    let viewingUserId: string | null = $state(null);
 
   // Denied roles/users management
-  let selectedDeniedRoleId = "";
-  let selectedDeniedUserId = "";
+    let selectedDeniedRoleId = $state("");
+    let selectedDeniedUserId = $state("");
 
   // Management
-  let loadingSettings = true;
-  let loadingStates = true;
-  let savingAllStates = false;
-  let errorSettings: string | null = null;
-  let errorStates: string | null = null;
+    let loadingSettings = $state(true);
+    let loadingStates = $state(true);
+    let savingAllStates = $state(false);
+    let errorSettings: string | null = $state(null);
+    let errorStates: string | null = $state(null);
 
   // Active tab for settings
-  let settingsTab: "general" | "denied" = "general";
+    let settingsTab: "general" | "denied" = $state("general");
   
   // Layout state
-  let activeTab = "settings";
+    let activeTab = $state("settings");
   
   const tabs = [
     { id: "settings", label: "Settings", icon: Settings },
@@ -118,15 +124,6 @@
     }
   }
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchRoleStateSettings(),
-      fetchRoleStates(),
-      fetchGuildRoles(),
-      fetchGuildMembers(),
-      fetchBotStatus()
-    ]);
-  }
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -505,21 +502,35 @@
   });
 
 
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchRoleStateSettings(),
+                fetchRoleStates(),
+                fetchGuildRoles(),
+                fetchGuildMembers(),
+                fetchBotStatus()
+            ]);
+        }
+    });
   // Reactive declarations for guild changes
-  $: if ($currentGuild) {
-    fetchRoleStateSettings();
-    fetchRoleStates();
-    fetchGuildRoles();
-    fetchGuildMembers();
-  }
-
+    run(() => {
+        if ($currentGuild) {
+            fetchRoleStateSettings();
+            fetchRoleStates();
+            fetchGuildRoles();
+            fetchGuildMembers();
+        }
+    });
   // Reactive declarations for instance changes
-  $: if ($currentInstance) {
-    fetchRoleStateSettings();
-    fetchRoleStates();
-    fetchGuildRoles();
-    fetchGuildMembers();
-  }
+    run(() => {
+        if ($currentInstance) {
+            fetchRoleStateSettings();
+            fetchRoleStates();
+            fetchGuildRoles();
+            fetchGuildMembers();
+        }
+    });
 </script>
 
 <DashboardPageLayout 
@@ -550,6 +561,7 @@
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -582,7 +594,7 @@
           <button
             class="px-4 py-2 border-b-2 transition-colors"
             class:font-medium={settingsTab === 'general'}
-            on:click={() => settingsTab = 'general'}
+            onclick={() => settingsTab = 'general'}
             style="border-color: {settingsTab === 'general' ? $colorStore.primary : 'transparent'};
                    color: {settingsTab === 'general' ? $colorStore.text : $colorStore.muted};"
           >
@@ -591,7 +603,7 @@
           <button
             class="px-4 py-2 border-b-2 transition-colors"
             class:font-medium={settingsTab === 'denied'}
-            on:click={() => settingsTab = 'denied'}
+            onclick={() => settingsTab = 'denied'}
             style="border-color: {settingsTab === 'denied' ? $colorStore.primary : 'transparent'};
                    color: {settingsTab === 'denied' ? $colorStore.text : $colorStore.muted};"
           >
@@ -638,7 +650,7 @@
               </div>
               <button
                 class="p-2 rounded-lg transition-all duration-200"
-                on:click={toggleRoleStates}
+                onclick={toggleRoleStates}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};"
                 aria-label={roleStateSettings.enabled ? "Disable Role States" : "Enable Role States"}
@@ -668,7 +680,7 @@
               </div>
               <button
                 class="p-2 rounded-lg transition-all duration-200"
-                on:click={toggleClearOnBan}
+                onclick={toggleClearOnBan}
                 disabled={!roleStateSettings.enabled}
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.text};
@@ -700,7 +712,7 @@
               </div>
               <button
                 class="p-2 rounded-lg transition-all duration-200"
-                on:click={toggleIgnoreBots}
+                onclick={toggleIgnoreBots}
                 disabled={!roleStateSettings.enabled}
                 style="background: {$colorStore.secondary}20;
                        color: {$colorStore.text};
@@ -730,7 +742,7 @@
               </div>
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
-                on:click={saveAllUserRoleStates}
+                onclick={saveAllUserRoleStates}
                 disabled={!roleStateSettings.enabled || savingAllStates}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
@@ -779,7 +791,7 @@
               </select>
               <button
                 class="px-3 py-1 rounded-lg transition-all duration-200 flex items-center gap-1"
-                on:click={addDeniedRole}
+                onclick={addDeniedRole}
                 disabled={!roleStateSettings.enabled || !selectedDeniedRoleId}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
@@ -805,7 +817,7 @@
                       <span style="color: {$colorStore.text}">{getRoleName(roleId)}</span>
                       <button
                         class="p-1 rounded transition-all duration-200"
-                        on:click={() => removeDeniedRole(roleId)}
+                        onclick={() => removeDeniedRole(roleId)}
                         disabled={!roleStateSettings.enabled}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};
@@ -847,7 +859,7 @@
               </select>
               <button
                 class="px-3 py-1 rounded-lg transition-all duration-200 flex items-center gap-1"
-                on:click={addDeniedUser}
+                onclick={addDeniedUser}
                 disabled={!roleStateSettings.enabled || !selectedDeniedUserId}
                 style="background: {$colorStore.secondary}20;
                        color: {$colorStore.text};
@@ -873,7 +885,7 @@
                       <span style="color: {$colorStore.text}">{getUserName(userId)}</span>
                       <button
                         class="p-1 rounded transition-all duration-200"
-                        on:click={() => removeDeniedUser(userId)}
+                        onclick={() => removeDeniedUser(userId)}
                         disabled={!roleStateSettings.enabled}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};
@@ -971,7 +983,7 @@
                           type="checkbox"
                           id={`role-${role.id}`}
                           checked={selectedRoleIds.includes(role.id)}
-                          on:change={() => toggleRoleSelection(role.id)}
+                          onchange={() => toggleRoleSelection(role.id)}
                           class="mr-2"
                         />
                         <label for={`role-${role.id}`} class="text-sm" style="color: {$colorStore.text}">
@@ -988,7 +1000,7 @@
                 <button
                   class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                   disabled={!selectedUserId || selectedRoleIds.length === 0}
-                  on:click={addRolesToUser}
+                  onclick={addRolesToUser}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};
                          opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
@@ -1000,7 +1012,7 @@
                 <button
                   class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                   disabled={!selectedUserId || selectedRoleIds.length === 0}
-                  on:click={removeRolesFromUser}
+                  onclick={removeRolesFromUser}
                   style="background: {$colorStore.accent}20;
                          color: {$colorStore.text};
                          opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
@@ -1060,7 +1072,7 @@
               <button
                 class="w-full px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                 disabled={!sourceUserId || !targetUserId}
-                on:click={applyRoleState}
+                onclick={applyRoleState}
                 style="background: {$colorStore.secondary}20;
                        color: {$colorStore.text};
                        opacity: {!sourceUserId || !targetUserId ? '0.5' : '1'};"
@@ -1128,7 +1140,7 @@
                     <div class="flex items-center">
                       <button
                         class="p-2 rounded-lg transition-all duration-200 mr-2"
-                        on:click={() => getUserRoleState(state.userId)}
+                        onclick={() => getUserRoleState(state.userId)}
                         style="background: {$colorStore.primary}20;
                                color: {$colorStore.text};"
                         aria-label="View roles"
@@ -1139,7 +1151,7 @@
 
                       <button
                         class="p-2 rounded-lg transition-all duration-200"
-                        on:click={() => deleteUserRoleState(state.userId)}
+                        onclick={() => deleteUserRoleState(state.userId)}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};"
                         aria-label="Delete role state"

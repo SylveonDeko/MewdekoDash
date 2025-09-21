@@ -30,6 +30,6 @@ export const GET: RequestHandler = async ({}) => {
     return json(guilds);
   } catch (fileErr) {
     logger.error("File read error:", fileErr);
-    throw error(500, "Failed to fetch guild data from backup file.");
+    error(500, "Failed to fetch guild data from backup file.");
   }
 };

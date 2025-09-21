@@ -1,5 +1,7 @@
 <!-- XpMobileTemplateEditor.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -31,28 +33,34 @@
 
   const dispatch = createEventDispatcher();
 
-  // Props
-  export let localTemplate: any;
-  export let changedSettings: Set<string>;
-  export let currentUserData: any = null;
-  export let sampleData: any;
-
-  // Debug logging
-  $: if (localTemplate) {
-    console.log("Mobile editor received template:", localTemplate);
+  
+  interface Props {
+    // Props
+    localTemplate: any;
+    changedSettings: Set<string>;
+    currentUserData?: any;
+    sampleData: any;
   }
 
+  let {
+    localTemplate = $bindable(),
+    changedSettings,
+    currentUserData = null,
+    sampleData
+  }: Props = $props();
+
+
   // Mobile-first state management
-  let viewMode: "preview" | "edit" | "fullscreen" = "preview";
-  let activePanel: string | null = null;
-  let isDesignMode = false;
-  let showRealDataPreview = false;
-  let showGrid = false;
+  let viewMode: "preview" | "edit" | "fullscreen" = $state("preview");
+  let activePanel: string | null = $state(null);
+  let isDesignMode = $state(false);
+  let showRealDataPreview = $state(false);
+  let showGrid = $state(false);
   let gridSize = 20;
-  let previewScale = 1;
+  let previewScale = $state(1);
   let isDragging = false;
   let dragElement: any = null;
-  let selectedElement: any = null;
+  let selectedElement: any = $state(null);
 
   // Touch interaction state
   let touchStartTime = 0;
@@ -65,14 +73,14 @@
   let longPressTimer: number;
 
   // Panel states
-  let panelStates: Record<string, boolean> = {
+  let panelStates: Record<string, boolean> = $state({
     general: false,
     user: false,
     bar: false,
     guild: false,
     time: false,
     club: false
-  };
+  });
 
   // Element positioning  
   let elementBounds: DOMRect | null = null;
@@ -117,124 +125,6 @@
     }
   ];
 
-  // Draggable elements configuration for mobile
-  $: draggableElements = localTemplate ? [
-    {
-      id: "username",
-      label: "Username",
-      icon: Type,
-      getX: () => localTemplate?.templateUser?.textX || 0,
-      getY: () => localTemplate?.templateUser?.textY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateUser.textX", Math.round(x));
-        handleChange("templateUser.textY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateUser?.showText,
-      color: "#3B82F6",
-      bounds: { width: 120, height: 24 }
-    },
-    {
-      id: "userAvatar",
-      label: "Avatar",
-      icon: User,
-      getX: () => localTemplate?.templateUser?.iconX || 0,
-      getY: () => localTemplate?.templateUser?.iconY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateUser.iconX", Math.round(x));
-        handleChange("templateUser.iconY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateUser?.showIcon,
-      color: "#10B981",
-      bounds: { 
-        width: localTemplate?.templateUser?.iconSizeX || 50, 
-        height: localTemplate?.templateUser?.iconSizeY || 50 
-      }
-    },
-    {
-      id: "guildLevel",
-      label: "Level",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateGuild?.guildLevelX || 0,
-      getY: () => localTemplate?.templateGuild?.guildLevelY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateGuild.guildLevelX", Math.round(x));
-        handleChange("templateGuild.guildLevelY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateGuild?.showGuildLevel,
-      color: "#8B5CF6",
-      bounds: { width: 80, height: 20 }
-    },
-    {
-      id: "guildRank",
-      label: "Rank",
-      icon: Award,
-      getX: () => localTemplate?.templateGuild?.guildRankX || 0,
-      getY: () => localTemplate?.templateGuild?.guildRankY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateGuild.guildRankX", Math.round(x));
-        handleChange("templateGuild.guildRankY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateGuild?.showGuildRank,
-      color: "#EC4899",
-      bounds: { width: 60, height: 20 }
-    },
-    {
-      id: "timeOnLevel",
-      label: "Time",
-      icon: Clock,
-      getX: () => localTemplate?.timeOnLevelX || 0,
-      getY: () => localTemplate?.timeOnLevelY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("timeOnLevelX", Math.round(x));
-        handleChange("timeOnLevelY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.showTimeOnLevel,
-      color: "#F59E0B",
-      bounds: { width: 100, height: 20 }
-    },
-    {
-      id: "clubName",
-      label: "Club",
-      icon: Users,
-      getX: () => localTemplate?.templateClub?.clubNameX || 0,
-      getY: () => localTemplate?.templateClub?.clubNameY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateClub.clubNameX", Math.round(x));
-        handleChange("templateClub.clubNameY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateClub?.showClubName,
-      color: "#14B8A6",
-      bounds: { width: 80, height: 20 }
-    },
-    {
-      id: "progressBarStart",
-      label: "Bar Start",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateBar?.barPointAx || 0,
-      getY: () => localTemplate?.templateBar?.barPointAy || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateBar.barPointAx", Math.round(x));
-        handleChange("templateBar.barPointAy", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateBar?.showBar,
-      color: "#EF4444",
-      bounds: { width: 20, height: 20 }
-    },
-    {
-      id: "progressBarEnd",
-      label: "Bar End",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateBar?.barPointBx || 0,
-      getY: () => localTemplate?.templateBar?.barPointBy || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateBar.barPointBx", Math.round(x));
-        handleChange("templateBar.barPointBy", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateBar?.showBar,
-      color: "#EF4444",
-      bounds: { width: 20, height: 20 }
-    }
-  ] : [];
 
   // Event handlers
   function handleChange(property: string, value: any) {
@@ -269,11 +159,11 @@
   }
 
   // Background image variables
-  let imageUrl = "";
-  let imageLoading = false;
-  let imageError = "";
-  let updateSizeFromImage = false;
-  let previewBackgroundUrl: string | null = null;
+  let imageUrl = $state("");
+  let imageLoading = $state(false);
+  let imageError = $state("");
+  let updateSizeFromImage = $state(false);
+  let previewBackgroundUrl: string | null = $state(null);
 
   function loadImage() {
     if (!imageUrl) return;
@@ -474,6 +364,130 @@
   onDestroy(() => {
     clearTimeout(longPressTimer);
   });
+  // Debug logging
+  run(() => {
+    if (localTemplate) {
+      console.log("Mobile editor received template:", localTemplate);
+    }
+  });
+  // Draggable elements configuration for mobile
+  let draggableElements = $derived(localTemplate ? [
+    {
+      id: "username",
+      label: "Username",
+      icon: Type,
+      getX: () => localTemplate?.templateUser?.textX || 0,
+      getY: () => localTemplate?.templateUser?.textY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateUser.textX", Math.round(x));
+        handleChange("templateUser.textY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateUser?.showText,
+      color: "#3B82F6",
+      bounds: { width: 120, height: 24 }
+    },
+    {
+      id: "userAvatar",
+      label: "Avatar",
+      icon: User,
+      getX: () => localTemplate?.templateUser?.iconX || 0,
+      getY: () => localTemplate?.templateUser?.iconY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateUser.iconX", Math.round(x));
+        handleChange("templateUser.iconY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateUser?.showIcon,
+      color: "#10B981",
+      bounds: { 
+        width: localTemplate?.templateUser?.iconSizeX || 50, 
+        height: localTemplate?.templateUser?.iconSizeY || 50 
+      }
+    },
+    {
+      id: "guildLevel",
+      label: "Level",
+      icon: BarChart3,
+      getX: () => localTemplate?.templateGuild?.guildLevelX || 0,
+      getY: () => localTemplate?.templateGuild?.guildLevelY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateGuild.guildLevelX", Math.round(x));
+        handleChange("templateGuild.guildLevelY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateGuild?.showGuildLevel,
+      color: "#8B5CF6",
+      bounds: { width: 80, height: 20 }
+    },
+    {
+      id: "guildRank",
+      label: "Rank",
+      icon: Award,
+      getX: () => localTemplate?.templateGuild?.guildRankX || 0,
+      getY: () => localTemplate?.templateGuild?.guildRankY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateGuild.guildRankX", Math.round(x));
+        handleChange("templateGuild.guildRankY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateGuild?.showGuildRank,
+      color: "#EC4899",
+      bounds: { width: 60, height: 20 }
+    },
+    {
+      id: "timeOnLevel",
+      label: "Time",
+      icon: Clock,
+      getX: () => localTemplate?.timeOnLevelX || 0,
+      getY: () => localTemplate?.timeOnLevelY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("timeOnLevelX", Math.round(x));
+        handleChange("timeOnLevelY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.showTimeOnLevel,
+      color: "#F59E0B",
+      bounds: { width: 100, height: 20 }
+    },
+    {
+      id: "clubName",
+      label: "Club",
+      icon: Users,
+      getX: () => localTemplate?.templateClub?.clubNameX || 0,
+      getY: () => localTemplate?.templateClub?.clubNameY || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateClub.clubNameX", Math.round(x));
+        handleChange("templateClub.clubNameY", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateClub?.showClubName,
+      color: "#14B8A6",
+      bounds: { width: 80, height: 20 }
+    },
+    {
+      id: "progressBarStart",
+      label: "Bar Start",
+      icon: BarChart3,
+      getX: () => localTemplate?.templateBar?.barPointAx || 0,
+      getY: () => localTemplate?.templateBar?.barPointAy || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateBar.barPointAx", Math.round(x));
+        handleChange("templateBar.barPointAy", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateBar?.showBar,
+      color: "#EF4444",
+      bounds: { width: 20, height: 20 }
+    },
+    {
+      id: "progressBarEnd",
+      label: "Bar End",
+      icon: BarChart3,
+      getX: () => localTemplate?.templateBar?.barPointBx || 0,
+      getY: () => localTemplate?.templateBar?.barPointBy || 0,
+      setPos: (x: number, y: number) => {
+        handleChange("templateBar.barPointBx", Math.round(x));
+        handleChange("templateBar.barPointBy", Math.round(y));
+      },
+      isVisible: () => localTemplate?.templateBar?.showBar,
+      color: "#EF4444",
+      bounds: { width: 20, height: 20 }
+    }
+  ] : []);
 </script>
 
 {#if localTemplate}
@@ -514,7 +528,7 @@
           class:ring-2={isDesignMode}
           style="background: {isDesignMode ? $colorStore.primary + '30' : 'transparent'}; 
                  ring-color: {$colorStore.primary}; color: {$colorStore.text};"
-          on:click={toggleDesignMode}
+          onclick={toggleDesignMode}
           aria-label="Toggle design mode"
         >
           <Move size={20} />
@@ -525,7 +539,7 @@
           class:ring-2={showRealDataPreview}
           style="background: {showRealDataPreview ? $colorStore.secondary + '30' : $colorStore.primary + '10'}; 
                  ring-color: {$colorStore.secondary}; color: {$colorStore.text};"
-          on:click={toggleDataPreview}
+          onclick={toggleDataPreview}
           aria-label="Toggle real data preview"
         >
           {#if showRealDataPreview}
@@ -539,7 +553,7 @@
           <button
             class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-            on:click={exitFullscreen}
+            onclick={exitFullscreen}
             aria-label="Exit fullscreen"
           >
             <Maximize2 size={20} class="rotate-45" />
@@ -557,7 +571,7 @@
           style="background: {viewMode === 'preview' ? $colorStore.primary + '20' : 'transparent'};
                  color: {viewMode === 'preview' ? $colorStore.primary : $colorStore.muted};
                  border-bottom: {viewMode === 'preview' ? '2px solid ' + $colorStore.primary : 'none'};"
-          on:click={() => viewMode = 'preview'}
+          onclick={() => viewMode = 'preview'}
         >
           Preview
         </button>
@@ -567,7 +581,7 @@
           style="background: {viewMode === 'edit' ? $colorStore.primary + '20' : 'transparent'};
                  color: {viewMode === 'edit' ? $colorStore.primary : $colorStore.muted};
                  border-bottom: {viewMode === 'edit' ? '2px solid ' + $colorStore.primary : 'none'};"
-          on:click={() => viewMode = 'edit'}
+          onclick={() => viewMode = 'edit'}
         >
           Settings
         </button>
@@ -585,7 +599,7 @@
               class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; 
                      border: 1px solid {$colorStore.primary}30; backdrop-filter: blur(8px);"
-              on:click={zoomIn}
+              onclick={zoomIn}
               aria-label="Zoom in"
             >
               <ZoomIn size={20} />
@@ -594,7 +608,7 @@
               class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; 
                      border: 1px solid {$colorStore.primary}30; backdrop-filter: blur(8px);"
-              on:click={zoomOut}
+              onclick={zoomOut}
               aria-label="Zoom out"
             >
               <ZoomOut size={20} />
@@ -603,7 +617,7 @@
               class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; 
                      border: 1px solid {$colorStore.secondary}30; backdrop-filter: blur(8px);"
-              on:click={resetZoom}
+              onclick={resetZoom}
               aria-label="Reset zoom"
             >
               <Maximize2 size={20} />
@@ -613,7 +627,7 @@
                 class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
                 style="background: {$colorStore.primary}90; color: white; 
                        backdrop-filter: blur(8px);"
-                on:click={enterFullscreen}
+                onclick={enterFullscreen}
                 aria-label="Enter fullscreen"
               >
                 <Maximize2 size={20} />
@@ -630,7 +644,7 @@
                 style="background: {showGrid ? $colorStore.accent + '30' : $colorStore.accent + '20'}; 
                        color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;
                        backdrop-filter: blur(8px); ring-color: {$colorStore.accent};"
-                on:click={toggleGrid}
+                onclick={toggleGrid}
                 aria-label="Toggle grid"
               >
                 <Grid size={20} />
@@ -670,7 +684,7 @@
                     class="p-2 rounded-lg"
                     style="background: {selectedElement.color}20; color: {selectedElement.color};"
                   >
-                    <svelte:component this={selectedElement.icon} size={16} />
+                    <selectedElement.icon size={16} />
                   </div>
                   <div>
                     <p class="font-medium" style="color: {$colorStore.text}">
@@ -684,7 +698,7 @@
                 <button
                   class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                  on:click={() => selectedElement = null}
+                  onclick={() => selectedElement = null}
                   aria-label="Deselect element"
                 >
                   <ChevronDown size={16} />
@@ -710,9 +724,9 @@
                     class:ring-2={selectedElement?.id === element.id}
                     style="background: {element.color}20; color: {element.color}; 
                            ring-color: {element.color};"
-                    on:click={() => selectedElement = element}
+                    onclick={() => selectedElement = element}
                   >
-                    <svelte:component this={element.icon} size={16} />
+                    <element.icon size={16} />
                     <span class="whitespace-nowrap">{element.label}</span>
                   </button>
                 {/each}
@@ -728,7 +742,7 @@
                 <button
                   class="w-full flex items-center justify-between p-4 transition-all duration-200 touch-manipulation"
                   style="background: {panelStates[panel.id] ? (panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent) + '20' : 'transparent'};"
-                  on:click={() => {
+                  onclick={() => {
                     panelStates[panel.id] = !panelStates[panel.id];
                     activePanel = panelStates[panel.id] ? panel.id : null;
                   }}
@@ -738,7 +752,7 @@
                       class="p-2 rounded-lg"
                       style="background: {(panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent)}20; color: {(panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent)};"
                     >
-                      <svelte:component this={panel.icon} size={20} />
+                      <panel.icon size={20} />
                     </div>
                     <span class="font-medium" style="color: {$colorStore.text}">
                       {panel.title}
@@ -769,7 +783,7 @@
                               <input
                                 type="number"
                                 bind:value={localTemplate.outputSizeX}
-                                on:input={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
+                                oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
                                 class="w-full p-3 rounded-lg bg-gray-800 border text-center font-mono touch-manipulation"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 min="300"
@@ -781,7 +795,7 @@
                               <input
                                 type="number"
                                 bind:value={localTemplate.outputSizeY}
-                                on:input={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
+                                oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
                                 class="w-full p-3 rounded-lg bg-gray-800 border text-center font-mono touch-manipulation"
                                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 min="150"
@@ -801,7 +815,7 @@
                               class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
                               style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
                                      border: 1px solid {$colorStore.primary}30;"
-                              on:click={() => {
+                              onclick={() => {
                                 handleChange('outputSizeX', 800);
                                 handleChange('outputSizeY', 280);
                               }}
@@ -812,7 +826,7 @@
                               class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
                               style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
                                      border: 1px solid {$colorStore.primary}30;"
-                              on:click={() => {
+                              onclick={() => {
                                 handleChange('outputSizeX', 1000);
                                 handleChange('outputSizeY', 350);
                               }}
@@ -823,7 +837,7 @@
                               class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
                               style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
                                      border: 1px solid {$colorStore.primary}30;"
-                              on:click={() => {
+                              onclick={() => {
                                 handleChange('outputSizeX', 600);
                                 handleChange('outputSizeY', 210);
                               }}
@@ -850,7 +864,7 @@
                                 />
                                 <button
                                   class="px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium touch-manipulation"
-                                  on:click={loadImage}
+                                  onclick={loadImage}
                                   disabled={imageLoading || !imageUrl}
                                   style="background: {$colorStore.primary}; color: white; opacity: {imageLoading || !imageUrl ? '0.5' : '1'};"
                                   aria-label="Load background image"
@@ -900,7 +914,7 @@
                               <button
                                 class="text-sm underline touch-manipulation"
                                 style="color: {$colorStore.accent};"
-                                on:click={() => { previewBackgroundUrl = null; imageUrl = ''; }}
+                                onclick={() => { previewBackgroundUrl = null; imageUrl = ''; }}
                               >
                                 Remove
                               </button>
@@ -924,7 +938,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateUser.showText}
-                              on:change={() => handleChange('templateUser.showText', !localTemplate.templateUser.showText)}
+                              onchange={() => handleChange('templateUser.showText', !localTemplate.templateUser.showText)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.primary};">
@@ -943,7 +957,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.templateUser.textColor)}
-                                  on:input={handleColorInput('templateUser.textColor')}
+                                  oninput={handleColorInput('templateUser.textColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -951,7 +965,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.templateUser.textColor)}
-                                  on:input={handleColorInput('templateUser.textColor')}
+                                  oninput={handleColorInput('templateUser.textColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.primary}30;"
                                 />
@@ -966,7 +980,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateUser.fontSize}
-                                on:input={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
+                                oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
                                 min="10"
                                 max="100"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -981,7 +995,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.textX}
-                                  on:input={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
+                                  oninput={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -991,7 +1005,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.textY}
-                                  on:input={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
+                                  oninput={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -1012,7 +1026,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateUser.showIcon}
-                              on:change={() => handleChange('templateUser.showIcon', !localTemplate.templateUser.showIcon)}
+                              onchange={() => handleChange('templateUser.showIcon', !localTemplate.templateUser.showIcon)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.secondary};">
@@ -1029,7 +1043,7 @@
                                 <input
                                   type="range"
                                   bind:value={localTemplate.templateUser.iconSizeX}
-                                  on:input={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
+                                  oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
                                   min="10"
                                   max="200"
                                   class="w-full touch-manipulation"
@@ -1037,7 +1051,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.iconSizeX}
-                                  on:input={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
+                                  oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
                                   class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1047,7 +1061,7 @@
                                 <input
                                   type="range"
                                   bind:value={localTemplate.templateUser.iconSizeY}
-                                  on:input={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
+                                  oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
                                   min="10"
                                   max="200"
                                   class="w-full touch-manipulation"
@@ -1055,7 +1069,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.iconSizeY}
-                                  on:input={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
+                                  oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
                                   class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1069,7 +1083,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.iconX}
-                                  on:input={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
+                                  oninput={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1079,7 +1093,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateUser.iconY}
-                                  on:input={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
+                                  oninput={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1104,7 +1118,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateBar.showBar}
-                              on:change={() => handleChange('templateBar.showBar', !localTemplate.templateBar.showBar)}
+                              onchange={() => handleChange('templateBar.showBar', !localTemplate.templateBar.showBar)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.accent};">
@@ -1123,7 +1137,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.templateBar.barColor)}
-                                  on:input={handleColorInput('templateBar.barColor')}
+                                  oninput={handleColorInput('templateBar.barColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -1131,7 +1145,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.templateBar.barColor)}
-                                  on:input={handleColorInput('templateBar.barColor')}
+                                  oninput={handleColorInput('templateBar.barColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.accent}30;"
                                 />
@@ -1146,7 +1160,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateBar.barWidth}
-                                on:input={() => handleChange('templateBar.barWidth', localTemplate.templateBar.barWidth)}
+                                oninput={() => handleChange('templateBar.barWidth', localTemplate.templateBar.barWidth)}
                                 min="1"
                                 max="30"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1161,7 +1175,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateBar.barTransparency}
-                                on:input={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
+                                oninput={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
                                 min="0"
                                 max="255"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1176,7 +1190,7 @@
                               <input
                                 type="number"
                                 bind:value={localTemplate.templateBar.barLength}
-                                on:input={() => handleChange('templateBar.barLength', localTemplate.templateBar.barLength)}
+                                oninput={() => handleChange('templateBar.barLength', localTemplate.templateBar.barLength)}
                                 class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                 style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                 min="1"
@@ -1194,7 +1208,7 @@
                                   <input
                                     type="number"
                                     bind:value={localTemplate.templateBar.barPointAx}
-                                    on:input={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
+                                    oninput={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
                                     class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                     style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   />
@@ -1204,7 +1218,7 @@
                                   <input
                                     type="number"
                                     bind:value={localTemplate.templateBar.barPointAy}
-                                    on:input={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
+                                    oninput={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
                                     class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                     style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   />
@@ -1223,7 +1237,7 @@
                                   <input
                                     type="number"
                                     bind:value={localTemplate.templateBar.barPointBx}
-                                    on:input={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
+                                    oninput={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
                                     class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                     style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   />
@@ -1233,7 +1247,7 @@
                                   <input
                                     type="number"
                                     bind:value={localTemplate.templateBar.barPointBy}
-                                    on:input={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
+                                    oninput={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
                                     class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                     style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   />
@@ -1259,7 +1273,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateGuild.showGuildLevel}
-                              on:change={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild.showGuildLevel)}
+                              onchange={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild.showGuildLevel)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.primary};">
@@ -1278,7 +1292,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                  on:input={handleColorInput('templateGuild.guildLevelColor')}
+                                  oninput={handleColorInput('templateGuild.guildLevelColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -1286,7 +1300,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                  on:input={handleColorInput('templateGuild.guildLevelColor')}
+                                  oninput={handleColorInput('templateGuild.guildLevelColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.primary}30;"
                                 />
@@ -1301,7 +1315,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                on:input={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
+                                oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
                                 min="10"
                                 max="100"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1315,7 +1329,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateGuild.guildLevelX}
-                                  on:input={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
+                                  oninput={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -1325,7 +1339,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateGuild.guildLevelY}
-                                  on:input={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
+                                  oninput={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -1346,7 +1360,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateGuild.showGuildRank}
-                              on:change={() => handleChange('templateGuild.showGuildRank', !localTemplate.templateGuild.showGuildRank)}
+                              onchange={() => handleChange('templateGuild.showGuildRank', !localTemplate.templateGuild.showGuildRank)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.secondary};">
@@ -1365,7 +1379,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                  on:input={handleColorInput('templateGuild.guildRankColor')}
+                                  oninput={handleColorInput('templateGuild.guildRankColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -1373,7 +1387,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                  on:input={handleColorInput('templateGuild.guildRankColor')}
+                                  oninput={handleColorInput('templateGuild.guildRankColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30;"
                                 />
@@ -1388,7 +1402,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateGuild.guildRankFontSize}
-                                on:input={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
+                                oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
                                 min="10"
                                 max="100"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1402,7 +1416,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateGuild.guildRankX}
-                                  on:input={() => handleChange('templateGuild.guildRankX', localTemplate.templateGuild.guildRankX)}
+                                  oninput={() => handleChange('templateGuild.guildRankX', localTemplate.templateGuild.guildRankX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1412,7 +1426,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateGuild.guildRankY}
-                                  on:input={() => handleChange('templateGuild.guildRankY', localTemplate.templateGuild.guildRankY)}
+                                  oninput={() => handleChange('templateGuild.guildRankY', localTemplate.templateGuild.guildRankY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1437,7 +1451,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.showTimeOnLevel}
-                              on:change={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
+                              onchange={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.accent};">
@@ -1455,7 +1469,7 @@
                               <input
                                 type="text"
                                 bind:value={localTemplate.timeOnLevelFormat}
-                                on:input={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
+                                oninput={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
                                 class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                 style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                 placeholder="{0}d{1}h{2}m"
@@ -1474,7 +1488,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.timeOnLevelColor)}
-                                  on:input={handleColorInput('timeOnLevelColor')}
+                                  oninput={handleColorInput('timeOnLevelColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -1482,7 +1496,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.timeOnLevelColor)}
-                                  on:input={handleColorInput('timeOnLevelColor')}
+                                  oninput={handleColorInput('timeOnLevelColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.accent}30;"
                                 />
@@ -1497,7 +1511,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.timeOnLevelFontSize}
-                                on:input={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
+                                oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
                                 min="10"
                                 max="100"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1511,7 +1525,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.timeOnLevelX}
-                                  on:input={() => handleChange('timeOnLevelX', localTemplate.timeOnLevelX)}
+                                  oninput={() => handleChange('timeOnLevelX', localTemplate.timeOnLevelX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                 />
@@ -1521,7 +1535,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.timeOnLevelY}
-                                  on:input={() => handleChange('timeOnLevelY', localTemplate.timeOnLevelY)}
+                                  oninput={() => handleChange('timeOnLevelY', localTemplate.timeOnLevelY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
                                 />
@@ -1546,7 +1560,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateClub.showClubName}
-                              on:change={() => handleChange('templateClub.showClubName', !localTemplate.templateClub.showClubName)}
+                              onchange={() => handleChange('templateClub.showClubName', !localTemplate.templateClub.showClubName)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.primary};">
@@ -1565,7 +1579,7 @@
                                 <input
                                   type="text"
                                   value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                  on:input={handleColorInput('templateClub.clubNameColor')}
+                                  oninput={handleColorInput('templateClub.clubNameColor')}
                                   class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   placeholder="#FFFFFF"
@@ -1573,7 +1587,7 @@
                                 <input
                                   type="color"
                                   value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                  on:input={handleColorInput('templateClub.clubNameColor')}
+                                  oninput={handleColorInput('templateClub.clubNameColor')}
                                   class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
                                   style="border-color: {$colorStore.primary}30;"
                                 />
@@ -1588,7 +1602,7 @@
                               <input
                                 type="range"
                                 bind:value={localTemplate.templateClub.clubNameFontSize}
-                                on:input={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
+                                oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
                                 min="10"
                                 max="100"
                                 class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
@@ -1602,7 +1616,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubNameX}
-                                  on:input={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
+                                  oninput={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -1612,7 +1626,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubNameY}
-                                  on:input={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
+                                  oninput={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 />
@@ -1633,7 +1647,7 @@
                               type="checkbox"
                               class="sr-only peer"
                               checked={localTemplate.templateClub.showClubIcon}
-                              on:change={() => handleChange('templateClub.showClubIcon', !localTemplate.templateClub.showClubIcon)}
+                              onchange={() => handleChange('templateClub.showClubIcon', !localTemplate.templateClub.showClubIcon)}
                             />
                             <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                  style="peer-checked:bg-color: {$colorStore.secondary};">
@@ -1650,7 +1664,7 @@
                                 <input
                                   type="range"
                                   bind:value={localTemplate.templateClub.clubIconSizeX}
-                                  on:input={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
+                                  oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
                                   min="10"
                                   max="200"
                                   class="w-full touch-manipulation"
@@ -1658,7 +1672,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubIconSizeX}
-                                  on:input={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
+                                  oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
                                   class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1668,7 +1682,7 @@
                                 <input
                                   type="range"
                                   bind:value={localTemplate.templateClub.clubIconSizeY}
-                                  on:input={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
+                                  oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
                                   min="10"
                                   max="200"
                                   class="w-full touch-manipulation"
@@ -1676,7 +1690,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubIconSizeY}
-                                  on:input={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
+                                  oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
                                   class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1690,7 +1704,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubIconX}
-                                  on:input={() => handleChange('templateClub.clubIconX', localTemplate.templateClub.clubIconX)}
+                                  oninput={() => handleChange('templateClub.clubIconX', localTemplate.templateClub.clubIconX)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1700,7 +1714,7 @@
                                 <input
                                   type="number"
                                   bind:value={localTemplate.templateClub.clubIconY}
-                                  on:input={() => handleChange('templateClub.clubIconY', localTemplate.templateClub.clubIconY)}
+                                  oninput={() => handleChange('templateClub.clubIconY', localTemplate.templateClub.clubIconY)}
                                   class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
                                   style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
                                 />
@@ -1737,7 +1751,7 @@
         <button
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 touch-manipulation"
           style="background: {$colorStore.accent}30; color: {$colorStore.accent};"
-          on:click={handleReset}
+          onclick={handleReset}
           aria-label="Reset changes"
         >
           <RotateCcw size={20} />
@@ -1746,7 +1760,7 @@
         <button
           class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 touch-manipulation"
           style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
-          on:click={handleSave}
+          onclick={handleSave}
           aria-label="Save changes"
         >
           <Save size={20} />

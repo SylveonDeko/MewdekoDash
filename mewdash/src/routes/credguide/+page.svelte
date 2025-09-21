@@ -4,11 +4,11 @@
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
-  let mounted = false;
-  let currentStep = 0;
-  let completedSteps: Set<number> = new Set();
-  let showAllSteps = false;
-  let selectedOS = "linux"; // 'linux' or 'windows'
+  let mounted = $state(false);
+  let currentStep = $state(0);
+  let completedSteps: Set<number> = $state(new Set());
+  let showAllSteps = $state(false);
+  let selectedOS = $state("linux"); // 'linux' or 'windows'
 
   // Step-by-step wizard data
   const steps = [
@@ -287,10 +287,10 @@
   }
 
   // Progress calculation
-  $: progress = ((completedSteps.size) / steps.length) * 100;
-  $: currentStepData = steps[currentStep];
-  $: requiredSteps = steps.filter(step => step.required).length;
-  $: completedRequiredSteps = steps.filter((step, index) => step.required && completedSteps.has(index)).length;
+  let progress = $derived(((completedSteps.size) / steps.length) * 100);
+  let currentStepData = $derived(steps[currentStep]);
+  let requiredSteps = $derived(steps.filter(step => step.required).length);
+  let completedRequiredSteps = $derived(steps.filter((step, index) => step.required && completedSteps.has(index)).length);
 
   onMount(() => {
     mounted = true;
@@ -395,7 +395,7 @@
                     style="{index === currentStep 
                       ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}20, ${$colorStore.gradientMid}25); border-color: ${$colorStore.primary}; color: ${$colorStore.text};` 
                       : `background: ${$colorStore.primary}10; border-color: ${$colorStore.primary}20; color: ${$colorStore.muted};`}"
-                    on:click={() => goToStep(index)}
+                    onclick={() => goToStep(index)}
                   >
                     <div class="flex items-center justify-between">
                       <div class="flex items-center space-x-3">
@@ -430,14 +430,14 @@
                   <button
                     class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
-                    on:click={() => showAllSteps = !showAllSteps}
+                    onclick={() => showAllSteps = !showAllSteps}
                   >
                     {showAllSteps ? '📋 Show Wizard' : '📜 Show All Steps'}
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
-                    on:click={() => completedSteps = new Set()}
+                    onclick={() => completedSteps = new Set()}
                   >
                     🔄 Reset Progress
                   </button>
@@ -466,7 +466,7 @@
                     <button
                       class="px-4 py-2 rounded-lg transition-all"
                       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
-                      on:click={() => { goToStep(index); showAllSteps = false; }}
+                      onclick={() => { goToStep(index); showAllSteps = false; }}
                     >
                       Enter Wizard
                     </button>
@@ -553,7 +553,7 @@
                   <button
                     class="px-4 py-2 rounded-lg transition-all hover:scale-105"
                     style="background: {completedSteps.has(currentStep) ? $colorStore.secondary : $colorStore.primary + '20'}; color: {$colorStore.text};"
-                    on:click={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
+                    onclick={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
                     {completedSteps.has(currentStep) ? '✅ Completed' : '⭕ Mark Complete'}
                   </button>
@@ -632,14 +632,14 @@
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
                             style="background: {selectedOS === 'linux' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                            on:click={() => selectedOS = 'linux'}
+                            onclick={() => selectedOS = 'linux'}
                           >
                             🐧 Linux (Ubuntu/Debian)
                           </button>
                           <button
                             class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
                             style="background: {selectedOS === 'windows' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                            on:click={() => selectedOS = 'windows'}
+                            onclick={() => selectedOS = 'windows'}
                           >
                             🪟 Windows
                           </button>
@@ -874,7 +874,7 @@
                     class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === 0}
-                    on:click={prevStep}
+                    onclick={prevStep}
                   >
                     ← Previous
                   </button>
@@ -884,7 +884,7 @@
                       <button
                         class="w-3 h-3 rounded-full transition-all duration-200 hover:scale-125"
                         style="background: {index === currentStep ? $colorStore.primary : $colorStore.primary + '30'};"
-                        on:click={() => goToStep(index)}
+                        onclick={() => goToStep(index)}
                         aria-label="Go to step {index + 1}"
                       ></button>
                     {/each}
@@ -894,7 +894,7 @@
                     class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === steps.length - 1}
-                    on:click={nextStep}
+                    onclick={nextStep}
                   >
                     {currentStep === steps.length - 1 ? 'Complete' : 'Next →'}
                   </button>

@@ -5,7 +5,7 @@
   import { logger } from "$lib/logger.ts";
   import { formatDistanceToNow } from "date-fns";
 
-  export let data;
+  let { data } = $props();
 
   type PerformanceData = {
     methodName: string;
@@ -15,11 +15,11 @@
     lastExecuted: string;
   };
 
-  let performanceData: PerformanceData[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let performanceData: PerformanceData[] = $state([]);
+  let loading = $state(true);
+  let error: string | null = $state(null);
   let refreshInterval: number;
-  let refreshInProgress = false;
+  let refreshInProgress = $state(false);
   let userId = data?.user?.id ? BigInt(data.user.id) : null;
 
   const fetchPerformanceData = async () => {
@@ -94,14 +94,14 @@
       <button
         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
         disabled={refreshInProgress}
-        on:click={fetchPerformanceData}
+        onclick={fetchPerformanceData}
       >
         {refreshInProgress ? 'Refreshing...' : 'Refresh'}
       </button>
       <button
         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
         disabled={refreshInProgress}
-        on:click={clearPerformanceData}
+        onclick={clearPerformanceData}
       >
         Clear Data
       </button>
@@ -129,19 +129,19 @@
         <thead>
         <tr class="bg-gray-700">
           <th class="px-4 py-3 text-left">
-            <button class="text-left font-bold" on:click={() => sortBy('methodName')}>Method</button>
+            <button class="text-left font-bold" onclick={() => sortBy('methodName')}>Method</button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" on:click={() => sortBy('callCount')}>Calls</button>
+            <button class="text-right font-bold" onclick={() => sortBy('callCount')}>Calls</button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" on:click={() => sortBy('avgExecutionTime')}>Avg Time</button>
+            <button class="text-right font-bold" onclick={() => sortBy('avgExecutionTime')}>Avg Time</button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" on:click={() => sortBy('totalTime')}>Total Time</button>
+            <button class="text-right font-bold" onclick={() => sortBy('totalTime')}>Total Time</button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" on:click={() => sortBy('lastExecuted')}>Last Executed</button>
+            <button class="text-right font-bold" onclick={() => sortBy('lastExecuted')}>Last Executed</button>
           </th>
         </tr>
         </thead>

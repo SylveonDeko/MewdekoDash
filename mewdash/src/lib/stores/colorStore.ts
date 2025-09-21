@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+// @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
 
@@ -12,8 +13,6 @@ interface ColorPalette {
   accent: string;
   text: string;
   muted: string;
-  background: string;
-  success: string;
   gradientStart: string;
   gradientMid: string;
   gradientEnd: string;
@@ -344,7 +343,8 @@ function createColorStore() {
       // Race between image loading and timeout
       await Promise.race([loadImage, timeout]);
 
-      const colorThief = new ColorThief();
+      // @ts-ignore - ColorThief type issues
+      const colorThief = new (ColorThief as any)();
       // Extract more colors for better accent detection
       const palette = colorThief.getPalette(img, 12) as RGB[]; // Increased from 8 to 12 colors
 

@@ -1,15 +1,17 @@
 <!-- routes/placeholders/+page.svelte -->
 <script lang="ts">
+    import {stopPropagation} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
-  let mounted = false;
-  let searchQuery = "";
-  let selectedCategory = "all";
-  let copiedPlaceholder = "";
-  let showCopyFeedback = false;
+    let mounted = $state(false);
+    let searchQuery = $state("");
+    let selectedCategory = $state("all");
+    let copiedPlaceholder = $state("");
+    let showCopyFeedback = $state(false);
 
   // Category options for DiscordSelector
   const categoryOptions = [
@@ -232,7 +234,7 @@
     }
   ];
 
-  $: filteredCategories = placeholderCategories.map(category => ({
+    let filteredCategories = $derived(placeholderCategories.map(category => ({
     ...category,
     placeholders: category.placeholders.filter(placeholder =>
       searchQuery.trim() === "" ||
@@ -246,9 +248,9 @@
     }
     // If a specific category is selected, only show that category
     return category.id === selectedCategory;
-  });
+    }));
 
-  $: totalResults = filteredCategories.reduce((sum, cat) => sum + cat.placeholders.length, 0);
+    let totalResults = $derived(filteredCategories.reduce((sum, cat) => sum + cat.placeholders.length, 0));
 
   function copyToClipboard(placeholder: string) {
     navigator.clipboard.writeText(placeholder).then(() => {
@@ -352,7 +354,7 @@
                 <button
                   class="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors duration-200 hover:opacity-70"
                   style="color: {$colorStore.muted};"
-                  on:click={() => searchQuery = ''}
+                  onclick={() => searchQuery = ''}
                   aria-label="Clear search"
                 >
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -459,7 +461,7 @@
             <button
               class="px-4 py-2 rounded-xl transition-all hover:scale-105"
               style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              on:click={() => { searchQuery = ''; selectedCategory = 'all'; }}
+              onclick={() => { searchQuery = ''; selectedCategory = 'all'; }}
             >
               Clear filters
             </button>
@@ -484,11 +486,11 @@
                         class="placeholder-card group rounded-xl p-4 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border: 1px solid {$colorStore.primary}20;"
                         in:fly={{ y: 10, duration: 200, delay: placeholderIndex * 50 }}
-                        on:click={() => copyToClipboard(placeholder.code)}
+                        onclick={() => copyToClipboard(placeholder.code)}
                         tabindex="0"
                         role="button"
                         aria-label="Copy {placeholder.code} to clipboard"
-                        on:keydown={(e) => {
+                        onkeydown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             copyToClipboard(placeholder.code);
@@ -505,7 +507,7 @@
                           <button
                             class="flex-shrink-0 p-2 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
-                            on:click|stopPropagation={() => copyToClipboard(placeholder.code)}
+                            onclick={stopPropagation(() => copyToClipboard(placeholder.code))}
                             aria-label="Copy to clipboard"
                           >
                             {#if copiedPlaceholder === placeholder.code && showCopyFeedback}

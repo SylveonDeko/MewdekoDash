@@ -1,5 +1,7 @@
 <!-- routes/dashboard/rolegreets/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -14,13 +16,17 @@
   import { logger } from "$lib/logger.ts";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State management
   let botStatus: BotStatusModel | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
   // Role Greets
@@ -34,33 +40,33 @@
     webhookUrl: string | null;
     greetBots: boolean;
     disabled: boolean;
-  }> = [];
+  }> = $state([]);
 
   // Guild roles and channels
   let guildRoles: Array<{
     id: string;
     name: string;
-  }> = [];
+  }> = $state([]);
 
   let guildChannels: Array<{
     id: string;
     name: string;
-  }> = [];
+  }> = $state([]);
 
   // Selected role for adding new greet
-  let selectedRoleId = "";
-  let selectedChannelId = "";
+    let selectedRoleId = $state("");
+    let selectedChannelId = $state("");
 
   // Edit states
-  let editingGreetId: number | null = null;
-  let editGreetMessage = "";
-  let editGreetDeleteTime = 0;
-  let editGreetWebhook: string | null = null;
-  let editGreetBots = false;
+    let editingGreetId: number | null = $state(null);
+    let editGreetMessage = $state("");
+    let editGreetDeleteTime = $state(0);
+    let editGreetWebhook: string | null = $state(null);
+    let editGreetBots = $state(false);
 
   // Management
-  let loading = true;
-  let error: string | null = null;
+    let loading = $state(true);
+    let error: string | null = $state(null);
 
   // Fetch bot status
   async function fetchBotStatus() {
@@ -71,14 +77,6 @@
     }
   }
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchRoleGreets(),
-      fetchGuildRoles(),
-      fetchGuildChannels(),
-      fetchBotStatus()
-    ]);
-  }
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -263,8 +261,29 @@
     }
   });
 
+
+    // Convert hex color to rgb values
+    function hexToRgb(hex: string) {
+        hex = hex.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return `${r}, ${g}, ${b}`;
+    }
+
+
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchRoleGreets(),
+                fetchGuildRoles(),
+                fetchGuildChannels(),
+                fetchBotStatus()
+            ]);
+        }
+    });
   // Color handling
-  $: colorVars = `
+    let colorVars = $derived(`
     --color-primary: ${$colorStore.primary};
     --color-secondary: ${$colorStore.secondary};
     --color-accent: ${$colorStore.accent};
@@ -273,30 +292,23 @@
     --color-primary-rgb: ${hexToRgb($colorStore.primary)};
     --color-secondary-rgb: ${hexToRgb($colorStore.secondary)};
     --color-accent-rgb: ${hexToRgb($colorStore.accent)};
-  `;
-
-  // Convert hex color to rgb values
-  function hexToRgb(hex: string) {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-
+  `);
   // Reactive declarations for guild changes
-  $: if ($currentGuild) {
-    fetchRoleGreets();
-    fetchGuildRoles();
-    fetchGuildChannels();
-  }
-
+    run(() => {
+        if ($currentGuild) {
+            fetchRoleGreets();
+            fetchGuildRoles();
+            fetchGuildChannels();
+        }
+    });
   // Reactive declarations for instance changes
-  $: if ($currentInstance) {
-    fetchRoleGreets();
-    fetchGuildRoles();
-    fetchGuildChannels();
-  }
+    run(() => {
+        if ($currentInstance) {
+            fetchRoleGreets();
+            fetchGuildRoles();
+            fetchGuildChannels();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -390,7 +402,7 @@
         <button
           class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
           disabled={!selectedRoleId || !selectedChannelId}
-          on:click={addRoleGreet}
+          onclick={addRoleGreet}
           style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                  color: {$colorStore.text};
                  opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
@@ -456,7 +468,7 @@
                     class="p-2 rounded-lg transition-all duration-200"
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.text};"
-                    on:click={() => startEditing(greet)}
+                    onclick={() => startEditing(greet)}
                     aria-label="Edit"
                     title="Edit"
                   >
@@ -467,7 +479,7 @@
                     class="p-2 rounded-lg transition-all duration-200"
                     style="background: {greet.disabled ? $colorStore.primary + '20' : $colorStore.accent + '20'};
                            color: {greet.disabled ? $colorStore.primary : $colorStore.accent};"
-                    on:click={() => toggleRoleGreetDisabled(greet.id, !greet.disabled)}
+                    onclick={() => toggleRoleGreetDisabled(greet.id, !greet.disabled)}
                     aria-label={greet.disabled ? "Enable" : "Disable"}
                     title={greet.disabled ? "Enable" : "Disable"}
                   >
@@ -553,7 +565,7 @@
                   <div class="flex justify-end gap-2 mt-4">
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      on:click={cancelEditing}
+                      onclick={cancelEditing}
                       style="background: {$colorStore.accent}30;
                              color: {$colorStore.text};"
                     >
@@ -562,7 +574,7 @@
 
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      on:click={() => updateRoleGreetMessage(greet.id, editGreetMessage)}
+                      onclick={() => updateRoleGreetMessage(greet.id, editGreetMessage)}
                       style="background: {$colorStore.primary}20;
                              color: {$colorStore.text};"
                     >
@@ -571,7 +583,7 @@
 
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      on:click={() => updateRoleGreetDeleteTime(greet.id, editGreetDeleteTime)}
+                      onclick={() => updateRoleGreetDeleteTime(greet.id, editGreetDeleteTime)}
                       style="background: {$colorStore.primary}20;
                              color: {$colorStore.text};"
                     >
@@ -580,7 +592,7 @@
 
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      on:click={() => updateRoleGreetWebhook(greet.id, editGreetWebhook)}
+                      onclick={() => updateRoleGreetWebhook(greet.id, editGreetWebhook)}
                       style="background: {$colorStore.primary}20;
                              color: {$colorStore.text};"
                     >
@@ -589,7 +601,7 @@
 
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      on:click={() => updateRoleGreetBots(greet.id, editGreetBots)}
+                      onclick={() => updateRoleGreetBots(greet.id, editGreetBots)}
                       style="background: {$colorStore.primary}20;
                              color: {$colorStore.text};"
                     >

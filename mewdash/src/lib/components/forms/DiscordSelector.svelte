@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export type SelectorType = "role" | "channel" | "user" | "timezone" | "custom";
   export type OptionType = {
     id: string;
@@ -19,42 +19,43 @@
   import { Hash, Crown, Users, MapPin, ChevronDown, Search, X } from "lucide-svelte";
   import Portal from "$lib/components/ui/Portal.svelte";
 
-  // Props
-  export let type: SelectorType;
-  export let options: OptionType[] = [];
-  export let selected: string | string[] | null = null;
-  export let multiple: boolean = false;
-  export let placeholder: string = "Select...";
-  export let searchable: boolean = true;
-  export let disabled: boolean = false;
-  export let customIcon: any = null; // Custom icon component for custom type
+  
+  interface Props {
+    // Props
+    type: SelectorType;
+    options?: OptionType[];
+    selected?: string | string[] | null;
+    multiple?: boolean;
+    placeholder?: string;
+    searchable?: boolean;
+    disabled?: boolean;
+    customIcon?: any; // Custom icon component for custom type
+  }
+
+  let {
+    type,
+    options = [],
+    selected = $bindable(null),
+    multiple = false,
+    placeholder = "Select...",
+    searchable = true,
+    disabled = false,
+    customIcon = null
+  }: Props = $props();
 
   // Internal state
-  let isOpen = false;
-  let searchTerm = "";
-  let dropdownRef: HTMLDivElement;
-  let searchInputRef: HTMLInputElement;
-  let containerRef: HTMLDivElement;
-  let focusedIndex = -1;
+  let isOpen = $state(false);
+  let searchTerm = $state("");
+  let dropdownRef: HTMLDivElement = $state();
+  let searchInputRef: HTMLInputElement = $state();
+  let containerRef: HTMLDivElement = $state();
+  let focusedIndex = $state(-1);
   let dropdownId = `dropdown-${Math.random().toString(36).substring(2, 9)}`;
 
   const dispatch = createEventDispatcher();
 
-  // Computed values
-  $: filteredOptions = searchable && searchTerm
-    ? options.filter(option => {
-      const searchText = getOptionDisplayName(option).toLowerCase();
-      return searchText.includes(searchTerm.toLowerCase());
-    })
-    : options;
 
-  $: selectedArray = multiple
-    ? (Array.isArray(selected) ? selected : selected ? [selected] : [])
-    : [];
 
-  $: hasSelection = multiple
-    ? selectedArray.length > 0
-    : selected !== null && selected !== undefined;
 
   // Get appropriate icon for selector type
   function getTypeIcon() {
@@ -157,29 +158,7 @@
     searchTerm = "";
   }
 
-  // Get selected option names for display (reactive)
-  $: selectedDisplayText = (() => {
-    if (!hasSelection) return placeholder;
 
-    if (multiple) {
-      const count = selectedArray.length;
-      if (count === 0) return placeholder;
-      if (count === 1) {
-        const option = options.find(opt => opt.id === selectedArray[0]);
-        return option ? getOptionDisplayName(option) : `${count} selected`;
-      }
-      return `${count} selected`;
-    } else {
-      const option = options.find(opt => opt.id === selected);
-      return option ? getOptionDisplayName(option) : placeholder;
-    }
-  })();
-
-  // Get selected option for icon display (reactive)
-  $: selectedOption = (() => {
-    if (!hasSelection || multiple) return null;
-    return options.find(opt => opt.id === selected) || null;
-  })();
 
   // Keyboard navigation
   function handleKeydown(event: KeyboardEvent) {
@@ -232,9 +211,44 @@
     selected = multiple ? [] : null;
     dispatch("change", { selected });
   }
+  // Computed values
+  let filteredOptions = $derived(searchable && searchTerm
+    ? options.filter(option => {
+      const searchText = getOptionDisplayName(option).toLowerCase();
+      return searchText.includes(searchTerm.toLowerCase());
+    })
+    : options);
+  let selectedArray = $derived(multiple
+    ? (Array.isArray(selected) ? selected : selected ? [selected] : [])
+    : []);
+  let hasSelection = $derived(multiple
+    ? selectedArray.length > 0
+    : selected !== null && selected !== undefined);
+  // Get selected option names for display (reactive)
+  let selectedDisplayText = $derived((() => {
+    if (!hasSelection) return placeholder;
+
+    if (multiple) {
+      const count = selectedArray.length;
+      if (count === 0) return placeholder;
+      if (count === 1) {
+        const option = options.find(opt => opt.id === selectedArray[0]);
+        return option ? getOptionDisplayName(option) : `${count} selected`;
+      }
+      return `${count} selected`;
+    } else {
+      const option = options.find(opt => opt.id === selected);
+      return option ? getOptionDisplayName(option) : placeholder;
+    }
+  })());
+  // Get selected option for icon display (reactive)
+  let selectedOption = $derived((() => {
+    if (!hasSelection || multiple) return null;
+    return options.find(opt => opt.id === selected) || null;
+  })());
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 <div
   aria-controls={dropdownId}
@@ -242,7 +256,7 @@
   aria-haspopup="listbox"
   bind:this={containerRef}
   class="relative"
-  on:keydown={handleKeydown}
+  onkeydown={handleKeydown}
   role="combobox"
   tabindex={disabled ? -1 : 0}
 >
@@ -252,7 +266,7 @@
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
     {disabled}
-    on:click={toggleDropdown}
+    onclick={toggleDropdown}
     style="background: {$colorStore.primary}08;
            border-color: {isOpen ? $colorStore.primary : $colorStore.primary + '30'};
            color: {$colorStore.text};"
@@ -263,10 +277,10 @@
       {#if type === 'custom' && selectedOption?.emoji}
         <span class="text-lg flex-shrink-0">{selectedOption.emoji}</span>
       {:else}
-        <svelte:component
+        {@const SvelteComponent = getTypeIcon()}
+        <SvelteComponent
           size={16}
           style="color: {$colorStore.primary}"
-          this={getTypeIcon()}
         />
       {/if}
 
@@ -285,7 +299,7 @@
                   <button
                     type="button"
                     class="hover:bg-black/20 rounded p-0.5"
-                    on:click={(e) => removeOption(selectedId, e)}
+                    onclick={(e) => removeOption(selectedId, e)}
                   >
                     <X size={12} />
                   </button>
@@ -315,7 +329,7 @@
         <button
           type="button"
           class="p-1 hover:bg-black/20 rounded flex-shrink-0"
-          on:click={clearAll}
+          onclick={clearAll}
           title="Clear selection"
         >
           <X size={14} style="color: {$colorStore.muted}" />
@@ -393,7 +407,7 @@
                      border-color: {isSelected ? $colorStore.primary + '50' : 'transparent'};
                      hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                      hover:border-color: {$colorStore.primary}40;"
-              on:click={() => selectOption(option.id)}
+              onclick={() => selectOption(option.id)}
               role="option"
               aria-selected={isSelected}
             >

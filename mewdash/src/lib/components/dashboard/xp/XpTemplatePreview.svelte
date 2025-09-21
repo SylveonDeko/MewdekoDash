@@ -1,41 +1,81 @@
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { RotateCcw } from "lucide-svelte";
 
-  export let localTemplate: any;
-  export let previewScale: number;
-  export let previewWidth: number;
-  export let previewHeight: number;
-  export let previewOffset: { x: number; y: number };
-  export let previewBackgroundUrl: string | null;
-  export let showGrid: boolean;
-  export let gridSize: number;
-  export let showGuideLines: boolean;
-  export let guideLinesPos: { x: number | null; y: number | null };
-  export let draggableElements: any[];
-  export let isDesignMode: boolean;
-  export let draggingElement: any;
-  export let hoverElement: any;
-  export let showRealDataPreview: boolean;
-  export let currentUserData: any;
-  export let sampleData: any;
-  export let showTooltips: boolean;
-  export let showCoordinateOverlay: boolean;
-  export let undoStack: string[];
-  export let startDrag: (event: MouseEvent | TouchEvent, element: any) => void;
-  export let formatColor: (colorString: string) => string;
-  export let calculateProgressPosition: () => { x: number; y: number };
-  export let undo: () => void;
-  export let resetZoom: () => void;
 
-  export let previewContainerRef: HTMLDivElement;
-  export let isFullPageMode = false;
+    interface Props {
+        localTemplate: any;
+        previewScale: number;
+        previewWidth: number;
+        previewHeight: number;
+        previewOffset: { x: number; y: number };
+        previewBackgroundUrl: string | null;
+        showGrid: boolean;
+        gridSize: number;
+        showGuideLines: boolean;
+        guideLinesPos: { x: number | null; y: number | null };
+        draggableElements: any[];
+        isDesignMode: boolean;
+        draggingElement: any;
+        hoverElement: any;
+        showRealDataPreview: boolean;
+        currentUserData: any;
+        sampleData: any;
+        showTooltips: boolean;
+        showCoordinateOverlay: boolean;
+        undoStack: string[];
+        startDrag: (event: MouseEvent | TouchEvent, element: any) => void;
+        formatColor: (colorString: string) => string;
+        calculateProgressPosition: () => { x: number; y: number };
+        undo: () => void;
+        resetZoom: () => void;
+        previewContainerRef: HTMLDivElement;
+        isFullPageMode?: boolean;
+    }
+
+    let {
+        localTemplate,
+        previewScale,
+        previewWidth,
+        previewHeight,
+        previewOffset,
+        previewBackgroundUrl,
+        showGrid,
+        gridSize,
+        showGuideLines,
+        guideLinesPos,
+        draggableElements,
+        isDesignMode,
+        draggingElement,
+        hoverElement = $bindable(),
+        showRealDataPreview,
+        currentUserData,
+        sampleData,
+        showTooltips,
+        showCoordinateOverlay,
+        undoStack,
+        startDrag,
+        formatColor,
+        calculateProgressPosition,
+        undo,
+        resetZoom,
+        previewContainerRef = $bindable(),
+        isFullPageMode = false
+    }: Props = $props();
 
   // Debug reactive statements
-  $: console.log("XpTemplatePreview - localTemplate changed:", localTemplate);
-  $: console.log("XpTemplatePreview - preview dimensions:", previewWidth, "x", previewHeight);
-  $: console.log("XpTemplatePreview - draggableElements:", draggableElements);
+    run(() => {
+        console.log("XpTemplatePreview - localTemplate changed:", localTemplate);
+    });
+    run(() => {
+        console.log("XpTemplatePreview - preview dimensions:", previewWidth, "x", previewHeight);
+    });
+    run(() => {
+        console.log("XpTemplatePreview - draggableElements:", draggableElements);
+    });
 </script>
 
 <div
@@ -132,12 +172,12 @@
              {isDesignMode ? 'opacity: 0.9;' : 'opacity: 0.6;'}
              {draggingElement === element ? 'z-index: 100; outline-color: ' + $colorStore.secondary + ';' : ''}
              {hoverElement === element ? 'box-shadow: 0 0 0 3px ' + element.color + ';' : ''}"
-            on:mousedown={(e) => startDrag(e, element)}
-            on:touchstart={(e) => startDrag(e, element)}
-            on:mouseover={() => isDesignMode && (hoverElement = element)}
-            on:mouseleave={() => isDesignMode && hoverElement === element && (hoverElement = null)}
-            on:focus={() => isDesignMode && (hoverElement = element)}
-            on:blur={() => isDesignMode && hoverElement === element && (hoverElement = null)}
+            onmousedown={(e) => startDrag(e, element)}
+            ontouchstart={(e) => startDrag(e, element)}
+            onmouseover={() => isDesignMode && (hoverElement = element)}
+            onmouseleave={() => isDesignMode && hoverElement === element && (hoverElement = null)}
+            onfocus={() => isDesignMode && (hoverElement = element)}
+            onblur={() => isDesignMode && hoverElement === element && (hoverElement = null)}
             aria-label={`${element.label} element`}
           >
             <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
@@ -296,7 +336,7 @@ Y: {Math.round(hoverElement.getY())}
   <div class="ml-auto flex gap-2">
     <button
       class="p-1 rounded-lg transition-colors opacity-70 hover:opacity-100 disabled:opacity-30 min-w-[44px] min-h-[44px]"
-      on:click={undo}
+      onclick={undo}
       disabled={undoStack.length === 0}
       aria-label="Undo"
       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
@@ -305,7 +345,7 @@ Y: {Math.round(hoverElement.getY())}
     </button>
     <button
       class="p-1 rounded-lg transition-colors opacity-70 hover:opacity-100 text-xs flex items-center min-h-[44px]"
-      on:click={resetZoom}
+      onclick={resetZoom}
       aria-label="Reset zoom"
       style="background: {$colorStore.primary}20; color: {$colorStore.text};"
     >

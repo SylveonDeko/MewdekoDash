@@ -1,5 +1,7 @@
 <!-- lib/components/ChatSaver.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -27,7 +29,11 @@
   import { goto } from "$app/navigation";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-  export let data: { user?: { id: string } };
+    interface Props {
+        data: { user?: { id: string } };
+    }
+
+    let {data}: Props = $props();
 
   interface Channel {
     id: string;
@@ -85,28 +91,28 @@
     messageCount: number;
   }
 
-  let channels: Channel[] = [];
-  let selectedChannelId: string = "";
+    let channels: Channel[] = $state([]);
+    let selectedChannelId: string = $state("");
   
   // Layout state
-  let activeTab = "fetch";
+    let activeTab = $state("fetch");
   
   const tabs = [
     { id: "fetch", label: "Fetch Messages", icon: Search },
     { id: "saved", label: "Saved Logs", icon: Folder },
     { id: "view", label: "View Messages", icon: MessageSquare }
   ];
-  let timeAmount: number = 1;
-  let timeUnit: "minutes" | "hours" | "days" = "hours";
-  let messages: Message[] = [];
-  let loading: boolean = false;
-  let showNotification: boolean = false;
-  let notificationMessage: string = "";
-  let notificationType: "success" | "error" = "success";
-  let savedLogs: SavedLog[] = [];
-  let currentLogId: string | null = null;
-  let editingLogName: string | false = false;
-  let newLogName: string = "";
+    let timeAmount: number = $state(1);
+    let timeUnit: "minutes" | "hours" | "days" = $state("hours");
+    let messages: Message[] = $state([]);
+    let loading: boolean = $state(false);
+    let showNotification: boolean = $state(false);
+    let notificationMessage: string = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let savedLogs: SavedLog[] = $state([]);
+    let currentLogId: string | null = $state(null);
+    let editingLogName: string | false = $state(false);
+    let newLogName: string = $state("");
   let guildMembers: GuildMember[] = [];
   let guildChannels: Channel[] = [];
 
@@ -126,11 +132,6 @@
     ]);
   });
 
-  $: if ($currentGuild) {
-    loadChannels();
-    loadGuildMembers();
-    loadSavedLogs();
-  }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success"): void {
     notificationMessage = message;
@@ -897,6 +898,13 @@
     }, 0);
   }
 
+    run(() => {
+        if ($currentGuild) {
+            loadChannels();
+            loadGuildMembers();
+            loadSavedLogs();
+        }
+    });
 </script>
 
 <DashboardPageLayout 
@@ -908,6 +916,7 @@
   bind:activeTab
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -998,7 +1007,7 @@
         <button
           class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
           disabled={loading}
-          on:click={fetchMessages}
+          onclick={fetchMessages}
           style="background: linear-gradient(to right, {$colorStore.primary}40, {$colorStore.secondary}40);
                  color: {$colorStore.text};
                  box-shadow: 0 0 20px {$colorStore.primary}20;"
@@ -1046,14 +1055,14 @@
                         class="flex-grow p-2 rounded-lg bg-gray-900/50 border min-h-[44px]"
                         style="border-color: {$colorStore.primary}30;
                               color: {$colorStore.text};"
-                        on:keydown={(e) => e.key === 'Enter' && saveLogName()}
+                        onkeydown={(e) => e.key === 'Enter' && saveLogName()}
                       />
                       <div class="flex gap-2">
                         <button
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.primary}20;
                                 color: {$colorStore.text};"
-                          on:click={saveLogName}
+                          onclick={saveLogName}
                         >
                           <Save class="w-4 h-4" />
                         </button>
@@ -1061,7 +1070,7 @@
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.accent}20;
                                 color: {$colorStore.accent};"
-                          on:click={() => editingLogName = false}
+                          onclick={() => editingLogName = false}
                         >
                           <X class="w-4 h-4" />
                         </button>
@@ -1082,7 +1091,7 @@
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.primary};"
-                    on:click={() => loadLog(log.id)}
+                    onclick={() => loadLog(log.id)}
                     title="View Log"
                   >
                     <Search class="w-4 h-4" />
@@ -1091,7 +1100,7 @@
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.secondary}20;
                            color: {$colorStore.secondary};"
-                    on:click={() => startEditingLogName(log.id)}
+                    onclick={() => startEditingLogName(log.id)}
                     title="Rename Log"
                   >
                     <Edit class="w-4 h-4" />
@@ -1100,7 +1109,7 @@
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: rgba(244, 67, 54, 0.2);
                            color: #f44336;"
-                    on:click={() => deleteLog(log.id)}
+                    onclick={() => deleteLog(log.id)}
                     title="Delete Log"
                   >
                     <Trash2 class="w-4 h-4" />
@@ -1147,7 +1156,7 @@
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] justify-center"
                 style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                       color: {$colorStore.text};"
-                on:click={saveLog}
+                onclick={saveLog}
               >
                 <Save class="w-5 h-5" />
                 Save Log
@@ -1158,7 +1167,7 @@
               class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] justify-center"
               style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                     color: {$colorStore.text};"
-              on:click={exportAsHTML}
+              onclick={exportAsHTML}
             >
               <Download class="w-5 h-5" />
               Export HTML

@@ -1,18 +1,27 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
 
-  export let fallback: string = "An unexpected error occurred";
-  export let showDetails: boolean = false;
+  interface Props {
+    fallback?: string;
+    showDetails?: boolean;
+    children?: import('svelte').Snippet;
+  }
 
-  let hasError = false;
-  let errorDetails: any = null;
-  let showErrorDetails = false;
+  let { fallback = "An unexpected error occurred", showDetails = false, children }: Props = $props();
+
+  let hasError = $state(false);
+  let errorDetails: any = $state(null);
+  let showErrorDetails = $state(false);
 
   // Reset error state when component props change
-  $: if (!hasError) {
-    errorDetails = null;
-  }
+  run(() => {
+    if (!hasError) {
+      errorDetails = null;
+    }
+  });
 
   onMount(() => {
     if (browser) {
@@ -85,13 +94,13 @@
 
       <div class="space-x-2 mb-4">
         <button
-          on:click={retry}
+          onclick={retry}
           class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
         >
           Try Again
         </button>
         <button
-          on:click={reload}
+          onclick={reload}
           class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
         >
           Reload Page
@@ -101,7 +110,7 @@
       {#if showDetails && errorDetails}
         <div class="mt-4">
           <button
-            on:click={() => showErrorDetails = !showErrorDetails}
+            onclick={() => showErrorDetails = !showErrorDetails}
             class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 text-xs transition-colors"
           >
             {showErrorDetails ? 'Hide' : 'Show'} Error Details
@@ -119,5 +128,5 @@
     </div>
   </div>
 {:else}
-  <slot />
+  {@render children?.()}
 {/if}

@@ -1,32 +1,50 @@
 <!-- XpMobileTemplatePreview.svelte -->
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy';
+
   import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { Move, ZoomIn, ZoomOut, RotateCcw } from "lucide-svelte";
 
   const dispatch = createEventDispatcher();
 
-  // Props
-  export let template: any;
-  export let userData: any;
-  export let scale = 1;
-  export let showGrid = false;
-  export let gridSize = 20;
-  export let isDesignMode = false;
-  export let selectedElement: any = null;
-  export let viewMode: "preview" | "edit" | "fullscreen" = "preview";
-  export let touchZoomEnabled = true;
-  export let panEnabled = true;
+  
+  interface Props {
+    // Props
+    template: any;
+    userData: any;
+    scale?: number;
+    showGrid?: boolean;
+    gridSize?: number;
+    isDesignMode?: boolean;
+    selectedElement?: any;
+    viewMode?: "preview" | "edit" | "fullscreen";
+    touchZoomEnabled?: boolean;
+    panEnabled?: boolean;
+  }
+
+  let {
+    template,
+    userData,
+    scale = $bindable(1),
+    showGrid = false,
+    gridSize = 20,
+    isDesignMode = false,
+    selectedElement = null,
+    viewMode = "preview",
+    touchZoomEnabled = true,
+    panEnabled = true
+  }: Props = $props();
 
   // Mobile preview state
-  let canvasRef: HTMLCanvasElement;
-  let containerRef: HTMLDivElement;
-  let ctx: CanvasRenderingContext2D;
+  let canvasRef: HTMLCanvasElement = $state();
+  let containerRef: HTMLDivElement = $state();
+  let ctx: CanvasRenderingContext2D = $state();
   let animationFrame: number;
   let isInitialized = false;
 
   // Touch interaction state
-  let touchState = {
+  let touchState = $state({
     isActive: false,
     startDistance: 0,
     startScale: 1,
@@ -37,22 +55,22 @@
     isZooming: false,
     longPressTimer: null as number | null,
     tapStartTime: 0
-  };
+  });
 
   // Pan and zoom state
-  let panOffset = { x: 0, y: 0 };
+  let panOffset = $state({ x: 0, y: 0 });
   let minScale = 0.1;
   let maxScale = 5;
 
   // Canvas dimensions
-  let canvasWidth = template?.outputSizeX || 800;
-  let canvasHeight = template?.outputSizeY || 280;
+  let canvasWidth = $state(template?.outputSizeX || 800);
+  let canvasHeight = $state(template?.outputSizeY || 280);
 
   // Responsive canvas sizing
-  $: containerWidth = viewMode === "fullscreen" ? window.innerWidth : 
-                    typeof window !== "undefined" ? Math.min(window.innerWidth - 40, 800) : 800;
-  $: containerHeight = viewMode === "fullscreen" ? window.innerHeight : 
-                      typeof window !== "undefined" ? Math.min(window.innerHeight - 200, 600) : 600;
+  let containerWidth = $derived(viewMode === "fullscreen" ? window.innerWidth : 
+                    typeof window !== "undefined" ? Math.min(window.innerWidth - 40, 800) : 800);
+  let containerHeight = $derived(viewMode === "fullscreen" ? window.innerHeight : 
+                      typeof window !== "undefined" ? Math.min(window.innerHeight - 200, 600) : 600);
 
   // Touch event handlers
   function handleTouchStart(e: TouchEvent) {
@@ -545,14 +563,16 @@
   });
 
   // Reactive updates
-  $: if (template && canvasRef && ctx) {
-    console.log('Reactive update: All conditions met, redrawing canvas.');
-    canvasWidth = template.outputSizeX || 800;
-    canvasHeight = template.outputSizeY || 280;
-    canvasRef.width = canvasWidth;
-    canvasRef.height = canvasHeight;
-    drawCanvas();
-  }
+  run(() => {
+    if (template && canvasRef && ctx) {
+      console.log('Reactive update: All conditions met, redrawing canvas.');
+      canvasWidth = template.outputSizeX || 800;
+      canvasHeight = template.outputSizeY || 280;
+      canvasRef.width = canvasWidth;
+      canvasRef.height = canvasHeight;
+      drawCanvas();
+    }
+  });
 </script>
 
 <div 
@@ -566,7 +586,7 @@
       <button
         class="p-2 rounded-full backdrop-blur-sm transition-all duration-200 touch-manipulation min-w-[44px] min-h-[44px]"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-        on:click={zoomOut}
+        onclick={zoomOut}
         disabled={scale <= minScale}
         aria-label="Zoom out"
       >
@@ -575,7 +595,7 @@
       <button
         class="p-2 rounded-full backdrop-blur-sm transition-all duration-200 touch-manipulation min-w-[44px] min-h-[44px]"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-        on:click={zoomIn}
+        onclick={zoomIn}
         disabled={scale >= maxScale}
         aria-label="Zoom in"
       >
@@ -584,7 +604,7 @@
       <button
         class="p-2 rounded-full backdrop-blur-sm transition-all duration-200 touch-manipulation min-w-[44px] min-h-[44px]"
         style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-        on:click={resetView}
+        onclick={resetView}
         aria-label="Reset view"
       >
         <RotateCcw class="w-4 h-4" />
@@ -615,10 +635,10 @@
                transform-origin: center;
                max-width: none;
                max-height: none;"
-        on:touchstart={handleTouchStart}
-        on:touchmove|preventDefault={handleTouchMove}
-        on:touchend={handleTouchEnd}
-      />
+        ontouchstart={handleTouchStart}
+        ontouchmove={preventDefault(handleTouchMove)}
+        ontouchend={handleTouchEnd}
+></canvas>
     </div>
   </div>
 

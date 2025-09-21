@@ -1,5 +1,7 @@
 <!-- routes/dashboard/embedbuilder/+page.svelte -->
 <script lang="ts">
+    import {run, self} from 'svelte/legacy';
+
   import { onMount, tick } from "svelte";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
@@ -102,7 +104,7 @@
   }
 
   // State management
-  let embeds: Embed[] = [{
+    let embeds: Embed[] = $state([{
     title: "",
     description: "",
     color: "#5865F2",
@@ -112,50 +114,42 @@
     image: { url: "" },
     footer: { text: "", icon_url: "" },
     fields: []
-  }];
+    }]);
 
-  let content = "";
-  let components: NewEmbedComponent[] = [];
-  let chatTriggers: ChatTrigger[] = [];
+    let content = $state("");
+    let components: NewEmbedComponent[] = $state([]);
+    let chatTriggers: ChatTrigger[] = $state([]);
 
   // Main navigation state
-  let activeMainTab = "templates";
-  let isSimpleMode = true;
+    let activeMainTab = $state("templates");
+    let isSimpleMode = $state(true);
 
   // UI state
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let jsonCopied = false;
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let jsonCopied = $state(false);
 
   // Placeholder picker state
-  let showPlaceholderPicker = false;
-  let placeholderPosition = { x: 0, y: 0 };
-  let placeholderSearchTerm = "";
+    let showPlaceholderPicker = $state(false);
+    let placeholderPosition = $state({x: 0, y: 0});
+    let placeholderSearchTerm = $state("");
   let currentEditingElement: HTMLInputElement | HTMLTextAreaElement | null = null;
   let currentEditingField: string | null = null;
 
   // Component editing state
-  let editingComponent: NewEmbedComponent | null = null;
-  let showTriggerSelect = false;
+    let editingComponent: NewEmbedComponent | null = $state(null);
+    let showTriggerSelect = $state(false);
   let currentTriggerComponent: NewEmbedComponent | null = null;
   let currentEditingOptionIndex: number | null = null;
 
   // Validation state
-  let validationErrors: any[] = [];
-  let validationWarnings: any[] = [];
+    let validationErrors: any[] = $state([]);
+    let validationWarnings: any[] = $state([]);
 
   // Guild handling
-  let selectedGuild: any = null;
-  $: isLoggedIn = $userAdminGuilds !== null;
-  $: hasAdminGuilds = isLoggedIn && $userAdminGuilds.length > 0;
+    let selectedGuild: any = $state(null);
 
-  $: currentGuild.subscribe((guild) => {
-    selectedGuild = guild;
-    if (guild) {
-      loadChatTriggers(guild.id);
-    }
-  });
 
   // Main tab configuration for DashboardPageLayout
   const mainTabs = [
@@ -508,19 +502,7 @@
     }
   }
 
-  // Can copy validation
-  $: canCopyJson = embeds.some(embed => 
-    embed.title || embed.description || embed.fields.length > 0
-  ) || content.trim().length > 0;
 
-  // Color variables for styling
-  $: colorVars = `
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `;
 
   // Complete placeholders data from placeholders page
   const placeholders: Placeholder[] = [
@@ -581,8 +563,31 @@
     validateComponents();
   }
 
+
+    let isLoggedIn = $derived($userAdminGuilds !== null);
+    let hasAdminGuilds = $derived(isLoggedIn && $userAdminGuilds.length > 0);
+    run(() => {
+        currentGuild.subscribe((guild) => {
+            selectedGuild = guild;
+            if (guild) {
+                loadChatTriggers(guild.id);
+            }
+        });
+    });
+    // Can copy validation
+    let canCopyJson = $derived(embeds.some(embed =>
+        embed.title || embed.description || embed.fields.length > 0
+    ) || content.trim().length > 0);
+    // Color variables for styling
+    let colorVars = $derived(`
+    --color-primary: ${$colorStore.primary};
+    --color-secondary: ${$colorStore.secondary};
+    --color-accent: ${$colorStore.accent};
+    --color-text: ${$colorStore.text};
+    --color-muted: ${$colorStore.muted};
+  `);
   // Action buttons for DashboardPageLayout
-  $: actionButtons = [
+    let actionButtons = $derived([
     {
       label: isSimpleMode ? "Switch to Advanced" : "Switch to Simple",
       icon: isSimpleMode ? Settings : Zap,
@@ -602,8 +607,7 @@
       loading: false,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text};`
     }
-  ];
-
+    ]);
 </script>
 
 <DashboardPageLayout 
@@ -616,6 +620,7 @@
   {actionButtons}
   on:tabChange={handleMainTabChange}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -655,7 +660,7 @@
                 style="background: {$colorStore.primary}20; 
                        color: {$colorStore.primary};
                        border: 1px solid {$colorStore.primary}30;"
-                on:click={() => activeMainTab = "editor"}
+                onclick={() => activeMainTab = "editor"}
               >
                 <Layout size={16} />
                 Start from Scratch
@@ -683,7 +688,7 @@
                   <button
                     class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
                     style="color: {$colorStore.muted};"
-                    on:click={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
+                    onclick={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
                     title="Insert placeholder"
                   >
                     %
@@ -706,7 +711,7 @@
                     class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                     style="background: {$colorStore.primary}; color: {$colorStore.text};"
                     disabled={embeds.length >= 10}
-                    on:click={addEmbed}
+                    onclick={addEmbed}
                   >
                     <Plus size={16} />
                     Add Embed
@@ -746,7 +751,7 @@
                   class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}; color: {$colorStore.text};"
                   disabled={components.length >= 25}
-                  on:click={() => addComponent('button')}
+                  onclick={() => addComponent('button')}
                 >
                   <Plus size={14} />
                   Button
@@ -755,7 +760,7 @@
                   class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.secondary}; color: {$colorStore.text};"
                   disabled={components.length >= 25}
-                  on:click={() => addComponent('select')}
+                  onclick={() => addComponent('select')}
                 >
                   <Plus size={14} />
                   Select
@@ -788,14 +793,14 @@
                           <button
                             class="px-3 py-1 text-xs rounded-lg transition-colors"
                             style="background: {$colorStore.primary}; color: {$colorStore.text};"
-                            on:click={() => handleComponentEdit({ detail: { component } })}
+                            onclick={() => handleComponentEdit({ detail: { component } })}
                           >
                             Edit
                           </button>
                           <button
                             class="px-3 py-1 text-xs rounded-lg transition-colors"
                             style="background: #ED4245; color: white;"
-                            on:click={() => handleComponentRemove({ detail: { componentKey: component.componentKey } })}
+                            onclick={() => handleComponentRemove({ detail: { componentKey: component.componentKey } })}
                           >
                             Remove
                           </button>
@@ -815,8 +820,8 @@
 
                     <!-- Edit Modal for this component -->
                     {#if editingComponent?.componentKey === component.componentKey}
-                      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
-                           on:click|self={() => editingComponent = null}>
+                      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                           onclick={self(() => editingComponent = null)}>
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}30;">
                           <ComponentEditor
@@ -838,14 +843,14 @@
                             <button
                               class="px-4 py-2 rounded-lg"
                               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                              on:click={() => editingComponent = null}
+                              onclick={() => editingComponent = null}
                             >
                               Cancel
                             </button>
                             <button
                               class="px-4 py-2 rounded-lg"
                               style="background: {$colorStore.primary}; color: {$colorStore.text};"
-                              on:click={() => {
+                              onclick={() => {
                                 const index = components.findIndex(c => c.componentKey === editingComponent.componentKey);
                                 if (index !== -1) {
                                   components[index] = editingComponent;
@@ -918,8 +923,8 @@
 {#if showTriggerSelect}
   <div
     class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-    on:click|self={() => showTriggerSelect = false}
-    on:keydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
+    onclick={self(() => showTriggerSelect = false)}
+    onkeydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
     role="dialog"
     aria-modal="true"
     aria-labelledby="select-trigger-title"
@@ -955,7 +960,7 @@
               style="background: {$colorStore.primary}10;
                      border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
-              on:click={() => selectTrigger(trigger)}
+              onclick={() => selectTrigger(trigger)}
               role="option"
               aria-selected="false"
             >
@@ -973,7 +978,7 @@
           class="px-4 py-2 rounded-lg font-medium transition-all duration-200"
           style="background: {$colorStore.accent}20;
                  color: {$colorStore.accent};"
-          on:click={() => showTriggerSelect = false}
+          onclick={() => showTriggerSelect = false}
         >
           Cancel
         </button>

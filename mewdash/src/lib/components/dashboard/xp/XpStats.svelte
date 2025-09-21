@@ -2,9 +2,13 @@
   import { AlertCircle, BarChart2 } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
 
-  export let serverStats: any;
-  export let loading: boolean = false;
-  export let error: string | null = null;
+  interface Props {
+    serverStats: any;
+    loading?: boolean;
+    error?: string | null;
+  }
+
+  let { serverStats, loading = false, error = null }: Props = $props();
 
   function formatNumber(num: number): string {
     return new Intl.NumberFormat().format(num);

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/suggestions/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -30,59 +32,63 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   let currentUser = data.user;
 
   // States
-  let activeTab = "suggestions";
-  let activeSubTab = "general";
+    let activeTab = $state("suggestions");
+    let activeSubTab = $state("general");
   let isMobile = false;
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let changedSettings = new Set<string>();
-  let showStatusModal = false;
-  let statusChangeReason = "";
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let changedSettings = $state(new Set<string>());
+    let showStatusModal = $state(false);
+    let statusChangeReason = $state("");
   let selectedSuggestion: SuggestionsModel | null = null;
-  let selectedStatus: SuggestionState | null = null;
+    let selectedStatus: SuggestionState | null = $state(null);
 
-  let sortBy: "dateAdded" | "currentState" = "dateAdded";
-  let sortDirection: "asc" | "desc" = "desc";
+    let sortBy: "dateAdded" | "currentState" = $state("dateAdded");
+    let sortDirection: "asc" | "desc" = $state("desc");
 
   // Data
-  let suggestions: SuggestionsModel[] = [];
-  let channels: Array<{ id: string; name: string }> = [];
+    let suggestions: SuggestionsModel[] = $state([]);
+    let channels: Array<{ id: string; name: string }> = $state([]);
 
 
   // Settings
-  let minLength = 0;
-  let maxLength = 2000;
-  let acceptMessage: string | null = "";
-  let denyMessage: string | null = "";
-  let considerMessage: string | null = "";
-  let implementMessage: string | null = "";
-  let acceptChannel = "";
-  let denyChannel = "";
-  let considerChannel = "";
-  let implementChannel = "";
-  let suggestChannel = "";
-  let threadType = 0;
-  let suggestButtonMessage: string | null = "";
-  let suggestButtonLabel: string | null = "";
-  let suggestButtonEmote: string | null = "";
-  let suggestEmotes: string | null = "";
-  let archiveOnDeny = false;
-  let archiveOnAccept = false;
-  let archiveOnConsider = false;
-  let archiveOnImplement = false;
+    let minLength = $state(0);
+    let maxLength = $state(2000);
+    let acceptMessage: string | null = $state("");
+    let denyMessage: string | null = $state("");
+    let considerMessage: string | null = $state("");
+    let implementMessage: string | null = $state("");
+    let acceptChannel = $state("");
+    let denyChannel = $state("");
+    let considerChannel = $state("");
+    let implementChannel = $state("");
+    let suggestChannel = $state("");
+    let threadType = $state(0);
+    let suggestButtonMessage: string | null = $state("");
+    let suggestButtonLabel: string | null = $state("");
+    let suggestButtonEmote: string | null = $state("");
+    let suggestEmotes: string | null = $state("");
+    let archiveOnDeny = $state(false);
+    let archiveOnAccept = $state(false);
+    let archiveOnConsider = $state(false);
+    let archiveOnImplement = $state(false);
   let suggestButtonChannel: bigint | null = null;
 
   // Computed values
-  $: hasChanges = changedSettings.size > 0;
-  $: sortedSuggestions = [...suggestions].sort((a, b) => {
+    let hasChanges = $derived(changedSettings.size > 0);
+    let sortedSuggestions = $derived([...suggestions].sort((a, b) => {
     if (sortBy === "dateAdded") {
       const dateA = new Date(a.dateAdded).getTime();
       const dateB = new Date(b.dateAdded).getTime();
@@ -92,7 +98,7 @@
       if (a.currentState > b.currentState) return sortDirection === "asc" ? 1 : -1;
       return 0;
     }
-  });
+    }));
 
 
   // Helper Functions
@@ -411,21 +417,25 @@
     };
   });
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchSuggestions(),
-      fetchChannels(),
-      loadSettings()
-    ]);
-  }
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchSuggestions(),
+                fetchChannels(),
+                loadSettings()
+            ]);
+        }
+    });
 
-  $: if ($currentGuild) {
-    Promise.all([
-      fetchSuggestions(),
-      fetchChannels(),
-      loadSettings()
-    ]);
-  }
+    run(() => {
+        if ($currentGuild) {
+            Promise.all([
+                fetchSuggestions(),
+                fetchChannels(),
+                loadSettings()
+            ]);
+        }
+    });
 
 </script>
 
@@ -467,6 +477,7 @@
     }
   ] : []}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -503,7 +514,7 @@
               class="px-4 py-2 rounded-lg transition-colors"
               style="background: {$colorStore.primary}20;
                      color: {$colorStore.text};"
-              on:click={closeStatusModal}
+              onclick={closeStatusModal}
             >
               Cancel
             </button>
@@ -511,7 +522,7 @@
               class="px-4 py-2 rounded-lg transition-colors"
               style="background: {$colorStore.primary};
                      color: {$colorStore.text};"
-              on:click={confirmStatusChange}
+              onclick={confirmStatusChange}
             >
               Update Status
             </button>
@@ -569,7 +580,7 @@
               class="px-3 py-2 rounded-lg border flex items-center gap-2"
               style="border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
-              on:click={toggleSortDirection}
+              onclick={toggleSortDirection}
             >
               {#if sortDirection === 'asc'}
                 <ArrowUp class="w-4 h-4" />
@@ -629,7 +640,7 @@
                       class="px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
                       style="background: #22c55e20;
                              color: #22c55e;"
-                      on:click={() => initiateStatusChange(suggestion, SuggestionState.Accepted)}
+                      onclick={() => initiateStatusChange(suggestion, SuggestionState.Accepted)}
                     >
                       <Check class="w-4 h-4" />
                       Accept
@@ -638,7 +649,7 @@
                       class="px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
                       style="background: #ef444420;
                              color: #ef4444;"
-                      on:click={() => initiateStatusChange(suggestion, SuggestionState.Denied)}
+                      onclick={() => initiateStatusChange(suggestion, SuggestionState.Denied)}
                     >
                       <X class="w-4 h-4" />
                       Deny
@@ -647,7 +658,7 @@
                       class="px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
                       style="background: {$colorStore.secondary}20;
                              color: {$colorStore.secondary};"
-                      on:click={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
+                      onclick={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
                     >
                       <MessageCircle class="w-4 h-4" />
                       Consider
@@ -656,7 +667,7 @@
                       class="px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
                       style="background: {$colorStore.accent}20;
                              color: {$colorStore.accent};"
-                      on:click={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
+                      onclick={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
                     >
                       <Check class="w-4 h-4" />
                       Implement
@@ -665,7 +676,7 @@
                       class="px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
                       style="background: {$colorStore.primary}20;
                              color: {$colorStore.muted};"
-                      on:click={() => deleteSuggestion(suggestion.id)}
+                      onclick={() => deleteSuggestion(suggestion.id)}
                     >
                       <Trash2 class="w-4 h-4" />
                       Delete
@@ -700,7 +711,7 @@
                     id="min-length"
                     type="number"
                     bind:value={minLength}
-                    on:input={() => markAsChanged('minLength')}
+                    oninput={() => markAsChanged('minLength')}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -715,7 +726,7 @@
                     id="max-length"
                     type="number"
                     bind:value={maxLength}
-                    on:input={() => markAsChanged('maxLength')}
+                    oninput={() => markAsChanged('maxLength')}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -767,7 +778,7 @@
                 <textarea
                   id="{message.key}-textarea"
                   bind:value={message.value}
-                  on:input={() => markAsChanged(message.key)}
+                  oninput={() => markAsChanged(message.key)}
                   class="w-full p-3 rounded-lg min-h-[100px] resize-none"
                   style="background: {$colorStore.primary}10;
                          border: 1px solid {$colorStore.primary}30;
@@ -878,7 +889,7 @@
                     type="checkbox"
                     class="sr-only peer"
                     bind:checked={archive.value}
-                    on:change={() => markAsChanged(archive.key)}
+                    onchange={() => markAsChanged(archive.key)}
                   />
                   <div
                     class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
@@ -906,7 +917,7 @@
                 id="suggest-emotes"
                 type="text"
                 bind:value={suggestEmotes}
-                on:input={() => markAsChanged('suggestEmotes')}
+                oninput={() => markAsChanged('suggestEmotes')}
                 class="w-full p-3 rounded-lg"
                 style="background: {$colorStore.primary}10;
                        border: 1px solid {$colorStore.primary}30;
@@ -928,7 +939,7 @@
                     id="suggest-button-label"
                     type="text"
                     bind:value={suggestButtonLabel}
-                    on:input={() => markAsChanged('suggestButtonLabel')}
+                    oninput={() => markAsChanged('suggestButtonLabel')}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -943,7 +954,7 @@
                     id="suggest-button-emote"
                     type="text"
                     bind:value={suggestButtonEmote}
-                    on:input={() => markAsChanged('suggestButtonEmote')}
+                    oninput={() => markAsChanged('suggestButtonEmote')}
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -958,7 +969,7 @@
                 <textarea
                   id="suggest-button-message"
                   bind:value={suggestButtonMessage}
-                  on:input={() => markAsChanged('suggestButtonMessage')}
+                  oninput={() => markAsChanged('suggestButtonMessage')}
                   class="w-full p-3 rounded-lg min-h-[100px] resize-none"
                   style="background: {$colorStore.primary}10;
                          border: 1px solid {$colorStore.primary}30;

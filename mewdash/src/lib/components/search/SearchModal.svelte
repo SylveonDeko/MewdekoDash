@@ -1,5 +1,8 @@
 <!-- lib/components/search/SearchModal.svelte -->
 <script lang="ts">
+  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+
+  const bubble = createBubbler();
   import { onMount, onDestroy } from "svelte";
   import { fly, fade } from "svelte/transition";
   import { browser } from "$app/environment";
@@ -13,20 +16,14 @@
   // No props needed - using store state
 
   // State
-  let searchInput: HTMLInputElement;
-  let query = '';
-  let results: SearchableItem[] = [];
-  let selectedIndex = 0;
+  let searchInput: HTMLInputElement = $state();
+  let query = $state('');
+  let results: SearchableItem[] = $state([]);
+  let selectedIndex = $state(0);
   let categories = ['All', 'Navigation', 'Community', 'Entertainment', 'Actions', 'Security', 'Settings', 'Analytics'];
-  let activeCategory = 'All';
-  let recentSearches: string[] = [];
+  let activeCategory = $state('All');
+  let recentSearches: string[] = $state([]);
 
-  // Reactive updates
-  $: $searchStore.isOpen && focusInput();
-  $: results = searchFeatures(query, activeCategory);
-  $: if (selectedIndex >= results.length && results.length > 0) {
-    selectedIndex = results.length - 1;
-  }
 
   // Fuzzy search implementation
   function searchFeatures(searchQuery: string, category: string): SearchableItem[] {
@@ -158,6 +155,18 @@
       window.removeEventListener('keydown', handleKeydown);
     }
   });
+  // Reactive updates
+  run(() => {
+    $searchStore.isOpen && focusInput();
+  });
+  run(() => {
+    results = searchFeatures(query, activeCategory);
+  });
+  run(() => {
+    if (selectedIndex >= results.length && results.length > 0) {
+      selectedIndex = results.length - 1;
+    }
+  });
 </script>
 
 {#if $searchStore.isOpen}
@@ -167,11 +176,12 @@
       style="z-index: 100000; background: rgba(0, 0, 0, 0.3);"
       in:fade={{ duration: 150 }}
       out:fade={{ duration: 100 }}
-      on:click={handleClickOutside}
-      on:keydown={(e) => e.key === 'Escape' && handleClickOutside()}
+      onclick={handleClickOutside}
+      onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
       role="dialog"
       aria-modal="true"
       aria-label="Search dashboard features"
+      tabindex="-1"
     >
       <div 
         class="w-full max-w-2xl rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-xl"
@@ -183,9 +193,11 @@
                           inset 0 1px 0 {$colorStore.primary}15;"
         in:fly={{ y: -30, duration: 300, delay: 50 }}
         out:fly={{ y: -30, duration: 200 }}
-        on:click|stopPropagation
+        onclick={stopPropagation(bubble('click'))}
+        onkeydown={stopPropagation(bubble('keydown'))}
+        role="searchbox"
         use:clickOutside
-        on:clickoutside={handleClickOutside}
+        onclickoutside={handleClickOutside}
       >
       <!-- Search Header -->
       <div class="flex items-center gap-4 p-6 border-b" style="border-color: {$colorStore.primary}20;">
@@ -208,7 +220,7 @@
         <button
           class="w-10 h-10 rounded-full flex items-center justify-center transition-all"
           style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}10;"
-          on:click={closeSearch}
+          onclick={closeSearch}
         >
           <X size={18} />
         </button>
@@ -223,7 +235,7 @@
             style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'}; 
                    color: {activeCategory === category ? $colorStore.primary : $colorStore.muted};
                    border: 1px solid {activeCategory === category ? $colorStore.primary + '40' : $colorStore.primary + '15'};"
-            on:click={() => { activeCategory = category; selectedIndex = 0; }}
+            onclick={() => { activeCategory = category; selectedIndex = 0; }}
           >
             {category}
           </button>
@@ -256,7 +268,7 @@
                   <button 
                     class="block w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
                     style="background: {$colorStore.primary}08; color: {$colorStore.text}; hover:background: {$colorStore.primary}15;"
-                    on:click={() => { query = recentSearch; }}
+                    onclick={() => { query = recentSearch; }}
                   >
                     {recentSearch}
                   </button>
@@ -271,11 +283,11 @@
                 <button
                   class="search-result-item popular-feature flex items-center gap-4 w-full p-4 rounded-xl transition-all duration-200 ease-in-out border border-transparent relative group"
                   style="background: {$colorStore.primary}08; hover:background: {$colorStore.primary}15;"
-                  on:click={() => selectResult(feature)}
+                  onclick={() => selectResult(feature)}
                 >
                   <div class="w-10 h-10 rounded-xl flex items-center justify-center"
                        style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
-                    <svelte:component this={feature.icon} size={18} style="color: {$colorStore.text};" />
+                    <feature.icon size={18} style="color: {$colorStore.text};" />
                   </div>
                   <div class="flex-1 text-left">
                     <div class="font-medium" style="color: {$colorStore.text};">{feature.title}</div>
@@ -296,14 +308,14 @@
                   ? `linear-gradient(135deg, ${$colorStore.primary}20, ${$colorStore.secondary}20)` 
                   : $colorStore.primary + '03'};
                        border-color: {index === selectedIndex ? $colorStore.primary + '30' : 'transparent'};"
-                on:click={() => selectResult(result)}
+                onclick={() => selectResult(result)}
               >
                 <!-- Icon -->
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                      style="background: {index === selectedIndex 
                        ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` 
                        : `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`};">
-                  <svelte:component this={result.icon} size={20} style="color: {$colorStore.text};" />
+                  <result.icon size={20} style="color: {$colorStore.text};" />
                 </div>
 
                 <!-- Content -->

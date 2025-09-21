@@ -2,8 +2,13 @@
 <script lang="ts">
   const sizes = ["1/2", "1/3", "1/4", "1/5"];
 
-  export let breakpoints = ["md", "lg", "xl"];
-  export let maxBreaks: number = sizes.length;
+  interface Props {
+    breakpoints?: any;
+    maxBreaks?: number;
+    children?: import('svelte').Snippet;
+  }
+
+  let { breakpoints = ["md", "lg", "xl"], maxBreaks = sizes.length, children }: Props = $props();
 
   const widths = Array.from(
     Array(Math.min(maxBreaks - 1, sizes.length, breakpoints.length)).keys(),
@@ -15,5 +20,5 @@
 </script>
 
 <div class="w-full {widths} flex justify-center">
-  <slot />
+  {@render children?.()}
 </div>

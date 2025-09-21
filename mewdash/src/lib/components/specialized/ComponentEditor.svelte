@@ -14,10 +14,15 @@
     Zap
   } from "lucide-svelte";
 
-  // Props
-  export let component: any;
-  export let triggers: any[] = [];
-  export let isEditing: boolean = false;
+  
+  interface Props {
+    // Props
+    component: any;
+    triggers?: any[];
+    isEditing?: boolean;
+  }
+
+  let { component = $bindable(), triggers = [], isEditing = false }: Props = $props();
 
   // Events
   const dispatch = createEventDispatcher<{
@@ -118,13 +123,13 @@
   }
 
   // Validation
-  $: isButtonValid = component.isSelect || 
-    (component.style === 5 ? isValidUrl(component.url) : component.id !== null);
+  let isButtonValid = $derived(component.isSelect || 
+    (component.style === 5 ? isValidUrl(component.url) : component.id !== null));
   
-  $: isSelectValid = !component.isSelect || 
-    (component.options && component.options.every((opt: any) => opt.id && opt.description?.trim()));
+  let isSelectValid = $derived(!component.isSelect || 
+    (component.options && component.options.every((opt: any) => opt.id && opt.description?.trim())));
 
-  $: isValid = isButtonValid && isSelectValid;
+  let isValid = $derived(isButtonValid && isSelectValid);
 </script>
 
 {#if isEditing}
@@ -166,7 +171,7 @@
             placeholder="Button text"
             value={component.displayName || ''}
             maxlength="80"
-            on:input={(e) => updateComponent('displayName', e.target?.value)}
+            oninput={(e) => updateComponent('displayName', e.target?.value)}
           />
         </div>
 
@@ -196,7 +201,7 @@
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="😀"
             value={component.emoji || ''}
-            on:input={(e) => updateComponent('emoji', e.target?.value)}
+            oninput={(e) => updateComponent('emoji', e.target?.value)}
           />
         </div>
 
@@ -214,7 +219,7 @@
                      color: {$colorStore.text};"
               placeholder="https://example.com"
               value={component.url || ''}
-              on:input={(e) => updateComponent('url', e.target?.value)}
+              oninput={(e) => updateComponent('url', e.target?.value)}
             />
             {#if component.url && !isValidUrl(component.url)}
               <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
@@ -242,7 +247,7 @@
                   </div>
                   <button
                     class="ml-2 p-1 rounded hover:bg-black/10"
-                    on:click={() => dispatch('selectTrigger', { component })}
+                    onclick={() => dispatch('selectTrigger', { component })}
                     title="Change trigger"
                   >
                     <Edit size={14} />
@@ -253,7 +258,7 @@
               <button
                 class="w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 border border-dashed"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                on:click={() => dispatch('selectTrigger', { component })}
+                onclick={() => dispatch('selectTrigger', { component })}
               >
                 <Zap size={16} class="inline mr-2" />
                 Select Trigger
@@ -281,7 +286,7 @@
             placeholder="Choose an option..."
             value={component.displayName || ''}
             maxlength="150"
-            on:input={(e) => updateComponent('displayName', e.target?.value)}
+            oninput={(e) => updateComponent('displayName', e.target?.value)}
           />
         </div>
 
@@ -298,7 +303,7 @@
               class="w-full px-3 py-2 rounded-lg border"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.minOptions || 1}
-              on:input={(e) => updateComponent('minOptions', parseInt(e.target?.value || '1'))}
+              oninput={(e) => updateComponent('minOptions', parseInt(e.target?.value || '1'))}
             />
           </div>
           
@@ -313,7 +318,7 @@
               class="w-full px-3 py-2 rounded-lg border"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.maxOptions || 1}
-              on:input={(e) => updateComponent('maxOptions', parseInt(e.target?.value || '1'))}
+              oninput={(e) => updateComponent('maxOptions', parseInt(e.target?.value || '1'))}
             />
           </div>
         </div>
@@ -328,7 +333,7 @@
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1"
               style="background: {$colorStore.primary}; color: {$colorStore.text};"
               disabled={(component.options?.length || 0) >= 25}
-              on:click={addOption}
+              onclick={addOption}
             >
               <Plus size={14} />
               Add Option
@@ -346,7 +351,7 @@
                   </span>
                   <button
                     class="p-1 rounded text-red-400 hover:bg-red-400/10 transition-colors"
-                    on:click={() => removeOption(index)}
+                    onclick={() => removeOption(index)}
                     title="Remove option"
                   >
                     <Trash2 size={14} />
@@ -369,7 +374,7 @@
                       placeholder="Option name"
                       value={option.name || ''}
                       maxlength="100"
-                      on:input={(e) => updateOption(index, 'name', e.target?.value)}
+                      oninput={(e) => updateOption(index, 'name', e.target?.value)}
                     />
                   </div>
 
@@ -388,7 +393,7 @@
                       placeholder="Option description"
                       value={option.description || ''}
                       maxlength="100"
-                      on:input={(e) => updateOption(index, 'description', e.target?.value)}
+                      oninput={(e) => updateOption(index, 'description', e.target?.value)}
                     />
                   </div>
 
@@ -403,7 +408,7 @@
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="😀"
                       value={option.emoji || ''}
-                      on:input={(e) => updateOption(index, 'emoji', e.target?.value)}
+                      oninput={(e) => updateOption(index, 'emoji', e.target?.value)}
                     />
                   </div>
 
@@ -428,7 +433,7 @@
                           </div>
                           <button
                             class="ml-1 p-1 rounded hover:bg-black/10"
-                            on:click={() => dispatch('selectTrigger', { component, optionIndex: index })}
+                            onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                             title="Change trigger"
                           >
                             <Edit size={12} />
@@ -439,7 +444,7 @@
                       <button
                         class="w-full px-3 py-2 rounded border border-dashed text-sm transition-all duration-200"
                         style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                        on:click={() => dispatch('selectTrigger', { component, optionIndex: index })}
+                        onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                       >
                         <Zap size={14} class="inline mr-1" />
                         Select Trigger
@@ -537,7 +542,7 @@
       <button
         class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
         style="background: {$colorStore.primary}; color: {$colorStore.text};"
-        on:click={() => dispatch('edit', { component })}
+        onclick={() => dispatch('edit', { component })}
         title="Edit component"
         aria-label="Edit component"
       >
@@ -547,7 +552,7 @@
       <button
         class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
         style="background: #ED4245; color: white;"
-        on:click={() => dispatch('remove', { componentKey: component.componentKey })}
+        onclick={() => dispatch('remove', { componentKey: component.componentKey })}
         title="Remove component"
         aria-label="Remove component"
       >

@@ -1,7 +1,11 @@
 <!-- lib/carousel/ImageWrapper.svelte -->
 <script lang="ts">
-  export let src: string;
-  export let alt: string;
+  interface Props {
+    src: string;
+    alt: string;
+  }
+
+  let { src, alt }: Props = $props();
 </script>
 
 <img {src} {alt} class="w-full overflow-hidden rounded-xl" />

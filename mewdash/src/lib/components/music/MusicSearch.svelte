@@ -19,6 +19,9 @@ A modal music search component for finding and adding tracks to the music queue.
 ```
 -->
 <script lang="ts">
+  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+
+  const bubble = createBubbler();
   import { createEventDispatcher, onMount } from "svelte";
   import { ExternalLink, Loader, Music, Plus, Search, X } from "lucide-svelte";
   import { api } from "$lib/api";
@@ -37,13 +40,17 @@ A modal music search component for finding and adding tracks to the music queue.
     controlsHighlight: string;
   }
 
-  export let colors: MusicSearchColors;
-  export let isOpen = false;
-  export let currentUser: Requester;
+  interface Props {
+    colors: MusicSearchColors;
+    isOpen?: boolean;
+    currentUser: Requester;
+  }
+
+  let { colors, isOpen = $bindable(false), currentUser }: Props = $props();
 
   const dispatch = createEventDispatcher();
 
-  let searchQuery = "";
+  let searchQuery = $state("");
   let searchResults: Array<{
     title: string;
     author: string;
@@ -51,16 +58,16 @@ A modal music search component for finding and adding tracks to the music queue.
     uri: string;
     artworkUri: string;
     provider: string;
-  }> = [];
-  let isSearching = false;
-  let errorMessage = "";
-  let selectedPlatform = "youtube";
+  }> = $state([]);
+  let isSearching = $state(false);
+  let errorMessage = $state("");
+  let selectedPlatform = $state("youtube");
   let debounceTimeout: NodeJS.Timeout | null = null;
-  let isAdding = false;
-  let addedTrackMessage = "";
-  let searchInputElement: HTMLInputElement;
-  let searchRetryCount = 0;
-  let addRetryCount = 0;
+  let isAdding = $state(false);
+  let addedTrackMessage = $state("");
+  let searchInputElement: HTMLInputElement = $state();
+  let searchRetryCount = $state(0);
+  let addRetryCount = $state(0);
   let lastSearchQuery = "";
 
   const MAX_RETRIES = 3;
@@ -281,17 +288,19 @@ A modal music search component for finding and adding tracks to the music queue.
     }
   }
 
-  $: if (isOpen && searchInputElement) {
-    setTimeout(() => searchInputElement?.focus(), 100);
-  }
+  run(() => {
+    if (isOpen && searchInputElement) {
+      setTimeout(() => searchInputElement?.focus(), 100);
+    }
+  });
 </script>
 
 {#if isOpen}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-30 flex items-center justify-center p-0 sm:p-4"
     transition:fade={{ duration: 200 }}
-    on:click={handleBackdropClick}
-    on:keydown={(e) => e.key === 'Escape' && close()}
+    onclick={handleBackdropClick}
+    onkeydown={(e) => e.key === 'Escape' && close()}
     role="button"
     tabindex="0"
     aria-label="Close music search dialog"
@@ -313,7 +322,7 @@ A modal music search component for finding and adding tracks to the music queue.
           </h2>
           <button
             class="p-2 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors focus:outline-none focus:ring-2"
-            on:click={close}
+            onclick={close}
             aria-label="Close search"
             style="color: {colors.text}; --ring-color: {colors.accent};"
           >
@@ -329,8 +338,8 @@ A modal music search component for finding and adding tracks to the music queue.
           <input
             bind:this={searchInputElement}
             bind:value={searchQuery}
-            on:input={handleSearch}
-            on:keydown={handleKeydown}
+            oninput={handleSearch}
+            onkeydown={handleKeydown}
             type="text"
             placeholder="Search for songs, artists, or paste a link..."
             class="w-full py-2 pl-10 pr-4 rounded-lg focus:outline-none focus:ring-2"
@@ -344,7 +353,7 @@ A modal music search component for finding and adding tracks to the music queue.
             <button
               class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 flex-shrink-0 hover:scale-105 active:scale-95"
               class:active-platform={selectedPlatform === platform.id}
-              on:click={() => {
+              onclick={() => {
               selectedPlatform = platform.id;
               if (searchQuery) handleSearch();
             }}
@@ -387,7 +396,7 @@ A modal music search component for finding and adding tracks to the music queue.
                 <button
                   class="ml-3 px-3 py-1 text-sm rounded transition-colors"
                   style="background: {colors.accent}30; color: {colors.text};"
-                  on:click={retrySearch}
+                  onclick={retrySearch}
                   aria-label="Retry search"
                 >
                   Retry
@@ -414,10 +423,10 @@ A modal music search component for finding and adding tracks to the music queue.
               <div
                 class="flex items-center gap-4 sm:gap-3 p-4 sm:p-3 rounded-xl sm:rounded-lg transition-all duration-200 hover:scale-[1.01] cursor-pointer group active:scale-[0.98]"
                 style="background: {colors.foreground}15; min-height: 80px;"
-                on:click={() => addToQueue(track)}
+                onclick={() => addToQueue(track)}
                 role="button"
                 tabindex="0"
-                on:keydown={(e) => e.key === 'Enter' && addToQueue(track)}
+                onkeydown={(e) => e.key === 'Enter' && addToQueue(track)}
                 aria-label="Add {track.title} to queue"
               >
                 <!-- Thumbnail with hover overlay -->
@@ -472,7 +481,7 @@ A modal music search component for finding and adding tracks to the music queue.
                         rel="noopener noreferrer"
                         class="p-1.5 rounded-full transition-colors"
                         style="background: {colors.accent}20; color: {colors.accent};"
-                        on:click|stopPropagation
+                        onclick={stopPropagation(bubble('click'))}
                         aria-label="Open in {track.provider || 'original source'}"
                       >
                         <ExternalLink class="w-4 h-4" />
@@ -490,7 +499,7 @@ A modal music search component for finding and adding tracks to the music queue.
                       target="_blank"
                       rel="noopener noreferrer"
                       class="p-1 rounded-full hover:bg-black hover:bg-opacity-20"
-                      on:click|stopPropagation
+                      onclick={stopPropagation(bubble('click'))}
                       aria-label="Open in {track.provider || 'original source'}"
                     >
                       <ExternalLink class="w-3 h-3 opacity-70" />

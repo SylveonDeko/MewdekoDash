@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ url, locals }) => {
   // Ensure user is authenticated
   if (!locals.user) {
-    throw redirect(302, '/api/discord/login');
+    redirect(302, "/api/discord/login");
   }
 
   // Get guild ID from URL parameters
@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
   const wizardType = url.searchParams.get('type') || 'first-time';
 
   if (!guildId) {
-    throw error(400, 'Guild ID is required for wizard');
+    error(400, "Guild ID is required for wizard");
   }
 
   // Return basic data - let client-side handle API calls

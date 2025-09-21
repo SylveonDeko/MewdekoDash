@@ -8,15 +8,29 @@ Feature card for selecting features during wizard setup
   import type { ComponentType } from "svelte";
   import { Check, Clock, Star } from "lucide-svelte";
 
-  export let id: string;
-  export let title: string;
-  export let description: string;
-  export let icon: ComponentType;
-  export let selected: boolean = false;
-  export let recommended: boolean = false;
-  export let setupTime: string = "";
-  export let difficulty: 'easy' | 'medium' | 'advanced' = 'easy';
-  export let disabled: boolean = false;
+  interface Props {
+    id: string;
+    title: string;
+    description: string;
+    icon: ComponentType;
+    selected?: boolean;
+    recommended?: boolean;
+    setupTime?: string;
+    difficulty?: 'easy' | 'medium' | 'advanced';
+    disabled?: boolean;
+  }
+
+  let {
+    id,
+    title,
+    description,
+    icon,
+    selected = false,
+    recommended = false,
+    setupTime = "",
+    difficulty = 'easy',
+    disabled = false
+  }: Props = $props();
 
   const dispatch = createEventDispatcher<{
     toggle: { id: string; selected: boolean };
@@ -27,11 +41,13 @@ Feature card for selecting features during wizard setup
     dispatch('toggle', { id, selected: !selected });
   }
 
-  $: difficultyColor = {
+  let difficultyColor = $derived({
     'easy': $colorStore.accent + '60',
     'medium': '#f59e0b',
     'advanced': '#ef4444'
-  }[difficulty];
+  }[difficulty]);
+
+  const SvelteComponent = $derived(icon);
 </script>
 
 <button
@@ -44,13 +60,13 @@ Feature card for selecting features during wizard setup
     border-color: {selected ? $colorStore.primary + '60' : disabled ? $colorStore.muted + '20' : $colorStore.primary + '25'};
     focus:ring-color: {$colorStore.primary};
   "
-  on:click={handleClick}
+  onclick={handleClick}
   {disabled}
   aria-pressed={selected}
 >
   <!-- Background decoration -->
   <div class="absolute top-0 right-0 w-20 h-20 opacity-5 transform rotate-12 translate-x-6 -translate-y-6">
-    <svelte:component this={icon} class="w-full h-full" />
+    <SvelteComponent class="w-full h-full" />
   </div>
 
   <!-- Selected indicator -->
@@ -80,7 +96,7 @@ Feature card for selecting features during wizard setup
         color: {selected ? $colorStore.primary : $colorStore.muted};
       "
     >
-      <svelte:component this={icon} class="w-5 h-5 sm:w-6 sm:h-6" />
+      <SvelteComponent class="w-5 h-5 sm:w-6 sm:h-6" />
     </div>
     
     <div class="flex-1 min-w-0">

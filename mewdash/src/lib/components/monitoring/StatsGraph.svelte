@@ -1,15 +1,21 @@
 <!-- lib/components/StatsGraph.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import type { GraphStatsResponse } from "$lib/types/models.ts";
 
-  export let data: GraphStatsResponse;
-  export let type: "join" | "leave" = "join";
+  interface Props {
+    data: GraphStatsResponse;
+    type?: "join" | "leave";
+  }
 
-  let canvas: HTMLCanvasElement;
-  let width = 0;
-  let height = 0;
+  let { data, type = "join" }: Props = $props();
+
+  let canvas: HTMLCanvasElement = $state();
+  let width = $state(0);
+  let height = $state(0);
   let resizeObserver: ResizeObserver;
 
   function draw() {
@@ -184,9 +190,11 @@
     resizeObserver?.disconnect();
   });
 
-  $: if (canvas && data && width && height) {
-    draw();
-  }
+  run(() => {
+    if (canvas && data && width && height) {
+      draw();
+    }
+  });
 </script>
 
 {#if data && data !== undefined}
@@ -219,7 +227,7 @@
       <canvas
         bind:this={canvas}
         class="w-full h-full"
-      />
+></canvas>
     </div>
   </div>
 {/if}

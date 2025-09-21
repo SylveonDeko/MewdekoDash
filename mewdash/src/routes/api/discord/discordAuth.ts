@@ -177,25 +177,25 @@ export async function deleteCookies(cookies: Cookies) {
     try {
       cookies.delete(ACCESS_TOKEN_COOKIE, { path: "/" });
     } catch (e) {
-      console.warn("Could not delete access token cookie:", e.message);
+      console.warn("Could not delete access token cookie:", e instanceof Error ? e.message : String(e));
     }
     
     try {
       cookies.delete(REFRESH_TOKEN_COOKIE, { path: "/" });
     } catch (e) {
-      console.warn("Could not delete refresh token cookie:", e.message);
+      console.warn("Could not delete refresh token cookie:", e instanceof Error ? e.message : String(e));
     }
     
     try {
       cookies.delete(ACCESS_EXPIRY_COOKIE, { path: "/" });
     } catch (e) {
-      console.warn("Could not delete access expiry cookie:", e.message);
+      console.warn("Could not delete access expiry cookie:", e instanceof Error ? e.message : String(e));
     }
     
     try {
       cookies.delete(SESSION_ID_COOKIE, { path: "/" });
     } catch (e) {
-      console.warn("Could not delete session ID cookie:", e.message);
+      console.warn("Could not delete session ID cookie:", e instanceof Error ? e.message : String(e));
     }
   } catch (error) {
     logger.error("Error deleting cookies:", error);

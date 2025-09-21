@@ -5,7 +5,11 @@
   import { clickOutside } from "$lib/clickOutside.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
 
-  export let buttons: ButtonConfig[] = [];
+  interface Props {
+    buttons?: ButtonConfig[];
+  }
+
+  let { buttons = [] }: Props = $props();
 
   interface ButtonConfig {
     label: string;
@@ -20,7 +24,7 @@
     ariaLabel?: string;
   }
 
-  let openDropdownIndex: number | null = null;
+  let openDropdownIndex: number | null = $state(null);
 
   function toggleDropdown(index: number) {
     if (openDropdownIndex === index) {
@@ -43,10 +47,10 @@
         <div
           class="relative flex-1 sm:flex-initial"
           use:clickOutside
-          on:clickoutside={() => (openDropdownIndex = null)}
+          onclickoutside={() => (openDropdownIndex = null)}
         >
           <button
-            on:click={() => toggleDropdown(index)}
+            onclick={() => toggleDropdown(index)}
             class="w-full sm:w-auto inline-flex items-center justify-center font-bold text-xl sm:text-2xl px-6 py-3 sm:py-2
             transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 rounded-xl sm:rounded-none focus:outline-none focus:ring-2 focus:ring-offset-2"
             style="color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
@@ -174,21 +178,6 @@
         animation: shimmer 0.7s ease-out;
     }
 
-    /* Dropdown animations */
-    .dropdown-enter {
-        animation: dropdown-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes dropdown-slide-in {
-        from {
-            opacity: 0;
-            transform: translateY(-10px) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
 
     /* Mobile touch improvements */
     @media (max-width: 640px) {

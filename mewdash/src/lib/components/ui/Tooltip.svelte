@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: Cannot set properties of undefined (setting 'next') -->
 <!-- lib/components/Tooltip.svelte -->
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';

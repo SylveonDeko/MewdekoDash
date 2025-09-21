@@ -3,25 +3,38 @@
   import { fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
-  // Props
-  export let type: "card" | "text" | "avatar" | "feature" | "stats" | "music" = "text";
-  export let width: string = "100%";
-  export let height: string = "1rem";
-  export let rounded: string = "md";
-  export let count: number = 1;
-  export let inline: boolean = false;
-  export let delay: number = 0;
+  
+  interface Props {
+    // Props
+    type?: "card" | "text" | "avatar" | "feature" | "stats" | "music";
+    width?: string;
+    height?: string;
+    rounded?: string;
+    count?: number;
+    inline?: boolean;
+    delay?: number;
+  }
+
+  let {
+    type = "text",
+    width = "100%",
+    height = "1rem",
+    rounded = "md",
+    count = 1,
+    inline = false,
+    delay = 0
+  }: Props = $props();
 
   // The animation shimmer color
-  $: shimmerColor = `linear-gradient(
+  let shimmerColor = $derived(`linear-gradient(
     90deg,
     ${$colorStore.primary}10 0%,
     ${$colorStore.primary}20 50%,
     ${$colorStore.primary}10 100%
-  )`;
+  )`);
 
   // Calculate the dynamic styles based on type
-  $: style = (() => {
+  let style = $derived((() => {
     let baseStyle = `background: #1f2937; width: ${width}; height: ${height};`;
 
     switch (rounded) {
@@ -48,7 +61,7 @@
     }
 
     return baseStyle;
-  })();
+  })());
 </script>
 
 {#if type === "card"}

@@ -1,5 +1,8 @@
 <!-- lib/components/TodoPermissionManager.svelte -->
 <script lang="ts">
+  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+
+  const bubble = createBubbler();
   import { createEventDispatcher, onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -18,33 +21,37 @@
   } from "lucide-svelte";
   import type { TodoListPermission, GrantPermissionRequest } from "$lib/types/todo";
 
-  export let listId: number;
-  export let isOpen = false;
+  interface Props {
+    listId: number;
+    isOpen?: boolean;
+  }
+
+  let { listId, isOpen = false }: Props = $props();
 
   const dispatch = createEventDispatcher<{
     close: void;
     permissionsUpdated: void;
   }>();
 
-  let permissions: TodoListPermission[] = [];
-  let guildMembers: Array<{ id: string; username: string; displayName: string; avatarUrl: string; isBot: boolean }> = [];
-  let loading = true;
-  let searchQuery = "";
-  let showAddUser = false;
-  let selectedUserId = "";
-  let newPermissions = {
+  let permissions: TodoListPermission[] = $state([]);
+  let guildMembers: Array<{ id: string; username: string; displayName: string; avatarUrl: string; isBot: boolean }> = $state([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let showAddUser = $state(false);
+  let selectedUserId = $state("");
+  let newPermissions = $state({
     canView: true,
     canEdit: false,
     canManage: false
-  };
+  });
 
   // Filter members for user selection
-  $: filteredMembers = guildMembers.filter(member => 
+  let filteredMembers = $derived(guildMembers.filter(member => 
     !member.isBot && 
     !permissions.some(p => p.userId.toString() === member.id) &&
     (member.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
      member.displayName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ));
 
   async function loadPermissions() {
     if (!$currentGuild?.id || !listId) return;
@@ -132,26 +139,28 @@
     }
   });
 
-  $: if (isOpen && listId) {
-    loadPermissions();
-  }
+  run(() => {
+    if (isOpen && listId) {
+      loadPermissions();
+    }
+  });
 </script>
 
 <!-- Modal Backdrop -->
 {#if isOpen}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div 
     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    on:click={closeModal}
+    onclick={closeModal}
     in:fly={{ opacity: 0, duration: 200 }}
   >
     <!-- Modal Content -->
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div 
       class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-      on:click|stopPropagation
+      onclick={stopPropagation(bubble('click'))}
       in:fly={{ y: 20, duration: 300, delay: 100 }}
     >
       <!-- Header -->
@@ -168,8 +177,8 @@
         <button
           class="p-2 rounded-lg transition-all hover:scale-110"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
-          on:click={closeModal}
-          on:keydown={handleKeydown}
+          onclick={closeModal}
+          onkeydown={handleKeydown}
         >
           <X size={20} />
         </button>
@@ -199,7 +208,7 @@
               <button
                 class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={() => showAddUser = !showAddUser}
+                onclick={() => showAddUser = !showAddUser}
               >
                 <Plus size={16} />
                 <span>Add User</span>
@@ -233,7 +242,7 @@
                           class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                           class:bg-blue-50={selectedUserId === member.id}
                           class:selected={selectedUserId === member.id}
-                          on:click={() => { selectedUserId = member.id; searchQuery = member.displayName; }}
+                          onclick={() => { selectedUserId = member.id; searchQuery = member.displayName; }}
                         >
                           <img src={member.avatarUrl} alt="" class="w-8 h-8 rounded-full" />
                           <div>
@@ -305,7 +314,7 @@
                   <button
                     class="flex-1 px-4 py-2 rounded-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: white;"
-                    on:click={grantPermissions}
+                    onclick={grantPermissions}
                     disabled={!selectedUserId || !newPermissions.canView}
                   >
                     Grant Permissions
@@ -314,7 +323,7 @@
                   <button
                     class="px-4 py-2 rounded-lg transition-all hover:scale-105"
                     style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
-                    on:click={() => showAddUser = false}
+                    onclick={() => showAddUser = false}
                   >
                     Cancel
                   </button>
@@ -336,6 +345,7 @@
             {:else}
               {#each permissions as permission, index}
                 {@const member = guildMembers.find(m => m.id === permission.userId.toString())}
+                {@const SvelteComponent = getPermissionIcon(permission)}
                 <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}08;"
                      in:fly={{ y: 20, duration: 200, delay: index * 50 }}>
@@ -362,7 +372,7 @@
                     <!-- Permission Level -->
                     <div class="flex items-center gap-2 px-3 py-1 rounded-full"
                          style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
-                      <svelte:component this={getPermissionIcon(permission)} size={14} />
+                      <SvelteComponent size={14} />
                       <span class="text-sm font-medium">{getPermissionSummary(permission)}</span>
                     </div>
 
@@ -370,7 +380,7 @@
                     <button
                       class="p-2 rounded-lg transition-all hover:scale-110"
                       style="color: #ef4444; background: #ef444415;"
-                      on:click={() => revokePermissions(permission.userId)}
+                      onclick={() => revokePermissions(permission.userId)}
                       title="Revoke permissions"
                     >
                       <Trash2 size={16} />
@@ -388,7 +398,7 @@
         <button
           class="px-6 py-2 rounded-lg transition-all hover:scale-105"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
-          on:click={closeModal}
+          onclick={closeModal}
         >
           Close
         </button>

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/music/+page.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -15,33 +17,26 @@
   import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2, Save } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
-  export let data: PageData;
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let channels: OptionType[] = [];
-  let roles: OptionType[] = [];
-  let musicStatus: any = null;
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let channels: OptionType[] = $state([]);
+  let roles: OptionType[] = $state([]);
+  let musicStatus: any = $state(null);
   let musicInterval: NodeJS.Timeout;
   let isMobile = false;
 
-  $: colors = $colorStore;
 
-  // Action buttons for the layout
-  $: actionButtons = [
-    {
-      label: "Save Changes",
-      icon: Save,
-      action: updateSettings,
-      loading: false,
-      style: `background: linear-gradient(to right, ${colors.primary}, ${colors.secondary}); color: ${colors.text}; box-shadow: 0 0 20px ${colors.primary}20;`
-    }
-  ];
 
   // Settings based on your MusicPlayerSettings model
-  let settings = {
+  let settings = $state({
     id: 0,
     guildId: "",
     playerRepeat: 2,
@@ -52,21 +47,21 @@
     autoPlay: 0,
     voteSkipEnabled: false,
     voteSkipThreshold: 50
-  };
+  });
 
-  enum AutoDisconnect {
-    None = 0,
-    Voice = 1,
-    Queue = 2,
-    Either = 3
-  }
+  const AutoDisconnect = {
+    None: 0,
+    Voice: 1,
+    Queue: 2,
+    Either: 3
+  } as const;
 
-  enum PlayerRepeatType {
-    None = 0,
-    Track = 1,
-    Queue = 2,
-    All = 2
-  }
+  const PlayerRepeatType = {
+    None: 0,
+    Track: 1,
+    Queue: 2,
+    All: 2
+  } as const;
 
   // Function to convert RGB to HSL
   function checkMobile() {
@@ -140,13 +135,6 @@
     }
   }
 
-  // Watch for guild changes
-  $: if ($currentGuild) {
-    fetchSettings();
-    fetchChannels();
-    fetchRoles();
-    fetchPlaybackStatus();
-  }
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
@@ -169,6 +157,26 @@
     if (browser) window.removeEventListener("resize", checkMobile);
   });
 
+  let colors = $derived($colorStore);
+  // Action buttons for the layout
+  let actionButtons = $derived([
+    {
+      label: "Save Changes",
+      icon: Save,
+      action: updateSettings,
+      loading: false,
+      style: `background: linear-gradient(to right, ${colors.primary}, ${colors.secondary}); color: ${colors.text}; box-shadow: 0 0 20px ${colors.primary}20;`
+    }
+  ]);
+  // Watch for guild changes
+  run(() => {
+    if ($currentGuild) {
+      fetchSettings();
+      fetchChannels();
+      fetchRoles();
+      fetchPlaybackStatus();
+    }
+  });
 </script>
 
 <DashboardPageLayout 
@@ -178,6 +186,7 @@
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
 >
+  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="mb-6" transition:fade>
@@ -428,7 +437,7 @@
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {colors.text};
                            transform: translateX({settings.voteSkipEnabled ? '20px' : '0'});"
-                  />
+></div>
                 </div>
                 <span style="color: {colors.text}">Enable Vote Skip</span>
               </label>

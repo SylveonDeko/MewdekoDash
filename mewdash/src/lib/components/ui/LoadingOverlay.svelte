@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore, showSpinner, loadingMessage } from "$lib/stores/loadingStore";
@@ -6,30 +8,32 @@
   import { fly } from "svelte/transition";
 
   // Loading state
-  let mounted = false;
-  let progressValue = 0;
+  let mounted = $state(false);
+  let progressValue = $state(0);
 
   // Get loading states with progress
-  $: loadingStates = Array.from($loadingStore.states.values());
-  $: hasProgress = loadingStates.some(state => state.progress !== undefined);
-  $: maxProgress = hasProgress 
+  let loadingStates = $derived(Array.from($loadingStore.states.values()));
+  let hasProgress = $derived(loadingStates.some(state => state.progress !== undefined));
+  let maxProgress = $derived(hasProgress 
     ? Math.max(...loadingStates.filter(s => s.progress !== undefined).map(s => s.progress!))
-    : 0;
+    : 0);
 
   // Smooth progress animation
-  $: if (hasProgress && mounted) {
-    const targetProgress = maxProgress;
-    const step = () => {
-      const diff = targetProgress - progressValue;
-      if (Math.abs(diff) > 0.5) {
-        progressValue += diff * 0.1;
-        requestAnimationFrame(step);
-      } else {
-        progressValue = targetProgress;
-      }
-    };
-    step();
-  }
+  run(() => {
+    if (hasProgress && mounted) {
+      const targetProgress = maxProgress;
+      const step = () => {
+        const diff = targetProgress - progressValue;
+        if (Math.abs(diff) > 0.5) {
+          progressValue += diff * 0.1;
+          requestAnimationFrame(step);
+        } else {
+          progressValue = targetProgress;
+        }
+      };
+      step();
+    }
+  });
 
   onMount(() => {
     mounted = true;

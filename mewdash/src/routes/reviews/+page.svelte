@@ -12,17 +12,22 @@
   import { logger } from "$lib/logger";
   import { fade, fly } from "svelte/transition";
 
-  export let data: PageData;
+  interface Props {
+      data: PageData;
+  }
+
+  let {data}: Props = $props();
 
   let reviews: BotReviews[] = [];
-  let newReview: Partial<BotReviews> = { stars: 0, review: "" };
-  let loading = true;
-  let error: string | null = null;
-  let previewContent = "";
-  let reviewsWithParsedContent: (BotReviews & { parsedReview?: string })[] = [];
+  let newReview: Partial<BotReviews> = $state({stars: 0, review: ""});
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let previewContent = $state("");
+  let reviewsWithParsedContent: (BotReviews & { parsedReview?: string })[] = $state([]);
 
-  $: user = data.user as DiscordUser | undefined;
-  $: userHasReviewed = false;
+  let user = $derived(data.user as DiscordUser | undefined);
+  let userHasReviewed = $state(false);
+  
 
   onMount(async () => {
     await fetchReviews();
@@ -207,8 +212,8 @@
         <textarea
           id="review-input"
           bind:value={newReview.review}
-          on:input={handleInput}
-          on:keydown={handleKeydown}
+          oninput={handleInput}
+          onkeydown={handleKeydown}
           placeholder="Write your review here..."
           class="w-full p-4 rounded-xl focus:ring-2 focus:outline-none min-h-[200px] resize-y transition-all duration-300 backdrop-blur-sm"
           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
@@ -226,7 +231,7 @@
         </div>
       </div>
       <button
-        on:click={submitReview}
+              onclick={submitReview}
         class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 active:scale-95 backdrop-blur-sm"
         style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >

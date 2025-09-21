@@ -3,6 +3,8 @@
 Wizard layout - minimal layout for focused setup experience
 -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { colorStore } from "$lib/stores/colorStore";
   import { userStore } from "$lib/stores/userStore";
   import { goto } from "$app/navigation";
@@ -10,7 +12,12 @@ Wizard layout - minimal layout for focused setup experience
   import { browser } from "$app/environment";
   import type { LayoutData } from "./$types";
 
-  export let data: LayoutData;
+    interface Props {
+        data: LayoutData;
+        children?: import('svelte').Snippet;
+    }
+
+    let {data, children}: Props = $props();
 
   // Ensure user is authenticated for wizard
   onMount(() => {
@@ -21,9 +28,11 @@ Wizard layout - minimal layout for focused setup experience
   });
 
   // Sync user data
-  $: if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
-    userStore.set(data.user);
-  }
+    run(() => {
+        if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
+            userStore.set(data.user);
+        }
+    });
 </script>
 
 <svelte:head>
@@ -53,6 +62,6 @@ Wizard layout - minimal layout for focused setup experience
 
   <!-- Wizard content area -->
   <main class="flex-1 w-full pb-6 md:pb-0">
-    <slot />
+      {@render children?.()}
   </main>
 </div>

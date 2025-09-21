@@ -9,14 +9,18 @@ Setup suggestion banner for experienced users with unconfigured guilds
   import { Lightbulb, X, ArrowRight, Clock } from "lucide-svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild";
 
-  export let guild: DiscordGuild;
-  export let context: {
+  interface Props {
+    guild: DiscordGuild;
+    context: {
     experienceLevel: number;
     isFirstDashboardAccess: boolean;
     completedWizardCount: number;
     guildHasBasicSetup: boolean;
   };
-  export let visible: boolean = true;
+    visible?: boolean;
+  }
+
+  let { guild, context, visible = true }: Props = $props();
 
   const dispatch = createEventDispatcher<{
     dismiss: void;
@@ -32,7 +36,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
   }
 
   // Estimated setup time based on experience level
-  $: estimatedTime = context.experienceLevel >= 2 ? "2-3 min" : "5 min";
+  let estimatedTime = $derived(context.experienceLevel >= 2 ? "2-3 min" : "5 min");
 </script>
 
 {#if visible}
@@ -93,7 +97,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2 text-sm min-h-[36px]"
             style="background: {$colorStore.secondary}; color: white;"
-            on:click={handleStartSetup}
+            onclick={handleStartSetup}
           >
             Quick Setup
             <ArrowRight class="w-3 h-3" />
@@ -102,7 +106,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
           <button
             class="px-3 py-2 rounded-lg font-medium transition-all hover:scale-105 text-sm min-h-[36px]"
             style="background: {$colorStore.muted}15; color: {$colorStore.muted};"
-            on:click={handleDismiss}
+            onclick={handleDismiss}
           >
             Maybe Later
           </button>
@@ -117,7 +121,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
           color: {$colorStore.muted};
           hover:background: {$colorStore.muted}25;
         "
-        on:click={handleDismiss}
+        onclick={handleDismiss}
         aria-label="Dismiss setup suggestion"
       >
         <X class="w-4 h-4" />

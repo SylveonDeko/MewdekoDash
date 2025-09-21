@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (slotName to slotName_1) making the component unusable -->
 <!-- lib/util/FluidContainer.svelte -->
 <script lang="ts">
   import Elem from "$lib/components/display/FluidElement.svelte";

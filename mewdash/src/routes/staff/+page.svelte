@@ -4,7 +4,7 @@
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
-  let mounted = false;
+  let mounted = $state(false);
 
   onMount(() => {
     mounted = true;
@@ -134,7 +134,7 @@
                   <button
                     class="description text-base cursor-pointer transition-all duration-200 hover:opacity-70 text-left w-full bg-transparent border-none p-0 font-inherit"
                      style="color: {$colorStore.muted};"
-                     on:click={(event) => handleEasterEggClick(event, member)}
+                    onclick={(event) => handleEasterEggClick(event, member)}
                      aria-label="Click to reveal easter egg">
                     {member.description}
                   </button>

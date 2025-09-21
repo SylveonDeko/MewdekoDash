@@ -7,13 +7,27 @@ Wrapper component for individual wizard steps with consistent styling and animat
   import { fly } from "svelte/transition";
   import type { ComponentType } from "svelte";
 
-  export let title: string;
-  export let subtitle: string = "";
-  export let icon: ComponentType | undefined = undefined;
-  export let stepNumber: number;
-  export let isActive: boolean = false;
-  export let maxWidth: string = "max-w-2xl";
-  export let showStepNumber: boolean = true;
+  interface Props {
+    title: string;
+    subtitle?: string;
+    icon?: ComponentType | undefined;
+    stepNumber: number;
+    isActive?: boolean;
+    maxWidth?: string;
+    showStepNumber?: boolean;
+    children?: import('svelte').Snippet;
+  }
+
+  let {
+    title,
+    subtitle = "",
+    icon = undefined,
+    stepNumber,
+    isActive = false,
+    maxWidth = "max-w-2xl",
+    showStepNumber = true,
+    children
+  }: Props = $props();
 </script>
 
 {#if isActive}
@@ -37,7 +51,8 @@ Wrapper component for individual wizard steps with consistent styling and animat
               "
             >
               {#if icon}
-                <svelte:component this={icon} class="w-6 h-6 sm:w-8 sm:h-8" />
+                {@const SvelteComponent = icon}
+                <SvelteComponent class="w-6 h-6 sm:w-8 sm:h-8" />
               {:else}
                 <span class="text-lg sm:text-2xl font-bold">{stepNumber}</span>
               {/if}
@@ -64,7 +79,7 @@ Wrapper component for individual wizard steps with consistent styling and animat
           border-color: {$colorStore.primary}30;
         "
       >
-        <slot />
+        {@render children?.()}
       </div>
     </div>
   </div>

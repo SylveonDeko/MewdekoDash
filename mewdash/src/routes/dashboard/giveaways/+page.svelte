@@ -1,5 +1,7 @@
 <!-- routes/dashboard/giveaways/+page.svelte -->
 <script lang="ts">
+    import {run, preventDefault} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -30,20 +32,20 @@
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-   let giveaways: Giveaways[] = [];
-  let expandedGiveaway: number | null = null;
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let guildRoles: Array<{ id: string; name: string }> = [];
-  let selectedRoles: string[] = [];
-  let entryMethod: "reaction" | "button" | "captcha" = "reaction";
+    let giveaways: Giveaways[] = $state([]);
+    let expandedGiveaway: number | null = $state(null);
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let guildRoles: Array<{ id: string; name: string }> = $state([]);
+    let selectedRoles: string[] = $state([]);
+    let entryMethod: "reaction" | "button" | "captcha" = $state("reaction");
   let isMobile = false;
   
   // Layout state
-  let activeTab = "active";
+    let activeTab = $state("active");
   
   const tabs = [
     { id: "active", label: "Active Giveaways", icon: Gift },
@@ -51,7 +53,7 @@
     { id: "ended", label: "Ended Giveaways", icon: Trophy }
   ];
 
- let newGiveaway: Partial<Giveaways> = {
+    let newGiveaway: Partial<Giveaways> = $state({
    item: "",
    winners: 1,
    channelId: BigInt(0),
@@ -65,17 +67,17 @@
    ended: 0,
    messageId: BigInt(0),
    emote: ""
- };
+    });
 
-  $: colors = $colorStore;
+    let colors = $derived($colorStore);
 
- $: colorVars = `
+    let colorVars = $derived(`
    --color-primary: ${colors.primary};
    --color-secondary: ${colors.secondary};
    --color-accent: ${colors.accent};
    --color-text: ${colors.text};
    --color-muted: ${colors.muted};
- `;
+ `);
 
  function checkMobile() {
    isMobile = browser && window.innerWidth < 768;
@@ -236,10 +238,12 @@
  }
 
  // Reactive statements
- $: if ($currentGuild) {
-   fetchGiveaways();
-   loadGuildRoles();
- }
+    run(() => {
+        if ($currentGuild) {
+            fetchGiveaways();
+            loadGuildRoles();
+        }
+    });
 
  onMount(async () => {
    if (!$currentGuild) await goto("/dashboard");
@@ -262,6 +266,7 @@
   bind:activeTab
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -308,7 +313,7 @@
          Create New Giveaway
        </h2>
 
-       <form on:submit|preventDefault={createGiveaway} class="space-y-6">
+          <form onsubmit={preventDefault(createGiveaway)} class="space-y-6">
          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
            <!-- Giveaway Item -->
            <div class="space-y-2">
@@ -341,7 +346,7 @@
                type="number"
                bind:value={newGiveaway.winners}
                min="1"
-               on:change={handleWinnersChange}
+               onchange={handleWinnersChange}
                class="w-full p-3 rounded-lg border focus:ring-2"
                style="background: {colors.primary}10;
                       border-color: {colors.primary}30;
@@ -410,7 +415,7 @@
                type="number"
                bind:value={newGiveaway.messageCountReq}
                min="0"
-               on:change={handleMessageCountChange}
+               onchange={handleMessageCountChange}
                class="w-full p-3 rounded-lg border focus:ring-2"
                style="background: {colors.primary}10;
                       border-color: {colors.primary}30;
@@ -438,9 +443,9 @@
                  class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200"
                  style="background: {entryMethod === method.id ? colors.primary : `${colors.primary}20`};
                         color: {entryMethod === method.id ? colors.text : colors.muted}"
-                 on:click={() => handleEntryMethodChange(method.id === 'reaction' ? 'reaction' : method.id === 'button' ? 'button' : 'captcha')}
+                 onclick={() => handleEntryMethodChange(method.id === 'reaction' ? 'reaction' : method.id === 'button' ? 'button' : 'captcha')}
                >
-                 <svelte:component this={method.icon} class="w-4 h-4" />
+                   <method.icon class="w-4 h-4"/>
                  {method.label}
                </button>
              {/each}
@@ -489,8 +494,8 @@
              >
                <div
                  class="p-4 flex justify-between items-center cursor-pointer"
-                 on:click={() => toggleGiveawayExpand(giveaway.id)}
-                 on:keydown={(e) => handleKeyDown(e, giveaway.id)}
+                 onclick={() => toggleGiveawayExpand(giveaway.id)}
+                 onkeydown={(e) => handleKeyDown(e, giveaway.id)}
                  role="button"
                  tabindex="0"
                >
@@ -555,7 +560,7 @@
                               flex items-center justify-center gap-2"
                        style="background: {colors.accent}20;
                               color: {colors.accent}"
-                       on:click={() => endGiveaway(giveaway.id)}
+                       onclick={() => endGiveaway(giveaway.id)}
                      >
                        <X class="w-4 h-4" />
                        End Giveaway

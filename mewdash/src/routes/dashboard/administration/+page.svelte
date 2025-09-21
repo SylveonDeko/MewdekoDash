@@ -1,5 +1,7 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -19,14 +21,14 @@
   import { loadingStore } from "$lib/stores/loadingStore";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
-  export let data;
+    let {data} = $props();
 
-  let loading = true;
-  let error: string | null = null;
-  let saving = false;
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let saving = $state(false);
   
   // Layout state
-  let activeTab = "overview";
+    let activeTab = $state("overview");
   
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
@@ -37,21 +39,21 @@
   ];
 
   // Server Management
-  let staffRole: bigint | null = null;
-  let memberRole: bigint | null = null;
-  let guildTimezone: string = "UTC";
-  let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = [];
+    let staffRole: bigint | null = $state(null);
+    let memberRole: bigint | null = $state(null);
+    let guildTimezone: string = $state("UTC");
+    let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = $state([]);
   let deleteMessageOnCommand: { enabled: boolean; channels: Array<{ channelId: bigint; state: boolean; }> } = { enabled: false, channels: [] };
-  let gameVoiceChannel: bigint | null = null;
+    let gameVoiceChannel: bigint | null = $state(null);
 
   // Auto-assign roles
-  let autoAssignRoles: { normalRoles: bigint[]; botRoles: bigint[] } = { normalRoles: [], botRoles: [] };
-  let autoBanRoles: Array<{ roleId: bigint; roleName: string }> = [];
-  let selectedNormalRoles: string[] = [];
-  let selectedBotRoles: string[] = [];
+    let autoAssignRoles: { normalRoles: bigint[]; botRoles: bigint[] } = $state({normalRoles: [], botRoles: []});
+    let autoBanRoles: Array<{ roleId: bigint; roleName: string }> = $state([]);
+    let selectedNormalRoles: string[] = $state([]);
+    let selectedBotRoles: string[] = $state([]);
 
   // Protection settings
-  let protectionStatus: any = {
+    let protectionStatus: any = $state({
     antiRaid: { enabled: false, userThreshold: 5, seconds: 10, action: "Mute", punishDuration: 60 },
     antiSpam: { enabled: false, messageThreshold: 5, action: "Mute", muteTime: 5, roleId: null },
     antiAlt: { enabled: false, minAgeMinutes: 1440, action: "Kick", actionDurationMinutes: 0, roleId: null },
@@ -73,15 +75,21 @@
       patternCount: 0,
       counter: 0
     }
-  };
+    });
 
   // Protection form data
   let editingProtection: string | null = null;
-  let tempProtectionConfig: any = {};
+    let tempProtectionConfig: any = $state({});
   
   // Anti-pattern specific state
-  let antiPatternPatterns: Array<{ id: number; name: string; pattern: string; checkUsername: boolean; checkDisplayName: boolean; }> = [];
-  let newPattern = { name: "", pattern: "", checkUsername: true, checkDisplayName: false };
+    let antiPatternPatterns: Array<{
+        id: number;
+        name: string;
+        pattern: string;
+        checkUsername: boolean;
+        checkDisplayName: boolean;
+    }> = $state([]);
+    let newPattern = $state({name: "", pattern: "", checkUsername: true, checkDisplayName: false});
 
   // Role Management
   let selfAssignableRoles: {
@@ -101,8 +109,13 @@
       } | null;
     }>;
     groups: Record<number, string>;
-  } = { exclusive: false, roles: [], groups: {} };
-  let voiceChannelRoles: Array<{ channelId: bigint; channelName: string; roleId: bigint; roleName: string }> = [];
+  } = $state({exclusive: false, roles: [], groups: {}});
+    let voiceChannelRoles: Array<{
+        channelId: bigint;
+        channelName: string;
+        roleId: bigint;
+        roleName: string
+    }> = $state([]);
   let reactionRoles: {
     success: boolean;
     reactionRoles: Array<{
@@ -115,27 +128,27 @@
         roleId: bigint;
       }>;
     }>;
-  } = { success: false, reactionRoles: [] };
+  } = $state({success: false, reactionRoles: []});
 
   // Permission Overrides
-  let permissionOverrides: Array<{ command: string; permission: string }> = [];
+    let permissionOverrides: Array<{ command: string; permission: string }> = $state([]);
   
   // Command Cooldowns
-  let commandCooldowns: Array<{ command: string; cooldown: number }> = [];
+    let commandCooldowns: Array<{ command: string; cooldown: number }> = $state([]);
 
   // Advanced Operations
-  let banMessage: string = "";
-  let massOperations = {
+    let banMessage: string = $state("");
+    let massOperations = $state({
     prune: { days: 7 }
-  };
+    });
 
   // Available data
-  let availableRoles: any[] = [];
-  let guildChannels: any[] = [];
+    let availableRoles: any[] = $state([]);
+    let guildChannels: any[] = $state([]);
   let textChannels: Array<{ id: string; name: string }> = [];
-  let voiceChannels: Array<{ id: string; name: string }> = [];
-  let availableCommands: Array<{ id: string; name: string; label?: string }> = [];
-  let availablePermissions: Array<{ id: string; name: string }> = [];
+    let voiceChannels: Array<{ id: string; name: string }> = $state([]);
+    let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
+    let availablePermissions: Array<{ id: string; name: string }> = $state([]);
   let actionOptions = [
     { id: "0", name: "Warn", label: "Warn" },
     { id: "1", name: "Mute", label: "Mute" },
@@ -144,25 +157,31 @@
   ];
 
   // UI State
-  let showConfirmModal = false;
-  let confirmModalData = { title: "", message: "", action: null, variant: "danger" };
+    let showConfirmModal = $state(false);
+    let confirmModalData = $state({title: "", message: "", action: null, variant: "danger"});
   
   // Expanded cards state
-  let expandedProtectionCard: string | null = null;
-  let expandedRoleCard: string | null = null;
-  let showPatternManagement = false;
+    let expandedProtectionCard: string | null = $state(null);
+    let expandedRoleCard: string | null = $state(null);
+    let showPatternManagement = $state(false);
   let showAdvancedSettings = false;
 
   // Form data
-  let newStaffRole: string | null = null;
-  let newMemberRole: string | null = null;
-  let newTimezone = "";
+    let newStaffRole: string | null = $state(null);
+    let newMemberRole: string | null = $state(null);
+    let newTimezone = $state("");
   let newAutoBanRole: string | null = null;
-  let newVoiceChannelRole: { channelId: string | null; roleId: string | null } = { channelId: null, roleId: null };
-  let newPermissionOverride: { command: string; permission: string } = { command: "", permission: "Administrator" };
-  let selectedPermissionOverrides: string[] = [];
+    let newVoiceChannelRole: { channelId: string | null; roleId: string | null } = $state({
+        channelId: null,
+        roleId: null
+    });
+    let newPermissionOverride: { command: string; permission: string } = $state({
+        command: "",
+        permission: "Administrator"
+    });
+    let selectedPermissionOverrides: string[] = $state([]);
   let selectAllPermissionOverrides = false;
-  let newCommandCooldown: { command: string; seconds: number } = { command: "", seconds: 5 };
+    let newCommandCooldown: { command: string; seconds: number } = $state({command: "", seconds: 5});
   let newDeleteMessageChannel: { channelId: string | null; state: string } = { channelId: null, state: "enable" };
   let searchQuery = "";
 
@@ -862,17 +881,19 @@
     fetchAllData();
   });
 
-  $: if ($currentGuild) {
-    fetchAllData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchAllData();
+        }
+    });
 
-  $: filteredRoles = availableRoles.filter(role => 
+    let filteredRoles = $derived(availableRoles.filter(role =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    ));
 
-  $: filteredChannels = guildChannels.filter(channel => 
+    let filteredChannels = $derived(guildChannels.filter(channel =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    ));
 </script>
 
 <DashboardPageLayout 
@@ -913,7 +934,7 @@
           <div class="rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-105 cursor-pointer"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
-               on:click={() => activeTab = 'protection'}>
+               onclick={() => activeTab = 'protection'}>
             <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div class="p-1.5 sm:p-2 rounded-lg" style="background: {$colorStore.primary}20;">
                 <Shield class="w-4 h-4 sm:w-5 sm:h-5" style="color: {$colorStore.primary}" />
@@ -999,7 +1020,7 @@
             <button
               class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);"
-              on:click={() => activeTab = 'protection'}
+              onclick={() => activeTab = 'protection'}
             >
               <div class="flex items-center gap-3 mb-2">
                 <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -1013,7 +1034,7 @@
             <button
               class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {$colorStore.secondary}30; background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);"
-              on:click={() => activeTab = 'roles'}
+              onclick={() => activeTab = 'roles'}
             >
               <div class="flex items-center gap-3 mb-2">
                 <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
@@ -1027,7 +1048,7 @@
             <button
               class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {$colorStore.accent}30; background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.secondary}10);"
-              on:click={() => activeTab = 'automation'}
+              onclick={() => activeTab = 'automation'}
             >
               <div class="flex items-center gap-3 mb-2">
                 <Settings class="w-5 h-5" style="color: {$colorStore.accent}" />
@@ -1113,6 +1134,8 @@
 
     {#if activeTab === 'roles'}
       <!-- Roles & Permissions Section -->
+        {@const SvelteComponent = expandedRoleCard === 'autoBan' ? ChevronUp : Plus}
+        {@const SvelteComponent_1 = expandedRoleCard === 'voiceChannel' ? ChevronUp : Plus}
       <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
         
         <!-- Auto-Assign Roles -->
@@ -1150,7 +1173,7 @@
               <button
                 class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                 disabled={saving}
-                on:click={saveNormalRoles}
+                onclick={saveNormalRoles}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               >
                 {saving ? "Saving..." : "Save Normal User Roles"}
@@ -1178,7 +1201,7 @@
               <button
                 class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                 disabled={saving}
-                on:click={saveBotRoles}
+                onclick={saveBotRoles}
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               >
                 {saving ? "Saving..." : "Save Bot User Roles"}
@@ -1208,9 +1231,9 @@
             <button
               class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              on:click={() => expandedRoleCard = expandedRoleCard === 'autoBan' ? null : 'autoBan'}
+              onclick={() => expandedRoleCard = expandedRoleCard === 'autoBan' ? null : 'autoBan'}
             >
-              <svelte:component this={expandedRoleCard === 'autoBan' ? ChevronUp : Plus} class="w-4 h-4" />
+                <SvelteComponent class="w-4 h-4"/>
               {expandedRoleCard === 'autoBan' ? 'Collapse' : 'Add Role'}
             </button>
           </div>
@@ -1238,7 +1261,7 @@
                     <button
                       class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      on:click={() => showConfirm("Remove Auto-Ban Role", `Are you sure you want to remove ${role.roleName} from auto-ban roles?`, () => removeAutoBanRole(role.roleId))}
+                      onclick={() => showConfirm("Remove Auto-Ban Role", `Are you sure you want to remove ${role.roleName} from auto-ban roles?`, () => removeAutoBanRole(role.roleId))}
                       aria-label="Remove {role.roleName} from auto-ban roles"
                     >
                       Remove
@@ -1270,7 +1293,7 @@
               <button
                 class="p-2 rounded-lg transition-all hover:scale-105 min-h-[44px] min-w-[44px]"
                 style="color: {selfAssignableRoles.exclusive ? $colorStore.secondary : $colorStore.muted}"
-                on:click={toggleSelfAssignableRolesExclusive}
+                onclick={toggleSelfAssignableRolesExclusive}
               >
                 {#if selfAssignableRoles.exclusive}
                   <ToggleRight class="w-6 h-6" />
@@ -1311,7 +1334,7 @@
                         <button
                           class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          on:click={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
+                          onclick={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
                           aria-label="Remove {role.role?.name} from self-assignable roles"
                         >
                           Remove
@@ -1345,7 +1368,7 @@
                         <button
                           class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          on:click={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
+                          onclick={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
                           aria-label="Remove {role.role?.name} from self-assignable roles"
                         >
                           Remove
@@ -1377,9 +1400,9 @@
             <button
               class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              on:click={() => expandedRoleCard = expandedRoleCard === 'voiceChannel' ? null : 'voiceChannel'}
+              onclick={() => expandedRoleCard = expandedRoleCard === 'voiceChannel' ? null : 'voiceChannel'}
             >
-              <svelte:component this={expandedRoleCard === 'voiceChannel' ? ChevronUp : Plus} class="w-4 h-4" />
+                <SvelteComponent_1 class="w-4 h-4"/>
               {expandedRoleCard === 'voiceChannel' ? 'Collapse' : 'Add Mapping'}
             </button>
           </div>
@@ -1412,7 +1435,7 @@
                     <button
                       class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      on:click={() => showConfirm("Remove Voice Channel Role", `Remove role mapping for ${vcRole.channelName}?`, () => removeVoiceChannelRole(vcRole.channelId))}
+                      onclick={() => showConfirm("Remove Voice Channel Role", `Remove role mapping for ${vcRole.channelName}?`, () => removeVoiceChannelRole(vcRole.channelId))}
                       aria-label="Remove voice channel role mapping for {vcRole.channelName}"
                     >
                       Remove
@@ -1456,14 +1479,14 @@
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      on:click={() => { expandedRoleCard = null; newVoiceChannelRole = { channelId: null, roleId: null }; }}
+                      onclick={() => { expandedRoleCard = null; newVoiceChannelRole = { channelId: null, roleId: null }; }}
                     >
                       Cancel
                     </button>
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      on:click={addVoiceChannelRole}
+                      onclick={addVoiceChannelRole}
                       disabled={!newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId || saving}
                     >
                       {#if saving}
@@ -1536,7 +1559,7 @@
                       <button
                         class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                         style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                        on:click={() => showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => api.removeReactionRole($currentGuild.id, rr.index))}
+                        onclick={() => showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => api.removeReactionRole($currentGuild.id, rr.index))}
                       >
                         Remove
                       </button>
@@ -1578,7 +1601,7 @@
                 style="background: {protectionStatus.antiRaid.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
                        color: {protectionStatus.antiRaid.enabled ? $colorStore.accent : $colorStore.secondary}; 
                        border: 1px solid {protectionStatus.antiRaid.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                on:click={() => toggleProtection('antiRaid')}
+                onclick={() => toggleProtection('antiRaid')}
               >
                 {#if protectionStatus.antiRaid.enabled}
                   <ToggleRight class="w-4 h-4" />
@@ -1590,12 +1613,13 @@
               </button>
               
               {#if protectionStatus.antiRaid.enabled}
+                  {@const SvelteComponent_2 = expandedProtectionCard === 'antiRaid' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleProtectionCard('antiRaid')}
+                  onclick={() => toggleProtectionCard('antiRaid')}
                 >
-                  <svelte:component this={expandedProtectionCard === 'antiRaid' ? ChevronUp : ChevronDown} class="w-4 h-4" />
+                    <SvelteComponent_2 class="w-4 h-4"/>
                   {expandedProtectionCard === 'antiRaid' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -1677,14 +1701,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={cancelProtectionEdit}
+                    onclick={cancelProtectionEdit}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={saveProtectionConfig}
+                    onclick={saveProtectionConfig}
                     disabled={saving}
                   >
                     <div class="flex items-center justify-center gap-2">
@@ -1732,7 +1756,7 @@
                 style="background: {protectionStatus.antiSpam.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
                        color: {protectionStatus.antiSpam.enabled ? $colorStore.accent : $colorStore.secondary}; 
                        border: 1px solid {protectionStatus.antiSpam.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                on:click={() => toggleProtection('antiSpam')}
+                onclick={() => toggleProtection('antiSpam')}
               >
                 {#if protectionStatus.antiSpam.enabled}
                   <ToggleRight class="w-4 h-4" />
@@ -1744,12 +1768,13 @@
               </button>
               
               {#if protectionStatus.antiSpam.enabled}
+                  {@const SvelteComponent_3 = expandedProtectionCard === 'antiSpam' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleProtectionCard('antiSpam')}
+                  onclick={() => toggleProtectionCard('antiSpam')}
                 >
-                  <svelte:component this={expandedProtectionCard === 'antiSpam' ? ChevronUp : ChevronDown} class="w-4 h-4" />
+                    <SvelteComponent_3 class="w-4 h-4"/>
                   {expandedProtectionCard === 'antiSpam' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -1816,14 +1841,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={cancelProtectionEdit}
+                    onclick={cancelProtectionEdit}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={saveProtectionConfig}
+                    onclick={saveProtectionConfig}
                     disabled={saving}
                   >
                     <div class="flex items-center justify-center gap-2">
@@ -1871,7 +1896,7 @@
                 style="background: {protectionStatus.antiAlt.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
                        color: {protectionStatus.antiAlt.enabled ? $colorStore.accent : $colorStore.secondary}; 
                        border: 1px solid {protectionStatus.antiAlt.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                on:click={() => toggleProtection('antiAlt')}
+                onclick={() => toggleProtection('antiAlt')}
               >
                 {#if protectionStatus.antiAlt.enabled}
                   <ToggleRight class="w-4 h-4" />
@@ -1883,12 +1908,13 @@
               </button>
               
               {#if protectionStatus.antiAlt.enabled}
+                  {@const SvelteComponent_4 = expandedProtectionCard === 'antiAlt' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleProtectionCard('antiAlt')}
+                  onclick={() => toggleProtectionCard('antiAlt')}
                 >
-                  <svelte:component this={expandedProtectionCard === 'antiAlt' ? ChevronUp : ChevronDown} class="w-4 h-4" />
+                    <SvelteComponent_4 class="w-4 h-4"/>
                   {expandedProtectionCard === 'antiAlt' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -1955,14 +1981,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={cancelProtectionEdit}
+                    onclick={cancelProtectionEdit}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={saveProtectionConfig}
+                    onclick={saveProtectionConfig}
                     disabled={saving}
                   >
                     <div class="flex items-center justify-center gap-2">
@@ -2010,7 +2036,7 @@
                 style="background: {protectionStatus.antiPattern.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
                        color: {protectionStatus.antiPattern.enabled ? $colorStore.accent : $colorStore.secondary}; 
                        border: 1px solid {protectionStatus.antiPattern.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                on:click={() => toggleProtection('antiPattern')}
+                onclick={() => toggleProtection('antiPattern')}
               >
                 {#if protectionStatus.antiPattern.enabled}
                   <ToggleRight class="w-4 h-4" />
@@ -2022,20 +2048,22 @@
               </button>
               
               {#if protectionStatus.antiPattern.enabled}
+                  {@const SvelteComponent_5 = expandedProtectionCard === 'antiPattern' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleProtectionCard('antiPattern')}
+                  onclick={() => toggleProtectionCard('antiPattern')}
                 >
-                  <svelte:component this={expandedProtectionCard === 'antiPattern' ? ChevronUp : ChevronDown} class="w-4 h-4" />
+                    <SvelteComponent_5 class="w-4 h-4"/>
                   {expandedProtectionCard === 'antiPattern' ? 'Collapse' : 'Configure'}
                 </button>
+                  {@const SvelteComponent_6 = showPatternManagement ? ChevronUp : ChevronRight}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  on:click={() => showPatternManagement = !showPatternManagement}
+                  onclick={() => showPatternManagement = !showPatternManagement}
                 >
-                  <svelte:component this={showPatternManagement ? ChevronUp : ChevronRight} class="w-4 h-4" />
+                    <SvelteComponent_6 class="w-4 h-4"/>
                   Patterns
                 </button>
               {/if}
@@ -2237,14 +2265,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={cancelProtectionEdit}
+                    onclick={cancelProtectionEdit}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={saveProtectionConfig}
+                    onclick={saveProtectionConfig}
                     disabled={saving}
                   >
                     <div class="flex items-center justify-center gap-2">
@@ -2325,7 +2353,7 @@
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                      on:click={addAntiPatternPattern}
+                      onclick={addAntiPatternPattern}
                       disabled={!newPattern.name.trim() || !newPattern.pattern.trim() || saving}
                     >
                       <Plus class="w-4 h-4" />
@@ -2356,7 +2384,7 @@
                         <button
                           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          on:click={() => removeAntiPatternPattern(pattern.id)}
+                          onclick={() => removeAntiPatternPattern(pattern.id)}
                         >
                           Remove
                         </button>
@@ -2399,7 +2427,7 @@
                 style="background: {protectionStatus.antiMassMention.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
                        color: {protectionStatus.antiMassMention.enabled ? $colorStore.accent : $colorStore.secondary}; 
                        border: 1px solid {protectionStatus.antiMassMention.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                on:click={() => toggleProtection('antiMassMention')}
+                onclick={() => toggleProtection('antiMassMention')}
               >
                 {#if protectionStatus.antiMassMention.enabled}
                   <ToggleRight class="w-4 h-4" />
@@ -2411,12 +2439,13 @@
               </button>
               
               {#if protectionStatus.antiMassMention.enabled}
+                  {@const SvelteComponent_7 = expandedProtectionCard === 'antiMassMention' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleProtectionCard('antiMassMention')}
+                  onclick={() => toggleProtectionCard('antiMassMention')}
                 >
-                  <svelte:component this={expandedProtectionCard === 'antiMassMention' ? ChevronUp : ChevronDown} class="w-4 h-4" />
+                    <SvelteComponent_7 class="w-4 h-4"/>
                   {expandedProtectionCard === 'antiMassMention' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -2529,14 +2558,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={cancelProtectionEdit}
+                    onclick={cancelProtectionEdit}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={saveProtectionConfig}
+                    onclick={saveProtectionConfig}
                     disabled={saving}
                   >
                     <div class="flex items-center justify-center gap-2">
@@ -2564,6 +2593,8 @@
 
     {#if activeTab === 'automation'}
       <!-- Automation & Settings Section -->
+        {@const SvelteComponent_8 = expandedRoleCard === 'commandCooldown' ? ChevronUp : Plus}
+        {@const SvelteComponent_9 = expandedRoleCard === 'permissionOverride' ? ChevronUp : Plus}
       <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
         
         <!-- Staff & Member Roles -->
@@ -2619,7 +2650,7 @@
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={saveServerSettings}
+                onclick={saveServerSettings}
                 disabled={saving}
               >
                 {#if saving}
@@ -2668,7 +2699,7 @@
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={saveServerSettings}
+                onclick={saveServerSettings}
                 disabled={saving}
               >
                 {#if saving}
@@ -2701,9 +2732,9 @@
               <button
                 class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={() => expandedRoleCard = expandedRoleCard === 'commandCooldown' ? null : 'commandCooldown'}
+                onclick={() => expandedRoleCard = expandedRoleCard === 'commandCooldown' ? null : 'commandCooldown'}
               >
-                <svelte:component this={expandedRoleCard === 'commandCooldown' ? ChevronUp : Plus} class="w-4 h-4" />
+                  <SvelteComponent_8 class="w-4 h-4"/>
                 {expandedRoleCard === 'commandCooldown' ? 'Collapse' : 'Add Cooldown'}
               </button>
             </div>
@@ -2734,7 +2765,7 @@
                   <button
                     class="absolute top-3 right-3 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 opacity-60 group-hover:opacity-100 min-h-[36px] min-w-[80px]"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                    on:click={() => removeCommandCooldown(cooldown.commandName || cooldown.command)}
+                    onclick={() => removeCommandCooldown(cooldown.commandName || cooldown.command)}
                     aria-label="Remove cooldown for {cooldown.commandName || cooldown.command}"
                   >
                     Remove
@@ -2783,14 +2814,14 @@
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={() => { expandedRoleCard = null; newCommandCooldown = { command: "", seconds: 5 }; }}
+                    onclick={() => { expandedRoleCard = null; newCommandCooldown = { command: "", seconds: 5 }; }}
                   >
                     Cancel
                   </button>
                   <button
                     class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={addCommandCooldown}
+                    onclick={addCommandCooldown}
                     disabled={!newCommandCooldown.command || newCommandCooldown.seconds <= 0 || saving}
                   >
                     {#if saving}
@@ -2825,9 +2856,9 @@
               <button
                 class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={() => expandedRoleCard = expandedRoleCard === 'permissionOverride' ? null : 'permissionOverride'}
+                onclick={() => expandedRoleCard = expandedRoleCard === 'permissionOverride' ? null : 'permissionOverride'}
               >
-                <svelte:component this={expandedRoleCard === 'permissionOverride' ? ChevronUp : Plus} class="w-4 h-4" />
+                  <SvelteComponent_9 class="w-4 h-4"/>
                 {expandedRoleCard === 'permissionOverride' ? 'Collapse' : 'Add Override'}
               </button>
               
@@ -2835,7 +2866,7 @@
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  on:click={() => showConfirm("Delete Selected Overrides", `Delete ${selectedPermissionOverrides.length} selected permission override${selectedPermissionOverrides.length > 1 ? 's' : ''}?`, deleteSelectedPermissionOverrides)}
+                  onclick={() => showConfirm("Delete Selected Overrides", `Delete ${selectedPermissionOverrides.length} selected permission override${selectedPermissionOverrides.length > 1 ? 's' : ''}?`, deleteSelectedPermissionOverrides)}
                 >
                   <Trash2 class="w-4 h-4" />
                   Delete Selected ({selectedPermissionOverrides.length})
@@ -2846,7 +2877,7 @@
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  on:click={() => showConfirm("Clear All Overrides", "Are you sure you want to clear all permission overrides?", resetPermissionOverrides)}
+                  onclick={() => showConfirm("Clear All Overrides", "Are you sure you want to clear all permission overrides?", resetPermissionOverrides)}
                 >
                   <Trash2 class="w-4 h-4" />
                   Clear All
@@ -2879,7 +2910,7 @@
                     <button
                       class="px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      on:click={() => removePermissionOverride(override.command, override.permission)}
+                      onclick={() => removePermissionOverride(override.command, override.permission)}
                     >
                       Remove
                     </button>
@@ -2926,14 +2957,14 @@
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      on:click={() => { expandedRoleCard = null; newPermissionOverride = { command: "", permission: "Administrator" }; }}
+                      onclick={() => { expandedRoleCard = null; newPermissionOverride = { command: "", permission: "Administrator" }; }}
                     >
                       Cancel
                     </button>
                     <button
                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      on:click={addPermissionOverride}
+                      onclick={addPermissionOverride}
                       disabled={!newPermissionOverride.command || saving}
                     >
                       {#if saving}
@@ -2985,7 +3016,7 @@
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={saveServerSettings}
+                onclick={saveServerSettings}
                 disabled={saving}
               >
                 {#if saving}
@@ -3029,7 +3060,7 @@
                 <button
                   class="px-4 py-2 rounded-lg font-medium transition-colors"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  on:click={() => toggleGameVoiceChannel(gameVoiceChannel)}
+                  onclick={() => toggleGameVoiceChannel(gameVoiceChannel)}
                 >
                   Disable
                 </button>
@@ -3055,7 +3086,7 @@
                 <button
                   class="px-4 py-2 rounded-lg font-medium transition-colors"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  on:click={() => toggleGameVoiceChannel(BigInt(newVoiceChannelRole.channelId))}
+                  onclick={() => toggleGameVoiceChannel(BigInt(newVoiceChannelRole.channelId))}
                 >
                   Set as Game Voice Channel
                 </button>
@@ -3095,7 +3126,7 @@
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                 placeholder="Enter custom ban message..."
                 rows="3"
-              />
+              ></textarea>
               <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                 This message will be sent to users when they are banned
               </p>
@@ -3105,7 +3136,7 @@
               <button
                 class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                on:click={saveBanMessage}
+                onclick={saveBanMessage}
                 disabled={saving}
               >
                 <Save class="w-4 h-4" />
@@ -3152,7 +3183,7 @@
                 <button
                   class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  on:click={() => showConfirm("Prune Users", `Remove users inactive for ${massOperations.prune.days} days?`, performPrune)}
+                  onclick={() => showConfirm("Prune Users", `Remove users inactive for ${massOperations.prune.days} days?`, performPrune)}
                   disabled={massOperations.prune.days <= 0 || saving}
                 >
                   Execute Prune

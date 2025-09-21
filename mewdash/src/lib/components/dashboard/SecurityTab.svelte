@@ -1,5 +1,7 @@
 <!-- lib/components/dashboard/SecurityTab.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -11,31 +13,31 @@
   import type { LoggingConfigurationResponse } from "$lib/types/logging.ts";
 
   // Security data
-  let moderationStats = {
+    let moderationStats = $state({
     totalWarnings: 0,
     activeMutes: 0,
     recentActions: 0,
     totalBans: 0
-  };
+    });
 
-  let protectionStatus = {
+    let protectionStatus = $state({
     antiRaid: { enabled: false },
     antiSpam: { enabled: false },
     antiAlt: { enabled: false },
     antiMassMention: { enabled: false }
-  };
+    });
 
-  let recentModerationActions: any[] = [];
-  let loading = true;
+    let recentModerationActions: any[] = $state([]);
+    let loading = $state(true);
 
   // Logging data
   let loggingConfig: LoggingConfigurationResponse | null = null;
-  let loggingStats = {
+    let loggingStats = $state({
     configuredChannels: 0,
     ignoredChannels: 0,
     ignoredUsers: 0,
     totalLogTypes: 0
-  };
+    });
 
   async function fetchSecurityData() {
     if (!$currentGuild?.id) return;
@@ -110,9 +112,11 @@
     fetchSecurityData();
   });
 
-  $: if ($currentGuild) {
-    fetchSecurityData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchSecurityData();
+        }
+    });
 
   // Helper functions
   function getActionIcon(action: string) {
@@ -159,7 +163,7 @@
   }
 
   // Count active protections
-  $: activeProtections = Object.values(protectionStatus).filter(p => p.enabled).length;
+    let activeProtections = $derived(Object.values(protectionStatus).filter(p => p.enabled).length);
 </script>
 
 <div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
@@ -205,13 +209,14 @@
           </div>
         {:else}
           {#each recentModerationActions as action}
+              {@const SvelteComponent = getActionIcon(action.punishment || action.action)}
             <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}08;">
 
               <!-- Action Icon -->
               <div class="w-6 h-6 rounded-full flex items-center justify-center"
                    style="background: {getActionColor(action.punishment || action.action)}20;">
-                <svelte:component this={getActionIcon(action.punishment || action.action)}
+                  <SvelteComponent
                                   size={14}
                                   style="color: {getActionColor(action.punishment || action.action)}" />
               </div>

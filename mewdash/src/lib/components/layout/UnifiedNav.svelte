@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `$: currentUser = data?.user || $userStore;` to `$derived` because there's a variable named derived.
+     Rename the variable and try again or migrate by hand. -->
 <!--
 @component
 A unified navigation component that provides responsive navigation with server and guild selection.

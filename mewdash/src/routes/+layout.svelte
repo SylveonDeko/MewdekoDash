@@ -1,5 +1,7 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import "../app.css";
   import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
   import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
@@ -13,7 +15,12 @@
   import { initAuthRefresh } from "$lib/authRefresh";
 
 
-  export let data: LayoutData;
+    interface Props {
+        data: LayoutData;
+        children?: import('svelte').Snippet;
+    }
+
+    let {data, children}: Props = $props();
 
   async function extractColors(user: any) {
     if (!browser || window.location.pathname.startsWith("/dashboard")) {
@@ -83,26 +90,34 @@
   ];
 
   // Keep user store in sync with server data
-  $: if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
-    console.log("Setting user store from server data:", data.user);
-    userStore.set(data.user);
-  }
+    run(() => {
+        if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
+            console.log("Setting user store from server data:", data.user);
+            userStore.set(data.user);
+        }
+    });
 
   // Clear user store if server says no user
-  $: if (browser && !data?.user && $userStore) {
-    console.log("Clearing user store - no server user");
-    userStore.set(null);
-  }
+    run(() => {
+        if (browser && !data?.user && $userStore) {
+            console.log("Clearing user store - no server user");
+            userStore.set(null);
+        }
+    });
 
   // Debug logging
-  $: if (browser) {
-    console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
-  }
+    run(() => {
+        if (browser) {
+            console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
+        }
+    });
 
   // Extract colors when user data changes
-  $: if (browser && data?.user) {
-    extractColors(data.user);
-  }
+    run(() => {
+        if (browser && data?.user) {
+            extractColors(data.user);
+        }
+    });
 </script>
 
 <svelte:head>
@@ -131,6 +146,6 @@
 
 <ErrorBoundary fallback="The page encountered an unexpected error. Please try refreshing." showDetails={true}>
   <main class="bg-mewd-dark-grey w-full">
-    <slot />
+      {@render children?.()}
   </main>
 </ErrorBoundary>

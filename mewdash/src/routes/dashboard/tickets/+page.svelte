@@ -1,4 +1,6 @@
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -42,56 +44,60 @@
     TicketTag
   } from "$lib/types/tickets.ts";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State
-  let activeTab: "overview" | "panels" | "tickets" | "cases" | "settings" | string = "overview";
-  let channels: Array<{ id: string; name: string }> = [];
+    let activeTab: "overview" | "panels" | "tickets" | "cases" | "settings" | string = $state("overview");
+    let channels: Array<{ id: string; name: string }> = $state([]);
   let categories: Array<{ id: string; name: string }> = [];
   let roles: Array<{ id: string; name: string }> = [];
-  let panels: TicketPanel[] = [];
-  let cases: TicketCase[] = [];
-  let stats: GuildStatistics | null = null;
-  let priorities: TicketPriority[] = [];
-  let tags: TicketTag[] = [];
-  let blacklistedUsers: Array<BlacklistedUserResponse> = [];
+    let panels: TicketPanel[] = $state([]);
+    let cases: TicketCase[] = $state([]);
+    let stats: GuildStatistics | null = $state(null);
+    let priorities: TicketPriority[] = $state([]);
+    let tags: TicketTag[] = $state([]);
+    let blacklistedUsers: Array<BlacklistedUserResponse> = $state([]);
 
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
   // Modal states
-  let showCreatePanel = false;
-  let showCreateCase = false;
+    let showCreatePanel = $state(false);
+    let showCreateCase = $state(false);
 
-  let showPanelButtons: TicketPanel | null = null;
-  let showSettings = false;
+    let showPanelButtons: TicketPanel | null = $state(null);
+    let showSettings = $state(false);
 
   // Form states
-  let newPanelData = {
+    let newPanelData = $state({
     channelId: "",
     title: "",
     description: "",
     embedTitle: "",
     embedDescription: "",
     color: "#5865F2"
-  };
+    });
 
-  let newCaseData = {
+    let newCaseData = $state({
     title: "",
     description: "",
     priority: 1
-  };
+    });
 
-  let settingsData = {
+    let settingsData = $state({
     transcriptChannelId: "",
     logChannelId: ""
-  };
+    });
 
-  $: colorVars = $colorStore;
+    let colorVars = $derived($colorStore);
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -339,16 +345,18 @@
     }
   }
 
-  $: if ($currentGuild) {
-    fetchData();
-    // Extract colors from server icon if available, otherwise use bot avatar as fallback
-    if ($currentGuild.icon) {
-      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-      colorStore.extractFromServerIcon(serverIconUrl);
-    } else if ($currentInstance?.botAvatar) {
-      colorStore.extractFromImage($currentInstance.botAvatar);
-    }
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchData();
+            // Extract colors from server icon if available, otherwise use bot avatar as fallback
+            if ($currentGuild.icon) {
+                const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+                colorStore.extractFromServerIcon(serverIconUrl);
+            } else if ($currentInstance?.botAvatar) {
+                colorStore.extractFromImage($currentInstance.botAvatar);
+            }
+        }
+    });
 
   // Tab configuration
   const tabs = [
@@ -360,7 +368,7 @@
   ];
 
   // Action buttons configuration
-  $: actionButtons = [
+    let actionButtons = $derived([
     {
       label: "Refresh",
       icon: RefreshCw,
@@ -385,7 +393,7 @@
       action: () => showSettings = true,
       loading: false
     }
-  ];
+    ]);
 
   // Handle tab change
   function handleTabChange(event: CustomEvent) {
@@ -414,6 +422,7 @@
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={handleTabChange}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -486,7 +495,7 @@
                       class="p-3 rounded-lg"
                       style="background: {stat.color}20"
                     >
-                      <svelte:component this={stat.icon} class="h-6 w-6" style="color: {stat.color}" />
+                        <stat.icon class="h-6 w-6" style="color: {stat.color}"/>
                     </div>
                   </div>
                 </div>
@@ -594,21 +603,21 @@
                         <button
                           class="p-2 rounded-lg transition-all duration-75"
                           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
-                          on:click={() => showPanelButtons = panel}
+                          onclick={() => showPanelButtons = panel}
                         >
                           <Settings class="w-4 h-4" />
                         </button>
                         <button
                           class="p-2 rounded-lg transition-all duration-75"
                           style="background: {$colorStore.secondary}10; color: {$colorStore.muted}"
-                          on:click={() => duplicatePanel(panel.id)}
+                          onclick={() => duplicatePanel(panel.id)}
                         >
                           <Copy class="w-4 h-4" />
                         </button>
                         <button
                           class="p-2 rounded-lg transition-all duration-75 hover:bg-red-500/10"
                           style="color: {$colorStore.muted}"
-                          on:click={() => deletePanel(panel.id)}
+                          onclick={() => deletePanel(panel.id)}
                         >
                           <Trash2 class="w-4 h-4" />
                         </button>
@@ -701,7 +710,7 @@
                         <button
                           class="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-75"
                           style="background: {$colorStore.accent}; color: {$colorStore.text}"
-                          on:click={() => closeCase(ticketCase.id)}
+                          onclick={() => closeCase(ticketCase.id)}
                         >
                           Close Case
                         </button>
@@ -901,14 +910,14 @@
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-          on:click={createPanel}
+          onclick={createPanel}
         >
           Create Panel
         </button>
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-          on:click={() => showCreatePanel = false}
+          onclick={() => showCreatePanel = false}
         >
           Cancel
         </button>
@@ -984,14 +993,14 @@
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.secondary}; color: {$colorStore.text}"
-          on:click={createCase}
+          onclick={createCase}
         >
           Create Case
         </button>
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-          on:click={() => showCreateCase = false}
+          onclick={() => showCreateCase = false}
         >
           Cancel
         </button>
@@ -1042,14 +1051,14 @@
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.accent}; color: {$colorStore.text}"
-          on:click={saveSettings}
+          onclick={saveSettings}
         >
           Save Settings
         </button>
         <button
           class="flex-1 py-3 rounded-lg font-medium"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-          on:click={() => showSettings = false}
+          onclick={() => showSettings = false}
         >
           Cancel
         </button>

@@ -1,29 +1,49 @@
 <!-- lib/components/StatCard.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import type { ComponentType } from "svelte";
   import { onMount } from "svelte";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { ArrowRight, TrendingDown, TrendingUp } from "lucide-svelte";
 
-  // Props
-  export let icon: ComponentType;
-  export let label: string;
-  export let value: string | number;
-  export let subtitle: string = "";
-  export let iconColor: "primary" | "secondary" | "accent" = "primary";
-  export let trend: "up" | "down" | "neutral" | null = null;
-  export let trendValue: string = "";
-  export let previousValue: string | number | null = null;
-  export let isLoading: boolean = false;
-  export let animationDelay: number = 0;
-  export let tooltipData: Array<{ label: string; value: string | number }> = [];
-  export let clickable: boolean = false; // New prop to control if the card should appear clickable
+  
+  interface Props {
+    // Props
+    icon: ComponentType;
+    label: string;
+    value: string | number;
+    subtitle?: string;
+    iconColor?: "primary" | "secondary" | "accent";
+    trend?: "up" | "down" | "neutral" | null;
+    trendValue?: string;
+    previousValue?: string | number | null;
+    isLoading?: boolean;
+    animationDelay?: number;
+    tooltipData?: Array<{ label: string; value: string | number }>;
+    clickable?: boolean; // New prop to control if the card should appear clickable
+  }
+
+  let {
+    icon,
+    label,
+    value,
+    subtitle = "",
+    iconColor = "primary",
+    trend = null,
+    trendValue = "",
+    previousValue = null,
+    isLoading = false,
+    animationDelay = 0,
+    tooltipData = [],
+    clickable = false
+  }: Props = $props();
 
   // State
-  let animatedValue: number = 0;
-  let showTooltip = false;
-  let mounted = false;
+  let animatedValue: number = $state(0);
+  let showTooltip = $state(false);
+  let mounted = $state(false);
 
   // Handle numeric value animation
   function animateValue(target: number) {
@@ -78,9 +98,11 @@
   });
 
   // React to value changes after mount
-  $: if (mounted && typeof value === "number" && !isNaN(value)) {
-    animateValue(value as number);
-  }
+  run(() => {
+    if (mounted && typeof value === "number" && !isNaN(value)) {
+      animateValue(value as number);
+    }
+  });
 
   // Format trend value
   function getTrendColor() {
@@ -100,6 +122,8 @@
     if (trend === "down") return TrendingDown;
     return ArrowRight;
   }
+
+  const SvelteComponent = $derived(icon);
 </script>
 
 <div
@@ -109,19 +133,18 @@
   class:cursor-pointer={clickable}
   class:hover-bg-gray={clickable}
   in:fade={{ delay: animationDelay, duration: 300 }}
-  on:keydown={clickable && tooltipData.length > 0 ? handleKeyDown : undefined}
-  on:mouseenter={tooltipData.length > 0 ? toggleTooltip : undefined}
-  on:mouseleave={tooltipData.length > 0 ? closeTooltip : undefined}
+  onkeydown={clickable && tooltipData.length > 0 ? handleKeyDown : undefined}
+  onmouseenter={tooltipData.length > 0 ? toggleTooltip : undefined}
+  onmouseleave={tooltipData.length > 0 ? closeTooltip : undefined}
   role={clickable && tooltipData.length > 0 ? "button" : "region"}
 >
   <div
     class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
     style="background: {$colorStore[iconColor]}20"
   >
-    <svelte:component
+    <SvelteComponent
       class="w-5 h-5"
       style="color: {$colorStore[iconColor]}"
-      this={icon}
     />
   </div>
 
@@ -141,12 +164,13 @@
         {/if}
 
         {#if trend && trend !== "neutral"}
+          {@const SvelteComponent_1 = getTrendIcon()}
           <div
             class="flex items-center gap-1 text-sm bg-opacity-20 px-1.5 py-0.5 rounded-full"
             style="background: {getTrendColor()}20; color: {getTrendColor()}"
             in:slide={{ delay: animationDelay + 300, duration: 300 }}
           >
-            <svelte:component this={getTrendIcon()} size={14} />
+            <SvelteComponent_1 size={14} />
             {#if trendValue}
               <span class="text-xs">{trendValue}</span>
             {/if}

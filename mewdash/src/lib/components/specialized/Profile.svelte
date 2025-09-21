@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Event attribute must be a JavaScript expression, not a string
+https://svelte.dev/e/attribute_invalid_event_handler -->
 <!-- lib/Profile.svelte -->
 <script lang="ts">
   export let profileData: {
@@ -21,7 +23,11 @@
   <p
     class="mb-2"
     id="profile-desc-{profileData.name}"
-    onClick="var st='{profileData.eggy}'!=='undefined'?'{profileData.eggy}':'{profileData.description}';document.getElementById('profile-desc-{profileData.name}').innerText=st"
+    onclick={() => {
+      const st = profileData.eggy !== 'undefined' ? profileData.eggy : profileData.description;
+      const element = document.getElementById(`profile-desc-${profileData.name}`);
+      if (element) element.innerText = st;
+    }}
   >
     {profileData.description}
   </p>

@@ -3,11 +3,21 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { fade } from "svelte/transition";
 
-  export let leaderboard: any[] = [];
-  export let leaderboardPage: number = 1;
-  export let loading: boolean = false;
-  export let error: string | null = null;
-  export let onPageChange: (page: number) => void;
+  interface Props {
+    leaderboard?: any[];
+    leaderboardPage?: number;
+    loading?: boolean;
+    error?: string | null;
+    onPageChange: (page: number) => void;
+  }
+
+  let {
+    leaderboard = [],
+    leaderboardPage = 1,
+    loading = false,
+    error = null,
+    onPageChange
+  }: Props = $props();
 
   function formatNumber(num: number): string {
     return new Intl.NumberFormat().format(num);
@@ -102,7 +112,7 @@
         style="background: {$colorStore.primary}20;
                color: {$colorStore.text};
                opacity: {leaderboardPage <= 1 ? '0.5' : '1'};"
-        on:click={() => goToPage(leaderboardPage - 1)}
+        onclick={() => goToPage(leaderboardPage - 1)}
         disabled={leaderboardPage <= 1}
         aria-label="Previous page"
       >
@@ -120,7 +130,7 @@
         class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
         style="background: {$colorStore.primary}20;
                color: {$colorStore.text};"
-        on:click={() => goToPage(leaderboardPage + 1)}
+        onclick={() => goToPage(leaderboardPage + 1)}
         aria-label="Next page"
       >
         Next

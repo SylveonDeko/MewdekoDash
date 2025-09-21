@@ -4,7 +4,7 @@
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
 
-  export let data;
+  let { data } = $props();
 
   type SystemInfo = {
     cpuUsage: number;
@@ -19,11 +19,11 @@
     }>;
   };
 
-  let systemInfo: SystemInfo | null = null;
-  let loading = true;
-  let error: string | null = null;
+  let systemInfo: SystemInfo | null = $state(null);
+  let loading = $state(true);
+  let error: string | null = $state(null);
   let refreshInterval: number;
-  let refreshInProgress = false;
+  let refreshInProgress = $state(false);
   let userId = data?.user?.id ? BigInt(data.user.id) : null;
 
   const fetchSystemInfo = async () => {
@@ -73,7 +73,7 @@
     <button
       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
       disabled={refreshInProgress}
-      on:click={fetchSystemInfo}
+      onclick={fetchSystemInfo}
     >
       {refreshInProgress ? 'Refreshing...' : 'Refresh'}
     </button>

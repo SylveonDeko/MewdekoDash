@@ -2,9 +2,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   
-  export let target: string | HTMLElement = 'body';
+  interface Props {
+    target?: string | HTMLElement;
+    children?: import('svelte').Snippet;
+  }
+
+  let { target = 'body', children }: Props = $props();
   
-  let portal: HTMLDivElement;
+  let portal: HTMLDivElement = $state();
   let targetElement: HTMLElement;
   
   onMount(() => {
@@ -25,5 +30,5 @@
 </script>
 
 <div bind:this={portal}>
-  <slot />
+  {@render children?.()}
 </div>

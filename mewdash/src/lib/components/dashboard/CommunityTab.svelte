@@ -1,5 +1,7 @@
 <!-- lib/components/dashboard/CommunityTab.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -31,48 +33,53 @@
   import type { SuggestionsModel } from "$lib/types/models.ts";
   import type { MessageStatsResponse, DailyMessageStats } from "$lib/types/messagestats.ts";
 
-  // Props from parent
-  export let guildFeatures: any;
-  export let memberStats: any;
+  
+  interface Props {
+    // Props from parent
+    guildFeatures: any;
+    memberStats: any;
+  }
+
+  let { guildFeatures, memberStats }: Props = $props();
 
   // Real data from API
-  let xpLeaderboard: any[] = [];
+  let xpLeaderboard: any[] = $state([]);
   let recentSuggestions: SuggestionsModel[] = [];
-  let starboardHighlights: any[] = [];
-  let loading = true;
-  let dailyMessages = 0;
-  let messageCountEnabled = false;
-  let activeMembers = 0;
+  let starboardHighlights: any[] = $state([]);
+  let loading = $state(true);
+  let dailyMessages = $state(0);
+  let messageCountEnabled = $state(false);
+  let activeMembers = $state(0);
 
   // Enhanced message stats
-  let messageStatsData: MessageStatsResponse | null = null;
-  let topActiveUsers: any[] = [];
+  let messageStatsData: MessageStatsResponse | null = $state(null);
+  let topActiveUsers: any[] = $state([]);
   let topChannels: any[] = [];
 
   // Patreon data
-  let patreonConnected = false;
-  let patreonSupporters = 0;
+  let patreonConnected = $state(false);
+  let patreonSupporters = $state(0);
   let patreonAnalytics: any = null;
 
   // Birthday data
   let birthdayStats: any = null;
-  let todaysBirthdays: any[] = [];
-  let upcomingBirthdays: any[] = [];
+  let todaysBirthdays: any[] = $state([]);
+  let upcomingBirthdays: any[] = $state([]);
 
   // Tickets data
-  let ticketStats = {
+  let ticketStats = $state({
     totalTickets: 0,
     openTickets: 0,
     closedToday: 0,
     activeStaff: 0
-  };
+  });
   let recentTickets: any[] = [];
   let ticketPanels: any[] = [];
 
   // Counting data
-  let countingChannels: any[] = [];
+  let countingChannels: any[] = $state([]);
   let countingStats: any = null;
-  let topCountingChannel: any = null;
+  let topCountingChannel: any = $state(null);
 
   async function fetchCommunityData() {
     if (!$currentGuild?.id) return;
@@ -197,9 +204,11 @@
     fetchCommunityData();
   });
 
-  $: if ($currentGuild) {
-    fetchCommunityData();
-  }
+  run(() => {
+    if ($currentGuild) {
+      fetchCommunityData();
+    }
+  });
 
   // Feature descriptions
   const featureDescriptions = {

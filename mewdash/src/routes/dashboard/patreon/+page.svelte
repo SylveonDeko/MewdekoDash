@@ -1,5 +1,7 @@
 <!-- routes/dashboard/patreon/+page.svelte -->
 <script lang="ts">
+    import {preventDefault} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -38,46 +40,51 @@
   } from "$lib/types";
   import { userStore } from "$lib/stores/userStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
 
-  let loading = true;
-  let error: string | null = null;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let patreonStatus: PatreonOAuthStatusResponse | null = null;
+    let {data}: Props = $props();
+
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let patreonStatus: PatreonOAuthStatusResponse | null = $state(null);
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
   }
-  let patreonAnalytics: PatreonAnalytics | null = null;
-  let patreonSupporters: PatreonSupporter[] = [];
+
+    let patreonAnalytics: PatreonAnalytics | null = $state(null);
+    let patreonSupporters: PatreonSupporter[] = $state([]);
   let patreonConfig: PatreonConfig | null = null;
-  let patreonTiers: PatreonTier[] = [];
-  let patreonCreator: PatreonCreator | null = null;
-  let guildRoles: Array<{ id: string; name: string }> = [];
-  let guildChannels: Array<{ id: string; name: string }> = [];
-  let isConnecting = false;
-  let isRefreshing = false;
-  let isSyncing = false;
-  let isUpdatingConfig = false;
+    let patreonTiers: PatreonTier[] = $state([]);
+    let patreonCreator: PatreonCreator | null = $state(null);
+    let guildRoles: Array<{ id: string; name: string }> = $state([]);
+    let guildChannels: Array<{ id: string; name: string }> = $state([]);
+    let isConnecting = $state(false);
+    let isRefreshing = $state(false);
+    let isSyncing = $state(false);
+    let isUpdatingConfig = $state(false);
 
   // Config form state
-  let configForm: PatreonConfigUpdateRequest = {
+    let configForm: PatreonConfigUpdateRequest = $state({
     channelId: undefined,
     message: undefined,
     announcementDay: undefined,
     toggleAnnouncements: undefined,
     toggleRoleSync: undefined
-  };
+    });
 
   // Tier mapping state
-  let selectedTierId = "";
-  let selectedRoleId = "";
-  let isMappingTier = false;
+    let selectedTierId = $state("");
+    let selectedRoleId = $state("");
+    let isMappingTier = $state(false);
   
   // Layout state
-  let activeTab = "overview";
+    let activeTab = $state("overview");
   
   const tabs = [
     { id: "overview", label: "Overview", icon: Heart },
@@ -439,7 +446,7 @@
         <p class="text-red-300">{error}</p>
         <button
           class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
-          on:click={loadAllData}
+          onclick={loadAllData}
         >
           <RefreshCw class="w-4 h-4 inline mr-2" />
           Retry
@@ -461,7 +468,7 @@
 
         <button
           class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 flex items-center gap-3 mx-auto text-lg"
-          on:click={connectPatreon}
+          onclick={connectPatreon}
           disabled={isConnecting}
         >
           {#if isConnecting}
@@ -679,7 +686,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                on:click={() => triggerOperation("sync_all")}
+                onclick={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
                 <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
@@ -689,7 +696,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                on:click={() => triggerOperation("sync_roles")}
+                onclick={() => triggerOperation("sync_roles")}
                 disabled={isSyncing}
               >
                 <Award class="w-4 h-4" />
@@ -699,7 +706,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                on:click={() => triggerOperation("manual_announcement")}
+                onclick={() => triggerOperation("manual_announcement")}
                 disabled={isSyncing}
               >
                 <MessageCircle class="w-4 h-4" />
@@ -709,7 +716,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                on:click={() => triggerOperation("refresh_token")}
+                onclick={() => triggerOperation("refresh_token")}
                 disabled={isSyncing}
               >
                 <RefreshCw class="w-4 h-4" />
@@ -719,7 +726,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
-                on:click={disconnectPatreon}
+                onclick={disconnectPatreon}
                 disabled={isConnecting}
               >
                 <Unlink class="w-4 h-4" />
@@ -742,7 +749,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={() => triggerOperation("sync_all")}
+                onclick={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
                 <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
@@ -838,7 +845,7 @@
                   <button
                     class="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                     style="background: {$colorStore.primary}; color: white;"
-                    on:click={mapTierToRole}
+                    onclick={mapTierToRole}
                     disabled={isMappingTier || !selectedTierId || !selectedRoleId}
                   >
                     {#if isMappingTier}
@@ -899,7 +906,7 @@
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Configuration</h3>
-              <form on:submit|preventDefault={updateConfig} class="space-y-4">
+                <form onsubmit={preventDefault(updateConfig)} class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="announcement-channel" class="block text-sm font-medium mb-2"

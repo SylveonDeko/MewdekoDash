@@ -1,5 +1,7 @@
 <!-- lib/components/dashboard/SettingsTab.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -15,19 +17,19 @@
 
 
   // Settings data
-  let guildConfig: any = {};
-  let roleSettings = {
+    let guildConfig: any = $state({});
+    let roleSettings = $state({
     autoAssignRoles: { normalRoles: [], botRoles: [] },
     selfAssignableRoles: [],
     roleStates: 0,
     roleGreets: 0
-  };
+    });
 
-  let integrationSettings = {
+    let integrationSettings = $state({
     patreonEnabled: false,
     webhooksCount: 0,
     apiKeysCount: 0
-  };
+    });
 
   let loggingConfig: any = null;
   let ticketStats = {
@@ -104,9 +106,11 @@
     fetchSettingsData();
   });
 
-  $: if ($currentGuild) {
-    fetchSettingsData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchSettingsData();
+        }
+    });
 
   // Helper functions
   function getFeatureStatus(feature: string): boolean {
@@ -127,10 +131,10 @@
   }
 
   // Calculate total configured items
-  $: totalAutoAssignRoles = (roleSettings.autoAssignRoles.normalRoles?.length || 0) +
-    (roleSettings.autoAssignRoles.botRoles?.length || 0);
-  $: totalRoleFeatures = roleSettings.roleStates + roleSettings.roleGreets;
-  $: totalSelfAssignRoles = roleSettings.selfAssignableRoles?.length || 0;
+    let totalAutoAssignRoles = $derived((roleSettings.autoAssignRoles.normalRoles?.length || 0) +
+        (roleSettings.autoAssignRoles.botRoles?.length || 0));
+    let totalRoleFeatures = $derived(roleSettings.roleStates + roleSettings.roleGreets);
+    let totalSelfAssignRoles = $derived(roleSettings.selfAssignableRoles?.length || 0);
 </script>
 
 <div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/starboard/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -29,13 +31,17 @@
   import { logger } from "$lib/logger.ts";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State management
   let botStatus: BotStatusModel | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
   // Starboard configurations
@@ -52,45 +58,45 @@
     removeOnReactionsClear: boolean;
     removeBelowThreshold: boolean;
     repostThreshold: number;
-  }> = [];
+  }> = $state([]);
 
   // Guild channels and emote selection
   let guildTextChannels: Array<{
     id: string;
     name: string;
-  }> = [];
+  }> = $state([]);
 
   // New starboard form
-  let newStarboard = {
+    let newStarboard = $state({
     channelId: "",
     emote: "⭐",
     threshold: 1
-  };
+    });
 
   // Channel management
-  let selectedStarboardId: number | null = null;
-  let selectedChannelId = "";
-  let parsedCheckedChannels: string[] = [];
+    let selectedStarboardId: number | null = $state(null);
+    let selectedChannelId = $state("");
+    let parsedCheckedChannels: string[] = $state([]);
 
   // Current view states
-  let loadingStarboards = true;
-  let errorStarboards: string | null = null;
-  let creatingStarboard = false;
+    let loadingStarboards = $state(true);
+    let errorStarboards: string | null = $state(null);
+    let creatingStarboard = $state(false);
 
 
   // Edit thresholds
-  let editStarThreshold = 0;
-  let editRepostThreshold = 0;
+    let editStarThreshold = $state(0);
+    let editRepostThreshold = $state(0);
 
   // Modals
-  let showDeleteModal = false;
-  let showSettingsModal = false;
-  let showChannelsModal = false;
-  let starboardToDelete: number | null = null;
-  let currentEditStarboard: any = null;
+    let showDeleteModal = $state(false);
+    let showSettingsModal = $state(false);
+    let showChannelsModal = $state(false);
+    let starboardToDelete: number | null = $state(null);
+    let currentEditStarboard: any = $state(null);
 
   // Custom emoji input (for when users want to use a custom emoji)
-  let customEmojiInput = "";
+    let customEmojiInput = $state("");
 
   // Fetch bot status
   async function fetchBotStatus() {
@@ -101,14 +107,6 @@
     }
   }
 
-  // Initialize data loading
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchStarboards(),
-      fetchGuildChannels(),
-      fetchBotStatus()
-    ]);
-  }
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -380,17 +378,31 @@
     return `${r}, ${g}, ${b}`;
   }
 
-  // Reactive declarations for guild changes
-  $: if ($currentGuild) {
-    fetchStarboards();
-    fetchGuildChannels();
-  }
 
+    // Initialize data loading
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchStarboards(),
+                fetchGuildChannels(),
+                fetchBotStatus()
+            ]);
+        }
+    });
+  // Reactive declarations for guild changes
+    run(() => {
+        if ($currentGuild) {
+            fetchStarboards();
+            fetchGuildChannels();
+        }
+    });
   // Reactive declarations for instance changes
-  $: if ($currentInstance) {
-    fetchStarboards();
-    fetchGuildChannels();
-  }
+    run(() => {
+        if ($currentInstance) {
+            fetchStarboards();
+            fetchGuildChannels();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -413,6 +425,7 @@
     }
   ]}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -465,7 +478,7 @@
               <!-- Common emojis -->
               <button
                 class="p-3 rounded-lg transition-all duration-200"
-                on:click={() => newStarboard.emote = "⭐"}
+                onclick={() => newStarboard.emote = "⭐"}
                 style="background: {newStarboard.emote === '⭐' ? $colorStore.primary : $colorStore.primary + '20'};
                        color: {$colorStore.text};"
               >
@@ -473,7 +486,7 @@
               </button>
               <button
                 class="p-3 rounded-lg transition-all duration-200"
-                on:click={() => newStarboard.emote = "🌟"}
+                onclick={() => newStarboard.emote = "🌟"}
                 style="background: {newStarboard.emote === '🌟' ? $colorStore.primary : $colorStore.primary + '20'};
                        color: {$colorStore.text};"
               >
@@ -481,7 +494,7 @@
               </button>
               <button
                 class="p-3 rounded-lg transition-all duration-200"
-                on:click={() => newStarboard.emote = "💫"}
+                onclick={() => newStarboard.emote = "💫"}
                 style="background: {newStarboard.emote === '💫' ? $colorStore.primary : $colorStore.primary + '20'};
                        color: {$colorStore.text};"
               >
@@ -489,7 +502,7 @@
               </button>
               <button
                 class="p-3 rounded-lg transition-all duration-200"
-                on:click={() => newStarboard.emote = "✨"}
+                onclick={() => newStarboard.emote = "✨"}
                 style="background: {newStarboard.emote === '✨' ? $colorStore.primary : $colorStore.primary + '20'};
                        color: {$colorStore.text};"
               >
@@ -508,7 +521,7 @@
               />
               <button
                 class="px-2 md:px-3 py-1 rounded-r-lg transition-all duration-200 whitespace-nowrap"
-                on:click={setCustomEmoji}
+                onclick={setCustomEmoji}
                 style="background: {$colorStore.primary}20;
                color: {$colorStore.text};"
               >
@@ -541,7 +554,7 @@
           <button
             class="w-full px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
             disabled={!newStarboard.channelId || !newStarboard.emote || creatingStarboard}
-            on:click={createStarboard}
+            onclick={createStarboard}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};
                    opacity: {!newStarboard.channelId || !newStarboard.emote || creatingStarboard ? '0.5' : '1'};"
@@ -704,7 +717,7 @@
                 <div class="flex flex-row md:flex-col justify-end gap-2">
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
-                    on:click={() => openSettingsModal(starboard)}
+                    onclick={() => openSettingsModal(starboard)}
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.text};"
                     aria-label="Starboard settings"
@@ -713,7 +726,7 @@
                   </button>
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
-                    on:click={() => openChannelsModal(starboard)}
+                    onclick={() => openChannelsModal(starboard)}
                     style="background: {$colorStore.secondary}20;
                            color: {$colorStore.text};"
                     aria-label="Manage channels"
@@ -722,7 +735,7 @@
                   </button>
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
-                    on:click={() => confirmDeleteStarboard(starboard.id)}
+                    onclick={() => confirmDeleteStarboard(starboard.id)}
                     style="background: {$colorStore.accent}20;
                            color: {$colorStore.accent};"
                     aria-label="Delete starboard"
@@ -754,7 +767,7 @@
         <div class="flex justify-end gap-3">
           <button
             class="px-4 py-2 rounded-lg"
-            on:click={() => { showDeleteModal = false; starboardToDelete = null; }}
+            onclick={() => { showDeleteModal = false; starboardToDelete = null; }}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >
@@ -762,7 +775,7 @@
           </button>
           <button
             class="px-4 py-2 rounded-lg flex items-center gap-2"
-            on:click={() => starboardToDelete && deleteStarboard(starboardToDelete)}
+            onclick={() => starboardToDelete && deleteStarboard(starboardToDelete)}
             style="background: {$colorStore.accent}20;
                    color: {$colorStore.accent};"
           >
@@ -803,7 +816,7 @@
               />
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200"
-                on:click={updateStarThreshold}
+                onclick={updateStarThreshold}
                 disabled={editStarThreshold === currentEditStarboard.threshold}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
@@ -830,7 +843,7 @@
               />
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200"
-                on:click={updateRepostThreshold}
+                onclick={updateRepostThreshold}
                 disabled={editRepostThreshold === currentEditStarboard.repostThreshold}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
@@ -861,7 +874,7 @@
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  on:click={() => toggleAllowBots(currentEditStarboard.id, currentEditStarboard.allowBots)}
+                  onclick={() => toggleAllowBots(currentEditStarboard.id, currentEditStarboard.allowBots)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
                   aria-label={currentEditStarboard.allowBots ? "Disable bot messages" : "Enable bot messages"}
@@ -886,7 +899,7 @@
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  on:click={() => toggleRemoveOnDelete(currentEditStarboard.id, currentEditStarboard.removeOnDelete)}
+                  onclick={() => toggleRemoveOnDelete(currentEditStarboard.id, currentEditStarboard.removeOnDelete)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
                   aria-label={currentEditStarboard.removeOnDelete ? "Disable remove on delete" : "Enable remove on delete"}
@@ -911,7 +924,7 @@
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  on:click={() => toggleRemoveOnClear(currentEditStarboard.id, currentEditStarboard.removeOnReactionsClear)}
+                  onclick={() => toggleRemoveOnClear(currentEditStarboard.id, currentEditStarboard.removeOnReactionsClear)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
                   aria-label={currentEditStarboard.removeOnReactionsClear ? "Disable remove on clear" : "Enable remove on clear"}
@@ -936,7 +949,7 @@
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  on:click={() => toggleRemoveBelowThreshold(currentEditStarboard.id, currentEditStarboard.removeBelowThreshold)}
+                  onclick={() => toggleRemoveBelowThreshold(currentEditStarboard.id, currentEditStarboard.removeBelowThreshold)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
                   aria-label={currentEditStarboard.removeBelowThreshold ? "Disable remove below threshold" : "Enable remove below threshold"}
@@ -961,7 +974,7 @@
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  on:click={() => toggleUseBlacklist(currentEditStarboard.id, currentEditStarboard.useBlacklist)}
+                  onclick={() => toggleUseBlacklist(currentEditStarboard.id, currentEditStarboard.useBlacklist)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
                   aria-label={currentEditStarboard.useBlacklist ? "Use whitelist mode" : "Use blacklist mode"}
@@ -980,7 +993,7 @@
         <div class="flex justify-end mt-6">
           <button
             class="px-4 py-2 rounded-lg"
-            on:click={() => { showSettingsModal = false; currentEditStarboard = null; }}
+            onclick={() => { showSettingsModal = false; currentEditStarboard = null; }}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >
@@ -1028,7 +1041,7 @@
               </div>
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
-                on:click={toggleChannelInList}
+                onclick={toggleChannelInList}
                 disabled={!selectedChannelId}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
@@ -1061,7 +1074,7 @@
                       <span style="color: {$colorStore.text}">#{getChannelName(channelId)}</span>
                       <button
                         class="p-1 rounded transition-all duration-200"
-                        on:click={() => { selectedChannelId = channelId; toggleChannelInList(); }}
+                        onclick={() => { selectedChannelId = channelId; toggleChannelInList(); }}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};"
                         aria-label="Remove channel"
@@ -1079,7 +1092,7 @@
         <div class="flex justify-end mt-6">
           <button
             class="px-4 py-2 rounded-lg"
-            on:click={() => { showChannelsModal = false; currentEditStarboard = null; selectedStarboardId = null; }}
+            onclick={() => { showChannelsModal = false; currentEditStarboard = null; selectedStarboardId = null; }}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
           >

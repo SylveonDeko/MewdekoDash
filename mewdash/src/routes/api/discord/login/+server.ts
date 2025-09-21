@@ -23,5 +23,5 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     authorizeUrl.searchParams.append('response_type', 'code');
     authorizeUrl.searchParams.append('scope', DISCORD_SCOPES);
 
-    throw redirect(302, authorizeUrl.toString());
+    redirect(302, authorizeUrl.toString());
 };

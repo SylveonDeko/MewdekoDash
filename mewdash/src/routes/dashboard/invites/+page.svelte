@@ -1,5 +1,7 @@
 <!-- routes/dashboard/invites/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -17,14 +19,18 @@
   import { loadingStore } from "$lib/stores/loadingStore";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State management
   let botStatus: BotStatusModel | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let activeTab = "settings";
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let activeTab = $state("settings");
   let isMobile = false;
   
   // Layout configuration
@@ -37,29 +43,29 @@
   ];
 
   // Invite Settings
-  let inviteSettings = {
+    let inviteSettings = $state({
     isEnabled: true,
     removeInviteOnLeave: false,
     minAccountAge: "00:00:00" // TimeSpan format
-  };
+    });
 
   // Invite Leaderboard
   let leaderboard: Array<{
     userId: string;
     username: string;
     inviteCount: number;
-  }> = [];
-  let leaderboardPage = 1;
+  }> = $state([]);
+    let leaderboardPage = $state(1);
   let leaderboardPageSize = 10;
 
   // User selection for viewing inviter/invited
-  let selectedUserId = "";
+    let selectedUserId = $state("");
   let guildMembers: Array<{
     id: string;
     username: string;
     displayName: string;
     avatarUrl: string;
-  }> = [];
+  }> = $state([]);
 
   // Inviter lookup
   let inviterInfo: {
@@ -67,9 +73,9 @@
     username: string;
     discriminator: string;
     avatarUrl: string;
-  } | null = null;
-  let inviterLoading = false;
-  let inviterError: string | null = null;
+  } | null = $state(null);
+    let inviterLoading = $state(false);
+    let inviterError: string | null = $state(null);
 
   // Invited users list
   let invitedUsers: Array<{
@@ -77,39 +83,39 @@
     username: string;
     discriminator: string;
     avatarUrl: string;
-  }> = [];
-  let invitedLoading = false;
-  let invitedError: string | null = null;
+  }> = $state([]);
+    let invitedLoading = $state(false);
+    let invitedError: string | null = $state(null);
 
   // Stats
-  let userStats = {
+    let userStats = $state({
     totalInvites: 0,
     avgInvitesPerUser: 0,
     topInviter: {
       username: "",
       inviteCount: 0
     }
-  };
+    });
 
   // Management
-  let changedSettings = new Set<string>();
-  let loading = {
+    let changedSettings = $state(new Set<string>());
+    let loading = $state({
     settings: true,
     leaderboard: true,
     members: true,
     stats: true
-  };
-  let error = {
+    });
+    let error = $state({
     settings: null as string | null,
     leaderboard: null as string | null,
     members: null as string | null,
     stats: null as string | null
-  };
+    });
 
   // Min account age inputs
-  let minAgeDays = 0;
-  let minAgeHours = 0;
-  let minAgeMinutes = 0;
+    let minAgeDays = $state(0);
+    let minAgeHours = $state(0);
+    let minAgeMinutes = $state(0);
 
   // Fetch bot status
   async function fetchBotStatus() {
@@ -120,15 +126,6 @@
     }
   }
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchInviteSettings(),
-      fetchLeaderboard(),
-      fetchGuildMembers(),
-      calculateStats(),
-      fetchBotStatus()
-    ]);
-  }
 
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
@@ -351,30 +348,46 @@
   });
 
 
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchInviteSettings(),
+                fetchLeaderboard(),
+                fetchGuildMembers(),
+                calculateStats(),
+                fetchBotStatus()
+            ]);
+        }
+    });
   // Reactive declarations for guild changes
-  $: if ($currentGuild) {
-    fetchInviteSettings();
-    fetchLeaderboard();
-    fetchGuildMembers();
-    calculateStats();
-  }
-
+    run(() => {
+        if ($currentGuild) {
+            fetchInviteSettings();
+            fetchLeaderboard();
+            fetchGuildMembers();
+            calculateStats();
+        }
+    });
   // Reactive declarations for instance changes
-  $: if ($currentInstance) {
-    fetchInviteSettings();
-    fetchLeaderboard();
-    fetchGuildMembers();
-    calculateStats();
-  }
-
+    run(() => {
+        if ($currentInstance) {
+            fetchInviteSettings();
+            fetchLeaderboard();
+            fetchGuildMembers();
+            calculateStats();
+        }
+    });
   // Reactive declarations for user selection changes
-  $: if (selectedUserId && activeTab === "inviter") {
-    lookupInviter();
-  }
-
-  $: if (selectedUserId && activeTab === "invited") {
-    lookupInvitedUsers();
-  }
+    run(() => {
+        if (selectedUserId && activeTab === "inviter") {
+            lookupInviter();
+        }
+    });
+    run(() => {
+        if (selectedUserId && activeTab === "invited") {
+            lookupInvitedUsers();
+        }
+    });
 </script>
 
 <DashboardPageLayout 
@@ -386,6 +399,7 @@
   bind:activeTab
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -443,7 +457,7 @@
                     type="checkbox"
                     bind:checked={inviteSettings.isEnabled}
                     class="sr-only peer"
-                    on:change={() => markAsChanged("inviteSettings")}
+                    onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Enable or disable invite tracking"
                   >
                   <div
@@ -474,7 +488,7 @@
                     type="checkbox"
                     bind:checked={inviteSettings.removeInviteOnLeave}
                     class="sr-only peer"
-                    on:change={() => markAsChanged("inviteSettings")}
+                    onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Remove invite count when a user leaves"
                   >
                   <div
@@ -506,7 +520,7 @@
                     id="min-age-days"
                     type="number"
                     bind:value={minAgeDays}
-                    on:input={() => markAsChanged("inviteSettings")}
+                    oninput={() => markAsChanged("inviteSettings")}
                     class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                     style="border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
@@ -520,7 +534,7 @@
                     id="min-age-hours"
                     type="number"
                     bind:value={minAgeHours}
-                    on:input={() => markAsChanged("inviteSettings")}
+                    oninput={() => markAsChanged("inviteSettings")}
                     class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                     style="border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
@@ -536,7 +550,7 @@
                     id="min-age-minutes"
                     type="number"
                     bind:value={minAgeMinutes}
-                    on:input={() => markAsChanged("inviteSettings")}
+                    oninput={() => markAsChanged("inviteSettings")}
                     class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                     style="border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
@@ -557,7 +571,7 @@
               <button
                 class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                 disabled={!changedSettings.has("inviteSettings")}
-                on:click={updateInviteSettings}
+                onclick={updateInviteSettings}
                 style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                        color: {$colorStore.text};"
                 aria-label="Save invite settings"
@@ -752,7 +766,7 @@
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
                        opacity: {leaderboardPage <= 1 ? '0.5' : '1'};"
-                on:click={() => goToPage(leaderboardPage - 1)}
+                onclick={() => goToPage(leaderboardPage - 1)}
                 disabled={leaderboardPage <= 1}
                 aria-label="Previous page"
               >
@@ -770,7 +784,7 @@
                 class="px-4 py-2 rounded-lg transition-all duration-200"
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};"
-                on:click={() => goToPage(leaderboardPage + 1)}
+                onclick={() => goToPage(leaderboardPage + 1)}
                 aria-label="Next page"
               >
                 Next
@@ -819,7 +833,7 @@
                 aria-label="Find inviter"
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                 disabled={!selectedUserId}
-                on:click={lookupInviter}
+                onclick={lookupInviter}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};"
               >
@@ -914,7 +928,7 @@
                 aria-label="Find invited users"
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                 disabled={!selectedUserId}
-                on:click={lookupInvitedUsers}
+                onclick={lookupInvitedUsers}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};"
               >

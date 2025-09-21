@@ -11,9 +11,9 @@
   import { BarChart3, Activity, Zap, Package } from "lucide-svelte";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-  export let data;
+  let {data} = $props();
 
-  let activeTab = "overview";
+  let activeTab = $state("overview");
 
   onMount(async () => {
     await loadingStore.wrap("owner-check", async () => {

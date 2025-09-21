@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (status-messages to status_messages) making the component unusable -->
 <!-- DashboardPageLayout.svelte -->
 <script lang="ts">
   import { fade, fly } from "svelte/transition";

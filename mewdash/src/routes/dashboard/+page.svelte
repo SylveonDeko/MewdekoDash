@@ -1,5 +1,8 @@
 <!-- routes/dashboard/+page.svelte -->
 <script lang="ts">
+  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+
+  const bubble = createBubbler();
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { fade, fly } from "svelte/transition";
@@ -28,56 +31,56 @@
   // Import search component
   import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
 
-  export let data;
+  let { data } = $props();
 
   // State management
   let currentUser = data.user;
-  let botStatus: BotStatusModel | null = null;
-  let loading = true;
-  let error: string | null = null;
-  let refreshing = false;
-  let joinStats: GraphStatsResponse | null = null;
-  let leaveStats: GraphStatsResponse | null = null;
-  let showShortcuts = false;
+  let botStatus: BotStatusModel | null = $state(null);
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let refreshing = $state(false);
+  let joinStats: GraphStatsResponse | null = $state(null);
+  let leaveStats: GraphStatsResponse | null = $state(null);
+  let showShortcuts = $state(false);
 
   // Derived state
-  $: musicStatus = $musicStore.status;
+  let musicStatus = $derived($musicStore.status);
 
-  // Tab state for mini player - let TabbedDashboard handle its own initialization
-  let currentActiveTab;
+  // Tab state for mini player - initialize with default value
+  let currentActiveTab = $state("overview");
 
   // Track when data is being fetched to prevent duplicate requests
   let fetchingData = false;
 
   // Server selector dropdown state
-  let showServerDropdown = false;
-  let serverSearchTerm = "";
-  let serverDropdownRef: HTMLDivElement;
+  let showServerDropdown = $state(false);
+  let serverSearchTerm = $state("");
+  let serverDropdownRef: HTMLDivElement = $state();
   let hasEverSelectedServer = false;
-  let switchingServer = false;
+  let switchingServer = $state(false);
 
   // Guild detailed information
-  let guildInfo = null;
+  let guildInfo = $state(null);
 
   // Role statistics
-  let roleStats = {
+  let roleStats = $state({
     totalRoleStates: 0,
     activeRoleGreets: 0,
     savedRoles: 0,
     totalRoles: 0,
     previousTotalRoles: 0
-  };
+  });
 
   // Guild member statistics
-  let guildMemberStats = {
+  let guildMemberStats = $state({
     totalMembers: 0,
     botMembers: 0,
     humanMembers: 0,
     previousMemberCount: 0
-  };
+  });
 
   // Feature flags for guild
-  let guildFeatures = {
+  let guildFeatures = $state({
     inviteTracking: false,
     roleStates: false,
     roleGreets: false,
@@ -86,24 +89,24 @@
     suggestions: false,
     musicEnabled: false,
     giveawaysEnabled: false
-  };
+  });
 
   // Description for features
 
 
   // Tooltip data for stats
-  $: memberTooltipData = [
+  let memberTooltipData = $derived([
     { label: "Human Members", value: guildMemberStats.humanMembers },
     { label: "Bot Members", value: guildMemberStats.botMembers },
     { label: "Total Members", value: guildMemberStats.totalMembers }
-  ];
+  ]);
 
-  $: roleTooltipData = [
+  let roleTooltipData = $derived([
     { label: "Total Roles", value: roleStats.totalRoles },
     { label: "Saved Roles", value: roleStats.savedRoles },
     { label: "Role States", value: roleStats.totalRoleStates },
     { label: "Role Greets", value: roleStats.activeRoleGreets }
-  ];
+  ]);
 
   // Unified data fetching
   async function fetchRoleStats() {
@@ -323,9 +326,9 @@
   }
 
   // Filtered guilds for server selector
-  $: filteredGuilds = ($userAdminGuilds || []).filter(guild =>
+  let filteredGuilds = $derived(($userAdminGuilds || []).filter(guild =>
     guild.name.toLowerCase().includes(serverSearchTerm.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).sort((a, b) => a.name.localeCompare(b.name)));
 
   // Server dropdown functions
   function toggleServerDropdown() {
@@ -439,61 +442,67 @@
     }
   });
 
-  $: if ($currentInstance) {
-    // Extract colors from server icon if available, otherwise use bot avatar as fallback
-    if (guildInfo?.iconUrl) {
-      colorStore.extractFromServerIcon(guildInfo.iconUrl);
-    } else if ($currentGuild?.icon) {
-      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-      colorStore.extractFromServerIcon(serverIconUrl);
-    } else {
-      colorStore.extractFromImage($currentInstance?.botAvatar);
-    }
+  run(() => {
+    if ($currentInstance) {
+      // Extract colors from server icon if available, otherwise use bot avatar as fallback
+      if (guildInfo?.iconUrl) {
+        colorStore.extractFromServerIcon(guildInfo.iconUrl);
+      } else if ($currentGuild?.icon) {
+        const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+        colorStore.extractFromServerIcon(serverIconUrl);
+      } else {
+        colorStore.extractFromImage($currentInstance?.botAvatar);
+      }
 
-    // Reset music polling
-    if (currentUser?.id) {
+      // Reset music polling
+      if (currentUser?.id) {
+        musicStore.reset();
+        musicStore.startPolling(currentUser.id);
+      }
+
+      fetchAllData();
+    }
+  });
+
+  run(() => {
+    if ($currentGuild) {
+      // Reset music store when guild changes
       musicStore.reset();
-      musicStore.startPolling(currentUser.id);
+      if (currentUser?.id) {
+        musicStore.startPolling(currentUser.id);
+      }
+      fetchAllData();
     }
-
-    fetchAllData();
-  }
-
-  $: if ($currentGuild) {
-    // Reset music store when guild changes
-    musicStore.reset();
-    if (currentUser?.id) {
-      musicStore.startPolling(currentUser.id);
-    }
-    fetchAllData();
-  }
+  });
 
   // Watch for userAdminGuilds to be populated and restore saved guild if needed
-  $: if (browser && $userAdminGuilds) {
-    try {
-      const savedGuild = localStorage.getItem("lastSelectedGuild");
-      if (savedGuild) {
-        const guildData = JSON.parse(savedGuild);
-        const restoredGuild = {
-          ...guildData,
-          id: BigInt(guildData.id)
-        };
+  run(() => {
+    if (browser && $userAdminGuilds) {
+      try {
+        const savedGuild = localStorage.getItem("lastSelectedGuild");
+        if (savedGuild) {
+          const guildData = JSON.parse(savedGuild);
+          const restoredGuild = {
+            ...guildData,
+            id: BigInt(guildData.id)
+          };
 
-        // Check if this guild is still in the user's admin guilds
-        const guildExists = $userAdminGuilds.some(guild => guild.id === restoredGuild.id);
-        if (guildExists) {
-          currentGuild.set(restoredGuild);
-          logger.info("Restored saved guild after admin guilds loaded:", restoredGuild.name);
-        } else {
-          // Guild no longer available, clear saved data
-          localStorage.removeItem("lastSelectedGuild");
+          // Check if this guild is still in the user's admin guilds
+          const guildExists = $userAdminGuilds.some(guild => guild.id === restoredGuild.id);
+          if (guildExists) {
+            currentGuild.set(restoredGuild);
+            logger.info("Restored saved guild after admin guilds loaded:", restoredGuild.name);
+          } else {
+            // Guild no longer available, clear saved data
+            localStorage.removeItem("lastSelectedGuild");
+          }
         }
+      } catch (err) {
+        logger.error("Failed to restore saved guild after admin guilds loaded:", err);
+        localStorage.removeItem("lastSelectedGuild");
       }
-    } catch (err) {
-      logger.error("Failed to restore saved guild after admin guilds loaded:", err);
-      localStorage.removeItem("lastSelectedGuild");
     }
-  }
+  });
 </script>
 
 <!-- Keyboard Shortcuts Dialog -->
@@ -539,9 +548,9 @@
               <button
                 class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105 shadow-lg hover:shadow-xl"
                 style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
-                on:click={toggleServerDropdown}
+                onclick={toggleServerDropdown}
                 use:clickOutside
-                on:clickoutside={closeServerDropdown}
+                onclickoutside={closeServerDropdown}
               >
                 <Server size={24} />
                 {showServerDropdown ? 'Close Server List' : 'Select Your Server'}
@@ -581,18 +590,21 @@
             class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
             in:fade={{ duration: 200 }}
             out:fade={{ duration: 150 }}
-            on:click={closeServerDropdown}
-            on:keydown={(e) => e.key === 'Escape' && closeServerDropdown()}
+            onclick={closeServerDropdown}
+            onkeydown={(e) => e.key === 'Escape' && closeServerDropdown()}
             role="dialog"
             aria-modal="true"
             aria-label="Server selection dropdown"
+            tabindex="-1"
           >
             <div
               class="w-96 max-w-[90vw] bg-gray-900 rounded-xl shadow-2xl border overflow-hidden"
               style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9));"
               in:fly={{ y: -20, duration: 200, delay: 100 }}
               out:fly={{ y: -20, duration: 150 }}
-              on:click|stopPropagation
+              onclick={stopPropagation(bubble('click'))}
+              onkeydown={stopPropagation(bubble('keydown'))}
+              role="listbox"
             >
               <!-- Search -->
               <div class="p-4 border-b" style="border-color: {$colorStore.primary}20;">
@@ -617,7 +629,7 @@
                 {#each filteredGuilds as guild (guild.id)}
                   <button
                     class="w-full flex items-center gap-4 p-4 hover:bg-black hover:bg-opacity-30 transition-colors text-left group"
-                    on:click={() => handleServerSelect(guild)}
+                    onclick={() => handleServerSelect(guild)}
                   >
                     <div class="relative">
                       <img
@@ -766,7 +778,7 @@
         <div class="mt-4 flex justify-end">
           <button
             class="flex items-center gap-2 py-2 px-4 rounded-lg transition-colors"
-            on:click={fetchAllData}
+            onclick={fetchAllData}
             style="background: {$colorStore.accent}20; color: {$colorStore.accent}"
           >
             <RefreshCw size={18} />
@@ -780,7 +792,7 @@
         <button
           class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-105"
           style="background: {$colorStore.primary}; color: white"
-          on:click={fetchAllData}
+          onclick={fetchAllData}
           aria-label="Refresh dashboard data"
         >
           <span class:animate-spin={refreshing}>
@@ -916,9 +928,9 @@
                     <!-- Clickable server name -->
                     <button
                       class="group flex items-center gap-2 mb-2 rounded-lg p-2 -m-2 transition-all duration-300 hover:bg-black hover:bg-opacity-10"
-                      on:click={toggleServerDropdown}
+                      onclick={toggleServerDropdown}
                       use:clickOutside
-                      on:clickoutside={closeServerDropdown}
+                      onclickoutside={closeServerDropdown}
                     >
                       {#key $currentGuild?.id}
                         <h1
@@ -966,7 +978,7 @@
                               class="w-full flex items-center gap-3 p-3 hover:bg-black hover:bg-opacity-30 transition-colors text-left"
                               class:bg-black={guild.id === $currentGuild.id}
                               class:bg-opacity-20={guild.id === $currentGuild.id}
-                              on:click={() => handleServerSelect(guild)}
+                              onclick={() => handleServerSelect(guild)}
                             >
                               <img
                                 src={guild.icon ? 
@@ -1049,7 +1061,7 @@
                       <button
                         class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        on:click={() => window.open(`https://discord.com/channels/${$currentGuild.id}`, '_blank')}
+                        onclick={() => window.open(`https://discord.com/channels/${$currentGuild.id}`, '_blank')}
                         in:fade={{ duration: 300, delay: 200 }}
                       >
                         <Link size={16} />
@@ -1072,7 +1084,7 @@
               <button
                 class="mt-4 px-4 py-2 rounded-lg transition-colors"
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                on:click={() => window.location.reload()}
+                onclick={() => window.location.reload()}
               >
                 Refresh Page
               </button>
@@ -1139,11 +1151,6 @@
         background: var(--color-primary) 50;
     }
 
-    @container (max-width: 640px) {
-        .music-controls {
-            @apply flex-col items-stretch;
-        }
-    }
 
     @media (max-width: 640px) {
         :global(.card-grid) {

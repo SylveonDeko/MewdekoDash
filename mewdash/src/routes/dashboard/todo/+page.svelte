@@ -1,5 +1,8 @@
 <!-- routes/dashboard/todo/+page.svelte -->
 <script lang="ts">
+    import {run, stopPropagation, createBubbler} from 'svelte/legacy';
+
+    const bubble = createBubbler();
   import { onMount } from "svelte";
   import { fly, scale } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -45,66 +48,66 @@
     AddTodoItemRequest 
   } from "$lib/types/todo";
 
-  export let data;
+    let {data} = $props();
 
   // State
-  let todoLists: TodoList[] = [];
-  let selectedListId: number | null = null;
-  let todoItems: TodoItem[] = [];
-  let loading = true;
-  let error: string | null = null;
+    let todoLists: TodoList[] = $state([]);
+    let selectedListId: number | null = $state(null);
+    let todoItems: TodoItem[] = $state([]);
+    let loading = $state(true);
+    let error: string | null = $state(null);
 
   // UI State
-  let showNewListModal = false;
-  let showPermissionManager = false;
-  let selectedPermissionListId: number | null = null;
-  let searchQuery = "";
-  let showFilters = false;
-  let includeCompleted = false;
+    let showNewListModal = $state(false);
+    let showPermissionManager = $state(false);
+    let selectedPermissionListId: number | null = $state(null);
+    let searchQuery = $state("");
+    let showFilters = $state(false);
+    let includeCompleted = $state(false);
 
   // Filters
-  let filters: TodoFilterOptions = {
+    let filters: TodoFilterOptions = $state({
     completed: false,
     sortBy: 'priority',
     sortOrder: 'desc'
-  };
+    });
 
   // New list form
-  let newListName = "";
-  let newListDescription = "";
+    let newListName = $state("");
+    let newListDescription = $state("");
   
   // Quick add form
-  let showQuickAdd = false;
-  let newItemTitle = "";
-  let newItemDescription = "";
-  let newItemPriority = 2;
+    let showQuickAdd = $state(false);
+    let newItemTitle = $state("");
+    let newItemDescription = $state("");
+    let newItemPriority = $state(2);
 
   // User permissions for selected list
-  let currentPermissions: UserPermissions = {
+    let currentPermissions: UserPermissions = $state({
     canView: false,
     canAdd: false,
     canEdit: false,
     canComplete: false,
     canDelete: false,
     canManage: false
-  };
+    });
 
   // Stats for selected list
-  let currentStats: TodoStats = {
+    let currentStats: TodoStats = $state({
     totalItems: 0,
     completedItems: 0,
     pendingItems: 0,
     overdueItems: 0,
     completionRate: 0
-  };
+    });
 
   // Computed values
-  $: filteredLists = todoLists.filter(list => 
+    let filteredLists = $derived(todoLists.filter(list =>
     list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (list.description && list.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+    ));
 
-  $: filteredItems = todoItems.filter(item => {
+    let filteredItems = $derived(todoItems.filter(item => {
     if (!includeCompleted && item.isCompleted) return false;
     if (filters.completed !== undefined && item.isCompleted !== filters.completed) return false;
     if (filters.priority && item.priority !== filters.priority) return false;
@@ -130,9 +133,9 @@
       default:
         return 0;
     }
-  });
+    }));
 
-  $: selectedList = todoLists.find(list => list.id === selectedListId);
+    let selectedList = $derived(todoLists.find(list => list.id === selectedListId));
 
   // Load todo lists
   async function loadTodoLists() {
@@ -384,13 +387,17 @@
     loadTodoLists();
   });
 
-  $: if ($currentGuild) {
-    loadTodoLists();
-  }
+    run(() => {
+        if ($currentGuild) {
+            loadTodoLists();
+        }
+    });
 
-  $: if (selectedListId) {
-    loadTodoItems();
-  }
+    run(() => {
+        if (selectedListId) {
+            loadTodoItems();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -418,7 +425,8 @@
       }
     ]}
   >
-    <svelte:fragment slot="status-messages">
+      <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
+      <svelte:fragment slot="status-messages">
       {#if error}
         <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
           <div class="flex items-center gap-2">
@@ -519,7 +527,7 @@
           <button
             class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg"
             style="color: {$colorStore.text};"
-            on:click={() => showNewListModal = true}
+            onclick={() => showNewListModal = true}
           >
             <div class="p-2 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
               <Plus size={20} />
@@ -541,8 +549,8 @@
                  class:ring-2={list.id === selectedListId}
                  style="background: linear-gradient(135deg, {list.color || $colorStore.primary}08, {list.color || $colorStore.primary}15);
                         ring-color: {list.id === selectedListId ? (list.color || $colorStore.primary) : 'transparent'};"
-                 on:click={() => handleSelectList({ detail: { listId: list.id } })}
-                 on:keydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
+                 onclick={() => handleSelectList({ detail: { listId: list.id } })}
+                 onkeydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
                  tabindex="0"
                  role="button"
                  aria-label="Select todo list {list.name}">
@@ -571,7 +579,7 @@
                     <button
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
-                      on:click|stopPropagation={() => handleShowPermissions({ detail: { listId: list.id } })}
+                      onclick={stopPropagation(() => handleShowPermissions({ detail: { listId: list.id } }))}
                       title="Manage permissions"
                     >
                       <Shield size={16} />
@@ -582,7 +590,7 @@
                     <button
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}20); color: {$colorStore.secondary};"
-                      on:click|stopPropagation
+                      onclick={stopPropagation(bubble('click'))}
                       title="List settings"
                     >
                       <Settings size={16} />
@@ -681,7 +689,7 @@
               <button
                 class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 min-h-[44px]"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
-                on:click={() => showQuickAdd = !showQuickAdd}
+                onclick={() => showQuickAdd = !showQuickAdd}
               >
                 <Plus size={16} />
                 <span>Add Item</span>
@@ -729,7 +737,7 @@
                     <button
                       class="w-full sm:flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
                       style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
-                      on:click={async () => {
+                      onclick={async () => {
                         if (newItemTitle.trim() && selectedListId) {
                           await handleAddTodoItem({
                             detail: {
@@ -756,7 +764,7 @@
                     <button
                       class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 font-medium flex items-center justify-center"
                       style="color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;"
-                      on:click={() => showQuickAdd = false}
+                      onclick={() => showQuickAdd = false}
                     >
                       <span>Cancel</span>
                     </button>
@@ -794,7 +802,7 @@
                       class="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-1"
                       style="border-color: {item.isCompleted ? '#10b981' : $colorStore.primary}; 
                              background: {item.isCompleted ? '#10b981' : 'transparent'};"
-                      on:click={() => handleCompleteItem({ detail: { itemId: item.id } })}
+                      onclick={() => handleCompleteItem({ detail: { itemId: item.id } })}
                       disabled={!currentPermissions.canComplete && !currentPermissions.canEdit}
                     >
                       {#if item.isCompleted}
@@ -870,7 +878,7 @@
                               <button
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, #ef444420, #dc262620); color: #ef4444;"
-                                on:click={() => handleDeleteItem({ detail: { itemId: item.id } })}
+                                onclick={() => handleDeleteItem({ detail: { itemId: item.id } })}
                                 title="Delete item"
                               >
                                 <Trash2 size={12} />
@@ -892,15 +900,15 @@
 
   <!-- New List Modal -->
   {#if showNewListModal}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-         on:click={() => showNewListModal = false}
+         onclick={() => showNewListModal = false}
          in:fly={{ opacity: 0, duration: 200 }}>
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md"
-           on:click|stopPropagation
+           onclick={stopPropagation(bubble('click'))}
            in:fly={{ y: 20, duration: 300, delay: 100 }}>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -944,7 +952,7 @@
               <button
                 class="w-full sm:flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 flex items-center justify-center min-h-[44px]"
                 style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
-                on:click={handleCreateList}
+                onclick={handleCreateList}
                 disabled={!newListName.trim()}
               >
                 Create List
@@ -952,7 +960,7 @@
               <button
                 class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all hover:scale-105 flex items-center justify-center min-h-[44px]"
                 style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
-                on:click={() => showNewListModal = false}
+                onclick={() => showNewListModal = false}
               >
                 Cancel
               </button>

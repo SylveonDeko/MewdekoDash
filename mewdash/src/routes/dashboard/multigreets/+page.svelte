@@ -1,5 +1,7 @@
 <!-- routes/dashboard/multigreets/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -31,23 +33,27 @@
   } from "lucide-svelte";
   import { logger } from "$lib/logger.ts";
 
-  export let data: PageData;
-  let channels: Array<{ id: string; name: string }> = [];
+    interface Props {
+        data: PageData;
+    }
 
-  let greets: MultiGreet[] = [];
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let selectedChannel: string | null = null;
-  let editMessage: { id: number; message: string } | null = null;
-  let editDeleteTime: { id: number; time: string } | null = null;
-  let editWebhook: { id: number; name: string; avatarUrl: string } | null = null;
-  let greetType: MultiGreetType = MultiGreetType.MultiGreet;
+    let {data}: Props = $props();
+    let channels: Array<{ id: string; name: string }> = $state([]);
+
+    let greets: MultiGreet[] = $state([]);
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let selectedChannel: string | null = $state(null);
+    let editMessage: { id: number; message: string } | null = $state(null);
+    let editDeleteTime: { id: number; time: string } | null = $state(null);
+    let editWebhook: { id: number; name: string; avatarUrl: string } | null = $state(null);
+    let greetType: MultiGreetType = $state(MultiGreetType.MultiGreet);
   let isMobile = false;
 
-  $: sortedGreets = [...greets].sort((a, b) => a.id - b.id);
+    let sortedGreets = $derived([...greets].sort((a, b) => a.id - b.id));
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -229,17 +235,19 @@
     }
   }
 
-  $: if ($currentGuild) {
-    fetchGreets();
-    fetchChannels();
-    // Extract colors from server icon if available, otherwise use bot avatar as fallback
-    if ($currentGuild.icon) {
-      const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-      colorStore.extractFromServerIcon(serverIconUrl);
-    } else if ($currentInstance?.botAvatar) {
-      colorStore.extractFromImage($currentInstance.botAvatar);
-    }
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchGreets();
+            fetchChannels();
+            // Extract colors from server icon if available, otherwise use bot avatar as fallback
+            if ($currentGuild.icon) {
+                const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+                colorStore.extractFromServerIcon(serverIconUrl);
+            } else if ($currentInstance?.botAvatar) {
+                colorStore.extractFromImage($currentInstance.botAvatar);
+            }
+        }
+    });
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
@@ -268,6 +276,7 @@
     }
   ]}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -301,7 +310,7 @@
                    color: {greetType === option.type ? $colorStore.text : $colorStore.muted};
                    ring-color: {`${$colorStore.primary}50`};
                    ring-offset-color: #1a1b1e;"
-            on:click={() => updateGreetType(option.type)}
+            onclick={() => updateGreetType(option.type)}
           >
             <div class="flex flex-col items-center gap-1">
               <span class="text-xl mb-1">{option.icon}</span>
@@ -406,7 +415,7 @@
                   <button
                     class="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10"
                     style="color: {$colorStore.muted}"
-                    on:click={() => removeGreet(greet.id)}
+                    onclick={() => removeGreet(greet.id)}
                   >
                     <Trash2 class="w-5 h-5" />
                   </button>
@@ -429,12 +438,12 @@
                                color: {$colorStore.text}"
                         placeholder="Enter greeting message..."
                         aria-label="Edit greeting message for greet {greet.id}"
-                      />
+                      ></textarea>
                       <div class="flex gap-2">
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          on:click={() => updateMessage(greet.id, editMessage.message)}
+                          onclick={() => updateMessage(greet.id, editMessage.message)}
                         >
                           <Check class="w-4 h-4" />
                           Save
@@ -442,7 +451,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-                          on:click={() => editMessage = null}
+                          onclick={() => editMessage = null}
                         >
                           <X class="w-4 h-4" />
                           Cancel
@@ -472,7 +481,7 @@
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
-                        on:click={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
+                        onclick={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
                       >
                         <Edit2 class="w-4 h-4" />
                       </button>
@@ -503,7 +512,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          on:click={() => updateDeleteTime(greet.id, editDeleteTime.time)}
+                          onclick={() => updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
                           <Check class="w-4 h-4" />
                           Save
@@ -511,7 +520,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-                          on:click={() => editDeleteTime = null}
+                          onclick={() => editDeleteTime = null}
                         >
                           <X class="w-4 h-4" />
                           Cancel
@@ -542,7 +551,7 @@
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
-                        on:click={() => editDeleteTime = { id: greet.id, time: String(greet.deleteTime || "") }}
+                        onclick={() => editDeleteTime = { id: greet.id, time: String(greet.deleteTime || "") }}
                       >
                         <Edit2 class="w-4 h-4" />
                       </button>
@@ -590,7 +599,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          on:click={() => updateWebhook(greet.id)}
+                          onclick={() => updateWebhook(greet.id)}
                         >
                           <Check class="w-4 h-4" />
                           Save
@@ -598,7 +607,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-                          on:click={() => editWebhook = null}
+                          onclick={() => editWebhook = null}
                         >
                           <X class="w-4 h-4" />
                           Cancel
@@ -629,7 +638,7 @@
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
-                        on:click={() => editWebhook = {
+                        onclick={() => editWebhook = {
                           id: greet.id,
                           name: "",
                           avatarUrl: ""
@@ -649,7 +658,7 @@
                       type="checkbox"
                       class="sr-only peer"
                       checked={greet.greetBots}
-                      on:change={(e) => updateGreetBots(greet.id, e.currentTarget.checked)}
+                      onchange={(e) => updateGreetBots(greet.id, e.currentTarget.checked)}
                     />
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
@@ -668,7 +677,7 @@
                       type="checkbox"
                       class="sr-only peer"
                       checked={!greet.disabled}
-                      on:change={(e) => updateDisabled(greet.id, !e.currentTarget.checked)}
+                      onchange={(e) => updateDisabled(greet.id, !e.currentTarget.checked)}
                     />
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white

@@ -1,5 +1,7 @@
 <!-- ValidationCard.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { createEventDispatcher } from 'svelte';
   import { colorStore } from "$lib/stores/colorStore";
   import { 
@@ -13,14 +15,27 @@
     ArrowRight
   } from "lucide-svelte";
 
-  // Props
-  export let errors: ValidationError[] = [];
-  export let warnings: ValidationWarning[] = [];
-  export let suggestions: ValidationSuggestion[] = [];
-  export let dismissible: boolean = true;
-  export let collapsible: boolean = false;
-  export let title: string = "";
-  export let compact: boolean = false;
+  
+  interface Props {
+    // Props
+    errors?: ValidationError[];
+    warnings?: ValidationWarning[];
+    suggestions?: ValidationSuggestion[];
+    dismissible?: boolean;
+    collapsible?: boolean;
+    title?: string;
+    compact?: boolean;
+  }
+
+  let {
+    errors = [],
+    warnings = [],
+    suggestions = [],
+    dismissible = true,
+    collapsible = false,
+    title = "",
+    compact = false
+  }: Props = $props();
 
   // Types
   interface ValidationError {
@@ -50,25 +65,31 @@
   }>();
 
   // Internal state
-  let collapsed = false;
-  let localErrors = [...errors];
-  let localWarnings = [...warnings];
-  let localSuggestions = [...suggestions];
+  let collapsed = $state(false);
+  let localErrors = $state([...errors]);
+  let localWarnings = $state([...warnings]);
+  let localSuggestions = $state([...suggestions]);
 
   // Update local arrays when props change
-  $: localErrors = [...errors];
-  $: localWarnings = [...warnings];
-  $: localSuggestions = [...suggestions];
+  run(() => {
+    localErrors = [...errors];
+  });
+  run(() => {
+    localWarnings = [...warnings];
+  });
+  run(() => {
+    localSuggestions = [...suggestions];
+  });
 
   // Computed values
-  $: totalIssues = localErrors.length + localWarnings.length + localSuggestions.length;
-  $: hasContent = totalIssues > 0;
-  $: errorCount = localErrors.length;
-  $: warningCount = localWarnings.length;
-  $: suggestionCount = localSuggestions.length;
+  let totalIssues = $derived(localErrors.length + localWarnings.length + localSuggestions.length);
+  let hasContent = $derived(totalIssues > 0);
+  let errorCount = $derived(localErrors.length);
+  let warningCount = $derived(localWarnings.length);
+  let suggestionCount = $derived(localSuggestions.length);
 
   // Get the most severe issue type for overall styling
-  $: severityLevel = errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'info';
+  let severityLevel = $derived(errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'info');
 
   // Dismiss an individual issue
   function dismissIssue(type: 'error' | 'warning' | 'suggestion', id: string) {
@@ -160,19 +181,19 @@
   >
     <!-- Header -->
     {#if title || collapsible}
+      {@const SvelteComponent = getIcon(severityLevel)}
       <div 
         class="flex items-center justify-between p-3 border-b cursor-pointer"
         class:cursor-pointer={collapsible}
         style="border-color: {getColors(severityLevel).border}30;"
-        on:click={toggleCollapsed}
-        on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && collapsible && toggleCollapsed()}
+        onclick={toggleCollapsed}
+        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && collapsible && toggleCollapsed()}
         role={collapsible ? 'button' : undefined}
         tabindex={collapsible ? 0 : undefined}
         aria-expanded={collapsible ? !collapsed : undefined}
       >
         <div class="flex items-center gap-2">
-          <svelte:component 
-            this={getIcon(severityLevel)} 
+          <SvelteComponent 
             size={16} 
             style="color: {getColors(severityLevel).icon};" 
           />
@@ -225,8 +246,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('error').bgDark}; 
                           border-color: {getColors('error').text};">
-                <svelte:component 
-                  this={AlertCircle} 
+                <AlertCircle 
                   size={16} 
                   class="flex-shrink-0 mt-0.5"
                   style="color: {getColors('error').icon};" 
@@ -246,7 +266,7 @@
                     <button
                       class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('error').text}; border: 1px solid {getColors('error').text}30;"
-                      on:click={() => executeAction('error', error.id, error.action.handler)}
+                      onclick={() => executeAction('error', error.id, error.action.handler)}
                     >
                       {error.action.label}
                       <ExternalLink size={10} />
@@ -257,7 +277,7 @@
                 {#if dismissible}
                   <button
                     class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
-                    on:click={() => dismissIssue('error', error.id)}
+                    onclick={() => dismissIssue('error', error.id)}
                     title="Dismiss error"
                     aria-label="Dismiss error"
                   >
@@ -284,8 +304,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('warning').bgDark}; 
                           border-color: {getColors('warning').text};">
-                <svelte:component 
-                  this={AlertTriangle} 
+                <AlertTriangle 
                   size={16} 
                   class="flex-shrink-0 mt-0.5"
                   style="color: {getColors('warning').icon};" 
@@ -305,7 +324,7 @@
                     <button
                       class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('warning').text}; border: 1px solid {getColors('warning').text}30;"
-                      on:click={() => executeAction('warning', warning.id, warning.action.handler)}
+                      onclick={() => executeAction('warning', warning.id, warning.action.handler)}
                     >
                       {warning.action.label}
                       <ExternalLink size={10} />
@@ -316,7 +335,7 @@
                 {#if dismissible}
                   <button
                     class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
-                    on:click={() => dismissIssue('warning', warning.id)}
+                    onclick={() => dismissIssue('warning', warning.id)}
                     title="Dismiss warning"
                     aria-label="Dismiss warning"
                   >
@@ -343,8 +362,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('suggestion').bgDark}; 
                           border-color: {getColors('suggestion').text};">
-                <svelte:component 
-                  this={Lightbulb} 
+                <Lightbulb 
                   size={16} 
                   class="flex-shrink-0 mt-0.5"
                   style="color: {getColors('suggestion').icon};" 
@@ -359,7 +377,7 @@
                     <button
                       class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('suggestion').text}; border: 1px solid {getColors('suggestion').text}30;"
-                      on:click={() => executeAction('suggestion', suggestion.id, suggestion.action.handler)}
+                      onclick={() => executeAction('suggestion', suggestion.id, suggestion.action.handler)}
                     >
                       {suggestion.action.label}
                       <ExternalLink size={10} />
@@ -370,7 +388,7 @@
                 {#if dismissible}
                   <button
                     class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
-                    on:click={() => dismissIssue('suggestion', suggestion.id)}
+                    onclick={() => dismissIssue('suggestion', suggestion.id)}
                     title="Dismiss suggestion"
                     aria-label="Dismiss suggestion"
                   >

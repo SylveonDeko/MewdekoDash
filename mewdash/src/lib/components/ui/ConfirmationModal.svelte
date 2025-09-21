@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+  const bubble = createBubbler();
   import { createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -6,13 +9,25 @@
 
   const dispatch = createEventDispatcher();
 
-  export let isOpen = false;
-  export let title = "Confirm Action";
-  export let message = "Are you sure you want to proceed?";
-  export let confirmText = "Confirm";
-  export let cancelText = "Cancel";
-  export let variant: "danger" | "warning" | "info" = "danger";
-  export let confirmDisabled = false;
+  interface Props {
+    isOpen?: boolean;
+    title?: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: "danger" | "warning" | "info";
+    confirmDisabled?: boolean;
+  }
+
+  let {
+    isOpen = $bindable(false),
+    title = "Confirm Action",
+    message = "Are you sure you want to proceed?",
+    confirmText = "Confirm",
+    cancelText = "Cancel",
+    variant = "danger",
+    confirmDisabled = false
+  }: Props = $props();
 
   function handleConfirm() {
     dispatch("confirm");
@@ -36,17 +51,17 @@
     }
   }
 
-  $: variantColor = variant === "danger" ? $colorStore.accent : 
+  let variantColor = $derived(variant === "danger" ? $colorStore.accent : 
                    variant === "warning" ? "#f59e0b" : 
-                   $colorStore.primary;
+                   $colorStore.primary);
 </script>
 
 {#if isOpen}
   <!-- Backdrop -->
   <div
     class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50 p-4"
-    on:click={handleCancel}
-    on:keydown={handleKeydown}
+    onclick={handleCancel}
+    onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-title"
@@ -57,7 +72,7 @@
     <div
       class="rounded-2xl border shadow-2xl max-w-md w-full backdrop-blur-sm"
       style="background: {$colorStore.background}90; border-color: {$colorStore.primary}30;"
-      on:click|stopPropagation
+      onclick={stopPropagation(bubble('click'))}
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
     >
@@ -74,7 +89,7 @@
         <button
           class="p-2 rounded-lg transition-colors hover:opacity-70"
           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
-          on:click={handleCancel}
+          onclick={handleCancel}
           aria-label="Close modal"
         >
           <X class="w-4 h-4" />
@@ -93,14 +108,14 @@
         <button
           class="flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:opacity-80"
           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-          on:click={handleCancel}
+          onclick={handleCancel}
         >
           {cancelText}
         </button>
         <button
           class="flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:opacity-80 disabled:opacity-50"
           style="background: {variantColor}; color: white"
-          on:click={handleConfirm}
+          onclick={handleConfirm}
           disabled={confirmDisabled}
         >
           {confirmText}

@@ -1,4 +1,5 @@
 import { get, writable } from "svelte/store";
+// @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
 import { logger } from "$lib/logger";
 
@@ -544,7 +545,8 @@ function createMusicPlayerColorStore() {
 
       await Promise.race([imageLoadPromise, timeoutPromise]);
 
-      const colorThief = new ColorThief();
+      // @ts-ignore - ColorThief type issues
+      const colorThief = new (ColorThief as any)();
       let palette: RGB[];
 
       try {

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/messagestats/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -35,53 +37,57 @@
   } from "lucide-svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   let currentUser = data.user;
   
   // States
-  let activeTab: "stats" | "manage" = "stats";
-  let activeSubTab: "overview" | "users" | "channels" | "settings" | "export" = "overview";
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let activeTab: "stats" | "manage" = $state("stats");
+    let activeSubTab: "overview" | "users" | "channels" | "settings" | "export" = $state("overview");
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
 
   // Data
-  let messageStats: MessageStatsResponse | null = null;
-  let topUsers: UserMessageStats[] = [];
-  let topChannels: ChannelMessageStats[] = [];
+    let messageStats: MessageStatsResponse | null = $state(null);
+    let topUsers: UserMessageStats[] = $state([]);
+    let topChannels: ChannelMessageStats[] = $state([]);
   let userPage = 1;
   let channelPage = 1;
   const pageSize = 10;
 
   // Export settings
-  let exportStartDate = "";
-  let exportEndDate = "";
-  let exportFormat: "csv" | "json" = "csv";
-  let includeUsers = true;
-  let includeChannels = true;
-  let includeHourly = false;
-  let isExporting = false;
+    let exportStartDate = $state("");
+    let exportEndDate = $state("");
+    let exportFormat: "csv" | "json" = $state("csv");
+    let includeUsers = $state(true);
+    let includeChannels = $state(true);
+    let includeHourly = $state(false);
+    let isExporting = $state(false);
 
   // Settings state
-  let messageCountEnabled = false;
-  let minMessageLength = 0;
-  let settingsLoading = false;
-  let resetLoading = false;
+    let messageCountEnabled = $state(false);
+    let minMessageLength = $state(0);
+    let settingsLoading = $state(false);
+    let resetLoading = $state(false);
 
   // Computed values
-  $: colorVars = `
+    let colorVars = $derived(`
     --color-primary: ${$colorStore.primary};
     --color-secondary: ${$colorStore.secondary};
     --color-accent: ${$colorStore.accent};
     --color-text: ${$colorStore.text};
     --color-muted: ${$colorStore.muted};
-  `;
+  `);
 
 
-  $: chartData = messageStats?.hourlyStats ? {
+    let chartData = $derived(messageStats?.hourlyStats ? {
     labels: messageStats.hourlyStats.map(stat => `${stat.hour}:00`),
     datasets: [{
       label: "Messages",
@@ -98,9 +104,9 @@
       tension: 0.4,
       fill: false
     }]
-  } : null;
+    } : null);
 
-  $: weeklyChartData = messageStats?.weeklyTrend ? {
+    let weeklyChartData = $derived(messageStats?.weeklyTrend ? {
     labels: messageStats.weeklyTrend.map(day => new Date(day.date).toLocaleDateString()),
     datasets: [{
       label: "Daily Messages",
@@ -110,7 +116,7 @@
       tension: 0.4,
       fill: true
     }]
-  } : null;
+    } : null);
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -322,13 +328,17 @@
     loadSettings();
   });
 
-  $: if ($currentInstance) {
-    loadData();
-  }
+    run(() => {
+        if ($currentInstance) {
+            loadData();
+        }
+    });
 
-  $: if ($currentGuild) {
-    loadData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            loadData();
+        }
+    });
 
   // Tab configuration
   const tabs = [
@@ -348,14 +358,14 @@
   ];
 
   // Action buttons configuration
-  $: actionButtons = [
+    let actionButtons = $derived([
     {
       label: "Refresh",
       icon: RefreshCw,
       action: loadData,
       loading: loading
     }
-  ];
+    ]);
 
   // Handle tab change
   function handleTabChange(event: CustomEvent) {
@@ -609,7 +619,7 @@
               class="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2"
               style="background: {$colorStore.primary}; color: {$colorStore.text};"
               disabled={isExporting}
-              on:click={exportStats}
+              onclick={exportStats}
             >
               {#if isExporting}
                 <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -641,7 +651,7 @@
                 <button
                   class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
                   style="background: {messageCountEnabled ? $colorStore.primary : $colorStore.muted}40; focus:ring-color: {$colorStore.primary};"
-                  on:click={toggleMessageCount}
+                  onclick={toggleMessageCount}
                   disabled={settingsLoading}
                 >
                   <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {messageCountEnabled ? 'translate-x-6' : 'translate-x-1'}"></span>
@@ -661,7 +671,7 @@
                     max="4098"
                     step="1"
                     bind:value={minMessageLength}
-                    on:change={updateMinMessageLength}
+                    onchange={updateMinMessageLength}
                     class="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
                     style="background: {$colorStore.primary}20;"
                     disabled={settingsLoading}
@@ -681,7 +691,7 @@
                   <button
                     class="flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors"
                     style="border-color: #ef4444; color: #ef4444; background: transparent;"
-                    on:click={() => resetMessageCounts('all')}
+                    onclick={() => resetMessageCounts('all')}
                     disabled={resetLoading}
                   >
                     {#if resetLoading}

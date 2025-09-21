@@ -1,16 +1,24 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { page } from "$app/stores";
   import { browser } from "$app/environment";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
 
-  let showDetails = false;
+  let { data }: Props = $props();
+
+  let showDetails = $state(false);
 
   // Log error details for debugging
-  $: if (browser && $page.error) {
-    console.error("Page error:", $page.error);
-  }
+  run(() => {
+    if (browser && $page.error) {
+      console.error("Page error:", $page.error);
+    }
+  });
 </script>
 
 <svelte:head>
@@ -41,7 +49,7 @@
           Return Home
         </a>
         <button
-          on:click={() => window.location.reload()}
+          onclick={() => window.location.reload()}
           class="inline-block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
         >
           Retry
@@ -52,7 +60,7 @@
     {#if browser && $page.error}
       <div class="mt-8">
         <button
-          on:click={() => showDetails = !showDetails}
+          onclick={() => showDetails = !showDetails}
           class="text-gray-400 hover:text-white text-sm transition-colors"
         >
           {showDetails ? 'Hide' : 'Show'} Error Details

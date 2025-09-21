@@ -1,5 +1,7 @@
 <!-- routes/dashboard/settings/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -29,21 +31,25 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
   let guildConfig: GuildConfig | null = null;
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
   let changedSettings = writable<Set<string>>(new Set());
-  let channels: Array<{ id: string; name: string }> = [];
-  let roles: Array<{ id: string; name: string }> = [];
+    let channels: Array<{ id: string; name: string }> = $state([]);
+    let roles: Array<{ id: string; name: string }> = $state([]);
   let botStatus: BotStatusModel | null = null;
 
   // We track local settings separately from the API state
-  let settings = {
+    let settings = $state({
     prefix: ".",
     staffRole: "0",
     gameMasterRole: "0",
@@ -60,7 +66,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
     warnExpireHours: 0,
     starboardChannel: "0",
     starboardThreshold: 1
-  };
+    });
 
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
@@ -164,10 +170,12 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
   }
 
   // Track current guild changes
-  $: if ($currentGuild) {
-    fetchGuildSettings();
-    fetchChannelsAndRoles();
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchGuildSettings();
+            fetchChannelsAndRoles();
+        }
+    });
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
@@ -208,6 +216,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
     }
   ]}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -267,7 +276,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
               type="text"
               bind:value={settings.prefix}
               class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              on:input={() => markAsChanged("prefix")}
+              oninput={() => markAsChanged("prefix")}
               style="border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
               aria-label="Command prefix for bot commands"
@@ -312,7 +321,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                 bind:value={settings.currencyName}
                 placeholder="Currency Name"
                 class="p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                on:input={() => markAsChanged("currency")}
+                oninput={() => markAsChanged("currency")}
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
                 aria-label="Name for server currency"
@@ -324,7 +333,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                 bind:value={settings.currencyEmoji}
                 placeholder="Currency Emoji"
                 class="p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                on:input={() => markAsChanged("currency")}
+                oninput={() => markAsChanged("currency")}
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
                 aria-label="Emoji for server currency"
@@ -351,7 +360,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                     id="message-count-toggle"
                     type="checkbox"
                     bind:checked={settings.useMessageCount}
-                    on:change={() => markAsChanged("messageCount")}
+                    onchange={() => markAsChanged("messageCount")}
                     class="sr-only peer"
                     aria-label="Enable message count tracking"
                   />
@@ -360,7 +369,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                     style="background: {$colorStore.text};
                            transform: translateX({settings.useMessageCount ? '20px' : '0'});"
                     aria-hidden="true"
-                  />
+                  ></div>
                 </div>
                 <span style="color: {$colorStore.text}">Enable Message Count</span>
               </label>
@@ -371,7 +380,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                 bind:value={settings.minMessageLength}
                 placeholder="Minimum Message Length"
                 class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                on:input={() => markAsChanged("minMessageLength")}
+                oninput={() => markAsChanged("minMessageLength")}
                 style="border-color: {$colorStore.secondary}30;
                        color: {$colorStore.text};"
                 aria-label="Minimum message length for XP gain"
@@ -531,7 +540,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                   bind:value={settings.starboardThreshold}
                   min="1"
                   class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                  on:input={() => markAsChanged("starboard")}
+                  oninput={() => markAsChanged("starboard")}
                   style="border-color: {$colorStore.primary}30;
                          color: {$colorStore.text};"
                   aria-label="Number of stars required for starboard"
@@ -562,7 +571,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                     id="warnings-toggle"
                     type="checkbox"
                     bind:checked={settings.warningsEnabled}
-                    on:change={() => markAsChanged("warnings")}
+                    onchange={() => markAsChanged("warnings")}
                     class="sr-only peer"
                     aria-label="Enable warning system"
                   />
@@ -571,7 +580,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                     style="background: {$colorStore.text};
                            transform: translateX({settings.warningsEnabled ? '20px' : '0'});"
                     aria-hidden="true"
-                  />
+                  ></div>
                 </div>
                 <span style="color: {$colorStore.text}">Enable Warnings</span>
               </label>
@@ -584,7 +593,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
                   min="0"
                   placeholder="Warning expiry in hours (0 = never)"
                   class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                  on:input={() => markAsChanged("warnings")}
+                  oninput={() => markAsChanged("warnings")}
                   style="border-color: {$colorStore.secondary}30;
                          color: {$colorStore.text};"
                   aria-label="Hours until warnings expire (0 for never)"

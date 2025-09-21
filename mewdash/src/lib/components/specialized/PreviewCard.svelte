@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Expected a valid CSS identifier
+https://svelte.dev/e/css_expected_identifier -->
 <!-- PreviewCard.svelte -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
@@ -65,7 +67,7 @@
     components.length > 0;
 </script>
 
-<div class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px]">
+<div class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px] preview-content">
   {#if hasContent}
     <!-- Message Content -->
     {#if content.trim()}
@@ -278,29 +280,29 @@
   }
 
   /* Discord-like markdown styles */
-  :global(.bg-\[#36393f\] strong) {
+  :global(.preview-content strong) {
     font-weight: 600;
   }
   
-  :global(.bg-\[#36393f\] em) {
+  :global(.preview-content em) {
     font-style: italic;
   }
   
-  :global(.bg-\[#36393f\] code) {
+  :global(.preview-content code) {
     background: #2f3136;
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
   }
 
-  :global(.bg-\[#36393f\] pre) {
+  :global(.preview-content pre) {
     background: #2f3136;
     padding: 8px;
     border-radius: 4px;
     overflow-x: auto;
   }
 
-  :global(.bg-\[#36393f\] blockquote) {
+  :global(.preview-content blockquote) {
     border-left: 4px solid #4f545c;
     padding-left: 8px;
     margin: 4px 0;

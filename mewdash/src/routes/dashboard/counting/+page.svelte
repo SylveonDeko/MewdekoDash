@@ -1,5 +1,7 @@
 <!-- routes/dashboard/counting/+page.svelte -->
 <script lang="ts">
+    import {run, stopPropagation} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -53,69 +55,73 @@
   } from "lucide-svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   let currentUser = data.user;
   
   // States
-  let activeTab: "channels" | "config" | "stats" | "leaderboard" | "management" = "channels";
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let activeTab: "channels" | "config" | "stats" | "leaderboard" | "management" = $state("channels");
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
-  let hasChanges = false;
+    let hasChanges = $state(false);
 
   // Data
-  let countingChannels: CountingChannelResponse[] = [];
-  let selectedChannel: CountingChannelResponse | null = null;
+    let countingChannels: CountingChannelResponse[] = $state([]);
+    let selectedChannel: CountingChannelResponse | null = $state(null);
   let channelConfig: CountingConfigResponse | null = null;
-  let channelStats: CountingStatsResponse | null = null;
-  let leaderboard: CountingUserStatsResponse[] = [];
-  let savePoints: SavePointResponse[] = [];
-  let textChannels: Array<{ id: string; name: string }> = [];
-  let guildRoles: Array<{ id: string; name: string; color?: number }> = [];
+    let channelStats: CountingStatsResponse | null = $state(null);
+    let leaderboard: CountingUserStatsResponse[] = $state([]);
+    let savePoints: SavePointResponse[] = $state([]);
+    let textChannels: Array<{ id: string; name: string }> = $state([]);
+    let guildRoles: Array<{ id: string; name: string; color?: number }> = $state([]);
 
   // Form data for new channel setup
-  let setupChannelId: string | null = null;
-  let setupStartNumber = 1;
-  let setupIncrement = 1;
+    let setupChannelId: string | null = $state(null);
+    let setupStartNumber = $state(1);
+    let setupIncrement = $state(1);
 
   // Config form data
-  let allowRepeatedUsers = false;
-  let cooldown = 0;
-  let requiredRoles: string[] = [];
-  let bannedRoles: string[] = [];
-  let maxNumber = 0;
-  let resetOnError = true;
-  let deleteWrongMessages = true;
-  let pattern = CountingPattern.Normal;
-  let numberBase = 10;
-  let successEmote = "";
-  let errorEmote = "";
-  let enableAchievements = true;
-  let enableCompetitions = false;
+    let allowRepeatedUsers = $state(false);
+    let cooldown = $state(0);
+    let requiredRoles: string[] = $state([]);
+    let bannedRoles: string[] = $state([]);
+    let maxNumber = $state(0);
+    let resetOnError = $state(true);
+    let deleteWrongMessages = $state(true);
+    let pattern = $state(CountingPattern.Normal);
+    let numberBase = $state(10);
+    let successEmote = $state("");
+    let errorEmote = $state("");
+    let enableAchievements = $state(true);
+    let enableCompetitions = $state(false);
 
   // Leaderboard settings
-  let leaderboardType = "contributions";
-  let leaderboardLimit = 20;
+    let leaderboardType = $state("contributions");
+    let leaderboardLimit = $state(20);
 
   // Reset form
-  let resetNumber = 1;
-  let resetReason = "";
+    let resetNumber = $state(1);
+    let resetReason = $state("");
 
   // Save point form
-  let saveReason = "";
+    let saveReason = $state("");
 
   // Computed values
-  $: colorVars = `
+    let colorVars = $derived(`
     --color-primary: ${$colorStore.primary};
     --color-secondary: ${$colorStore.secondary};
     --color-accent: ${$colorStore.accent};
     --color-text: ${$colorStore.text};
     --color-muted: ${$colorStore.muted};
-  `;
+  `);
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -406,17 +412,23 @@
     };
   });
 
-  $: if ($currentInstance) {
-    loadData();
-  }
+    run(() => {
+        if ($currentInstance) {
+            loadData();
+        }
+    });
 
-  $: if ($currentGuild) {
-    loadData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            loadData();
+        }
+    });
 
-  $: if (activeTab === "leaderboard" && selectedChannel) {
-    loadLeaderboard();
-  }
+    run(() => {
+        if (activeTab === "leaderboard" && selectedChannel) {
+            loadLeaderboard();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -445,6 +457,7 @@
     }
   ] : []}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -522,7 +535,7 @@
         <button
           class="mt-4 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-          on:click={setupChannel}
+          onclick={setupChannel}
           disabled={!setupChannelId}
         >
           <Plus size={16} />
@@ -543,7 +556,7 @@
             <div 
               class="rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
               style="border-color: {selectedChannel?.id === channel.id ? $colorStore.primary : $colorStore.primary + '30'}; background: {selectedChannel?.id === channel.id ? $colorStore.primary + '15' : $colorStore.primary + '05'};"
-              on:click={() => {
+              onclick={() => {
                 selectedChannel = channel;
                 activeTab = "config";
                 loadChannelDetails(channel.channelId);
@@ -563,7 +576,7 @@
                   
                   <button
                     class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 flex-shrink-0"
-                    on:click|stopPropagation={() => disableChannel(channel)}
+                    onclick={stopPropagation(() => disableChannel(channel))}
                     title="Disable channel"
                   >
                     <Trash2 size={16} />
@@ -635,7 +648,7 @@
             <input
               type="number"
               bind:value={numberBase}
-              on:input={markAsChanged}
+              oninput={markAsChanged}
               min="2"
               max="36"
               class="w-full p-3 rounded-lg border"
@@ -649,7 +662,7 @@
             <input
               type="number"
               bind:value={cooldown}
-              on:input={markAsChanged}
+              oninput={markAsChanged}
               min="0"
               max="300"
               class="w-full p-3 rounded-lg border"
@@ -662,7 +675,7 @@
             <input
               type="number"
               bind:value={maxNumber}
-              on:input={markAsChanged}
+              oninput={markAsChanged}
               min="0"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -675,7 +688,7 @@
             <input
               type="text"
               bind:value={successEmote}
-              on:input={markAsChanged}
+              oninput={markAsChanged}
               placeholder="✅"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -687,7 +700,7 @@
             <input
               type="text"
               bind:value={errorEmote}
-              on:input={markAsChanged}
+              oninput={markAsChanged}
               placeholder="❌"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -706,7 +719,7 @@
               <input
                 type="checkbox"
                 bind:checked={allowRepeatedUsers}
-                on:change={markAsChanged}
+                onchange={markAsChanged}
                 class="w-4 h-4"
               />
               <span style="color: {$colorStore.text}">Allow repeated users</span>
@@ -716,7 +729,7 @@
               <input
                 type="checkbox"
                 bind:checked={resetOnError}
-                on:change={markAsChanged}
+                onchange={markAsChanged}
                 class="w-4 h-4"
               />
               <span style="color: {$colorStore.text}">Reset count on error</span>
@@ -726,7 +739,7 @@
               <input
                 type="checkbox"
                 bind:checked={deleteWrongMessages}
-                on:change={markAsChanged}
+                onchange={markAsChanged}
                 class="w-4 h-4"
               />
               <span style="color: {$colorStore.text}">Delete wrong messages</span>
@@ -738,7 +751,7 @@
               <input
                 type="checkbox"
                 bind:checked={enableAchievements}
-                on:change={markAsChanged}
+                onchange={markAsChanged}
                 class="w-4 h-4"
               />
               <span style="color: {$colorStore.text}">Enable achievements</span>
@@ -748,7 +761,7 @@
               <input
                 type="checkbox"
                 bind:checked={enableCompetitions}
-                on:change={markAsChanged}
+                onchange={markAsChanged}
                 class="w-4 h-4"
               />
               <span style="color: {$colorStore.text}">Enable competitions</span>
@@ -937,7 +950,7 @@
             <input
               type="number"
               bind:value={leaderboardLimit}
-              on:change={loadLeaderboard}
+              onchange={loadLeaderboard}
               min="5"
               max="100"
               class="w-full p-3 rounded-lg border"
@@ -1039,7 +1052,7 @@
         <button
           class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
           style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
-          on:click={resetChannel}
+          onclick={resetChannel}
         >
           <RotateCcw size={16} />
           Reset Channel
@@ -1063,7 +1076,7 @@
             <button
               class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              on:click={createSavePoint}
+              onclick={createSavePoint}
             >
               <Save size={16} />
               Create Save Point
@@ -1104,7 +1117,7 @@
                   <button
                     class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    on:click={() => {
+                    onclick={() => {
                       if (confirm("Are you sure you want to restore from this save point?")) {
                         // Implementation would go here
                       }
@@ -1115,7 +1128,7 @@
                   
                   <button
                     class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 text-red-500 hover:bg-red-500/20"
-                    on:click={() => {
+                    onclick={() => {
                       if (confirm("Are you sure you want to delete this save point?")) {
                         // Implementation would go here
                       }

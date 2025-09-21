@@ -17,7 +17,11 @@
     Calendar
   } from "lucide-svelte";
 
-  export let selectedCategory: string = 'all';
+  interface Props {
+    selectedCategory?: string;
+  }
+
+  let { selectedCategory = $bindable('all') }: Props = $props();
 
   const dispatch = createEventDispatcher<{
     select: { template: EmbedTemplate };
@@ -286,9 +290,9 @@
     { id: 'fun', name: 'Fun', icon: Trophy }
   ];
 
-  $: filteredTemplates = selectedCategory === 'all' 
+  let filteredTemplates = $derived(selectedCategory === 'all' 
     ? templates 
-    : templates.filter(t => t.category === selectedCategory);
+    : templates.filter(t => t.category === selectedCategory));
 
   function selectTemplate(template: EmbedTemplate) {
     dispatch('select', { template });
@@ -312,10 +316,10 @@
         style="color: {selectedCategory === category.id ? $colorStore.primary : $colorStore.muted};
                background: {selectedCategory === category.id ? $colorStore.primary + '20' : 'transparent'};
                border-color: {selectedCategory === category.id ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
-        on:click={() => selectedCategory = category.id}
-        on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedCategory = category.id)}
+        onclick={() => selectedCategory = category.id}
+        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedCategory = category.id)}
       >
-        <svelte:component this={category.icon} size={14} />
+        <category.icon size={14} />
         {category.name}
       </button>
     {/each}
@@ -328,8 +332,8 @@
         class="group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-lg overflow-hidden"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
                border-color: {$colorStore.primary}20;"
-        on:click={() => selectTemplate(template)}
-        on:keydown={(e) => handleKeydown(e, template)}
+        onclick={() => selectTemplate(template)}
+        onkeydown={(e) => handleKeydown(e, template)}
         role="button"
         tabindex="0"
         aria-label="Select {template.name} template"
@@ -338,7 +342,7 @@
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-2">
             <div class="p-1.5 rounded" style="background: {$colorStore.primary}15;">
-              <svelte:component this={template.icon} size={14} style="color: {$colorStore.primary};" />
+              <template.icon size={14} style="color: {$colorStore.primary};" />
             </div>
             <div class="min-w-0 flex-1">
               <h3 class="font-medium text-sm truncate" style="color: {$colorStore.text};">{template.name}</h3>

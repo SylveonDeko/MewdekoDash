@@ -3,19 +3,34 @@
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
-  export let excludedChannels: string[] = [];
-  export let excludedRoles: string[] = [];
-  export let guildChannels: any[] = [];
-  export let guildRoles: any[] = [];
-  export let loading: boolean = false;
-  export let error: string | null = null;
-  export let onExcludeChannel: (channelId: string) => void;
-  export let onIncludeChannel: (channelId: string) => void;
-  export let onExcludeRole: (roleId: string) => void;
-  export let onIncludeRole: (roleId: string) => void;
+  interface Props {
+    excludedChannels?: string[];
+    excludedRoles?: string[];
+    guildChannels?: any[];
+    guildRoles?: any[];
+    loading?: boolean;
+    error?: string | null;
+    onExcludeChannel: (channelId: string) => void;
+    onIncludeChannel: (channelId: string) => void;
+    onExcludeRole: (roleId: string) => void;
+    onIncludeRole: (roleId: string) => void;
+  }
 
-  let selectedChannelId = "";
-  let selectedRoleId = "";
+  let {
+    excludedChannels = [],
+    excludedRoles = [],
+    guildChannels = [],
+    guildRoles = [],
+    loading = false,
+    error = null,
+    onExcludeChannel,
+    onIncludeChannel,
+    onExcludeRole,
+    onIncludeRole
+  }: Props = $props();
+
+  let selectedChannelId = $state("");
+  let selectedRoleId = $state("");
 
   function handleExcludeChannel() {
     if (selectedChannelId) {
@@ -31,16 +46,16 @@
     }
   }
 
-  $: channelOptions = guildChannels.map(channel => ({
+  let channelOptions = $derived(guildChannels.map(channel => ({
     id: channel.id,
     name: channel.name
-  }));
+  })));
 
-  $: roleOptions = guildRoles.map(role => ({
+  let roleOptions = $derived(guildRoles.map(role => ({
     id: role.id,
     name: role.name,
     color: role.color
-  }));
+  })));
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -98,7 +113,7 @@
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 min-h-[50px] sm:min-h-[44px]"
             disabled={!selectedChannelId}
-            on:click={handleExcludeChannel}
+            onclick={handleExcludeChannel}
             style="background: {$colorStore.primary}20;
                    color: {$colorStore.text};"
             aria-label="Exclude selected channel"
@@ -130,7 +145,7 @@
                 class="p-2 rounded-full transition-all duration-200 flex-shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                on:click={() => onIncludeChannel(channelId)}
+                onclick={() => onIncludeChannel(channelId)}
                 aria-label={`Include channel ${guildChannels.find(c => c.id === channelId.toString())?.name || channelId}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -167,7 +182,7 @@
           <button
             class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 min-h-[50px] sm:min-h-[44px]"
             disabled={!selectedRoleId}
-            on:click={handleExcludeRole}
+            onclick={handleExcludeRole}
             style="background: {$colorStore.secondary}20;
                    color: {$colorStore.text};"
             aria-label="Exclude selected role"
@@ -199,7 +214,7 @@
                 class="p-2 rounded-full transition-all duration-200 flex-shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                on:click={() => onIncludeRole(roleId)}
+                onclick={() => onIncludeRole(roleId)}
                 aria-label={`Include role ${guildRoles.find(r => r.id === roleId.toString())?.name || roleId}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

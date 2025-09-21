@@ -4,15 +4,29 @@
   import { colorStore } from "$lib/stores/colorStore";
   import type { ComponentType } from "svelte";
 
-  // Props
-  export let icon: ComponentType;
-  export let title: string;
-  export let isActive = false;
-  export let description: string = "";
-  export let href: string = "";
-  export let animationDelay: number = 0;
-  export let hasRecentActivity: boolean = false;
-  export let activityText: string = "";
+
+  interface Props {
+      // Props
+      icon: ComponentType;
+      title: string;
+      isActive?: boolean;
+      description?: string;
+      href?: string;
+      animationDelay?: number;
+      hasRecentActivity?: boolean;
+      activityText?: string;
+  }
+
+  let {
+      icon,
+      title,
+      isActive = false,
+      description = "",
+      href = "",
+      animationDelay = 0,
+      hasRecentActivity = false,
+      activityText = ""
+  }: Props = $props();
 </script>
 
 <div
@@ -21,6 +35,7 @@
   role="listitem"
 >
   {#if href}
+      {@const SvelteComponent = icon}
     <a 
       {href} 
       class="block p-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -37,8 +52,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="flex-shrink-0">
-            <svelte:component
-              this={icon}
+              <SvelteComponent
               class="w-5 h-5 transition-colors duration-300"
               style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
             />
@@ -68,6 +82,7 @@
       </div>
     </a>
   {:else}
+      {@const SvelteComponent_1 = icon}
     <div 
       class="p-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
       class:ring-2={isActive}
@@ -81,8 +96,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="flex-shrink-0">
-            <svelte:component
-              this={icon}
+              <SvelteComponent_1
               class="w-5 h-5 transition-colors duration-300"
               style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
             />

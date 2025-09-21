@@ -1,5 +1,7 @@
 <!-- routes/dashboard/logging/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -41,45 +43,33 @@
   } from "lucide-svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   let currentUser = data.user;
   
   // States
-  let activeTab: "channels" | "ignored" = "channels";
-  let loading = true;
-  let error: string | null = null;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let hasChanges = false;
+    let activeTab: "channels" | "ignored" = $state("channels");
+    let loading = $state(true);
+    let error: string | null = $state(null);
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
+    let hasChanges = $state(false);
 
   // Data
   let config: LoggingConfigurationResponse | null = null;
-  let textChannels: Array<{ id: string; name: string }> = [];
-  let logChannels: Record<LogType, string | null> = {} as any;
-  let ignoredChannels: string[] = [];
-  let selectedCategory = "popular";
-  let channelSearchQuery = "";
+    let textChannels: Array<{ id: string; name: string }> = $state([]);
+    let logChannels: Record<LogType, string | null> = $state({} as any);
+    let ignoredChannels: string[] = $state([]);
+    let selectedCategory = $state("popular");
+    let channelSearchQuery = $state("");
   
-  // Reactive: logging is enabled if any channels are configured
-  $: isLoggingEnabled = Object.values(logChannels).some(channelId => channelId && channelId !== '0');
 
-  // Tab configuration for DashboardPageLayout
-  $: tabs = [
-    { id: "channels", label: "Log Channels", icon: Hash },
-    { id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: X }
-  ];
 
-  // Action buttons for save functionality
-  $: actionButtons = hasChanges ? [
-    {
-      label: "Save Configuration",
-      icon: Save,
-      action: saveConfiguration,
-      style: `background: ${$colorStore.primary}; color: white; box-shadow: 0 4px 12px ${$colorStore.primary}30;`
-    }
-  ] : [];
 
   // Handle tab changes from DashboardPageLayout
   function handleTabChange(event: CustomEvent<{tabId: string}>) {
@@ -127,20 +117,8 @@
     'user_banned', 'user_unbanned', 'channel_created', 'channel_deleted'
   ];
 
-  // Reactive: Filter channels for search
-  $: filteredChannels = textChannels.filter(channel => 
-    channel.name.toLowerCase().includes(channelSearchQuery.toLowerCase())
-  );
 
-  // Reactive: Separate ignored and active channels for better UX
-  $: ignoredChannelList = textChannels.filter(channel => ignoredChannels.includes(channel.id));
-  $: activeChannelList = textChannels.filter(channel => !ignoredChannels.includes(channel.id));
 
-  $: filteredLogTypes = selectedCategory === "all" 
-    ? LOG_TYPE_MAPPINGS 
-    : selectedCategory === "popular"
-    ? LOG_TYPE_MAPPINGS.filter(mapping => popularLogTypes.includes(mapping.logType))
-    : LOG_TYPE_MAPPINGS.filter(mapping => mapping.category === selectedCategory);
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -260,13 +238,45 @@
     loadData();
   });
 
-  $: if ($currentInstance) {
-    loadData();
-  }
 
-  $: if ($currentGuild) {
-    loadData();
-  }
+    // Reactive: logging is enabled if any channels are configured
+    let isLoggingEnabled = $derived(Object.values(logChannels).some(channelId => channelId && channelId !== '0'));
+    // Tab configuration for DashboardPageLayout
+    let tabs = $derived([
+        {id: "channels", label: "Log Channels", icon: Hash},
+        {id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: X}
+    ]);
+    // Action buttons for save functionality
+    let actionButtons = $derived(hasChanges ? [
+        {
+            label: "Save Configuration",
+            icon: Save,
+            action: saveConfiguration,
+            style: `background: ${$colorStore.primary}; color: white; box-shadow: 0 4px 12px ${$colorStore.primary}30;`
+        }
+    ] : []);
+    // Reactive: Filter channels for search
+    let filteredChannels = $derived(textChannels.filter(channel =>
+        channel.name.toLowerCase().includes(channelSearchQuery.toLowerCase())
+    ));
+    // Reactive: Separate ignored and active channels for better UX
+    let ignoredChannelList = $derived(textChannels.filter(channel => ignoredChannels.includes(channel.id)));
+    let activeChannelList = $derived(textChannels.filter(channel => !ignoredChannels.includes(channel.id)));
+    let filteredLogTypes = $derived(selectedCategory === "all"
+        ? LOG_TYPE_MAPPINGS
+        : selectedCategory === "popular"
+            ? LOG_TYPE_MAPPINGS.filter(mapping => popularLogTypes.includes(mapping.logType))
+            : LOG_TYPE_MAPPINGS.filter(mapping => mapping.category === selectedCategory));
+    run(() => {
+        if ($currentInstance) {
+            loadData();
+        }
+    });
+    run(() => {
+        if ($currentGuild) {
+            loadData();
+        }
+    });
 </script>
 
 <DashboardPageLayout 
@@ -280,6 +290,7 @@
   on:tabChange={handleTabChange}
 >
 
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     <!-- Status Messages -->
     {#if showNotification}
@@ -337,9 +348,9 @@
             class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
             style="background: {selectedCategory === category.id ? $colorStore.secondary : `${$colorStore.primary}10`};
                    color: {selectedCategory === category.id ? $colorStore.text : $colorStore.muted};"
-            on:click={() => selectedCategory = category.id}
+            onclick={() => selectedCategory = category.id}
           >
-            <svelte:component this={category.icon} size={16} />
+              <category.icon size={16}/>
             {category.name}
           </button>
         {/each}
@@ -348,6 +359,7 @@
       <!-- Log Channel Configuration -->
       <div class="grid gap-4">
         {#each filteredLogTypes as mapping (mapping.logType)}
+            {@const SvelteComponent = getIconComponent(mapping.icon)}
           <div 
             class="rounded-xl border p-4"
             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
@@ -356,7 +368,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                  <svelte:component this={getIconComponent(mapping.icon)} size={20} style="color: {$colorStore.primary}" />
+                    <SvelteComponent size={20} style="color: {$colorStore.primary}"/>
                 </div>
                 <div>
                   <h3 class="font-medium" style="color: {$colorStore.text}">{mapping.displayName}</h3>
@@ -428,7 +440,7 @@
                   <button 
                     class="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:scale-105"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                    on:click={() => removeFromIgnored(channel.id)}
+                    onclick={() => removeFromIgnored(channel.id)}
                   >
                     <Plus size={12} />
                     <span>Log</span>
@@ -478,7 +490,7 @@
                   <button 
                     class="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:scale-105"
                     style="background: #ef444420; color: #ef4444;"
-                    on:click={() => addToIgnored(channel.id)}
+                    onclick={() => addToIgnored(channel.id)}
                   >
                     <X size={12} />
                     <span>Ignore</span>

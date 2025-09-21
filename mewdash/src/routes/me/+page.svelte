@@ -27,34 +27,34 @@
     XCircle
   } from "lucide-svelte";
 
-  export let data;
+  let {data} = $props();
 
   // State
   let loading = false;
-  let saving = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
-  let showNotification = false;
+  let saving = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
+  let showNotification = $state(false);
 
   // User data
   let currentUser = data.user;
   let userId = BigInt(currentUser?.id || "0");
 
   // Global data (loads immediately)
-  let userProfile: any = {};
-  let userPreferences: any = {};
-  let editingProfile = false;
-  let profileForm: any = {};
+  let userProfile: any = $state({});
+  let userPreferences: any = $state({});
+  let editingProfile = $state(false);
+  let profileForm: any = $state({});
 
   // Server selection for per-server settings
-  let availableGuilds: any[] = [];
-  let selectedGuild: any = null;
-  let showGuildDropdown = false;
-  let guildSearchTerm = "";
-  let guildConfig: any = null;
+  let availableGuilds: any[] = $state([]);
+  let selectedGuild: any = $state(null);
+  let showGuildDropdown = $state(false);
+  let guildSearchTerm = $state("");
+  let guildConfig: any = $state(null);
 
   // Per-server data (loads after guild selection)
-  let serverData: any = {
+  let serverData: any = $state({
     highlights: [],
     highlightSettings: { highlightsEnabled: true, ignoredChannels: [], ignoredUsers: [] },
     afkStatus: { isAfk: false, message: "", when: null, wasTimed: false },
@@ -68,11 +68,11 @@
     messages: { totalMessages: 0, channelBreakdown: [] },
     starboard: null,
     analytics: {}
-  };
+  });
 
   // Form state
-  let newHighlightWord = "";
-  let newAfkMessage = "";
+  let newHighlightWord = $state("");
+  let newAfkMessage = $state("");
 
   // Load global profile data
   async function loadGlobalData() {
@@ -430,9 +430,9 @@
     showNotification = false;
   }
 
-  $: filteredGuilds = availableGuilds.filter(guild =>
+  let filteredGuilds = $derived(availableGuilds.filter(guild =>
     guild.name.toLowerCase().includes(guildSearchTerm.toLowerCase())
-  );
+  ));
 
   onMount(async () => {
     // Extract colors from user avatar
@@ -488,7 +488,7 @@
             <button
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105 border"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
-              on:click={() => editingProfile = true}
+              onclick={() => editingProfile = true}
             >
               Edit
             </button>
@@ -603,7 +603,7 @@
               <button
                 class="px-4 py-2 rounded-lg text-sm border"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
-                on:click={() => editingProfile = false}
+                onclick={() => editingProfile = false}
                 disabled={saving}
               >
                 Cancel
@@ -611,7 +611,7 @@
               <button
                 class="px-4 py-2 rounded-lg text-sm flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={saveProfile}
+                onclick={saveProfile}
                 disabled={saving}
               >
                 <Save class="w-3 h-3" />
@@ -678,7 +678,7 @@
                 <input
                   type="checkbox"
                   checked={userProfile.greetDmsOptOut}
-                  on:change={toggleGreetDms}
+                  onchange={toggleGreetDms}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -701,7 +701,7 @@
                 <input
                   type="checkbox"
                   checked={userProfile.statsOptOut}
-                  on:change={toggleStats}
+                  onchange={toggleStats}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -724,7 +724,7 @@
                 <input
                   type="checkbox"
                   checked={userProfile.birthdayAnnouncementsEnabled}
-                  on:change={toggleBirthdayAnnouncements}
+                  onchange={toggleBirthdayAnnouncements}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -760,7 +760,7 @@
                 <input
                   type="checkbox"
                   checked={userPreferences.levelUpPingsDisabled}
-                  on:change={toggleLevelUpPings}
+                  onchange={toggleLevelUpPings}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -783,7 +783,7 @@
                 <input
                   type="checkbox"
                   checked={userPreferences.pronounsDisabled}
-                  on:change={togglePronouns}
+                  onchange={togglePronouns}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -806,7 +806,7 @@
                 <input
                   type="checkbox"
                   checked={userPreferences.prefersGuidedSetup}
-                  on:change={toggleGuidedSetup}
+                  onchange={toggleGuidedSetup}
                   disabled={saving}
                   class="sr-only"
                 />
@@ -830,7 +830,7 @@
                   <button
                     class="px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-105"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
-                    on:click={resetWizard}
+                    onclick={resetWizard}
                     disabled={saving}
                   >
                     {saving ? 'Resetting...' : 'Reset'}
@@ -868,11 +868,11 @@
           </p>
 
           {#if availableGuilds.length > 0}
-            <div class="relative max-w-md mx-auto" use:clickOutside on:clickoutside={() => showGuildDropdown = false}>
+              <div class="relative max-w-md mx-auto" use:clickOutside onclickoutside={() => showGuildDropdown = false}>
               <button
                 class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={() => showGuildDropdown = !showGuildDropdown}
+                onclick={() => showGuildDropdown = !showGuildDropdown}
               >
                 <Server size={20} />
                 Choose Server
@@ -900,7 +900,7 @@
                     {#each filteredGuilds as guild (guild.id)}
                       <button
                         class="w-full flex items-center gap-3 p-3 hover:bg-black hover:bg-opacity-30 transition-colors text-left"
-                        on:click={() => handleGuildSelect(guild)}
+                        onclick={() => handleGuildSelect(guild)}
                       >
                         <img
                           src={guild.icon ? 
@@ -959,7 +959,7 @@
               <button
                 class="px-6 py-3 rounded-xl font-medium border transition-all hover:scale-105 flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}40;"
-                on:click={changeServer}
+                onclick={changeServer}
               >
                 <Server class="w-4 h-4" />
                 Change Server
@@ -970,7 +970,7 @@
                 <button
                   class="px-4 py-3 rounded-xl font-medium border transition-all hover:scale-105 flex items-center gap-2"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
-                  on:click={resetGuildWizard}
+                  onclick={resetGuildWizard}
                   disabled={saving}
                   title="Reset setup wizard for this server"
                 >
@@ -1037,12 +1037,12 @@
                   placeholder="Add highlight word..."
                   class="flex-1 px-3 py-2 rounded-lg border text-sm"
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                  on:keydown={(e) => e.key === 'Enter' && addHighlight()}
+                  onkeydown={(e) => e.key === 'Enter' && addHighlight()}
                 />
                 <button
                   class="px-4 py-2 rounded-lg transition-all hover:scale-105"
                   style="background: {$colorStore.primary}; color: white;"
-                  on:click={addHighlight}
+                  onclick={addHighlight}
                   disabled={!newHighlightWord.trim()}
                 >
                   <Plus class="w-4 h-4" />
@@ -1058,7 +1058,7 @@
                     <button
                       class="p-1 rounded transition-all hover:scale-110"
                       style="color: {$colorStore.accent};"
-                      on:click={() => removeHighlight(highlight.id)}
+                      onclick={() => removeHighlight(highlight.id)}
                     >
                       <Trash2 class="w-3 h-3" />
                     </button>
@@ -1182,7 +1182,7 @@
                   <button
                     class="flex-1 px-4 py-2 rounded-lg text-sm font-medium min-h-[40px]"
                     style="background: {$colorStore.primary}; color: white;"
-                    on:click={setAfkStatus}
+                    onclick={setAfkStatus}
                     disabled={saving}
                   >
                     {saving ? 'Setting...' : 'Set AFK'}
@@ -1191,7 +1191,7 @@
                     <button
                       class="px-4 py-2 rounded-lg text-sm border min-h-[40px]"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
-                      on:click={removeAfkStatus}
+                      onclick={removeAfkStatus}
                       disabled={saving}
                     >
                       Remove

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/birthday/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
     import { onMount } from "svelte";
     import { fly, fade } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
@@ -45,45 +47,47 @@
     } from "$lib/types/birthday";
 
     // Component state
-    let loading = false;
-    let saving = false;
-    let message = "";
-    let messageType: "success" | "error" | "info" = "info";
+    let loading = $state(false);
+    let saving = $state(false);
+    let message = $state("");
+    let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let birthdayConfig: BirthdayConfigResponse | null = null;
-    let birthdayUsers: BirthdayUserResponse[] = [];
-    let birthdayStats: BirthdayStatsResponse | null = null;
-    let guildChannels: Array<{ id: string; name: string; }> = [];
-    let guildRoles: Array<{ id: string; name: string; color: number }> = [];
+    let birthdayConfig: BirthdayConfigResponse | null = $state(null);
+    let birthdayUsers: BirthdayUserResponse[] = $state([]);
+    let birthdayStats: BirthdayStatsResponse | null = $state(null);
+    let guildChannels: Array<{ id: string; name: string; }> = $state([]);
+    let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
     // Form data
-    let configForm: BirthdayConfigRequest = {
+    let configForm: BirthdayConfigRequest = $state({
         birthdayChannelId: null,
         birthdayRoleId: null,
         birthdayMessage: null,
         birthdayPingRoleId: null,
         birthdayReminderDays: 1,
         defaultTimezone: "UTC"
-    };
+    });
 
     // UI state
-    let activeTab = "config";
-    let upcomingDays = 7;
-    let upcomingBirthdays: BirthdayUserResponse[] = [];
-    let todaysBirthdays: BirthdayUserResponse[] = [];
+    let activeTab = $state("config");
+    let upcomingDays = $state(7);
+    let upcomingBirthdays: BirthdayUserResponse[] = $state([]);
+    let todaysBirthdays: BirthdayUserResponse[] = $state([]);
 
     // Initialize data
-    $: if (birthdayConfig) {
-        configForm = {
-            birthdayChannelId: birthdayConfig.birthdayChannelId,
-            birthdayRoleId: birthdayConfig.birthdayRoleId,
-            birthdayMessage: birthdayConfig.birthdayMessage,
-            birthdayPingRoleId: birthdayConfig.birthdayPingRoleId,
-            birthdayReminderDays: birthdayConfig.birthdayReminderDays,
-            defaultTimezone: birthdayConfig.defaultTimezone
-        };
-    }
+    run(() => {
+        if (birthdayConfig) {
+            configForm = {
+                birthdayChannelId: birthdayConfig.birthdayChannelId,
+                birthdayRoleId: birthdayConfig.birthdayRoleId,
+                birthdayMessage: birthdayConfig.birthdayMessage,
+                birthdayPingRoleId: birthdayConfig.birthdayPingRoleId,
+                birthdayReminderDays: birthdayConfig.birthdayReminderDays,
+                defaultTimezone: birthdayConfig.defaultTimezone
+            };
+        }
+    });
 
     // Load all birthday data
     async function loadAllBirthdayData() {
@@ -251,11 +255,11 @@
     }
 
     // Day options for DiscordSelector
-    $: dayOptions = [
+    let dayOptions = $derived([
         { id: "7", name: "Next 7 days" },
         { id: "14", name: "Next 14 days" },
         { id: "30", name: "Next 30 days" }
-    ];
+    ]);
 
     // Handle day selection change
     function handleDayChange(event: CustomEvent) {
@@ -275,14 +279,14 @@
     ];
 
     // Action buttons configuration
-    $: actionButtons = [
+    let actionButtons = $derived([
         {
             label: "Refresh",
             icon: RefreshCw,
             action: loadAllBirthdayData,
             loading: loading
         }
-    ];
+    ]);
 
     // Handle tab change
     function handleTabChange(event: CustomEvent) {
@@ -301,6 +305,7 @@
         on:tabChange={handleTabChange}
 >
 
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
     <svelte:fragment slot="status-messages">
         <!-- Status Message -->
         {#if message}
@@ -484,7 +489,7 @@
                     <button
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
-                            on:click={saveConfig}
+                            onclick={saveConfig}
                             disabled={saving}
                     >
                         <Save class="w-5 h-5" />
@@ -494,7 +499,7 @@
                     <button
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                            on:click={resetConfig}
+                            onclick={resetConfig}
                             disabled={saving}
                     >
                         <RefreshCw class="w-5 h-5" />
@@ -530,7 +535,7 @@
                                             type="checkbox"
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Announcements) : false}
-                                            on:change={() => toggleFeature(BirthdayFeaturesEnum.Announcements)}
+                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.Announcements)}
                                     />
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
@@ -552,7 +557,7 @@
                                             type="checkbox"
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.BirthdayRole) : false}
-                                            on:change={() => toggleFeature(BirthdayFeaturesEnum.BirthdayRole)}
+                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.BirthdayRole)}
                                             disabled={!configForm.birthdayRoleId}
                                     />
                                     <div
@@ -575,7 +580,7 @@
                                             type="checkbox"
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Reminders) : false}
-                                            on:change={() => toggleFeature(BirthdayFeaturesEnum.Reminders)}
+                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.Reminders)}
                                     />
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
@@ -597,7 +602,7 @@
                                             type="checkbox"
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.PingRole) : false}
-                                            on:change={() => toggleFeature(BirthdayFeaturesEnum.PingRole)}
+                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.PingRole)}
                                             disabled={!configForm.birthdayPingRoleId}
                                     />
                                     <div
@@ -620,7 +625,7 @@
                                             type="checkbox"
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.TimezoneSupport) : false}
-                                            on:change={() => toggleFeature(BirthdayFeaturesEnum.TimezoneSupport)}
+                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.TimezoneSupport)}
                                     />
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"

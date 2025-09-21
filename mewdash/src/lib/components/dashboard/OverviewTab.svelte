@@ -10,32 +10,29 @@
   import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
   import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
 
-  // Props from parent
-  export let botStatus: any;
-  export let guildMemberStats: any;
-  export let roleStats: any;
-  export let joinStats: any;
-  export let leaveStats: any;
-  export let onRefresh: () => void;
-  export let refreshing: boolean = false;
+  
+  interface Props {
+    // Props from parent
+    botStatus: any;
+    guildMemberStats: any;
+    roleStats: any;
+    joinStats: any;
+    leaveStats: any;
+    onRefresh: () => void;
+    refreshing?: boolean;
+  }
 
-  // Derived state
-  $: musicStatus = $musicStore.status;
-  $: colors = $musicPlayerColors;
-  $: currentPosition = getCurrentPosition();
-  $: progressPercentage = getProgressPercentage();
-  $: memberTooltipData = [
-    { label: "Human Members", value: guildMemberStats.humanMembers },
-    { label: "Bot Members", value: guildMemberStats.botMembers },
-    { label: "Total Members", value: guildMemberStats.totalMembers }
-  ];
+  let {
+    botStatus,
+    guildMemberStats,
+    roleStats,
+    joinStats,
+    leaveStats,
+    onRefresh,
+    refreshing = false
+  }: Props = $props();
 
-  $: roleTooltipData = [
-    { label: "Total Roles", value: roleStats.totalRoles },
-    { label: "Saved Roles", value: roleStats.savedRoles },
-    { label: "Role States", value: roleStats.totalRoleStates },
-    { label: "Role Greets", value: roleStats.activeRoleGreets }
-  ];
+
 
   // Calculate role trend
   function calculateRoleTrend(): { trend: "up" | "down" | "neutral", value: string } {
@@ -84,6 +81,22 @@
       : 0;
   }
 
+  // Derived state
+  let musicStatus = $derived($musicStore.status);
+  let colors = $derived($musicPlayerColors);
+  let currentPosition = $derived(getCurrentPosition());
+  let progressPercentage = $derived(getProgressPercentage());
+  let memberTooltipData = $derived([
+    { label: "Human Members", value: guildMemberStats.humanMembers },
+    { label: "Bot Members", value: guildMemberStats.botMembers },
+    { label: "Total Members", value: guildMemberStats.totalMembers }
+  ]);
+  let roleTooltipData = $derived([
+    { label: "Total Roles", value: roleStats.totalRoles },
+    { label: "Saved Roles", value: roleStats.savedRoles },
+    { label: "Role States", value: roleStats.totalRoleStates },
+    { label: "Role Greets", value: roleStats.activeRoleGreets }
+  ]);
 </script>
 
 <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
@@ -210,7 +223,7 @@
         <button
           class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-105"
           disabled={refreshing}
-          on:click={onRefresh}
+          onclick={onRefresh}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         >
           <span class:animate-spin={refreshing}>

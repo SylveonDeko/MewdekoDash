@@ -1,10 +1,14 @@
 <!-- lib/StarRating.svelte -->
 <script lang="ts">
-  export let value: number = 0;
-  export let readonly: boolean = false;
-  export let max: number = 5;
+  interface Props {
+    value?: number;
+    readonly?: boolean;
+    max?: number;
+  }
 
-  let hoveredValue: number | null = null;
+  let { value = $bindable(0), readonly = false, max = 5 }: Props = $props();
+
+  let hoveredValue: number | null = $state(null);
 
   function handleClick(star: number) {
     if (!readonly) {
@@ -47,13 +51,13 @@
     }
   }
 
-  $: displayValue = hoveredValue !== null ? hoveredValue : value;
+  let displayValue = $derived(hoveredValue !== null ? hoveredValue : value);
 </script>
 
 <div
   class="star-rating"
-  on:mouseleave={handleMouseLeave}
-  on:keydown={handleKeyDown}
+  onmouseleave={handleMouseLeave}
+  onkeydown={handleKeyDown}
   role="slider"
   tabindex={readonly ? -1 : 0}
   aria-valuenow={value}
@@ -66,8 +70,8 @@
       class="star"
       class:filled={i < displayValue}
       disabled={readonly}
-      on:click={() => handleClick(i + 1)}
-      on:mouseenter={() => handleMouseEnter(i + 1)}
+      onclick={() => handleClick(i + 1)}
+      onmouseenter={() => handleMouseEnter(i + 1)}
       aria-label={`Rate ${i + 1} star${i !== 0 ? "s" : ""}`}
     >
       <svg

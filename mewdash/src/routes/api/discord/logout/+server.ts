@@ -5,5 +5,5 @@ export const GET: RequestHandler = async ({ cookies, locals }) => {
   await deleteCookies(cookies);
   locals.user = null;
 
-  throw redirect(303, '/');
+  redirect(303, '/');
 };

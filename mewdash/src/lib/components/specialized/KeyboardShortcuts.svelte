@@ -61,14 +61,14 @@
   ];
 
   // State
-  let isVisible = false;
-  let activeContext = "Global";
+  let isVisible = $state(false);
+  let activeContext = $state("Global");
 
   // Contexts extracted from shortcuts
-  $: contexts = [...new Set(shortcuts.map(s => s.context))];
-  $: filteredShortcuts = shortcuts.filter(s =>
+  let contexts = $derived([...new Set(shortcuts.map(s => s.context))]);
+  let filteredShortcuts = $derived(shortcuts.filter(s =>
     activeContext === "All" || s.context === activeContext
-  );
+  ));
 
   // Toggle the shortcuts dialog
   function toggleShortcuts() {
@@ -116,8 +116,8 @@
   <!-- Backdrop -->
   <div
     class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    on:click={closeDialog}
-    on:keydown={(e) => e.key === 'Escape' && closeDialog()}
+    onclick={closeDialog}
+    onkeydown={(e) => e.key === 'Escape' && closeDialog()}
     role="button"
     tabindex="0"
     aria-label="Close keyboard shortcuts dialog"
@@ -143,7 +143,7 @@
 
         <button
           class="p-2 rounded-full hover:bg-gray-800 transition-colors"
-          on:click={closeDialog}
+          onclick={closeDialog}
           aria-label="Close keyboard shortcuts"
         >
           <X size={20} style="color: {$colorStore.muted}" />
@@ -155,7 +155,7 @@
         <button
           class="px-3 py-1 rounded-md text-sm transition-colors"
           class:bg-gray-800={activeContext === 'All'}
-          on:click={() => setContext('All')}
+          onclick={() => setContext('All')}
           style="color: {activeContext === 'All' ? $colorStore.primary : $colorStore.muted}"
         >
           All
@@ -165,7 +165,7 @@
           <button
             class="px-3 py-1 rounded-md text-sm transition-colors"
             class:bg-gray-800={activeContext === context}
-            on:click={() => setContext(context)}
+            onclick={() => setContext(context)}
             style="color: {activeContext === context ? $colorStore.primary : $colorStore.muted}"
           >
             {context}

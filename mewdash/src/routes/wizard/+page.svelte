@@ -31,48 +31,38 @@ Main wizard page component that orchestrates the entire setup flow
   import PreviewCard from '$lib/components/specialized/PreviewCard.svelte';
   import {api} from "$lib/api.ts";
 
-  export let data: PageData;
 
   // Wizard state
-  let currentStep = 1;
-  let completedSteps: number[] = [];
-  let selectedFeatures: string[] = [];
-  let wizardLoading = false;
-  let skipConfirmation = false;
-  let permissionData: any = null;
-  let permissionsLoading = true;
-  let guild: any = null;
+  let currentStep = $state(1);
+  let completedSteps: number[] = $state([]);
+  let selectedFeatures: string[] = $state([]);
+  let wizardLoading = $state(false);
+  let skipConfirmation = $state(false);
+  let permissionData: any = $state(null);
+  let permissionsLoading = $state(true);
+  let guild: any = $state(null);
   let wizardState: any = null;
   let wizardDecision: any = null;
-  let dataLoading = true;
-  let dataError: string | null = null;
+  let dataLoading = $state(true);
+  let dataError: string | null = $state(null);
   
   // Feature configuration flow
-  let currentConfigFeatureIndex = 0;
+  let currentConfigFeatureIndex = $state(0);
   let configurationComplete = false;
 
-  // Dynamic step configuration based on selected features
-  $: baseSteps = data.wizardType === 'first-time' ? 3 : 2; // Welcome + (Permissions) + Features
-  $: configSteps = selectedFeatures.length; // One step per selected feature
-  $: totalSteps = baseSteps + configSteps + 1; // +1 for completion
-  $: currentConfiguredFeature = selectedFeatures[currentConfigFeatureIndex];
   
-  $: stepTitles = [
-    "Welcome",
-    ...(data.wizardType === 'first-time' ? ["Permissions"] : []),
-    "Features",
-    ...selectedFeatures.map(id => allFeatures.find(f => f.id === id)?.title || id),
-    "Complete"
-  ];
 
-  // Determine if we're in configuration phase
-  $: isConfigurationStep = currentStep > baseSteps && currentStep <= baseSteps + configSteps;
-  $: currentConfigStepIndex = currentStep - baseSteps - 1;
 
   // Import icons to match dashboard
   import { 
     Moon, Users, Tag, RotateCcw, Heart, MessageSquare, Link, Badge, Lock, Gift, Save
   } from 'lucide-svelte';
+
+  interface Props {
+      data: PageData;
+  }
+
+  let {data}: Props = $props();
 
   // Smart feature selection - most popular/useful features for setup
   const featureCategories = [
@@ -111,7 +101,7 @@ Main wizard page component that orchestrates the entire setup flow
   const allFeatures = featureCategories.flatMap(cat => cat.features);
 
   // Feature configuration state for essential settings
-  let featureConfigs = {
+  let featureConfigs = $state({
     multigreets: {
       channelId: null,
       channelIds: [], // Support multiple channels
@@ -158,10 +148,10 @@ Main wizard page component that orchestrates the entire setup flow
     giveaways: {
       channelId: null
     }
-  };
+  });
 
-  let availableChannels = [];
-  let availableRoles = [];
+  let availableChannels = $state([]);
+  let availableRoles = $state([]);
   let availableCategories = [];
   let channelsLoading = false;
 
@@ -805,16 +795,30 @@ Main wizard page component that orchestrates the entire setup flow
     }
   }
 
-  $: canProceed = currentStep === 1 || 
+
+  // Dynamic step configuration based on selected features
+  let baseSteps = $derived(data.wizardType === 'first-time' ? 3 : 2); // Welcome + (Permissions) + Features
+  let configSteps = $derived(selectedFeatures.length); // One step per selected feature
+  let totalSteps = $derived(baseSteps + configSteps + 1); // +1 for completion
+  let currentConfiguredFeature = $derived(selectedFeatures[currentConfigFeatureIndex]);
+  let stepTitles = $derived([
+      "Welcome",
+      ...(data.wizardType === 'first-time' ? ["Permissions"] : []),
+      "Features",
+      ...selectedFeatures.map(id => allFeatures.find(f => f.id === id)?.title || id),
+      "Complete"
+  ]);
+  // Determine if we're in configuration phase
+  let isConfigurationStep = $derived(currentStep > baseSteps && currentStep <= baseSteps + configSteps);
+  let currentConfigStepIndex = $derived(currentStep - baseSteps - 1);
+  let canProceed = $derived(currentStep === 1 || 
     (currentStep === 2 && (data.wizardType === 'quick-setup' || permissionData?.canFunction)) ||
     (currentStep === 3 && selectedFeatures.length > 0) ||
-    currentStep === totalSteps;
-
-  $: stepIndex = data.wizardType === 'first-time' ? currentStep : 
-    currentStep === 1 ? 1 : currentStep === 2 ? 3 : currentStep === 3 ? 4 : 5;
-
+      currentStep === totalSteps);
+  let stepIndex = $derived(data.wizardType === 'first-time' ? currentStep :
+      currentStep === 1 ? 1 : currentStep === 2 ? 3 : currentStep === 3 ? 4 : 5);
   // Show loading state until data is loaded
-  $: showContent = !dataLoading && !dataError && guild;
+  let showContent = $derived(!dataLoading && !dataError && guild);
 </script>
 
 <svelte:head>
@@ -839,7 +843,7 @@ Main wizard page component that orchestrates the entire setup flow
         <button
           class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
           style="background: {$colorStore.primary}; color: white;"
-          on:click={() => goto('/dashboard')}
+          onclick={() => goto('/dashboard')}
         >
           Back to Dashboard
         </button>
@@ -913,7 +917,7 @@ Main wizard page component that orchestrates the entire setup flow
         <button
           class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
           style="background: {$colorStore.primary}; color: white;"
-          on:click={nextStep}
+          onclick={nextStep}
         >
           Get Started
           <ArrowRight class="w-4 h-4" />
@@ -922,7 +926,7 @@ Main wizard page component that orchestrates the entire setup flow
         <button
           class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
           style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-          on:click={skipWizard}
+          onclick={skipWizard}
           disabled={wizardLoading}
         >
           {skipConfirmation ? 'Confirm Skip' : 'Skip Setup'}
@@ -942,7 +946,7 @@ Main wizard page component that orchestrates the entire setup flow
             <button
               class="px-3 py-1 rounded text-sm font-medium transition-all"
               style="background: #f59e0b25; color: #f59e0b;"
-              on:click={skipWizard}
+              onclick={skipWizard}
               disabled={wizardLoading}
             >
               {wizardLoading ? 'Skipping...' : 'Yes, Skip'}
@@ -950,7 +954,7 @@ Main wizard page component that orchestrates the entire setup flow
             <button
               class="px-3 py-1 rounded text-sm font-medium transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-              on:click={cancelSkip}
+              onclick={cancelSkip}
             >
               Cancel
             </button>
@@ -1046,7 +1050,7 @@ Main wizard page component that orchestrates the entire setup flow
           <button
             class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-            on:click={previousStep}
+            onclick={previousStep}
           >
             <ArrowLeft class="w-4 h-4" />
             Back
@@ -1055,7 +1059,7 @@ Main wizard page component that orchestrates the entire setup flow
           <button
             class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50"
             style="background: {$colorStore.primary}; color: white;"
-            on:click={nextStep}
+            onclick={nextStep}
             disabled={!canProceed}
           >
             Continue
@@ -1118,7 +1122,7 @@ Main wizard page component that orchestrates the entire setup flow
         <button
           class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
           style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-          on:click={previousStep}
+          onclick={previousStep}
         >
           <ArrowLeft class="w-4 h-4" />
           Back
@@ -1127,7 +1131,7 @@ Main wizard page component that orchestrates the entire setup flow
         <button
           class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50"
           style="background: {$colorStore.primary}; color: white;"
-          on:click={nextStep}
+          onclick={nextStep}
           disabled={!canProceed}
         >
           {selectedFeatures.length > 0 ? 'Configure Features' : 'Skip Features'}
@@ -1228,7 +1232,7 @@ Main wizard page component that orchestrates the entire setup flow
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                         rows="3" bind:value={featureConfigs.multigreets.message}
                         placeholder="Welcome to %server.name%, %user.mention%! 🎉"
-                      />
+                      ></textarea>
                       
                       {#if featureConfigs.multigreets.useRichMessage}
                         <div class="mt-3 space-y-4">
@@ -1238,7 +1242,7 @@ Main wizard page component that orchestrates the entire setup flow
                               type="button"
                               class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                              on:click={() => {
+                              onclick={() => {
                                 featureConfigs.multigreets.embeds = [...(featureConfigs.multigreets.embeds || []), {
                                   title: '',
                                   description: '',
@@ -1254,7 +1258,7 @@ Main wizard page component that orchestrates the entire setup flow
                               type="button" 
                               class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                              on:click={() => {
+                              onclick={() => {
                                 featureConfigs.multigreets.components = [...(featureConfigs.multigreets.components || []), {
                                   componentKey: `welcome-btn-${Date.now()}`, id: null, displayName: '', style: 1, url: '', emoji: '', isSelect: false, maxOptions: 1, minOptions: 1, options: []
                                 }];
@@ -1276,7 +1280,7 @@ Main wizard page component that orchestrates the entire setup flow
                                       type="button"
                                       class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                                      on:click={() => {
+                                      onclick={() => {
                                         featureConfigs.multigreets.embeds = featureConfigs.multigreets.embeds.filter((_, i) => i !== index);
                                       }}
                                     >
@@ -1427,7 +1431,7 @@ Main wizard page component that orchestrates the entire setup flow
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                         rows="3" bind:value={featureConfigs.rolegreets.message}
                         placeholder="Congratulations %user.mention% on getting the %role.name% role! 🎉"
-                      />
+                      ></textarea>
                       
                       {#if featureConfigs.rolegreets.useRichMessage}
                         <div class="mt-3 space-y-4">
@@ -1437,7 +1441,7 @@ Main wizard page component that orchestrates the entire setup flow
                               type="button"
                               class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                              on:click={() => {
+                              onclick={() => {
                                 featureConfigs.rolegreets.embeds = [...(featureConfigs.rolegreets.embeds || []), {
                                   title: '',
                                   description: '',
@@ -1453,7 +1457,7 @@ Main wizard page component that orchestrates the entire setup flow
                               type="button" 
                               class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                              on:click={() => {
+                              onclick={() => {
                                 featureConfigs.rolegreets.components = [...(featureConfigs.rolegreets.components || []), {
                                   componentKey: `role-btn-${Date.now()}`, id: null, displayName: '', style: 1, url: '', emoji: '', isSelect: false, maxOptions: 1, minOptions: 1, options: []
                                 }];
@@ -1475,7 +1479,7 @@ Main wizard page component that orchestrates the entire setup flow
                                       type="button"
                                       class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                                      on:click={() => {
+                                      onclick={() => {
                                         featureConfigs.rolegreets.embeds = featureConfigs.rolegreets.embeds.filter((_, i) => i !== index);
                                       }}
                                     >
@@ -1703,7 +1707,7 @@ Main wizard page component that orchestrates the entire setup flow
             <!-- Default configuration for other features -->
             <div class="text-center py-12">
               <div class="mb-6">
-                <svelte:component this={feature.icon} class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary};" />
+                  <feature.icon class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary};"/>
                 <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text};">{feature.title}</h3>
                 <p class="text-sm max-w-md mx-auto" style="color: {$colorStore.muted};">{feature.description}</p>
               </div>
@@ -1723,7 +1727,7 @@ Main wizard page component that orchestrates the entire setup flow
             <button
               class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-              on:click={previousStep}
+              onclick={previousStep}
             >
               <ArrowLeft class="w-4 h-4" />
               Back
@@ -1737,7 +1741,7 @@ Main wizard page component that orchestrates the entire setup flow
               <button
                 class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.primary}; color: white;"
-                on:click={finishCurrentFeatureConfig}
+                onclick={finishCurrentFeatureConfig}
                 disabled={wizardLoading}
               >
                 {wizardLoading ? 'Configuring...' : currentConfigStepIndex === selectedFeatures.length - 1 ? 'Finish Setup' : 'Configure Next'}

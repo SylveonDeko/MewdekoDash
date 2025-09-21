@@ -6,32 +6,44 @@ Permission check component for verifying bot permissions during wizard
   import { colorStore } from "$lib/stores/colorStore";
   import { Check, X, AlertCircle, Info, ExternalLink } from "lucide-svelte";
 
-  export let permission: string;
-  export let hasPermission: boolean;
-  export let importance: string | number = 'recommended';
-  export let description: string;
-  export let requiredForFeatures: string[] = [];
+  interface Props {
+    permission: string;
+    hasPermission: boolean;
+    importance?: string | number;
+    description: string;
+    requiredForFeatures?: string[];
+  }
+
+  let {
+    permission,
+    hasPermission,
+    importance = 'recommended',
+    description,
+    requiredForFeatures = []
+  }: Props = $props();
 
   // Convert importance to lowercase string for consistency
-  $: importanceString = typeof importance === 'string' 
+  let importanceString = $derived(typeof importance === 'string' 
     ? importance.toLowerCase() 
-    : importance === 0 ? 'critical' : importance === 1 ? 'recommended' : 'optional';
+    : importance === 0 ? 'critical' : importance === 1 ? 'recommended' : 'optional');
 
-  $: statusColor = hasPermission 
+  let statusColor = $derived(hasPermission 
     ? $colorStore.accent 
     : importanceString === 'critical' 
       ? '#ef4444' 
       : importanceString === 'recommended' 
         ? '#f59e0b' 
-        : $colorStore.muted;
+        : $colorStore.muted);
 
-  $: statusIcon = hasPermission ? Check : X;
+  let statusIcon = $derived(hasPermission ? Check : X);
 
-  $: importanceInfo = {
+  let importanceInfo = $derived({
     'critical': { label: 'Critical', color: '#ef4444', icon: AlertCircle },
     'recommended': { label: 'Recommended', color: '#f59e0b', icon: AlertCircle },
     'optional': { label: 'Optional', color: $colorStore.muted, icon: Info }
-  }[importanceString] || { label: 'Unknown', color: $colorStore.muted, icon: Info };
+  }[importanceString] || { label: 'Unknown', color: $colorStore.muted, icon: Info });
+
+  const SvelteComponent = $derived(statusIcon);
 </script>
 
 <div 
@@ -54,7 +66,7 @@ Permission check component for verifying bot permissions during wizard
       color: {statusColor};
     "
   >
-    <svelte:component this={statusIcon} class="w-4 h-4" />
+    <SvelteComponent class="w-4 h-4" />
   </div>
 
   <!-- Permission details -->
@@ -67,7 +79,7 @@ Permission check component for verifying bot permissions during wizard
       <!-- Importance badge -->
       <div class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium flex-shrink-0"
            style="background: {importanceInfo.color}15; color: {importanceInfo.color};">
-        <svelte:component this={importanceInfo.icon} class="w-3 h-3" />
+        <importanceInfo.icon class="w-3 h-3" />
         {importanceInfo.label}
       </div>
     </div>
@@ -94,7 +106,7 @@ Permission check component for verifying bot permissions during wizard
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-1 text-sm font-medium"
            style="color: {statusColor};">
-        <svelte:component this={statusIcon} class="w-4 h-4" />
+        <SvelteComponent class="w-4 h-4" />
         {hasPermission ? 'Permission granted' : 'Permission missing'}
       </div>
       

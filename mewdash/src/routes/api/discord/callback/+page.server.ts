@@ -15,14 +15,14 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     cookies.delete("auth_redirect_to", { path: "/" });
     
     if (!code) {
-        throw redirect(303, redirectTo);
+        redirect(303, redirectTo);
     }
 
     // Check if we've already processed this code
     const processedCode = cookies.get('processed_oauth_code');
     if (processedCode === code) {
         cookies.delete('processed_oauth_code', { path: '/' });
-        throw redirect(303, redirectTo);
+        redirect(303, redirectTo);
     }
 
     try {
@@ -46,7 +46,7 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
 
         // Use 302 redirect to ensure cookies are sent properly
         const finalRedirect = redirectTo.startsWith("/dashboard") ? "/dashboard" : redirectTo;
-        throw redirect(302, finalRedirect);
+        redirect(302, finalRedirect);
     } catch (error) {
         if (error instanceof Error) {
             logger.error('Callback error details:', {
@@ -60,6 +60,6 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
         }
 
         // Even on error, try to redirect to the intended destination
-        throw redirect(303, redirectTo);
+        redirect(303, redirectTo);
     }
 };

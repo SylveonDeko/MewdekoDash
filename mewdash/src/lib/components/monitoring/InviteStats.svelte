@@ -5,9 +5,13 @@
   import { inviteStore } from "$lib/stores/inviteStore";
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
 
-  export let animationDelay: number = 0;
+  interface Props {
+    animationDelay?: number;
+  }
 
-  $: stats = $inviteStore.stats;
+  let { animationDelay = 0 }: Props = $props();
+
+  let stats = $derived($inviteStore.stats);
 </script>
 
 {#if stats && stats !== undefined && stats.averageJoins !== undefined}

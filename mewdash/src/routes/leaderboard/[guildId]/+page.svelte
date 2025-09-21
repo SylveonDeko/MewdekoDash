@@ -16,31 +16,31 @@
     Zap
   } from "lucide-svelte";
 
-  export let data;
+  let {data} = $props();
 
   // Authentication required
   let currentUser = data.user;
   let userId = currentUser ? BigInt(currentUser.id) : null;
   
   // Get guild ID from URL params
-  $: guildId = BigInt($page.params.guildId);
+  let guildId = $derived(BigInt($page.params.guildId));
   
   // Guild membership state
-  let isMember = false;
-  let checkingMembership = false;
+  let isMember = $state(false);
+  let checkingMembership = $state(false);
 
   // State
-  let loading = true;
-  let paginationLoading = false;
-  let error = "";
-  let guildInfo: any = null;
-  let leaderboard: any[] = [];
-  let serverStats: any = {};
-  let currentPage = 1;
+  let loading = $state(true);
+  let paginationLoading = $state(false);
+  let error = $state("");
+  let guildInfo: any = $state(null);
+  let leaderboard: any[] = $state([]);
+  let serverStats: any = $state({});
+  let currentPage = $state(1);
   let pageSize = 20;
-  let availableInstances: any[] = [];
-  let selectedInstance: any = null;
-  let checkingInstances = false;
+  let availableInstances: any[] = $state([]);
+  let selectedInstance: any = $state(null);
+  let checkingInstances = $state(false);
 
   // Instance state tracking (like InstanceSelector.svelte)
   let instanceStates: Record<string, {
@@ -49,7 +49,7 @@
     error: string | null;
     checked: boolean;
     guildInfo?: any;
-  }> = {};
+  }> = $state({});
 
   // Find which instances have this guild (following InstanceSelector pattern)
   async function findInstancesWithGuild() {
@@ -255,8 +255,8 @@
   }
 
   // Reactive state tracking (like InstanceSelector)
-  $: stillChecking = Object.values(instanceStates).some(state => state.loading);
-  $: showLoadingState = (loading && !paginationLoading) || checkingInstances || stillChecking || checkingMembership;
+  let stillChecking = $derived(Object.values(instanceStates).some(state => state.loading));
+  let showLoadingState = $derived((loading && !paginationLoading) || checkingInstances || stillChecking || checkingMembership);
 
   onMount(async () => {
     // Require authentication
@@ -486,7 +486,7 @@
                 <button
                   class="px-3 py-1.5 rounded-lg border transition-all hover:scale-105 text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
-                  on:click={() => goToPage(currentPage - 1)}
+                  onclick={() => goToPage(currentPage - 1)}
                   disabled={currentPage <= 1 || paginationLoading}
                 >
                   {#if paginationLoading && currentPage > 1}
@@ -505,7 +505,7 @@
                 <button
                   class="px-3 py-1.5 rounded-lg border transition-all hover:scale-105 text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
-                  on:click={() => goToPage(currentPage + 1)}
+                  onclick={() => goToPage(currentPage + 1)}
                   disabled={leaderboard.length < pageSize || paginationLoading}
                 >
                   {#if paginationLoading}
@@ -529,7 +529,8 @@
                 <div class="flex items-center justify-center w-12 h-12 rounded-xl border-2"
                      style="background: {getRankColor(user.rank)}20; border-color: {getRankColor(user.rank)}40;">
                   {#if user.rank <= 3}
-                    <svelte:component this={getRankIcon(user.rank)} 
+                      {@const SvelteComponent = getRankIcon(user.rank)}
+                      <SvelteComponent
                                       class="w-6 h-6" 
                                       style="color: {getRankColor(user.rank)}" />
                   {:else}
@@ -599,7 +600,7 @@
             <button
               class="px-4 py-2 rounded-lg border transition-all hover:scale-105 min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
-              on:click={() => goToPage(currentPage - 1)}
+              onclick={() => goToPage(currentPage - 1)}
               disabled={currentPage <= 1 || paginationLoading}
             >
               {#if paginationLoading && currentPage > 1}
@@ -618,7 +619,7 @@
             <button
               class="px-4 py-2 rounded-lg border transition-all hover:scale-105 min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
-              on:click={() => goToPage(currentPage + 1)}
+              onclick={() => goToPage(currentPage + 1)}
               disabled={leaderboard.length < pageSize || paginationLoading}
             >
               {#if paginationLoading}

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/+layout.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
   import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
@@ -13,11 +15,11 @@
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
 
-  export let data;
+    let {data, children} = $props();
 
   // Setup suggestion banner state
-  let showSetupSuggestion = false;
-  let setupSuggestionContext: any = null;
+    let showSetupSuggestion = $state(false);
+    let setupSuggestionContext: any = $state(null);
 
   // Check for wizard or setup suggestion when guild changes
   async function checkWizardOrSuggestion() {
@@ -68,9 +70,11 @@
   }
 
   // Watch for guild changes to check wizard or setup suggestion
-  $: if (browser && $currentGuild && $userStore) {
-    checkWizardOrSuggestion();
-  }
+    run(() => {
+        if (browser && $currentGuild && $userStore) {
+            checkWizardOrSuggestion();
+        }
+    });
 
   // Load saved instance immediately when browser is available to prevent flash
   if (browser) {
@@ -106,14 +110,16 @@
   });
 
   // Extract colors from server icon when guild changes, fallback to bot avatar
-  $: if ($currentGuild?.icon) {
-    // Use server icon for server-specific theming
-    const iconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png`;
-    colorStore.extractFromServerIcon(iconUrl);
-  } else if ($currentInstance?.botAvatar) {
-    // Fallback to bot avatar if no server icon
-    colorStore.extractFromImage($currentInstance.botAvatar);
-  }
+    run(() => {
+        if ($currentGuild?.icon) {
+            // Use server icon for server-specific theming
+            const iconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png`;
+            colorStore.extractFromServerIcon(iconUrl);
+        } else if ($currentInstance?.botAvatar) {
+            // Fallback to bot avatar if no server icon
+            colorStore.extractFromImage($currentInstance.botAvatar);
+        }
+    });
 </script>
 
 <div class="pt-4 flex w-full">
@@ -136,8 +142,8 @@
             />
           </div>
         {/if}
-        
-        <slot />
+
+          {@render children?.()}
       </ErrorBoundary>
       <!-- Always show mobile nav when we have an instance - it can handle both guild and instance selection -->
       <MobileNavBar showInstanceSelector={!$currentGuild} data={data} />

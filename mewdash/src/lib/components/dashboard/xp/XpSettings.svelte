@@ -3,10 +3,19 @@
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
-  export let xpSettings: any;
-  export let loading: boolean = false;
-  export let error: string | null = null;
-  export let changedSettings: Set<string>;
+  interface Props {
+    xpSettings: any;
+    loading?: boolean;
+    error?: string | null;
+    changedSettings: Set<string>;
+  }
+
+  let {
+    xpSettings = $bindable(),
+    loading = false,
+    error = null,
+    changedSettings = $bindable()
+  }: Props = $props();
 
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
@@ -66,7 +75,7 @@
         id="xp-per-message"
         bind:value={xpSettings.xpPerMessage}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -95,7 +104,7 @@
         id="message-xp-cooldown"
         bind:value={xpSettings.messageXpCooldown}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.secondary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -123,7 +132,7 @@
         id="voice-xp-per-minute"
         bind:value={xpSettings.voiceXpPerMinute}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.accent}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -152,7 +161,7 @@
         id="voice-xp-timeout"
         bind:value={xpSettings.voiceXpTimeout}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -180,7 +189,7 @@
         id="xp-multiplier"
         bind:value={xpSettings.xpMultiplier}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.secondary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -234,7 +243,7 @@
         id="custom-xp-image-url"
         bind:value={xpSettings.customXpImageUrl}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        on:input={() => markAsChanged("xpSettings")}
+        oninput={() => markAsChanged("xpSettings")}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -264,7 +273,7 @@
             type="checkbox"
             bind:checked={xpSettings.serverExclusionState}
             class="sr-only peer"
-            on:change={() => markAsChanged("xpSettings")}
+            onchange={() => markAsChanged("xpSettings")}
             aria-label="Enable or disable XP gain for the entire server"
             id="server-exclusion"
           >

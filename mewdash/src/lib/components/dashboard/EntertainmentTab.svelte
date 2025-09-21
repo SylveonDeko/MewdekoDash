@@ -1,5 +1,7 @@
 <!-- lib/components/dashboard/EntertainmentTab.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -16,12 +18,12 @@
 
 
   // Derived state
-  $: musicStatus = $musicStore.status;
-  $: hasActiveMusic = musicStatus?.CurrentTrack;
+  let musicStatus = $derived($musicStore.status);
+  let hasActiveMusic = $derived(musicStatus?.CurrentTrack);
 
   // Entertainment data
-  let giveaways: any[] = [];
-  let customVoiceConfig: any = null;
+  let giveaways: any[] = $state([]);
+  let customVoiceConfig: any = $state(null);
   let loading = true;
 
   async function fetchContentData() {
@@ -50,9 +52,11 @@
     fetchContentData();
   });
 
-  $: if ($currentGuild) {
-    fetchContentData();
-  }
+  run(() => {
+    if ($currentGuild) {
+      fetchContentData();
+    }
+  });
 
   // Music control helpers
   function formatDuration(seconds: number): string {

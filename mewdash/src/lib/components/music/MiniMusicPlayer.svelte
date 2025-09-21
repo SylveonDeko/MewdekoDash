@@ -8,16 +8,20 @@
   import type { MusicStatus } from "$lib/types/music";
   import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 
-  export let musicStatus: MusicStatus | null = null;
-  export let isVisible: boolean = false;
+  interface Props {
+    musicStatus?: MusicStatus | null;
+    isVisible?: boolean;
+  }
+
+  let { musicStatus = null, isVisible = false }: Props = $props();
 
   // Derived state
-  $: currentTrack = musicStatus?.CurrentTrack;
-  $: isPlaying = musicStatus?.State === 2;  // 2 = Playing state
-  $: hasTrack = currentTrack?.Track?.Title;
+  let currentTrack = $derived(musicStatus?.CurrentTrack);
+  let isPlaying = $derived(musicStatus?.State === 2);  // 2 = Playing state
+  let hasTrack = $derived(currentTrack?.Track?.Title);
 
   // Color store reactive values
-  $: colors = $musicPlayerColors;
+  let colors = $derived($musicPlayerColors);
 
   // Format track title for display
   function formatTrackTitle(title: string): string {
@@ -101,7 +105,7 @@
     <!-- Track Info -->
     <button 
       class="flex-1 min-w-0 cursor-pointer text-left" 
-      on:click={openMusicDashboard}
+      onclick={openMusicDashboard}
       aria-label="Open music dashboard"
     >
       <div
@@ -126,7 +130,7 @@
       <button
         class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         style="background: {colors.primary}25; color: {colors.primary};"
-        on:click={togglePlayPause}
+        onclick={togglePlayPause}
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {#if isPlaying}
@@ -140,7 +144,7 @@
       <button
         class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         style="background: {colors.secondary}20; color: {colors.secondary};"
-        on:click={skipTrack}
+        onclick={skipTrack}
         aria-label="Skip track"
       >
         <SkipForward size={14} />

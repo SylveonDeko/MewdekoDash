@@ -1,5 +1,7 @@
 <!-- routes/dashboard/moderation/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -10,15 +12,15 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-  export let data;
+    let {data} = $props();
 
-  let warnings: any[] = [];
-  let recentActivity: any[] = [];
-  let loading = true;
-  let error: string | null = null;
+    let warnings: any[] = $state([]);
+    let recentActivity: any[] = $state([]);
+    let loading = $state(true);
+    let error: string | null = $state(null);
 
   // Layout state
-  let activeTab = "overview";
+    let activeTab = $state("overview");
   
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
@@ -27,9 +29,9 @@
   ];
   
   // Stats
-  let totalWarnings = 0;
-  let activeWarnings = 0;
-  let forgivenWarnings = 0;
+    let totalWarnings = $state(0);
+    let activeWarnings = $state(0);
+    let forgivenWarnings = $state(0);
 
   async function fetchModerationData() {
     if (!$currentGuild?.id) return;
@@ -69,9 +71,11 @@
     fetchModerationData();
   });
 
-  $: if ($currentGuild) {
-    fetchModerationData();
-  }
+    run(() => {
+        if ($currentGuild) {
+            fetchModerationData();
+        }
+    });
 </script>
 
 <DashboardPageLayout 
@@ -92,6 +96,7 @@
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
 
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if error}
       <div class="p-6 rounded-xl mb-6 transition-all" role="alert"

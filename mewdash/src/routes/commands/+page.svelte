@@ -1,24 +1,30 @@
 <!-- routes/commands/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
   import { onDestroy, onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   const searchStore = createSearchStore(data.modules);
-  let mounted = false;
-  let activeTabIndex = 0;
-  let searchValue = "";
-  let showShortcuts = false;
-  let searchResultCount = 0;
+    let mounted = $state(false);
+    let activeTabIndex = $state(0);
+    let searchValue = $state("");
+    let showShortcuts = $state(false);
+    let searchResultCount = $state(0);
 
   // Reactive variables for tab functionality
-  $: filteredModules = searchValue.trim() ? $searchStore.filtered : data.modules;
-  $: activeModule = filteredModules[activeTabIndex] || filteredModules[0];
-  $: {
+    let filteredModules = $derived(searchValue.trim() ? $searchStore.filtered : data.modules);
+    let activeModule = $derived(filteredModules[activeTabIndex] || filteredModules[0]);
+    run(() => {
     // Update search result count
     if (searchValue.trim()) {
       searchResultCount = filteredModules.reduce((count, module) => {
@@ -29,17 +35,21 @@
         return count + (module.Commands ? module.Commands.length : 0);
       }, 0);
     }
-  }
+    });
 
   // Update search store when search value changes
-  $: if (searchValue !== $searchStore.search) {
-    searchStore.update(store => ({ ...store, search: searchValue }));
-  }
+    run(() => {
+        if (searchValue !== $searchStore.search) {
+            searchStore.update(store => ({...store, search: searchValue}));
+        }
+    });
 
   // Reset active tab when search changes
-  $: if (searchValue.trim()) {
-    activeTabIndex = 0;
-  }
+    run(() => {
+        if (searchValue.trim()) {
+            activeTabIndex = 0;
+        }
+    });
 
   const unsubscribe = searchStore.subscribe((model) => searchHandler(model));
 
@@ -170,8 +180,8 @@
               bind:value={searchValue}
               class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
               id="search"
-              on:blur={handleSearchBlur}
-              on:focus={handleSearchFocus}
+              onblur={handleSearchBlur}
+              onfocus={handleSearchFocus}
               placeholder="Search modules or commands..."
               style="background: {$colorStore.primary}20;
                      color: {$colorStore.text};
@@ -183,7 +193,7 @@
               <button
                 class="absolute inset-y-0 right-0 pr-4 flex items-center text-sm transition-colors duration-200 hover:opacity-70"
                 style="color: {$colorStore.muted};"
-                on:click={clearSearch}
+                onclick={clearSearch}
                 aria-label="Clear search"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,21 +250,21 @@
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-105"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
-                  on:click={() => searchValue = 'music'}
+                  onclick={() => searchValue = 'music'}
                 >
                   music
                 </button>
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-105"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
-                  on:click={() => searchValue = 'moderation'}
+                  onclick={() => searchValue = 'moderation'}
                 >
                   moderation
                 </button>
                 <button
                   class="px-3 py-1 rounded-full transition-all hover:scale-105"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
-                  on:click={() => searchValue = 'fun'}
+                  onclick={() => searchValue = 'fun'}
                 >
                   fun
                 </button>
@@ -302,8 +312,8 @@
                   aria-controls="tabpanel-{index}"
                   id="tab-{index}"
                   tabindex={index === activeTabIndex ? 0 : -1}
-                  on:click={() => activeTabIndex = index}
-                  on:keydown={(e) => handleTabKeydown(e, index)}
+                  onclick={() => activeTabIndex = index}
+                  onkeydown={(e) => handleTabKeydown(e, index)}
                 >
                   <div
                     class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform backdrop-blur-sm"

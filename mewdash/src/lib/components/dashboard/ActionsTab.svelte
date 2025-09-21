@@ -1,5 +1,7 @@
 <!-- lib/components/dashboard/ActionsTab.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -28,17 +30,17 @@
   let roleGreets: any[] = [];
   let roleStates: any[] = [];
   let guildConfig: any = {};
-  let loading = true;
+  let loading = $state(true);
 
   // Derived stats
-  let actionsStats = {
+  let actionsStats = $state({
     activeGreets: 0,
     totalRoleStates: 0,
     afkEnabled: false,
     recentGreets: 0
-  };
+  });
 
-  let recentGreetings: any[] = [];
+  let recentGreetings: any[] = $state([]);
 
   async function fetchActionsData() {
     if (!$currentGuild?.id) return;
@@ -98,9 +100,11 @@
     fetchActionsData();
   });
 
-  $: if ($currentGuild) {
-    fetchActionsData();
-  }
+  run(() => {
+    if ($currentGuild) {
+      fetchActionsData();
+    }
+  });
 
   // Helper functions
   function formatRelativeTime(dateString: string): string {

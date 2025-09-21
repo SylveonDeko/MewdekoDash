@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script lang="ts" module>
   import type { SvelteComponent } from "svelte";
 
   export interface Item {
@@ -8,33 +8,51 @@
 </script>
 
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import reducedMotion from "$lib/reducedMotion.ts";
 
-  export let items: Item[] = [];
-  export let defaultAbsoluteNavigation = true;
-  export let defaultRelativeNavigation = true;
 
-  export let currentIndex: number;
-  export let itemCount: number;
+  interface Props {
+    items?: Item[];
+    defaultAbsoluteNavigation?: boolean;
+    defaultRelativeNavigation?: boolean;
+    currentIndex: number;
+    itemCount: number;
+    navigation?: import('svelte').Snippet<[any]>;
+  }
+
+  let {
+    items = [],
+    defaultAbsoluteNavigation = true,
+    defaultRelativeNavigation = true,
+    currentIndex = $bindable(),
+    itemCount = $bindable(),
+    navigation
+  }: Props = $props();
 
   //Bound to the carousel list
-  let carousel: HTMLElement;
+  let carousel: HTMLElement = $state();
   //Bound to the carousel items ordered by their index
-  let carouselElements: HTMLElement[] = [];
+  let carouselElements: HTMLElement[] = $state([]);
   //Updated to the current scroll position of the carousel
-  let carouselScroll: number;
+  let carouselScroll: number = $state();
 
   // Generate unique ID for ARIA labeling
   const carouselId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
   const liveRegionId = `${carouselId}-live`;
 
   //The amount of items in the carousel
-  $: itemCount = items?.length ?? 0;
+  run(() => {
+    itemCount = items?.length ?? 0;
+  });
   //The scrolled width divided by the width of a single image (maximum width/image count) is the index of the currently centered image
-  $: currentIndex =
-    !carousel || !carouselScroll
-      ? 0
-      : Math.round(carouselScroll / (carousel?.scrollWidth / itemCount));
+  run(() => {
+    currentIndex =
+      !carousel || !carouselScroll
+        ? 0
+        : Math.round(carouselScroll / (carousel?.scrollWidth / itemCount));
+  });
 
   function scrollToIndex(index: number) {
     //Check if index is in bounds
@@ -82,12 +100,10 @@
   </div>
 
   {#if itemCount > 1}
-    <section
-      role="region"
+    <div
       aria-roledescription="carousel"
       aria-labelledby="{carouselId}-label"
-      tabindex="0"
-      on:keydown={handleKeydown}
+      role="group"
     >
       <h2 id="{carouselId}-label" class="sr-only">Content Carousel</h2>
       <ol
@@ -95,28 +111,31 @@
           ? ''
           : 'scroll-smooth'}"
         bind:this={carousel}
-        on:scroll={() => (carouselScroll = carousel.scrollLeft)}
+        onscroll={() => (carouselScroll = carousel.scrollLeft)}
+        tabindex="0"
+        onkeydown={handleKeydown}
       >
       {#each items as { props, component }, index}
+        {@const SvelteComponent_1 = component}
         <li
           bind:this={carouselElements[index]}
           class="relative h-full w-full snap-center flex grow-0 shrink-0 basis-full"
           aria-current={index === currentIndex ? 'true' : 'false'}
           aria-label="Item {index + 1} of {itemCount}"
         >
-          <svelte:component this={component} {...props} />
+          <SvelteComponent_1 {...props} />
         </li>
       {/each}
     </ol>
       <nav aria-label="Carousel navigation controls">
-      <slot name="navigation" {scrollToIndex} {currentIndex} {itemCount}>
+      {#if navigation}{@render navigation({ scrollToIndex, currentIndex, itemCount, })}{:else}
         {#if defaultRelativeNavigation}
           <div
             class="absolute h-[100%] w-min left-0 top-0 flex content-center mx-2"
           >
             <button
               aria-label="Go to previous item"
-              on:click={() => scrollToIndex(currentIndex - 1)}
+              onclick={() => scrollToIndex(currentIndex - 1)}
               disabled={currentIndex <= 0}
               tabindex={defaultRelativeNavigation ? 0 : -1}
             >
@@ -137,7 +156,7 @@
           >
             <button
               aria-label="Go to next item"
-              on:click={() => scrollToIndex(currentIndex + 1)}
+              onclick={() => scrollToIndex(currentIndex + 1)}
               disabled={currentIndex >= itemCount - 1}
               tabindex={defaultRelativeNavigation ? 0 : -1}
             >
@@ -166,19 +185,20 @@
                 currentIndex
                   ? 'bg-opacity-100'
                   : 'bg-opacity-60  hover:bg-opacity-100'}"
-                on:click={() => scrollToIndex(index)}
+                onclick={() => scrollToIndex(index)}
                 tabindex={defaultAbsoluteNavigation ? 0 : -1}
               >
               </button>
             {/each}
           </div>
         {/if}
-      </slot>
+      {/if}
     </nav>
-    </section>
+    </div>
   {:else if itemCount === 1}
+    {@const SvelteComponent_2 = items[0].component}
     <div class="w-full h-full">
-      <svelte:component this={items[0].component} {...items[0].props} />
+      <SvelteComponent_2 {...items[0].props} />
     </div>
   {/if}
 </div>

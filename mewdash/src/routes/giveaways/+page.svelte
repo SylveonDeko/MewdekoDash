@@ -14,15 +14,20 @@
   let guildId: bigint;
   let giveawayId: number;
   let userId: bigint;
-  let turnstileToken: string;
-  let message: string = "";
-  let isSubmitting = false;
-  let mounted = false;
-  export let data: PageData;
+  let turnstileToken: string = $state();
+  let message: string = $state("");
+  let isSubmitting = $state(false);
+  let mounted = $state(false);
 
-  let giveaway: Giveaways | null = null;
-  let loading = true;
-  let error: string | null = null;
+  interface Props {
+      data: PageData;
+  }
+
+  let {data}: Props = $props();
+
+  let giveaway: Giveaways | null = $state(null);
+  let loading = $state(true);
+  let error: string | null = $state(null);
 
   // Enhanced error handling
   type ErrorType = "network" | "auth" | "validation" | "server" | "unknown";
@@ -152,8 +157,8 @@
     return `${minutes}m`;
   }
 
-  $: timeRemaining = giveaway ? getTimeRemaining(giveaway.when) : "";
-  $: isGiveawayActive = giveaway ? new Date(giveaway.when).getTime() > Date.now() : false;
+  let timeRemaining = $derived(giveaway ? getTimeRemaining(giveaway.when) : "");
+  let isGiveawayActive = $derived(giveaway ? new Date(giveaway.when).getTime() > Date.now() : false);
 </script>
 
 <svelte:head>
@@ -228,7 +233,7 @@
           <button
             class="mt-6 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-            on:click={() => window.location.reload()}
+            onclick={() => window.location.reload()}
           >
             Try Again
           </button>
@@ -325,7 +330,7 @@
               <!-- Entry Button -->
               <div class="text-center">
                 <button
-                  on:click={enterGiveaway}
+                        onclick={enterGiveaway}
                   disabled={!turnstileToken || !isGiveawayActive || isSubmitting}
                   class="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[200px]"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; box-shadow: 0 4px 20px {$colorStore.primary}30;"

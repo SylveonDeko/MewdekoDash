@@ -1,5 +1,7 @@
 <!-- routes/dashboard/chat-triggers/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -34,12 +36,16 @@
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // Notification variables
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
 
   // Enums
   const RequirePrefixType = {
@@ -71,7 +77,7 @@
   };
 
   // Data variables  
-  let triggers: ChatTriggers[] = [];
+    let triggers: ChatTriggers[] = $state([]);
   let newTrigger: Partial<ChatTriggers> & { 
     isValidRegex: boolean; 
     grantedRoles: string[] | string | null; 
@@ -80,7 +86,7 @@
     validTriggerTypesInteraction: boolean;
     validTriggerTypesButton: boolean;
     validTriggerTypesReactions: boolean;
-  } = {
+  } = $state({
     trigger: "",
     response: "",
     grantedRoles: [],
@@ -102,30 +108,30 @@
     applicationCommandType: CtApplicationCommandType.None,
     prefixType: RequirePrefixType.None,
     roleGrantType: CtRoleGrantType.Sender,
-  };
-  let guildRoles: Array<{ id: string; name: string }> = [];
+  });
+    let guildRoles: Array<{ id: string; name: string }> = $state([]);
 
   // UI state variables - Dual Mode Interface
-  let activeTab: "simple" | "advanced" = "simple";
-  let expandedTriggerId: number | null = null;
-  let loading = true;
-  let error: string | null = null;
+    let activeTab: "simple" | "advanced" = $state("simple");
+    let expandedTriggerId: number | null = $state(null);
+    let loading = $state(true);
+    let error: string | null = $state(null);
   let isMobile = false;
   
   // Accessibility state
-  let statusMessage = "";
-  let errorMessage = "";
+    let statusMessage = $state("");
+    let errorMessage = $state("");
   let focusedCardIndex = -1;
   
   // Simple mode state
-  let quickTriggerText = "";
-  let quickResponseText = "";
-  let showAdvancedOptions = false;
+    let quickTriggerText = $state("");
+    let quickResponseText = $state("");
+    let showAdvancedOptions = $state(false);
   
   // Advanced mode state
-  let newTriggerRegexTestString = "";
-  let newTriggerRegexTestResult = "";
-  let newTriggerRegexHighlightedString = "";
+    let newTriggerRegexTestString = $state("");
+    let newTriggerRegexTestResult = $state("");
+    let newTriggerRegexHighlightedString = $state("");
   let regexTestString = "";
   let regexTestResult = "";
   let regexHighlightedString = "";
@@ -482,22 +488,22 @@
   }
 
   // Format data for DiscordSelector
-  $: roleOptions = guildRoles.map(role => ({
+    let roleOptions = $derived(guildRoles.map(role => ({
     id: role.id,
     name: role.name
-  }));
+    })));
 
   // Boolean options for DiscordSelector
-  $: booleanOptions = [
+    let booleanOptions = $derived([
     { id: "true", name: "Yes" },
     { id: "false", name: "No" }
-  ];
+    ]);
 
   // Pattern type options for DiscordSelector
-  $: triggerTypeOptions = [
+    let triggerTypeOptions = $derived([
     { id: "false", name: "Normal Text Pattern" },
     { id: "true", name: "Regular Expression Pattern" }
-  ];
+    ]);
 
   // Format enum options for DiscordSelector
   function getEnumOptionsForSelector(key: string) {
@@ -589,24 +595,26 @@
   });
 
   // Watch for guild changes
-  $: if ($currentGuild) {
-    loadTriggers()
-    loadGuildRoles()
-  }
+    run(() => {
+        if ($currentGuild) {
+            loadTriggers()
+            loadGuildRoles()
+        }
+    });
 
-  $: colors = $colorStore;
+    let colors = $derived($colorStore);
 
   onDestroy(() => {
     if (browser) window.removeEventListener("resize", checkMobile);
   });
 
-  $: colorVars = `
+    let colorVars = $derived(`
     --color-primary: ${colors.primary};
     --color-secondary: ${colors.secondary};
     --color-accent: ${colors.accent};
     --color-text: ${colors.text};
     --color-muted: ${colors.muted};
-  `;
+  `);
   
   // Tabs configuration following birthday pattern
   const tabs = [
@@ -615,7 +623,7 @@
   ];
 
   // Action buttons configuration
-  $: actionButtons = [];
+    let actionButtons = $derived([]);
 
   // Handle tab change
   function handleTabChange(event: CustomEvent) {
@@ -825,7 +833,7 @@
 </script>
 
 <!-- Global keyboard event handler -->
-<svelte:window on:keydown={handleGlobalKeydown} />
+<svelte:window onkeydown={handleGlobalKeydown}/>
 
 <!-- Accessibility live regions -->
 <div aria-live="polite" aria-atomic="true" class="sr-only">
@@ -845,6 +853,7 @@
   guildName="Dashboard"
   on:tabChange={handleTabChange}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     <!-- Notifications -->
     {#if showNotification}
@@ -944,7 +953,7 @@
               <button 
                 class="flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-200 min-h-[52px] disabled:opacity-50 hover:brightness-110"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
-                on:click={createQuickTrigger}
+                onclick={createQuickTrigger}
                 disabled={!quickTriggerText.trim() || !quickResponseText.trim()}
                 aria-describedby="create-help"
               >
@@ -958,7 +967,7 @@
                 type="button"
                 class="px-4 py-3 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
                 style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
-                on:click={() => activeTab = 'advanced'}
+                onclick={() => activeTab = 'advanced'}
               >
                 More Options →
               </button>
@@ -983,7 +992,7 @@
             <button 
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.primary}30; background: linear-gradient(135deg, {colors.primary}10, {colors.secondary}10);"
-              on:click={() => useTemplate('simple')}
+              onclick={() => useTemplate('simple')}
               role="button"
               aria-describedby="template-simple-desc"
             >
@@ -999,7 +1008,7 @@
             <button 
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.secondary}15, {colors.primary}10);"
-              on:click={() => useTemplate('role')}
+              onclick={() => useTemplate('role')}
               role="button"
               aria-describedby="template-role-desc"
             >
@@ -1015,7 +1024,7 @@
             <button 
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.accent}30; background: linear-gradient(135deg, {colors.accent}15, {colors.secondary}10);"
-              on:click={() => useTemplate('slash')}
+              onclick={() => useTemplate('slash')}
               role="button"
               aria-describedby="template-slash-desc"
             >
@@ -1031,7 +1040,7 @@
             <button 
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.gradientStart}15, {colors.gradientMid}10);"
-              on:click={() => useTemplate('embed')}
+              onclick={() => useTemplate('embed')}
               role="button"
               aria-describedby="template-embed-desc"
             >
@@ -1059,6 +1068,7 @@
         {:else}
           <div class="space-y-4">
             {#each triggers as trigger (trigger.id)}
+                {@const SvelteComponent = expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
               <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
                    style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                           border-color: {colors.primary}30;
@@ -1082,7 +1092,7 @@
                       <button
                         class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
-                        on:click={() => deleteTrigger(trigger.id)}
+                        onclick={() => deleteTrigger(trigger.id)}
                         aria-label="Delete trigger {trigger.trigger}"
                       >
                         <Trash class="w-4 h-4" style="color: {colors.accent}" />
@@ -1091,12 +1101,11 @@
                       <button
                         class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
-                        on:click={() => toggleExpand(trigger.id)}
+                        onclick={() => toggleExpand(trigger.id)}
                         aria-expanded={expandedTriggerId === trigger.id}
                         aria-label="{expandedTriggerId === trigger.id ? 'Collapse' : 'Expand'} trigger settings"
                       >
-                        <svelte:component
-                          this={expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
+                          <SvelteComponent
                           class="w-4 h-4"
                           style="color: {colors.secondary}"
                         />
@@ -1230,7 +1239,7 @@
                         <button
                           class="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
                           style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
-                          on:click={() => updateTrigger(trigger)}
+                          onclick={() => updateTrigger(trigger)}
                         >
                           <div class="flex items-center gap-2">
                             <Save class="w-4 h-4" />
@@ -1248,6 +1257,7 @@
       </div>
 
     {:else if activeTab === 'advanced'}
+        {@const SvelteComponent_1 = showAdvancedOptions ? ChevronUp : ChevronRight}
       <div class="w-full space-y-6" in:fade={{ duration: 200 }}
            role="tabpanel" id="advanced-panel" aria-labelledby="advanced-tab" tabindex="0">
         
@@ -1272,7 +1282,7 @@
                   class="w-full p-3 rounded-lg border transition-all duration-200"
                   style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
                   bind:value={newTrigger.trigger}
-                  on:input={handleNewTriggerRegexChange}
+                  oninput={handleNewTriggerRegexChange}
                   placeholder="Enter trigger text or regex pattern"
                   aria-required="true"
                   aria-describedby="trigger-validity"
@@ -1332,7 +1342,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesMessage}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
@@ -1347,7 +1357,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesInteraction}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
@@ -1362,7 +1372,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesButton}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
@@ -1377,7 +1387,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesReactions}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
@@ -1413,7 +1423,7 @@
                       class="w-full p-3 rounded-lg border"
                       style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}10;"
                       bind:value={newTriggerRegexTestString}
-                      on:input={testNewTriggerRegex}
+                      oninput={testNewTriggerRegex}
                       placeholder="Enter text to test against your regex"
                     />
                   </div>
@@ -1495,7 +1505,7 @@
                        style="background: {colors.primary}08; opacity: {newTrigger.reactToTrigger ? '0.5' : '1'};">
                   <input type="checkbox" 
                          bind:checked={newTrigger.autoDeleteTrigger}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          disabled={newTrigger.reactToTrigger}
                          class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
@@ -1553,7 +1563,7 @@
                        style="background: {colors.primary}08; opacity: {newTrigger.autoDeleteTrigger ? '0.5' : '1'};">
                   <input type="checkbox" 
                          bind:checked={newTrigger.reactToTrigger}
-                         on:change={validateTriggerOptions}
+                         onchange={validateTriggerOptions}
                          disabled={newTrigger.autoDeleteTrigger}
                          class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
@@ -1609,12 +1619,11 @@
               <button 
                 class="flex items-center gap-2 text-lg font-semibold transition-colors duration-200"
                 style="color: {colors.text}"
-                on:click={() => showAdvancedOptions = !showAdvancedOptions}
+                onclick={() => showAdvancedOptions = !showAdvancedOptions}
                 aria-expanded={showAdvancedOptions}
                 aria-controls="advanced-options"
               >
-                <svelte:component 
-                  this={showAdvancedOptions ? ChevronUp : ChevronRight} 
+                  <SvelteComponent_1
                   class="w-5 h-5" 
                 />
                 Advanced Configuration
@@ -1713,7 +1722,7 @@
               <button
                 class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
-                on:click={addTrigger}
+                onclick={addTrigger}
                 disabled={!newTrigger.trigger?.trim() || !newTrigger.response?.trim() || (newTrigger.isRegex && !newTrigger.isValidRegex)}
                 aria-describedby="create-help"
               >

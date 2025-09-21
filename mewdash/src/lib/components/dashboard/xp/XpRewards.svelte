@@ -3,18 +3,32 @@
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
-  export let roleRewards: any[] = [];
-  export let currencyRewards: any[] = [];
-  export let guildRoles: any[] = [];
-  export let loading: boolean = false;
-  export let error: string | null = null;
-  export let onAddRoleReward: (level: number, roleId: string) => void;
-  export let onRemoveRoleReward: (rewardId: number) => void;
-  export let onAddCurrencyReward: (level: number, amount: number) => void;
-  export let onRemoveCurrencyReward: (rewardId: number) => void;
+  interface Props {
+    roleRewards?: any[];
+    currencyRewards?: any[];
+    guildRoles?: any[];
+    loading?: boolean;
+    error?: string | null;
+    onAddRoleReward: (level: number, roleId: string) => void;
+    onRemoveRoleReward: (rewardId: number) => void;
+    onAddCurrencyReward: (level: number, amount: number) => void;
+    onRemoveCurrencyReward: (rewardId: number) => void;
+  }
 
-  let newRoleReward = { level: 1, roleId: "" };
-  let newCurrencyReward = { level: 1, amount: 100 };
+  let {
+    roleRewards = [],
+    currencyRewards = [],
+    guildRoles = [],
+    loading = false,
+    error = null,
+    onAddRoleReward,
+    onRemoveRoleReward,
+    onAddCurrencyReward,
+    onRemoveCurrencyReward
+  }: Props = $props();
+
+  let newRoleReward = $state({ level: 1, roleId: "" });
+  let newCurrencyReward = $state({ level: 1, amount: 100 });
 
   function formatNumber(num: number): string {
     return new Intl.NumberFormat().format(num);
@@ -34,11 +48,11 @@
     }
   }
 
-  $: roleOptions = guildRoles.map(role => ({
+  let roleOptions = $derived(guildRoles.map(role => ({
     id: role.id,
     name: role.name,
     color: role.color
-  }));
+  })));
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -114,7 +128,7 @@
           class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
           style="background: {$colorStore.primary}20;
                  color: {$colorStore.text};"
-          on:click={handleAddRoleReward}
+          onclick={handleAddRoleReward}
           aria-label="Add role reward"
         >
           Add Role Reward
@@ -147,7 +161,7 @@
                 class="p-2 rounded-full transition-all duration-200 flex-shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                on:click={() => onRemoveRoleReward(reward.id)}
+                onclick={() => onRemoveRoleReward(reward.id)}
                 aria-label={`Remove role reward for level ${reward.level}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -203,7 +217,7 @@
           class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
           style="background: {$colorStore.secondary}20;
                  color: {$colorStore.text};"
-          on:click={handleAddCurrencyReward}
+          onclick={handleAddCurrencyReward}
           aria-label="Add currency reward"
         >
           Add Currency Reward
@@ -236,7 +250,7 @@
                 class="p-2 rounded-full transition-all duration-200 flex-shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                on:click={() => onRemoveCurrencyReward(reward.id)}
+                onclick={() => onRemoveCurrencyReward(reward.id)}
                 aria-label={`Remove currency reward for level ${reward.level}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

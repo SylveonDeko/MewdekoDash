@@ -6,10 +6,19 @@ Wizard progress indicator showing current step and completion status
   import { colorStore } from "$lib/stores/colorStore";
   import { Check } from "lucide-svelte";
 
-  export let currentStep: number;
-  export let totalSteps: number;
-  export let stepTitles: string[] = [];
-  export let completedSteps: number[] = [];
+  interface Props {
+    currentStep: number;
+    totalSteps: number;
+    stepTitles?: string[];
+    completedSteps?: number[];
+  }
+
+  let {
+    currentStep,
+    totalSteps,
+    stepTitles = [],
+    completedSteps = []
+  }: Props = $props();
 
   // Default step titles if not provided
   const defaultStepTitles = [
@@ -20,8 +29,8 @@ Wizard progress indicator showing current step and completion status
     "Complete"
   ];
 
-  $: displayTitles = stepTitles.length > 0 ? stepTitles : defaultStepTitles.slice(0, totalSteps);
-  $: progressPercent = (currentStep / totalSteps) * 100;
+  let displayTitles = $derived(stepTitles.length > 0 ? stepTitles : defaultStepTitles.slice(0, totalSteps));
+  let progressPercent = $derived((currentStep / totalSteps) * 100);
 </script>
 
 <div class="wizard-progress mb-6">

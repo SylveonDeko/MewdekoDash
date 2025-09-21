@@ -9,11 +9,15 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { browser } from "$app/environment";
 
-  export let data: any;
-  let instances: BotInstance[] = [];
-  let loading = true;
-  let error: string | null = null;
-  let checkingInstances = false;
+  interface Props {
+    data: any;
+  }
+
+  let { data }: Props = $props();
+  let instances: BotInstance[] = $state([]);
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let checkingInstances = $state(false);
 
   // Use a reactive object instead of Map for better Svelte reactivity
   let instanceStates: Record<string, {
@@ -21,7 +25,7 @@
     hasMutualGuild: boolean;
     error: string | null;
     checked: boolean; // Track if we've finished checking this instance
-  }> = {};
+  }> = $state({});
 
   async function checkInstanceMutualGuilds(instance: BotInstance) {
     if (!data.user) return false;
@@ -156,19 +160,19 @@
   }
 
   // Filter to show only instances with mutual guilds, but only after they've been checked
-  $: visibleInstances = instances.filter(instance => {
+  let visibleInstances = $derived(instances.filter(instance => {
     const instanceId = instance.botId.toString();
     const state = instanceStates[instanceId];
 
     // Only show instances that have been checked and have mutual guilds
     return state?.checked && state?.hasMutualGuild;
-  });
+  }));
 
   // Track if we're still checking any instances
-  $: stillChecking = Object.values(instanceStates).some(state => state.loading);
+  let stillChecking = $derived(Object.values(instanceStates).some(state => state.loading));
 
   // Show loading state while checking instances
-  $: showLoading = loading || checkingInstances || stillChecking;
+  let showLoading = $derived(loading || checkingInstances || stillChecking);
 </script>
 
 <div
@@ -262,8 +266,8 @@
       {#each visibleInstances as instance (instance.botId)}
         {@const state = instanceStates[instance.botId.toString()]}
         <button
-          on:click={() => handleInstanceSelect(instance)}
-          on:keydown={(e) => handleKeydown(e, instance)}
+          onclick={() => handleInstanceSelect(instance)}
+          onkeydown={(e) => handleKeydown(e, instance)}
           class="flex items-center p-6 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;

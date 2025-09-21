@@ -1,5 +1,7 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -42,21 +44,25 @@
   import { logger } from "$lib/logger.ts";
   import type { PageData } from "./$types";
 
-  export let data: PageData;
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
 
   // State management
   let botStatus: BotStatusModel | null = null;
-  let notificationMessage = "";
-  let notificationType = "success";
-  let isMobile = false;
+    let notificationMessage = $state("");
+    let notificationType = $state("success");
+    let isMobile = $state(false);
   let lastDragUpdate = 0;
   const THROTTLE_MS = 16;
   let dragAnimationFrameId: number | null = null;
-  let currentUserData: any = null;
+    let currentUserData: any = $state(null);
   let isLoadingUserData = false;
 
   // XP Settings
-  let xpSettings = {
+    let xpSettings = $state({
     guildId: $currentGuild?.id || BigInt(0),
     xpPerMessage: 3,
     messageXpCooldown: 60,
@@ -67,10 +73,10 @@
     customXpImageUrl: "",
     xpGainDisabled: false,
     serverExclusionState: false
-  };
+    });
 
   // XP Stats
-  let serverStats = {
+    let serverStats = $state({
     totalUsers: 0,
     totalXp: 0,
     averageLevel: 0,
@@ -81,7 +87,7 @@
       avatarUrl: string;
       timestamp: string;
     }>
-  };
+    });
 
   // XP Leaderboard
   let leaderboard: Array<{
@@ -94,12 +100,12 @@
     rank: number;
     username: string;
     avatarUrl: string;
-  }> = [];
-  let leaderboardPage = 1;
+  }> = $state([]);
+    let leaderboardPage = $state(1);
   let leaderboardPageSize = 9;
 
   // XP Template
-  let template: any = null;
+    let template: any = $state(null);
 
   // XP Rewards
   let roleRewards: Array<{
@@ -108,44 +114,44 @@
     level: number;
     roleId: string;
     roleName: string;
-  }> = [];
+  }> = $state([]);
 
   let currencyRewards: Array<{
     id: number;
     guildId: string;
     level: number;
     amount: number;
-  }> = [];
+  }> = $state([]);
 
   // XP Exclusions
-  let excludedChannels: string[] = [];
-  let excludedRoles: string[] = [];
+    let excludedChannels: string[] = $state([]);
+    let excludedRoles: string[] = $state([]);
 
   // Management
-  let changedSettings = new Set<string>();
-  let activeTab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions" = "settings";
-  let guildChannels: Array<{ id: string; name: string }> = [];
-  let guildRoles: Array<{ id: string; name: string }> = [];
-  let loading = {
+    let changedSettings = $state(new Set<string>());
+    let activeTab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions" = $state("settings");
+    let guildChannels: Array<{ id: string; name: string }> = $state([]);
+    let guildRoles: Array<{ id: string; name: string }> = $state([]);
+    let loading = $state({
     settings: true,
     stats: true,
     leaderboard: true,
     rewards: true,
     exclusions: true,
     template: true
-  };
-  let error = {
+    });
+    let error = $state({
     settings: null as string | null,
     stats: null as string | null,
     leaderboard: null as string | null,
     rewards: null as string | null,
     exclusions: null as string | null,
     template: null as string | null
-  };
+    });
 
   // Template Editor State
   let editorActiveTab = "general";
-  let localTemplate: any = null;
+    let localTemplate: any = $state(null);
   let previewContainerRef: HTMLDivElement;
   let draggingElement: any = null;
   let hoverElement: any = null;
@@ -186,7 +192,7 @@
   ];
 
   // Enhanced sample data for preview with realistic information
-  let sampleData = {
+    let sampleData = $state({
     username: "QuantumViper42",
     avatarUrl: "https://cdn.discordapp.com/avatars/123456789012345678/a_1234567890abcdef1234567890abcdef.gif",
     discriminator: "0001",
@@ -208,7 +214,7 @@
     streak: 15,
     favoriteChannel: "general-chat",
     topEmoji: "😎"
-  };
+    });
 
 
   // Fetch bot status
@@ -240,18 +246,6 @@
     }
   }
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchXpSettings(),
-      fetchServerStats(),
-      fetchLeaderboard(),
-      fetchXpTemplate(),
-      fetchRewards(),
-      fetchExclusions(),
-      fetchChannelsAndRoles(),
-      fetchBotStatus()
-    ]);
-  }
 
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
@@ -1138,36 +1132,56 @@
     return `${r}, ${g}, ${b}`;
   }
 
+
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchXpSettings(),
+                fetchServerStats(),
+                fetchLeaderboard(),
+                fetchXpTemplate(),
+                fetchRewards(),
+                fetchExclusions(),
+                fetchChannelsAndRoles(),
+                fetchBotStatus()
+            ]);
+        }
+    });
   // Reactive declarations for guild changes
-  $: if ($currentGuild) {
-    fetchXpSettings();
-    fetchServerStats();
-    fetchLeaderboard();
-    fetchXpTemplate();
-    fetchRewards();
-    fetchExclusions();
-    fetchChannelsAndRoles();
-  }
-
+    run(() => {
+        if ($currentGuild) {
+            fetchXpSettings();
+            fetchServerStats();
+            fetchLeaderboard();
+            fetchXpTemplate();
+            fetchRewards();
+            fetchExclusions();
+            fetchChannelsAndRoles();
+        }
+    });
   // Reactive declarations for instance changes
-  $: if ($currentInstance) {
-    fetchXpSettings();
-    fetchServerStats();
-    fetchLeaderboard();
-    fetchXpTemplate();
-    fetchRewards();
-    fetchExclusions();
-    fetchChannelsAndRoles();
-  }
-
+    run(() => {
+        if ($currentInstance) {
+            fetchXpSettings();
+            fetchServerStats();
+            fetchLeaderboard();
+            fetchXpTemplate();
+            fetchRewards();
+            fetchExclusions();
+            fetchChannelsAndRoles();
+        }
+    });
   // Update preview on template change
-  $: if (localTemplate && previewContainerRef) {
-    setTimeout(() => updatePreviewScale(), 0);
-  }
-
-  $: if (activeTab === "template" && !currentUserData) {
-    fetchCurrentUserData();
-  }
+    run(() => {
+        if (localTemplate && previewContainerRef) {
+            setTimeout(() => updatePreviewScale(), 0);
+        }
+    });
+    run(() => {
+        if (activeTab === "template" && !currentUserData) {
+            fetchCurrentUserData();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -1228,7 +1242,7 @@
         <div class="flex justify-end mt-6">
           <button
             class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
-            on:click={updateXpSettings}
+            onclick={updateXpSettings}
             style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                    color: {$colorStore.text};"
             aria-label="Save XP settings"
@@ -1346,7 +1360,7 @@
           {#if changedSettings.has("template")}
             <button
               class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
-              on:click={resetChanges}
+              onclick={resetChanges}
               style="background: {$colorStore.accent}30; color: {$colorStore.accent};"
               aria-label="Reset changes"
             >
@@ -1354,7 +1368,7 @@
             </button>
             <button
               class="px-6 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
-              on:click={updateXpTemplate}
+              onclick={updateXpTemplate}
               style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                color: {$colorStore.text};"
               aria-label="Save template changes"

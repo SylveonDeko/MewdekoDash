@@ -1,5 +1,7 @@
 <!-- lib/components/CompactMusicPlayer.svelte -->
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { fly, slide } from "svelte/transition";
   import {
@@ -51,38 +53,22 @@
     }
   });
 
-  export let musicStatus: MusicStatus | null = null;
+  interface Props {
+    musicStatus?: MusicStatus | null;
+  }
+
+  let { musicStatus = null }: Props = $props();
 
   // Component state
-  let isExpanded = false;
+  let isExpanded = $state(false);
 
   // Media session variables
   let silentAudioElement: HTMLAudioElement;
   let audioPlayPromisePending = false;
 
-  // Derived state
-  $: currentTrack = musicStatus?.CurrentTrack;
-  $: isPlaying = musicStatus?.State === 2;
-  $: hasTrack = currentTrack?.Track?.Title;
-  $: currentPosition = getCurrentPosition();
-  $: progressPercentage = getProgressPercentage();
 
-  // Color store reactive values  
-  $: colors = $musicPlayerColors;
 
-  // Update MediaSession metadata when track changes
-  $: if (musicStatus?.CurrentTrack?.Track) {
-    updateMediaSessionMetadata();
-  }
 
-  // Update MediaSession playback state when playback state changes
-  $: if (musicStatus?.State !== undefined) {
-    ensureSilentAudioPlaying();
-
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
-    }
-  }
 
   // Format track title for display
   function formatTrackTitle(title: string, compact: boolean = true): string {
@@ -373,6 +359,30 @@
       silentAudioElement.pause();
     }
   }
+  // Derived state
+  let currentTrack = $derived(musicStatus?.CurrentTrack);
+  let isPlaying = $derived(musicStatus?.State === 2);
+  let hasTrack = $derived(currentTrack?.Track?.Title);
+  let currentPosition = $derived(getCurrentPosition());
+  let progressPercentage = $derived(getProgressPercentage());
+  // Color store reactive values  
+  let colors = $derived($musicPlayerColors);
+  // Update MediaSession metadata when track changes
+  run(() => {
+    if (musicStatus?.CurrentTrack?.Track) {
+      updateMediaSessionMetadata();
+    }
+  });
+  // Update MediaSession playback state when playback state changes
+  run(() => {
+    if (musicStatus?.State !== undefined) {
+      ensureSilentAudioPlaying();
+
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
+      }
+    }
+  });
 </script>
 
 {#if hasTrack}
@@ -455,7 +465,7 @@
             <button
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
-              on:click={previousTrack}
+              onclick={previousTrack}
               aria-label="Previous track"
             >
               <SkipBack size={14} class="md:w-4 md:h-4" />
@@ -465,7 +475,7 @@
             <button
               class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
               style="background: {colors.controlsHighlight}; color: {colors.text};"
-              on:click={togglePlayPause}
+              onclick={togglePlayPause}
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {#if isPlaying}
@@ -479,7 +489,7 @@
             <button
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
-              on:click={skipTrack}
+              onclick={skipTrack}
               aria-label="Skip track"
             >
               <SkipForward size={14} class="md:w-4 md:h-4" />
@@ -489,7 +499,7 @@
             <button
               class="hidden md:flex w-10 h-10 rounded-full items-center justify-center transition-all hover:scale-110 active:scale-95 ml-2"
               style="background: {colors.accent}20; color: {colors.accent};"
-              on:click={toggleExpanded}
+              onclick={toggleExpanded}
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {#if isExpanded}
@@ -503,7 +513,7 @@
             <button
               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.accent}20; color: {colors.accent};"
-              on:click={openMusicDashboard}
+              onclick={openMusicDashboard}
               aria-label="Open music dashboard"
             >
               <ExternalLink size={14} class="md:w-4 md:h-4" />
@@ -591,7 +601,7 @@
               class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
               style="color: {musicStatus?.IsShuffling ? colors.accent : colors.text + '60'}; 
                      background: {musicStatus?.IsShuffling ? colors.accent + '20' : 'transparent'};"
-              on:click={toggleShuffle}
+              onclick={toggleShuffle}
               aria-label="Shuffle"
             >
               <Shuffle size={14} />
@@ -602,7 +612,7 @@
               class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
               style="color: {musicStatus?.RepeatMode !== 0 ? colors.accent : colors.text + '60'}; 
                      background: {musicStatus?.RepeatMode !== 0 ? colors.accent + '20' : 'transparent'};"
-              on:click={toggleRepeat}
+              onclick={toggleRepeat}
               aria-label="Repeat"
             >
               <Repeat size={14} />
@@ -627,7 +637,7 @@
     <button
       class="mt-4 px-4 py-2 rounded-lg transition-all hover:scale-105"
       style="background: {colors.foreground}20; color: {colors.foreground}; border: 1px solid {colors.foreground}30;"
-      on:click={openMusicDashboard}
+      onclick={openMusicDashboard}
     >
       Open Music Dashboard
     </button>

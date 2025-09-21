@@ -17,10 +17,15 @@
     EyeOff
   } from "lucide-svelte";
 
-  // Props
-  export let embed: any;
-  export let index: number = 0;
-  export let placeholders: any[] = [];
+  
+  interface Props {
+    // Props
+    embed: any;
+    index?: number;
+    placeholders?: any[];
+  }
+
+  let { embed = $bindable(), index = 0, placeholders = [] }: Props = $props();
 
   // Events
   const dispatch = createEventDispatcher<{
@@ -31,11 +36,11 @@
   }>();
 
   // Internal state
-  let activeTab = 'content';
+  let activeTab = $state('content');
   let fieldIdCounter = Math.max(...(embed.fields?.map((f: any) => f.id) || [0])) + 1;
-  let showPlaceholderDropdown = '';
-  let placeholderSearch = '';
-  let currentInputElement: HTMLInputElement | HTMLTextAreaElement | null = null;
+  let showPlaceholderDropdown = $state('');
+  let placeholderSearch = $state('');
+  let currentInputElement: HTMLInputElement | HTMLTextAreaElement | null = $state(null);
 
   // Tabs configuration
   const tabs = [
@@ -197,7 +202,7 @@
       <button
         class="p-2 rounded-lg transition-all duration-200 hover:scale-105"
         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-        on:click={() => dispatch('duplicate', { index })}
+        onclick={() => dispatch('duplicate', { index })}
         title="Duplicate embed"
         aria-label="Duplicate embed"
       >
@@ -207,7 +212,7 @@
       <button
         class="p-2 rounded-lg transition-all duration-200 hover:scale-105"
         style="background: #ED424515; color: #ED4245;"
-        on:click={() => dispatch('remove', { index })}
+        onclick={() => dispatch('remove', { index })}
         title="Remove embed"
         aria-label="Remove embed"
       >
@@ -247,12 +252,12 @@
               placeholder="Enter embed title..."
               value={embed.title}
               maxlength="256"
-              on:input={(e) => handleInput(e, 'title')}
+              oninput={(e) => handleInput(e, 'title')}
             />
             <button
               class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
               style="color: {$colorStore.muted};"
-              on:click={() => togglePlaceholderDropdown(`embed-title-${index}`)}
+              onclick={() => togglePlaceholderDropdown(`embed-title-${index}`)}
               title="Insert placeholder"
             >
               %
@@ -291,12 +296,12 @@
               placeholder="Enter embed description... (Supports Discord markdown)"
               value={embed.description}
               maxlength="4096"
-              on:input={(e) => handleInput(e, 'description')}
+              oninput={(e) => handleInput(e, 'description')}
             ></textarea>
             <button
               class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
               style="color: {$colorStore.muted};"
-              on:click={() => togglePlaceholderDropdown(`embed-description-${index}`)}
+              onclick={() => togglePlaceholderDropdown(`embed-description-${index}`)}
               title="Insert placeholder"
             >
               %
@@ -333,7 +338,7 @@
                    color: {$colorStore.text};"
             placeholder="https://example.com"
             value={embed.url}
-            on:input={(e) => handleInput(e, 'url')}
+            oninput={(e) => handleInput(e, 'url')}
           />
           {#if embed.url && !isValidUrl(embed.url)}
             <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
@@ -367,7 +372,7 @@
               class="w-16 h-10 rounded border-2"
               style="border-color: {$colorStore.primary}30;"
               value={embed.color}
-              on:input={(e) => updateEmbed('color', e.target?.value)}
+              oninput={(e) => updateEmbed('color', e.target?.value)}
             />
           </div>
         </div>
@@ -393,12 +398,12 @@
                   placeholder="Author name"
                   value={embed.author?.name || ''}
                   maxlength="256"
-                  on:input={(e) => handleInput(e, 'author.name')}
+                  oninput={(e) => handleInput(e, 'author.name')}
                 />
                 <button
                   class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
                   style="color: {$colorStore.muted};"
-                  on:click={() => togglePlaceholderDropdown(`author-name-${index}`)}
+                  onclick={() => togglePlaceholderDropdown(`author-name-${index}`)}
                   title="Insert placeholder"
                 >
                   %
@@ -429,7 +434,7 @@
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="https://example.com"
                 value={embed.author?.url || ''}
-                on:input={(e) => handleInput(e, 'author.url')}
+                oninput={(e) => handleInput(e, 'author.url')}
               />
             </div>
 
@@ -444,7 +449,7 @@
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="https://example.com/icon.png"
                 value={embed.author?.icon_url || ''}
-                on:input={(e) => handleInput(e, 'author.icon_url')}
+                oninput={(e) => handleInput(e, 'author.icon_url')}
               />
             </div>
           </div>
@@ -471,12 +476,12 @@
                   placeholder="Footer text"
                   value={embed.footer?.text || ''}
                   maxlength="2048"
-                  on:input={(e) => handleInput(e, 'footer.text')}
+                  oninput={(e) => handleInput(e, 'footer.text')}
                 />
                 <button
                   class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
                   style="color: {$colorStore.muted};"
-                  on:click={() => togglePlaceholderDropdown(`footer-text-${index}`)}
+                  onclick={() => togglePlaceholderDropdown(`footer-text-${index}`)}
                   title="Insert placeholder"
                 >
                   %
@@ -507,7 +512,7 @@
                 style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="https://example.com/icon.png"
                 value={embed.footer?.icon_url || ''}
-                on:input={(e) => handleInput(e, 'footer.icon_url')}
+                oninput={(e) => handleInput(e, 'footer.icon_url')}
               />
             </div>
           </div>
@@ -525,7 +530,7 @@
             class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
             style="background: {$colorStore.primary}; color: {$colorStore.text};"
             disabled={(embed.fields?.length || 0) >= 25}
-            on:click={addField}
+            onclick={addField}
           >
             <Plus size={16} />
             Add Field
@@ -540,7 +545,7 @@
                 <span class="text-sm font-medium" style="color: {$colorStore.text};">Field {fieldIndex + 1}</span>
                 <button
                   class="p-1 rounded text-red-400 hover:bg-red-400/10 transition-colors"
-                  on:click={() => removeField(fieldIndex)}
+                  onclick={() => removeField(fieldIndex)}
                   title="Remove field"
                 >
                   <Trash2 size={14} />
@@ -565,12 +570,12 @@
                       placeholder="Field name"
                       value={field.name}
                       maxlength="256"
-                      on:input={(e) => handleFieldInput(e, fieldIndex, 'name')}
+                      oninput={(e) => handleFieldInput(e, fieldIndex, 'name')}
                     />
                     <button
                       class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
                       style="color: {$colorStore.muted};"
-                      on:click={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)}
+                      onclick={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)}
                       title="Insert placeholder"
                     >
                       %
@@ -607,12 +612,12 @@
                       placeholder="Field value"
                       value={field.value}
                       maxlength="1024"
-                      on:input={(e) => handleFieldInput(e, fieldIndex, 'value')}
+                      oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
                     ></textarea>
                     <button
                       class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
                       style="color: {$colorStore.muted};"
-                      on:click={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)}
+                      onclick={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)}
                       title="Insert placeholder"
                     >
                       %
@@ -639,7 +644,7 @@
                     id="inline-{index}-{fieldIndex}"
                     class="rounded"
                     checked={field.inline}
-                    on:change={(e) => updateField(fieldIndex, 'inline', e.target?.checked)}
+                    onchange={(e) => updateField(fieldIndex, 'inline', e.target?.checked)}
                   />
                   <label for="inline-{index}-{fieldIndex}" class="text-xs" style="color: {$colorStore.text};">
                     Display inline (up to 3 fields per row)
@@ -671,7 +676,7 @@
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="https://example.com/thumbnail.png"
             value={embed.thumbnail?.url || ''}
-            on:input={(e) => handleInput(e, 'thumbnail.url')}
+            oninput={(e) => handleInput(e, 'thumbnail.url')}
           />
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">Small image displayed in the top-right corner</p>
         </div>
@@ -688,7 +693,7 @@
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="https://example.com/image.png"
             value={embed.image?.url || ''}
-            on:input={(e) => handleInput(e, 'image.url')}
+            oninput={(e) => handleInput(e, 'image.url')}
           />
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">Large image displayed at the bottom of the embed</p>
         </div>

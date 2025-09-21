@@ -18,15 +18,7 @@
   import SecurityTab from "$lib/components/dashboard/SecurityTab.svelte";
   import SettingsTab from "$lib/components/dashboard/SettingsTab.svelte";
 
-  // Props from parent
-  export let botStatus: any;
-  export let guildMemberStats: any;
-  export let roleStats: any;
-  export let joinStats: any;
-  export let leaveStats: any;
-  export let guildFeatures: any;
-  export let onRefresh: () => void;
-  export let refreshing: boolean = false;
+  
 
   // Initialize activeTab from URL immediately when browser is available
   function getInitialTab(): string {
@@ -40,8 +32,32 @@
     return "overview";
   }
 
-  // Export activeTab so parent can access it
-  export let activeTab = getInitialTab();
+  
+  interface Props {
+    // Props from parent
+    botStatus: any;
+    guildMemberStats: any;
+    roleStats: any;
+    joinStats: any;
+    leaveStats: any;
+    guildFeatures: any;
+    onRefresh: () => void;
+    refreshing?: boolean;
+    // Export activeTab so parent can access it
+    activeTab?: any;
+  }
+
+  let {
+    botStatus,
+    guildMemberStats,
+    roleStats,
+    joinStats,
+    leaveStats,
+    guildFeatures,
+    onRefresh,
+    refreshing = false,
+    activeTab = $bindable(getInitialTab())
+  }: Props = $props();
 
   // Tab definitions
   const tabs = [
@@ -90,8 +106,8 @@
   ];
 
   // State management
-  let isChangingTab = false;
-  let tabContainerElement: HTMLElement;
+  let isChangingTab = $state(false);
+  let tabContainerElement: HTMLElement = $state();
 
   // Keyboard shortcuts
   const keyboardShortcuts = {
@@ -304,7 +320,7 @@
   }
 
   // Get current tab data
-  $: currentTabData = tabs.find(tab => tab.id === activeTab) || tabs[0];
+  let currentTabData = $derived(tabs.find(tab => tab.id === activeTab) || tabs[0]);
 
   // Handle browser back/forward buttons
   function handlePopState(event: PopStateEvent) {
@@ -368,10 +384,10 @@
               style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};
                      border: 1px solid {activeTab === tab.id ? $colorStore.primary + '40' : 'transparent'};"
-              on:click={() => switchTab(tab.id)}
+              onclick={() => switchTab(tab.id)}
               disabled={isChangingTab}
             >
-              <svelte:component this={tab.icon} size={20} />
+              <tab.icon size={20} />
               <span class="font-medium">{tab.label}</span>
 
               <!-- Active indicator -->
@@ -401,7 +417,7 @@
           <div class="flex items-center gap-1">
             <button
               class="p-2 rounded-lg transition-all hover:scale-110"
-              on:click={previousTab}
+              onclick={previousTab}
               style="color: {$colorStore.muted}; hover:color: {$colorStore.primary};"
               title="Previous tab (Ctrl+←)"
             >
@@ -409,7 +425,7 @@
             </button>
             <button
               class="p-2 rounded-lg transition-all hover:scale-110"
-              on:click={nextTab}
+              onclick={nextTab}
               style="color: {$colorStore.muted}; hover:color: {$colorStore.primary};"
               title="Next tab (Ctrl+→)"
             >
@@ -441,9 +457,9 @@
               class="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
               style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};"
-              on:click={() => switchTab(tab.id)}
+              onclick={() => switchTab(tab.id)}
             >
-              <svelte:component this={tab.icon} size={16} />
+              <tab.icon size={16} />
               <span class="text-sm font-medium">{tab.label}</span>
             </button>
           {/each}

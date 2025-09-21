@@ -4,7 +4,7 @@
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
 
-  export let data;
+  let { data } = $props();
 
   type ModuleMetric = {
     moduleName: string;
@@ -15,17 +15,17 @@
     errorRate: number;
   };
 
-  let moduleMetrics: ModuleMetric[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let moduleMetrics: ModuleMetric[] = $state([]);
+  let loading = $state(true);
+  let error: string | null = $state(null);
   let refreshInterval: number;
-  let refreshInProgress = false;
+  let refreshInProgress = $state(false);
   let userId = data?.user?.id ? BigInt(data.user.id) : null;
   let sortField: keyof ModuleMetric = "eventsProcessed";
   let sortDirection: "asc" | "desc" = "desc";
 
   // Ensure moduleMetrics is always an array
-  $: safeModuleMetrics = Array.isArray(moduleMetrics) ? moduleMetrics : [];
+  let safeModuleMetrics = $derived(Array.isArray(moduleMetrics) ? moduleMetrics : []);
 
   const fetchModuleMetrics = async () => {
     if (!userId || refreshInProgress) return;
@@ -148,7 +148,7 @@
     <button
       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
       disabled={refreshInProgress}
-      on:click={fetchModuleMetrics}
+      onclick={fetchModuleMetrics}
     >
       {refreshInProgress ? 'Refreshing...' : 'Refresh'}
     </button>
@@ -205,32 +205,32 @@
         <thead>
         <tr class="bg-gray-700">
           <th class="px-4 py-3 text-left">
-            <button class="text-left font-bold hover:text-blue-300" on:click={() => sortBy('moduleName')}>
+            <button class="text-left font-bold hover:text-blue-300" onclick={() => sortBy('moduleName')}>
               Module Name {getSortIcon('moduleName')}
             </button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" on:click={() => sortBy('eventsProcessed')}>
+            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('eventsProcessed')}>
               Events Processed {getSortIcon('eventsProcessed')}
             </button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" on:click={() => sortBy('errors')}>
+            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('errors')}>
               Errors {getSortIcon('errors')}
             </button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" on:click={() => sortBy('errorRate')}>
+            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('errorRate')}>
               Error Rate {getSortIcon('errorRate')}
             </button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" on:click={() => sortBy('averageExecutionTime')}>
+            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('averageExecutionTime')}>
               Avg Time {getSortIcon('averageExecutionTime')}
             </button>
           </th>
           <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" on:click={() => sortBy('totalExecutionTime')}>
+            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('totalExecutionTime')}>
               Total Time {getSortIcon('totalExecutionTime')}
             </button>
           </th>

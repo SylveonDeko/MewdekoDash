@@ -11,11 +11,11 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
 
-  export let data;
+  let {data} = $props();
 
-  let guilds: RedisGuild[] = [];
-  let fetched = false;
-  let isLoading = true;
+  let guilds: RedisGuild[] = $state([]);
+  let fetched = $state(false);
+  let isLoading = $state(true);
   const MAX_GUILD_NAME_LENGTH = 20;
   const MAX_GUILDS_TO_SHOW = 10;
 
@@ -28,7 +28,7 @@
   let suggestionsItemCount = 0;
   
   // Feature expansion state
-  let showAllFeatures = false;
+  let showAllFeatures = $state(false);
 
   // Primary buttons for mobile view
   const primaryButtons = [
@@ -588,8 +588,8 @@
       <!-- Show More Features Section -->
       <div class="px-4 mb-16">
         <div class="max-w-6xl mx-auto text-center">
-          <button 
-            on:click={() => showAllFeatures = !showAllFeatures}
+          <button
+                  onclick={() => showAllFeatures = !showAllFeatures}
             class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 mb-8"
             style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border: 2px solid {$colorStore.accent}30;">
             {showAllFeatures ? 'Hide' : 'Show All'} 25+ Additional Features

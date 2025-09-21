@@ -6,15 +6,15 @@
 
   const dispatch = createEventDispatcher();
 
-  let days: number = 0;
-  let hours: number = 0;
-  let minutes: number = 0;
-  let seconds: number = 0;
+  let days: number = $state(0);
+  let hours: number = $state(0);
+  let minutes: number = $state(0);
+  let seconds: number = $state(0);
 
-  $: totalDurationMs =
-    ((days * 24 + hours) * 60 * 60 + minutes * 60 + seconds) * 1000;
+  let totalDurationMs =
+    $derived(((days * 24 + hours) * 60 * 60 + minutes * 60 + seconds) * 1000);
 
-  let endTime: Date = new Date(Date.now() + totalDurationMs);
+  let endTime: Date = $state(new Date(Date.now() + totalDurationMs));
   let intervalId: NodeJS.Timeout;
 
   function startInterval() {
@@ -66,12 +66,12 @@
     dispatch("change", endTime);
   }
 
-  $: durationText = [
+  let durationText = $derived([
     days > 0 ? `${days}d` : null,
     hours > 0 ? `${hours}h` : null,
     minutes > 0 ? `${minutes}m` : null,
     seconds > 0 ? `${seconds}s` : null,
-  ].filter(Boolean).join(' ') || '0s';
+  ].filter(Boolean).join(' ') || '0s');
 
   // Generate unique ID for fieldset
   const fieldsetId = `interval-picker-${Math.random().toString(36).substr(2, 9)}`;
@@ -107,6 +107,7 @@
         { label: 'Minutes', value: minutes, unit: 'minutes', icon: Clock3, max: 59 },
         { label: 'Seconds', value: seconds, unit: 'seconds', icon: Timer, max: 59 }
       ] as { label, value, unit, icon, max }}
+        {@const SvelteComponent = icon}
         <div class="group relative">
           <div class="absolute inset-0 rounded-lg transition-transform group-focus-within:scale-95"
                style="background: var(--color-primary)10;"></div>
@@ -116,7 +117,7 @@
               class="flex items-center gap-1.5 text-xs font-medium ml-1"
               style="color: var(--color-muted)"
             >
-              <svelte:component this={icon} class="w-3.5 h-3.5" />
+              <SvelteComponent class="w-3.5 h-3.5" />
               {label}
             </label>
             <input
@@ -127,7 +128,7 @@
               inputmode="numeric"
               pattern="[0-9]*"
               value={value}
-              on:input={(e) => validateInput(e, unit)}
+              oninput={(e) => validateInput(e, unit)}
               class="w-full px-3 py-2.5 rounded-lg border-2 bg-transparent text-center text-lg font-medium
                      focus:outline-none transition-all duration-200"
               style="border-color: var(--color-primary)20;

@@ -1,5 +1,7 @@
 <!-- routes/dashboard/afk/+page.svelte -->
 <script lang="ts">
+    import {run} from 'svelte/legacy';
+
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api";
   import type { PageData } from "./$types";
@@ -21,47 +23,51 @@
 
   let botStatus: BotStatusModel | null = null;
 
-  export let data: PageData;
-  let showNotification = false;
-  let notificationMessage = "";
-  let notificationType: "success" | "error" = "success";
+    interface Props {
+        data: PageData;
+    }
+
+    let {data}: Props = $props();
+    let showNotification = $state(false);
+    let notificationMessage = $state("");
+    let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
-  let afkUsers: Afk[] = [];
-  let expandedUser = null;
-  let loading = true;
-  let error = null;
+    let afkUsers: Afk[] = $state([]);
+    let expandedUser = $state(null);
+    let loading = $state(true);
+    let error = $state(null);
 
   // AFK Settings
-  let afkDeletionTime = 0;
-  let afkMaxLength = 0;
-  let afkType = 1;
-  let afkTimeout = "0s";
+    let afkDeletionTime = $state(0);
+    let afkMaxLength = $state(0);
+    let afkType = $state(1);
+    let afkTimeout = $state("0s");
   let afkTimeoutSeconds = 0;
   let afkDisabledChannels: string[] = [];
-  let customAfkMessage = "";
-  let changedSettings = new Set();
+    let customAfkMessage = $state("");
+    let changedSettings = $state(new Set());
   
   // Channel management
-  let availableChannels: Array<{ id: string; name: string }> = [];
-  let selectedDisabledChannels: string[] = [];
+    let availableChannels: Array<{ id: string; name: string }> = $state([]);
+    let selectedDisabledChannels: string[] = $state([]);
   
   // User management
-  let selectedUsers = new Set<string>();
-  let selectAllUsers = false;
+    let selectedUsers = $state(new Set<string>());
+    let selectAllUsers = $state(false);
   
   // Modal state
-  let showConfirmModal = false;
-  let modalConfig = {
+    let showConfirmModal = $state(false);
+    let modalConfig = $state({
     title: "",
     message: "",
     confirmText: "Confirm",
     variant: "danger" as "danger" | "warning" | "info",
     action: null as (() => void) | null
-  };
+    });
   
   // Layout state
-  let activeTab = "settings";
+    let activeTab = $state("settings");
   
   const tabs = [
     { id: "settings", label: "Basic Settings", icon: Settings },
@@ -123,13 +129,6 @@
 }
 
 
-  $: if ($currentInstance) {
-    Promise.all([
-      fetchAfkUsers(),
-      fetchAfkSettings(),
-      fetchBotStatus()
-    ]);
-  }
 
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
@@ -426,18 +425,29 @@
   }
 
 
-  $: if ($currentGuild) {
-    fetchAfkUsers();
-    fetchAfkSettings();
-  }
-
-  $: if ($currentInstance) {
-    fetchAfkUsers();
-    fetchAfkSettings();
-  }
-
+    run(() => {
+        if ($currentInstance) {
+            Promise.all([
+                fetchAfkUsers(),
+                fetchAfkSettings(),
+                fetchBotStatus()
+            ]);
+        }
+    });
+    run(() => {
+        if ($currentGuild) {
+            fetchAfkUsers();
+            fetchAfkSettings();
+        }
+    });
+    run(() => {
+        if ($currentInstance) {
+            fetchAfkUsers();
+            fetchAfkSettings();
+        }
+    });
   // Action buttons configuration
-  $: actionButtons = [
+    let actionButtons = $derived([
     {
       label: "Refresh",
       icon: RefreshCw,
@@ -455,8 +465,7 @@
       loading: false,
       variant: "danger" as const
     }] : [])
-  ];
-
+    ]);
 </script>
 
 <DashboardPageLayout 
@@ -469,7 +478,8 @@
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
-  
+
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -511,7 +521,7 @@
             id="afk-deletion-time"
             bind:value={afkDeletionTime}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            on:input={(e) => {
+            oninput={(e) => {
               const value = parseInt(e.currentTarget.value);
               if (isNaN(value) || value < 0) {
                 e.currentTarget.setCustomValidity("Value must be 0 or greater");
@@ -548,7 +558,7 @@
             id="afk-max-length"
             bind:value={afkMaxLength}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            on:input={(e) => {
+            oninput={(e) => {
               const value = parseInt(e.currentTarget.value);
               if (isNaN(value) || value < 1 || value > 4096) {
                 e.currentTarget.setCustomValidity("Value must be between 1 and 4096");
@@ -604,7 +614,7 @@
         <button
           class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
           disabled={changedSettings.size === 0}
-          on:click={updateAllAfkSettings}
+          onclick={updateAllAfkSettings}
           style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                  color: {$colorStore.text};"
         >
@@ -647,7 +657,7 @@
             id="afk-timeout"
             value={afkTimeout}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-            on:input={handleTimeoutInput}
+            oninput={handleTimeoutInput}
             style="border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
@@ -699,7 +709,7 @@
             id="custom-afk-message"
             bind:value={customAfkMessage}
             class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[120px] resize-vertical"
-            on:input={() => markAsChanged("customMessage")}
+            oninput={() => markAsChanged("customMessage")}
             placeholder="Enter custom AFK embed message... Use '-' to reset to default."
             style="border-color: {$colorStore.primary}30;
                    color: {$colorStore.text};
@@ -721,7 +731,7 @@
         <button
           class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
           disabled={changedSettings.size === 0}
-          on:click={updateAllAfkSettings}
+          onclick={updateAllAfkSettings}
           style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
                  color: {$colorStore.text};"
         >
@@ -757,7 +767,7 @@
               <input
                 type="checkbox"
                 bind:checked={selectAllUsers}
-                on:change={toggleSelectAll}
+                onchange={toggleSelectAll}
                 class="w-4 h-4 rounded border flex-shrink-0"
                 style="accent-color: {$colorStore.primary};"
               />
@@ -772,7 +782,7 @@
                 style="background: {$colorStore.accent}15;
                        color: {$colorStore.accent};
                        hover:background: {$colorStore.accent}20;"
-                on:click={showBulkRemoveConfirm}
+                onclick={showBulkRemoveConfirm}
               >
                 <UserMinus class="w-4 h-4" />
                 <span class="sm:hidden">Remove Selected ({selectedUsers.size})</span>
@@ -824,7 +834,7 @@
                   <input
                     type="checkbox"
                     checked={selectedUsers.has(user.userId.toString())}
-                    on:change={() => toggleUserSelection(user.userId.toString())}
+                    onchange={() => toggleUserSelection(user.userId.toString())}
                     class="w-4 h-4 rounded border flex-shrink-0"
                     style="accent-color: {$colorStore.primary};"
                   />
@@ -832,7 +842,7 @@
                   <button
                     class="flex items-center gap-3 flex-grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
                     style="hover:background: {$colorStore.primary}15;"
-                    on:click={() => toggleUserExpand(user.userId)}
+                    onclick={() => toggleUserExpand(user.userId)}
                     aria-expanded={expandedUser === user.userId}
                     aria-controls="user-details-{user.userId}"
                   >
@@ -909,7 +919,7 @@
                   style="background: {$colorStore.accent}15;
                          color: {$colorStore.accent};
                          hover:background: {$colorStore.accent}20;"
-                  on:click={() => showClearAfkConfirm(user.userId)}
+                  onclick={() => showClearAfkConfirm(user.userId)}
                 >
                   <UserMinus class="w-4 h-4" />
                   <span class="sm:hidden">Remove AFK</span>

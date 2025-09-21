@@ -1,5 +1,7 @@
 <!-- routes/dashboard/repeaters/+page.svelte -->
 <script lang="ts">
+    import {run, preventDefault} from 'svelte/legacy';
+
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
@@ -66,28 +68,28 @@
   } from "$lib/types/repeater";
 
   // Component state
-  let loading = false;
-  let saving = false;
-  let message = "";
-  let messageType: "success" | "error" | "info" = "info";
+    let loading = $state(false);
+    let saving = $state(false);
+    let message = $state("");
+    let messageType: "success" | "error" | "info" = $state("info");
 
   // Data state
-  let repeaters: RepeaterResponse[] = [];
-  let repeaterStats: RepeaterStatsResponse | null = null;
-  let messageCountStatus: MessageCountingStatus | null = null;
-  let guildChannels: Array<{ id: string; name: string; }> = [];
+    let repeaters: RepeaterResponse[] = $state([]);
+    let repeaterStats: RepeaterStatsResponse | null = $state(null);
+    let messageCountStatus: MessageCountingStatus | null = $state(null);
+    let guildChannels: Array<{ id: string; name: string; }> = $state([]);
   let forumChannels: Array<{ 
     id: string; 
     name: string; 
-    tags: Array<{id: bigint, name: string, emoji: string | null, isModerated: boolean}>; 
-  }> = [];
+    tags: Array<{id: bigint, name: string, emoji: string | null, isModerated: boolean}>;
+  }> = $state([]);
   
   // Dynamic channel selection state
-  let selectedChannelType: 'text' | 'forum' | null = null;
-  let availableForumTags: Array<{id: bigint, name: string, emoji: string | null}> = [];
-  let selectedForumTags: {required: bigint[], excluded: bigint[]} = {required: [], excluded: []};
+    let selectedChannelType: 'text' | 'forum' | null = $state(null);
+    let availableForumTags: Array<{ id: bigint, name: string, emoji: string | null }> = $state([]);
+    let selectedForumTags: { required: bigint[], excluded: bigint[] } = $state({required: [], excluded: []});
 
-  let messageContent = ""; // Plain text content
+    let messageContent = $state(""); // Plain text content
   let messageEmbeds: Array<{
     title: string;
     description: string;
@@ -98,7 +100,7 @@
     image: { url: string };
     footer: { text: string; icon_url: string };
     fields: Array<{ name: string; value: string; inline: boolean; id: number }>;
-  }> = [];
+  }> = $state([]);
   let messageComponents: Array<{
     componentKey: string;
     id: string | null;
@@ -110,23 +112,23 @@
     maxOptions: number;
     minOptions: number;
     options: Array<{ id: string | null; name: string; emoji: string; description: string }>;
-  }> = [];
+  }> = $state([]);
 
   // Message builder state
-  let showEmbedBuilder = false;
-  let showComponentBuilder = false;
+    let showEmbedBuilder = $state(false);
+    let showComponentBuilder = $state(false);
   let editingEmbed: any = null;
   let editingComponent: any = null;
 
   // UI state
-  let activeTab = "overview";
-  let selectedRepeater: RepeaterResponse | null = null;
+    let activeTab = $state("overview");
+    let selectedRepeater: RepeaterResponse | null = $state(null);
   let showCreateForm = false;
-  let editingRepeaterId: number | null = null;
-  let isEditMode = false;
+    let editingRepeaterId: number | null = $state(null);
+    let isEditMode = $state(false);
 
   // Form data for creating/editing repeaters - NOW WITH ALL FIELDS
-  let formData: RepeaterFormData = {
+    let formData: RepeaterFormData = $state({
     channelId: null,
     message: "",
     interval: "00:05:00",
@@ -147,29 +149,29 @@
     threadAutoSticky: false,
     threadOnlyMode: false,
     forumTagConditions: null
-  };
+    });
 
   // Additional state for advanced features
-  let selectedRepeaterIds: number[] = [];
+    let selectedRepeaterIds: number[] = $state([]);
   let showBulkActions = false;
   let showAdvancedTimeEditor = false;
-  let showForumTagEditor = false;
+    let showForumTagEditor = $state(false);
   let currentForumTags: Array<{id: bigint, name: string, type: 'required'|'excluded'}> = [];
   let threadStickyMessages: Array<{threadId: bigint, messageId: bigint, threadName: string, isActive: boolean}> = [];
   
   // UI state for simplified form
-  let showAdvancedOptions = false;
+    let showAdvancedOptions = $state(false);
 
   // Trigger mode options for DiscordSelector
-  $: triggerModeOptions = Object.values(StickyTriggerMode)
+    let triggerModeOptions = $derived(Object.values(StickyTriggerMode)
     .filter(v => typeof v === 'number')
     .map(mode => ({
       id: mode.toString(),
       name: getTriggerModeLabel(mode as StickyTriggerMode),
       label: `${getTriggerModeLabel(mode as StickyTriggerMode)} - ${getTriggerModeDescription(mode as StickyTriggerMode)}`
-    }));
+    })));
 
-  $: allChannels = [
+    let allChannels = $derived([
     ...guildChannels.map(ch => ({ 
       id: ch.id, 
       name: ch.name, 
@@ -183,10 +185,10 @@
       label: `#${ch.name} (Forum - ${ch.tags.length} tags)`,
       tags: ch.tags
     }))
-  ];
+    ]);
 
   // Dynamic channel type detection and tag loading
-  $: {
+    run(() => {
     if (formData.channelId) {
       const selectedChannel = allChannels.find(ch => ch.id === formData.channelId);
       if (selectedChannel) {
@@ -219,7 +221,7 @@
       selectedChannelType = null;
       availableForumTags = [];
     }
-  }
+    });
 
   // Load all repeater data
   async function loadAllData() {
@@ -602,11 +604,11 @@
   }
 
   // Auto-enable thread-only mode when immediate trigger is selected on forum channels
-  $: {
+    run(() => {
     if (!isEditMode && selectedChannelType === 'forum' && formData.triggerMode === StickyTriggerMode.Immediate) {
       formData.threadOnlyMode = true;
     }
-  }
+    });
 
   // Parse repeater message for preview
   function parseRepeaterMessage(messageText: string) {
@@ -867,14 +869,14 @@
   ];
 
   // Action buttons configuration
-  $: actionButtons = [
+    let actionButtons = $derived([
     {
       label: "Refresh",
       icon: RefreshCw,
       action: loadAllData,
       loading: loading
     }
-  ];
+    ]);
 
   // Handle tab change
   function handleTabChange(event: CustomEvent) {
@@ -898,6 +900,7 @@
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={handleTabChange}
 >
+    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     <!-- Status Message -->
     {#if message}
@@ -1054,7 +1057,7 @@
           <button
             class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
             style="background: {$colorStore.primary}; color: white;"
-            on:click={() => activeTab = 'create'}
+            onclick={() => activeTab = 'create'}
           >
             <Plus class="w-5 h-5 inline mr-2" />
             Create Repeater
@@ -1067,7 +1070,7 @@
             <button
               class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-              on:click={selectAllRepeaters}
+              onclick={selectAllRepeaters}
               disabled={repeaters.length === 0}
             >
               <CheckSquare class="w-4 h-4 inline mr-1" />
@@ -1078,7 +1081,7 @@
               <button
                 class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                on:click={clearSelection}
+                onclick={clearSelection}
               >
                 <Square class="w-4 h-4 inline mr-1" />
                 Clear ({selectedRepeaterIds.length})
@@ -1096,7 +1099,7 @@
               <button
                 class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                on:click={() => bulkToggleRepeaters(true)}
+                onclick={() => bulkToggleRepeaters(true)}
               >
                 <CheckCircle class="w-4 h-4 inline mr-1" />
                 Enable All
@@ -1105,7 +1108,7 @@
               <button
                 class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                on:click={() => bulkToggleRepeaters(false)}
+                onclick={() => bulkToggleRepeaters(false)}
               >
                 <XCircle class="w-4 h-4 inline mr-1" />
                 Disable All
@@ -1134,7 +1137,7 @@
                       type="checkbox"
                       class="sr-only"
                       checked={selectedRepeaterIds.includes(repeater.id)}
-                      on:change={() => toggleRepeaterSelection(repeater.id)}
+                      onchange={() => toggleRepeaterSelection(repeater.id)}
                     />
                     {#if selectedRepeaterIds.includes(repeater.id)}
                       <CheckCircle class="w-4 h-4" style="color: white" />
@@ -1341,7 +1344,7 @@
                   <button
                     class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-                    on:click={() => editRepeater(repeater)}
+                    onclick={() => editRepeater(repeater)}
                   >
                     <Edit3 class="w-4 h-4" />
                     Edit
@@ -1351,7 +1354,7 @@
                     class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {repeater.isEnabled ? $colorStore.accent + '20' : $colorStore.primary + '20'};
                            color: {repeater.isEnabled ? $colorStore.accent : $colorStore.primary};"
-                    on:click={() => toggleRepeater(repeater.id)}
+                    onclick={() => toggleRepeater(repeater.id)}
                   >
                     <ToggleLeft class="w-4 h-4" />
                     {repeater.isEnabled ? 'Disable' : 'Enable'}
@@ -1360,7 +1363,7 @@
                   <button
                     class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                    on:click={() => triggerRepeater(repeater.id)}
+                    onclick={() => triggerRepeater(repeater.id)}
                     disabled={!repeater.isEnabled}
                   >
                     <Play class="w-4 h-4" />
@@ -1372,7 +1375,7 @@
                     <button
                       class="flex items-center gap-1 px-2 py-2 rounded-l-lg text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                      on:click={() => moveRepeaterUp(repeater.id)}
+                      onclick={() => moveRepeaterUp(repeater.id)}
                       disabled={repeater.queuePosition <= 1}
                     >
                       <ArrowUp class="w-4 h-4" />
@@ -1380,7 +1383,7 @@
                     <button
                       class="flex items-center gap-1 px-2 py-2 rounded-r-lg text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                      on:click={() => moveRepeaterDown(repeater.id)}
+                      onclick={() => moveRepeaterDown(repeater.id)}
                     >
                       <ArrowDown class="w-4 h-4" />
                     </button>
@@ -1389,7 +1392,7 @@
                   <button
                     class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                    on:click={() => deleteRepeater(repeater.id)}
+                    onclick={() => deleteRepeater(repeater.id)}
                   >
                     <Trash2 class="w-4 h-4" />
                     Delete
@@ -1402,7 +1405,7 @@
                   <button
                     class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                    on:click={() => {
+                    onclick={() => {
                       const newInterval = prompt('New interval (HH:MM:SS):', repeater.interval);
                       if (newInterval) updateRepeaterInterval(repeater.id, newInterval);
                     }}
@@ -1414,7 +1417,7 @@
                   <button
                     class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                    on:click={() => {
+                    onclick={() => {
                       const newTime = prompt('Start time (HH:MM, leave empty to disable):', repeater.startTimeOfDay || '');
                       updateRepeaterStartTime(repeater.id, newTime || null);
                     }}
@@ -1427,7 +1430,7 @@
                     <button
                       class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
-                      on:click={() => {
+                      onclick={() => {
                         const newThreshold = prompt('Conversation threshold (messages/minute):', repeater.conversationThreshold.toString());
                         if (newThreshold) updateRepeaterConversationThreshold(repeater.id, parseInt(newThreshold));
                       }}
@@ -1440,7 +1443,7 @@
                   <button
                     class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-                    on:click={() => {
+                    onclick={() => {
                       const maxAge = prompt('Max age (e.g., 7.00:00:00 for 7 days, empty for no limit):', repeater.maxAge || '');
                       const maxTriggers = prompt('Max triggers (empty for no limit):', repeater.maxTriggers?.toString() || '');
                       updateRepeaterExpiry(repeater.id, maxAge || undefined, maxTriggers ? parseInt(maxTriggers) : undefined);
@@ -1455,7 +1458,7 @@
                     <button
                       class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
-                      on:click={() => {
+                      onclick={() => {
                         selectedRepeater = repeater;
                         showForumTagEditor = true;
                         loadForumTags(repeater.id);
@@ -1470,7 +1473,7 @@
                     <button
                       class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                      on:click={() => openAdvancedTimeEditor(repeater.id)}
+                      onclick={() => openAdvancedTimeEditor(repeater.id)}
                     >
                       <Code class="w-3 h-3" />
                       Time JSON
@@ -1481,7 +1484,7 @@
                     <button
                       class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-                      on:click={() => {
+                      onclick={() => {
                         selectedRepeater = repeater;
                         loadThreadStickyMessages(repeater.id);
                       }}
@@ -1513,7 +1516,7 @@
           {/if}
         </div>
 
-        <form on:submit|preventDefault={isEditMode ? updateRepeater : createRepeater} class="space-y-6">
+          <form onsubmit={preventDefault(isEditMode ? updateRepeater : createRepeater)} class="space-y-6">
           <!-- ===== SIMPLIFIED ESSENTIAL SETTINGS ===== -->
           
           <!-- Channel Selection -->
@@ -1548,7 +1551,7 @@
                     type="button"
                     class="text-xs px-2 py-1 rounded transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    on:click={() => selectedForumTags = {required: [], excluded: []}}
+                    onclick={() => selectedForumTags = {required: [], excluded: []}}
                   >
                     Clear All
                   </button>
@@ -1577,7 +1580,7 @@
                           type="checkbox"
                           class="sr-only"
                           checked={selectedForumTags.required.includes(tag.id)}
-                          on:change={(e) => {
+                          onchange={(e) => {
                             if (e.target.checked) {
                               selectedForumTags.required = [...selectedForumTags.required, tag.id];
                               selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
@@ -1626,7 +1629,7 @@
                           class="sr-only"
                           checked={selectedForumTags.excluded.includes(tag.id)}
                           disabled={selectedForumTags.required.includes(tag.id)}
-                          on:change={(e) => {
+                          onchange={(e) => {
                             if (e.target.checked) {
                               selectedForumTags.excluded = [...selectedForumTags.excluded, tag.id];
                             } else {
@@ -1719,7 +1722,7 @@
                       type="button"
                       class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                      on:click={() => showEmbedBuilder = !showEmbedBuilder}
+                      onclick={() => showEmbedBuilder = !showEmbedBuilder}
                     >
                       <Plus class="w-4 h-4" />
                       {messageEmbeds.length > 0 ? `${messageEmbeds.length} Embeds` : 'Add Embed'}
@@ -1729,7 +1732,7 @@
                       type="button"
                       class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      on:click={() => showComponentBuilder = !showComponentBuilder}
+                      onclick={() => showComponentBuilder = !showComponentBuilder}
                     >
                       <Plus class="w-4 h-4" />
                       {messageComponents.length > 0 ? `${messageComponents.length} Components` : 'Add Components'}
@@ -1772,7 +1775,7 @@
                       type="button"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
                       style="background: {$colorStore.primary}; color: white;"
-                      on:click={() => {
+                      onclick={() => {
                         if (messageEmbeds.length < 10) {
                           messageEmbeds = [...messageEmbeds, {
                             title: '',
@@ -1797,7 +1800,7 @@
                       type="button"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      on:click={() => showEmbedBuilder = false}
+                      onclick={() => showEmbedBuilder = false}
                     >
                       Done
                     </button>
@@ -1824,7 +1827,7 @@
                             type="button"
                             class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                            on:click={() => {
+                            onclick={() => {
                               const duplicated = JSON.parse(JSON.stringify(embed));
                               messageEmbeds.splice(embedIndex + 1, 0, duplicated);
                               messageEmbeds = [...messageEmbeds];
@@ -1837,7 +1840,7 @@
                             type="button"
                             class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                             style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                            on:click={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
+                            onclick={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
                           >
                             <Trash2 class="w-3 h-3 inline mr-1" />
                             Remove
@@ -1895,7 +1898,7 @@
                       type="button"
                       class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                      on:click={() => {
+                      onclick={() => {
                         messageComponents = [...messageComponents, {
                           componentKey: `btn-${Date.now()}`,
                           id: null,
@@ -1919,7 +1922,7 @@
                       type="button"
                       class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      on:click={() => showComponentBuilder = false}
+                      onclick={() => showComponentBuilder = false}
                     >
                       Done
                     </button>
@@ -1938,7 +1941,7 @@
                           type="button"
                           class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                          on:click={() => messageComponents = messageComponents.filter((_, i) => i !== index)}
+                          onclick={() => messageComponents = messageComponents.filter((_, i) => i !== index)}
                         >
                           Remove
                         </button>
@@ -2082,7 +2085,7 @@
               type="button"
               class="w-full flex items-center justify-between p-4 transition-all hover:bg-opacity-50"
               style="background: {$colorStore.primary}05;"
-              on:click={() => showAdvancedOptions = !showAdvancedOptions}
+              onclick={() => showAdvancedOptions = !showAdvancedOptions}
             >
               <div class="flex items-center gap-3">
                 <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -2304,7 +2307,7 @@
                 type="button"
                 class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                on:click={() => {
+                onclick={() => {
                   isEditMode = false;
                   editingRepeaterId = null;
                   selectedRepeater = null;
@@ -2320,7 +2323,7 @@
                 type="button"
                 class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
-                on:click={resetForm}
+                onclick={resetForm}
               >
                 <RefreshCw class="w-5 h-5" />
                 Reset Form

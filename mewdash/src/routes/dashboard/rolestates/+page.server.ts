@@ -6,6 +6,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const data = await parent();
 
   if (!data.user) {
-    throw redirect(302, "/");
+    redirect(302, "/");
   }
 };
