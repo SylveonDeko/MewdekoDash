@@ -2,9 +2,14 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
-  import { fly, slide } from "svelte/transition";
+  import {pushState, replaceState} from "$app/navigation";
+  import {fly, slide, fade} from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { BarChart3, ChevronLeft, ChevronRight, Music, Settings, Shield, Users, Zap } from "lucide-svelte";
+  import {ChevronLeft, ChevronRight} from "lucide-svelte";
+  import {logger} from "$lib/logger";
+
+  // Import Font Awesome CSS
+  import '@fortawesome/fontawesome-free/css/all.min.css';
 
   // Import search components
   import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
@@ -45,6 +50,7 @@
     refreshing?: boolean;
     // Export activeTab so parent can access it
     activeTab?: any;
+      showMusicPlayer?: boolean;
   }
 
   let {
@@ -56,50 +62,59 @@
     guildFeatures,
     onRefresh,
     refreshing = false,
-    activeTab = $bindable(getInitialTab())
+      activeTab = $bindable(getInitialTab()),
+      showMusicPlayer = false
   }: Props = $props();
 
-  // Tab definitions
+  // Log when showMusicPlayer changes
+  $effect(() => {
+      logger.info('TabbedDashboard: showMusicPlayer changed', {
+          showMusicPlayer,
+          activeTab
+      });
+  });
+
+  // Tab definitions with Font Awesome icons
   const tabs = [
     {
       id: "overview",
       label: "Overview",
-      icon: BarChart3,
+        icon: "fa-solid fa-chart-line",
       component: OverviewTab,
       description: "Server stats and bot status"
     },
     {
       id: "community",
       label: "Community",
-      icon: Users,
+        icon: "fa-solid fa-users",
       component: CommunityTab,
       description: "XP, suggestions, tickets"
     },
     {
       id: "entertainment",
       label: "Entertainment",
-      icon: Music,
+        icon: "fa-solid fa-music",
       component: EntertainmentTab,
       description: "Music, voice, giveaways"
     },
     {
       id: "actions",
       label: "Actions",
-      icon: Zap,
+        icon: "fa-solid fa-bolt",
       component: ActionsTab,
       description: "Greets, triggers, embeds"
     },
     {
       id: "security",
       label: "Security",
-      icon: Shield,
+        icon: "fa-solid fa-shield-halved",
       component: SecurityTab,
       description: "Moderation and protection"
     },
     {
       id: "settings",
       label: "Settings",
-      icon: Settings,
+        icon: "fa-solid fa-gear",
       component: SettingsTab,
       description: "Bot config and roles"
     }
@@ -108,6 +123,10 @@
   // State management
   let isChangingTab = $state(false);
   let tabContainerElement: HTMLElement = $state();
+  let showSwipeHint = $state(true);
+  let tabElements: HTMLElement[] = $state([]);
+  let showBounceStart = $state(false);
+  let showBounceEnd = $state(false);
 
   // Keyboard shortcuts
   const keyboardShortcuts = {
@@ -133,10 +152,10 @@
 
       // Only add to history if the tab actually changed and we want to track it
       if (currentTab !== tabId && addToHistory) {
-        window.history.pushState({ tab: tabId }, "", url.toString());
+          pushState(url.toString(), {tab: tabId});
       } else if (currentTab !== tabId) {
         // Still need to update the URL even when not adding to history
-        window.history.replaceState({ tab: tabId }, "", url.toString());
+          replaceState(url.toString(), {tab: tabId});
       }
     }
   }
@@ -299,10 +318,10 @@
     const swipeThreshold = 80; // Increased threshold to prevent accidental swipes
     const maxSwipeTime = 300; // Maximum time for a valid swipe
 
-
     const diffX = touchStartX - touchEndX;
     const diffY = Math.abs(touchStartY - touchEndY);
     const swipeTime = Date.now() - touchStartTime;
+      const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
 
     // Stricter swipe detection
     if (
@@ -312,9 +331,23 @@
       isDragging // User actually dragged
     ) {
       if (diffX > 0) {
-        nextTab(); // Swipe left -> next tab
+          // Swipe left -> try next tab
+          if (currentIndex === tabs.length - 1) {
+              // At the end, show bounce
+              showBounceEnd = true;
+              setTimeout(() => showBounceEnd = false, 400);
+          } else {
+              nextTab();
+          }
       } else {
-        previousTab(); // Swipe right -> previous tab
+          // Swipe right -> try previous tab
+          if (currentIndex === 0) {
+              // At the start, show bounce
+              showBounceStart = true;
+              setTimeout(() => showBounceStart = false, 400);
+          } else {
+              previousTab();
+          }
       }
     }
   }
@@ -336,6 +369,11 @@
     if (browser && activeTab !== "overview") {
       updateUrlTab(activeTab, false);
     }
+
+      // Hide swipe hint after 3 seconds
+      setTimeout(() => {
+          showSwipeHint = false;
+      }, 3000);
 
     if (browser) {
       // Add keyboard event listener
@@ -375,103 +413,250 @@
     <div class="w-full px-4 md:px-6">
 
       <!-- Desktop Tab Navigation -->
-      <div class="hidden md:flex items-center justify-between py-4">
-        <div class="flex items-center space-x-1">
-          {#each tabs as tab}
-            <button
-              class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative"
-              class:opacity-60={isChangingTab && activeTab !== tab.id}
-              style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
-                     background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};
-                     border: 1px solid {activeTab === tab.id ? $colorStore.primary + '40' : 'transparent'};"
-              onclick={() => switchTab(tab.id)}
-              disabled={isChangingTab}
-            >
-              <tab.icon size={20} />
-              <span class="font-medium">{tab.label}</span>
+        <div class="hidden md:block py-5">
+            <!-- Top Row: Centered Tab Navigation -->
+            <div class="flex items-center justify-between mb-6">
+                <!-- Left: Navigation Arrows -->
+                <div class="flex items-center gap-1 px-2 py-1 rounded-xl"
+                     style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}10;">
+                    <button
+                            class="group p-1.5 rounded-lg btn-press hover:scale-110"
+                            onclick={previousTab}
+                            onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
+                            onmouseleave={(e) => e.currentTarget.querySelector('i')?.classList.remove('fa-bounce')}
+                            style="color: {$colorStore.muted};"
+                            title="Previous tab (Ctrl+←)"
+                    >
+                        <i class="fa-solid fa-chevron-left text-base"
+                           style="--fa-animation-duration: 0.8s;
+                        --fa-bounce-rebound: -0.3;
+                        --fa-bounce-height: -0.2;"></i>
+                    </button>
+                    <div class="w-px h-4 mx-1" style="background: {$colorStore.primary}20;"></div>
+                    <button
+                            class="group p-1.5 rounded-lg btn-press hover:scale-110"
+                            onclick={nextTab}
+                            onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
+                            onmouseleave={(e) => e.currentTarget.querySelector('i')?.classList.remove('fa-bounce')}
+                            style="color: {$colorStore.muted};"
+                            title="Next tab (Ctrl+→)"
+                    >
+                        <i class="fa-solid fa-chevron-right text-base"
+                           style="--fa-animation-duration: 0.8s;
+                        --fa-bounce-rebound: -0.3;
+                        --fa-bounce-height: -0.2;"></i>
+                    </button>
+                </div>
 
-              <!-- Active indicator -->
-              {#if activeTab === tab.id}
-                <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-md"
-                     style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary})"
-                     in:slide={{ duration: 200 }}></div>
-              {/if}
-            </button>
-          {/each}
-        </div>
+                <!-- Center: Tab Pills -->
+                <div class="flex items-center justify-center flex-1 mx-8">
+                    <div class="relative flex items-center p-1.5 rounded-2xl"
+                         style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
 
-        <!-- Search and Tab Info -->
-        <div class="flex items-center gap-4">
-          <!-- Search Trigger -->
-          <SearchTrigger variant="compact" />
+                        <!-- Sliding Background -->
+                        {#if activeTab && tabElements.length > 0}
+                            {@const activeIndex = tabs.findIndex(tab => tab.id === activeTab)}
+                            {@const activeElement = tabElements[activeIndex]}
+                            {#if activeElement}
+                                <div class="absolute h-[calc(100%-12px)] rounded-xl transition-all duration-300 ease-out pointer-events-none"
+                                     style="width: {activeElement.offsetWidth}px;
+                              transform: translateX({activeElement.offsetLeft - 6}px);
+                              background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}20);
+                              border: 1px solid {$colorStore.primary}30;
+                              box-shadow: 0 2px 8px {$colorStore.primary}15;">
+                                </div>
+                            {/if}
+                        {/if}
 
-          <div class="text-sm text-right">
-            <div class="font-medium" style="color: {$colorStore.text}">
-              {currentTabData.label}
+                        <!-- Tab Buttons -->
+                        {#each tabs as tab, index}
+                            {@const isActive = activeTab === tab.id}
+                            <button
+                                    bind:this={tabElements[index]}
+                                    class="relative z-10 flex items-center gap-2.5 px-5 py-2.5 rounded-xl tab-press group"
+                                    class:opacity-60={isChangingTab && !isActive}
+                                    onclick={() => switchTab(tab.id)}
+                                    disabled={isChangingTab}
+                            >
+                                <i class="{tab.icon} text-lg transition-all duration-200 {isActive ? 'fa-beat' : ''}"
+                                   style="color: {isActive ? $colorStore.primary : $colorStore.muted};
+                            opacity: {isActive ? 1 : 0.7};
+                            --fa-animation-duration: 2s;
+                            --fa-beat-scale: 1.1;"></i>
+                                <span class="font-medium text-sm transition-all duration-200"
+                                      style="color: {isActive ? $colorStore.text : $colorStore.muted};">
+                    {tab.label}
+                  </span>
+                                {#if tab.id === 'entertainment' && showMusicPlayer}
+                    <span class="relative flex h-2 w-2 ml-1">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                            style="background: {$colorStore.primary};"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2"
+                            style="background: {$colorStore.primary};"></span>
+                    </span>
+                                {/if}
+                            </button>
+
+                            {#if index < tabs.length - 1}
+                                <div class="w-px h-5 opacity-20" style="background: {$colorStore.muted};"></div>
+                            {/if}
+                        {/each}
+                    </div>
+                </div>
+
+                <!-- Right: Search -->
+                <div class="relative group">
+                    <SearchTrigger variant="compact"/>
+                    <div class="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div class="px-2 py-1 rounded text-xs whitespace-nowrap"
+                             style="background: {$colorStore.background}; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;">
+                            Quick Search (/)
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="color: {$colorStore.muted}">
-              {currentTabData.description}
-            </div>
+
+            <!-- Bottom Row: Tab Description and Keyboard Hints -->
+            <div class="flex items-center justify-between">
+                <!-- Current Tab Description -->
+                <div class="flex items-center gap-3">
+                    <div class="w-1 h-8 rounded-full"
+                         style="background: linear-gradient(180deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wider opacity-60" style="color: {$colorStore.muted}">
+                            Current Section
+                        </div>
+                        <div class="relative h-5">
+                            {#key activeTab}
+                                <div class="text-sm font-medium absolute inset-0 whitespace-nowrap"
+                                     style="color: {$colorStore.text}"
+                                     in:fade={{ duration: 200, delay: 100 }}
+                                     out:fade={{ duration: 100 }}>
+                                    {currentTabData.description}
+                                </div>
+                            {/key}
+                        </div>
+                    </div>
           </div>
 
-          <div class="flex items-center gap-1">
-            <button
-              class="p-2 rounded-lg transition-all hover:scale-110"
-              onclick={previousTab}
-              style="color: {$colorStore.muted}; hover:color: {$colorStore.primary};"
-              title="Previous tab (Ctrl+←)"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              class="p-2 rounded-lg transition-all hover:scale-110"
-              onclick={nextTab}
-              style="color: {$colorStore.muted}; hover:color: {$colorStore.primary};"
-              title="Next tab (Ctrl+→)"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mobile Tab Navigation -->
-      <div class="md:hidden py-3">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-semibold" style="color: {$colorStore.text}">
-            {currentTabData.label}
-          </h2>
-          <div class="flex items-center gap-3">
-            <!-- Mobile Search -->
-            <SearchTrigger variant="mobile" showShortcut={false} />
-            <div class="text-sm" style="color: {$colorStore.muted}">
-              {tabs.findIndex(tab => tab.id === activeTab) + 1} / {tabs.length}
+                <!-- Keyboard Shortcuts Hint -->
+                <div class="flex items-center gap-3 text-xs" style="color: {$colorStore.muted};">
+                    <div class="flex items-center gap-1.5">
+                        <kbd class="px-1.5 py-0.5 rounded"
+                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                            1-6
+                        </kbd>
+                        <span>Switch tabs</span>
+                    </div>
+                    <div class="w-px h-3" style="background: {$colorStore.primary}20;"></div>
+                    <div class="flex items-center gap-1.5">
+                        <kbd class="px-1.5 py-0.5 rounded"
+                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
+                            /
+                        </kbd>
+                        <span>Search</span>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
 
-        <!-- Mobile tab selector -->
-        <div class="flex space-x-2 overflow-x-auto pb-2">
-          {#each tabs as tab}
-            <button
-              class="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-              style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
-                     background: {activeTab === tab.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};"
-              onclick={() => switchTab(tab.id)}
-            >
-              <tab.icon size={16} />
-              <span class="text-sm font-medium">{tab.label}</span>
-            </button>
-          {/each}
-        </div>
+        <!-- Mobile Tab Navigation -->
+        <div class="md:hidden py-2">
+            <!-- Mobile Tab Pills -->
+            <div class="relative">
+                <!-- Bounce Indicators -->
+                {#if showBounceStart}
+                    <div class="absolute left-0 top-0 bottom-0 w-2 z-20 rounded-r-full animate-bounce-left"
+                         style="background: linear-gradient(90deg, {$colorStore.primary}40, transparent);"></div>
+                {/if}
+                {#if showBounceEnd}
+                    <div class="absolute right-0 top-0 bottom-0 w-2 z-20 rounded-l-full animate-bounce-right"
+                         style="background: linear-gradient(-90deg, {$colorStore.primary}40, transparent);"></div>
+                {/if}
+
+                <!-- Fade edges for scroll indication -->
+                <div class="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+                     style="background: linear-gradient(to right, {$colorStore.background}, transparent);"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+                     style="background: linear-gradient(to left, {$colorStore.background}, transparent);"></div>
+
+                <!-- Scrollable Tab Container -->
+                <div class="flex gap-2 overflow-x-auto pb-2 pt-2 px-2 scrollbar-hide {showBounceStart ? 'animate-bounce-content-right' : ''} {showBounceEnd ? 'animate-bounce-content-left' : ''}"
+                     style="-webkit-overflow-scrolling: touch;">
+                    {#each tabs as tab, index}
+                        {@const isActive = activeTab === tab.id}
+                        <button
+                                class="shrink-0 relative flex items-center gap-2 px-4 py-2.5 rounded-full tab-press min-w-fit"
+                                class:scale-105={isActive}
+                                style="background: {isActive
+                       ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}20)`
+                       : $colorStore.primary + '08'};
+                       border: 1px solid {isActive ? $colorStore.primary + '30' : 'transparent'};
+                       color: {isActive ? $colorStore.text : $colorStore.muted};"
+                                onclick={() => switchTab(tab.id)}
+                                disabled={isChangingTab}
+                        >
+                            <!-- Icon with Animation -->
+                            <i class="{tab.icon} text-sm {isActive ? 'fa-beat' : ''}"
+                               style="color: {isActive ? $colorStore.primary : $colorStore.muted};
+                          --fa-animation-duration: 2s;
+                          --fa-beat-scale: 1.05;"></i>
+
+                            <!-- Label -->
+                            <span class="text-sm font-medium whitespace-nowrap">
+                  {tab.label}
+                </span>
+                        </button>
+                    {/each}
+                </div>
+            </div>
+
+            <!-- Mobile Footer with Description and Search -->
+            <div class="flex items-center justify-between mt-3 px-3 h-10">
+                <div class="flex-1">
+                    <div class="relative h-5">
+                        {#key activeTab}
+                            <div class="text-sm font-medium absolute inset-0 whitespace-nowrap"
+                                 style="color: {$colorStore.text}"
+                                 in:fade={{ duration: 200, delay: 100 }}
+                                 out:fade={{ duration: 100 }}>
+                                {currentTabData.label}
+                            </div>
+                        {/key}
+                    </div>
+                    <div class="relative h-4">
+                        {#key activeTab}
+                            <div class="text-xs absolute inset-0 whitespace-nowrap"
+                                 style="color: {$colorStore.muted}; opacity: 0.8;"
+                                 in:fade={{ duration: 200, delay: 150 }}
+                                 out:fade={{ duration: 100 }}>
+                                {currentTabData.description}
+                            </div>
+                        {/key}
+                    </div>
+                </div>
+
+                <!-- Mobile Search -->
+                <SearchTrigger showShortcut={false} variant="mobile"/>
+            </div>
+
+            <!-- Swipe Hint (shows only briefly on first load) -->
+            {#if showSwipeHint}
+                <div class="flex items-center justify-center gap-2 mt-2 text-xs animate-pulse transition-opacity duration-500"
+                     style="color: {$colorStore.muted}; opacity: 0.5;">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>Swipe to navigate</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            {/if}
       </div>
     </div>
   </div>
 
   <!-- Tab Content -->
-  <div class="w-full">
+    <div class="w-full relative">
     {#if activeTab === 'overview'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <OverviewTab
           {botStatus}
           {guildMemberStats}
@@ -483,39 +668,133 @@
         />
       </div>
     {:else if activeTab === 'community'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <CommunityTab
           {guildFeatures}
           memberStats={guildMemberStats}
         />
       </div>
     {:else if activeTab === 'entertainment'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <EntertainmentTab />
       </div>
     {:else if activeTab === 'actions'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <ActionsTab />
       </div>
     {:else if activeTab === 'security'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <SecurityTab />
       </div>
     {:else if activeTab === 'settings'}
-      <div in:fly={{ x: 20, duration: 300, delay: 100 }}>
+        <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
         <SettingsTab />
       </div>
     {/if}
-  </div>
-
-  <!-- Keyboard Shortcuts Hint -->
-  <div class="fixed bottom-4 right-4 hidden md:block opacity-60 hover:opacity-100 transition-opacity"
-       style="color: {$colorStore.muted}">
-    <div class="text-xs bg-black bg-opacity-50 px-2 py-1 rounded">
-      Press 1-6 to switch tabs
-    </div>
   </div>
 </div>
 
 <!-- Global Search Modal -->
 <SearchModal />
+
+<style>
+    /* Hide scrollbar for mobile tab navigation */
+    .scrollbar-hide {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
+    }
+
+    /* Button press animation - like a keyboard key */
+    .btn-press {
+        transition: transform 0.1s ease-out;
+    }
+
+    .btn-press:active {
+        transform: scale(0.92);
+    }
+
+    /* Enhanced press for tab buttons */
+    .tab-press {
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-press:active {
+        transform: scale(0.95) translateY(1px);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Bounce animations for swipe boundaries */
+    @keyframes bounceLeft {
+        0% {
+            transform: scaleX(0);
+        }
+        50% {
+            transform: scaleX(1.5);
+        }
+        100% {
+            transform: scaleX(0);
+        }
+    }
+
+    @keyframes bounceRight {
+        0% {
+            transform: scaleX(0);
+        }
+        50% {
+            transform: scaleX(1.5);
+        }
+        100% {
+            transform: scaleX(0);
+        }
+    }
+
+    @keyframes bounceContentLeft {
+        0% {
+            transform: translateX(0);
+        }
+        25% {
+            transform: translateX(-8px);
+        }
+        75% {
+            transform: translateX(-4px);
+        }
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes bounceContentRight {
+        0% {
+            transform: translateX(0);
+        }
+        25% {
+            transform: translateX(8px);
+        }
+        75% {
+            transform: translateX(4px);
+        }
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    .animate-bounce-left {
+        animation: bounceLeft 0.4s ease-out;
+    }
+
+    .animate-bounce-right {
+        animation: bounceRight 0.4s ease-out;
+    }
+
+    .animate-bounce-content-left {
+        animation: bounceContentLeft 0.4s ease-out;
+    }
+
+    .animate-bounce-content-right {
+        animation: bounceContentRight 0.4s ease-out;
+    }
+</style>

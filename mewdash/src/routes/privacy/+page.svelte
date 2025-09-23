@@ -15,7 +15,7 @@
 </svelte:head>
 
 <div
-  class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey text-white p-6 rounded shadow-md flex justify-center items-center"
+        class="min-h-[calc(105vh-5.5rem)] w-screen bg-mewd-light-grey text-white p-6 rounded-sm shadow-md flex justify-center items-center"
 >
   <div class="space-y-5 text-center text-left">
     <h1 class="text-3xl font-semibold">Privacy Policy for Mewdeko</h1>

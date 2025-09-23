@@ -2,24 +2,46 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import { 
-    AlertTriangle, Bot, CheckCircle, Settings, Shield, UserCheck, Users, 
-    Clock, Globe, BarChart3, ShieldCheck, Mic, Hash, Key, Crown,
-    ToggleLeft, ToggleRight, Plus, X, Search, Trash2, Edit3, Save,
-    Volume2, MessageSquare, Filter, Link2, RefreshCw, Database,
-    AtSign, Zap, Timer, Eye, EyeOff, Gamepad2, Check, Activity, Layers,
-    ChevronDown, ChevronUp, ChevronRight
-  } from "lucide-svelte";
-  import { fly, slide } from "svelte/transition";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger";
+    import {
+        Activity,
+        AlertTriangle,
+        AtSign,
+        BarChart3,
+        Bot,
+        Check,
+        ChevronDown,
+        ChevronRight,
+        ChevronUp,
+        Crown,
+        Gamepad2,
+        Globe,
+        Key,
+        Layers,
+        MessageSquare,
+        Plus,
+        RefreshCw,
+        Save,
+        Settings,
+        Shield,
+        Timer,
+        ToggleLeft,
+        ToggleRight,
+        Trash2,
+        UserCheck,
+        Users,
+        Volume2,
+        Zap
+    } from "lucide-svelte";
+    import {fly, slide} from "svelte/transition";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {loadingStore} from "$lib/stores/loadingStore";
+    import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
     let {data} = $props();
 
@@ -912,7 +934,7 @@
       <span class="ml-3" style="color: {$colorStore.text}">Loading administration data...</span>
     </div>
   {:else if error}
-    <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
+      <div class="backdrop-blur-xs p-6 rounded-xl mb-6 transition-all" role="alert"
          style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
       <div class="flex items-center gap-3">
         <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
@@ -931,7 +953,7 @@
         <!-- Quick Stats Cards -->
         <div class="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           <!-- Protection Status -->
-          <div class="rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-105 cursor-pointer"
+            <div class="backdrop-blur-xs rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-105 cursor-pointer"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
                onclick={() => activeTab = 'protection'}>
@@ -950,7 +972,7 @@
           </div>
 
           <!-- Role Management -->
-          <div class="rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
+            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.secondary}30;">
             <div class="flex items-center gap-3 mb-4">
@@ -968,7 +990,7 @@
           </div>
 
           <!-- Auto-Assign Roles -->
-          <div class="rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
+            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.accent}30;">
             <div class="flex items-center gap-3 mb-4">
@@ -986,7 +1008,7 @@
           </div>
 
           <!-- Command Cooldowns -->
-          <div class="rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
+            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;">
             <div class="flex items-center gap-3 mb-4">
@@ -1141,7 +1163,7 @@
         <!-- Auto-Assign Roles -->
         
         <!-- Normal & Bot Auto-Assign Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 100 }}>
@@ -1214,7 +1236,7 @@
         </div>
 
         <!-- Auto-Ban Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -1253,7 +1275,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {#each autoBanRoles as role}
                   <div
-                    class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                          class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                     style="background: {$colorStore.accent}05; border-color: {$colorStore.accent}20;">
                     <span class="font-medium" style="color: {$colorStore.text}">
                       {role.roleName}
@@ -1274,7 +1296,7 @@
         </div>
 
         <!-- Self-Assignable Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 300 }}>
@@ -1321,7 +1343,7 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {#each selfAssignableRoles.roles.filter(r => r.model.group === parseInt(groupId)) as role}
                       <div
-                        class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                              class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                         <span class="font-medium" style="color: {$colorStore.text}">
                           {role.role?.name || `Role ${role.model.roleId}`}
@@ -1355,7 +1377,7 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {#each selfAssignableRoles.roles.filter(r => r.model.group === 0) as role}
                       <div
-                        class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                              class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                         <span class="font-medium" style="color: {$colorStore.text}">
                           {role.role?.name || `Role ${role.model.roleId}`}
@@ -1383,7 +1405,7 @@
         </div>
 
         <!-- Voice Channel Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 400 }}>
@@ -1422,7 +1444,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each voiceChannelRoles as vcRole}
                   <div
-                    class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                          class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                     <div class="space-y-1">
                       <p class="font-medium" style="color: {$colorStore.text}">
@@ -1504,7 +1526,7 @@
         </div>
 
         <!-- Reaction Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 500 }}>
@@ -1532,7 +1554,7 @@
               <div class="space-y-4">
                 {#each reactionRoles.reactionRoles as rr}
                   <div
-                    class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                          class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                     <div class="flex items-center justify-between mb-3">
                       <p class="font-medium" style="color: {$colorStore.text}">
@@ -1578,7 +1600,7 @@
       <div class="space-y-6">
         
         <!-- Anti-Raid Protection -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 100 }}>
@@ -1733,7 +1755,7 @@
         </div>
 
         <!-- Anti-Spam Protection -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -1873,7 +1895,7 @@
         </div>
 
         <!-- Anti-Alt Protection -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 300 }}>
@@ -2013,7 +2035,7 @@
         </div>
 
         <!-- Anti-Pattern Protection -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 500 }}>
@@ -2140,7 +2162,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkAccountAge}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkAccountAge}
@@ -2155,7 +2177,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkJoinTiming}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkJoinTiming}
@@ -2170,7 +2192,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkBatchCreation}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkBatchCreation}
@@ -2185,7 +2207,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkOfflineStatus}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkOfflineStatus}
@@ -2200,7 +2222,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkNewAccounts}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkNewAccounts}
@@ -2331,7 +2353,7 @@
                     <div class="flex flex-wrap gap-3">
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" bind:checked={newPattern.checkUsername} class="sr-only peer" />
-                        <div class="w-4 h-4 rounded border transition-all peer-checked:bg-current" 
+                          <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
                           {#if newPattern.checkUsername}<Check class="w-3 h-3 text-white" />{/if}
                         </div>
@@ -2340,7 +2362,7 @@
                       
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" bind:checked={newPattern.checkDisplayName} class="sr-only peer" />
-                        <div class="w-4 h-4 rounded border transition-all peer-checked:bg-current" 
+                          <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
                           {#if newPattern.checkDisplayName}<Check class="w-3 h-3 text-white" />{/if}
                         </div>
@@ -2374,10 +2396,12 @@
                           <p class="text-sm font-mono" style="color: {$colorStore.muted}">{pattern.pattern}</p>
                           <div class="flex gap-2 mt-1">
                             {#if pattern.checkUsername}
-                              <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">Username</span>
+                                <span class="text-xs px-2 py-1 rounded-sm"
+                                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">Username</span>
                             {/if}
                             {#if pattern.checkDisplayName}
-                              <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Display Name</span>
+                                <span class="text-xs px-2 py-1 rounded-sm"
+                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Display Name</span>
                             {/if}
                           </div>
                         </div>
@@ -2404,7 +2428,7 @@
         </div>
 
         <!-- Anti-Mass Mention Protection -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 400 }}>
@@ -2542,7 +2566,7 @@
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.ignoreBots}
                              class="sr-only peer" />
-                      <div class="w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center"
+                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
                            style="border-color: {tempProtectionConfig.ignoreBots ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.ignoreBots ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.ignoreBots}
@@ -2598,7 +2622,7 @@
       <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
         
         <!-- Staff & Member Roles -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 100 }}>
@@ -2665,7 +2689,7 @@
         </div>
 
         <!-- Timezone Settings -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -2714,7 +2738,7 @@
         </div>
 
         <!-- Command Cooldowns -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 300 }}>
@@ -2750,7 +2774,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {#each commandCooldowns as cooldown}
                 <div
-                  class="group relative p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                        class="group relative p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                   style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                   
                   <div class="pr-16">
@@ -2838,7 +2862,7 @@
         </div>
 
         <!-- Permission Overrides -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 400 }}>
@@ -2982,7 +3006,7 @@
         </div>
 
         <!-- Timezone Settings -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -3031,7 +3055,7 @@
         </div>
 
         <!-- Game Voice Channel -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 300 }}>
@@ -3102,7 +3126,7 @@
       <div class="space-y-6">
         
         <!-- Ban Message Management -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 100 }}>
@@ -3147,7 +3171,7 @@
         </div>
 
         <!-- Mass Operations -->
-        <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;"
              in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -3208,6 +3232,8 @@
 />
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(*::-webkit-scrollbar) {
         @apply w-2;
     }

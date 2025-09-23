@@ -2,34 +2,34 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import {
-    AlertCircle,
-    ExternalLink,
-    Filter,
-    Hash,
-    MessageSquarePlus,
-    Settings,
-    Sparkles,
-    Star,
-    ToggleLeft,
-    ToggleRight,
-    Trash,
-    Trash2
-  } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import type { PageData } from "./$types";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import type {BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {
+        AlertCircle,
+        ExternalLink,
+        Filter,
+        Hash,
+        MessageSquarePlus,
+        Settings,
+        Sparkles,
+        Star,
+        ToggleLeft,
+        ToggleRight,
+        Trash,
+        Trash2
+    } from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -436,7 +436,7 @@
 
     <!-- Create New Starboard Section -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-4 md:p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -576,7 +576,7 @@
 
     <!-- Existing Starboards Section -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-4 md:p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -753,7 +753,7 @@
   <!-- Delete Confirmation Modal -->
   {#if showDeleteModal}
     <div
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -790,7 +790,7 @@
   <!-- Settings Modal -->
   {#if showSettingsModal && currentEditStarboard}
     <div
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -1007,7 +1007,7 @@
   <!-- Channel Management Modal -->
   {#if showChannelsModal && currentEditStarboard}
     <div
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -1073,7 +1073,7 @@
                         style="background: {$colorStore.primary}10;">
                       <span style="color: {$colorStore.text}">#{getChannelName(channelId)}</span>
                       <button
-                        class="p-1 rounded transition-all duration-200"
+                              class="p-1 rounded-sm transition-all duration-200"
                         onclick={() => { selectedChannelId = channelId; toggleChannelInList(); }}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};"

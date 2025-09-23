@@ -142,7 +142,7 @@
                 #{guildChannels.find(c => c.id === channelId.toString())?.name || `Channel ID: ${channelId}`}
               </span>
               <button
-                class="p-2 rounded-full transition-all duration-200 flex-shrink-0 ml-2 min-w-[44px] min-h-[44px]"
+                      class="p-2 rounded-full transition-all duration-200 shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onIncludeChannel(channelId)}
@@ -211,7 +211,7 @@
                 @{guildRoles.find(r => r.id === roleId.toString())?.name || `Role ID: ${roleId}`}
               </span>
               <button
-                class="p-2 rounded-full transition-all duration-200 flex-shrink-0 ml-2 min-w-[44px] min-h-[44px]"
+                      class="p-2 rounded-full transition-all duration-200 shrink-0 ml-2 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onIncludeRole(roleId)}

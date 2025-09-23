@@ -1,7 +1,12 @@
 // src/routes/api/discord/callback/+page.server.ts
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
-import { buildSearchParams, getUserData, requestDiscordToken, setCookies } from "../discordAuth";
+import {
+  buildSearchParams,
+  getUserData,
+  requestDiscordToken,
+  setCookies,
+} from "../discordAuth";
 import { logger } from "$lib/logger";
 
 // routes/api/discord/callback/+page.server.ts
@@ -9,7 +14,7 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     const code = url.searchParams.get('code');
 
     // Get the stored redirect destination
-    const redirectTo = cookies.get("auth_redirect_to") || "/?loggedin";
+    const redirectTo = cookies.get("auth_redirect_to") || "/";
 
     // Clean up the redirect cookie
     cookies.delete("auth_redirect_to", { path: "/" });
@@ -26,40 +31,53 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     }
 
     try {
-        const tokens = await requestDiscordToken(
-          buildSearchParams('callback', code),
-          cookies
-        );
+      const tokens = await requestDiscordToken(
+        buildSearchParams("callback", code),
+        cookies,
+      );
 
-        const userData = await getUserData(tokens.access_token);
-        locals.user = userData;
-        
-        // Set cookies with user data for session creation
-        await setCookies(tokens, cookies, userData);
+      const userData = await getUserData(tokens.access_token);
+      locals.user = userData;
 
-        // Mark this code as processed
-        cookies.set('processed_oauth_code', code, {
-            path: '/',
-            maxAge: 60, // Only keep for 1 minute
-            httpOnly: true
-        });
+      // Set cookies with user data for session creation
+      await setCookies(tokens, cookies, userData);
 
-        // Use 302 redirect to ensure cookies are sent properly
-        const finalRedirect = redirectTo.startsWith("/dashboard") ? "/dashboard" : redirectTo;
-        redirect(302, finalRedirect);
+      // Mark this code as processed
+      cookies.set("processed_oauth_code", code, {
+        path: "/",
+        maxAge: 60, // Only keep for 1 minute
+        httpOnly: true,
+      });
+
+      // Use 302 redirect to ensure cookies are sent properly
+      const finalRedirect = redirectTo.startsWith("/dashboard")
+        ? "/dashboard"
+        : redirectTo;
+      redirect(302, finalRedirect);
     } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Callback error details:', {
-                error: error.message,
-                name: error.name,
-                status: (error as any).status,
-                response: (error as any).response
-            });
-        } else {
-            logger.error('Callback error details:', { error });
-        }
+      // Check if it's a redirect (not an actual error)
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        "location" in error
+      ) {
+        // This is a redirect, not an error - just re-throw it
+        throw error;
+      }
 
-        // Even on error, try to redirect to the intended destination
-        redirect(303, redirectTo);
+      if (error instanceof Error) {
+        logger.error("Callback error details:", {
+          error: error.message,
+          name: error.name,
+          status: (error as any).status,
+          response: (error as any).response,
+        });
+      } else {
+        logger.error("Callback error details:", { error });
+      }
+
+      // Even on error, try to redirect to the intended destination
+      redirect(303, redirectTo);
     }
 };

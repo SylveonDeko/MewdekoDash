@@ -1,11 +1,11 @@
 <!-- lib/MultiButton.svelte -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
-  import { clickOutside } from "$lib/clickOutside.ts";
-  import { colorStore } from "$lib/stores/colorStore.ts";
+    import {fly} from "svelte/transition";
+    import {cubicOut} from "svelte/easing";
+    import {clickOutside} from "$lib/clickOutside.ts";
+    import {colorStore} from "$lib/stores/colorStore.ts";
 
-  interface Props {
+    interface Props {
     buttons?: ButtonConfig[];
   }
 
@@ -35,11 +35,11 @@
   }
 </script>
 
-<div class="mt-8 flex justify-center z-50 backdrop-blur-md">
+<div class="mt-8 flex justify-center relative" style="z-index: 50;">
   <div
-    class="flex flex-col sm:flex-row items-stretch relative rounded-2xl sm:rounded-full backdrop-blur-md transition-all duration-300 shadow-lg hover:shadow-2xl"
-    style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
-           border: 1px solid {$colorStore.primary}30;"
+          class="flex flex-col sm:flex-row items-stretch relative rounded-2xl sm:rounded-full transition-all duration-300 shadow-lg hover:shadow-2xl"
+          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+           border: 1px solid {$colorStore.primary}20;"
   >
     {#each buttons as button, index}
       {#if button.options}
@@ -51,8 +51,9 @@
         >
           <button
             onclick={() => toggleDropdown(index)}
-            class="w-full sm:w-auto inline-flex items-center justify-center font-bold text-xl sm:text-2xl px-6 py-3 sm:py-2
-            transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 rounded-xl sm:rounded-none focus:outline-none focus:ring-2 focus:ring-offset-2"
+            class="group w-full sm:w-auto inline-flex items-center justify-center font-bold text-xl sm:text-2xl px-6 py-3 sm:py-2
+            transition-all duration-300 hover:bg-white/10 hover:shadow-md active:scale-95 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-offset-2
+            {index === 0 ? 'sm:rounded-l-full' : ''} {index === buttons.length - 1 ? 'sm:rounded-r-full' : ''}"
             style="color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
             aria-label={button.ariaLabel || button.label}
             aria-expanded={openDropdownIndex === index}
@@ -70,19 +71,17 @@
           {#if openDropdownIndex === index}
             <div
               id={`dropdown-${index}`}
-              class="absolute left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-48 z-50"
+              class="absolute left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-48 rounded-xl py-2 shadow-2xl border backdrop-blur-md"
+              style="z-index: 9999;
+                     background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25);
+                     border-color: {$colorStore.primary}40;"
               in:fly={{ y: -10, duration: 300, easing: cubicOut }}
               out:fly={{ y: -10, duration: 300, easing: cubicOut }}
             >
-              <div
-                class="rounded-xl py-2 backdrop-blur-md shadow-2xl transition-all duration-300 border-2"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);
-                       border-color: {$colorStore.primary}50;"
-              >
                 {#each button.options as option, optionIndex}
                   <a
                     href={option.href}
-                    class="group block px-4 py-3 hover:bg-white/10 transition-all duration-200 focus:bg-white/10 focus:outline-none rounded-lg mx-2"
+                    class="group block px-4 py-3 hover:bg-white/10 transition-all duration-200 focus:bg-white/10 focus:outline-hidden rounded-lg mx-2"
                     style="color: {$colorStore.text}"
                     target="_blank"
                     rel="noreferrer"
@@ -100,7 +99,6 @@
                     </span>
                   </a>
                 {/each}
-              </div>
             </div>
           {/if}
         </div>
@@ -111,28 +109,26 @@
             <a
               href={button.href}
               class="group w-full sm:w-auto inline-flex items-center justify-center font-bold text-xl sm:text-2xl px-6 py-3 sm:py-2
-              transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 rounded-xl sm:rounded-none focus:outline-none focus:ring-2 focus:ring-offset-2 relative overflow-hidden"
+              transition-all duration-300 hover:bg-white/10 hover:shadow-md active:scale-95 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-offset-2
+              {index === 0 ? 'sm:rounded-l-full' : ''} {index === buttons.length - 1 ? 'sm:rounded-r-full' : ''}"
               style="color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
               target="_blank"
               rel="noreferrer"
               aria-label={button.ariaLabel || button.label}
             >
-              <span class="relative z-10">{button.label}</span>
-              <div
-                class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                <span>{button.label}</span>
             </a>
           </div>
         {:else}
           <div class="relative flex-1 sm:flex-initial">
             <button
               class="group w-full sm:w-auto inline-flex items-center justify-center font-bold text-xl sm:text-2xl px-6 py-3 sm:py-2
-              transition-all duration-300 hover:bg-white/5 hover:scale-105 active:scale-95 rounded-xl sm:rounded-none focus:outline-none focus:ring-2 focus:ring-offset-2 relative overflow-hidden"
+              transition-all duration-300 hover:bg-white/10 hover:shadow-md active:scale-95 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-offset-2
+              {index === 0 ? 'sm:rounded-l-full' : ''} {index === buttons.length - 1 ? 'sm:rounded-r-full' : ''}"
               style="color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
               aria-label={button.ariaLabel || button.label}
             >
-              <span class="relative z-10">{button.label}</span>
-              <div
-                class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                <span>{button.label}</span>
             </button>
           </div>
         {/if}
@@ -142,10 +138,6 @@
 </div>
 
 <style>
-    div[style*="background"] {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
     /* Enhanced mobile responsiveness */
     @media (max-width: 640px) {
         div[class*="flex-col"] > div {
@@ -163,21 +155,6 @@
         outline: 2px solid var(--tw-ring-color, #3b82f6);
         outline-offset: 2px;
     }
-
-    /* Button hover animations */
-    @keyframes shimmer {
-        0% {
-            transform: translateX(-100%) skewX(-12deg);
-        }
-        100% {
-            transform: translateX(200%) skewX(-12deg);
-        }
-    }
-
-    .group:hover .absolute {
-        animation: shimmer 0.7s ease-out;
-    }
-
 
     /* Mobile touch improvements */
     @media (max-width: 640px) {

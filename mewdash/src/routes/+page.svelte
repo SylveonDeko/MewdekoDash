@@ -1,23 +1,21 @@
 <!-- routes/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import FluidContainer from "$lib/components/display/FluidContainer.svelte";
-  import Interactable from "$lib/components/display/InteractableElement.svelte";
-  import Carousel from "$lib/components/display/Carousel.svelte";
-  import ImageWrapper from "$lib/components/display/ImageWrapper.svelte";
-  import type { RedisGuild } from "$lib/types/redisGuild";
-  import MultiButton from "$lib/components/display/MultiButton.svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
+    import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import type {RedisGuild} from "$lib/types/redisGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
 
-  let {data} = $props();
+    let {data} = $props();
 
   let guilds: RedisGuild[] = $state([]);
   let fetched = $state(false);
   let isLoading = $state(true);
   const MAX_GUILD_NAME_LENGTH = 20;
   const MAX_GUILDS_TO_SHOW = 10;
+
+  // Mouse tracking for desktop button effects
+  let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
 
   // Carousel state variables
   let moderationCurrentIndex = 0;
@@ -46,49 +44,31 @@
     }
   ];
 
-  // Full buttons list for desktop
+  // Desktop buttons list
   const buttons = [
     {
       label: "Dashboard",
       href: "/dashboard",
-      ariaLabel: "Open Mewdeko Dashboard"
+        ariaLabel: "Open Mewdeko Dashboard",
+        icon: "home"
     },
     {
-      label: "Invite",
-      ariaLabel: "Invite Mewdeko",
-      options: [
-        {
-          label: "Stable",
-          href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot",
-          ariaLabel: "Invite Stable Version of Mewdeko"
-        },
-        {
-          label: "Nightly",
-          href: "https://discord.com/oauth2/authorize?client_id=964590728397344868&permissions=6618603&scope=bot",
-          ariaLabel: "Invite Nightly Version of Mewdeko"
-        }
-      ]
+        label: "Invite Bot",
+        href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot",
+        ariaLabel: "Invite Mewdeko to your server",
+        icon: "add"
     },
     {
       label: "Donate",
-      ariaLabel: "Donate to Mewdeko",
-      options: [
-        {
-          label: "Ko-fi",
-          href: "https://ko-fi.com/mewdeko",
-          ariaLabel: "Donate via Ko-fi"
-        },
-        {
-          label: "Paypal",
-          href: "https://paypal.me/eugenevernik",
-          ariaLabel: "Donate via Paypal"
-        }
-      ]
+        href: "https://ko-fi.com/mewdeko",
+        ariaLabel: "Support Mewdeko on Ko-fi",
+        icon: "heart"
     },
     {
-      label: "Server",
+        label: "Discord",
       href: "https://discord.gg/Z9DYApMXFN",
-      ariaLabel: "Join the Mewdeko Server"
+        ariaLabel: "Join the Mewdeko Discord Server",
+        icon: "discord"
     }
   ];
 
@@ -118,6 +98,19 @@
 
   function truncateStringToLength(str: string, num: number): string {
     return str.length <= num ? str : str.slice(0, num) + "...";
+  }
+
+  function handleButtonMouseMove(e: MouseEvent, buttonId: string) {
+      const target = e.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      buttonMousePositions[buttonId] = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+      };
+  }
+
+  function handleButtonMouseLeave(buttonId: string) {
+      delete buttonMousePositions[buttonId];
   }
 </script>
 
@@ -153,7 +146,7 @@
          --color-muted: {$colorStore.muted};"
 >
   <header
-    class="py-12 sm:py-16 px-4 sm:px-12 flex flex-col items-center relative backdrop-blur-md"
+          class="py-12 sm:py-16 px-4 sm:px-12 flex flex-col items-center relative"
     in:fade={{ duration: 300 }}
     style="background: radial-gradient(circle at top,
       {$colorStore.gradientStart}15 0%,
@@ -182,62 +175,326 @@
       </div>
     </div>
 
-    <!-- Mobile-first button layout -->
+      <!-- Subtle login notice -->
+      {#if !data.user}
+          <div class="mt-6 mb-4 px-4 animate-fade-in" in:fade={{ duration: 600, delay: 300 }}>
+              <p class="text-sm text-center italic opacity-75 max-w-md mx-auto" style="color: {$colorStore.muted}">
+                  <span class="inline-block animate-pulse-subtle">✨</span>
+                  Psst... login and watch the site come to life with your profile icon colors
+                  <span class="inline-block animate-pulse-subtle">✨</span>
+              </p>
+          </div>
+      {/if}
+
+      <!-- Mobile-first button layout -->
     <div class="w-full max-w-2xl mx-auto">
-      <!-- Primary CTAs for mobile -->
+        <!-- Mobile card layout -->
       <div class="flex flex-col sm:hidden gap-4 mb-6 px-4">
-        {#each primaryButtons as button, index}
+          <!-- Dashboard Card -->
           <a
-            href={button.href}
-            class="group relative w-full px-8 py-4 rounded-2xl font-bold text-lg text-center transition-all duration-300 backdrop-blur-sm hover:shadow-xl hover:scale-105 active:scale-95"
-            style="background: linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}35);
-                   color: {$colorStore.text};
-                   border: 1px solid {$colorStore.primary}50;
-                   box-shadow: 0 8px 32px {$colorStore.primary}20;"
-            aria-label={button.ariaLabel}
-            in:fly={{ y: 20, duration: 300, delay: index * 100 }}
+                  aria-label="Open Mewdeko Dashboard"
+                  class="group relative p-5 rounded-2xl transition-all duration-300 active:scale-[0.98] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
+                  href="/dashboard"
+                  in:fly={{ y: 20, duration: 400, delay: 100 }}
+                  style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10);
+                 border: 1px solid {$colorStore.primary}30;
+                 box-shadow: 0 4px 20px {$colorStore.primary}10;
+                 background-size: {data.user ? '200% 200%' : '100% 100%'};"
           >
-            <span class="relative z-10">{button.label}</span>
-            <div
-              class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-500"
+                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
+
+              <div class="relative">
+                  <div class="flex items-start justify-between mb-3">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.primary}"
+                           viewBox="0 0 24 24">
+                          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2"/>
+                      </svg>
+                      <span class="text-xs px-2 py-1 rounded-full"
+                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
+                Manage
+              </span>
+                  </div>
+                  <h3 class="font-bold text-lg mb-1" style="color: {$colorStore.text}">Dashboard</h3>
+                  <p class="text-sm" style="color: {$colorStore.muted}">Configure your bot settings</p>
+              </div>
           </a>
-        {/each}
+
+          <!-- Invite Bot Card -->
+          <a
+                  aria-label="Invite Mewdeko to your server"
+                  class="group relative p-5 rounded-2xl transition-all duration-300 active:scale-[0.98] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
+                  href="https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot"
+                  in:fly={{ y: 20, duration: 400, delay: 200 }}
+                  rel="noreferrer"
+                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);
+                 border: 1px solid {$colorStore.secondary}30;
+                 box-shadow: 0 4px 20px {$colorStore.secondary}10;
+                 background-size: {data.user ? '200% 200%' : '100% 100%'};"
+                  target="_blank"
+          >
+              <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-500"
+                   style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.primary}15);"></div>
+
+              <div class="relative">
+                  <div class="flex items-start justify-between mb-3">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.secondary}"
+                           viewBox="0 0 24 24">
+                          <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                                stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2"/>
+                      </svg>
+                      <span class="text-xs px-2 py-1 rounded-full"
+                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                Free
+              </span>
+                  </div>
+                  <h3 class="font-bold text-lg mb-1" style="color: {$colorStore.text}">Add to Server</h3>
+                  <p class="text-sm" style="color: {$colorStore.muted}">Invite Mewdeko to your Discord</p>
+              </div>
+          </a>
+
+          <!-- Secondary Actions Row -->
+          <div class="grid grid-cols-2 gap-3">
+              <!-- Discord Card -->
+              <a
+                      aria-label="Join the Mewdeko Discord Server"
+                      class="group relative p-4 rounded-xl transition-all duration-300 active:scale-[0.98] overflow-hidden"
+                      href="https://discord.gg/Z9DYApMXFN"
+                      in:fly={{ y: 20, duration: 400, delay: 300 }}
+                      rel="noreferrer"
+                      style="background: {$colorStore.primary}08;
+                   border: 1px solid {$colorStore.primary}20;
+                   box-shadow: 0 2px 12px {$colorStore.primary}05;"
+                      target="_blank"
+              >
+                  <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-300"
+                       style="background: {$colorStore.primary}12;"></div>
+
+                  <div class="relative">
+                      <svg class="w-6 h-6 mb-2" fill="currentColor" style="color: {$colorStore.text}"
+                           viewBox="0 0 24 24">
+                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                      </svg>
+                      <p class="font-semibold text-sm" style="color: {$colorStore.text}">Discord</p>
+                      <p class="text-xs mt-1" style="color: {$colorStore.muted}">Join us</p>
+                  </div>
+              </a>
+
+              <!-- Support Card -->
+              <a
+                      aria-label="Support Mewdeko on Ko-fi"
+                      class="group relative p-4 rounded-xl transition-all duration-300 active:scale-[0.98] overflow-hidden"
+                      href="https://ko-fi.com/mewdeko"
+                      in:fly={{ y: 20, duration: 400, delay: 400 }}
+                      rel="noreferrer"
+                      style="background: {$colorStore.secondary}08;
+                   border: 1px solid {$colorStore.secondary}20;
+                   box-shadow: 0 2px 12px {$colorStore.secondary}05;"
+                      target="_blank"
+              >
+                  <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-300"
+                       style="background: {$colorStore.secondary}12;"></div>
+
+                  <div class="relative">
+                      <svg class="w-6 h-6 mb-2" fill="currentColor" style="color: {$colorStore.text}"
+                           viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <p class="font-semibold text-sm" style="color: {$colorStore.text}">Support</p>
+                      <p class="text-xs mt-1" style="color: {$colorStore.muted}">Donate</p>
+                  </div>
+              </a>
+          </div>
       </div>
 
-      <!-- Desktop buttons -->
-      <div class="hidden sm:block">
-        <MultiButton {buttons} />
-      </div>
+        <!-- Desktop buttons - New Layout -->
+        <div class="hidden sm:block mt-8 max-w-3xl mx-auto">
+            <div class="grid grid-cols-2 gap-4 px-4">
+                <!-- Primary CTAs - Top Row -->
+                <a
+                        aria-label="Open Mewdeko Dashboard"
+                        class="group relative p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
+                        href="/dashboard"
+                        in:fly={{ y: 20, duration: 400, delay: 100 }}
+                        onmouseleave={() => handleButtonMouseLeave('dashboard')}
+                        onmousemove={(e) => handleButtonMouseMove(e, 'dashboard')}
+                        style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10);
+                   border: 1px solid {$colorStore.primary}30;
+                   box-shadow: 0 4px 20px {$colorStore.primary}10;
+                   background-size: {data.user ? '200% 200%' : '100% 100%'};"
+                >
+                    <!-- Mouse spotlight inside button -->
+                    {#if buttonMousePositions['dashboard']}
+                        <div
+                                class="pointer-events-none absolute w-32 h-32 rounded-full opacity-30 transition-all duration-100 ease-out"
+                                style="background: radial-gradient(circle at center, {$colorStore.primary}60, transparent 70%);
+                       left: {buttonMousePositions['dashboard'].x}px;
+                       top: {buttonMousePositions['dashboard'].y}px;
+                       transform: translate(-50%, -50%);
+                       filter: blur(20px);"
+                        ></div>
+                    {/if}
 
-      <!-- Secondary actions for mobile -->
-      <div class="flex sm:hidden justify-center gap-3 mt-4">
-        <a
-          aria-label="Join Discord Server"
-          class="group px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-sm"
-          href="https://discord.gg/Z9DYApMXFN"
-          style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
-        >
-          <span class="flex items-center gap-2">
-            Discord
-          </span>
-        </a>
-        <a
-          aria-label="Donate on Ko-fi"
-          class="group px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-sm"
-          href="https://ko-fi.com/mewdeko"
-          style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}40;"
-        >
-          <span class="flex items-center gap-2">
-            Donate
-          </span>
-        </a>
-      </div>
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.primary}"
+                                 viewBox="0 0 24 24">
+                                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                      stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"/>
+                            </svg>
+                            <span class="text-xs px-2 py-1 rounded-full"
+                                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
+                  Manage
+                </span>
+                        </div>
+                        <h3 class="font-bold text-xl mb-1" style="color: {$colorStore.text}">Dashboard</h3>
+                        <p class="text-sm" style="color: {$colorStore.muted}">Configure your bot settings</p>
+                    </div>
+                </a>
+
+                <a
+                        aria-label="Invite Mewdeko to your server"
+                        class="group relative p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
+                        href="https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot"
+                        in:fly={{ y: 20, duration: 400, delay: 200 }}
+                        onmouseleave={() => handleButtonMouseLeave('invite')}
+                        onmousemove={(e) => handleButtonMouseMove(e, 'invite')}
+                        rel="noreferrer"
+                        style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);
+                   border: 1px solid {$colorStore.secondary}30;
+                   box-shadow: 0 4px 20px {$colorStore.secondary}10;
+                   background-size: {data.user ? '200% 200%' : '100% 100%'};"
+                        target="_blank"
+                >
+                    <!-- Mouse spotlight inside button -->
+                    {#if buttonMousePositions['invite']}
+                        <div
+                                class="pointer-events-none absolute w-32 h-32 rounded-full opacity-30 transition-all duration-100 ease-out"
+                                style="background: radial-gradient(circle at center, {$colorStore.secondary}60, transparent 70%);
+                       left: {buttonMousePositions['invite'].x}px;
+                       top: {buttonMousePositions['invite'].y}px;
+                       transform: translate(-50%, -50%);
+                       filter: blur(20px);"
+                        ></div>
+                    {/if}
+
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                         style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.primary}15);"></div>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor"
+                                 style="color: {$colorStore.secondary}" viewBox="0 0 24 24">
+                                <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                                      stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2"/>
+                            </svg>
+                            <span class="text-xs px-2 py-1 rounded-full"
+                                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                  Free
+                </span>
+                        </div>
+                        <h3 class="font-bold text-xl mb-1" style="color: {$colorStore.text}">Add to Server</h3>
+                        <p class="text-sm" style="color: {$colorStore.muted}">Invite Mewdeko to your Discord</p>
+                    </div>
+                </a>
+
+                <!-- Secondary CTAs - Bottom Row -->
+                <a
+                        aria-label="Join the Mewdeko Discord Server"
+                        class="group relative p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+                        href="https://discord.gg/Z9DYApMXFN"
+                        in:fly={{ y: 20, duration: 400, delay: 300 }}
+                        onmouseleave={() => handleButtonMouseLeave('discord')}
+                        onmousemove={(e) => handleButtonMouseMove(e, 'discord')}
+                        rel="noreferrer"
+                        style="background: {$colorStore.primary}08;
+                   border: 1px solid {$colorStore.primary}20;
+                   box-shadow: 0 2px 12px {$colorStore.primary}05;"
+                        target="_blank"
+                >
+                    <!-- Mouse spotlight inside button -->
+                    {#if buttonMousePositions['discord']}
+                        <div
+                                class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
+                                style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
+                       left: {buttonMousePositions['discord'].x}px;
+                       top: {buttonMousePositions['discord'].y}px;
+                       transform: translate(-50%, -50%);
+                       filter: blur(15px);"
+                        ></div>
+                    {/if}
+
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                         style="background: {$colorStore.primary}12;"></div>
+
+                    <div class="relative z-10 flex items-center gap-3">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" style="color: {$colorStore.text}"
+                             viewBox="0 0 24 24">
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                        </svg>
+                        <div>
+                            <p class="font-semibold" style="color: {$colorStore.text}">Join Community</p>
+                            <p class="text-xs" style="color: {$colorStore.muted}">Get help & chat</p>
+                        </div>
+                    </div>
+                </a>
+
+                <a
+                        aria-label="Support Mewdeko on Ko-fi"
+                        class="group relative p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+                        href="https://ko-fi.com/mewdeko"
+                        in:fly={{ y: 20, duration: 400, delay: 400 }}
+                        onmouseleave={() => handleButtonMouseLeave('donate')}
+                        onmousemove={(e) => handleButtonMouseMove(e, 'donate')}
+                        rel="noreferrer"
+                        style="background: {$colorStore.secondary}08;
+                   border: 1px solid {$colorStore.secondary}20;
+                   box-shadow: 0 2px 12px {$colorStore.secondary}05;"
+                        target="_blank"
+                >
+                    <!-- Mouse spotlight inside button -->
+                    {#if buttonMousePositions['donate']}
+                        <div
+                                class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
+                                style="background: radial-gradient(circle at center, {$colorStore.secondary}50, transparent 70%);
+                       left: {buttonMousePositions['donate'].x}px;
+                       top: {buttonMousePositions['donate'].y}px;
+                       transform: translate(-50%, -50%);
+                       filter: blur(15px);"
+                        ></div>
+                    {/if}
+
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                         style="background: {$colorStore.secondary}12;"></div>
+
+                    <div class="relative z-10 flex items-center gap-3">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" style="color: {$colorStore.text}"
+                             viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <div>
+                            <p class="font-semibold" style="color: {$colorStore.text}">Support Us</p>
+                            <p class="text-xs" style="color: {$colorStore.muted}">Buy us a coffee</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
     </div>
 
-    {#if fetched}
+      {#if fetched}
       <section
         aria-labelledby="top-servers-heading"
-        class="relative mt-16 w-full z-40"
+        class="relative mt-16 w-full"
       >
         <div class="text-center mb-8">
           <h2
@@ -252,130 +509,91 @@
           </p>
         </div>
         {#if guilds.length > 0}
-          <div class="px-4 max-w-4xl mx-auto">
-            <!-- Mobile: Grid layout -->
-            <div class="grid grid-cols-5 sm:hidden gap-4 justify-items-center mb-4" role="list"
+            <div class="w-full max-w-6xl mx-auto px-4">
+                <!-- Responsive grid layout for all screen sizes with centering -->
+                <div class="flex flex-wrap justify-center gap-4" role="list"
                  aria-label="Top server communities">
-              {#each guilds.slice(0, 10) as guild, index (guild.Name)}
+                    {#each guilds.slice(0, 8) as guild, index (guild.Name)}
                 <div
-                  class="relative group server-icon-mobile focus-within:ring-2 focus-within:ring-offset-2 rounded-full"
-                  style="--tw-ring-color: {$colorStore.accent};"
+                        class="group relative rounded-xl border transition-all duration-300 hover:scale-[1.02] overflow-hidden w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
+                        style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}10);
+                         border-color: {$colorStore.primary}20;
+                         box-shadow: 0 2px 12px {$colorStore.primary}05;"
                   in:fly={{ y: 20, duration: 300, delay: index * 50 }}
                   role="listitem"
                 >
-                  <button
-                    class="w-12 h-12 rounded-full server-icon border-2 border-transparent group-hover:border-primary/50 focus:border-primary/70 focus:outline-none transition-all duration-300 relative overflow-hidden"
-                    style="border-color: {$colorStore.primary}20;"
-                    aria-label="{guild.Name} server with {guild.MemberCount.toLocaleString()} members"
-                    tabindex="0"
-                    aria-describedby="tooltip-mobile-{index}"
-                  >
-                    <img
-                      src={guild.IconUrl}
-                      alt=""
-                      loading="lazy"
-                      class="w-full h-full object-cover rounded-full"
-                      role="presentation"
-                    />
-                  </button>
-                  <div
-                    class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white opacity-90 animate-pulse"
-                    aria-hidden="true"></div>
+                    <!-- Hover gradient overlay -->
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                         style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}08);"></div>
 
-                  <!-- Enhanced mobile tooltip -->
-                  <div
-                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-3 py-2 text-xs rounded-lg shadow-xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-3 backdrop-blur-lg animate-in fade-in duration-200"
-                    role="tooltip"
-                    id="tooltip-mobile-{index}"
-                    style="background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75)), linear-gradient(135deg, {$colorStore.gradientStart}60, {$colorStore.gradientEnd}60);
-                           border: 1px solid {$colorStore.primary}60;
-                           box-shadow: 0 10px 40px rgba(0,0,0,0.3);"
-                  >
-                    <p class="font-bold text-center" style="color: {$colorStore.text}">
-                      {truncateStringToLength(guild.Name, 18)}
-                    </p>
-                    <p class="text-center mt-1" style="color: {$colorStore.muted}">
-                      {guild.MemberCount.toLocaleString()} members
-                    </p>
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 rotate-45"
-                         style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
+                    <div class="relative p-4">
+                        <div class="flex items-center gap-3">
+                            <!-- Server icon -->
+                            <div class="relative flex-shrink-0">
+                                <img
+                                        src={guild.IconUrl}
+                                        alt="{guild.Name} icon"
+                                        loading="lazy"
+                                        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-opacity-20"
+                                        style="ring-color: {$colorStore.primary};"
+                                />
+                                <!-- Online indicator -->
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full ring-2 ring-opacity-90"
+                                     style="ring-color: {$colorStore.background};"></div>
+                            </div>
+
+                            <!-- Server info -->
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-sm sm:text-base truncate"
+                                    style="color: {$colorStore.text}">
+                                    {guild.Name}
+                                </h3>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4" style="color: {$colorStore.muted}"
+                                         fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                                    </svg>
+                                    <span class="text-xs sm:text-sm" style="color: {$colorStore.muted}">
+                            {guild.MemberCount.toLocaleString()}
+                          </span>
+                                </div>
+                            </div>
+                        </div>
                   </div>
                 </div>
               {/each}
             </div>
 
-            <!-- Desktop: Flex layout -->
-            <ul
-              class="hidden sm:flex flex-wrap justify-center items-center gap-6 p-4"
-              aria-label="Top server communities"
-              role="list"
-            >
-              {#each guilds as guild, index (guild.Name)}
-                <li
-                  class="relative group server-icon-desktop focus-within:ring-4 focus-within:ring-offset-4 rounded-full"
-                  style="--tw-ring-color: {$colorStore.accent};"
-                  in:fly={{ y: 20, duration: 300, delay: index * 75 }}
-                  role="listitem"
-                >
-                  <button
-                    class="w-16 h-16 lg:w-20 lg:h-20 rounded-full server-icon border-3 border-transparent group-hover:border-primary/60 focus:border-primary/80 focus:outline-none transition-all duration-300 shadow-lg hover:shadow-2xl relative overflow-hidden"
-                    style="border-color: {$colorStore.primary}25;"
-                    aria-label="{guild.Name} server with {guild.MemberCount.toLocaleString()} members"
-                    aria-describedby="tooltip-desktop-{index}"
-                    tabindex="0"
-                  >
-                    <img
-                      src={guild.IconUrl}
-                      alt=""
-                      loading="lazy"
-                      class="w-full h-full object-cover rounded-full"
-                      role="presentation"
-                    />
-                  </button>
-                  <div
-                    class="absolute -top-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white opacity-90 animate-pulse"
-                    aria-hidden="true"></div>
-
-                  <!-- Enhanced desktop tooltip -->
-                  <div
-                    class="absolute hidden group-hover:block group-focus-within:block z-20 px-4 py-3 text-sm rounded-xl shadow-2xl whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-4 backdrop-blur-lg animate-in fade-in slide-in-from-bottom-2 duration-300"
-                    role="tooltip"
-                    id="tooltip-desktop-{index}"
-                    style="background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75)), linear-gradient(135deg, {$colorStore.gradientStart}60, {$colorStore.gradientEnd}60);
-                           border: 1px solid {$colorStore.primary}60;
-                           box-shadow: 0 20px 60px rgba(0,0,0,0.4);"
-                  >
-                    <p class="font-bold text-center mb-1" style="color: {$colorStore.text}">
-                      {truncateStringToLength(guild.Name, MAX_GUILD_NAME_LENGTH)}
-                    </p>
-                    <p class="text-center text-xs" style="color: {$colorStore.muted}">
-                      {guild.MemberCount.toLocaleString()} members active
-                    </p>
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-3 h-3 rotate-45"
-                         style="background: linear-gradient(135deg, rgba(0,0,0,0.85), {$colorStore.gradientStart}60); border-bottom: 1px solid {$colorStore.primary}60; border-right: 1px solid {$colorStore.primary}60;"></div>
-                  </div>
-                </li>
-              {/each}
-            </ul>
+                <!-- View more indicator -->
+                {#if guilds.length > 8}
+                    <div class="text-center mt-6">
+                        <p class="text-sm" style="color: {$colorStore.muted}">
+                            And {guilds.length - 8} more amazing communities...
+                        </p>
+                    </div>
+                {/if}
           </div>
         {:else if isLoading}
           <!-- Loading skeleton -->
-          <div class="px-4 max-w-4xl mx-auto">
-            <!-- Mobile skeleton -->
-            <div class="grid grid-cols-5 sm:hidden gap-4 justify-items-center mb-4">
-              {#each Array(10) as _, index}
-                <div class="animate-pulse" in:fly={{ y: 20, duration: 300, delay: index * 50 }}>
-                  <div class="w-12 h-12 rounded-full bg-gradient-to-r from-gray-300 to-gray-400 opacity-50"></div>
-                </div>
-              {/each}
-            </div>
-
-            <!-- Desktop skeleton -->
-            <div class="hidden sm:flex flex-wrap justify-center items-center gap-6 p-4">
-              {#each Array(10) as _, index}
-                <div class="animate-pulse" in:fly={{ y: 20, duration: 300, delay: index * 75 }}>
-                  <div
-                    class="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-gradient-to-r from-gray-300 to-gray-400 opacity-50"></div>
+            <div class="w-full max-w-6xl mx-auto px-4">
+                <div class="flex flex-wrap justify-center gap-4">
+                    {#each Array(8) as _, index}
+                        <div class="animate-pulse w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
+                             in:fly={{ y: 20, duration: 300, delay: index * 50 }}>
+                            <div class="rounded-xl border p-4"
+                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}08);
+                              border-color: {$colorStore.primary}15;">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r opacity-30"
+                                         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);"></div>
+                                    <div class="flex-1">
+                                        <div class="h-4 rounded-lg mb-2 opacity-20"
+                                             style="background: {$colorStore.text}; width: 70%;"></div>
+                                        <div class="h-3 rounded-lg opacity-15"
+                                             style="background: {$colorStore.muted}; width: 40%;"></div>
+                                    </div>
+                                </div>
+                            </div>
                 </div>
               {/each}
             </div>
@@ -401,7 +619,7 @@
 
   <section
     aria-labelledby="features-heading"
-    class="py-24 backdrop-blur-sm relative overflow-hidden"
+    class="py-24 backdrop-blur-xs relative overflow-hidden"
     style="background: radial-gradient(circle at center,
       {$colorStore.gradientStart}15 0%,
       {$colorStore.gradientEnd}10 50%,
@@ -680,7 +898,7 @@
       <!-- Community CTA Section -->
       <div class="text-center py-16 px-4">
         <div class="max-w-4xl mx-auto">
-          <div class="backdrop-blur-sm rounded-2xl border p-8 shadow-lg"
+            <div class="backdrop-blur-xs rounded-2xl border p-8 shadow-lg"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
                       border-color: {$colorStore.primary}20;">
             <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
@@ -703,3 +921,94 @@
   </section>
 </main>
 
+<style>
+    @keyframes pulse-border {
+        0%, 100% {
+            opacity: 0.5;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.8;
+            transform: scale(1.01);
+        }
+    }
+
+    .animate-pulse-border {
+        animation: pulse-border 3s ease-in-out infinite;
+    }
+
+    .animate-float {
+        animation: float 20s ease-in-out infinite;
+    }
+
+    .animate-float-slow {
+        animation: float 25s ease-in-out infinite;
+    }
+
+    .animate-float-slower {
+        animation: float 30s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translate(0, 0);
+        }
+        25% {
+            transform: translate(-20px, -20px);
+        }
+        50% {
+            transform: translate(20px, -10px);
+        }
+        75% {
+            transform: translate(-10px, 20px);
+        }
+    }
+
+    .animate-pulse-subtle {
+        animation: pulse-subtle 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-subtle {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.9;
+        }
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .animate-gradient-bg {
+        animation: gradient-shift 8s ease infinite;
+    }
+
+    .animate-gradient {
+        animation: gradient-shift 6s ease infinite;
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.6s ease-out forwards;
+    }
+</style>

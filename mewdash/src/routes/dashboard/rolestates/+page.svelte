@@ -2,38 +2,38 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import {
-      AlertCircle,
-      ExternalLink,
-      Eye,
-      ListMinus,
-      Plus, RefreshCw,
-      Save,
-      Settings,
-      ShieldOff,
-      ToggleLeft,
-      ToggleRight,
-      Trash,
-      UserMinus,
-      UserPlus,
-      Users,
-      UserX
-  } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import type { PageData } from "./$types";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import type {BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {
+        AlertCircle,
+        ExternalLink,
+        Eye,
+        ListMinus,
+        Plus,
+        RefreshCw,
+        Save,
+        Settings,
+        ShieldOff,
+        ToggleLeft,
+        ToggleRight,
+        Trash,
+        UserMinus,
+        UserPlus,
+        Users,
+        UserX
+    } from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -573,7 +573,7 @@
   {#if activeTab === 'settings'}
     <!-- Settings Section -->
     <section
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -816,7 +816,7 @@
                         style="background: {$colorStore.primary}10;">
                       <span style="color: {$colorStore.text}">{getRoleName(roleId)}</span>
                       <button
-                        class="p-1 rounded transition-all duration-200"
+                              class="p-1 rounded-sm transition-all duration-200"
                         onclick={() => removeDeniedRole(roleId)}
                         disabled={!roleStateSettings.enabled}
                         style="background: {$colorStore.accent}20;
@@ -884,7 +884,7 @@
                         style="background: {$colorStore.secondary}10;">
                       <span style="color: {$colorStore.text}">{getUserName(userId)}</span>
                       <button
-                        class="p-1 rounded transition-all duration-200"
+                              class="p-1 rounded-sm transition-all duration-200"
                         onclick={() => removeDeniedUser(userId)}
                         disabled={!roleStateSettings.enabled}
                         style="background: {$colorStore.accent}20;
@@ -924,7 +924,7 @@
 
     <!-- Role States Management -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >

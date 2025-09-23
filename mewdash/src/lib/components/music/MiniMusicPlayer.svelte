@@ -1,14 +1,14 @@
 <!-- lib/components/MiniMusicPlayer.svelte -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { Music, Pause, Play, SkipForward, Volume2 } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { logger } from "$lib/logger";
-  import type { MusicStatus } from "$lib/types/music";
-  import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
+    import {fly} from "svelte/transition";
+    import {Music, Pause, Play, SkipBack, SkipForward} from "lucide-svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {logger} from "$lib/logger";
+    import type {MusicStatus} from "$lib/types/music";
+    import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
 
-  interface Props {
+    interface Props {
     musicStatus?: MusicStatus | null;
     isVisible?: boolean;
   }
@@ -19,6 +19,8 @@
   let currentTrack = $derived(musicStatus?.CurrentTrack);
   let isPlaying = $derived(musicStatus?.State === 2);  // 2 = Playing state
   let hasTrack = $derived(currentTrack?.Track?.Title);
+    let botInChannel = $derived(musicStatus?.BotInChannel);
+    let channelName = $derived(musicStatus?.ChannelName);
 
   // Color store reactive values
   let colors = $derived($musicPlayerColors);
@@ -56,25 +58,34 @@
     }
   }
 
+    async function previousTrack() {
+        try {
+            if (!$currentGuild?.id) return;
+            await api.previousTrack($currentGuild.id);
+        } catch (err) {
+            logger.error("Failed to go to previous track:", err);
+        }
+    }
+
   // Navigate to music dashboard
   function openMusicDashboard() {
     window.location.href = "/dashboard/music";
   }
 </script>
 
-{#if isVisible && hasTrack}
+{#if isVisible && (hasTrack || botInChannel)}
   <div
-    class="flex items-center gap-3 p-3 rounded-lg backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl border border-opacity-20 max-w-sm"
-    style="background: linear-gradient(135deg, {colors.background}90, {colors.backgroundSecondary}80); 
+          class="flex items-center gap-2 p-2 rounded-xl backdrop-blur-xs shadow-lg transition-all duration-300 hover:shadow-xl border"
+          style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;
-           color: {colors.text};"
-    in:fly={{ x: 100, duration: 300, delay: 0 }}
-    out:fly={{ x: 100, duration: 300 }}
+           max-width: 320px;"
+          in:fly={{ x: 20, duration: 400, delay: 0 }}
+          out:fly={{ x: 20, duration: 300 }}
   >
     <!-- Album Art Thumbnail -->
-    <div class="relative flex-shrink-0">
+      <div class="relative shrink-0">
       <div
-        class="w-12 h-12 rounded-lg overflow-hidden shadow-md ring-1 ring-opacity-20"
+              class="w-10 h-10 rounded-lg overflow-hidden shadow-md ring-1 ring-opacity-30"
         style="ring-color: {colors.accent};"
       >
         {#if currentTrack?.Track?.ArtworkUri}
@@ -88,28 +99,34 @@
             class="w-full h-full flex items-center justify-center"
             style="background: {colors.primary}20;"
           >
-            <Music size={20} style="color: {colors.primary}" />
+              <Music size={16} style="color: {colors.primary}"/>
           </div>
         {/if}
       </div>
 
-      <!-- Playing indicator -->
+          <!-- Playing/Connected indicator -->
       {#if isPlaying}
         <div
-          class="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white shadow-sm animate-pulse"
+                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-xs animate-pulse"
           style="background: {colors.accent};"
+        ></div>
+      {:else if botInChannel && !hasTrack}
+          <div
+                  class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white shadow-xs"
+                  style="background: {colors.primary};"
         ></div>
       {/if}
     </div>
 
     <!-- Track Info -->
-    <button 
-      class="flex-1 min-w-0 cursor-pointer text-left" 
+      <button
+              class="flex-1 min-w-0 cursor-pointer text-left"
       onclick={openMusicDashboard}
       aria-label="Open music dashboard"
     >
+          {#if hasTrack}
       <div
-        class="font-medium text-sm truncate"
+              class="font-medium text-xs truncate"
         style="color: {colors.text};"
         title={currentTrack?.Track?.Title}
       >
@@ -117,47 +134,79 @@
       </div>
       <div
         class="text-xs truncate opacity-80"
-        style="color: {colors.textSecondary};"
+        style="color: {colors.text}80;"
         title={currentTrack?.Track?.Author}
       >
         {formatArtist(currentTrack?.Track?.Author || "")}
       </div>
+          {:else if botInChannel}
+              <div
+                      class="font-medium text-xs truncate"
+                      style="color: {colors.text};"
+              >
+                  Ready to play
+              </div>
+              <div
+                      class="text-xs truncate opacity-80"
+                      style="color: {colors.text}80;"
+              >
+                  {channelName || "Voice channel"}
+              </div>
+          {/if}
     </button>
 
     <!-- Controls -->
-    <div class="flex items-center gap-1 flex-shrink-0">
-      <!-- Play/Pause Button -->
+      {#if hasTrack}
+          <div class="flex items-center gap-0.5 shrink-0">
+              <!-- Previous Button -->
+              <button
+                      class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                      style="background: {colors.foreground}20; color: {colors.foreground};"
+                      onclick={previousTrack}
+                      aria-label="Previous track"
+              >
+                  <SkipBack size={12}/>
+              </button>
+
+              <!-- Play/Pause Button -->
       <button
-        class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-        style="background: {colors.primary}25; color: {colors.primary};"
+              class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+              style="background: {colors.controlsHighlight}; color: {colors.text};"
         onclick={togglePlayPause}
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {#if isPlaying}
-          <Pause size={14} />
+            <Pause size={13}/>
         {:else}
-          <Play size={14} style="margin-left: 1px;" />
+            <Play size={13} style="margin-left: 1px;"/>
         {/if}
       </button>
 
       <!-- Skip Button -->
       <button
-        class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-        style="background: {colors.secondary}20; color: {colors.secondary};"
+              class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              style="background: {colors.foreground}20; color: {colors.foreground};"
         onclick={skipTrack}
         aria-label="Skip track"
       >
-        <SkipForward size={14} />
+          <SkipForward size={12}/>
       </button>
-
-      <!-- Volume Indicator -->
-      <div
-        class="w-6 h-6 flex items-center justify-center opacity-60"
-        title="Volume: {Math.round((musicStatus?.Volume || 0) * 100)}%"
-      >
-        <Volume2 size={12} style="color: {colors.textSecondary}" />
-      </div>
+          </div>
+      {:else}
+          <!-- When bot is idle in channel, just show an arrow to open dashboard -->
+          <div class="shrink-0">
+              <button
+                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                      style="background: {colors.accent}20; color: {colors.accent};"
+                      onclick={openMusicDashboard}
+                      aria-label="Open music dashboard"
+              >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+              </button>
     </div>
+      {/if}
   </div>
 {/if}
 

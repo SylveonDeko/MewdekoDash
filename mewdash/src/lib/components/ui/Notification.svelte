@@ -1,12 +1,12 @@
 <!-- lib/components/ui/Notification.svelte -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { CheckCircle, AlertCircle, X } from "lucide-svelte";
-  import { onMount, onDestroy } from "svelte";
+    import {fly} from "svelte/transition";
+    import {cubicOut} from "svelte/easing";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {AlertCircle, CheckCircle, X} from "lucide-svelte";
+    import {onDestroy, onMount} from "svelte";
 
-  interface Props {
+    interface Props {
     message: string;
     type?: "success" | "error";
     timeout?: number;
@@ -75,7 +75,7 @@
 </script>
 
 <div
-  class="fixed top-20 md:top-4 right-4 p-4 rounded-xl shadow-2xl backdrop-blur-md border max-w-sm min-w-80 z-[60]"
+        class="fixed top-20 md:top-4 right-4 p-4 rounded-xl shadow-2xl backdrop-blur-md border max-w-sm min-w-80 z-60"
   style="
     background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10),
                 linear-gradient(135deg, {type === 'success' ? successColor : errorColor}25, {type === 'success' ? successColor : errorColor}15);
@@ -97,8 +97,8 @@
 >
     <div class="flex items-start gap-3">
       <!-- Icon -->
-      <div 
-        class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
+        <div
+                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
         style="background-color: {type === 'success' ? successColor : errorColor}20;"
       >
         {#if type === 'success'}
@@ -126,7 +126,7 @@
 
       <!-- Dismiss Button -->
       <button
-        class="flex-shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
+              class="shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
         style="color: {$colorStore.muted}; 
                hover:background-color: {type === 'success' ? successColor : errorColor}20;
                hover:color: {$colorStore.text};"

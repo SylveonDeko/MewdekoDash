@@ -1,29 +1,26 @@
 <!-- lib/components/CompactMusicPlayer.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { fly, slide } from "svelte/transition";
-  import {
-    ChevronDown,
-    ChevronUp,
-    ExternalLink,
-    Music,
-    Pause,
-    Play,
-    Repeat,
-    Shuffle,
-    SkipBack,
-    SkipForward,
-    Volume2
-  } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { logger } from "$lib/logger";
-  import type { MusicStatus } from "$lib/types/music";
-  import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
+    import {onDestroy, onMount} from "svelte";
+    import {fly, slide} from "svelte/transition";
+    import {
+        ChevronDown,
+        ChevronUp,
+        ExternalLink,
+        Music,
+        Pause,
+        Play,
+        SkipBack,
+        SkipForward,
+        Volume2
+    } from "lucide-svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {logger} from "$lib/logger";
+    import type {MusicStatus} from "$lib/types/music";
+    import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
 
-  onMount(() => {
+    onMount(() => {
     setupSilentAudio();
     setupMediaSession();
   });
@@ -36,7 +33,7 @@
     }
 
     if ("mediaSession" in navigator) {
-      const actions = ["play", "pause", "previoustrack", "nexttrack", "seekto"];
+        const actions: MediaSessionAction[] = ["play", "pause", "previoustrack", "nexttrack", "seekto"];
       actions.forEach(action => {
         try {
           navigator.mediaSession.setActionHandler(action, null);
@@ -61,9 +58,12 @@
 
   // Component state
   let isExpanded = $state(false);
+  let progressInterval: number | null = null;
+  let smoothProgress = 0;
+  let lastUpdateTime = Date.now();
 
   // Media session variables
-  let silentAudioElement: HTMLAudioElement;
+  let silentAudioElement: HTMLAudioElement | null = null;
   let audioPlayPromisePending = false;
 
 
@@ -109,25 +109,83 @@
     return "--:--";
   }
 
+  function formatTime(time: any): string {
+      if (!time) return "0:00";
+
+      // Handle Position object with RelativePosition
+      if (typeof time === "object" && time.RelativePosition) {
+          const match = time.RelativePosition.match(/(\d+):(\d+)\.(\d+)/);
+          if (match) {
+              const minutes = parseInt(match[1]);
+              const seconds = parseInt(match[2]);
+              return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+          }
+      }
+
+      // Handle string format
+      if (typeof time === "string") {
+          const parts = time.split(":");
+          if (parts.length === 3) {
+              const hours = parseInt(parts[0]);
+              const minutes = parseInt(parts[1]);
+              const seconds = parseInt(parts[2]);
+              return `${hours * 60 + minutes}:${seconds.toString().padStart(2, "0")}`;
+          } else if (parts.length === 2) {
+              return time;
+          }
+      }
+
+      // Handle number format (seconds)
+      if (typeof time === "number") {
+          const mins = Math.floor(time / 60);
+          const secs = Math.floor(time % 60);
+          return `${mins}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      return "0:00";
+  }
+
   function getSeconds(timeStr: string): number {
     if (!timeStr) return 0;
     const parts = timeStr.split(":");
-    return parts.length === 3
-      ? parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
-      : 0;
+      if (parts.length === 3) {
+          // Format: HH:MM:SS.FFFFFFF
+          const hours = parseInt(parts[0]) || 0;
+          const minutes = parseInt(parts[1]) || 0;
+          const seconds = parseFloat(parts[2]) || 0;
+          return hours * 3600 + minutes * 60 + seconds;
+      } else if (parts.length === 2) {
+          // Format: MM:SS
+          const minutes = parseInt(parts[0]) || 0;
+          const seconds = parseFloat(parts[1]) || 0;
+          return minutes * 60 + seconds;
+      }
+      return 0;
   }
 
   function getCurrentPosition(): number {
-    if (!musicStatus?.Position?.RelativePosition) return 0;
+      if (!musicStatus?.Position) return 0;
 
-    const match = musicStatus.Position.RelativePosition.match(/(\d+):(\d+)\.(\d+)/);
-    if (match) {
-      const minutes = parseInt(match[1]);
-      const seconds = parseInt(match[2]);
-      const milliseconds = parseInt(match[3]);
-      return minutes * 60 + seconds + milliseconds / 1000;
+      // If we're not playing, just return the relative position
+      if (musicStatus.State !== 2) {
+          return getSeconds(musicStatus.Position.RelativePosition || "0:00");
+      }
+
+      // Calculate actual position based on server time sync
+      try {
+          const serverTime = new Date(musicStatus.Position.SystemClock?.UtcNow).getTime();
+          const localTime = Date.now();
+          const serverTimeDiff = serverTime - localTime;
+
+          const syncedAt = new Date(musicStatus.Position.SyncedAt).getTime();
+          const basePosition = getSeconds(musicStatus.Position.RelativePosition || "0:00");
+
+          const timeSinceSync = (localTime + serverTimeDiff - syncedAt) / 1000;
+          return Math.max(0, basePosition + timeSinceSync);
+      } catch (err) {
+          // Fallback to simple relative position if sync data is missing
+          return getSeconds(musicStatus.Position.RelativePosition || "0:00");
     }
-    return 0;
   }
 
   function getProgressPercentage(): number {
@@ -144,7 +202,7 @@
       await api.pauseResume($currentGuild.id);
 
       // Handle silent audio element for MediaSession API
-      if (silentAudioElement) {
+        if (silentAudioElement && musicStatus) {
         if (musicStatus.State !== 2) { // Will become playing
           if (!audioPlayPromisePending && silentAudioElement.paused) {
             audioPlayPromisePending = true;
@@ -154,7 +212,7 @@
               audioPlayPromisePending = false;
             } catch (e) {
               audioPlayPromisePending = false;
-              logger.debug("Silent audio play prevented:", e);
+                logger.info("Silent audio play prevented:", e);
             }
           }
         } else { // Will become paused
@@ -198,10 +256,13 @@
 
   // Add missing API functions to match original music player
 
+  // Note: These functions would need to be implemented in the API if shuffle/repeat are needed
+  // Currently commenting out as they're not used in the compact player
+  /*
   async function toggleShuffle() {
     try {
       if (!$currentGuild?.id) return;
-      await api.toggleShuffle($currentGuild.id);
+      // await api.toggleShuffle($currentGuild.id);
     } catch (err) {
       logger.error("Failed to toggle shuffle:", err);
     }
@@ -210,11 +271,12 @@
   async function toggleRepeat() {
     try {
       if (!$currentGuild?.id) return;
-      await api.toggleRepeat($currentGuild.id);
+      // await api.toggleRepeat($currentGuild.id);
     } catch (err) {
       logger.error("Failed to toggle repeat:", err);
     }
   }
+  */
 
   // Media Session Setup Functions
   function setupMediaSession() {
@@ -263,7 +325,7 @@
             playbackRate: 1.0
           });
         } catch (error) {
-          logger.debug("MediaSession seekto not supported", error);
+            logger.info("MediaSession seekto not supported", error);
         }
 
         logger.info("MediaSession API initialized successfully");
@@ -306,7 +368,7 @@
               playbackRate: 1.0
             });
           } catch (error) {
-            logger.debug("MediaSession position state error:", error);
+              logger.info("MediaSession position state error:", error);
           }
         }
       }
@@ -328,7 +390,7 @@
           updateMediaSessionMetadata();
         });
 
-        logger.debug("Silent audio element initialized");
+          logger.info("Silent audio element initialized");
       } catch (err) {
         logger.error("Error setting up silent audio:", err);
       }
@@ -350,7 +412,7 @@
           })
           .catch(err => {
             audioPlayPromisePending = false;
-            logger.debug("Silent audio play prevented:", err);
+              logger.info("Silent audio play prevented:", err);
           });
       } else {
         audioPlayPromisePending = false;
@@ -363,18 +425,20 @@
   let currentTrack = $derived(musicStatus?.CurrentTrack);
   let isPlaying = $derived(musicStatus?.State === 2);
   let hasTrack = $derived(currentTrack?.Track?.Title);
+  let botInChannel = $derived(musicStatus?.BotInChannel);
+  let channelName = $derived(musicStatus?.ChannelName);
   let currentPosition = $derived(getCurrentPosition());
   let progressPercentage = $derived(getProgressPercentage());
-  // Color store reactive values  
+  // Color store reactive values
   let colors = $derived($musicPlayerColors);
   // Update MediaSession metadata when track changes
-  run(() => {
+  $effect(() => {
     if (musicStatus?.CurrentTrack?.Track) {
       updateMediaSessionMetadata();
     }
   });
   // Update MediaSession playback state when playback state changes
-  run(() => {
+  $effect(() => {
     if (musicStatus?.State !== undefined) {
       ensureSilentAudioPlaying();
 
@@ -385,18 +449,20 @@
   });
 </script>
 
-{#if hasTrack}
+{#if hasTrack || botInChannel}
   <div
-    class="backdrop-blur-sm rounded-2xl border shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px] w-full"
+          class="backdrop-blur-xs rounded-2xl border shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px] w-full"
     style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;"
-    in:fly={{ y: 20, duration: 300 }}
+          in:fly={{ y: 10, duration: 400, delay: 100 }}
+          out:fly={{ y: -10, duration: 300 }}
   >
     <!-- Compact Header -->
     <div class="p-4">
+        {#if hasTrack}
       <div class="flex items-center gap-4">
         <!-- Album Art -->
-        <div class="relative flex-shrink-0">
+          <div class="relative shrink-0">
           <div
             class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30"
             style="ring-color: {colors.accent};"
@@ -420,7 +486,7 @@
           <!-- Playing indicator -->
           {#if isPlaying}
             <div
-              class="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm animate-pulse"
+                    class="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-xs animate-pulse"
               style="background: {colors.accent};"
             ></div>
           {/if}
@@ -443,19 +509,19 @@
             {formatArtist(currentTrack?.Track?.Author || "", !isExpanded)}
           </div>
           <!-- Desktop: Show time below artist -->
-          {#if currentTrack?.Track?.Duration}
+            {#if currentTrack?.Track?.Duration && musicStatus?.Position}
             <div class="hidden md:block text-xs mt-1" style="color: {colors.text}60;">
-              {formatDuration(currentPosition)} / {formatDuration(currentTrack.Track.Duration)}
+                {formatTime(musicStatus.Position)} / {formatDuration(currentTrack.Track.Duration)}
             </div>
           {/if}
         </div>
 
         <!-- Compact Controls -->
-        <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 flex-shrink-0">
+          <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 shrink-0">
           <!-- Mobile: Show time above controls -->
-          {#if currentTrack?.Track?.Duration}
+              {#if currentTrack?.Track?.Duration && musicStatus?.Position}
             <div class="md:hidden text-xs mb-1 text-center order-first" style="color: {colors.text}60;">
-              {formatDuration(currentPosition)} / {formatDuration(currentTrack.Track.Duration)}
+                {formatTime(musicStatus.Position)} / {formatDuration(currentTrack.Track.Duration)}
             </div>
           {/if}
 
@@ -521,17 +587,57 @@
           </div>
         </div>
       </div>
+        {:else if botInChannel}
+            <!-- Bot in channel but not playing -->
+            <div class="flex items-center gap-4">
+                <div class="relative shrink-0">
+                    <div
+                            class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30 flex items-center justify-center"
+                            style="ring-color: {colors.accent}; background: {colors.primary}20;"
+                    >
+                        <Music size={24} style="color: {colors.primary}"/>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div
+                            class="font-semibold text-base md:text-lg truncate"
+                            style="color: {colors.text};"
+                    >
+                        Ready to play
+                    </div>
+                    <div
+                            class="text-sm truncate opacity-80"
+                            style="color: {colors.text}80;"
+                    >
+                        Connected to {channelName || "voice channel"}
+                    </div>
+                </div>
+
+                <!-- Open Full Player Button -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                            class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                            style="background: {colors.accent}20; color: {colors.accent};"
+                            onclick={openMusicDashboard}
+                            aria-label="Open music dashboard"
+                    >
+                        <ExternalLink size={16} class="md:w-[18px] md:h-[18px]"/>
+                    </button>
+                </div>
+            </div>
+        {/if}
 
       <!-- Progress Bar -->
-      {#if currentTrack?.Track?.Duration}
+        {#if hasTrack && currentTrack?.Track?.Duration}
         <div class="mt-4">
           <div
             class="w-full h-2 rounded-full overflow-hidden"
             style="background: {colors.foreground}20;"
           >
             <div
-              class="h-full rounded-full transition-all duration-1000"
-              style="background: linear-gradient(90deg, {colors.foreground}, {colors.accent}); 
+                    class="h-full rounded-full transition-all duration-100"
+                    style="background: linear-gradient(90deg, {colors.foreground}, {colors.accent});
                      width: {progressPercentage}%;"
             ></div>
           </div>
@@ -596,43 +702,26 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Shuffle -->
-            <button
-              class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-              style="color: {musicStatus?.IsShuffling ? colors.accent : colors.text + '60'}; 
-                     background: {musicStatus?.IsShuffling ? colors.accent + '20' : 'transparent'};"
-              onclick={toggleShuffle}
-              aria-label="Shuffle"
-            >
-              <Shuffle size={14} />
-            </button>
-
-            <!-- Repeat -->
-            <button
-              class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-              style="color: {musicStatus?.RepeatMode !== 0 ? colors.accent : colors.text + '60'}; 
-                     background: {musicStatus?.RepeatMode !== 0 ? colors.accent + '20' : 'transparent'};"
-              onclick={toggleRepeat}
-              aria-label="Repeat"
-            >
-              <Repeat size={14} />
-            </button>
+              <!-- Shuffle (removed as API not available) -->
+              <!-- Repeat (removed as API not available) -->
           </div>
         </div>
       </div>
     {/if}
   </div>
-{:else}
+{:else if !botInChannel}
   <!-- No Music Placeholder -->
-  <div class="backdrop-blur-sm rounded-2xl border p-6 text-center transition-all"
+    <div class="backdrop-blur-xs rounded-2xl border p-6 text-center transition-all"
        style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
-              border-color: {colors.foreground}30;">
+              border-color: {colors.foreground}30;"
+         in:fly={{ y: 10, duration: 400, delay: 100 }}
+         out:fly={{ y: -10, duration: 300 }}>
     <Music class="w-12 h-12 mx-auto mb-4" style="color: {colors.foreground}50;" />
     <h3 class="text-xl font-semibold" style="color: {colors.text};">
-      No music is currently playing
+        Bot is not in a voice channel
     </h3>
     <p class="mt-2" style="color: {colors.text}80;">
-      Join a voice channel and use commands to play music
+        Use bot commands to join a voice channel and play music
     </p>
     <button
       class="mt-4 px-4 py-2 rounded-lg transition-all hover:scale-105"

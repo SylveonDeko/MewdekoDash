@@ -150,8 +150,8 @@
 {#if isOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div 
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    <div
+            class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
     onclick={closeModal}
     in:fly={{ opacity: 0, duration: 200 }}
   >
@@ -193,10 +193,10 @@
               <div class="flex items-center gap-4 p-4 rounded-xl animate-pulse" style="background: {$colorStore.primary}08;">
                 <div class="w-10 h-10 rounded-full" style="background: {$colorStore.primary}20;"></div>
                 <div class="flex-1 space-y-2">
-                  <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 60%;"></div>
-                  <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 40%;"></div>
+                    <div class="h-4 rounded-sm" style="background: {$colorStore.primary}20; width: 60%;"></div>
+                    <div class="h-3 rounded-sm" style="background: {$colorStore.primary}15; width: 40%;"></div>
                 </div>
-                <div class="w-20 h-6 rounded" style="background: {$colorStore.primary}20;"></div>
+                  <div class="w-20 h-6 rounded-sm" style="background: {$colorStore.primary}20;"></div>
               </div>
             {/each}
           </div>
@@ -270,7 +270,7 @@
                       <input 
                         type="checkbox" 
                         bind:checked={newPermissions.canView}
-                        class="rounded"
+                        class="rounded-sm"
                       />
                       <div class="flex items-center gap-2">
                         <Eye size={16} style="color: {$colorStore.primary}" />
@@ -284,7 +284,7 @@
                       <input 
                         type="checkbox" 
                         bind:checked={newPermissions.canEdit}
-                        class="rounded"
+                        class="rounded-sm"
                       />
                       <div class="flex items-center gap-2">
                         <Edit size={16} style="color: {$colorStore.secondary}" />
@@ -298,7 +298,7 @@
                       <input 
                         type="checkbox" 
                         bind:checked={newPermissions.canManage}
-                        class="rounded"
+                        class="rounded-sm"
                       />
                       <div class="flex items-center gap-2">
                         <Shield size={16} style="color: {$colorStore.accent}" />

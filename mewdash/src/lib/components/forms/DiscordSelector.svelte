@@ -275,7 +275,7 @@
     <div class="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
       <!-- Type icon or selected emoji -->
       {#if type === 'custom' && selectedOption?.emoji}
-        <span class="text-lg flex-shrink-0">{selectedOption.emoji}</span>
+        <span class="text-lg shrink-0">{selectedOption.emoji}</span>
       {:else}
         {@const SvelteComponent = getTypeIcon()}
         <SvelteComponent
@@ -298,7 +298,7 @@
                   <span class="truncate">{getOptionDisplayName(option)}</span>
                   <button
                     type="button"
-                    class="hover:bg-black/20 rounded p-0.5"
+                    class="hover:bg-black/20 rounded-sm p-0.5"
                     onclick={(e) => removeOption(selectedId, e)}
                   >
                     <X size={12} />
@@ -324,11 +324,11 @@
     </div>
 
     <!-- Right side controls -->
-    <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+    <div class="flex items-center gap-1 shrink-0 ml-2">
       {#if hasSelection && !disabled}
         <button
           type="button"
-          class="p-1 hover:bg-black/20 rounded flex-shrink-0"
+          class="p-1 hover:bg-black/20 rounded-sm shrink-0"
           onclick={clearAll}
           title="Clear selection"
         >
@@ -337,7 +337,7 @@
       {/if}
 
       <div
-        class="transition-transform duration-200 flex-shrink-0"
+              class="transition-transform duration-200 shrink-0"
         class:rotate-180={isOpen}
       >
         <ChevronDown
@@ -416,14 +416,14 @@
                 <!-- Role color indicator -->
                 {#if type === 'role' && option.color}
                   <div
-                    class="w-3 h-3 rounded-full flex-shrink-0"
+                          class="w-3 h-3 rounded-full shrink-0"
                     style="background-color: {getRoleColorHex(option.color)}"
                   ></div>
                 {/if}
                 
                 <!-- Custom emoji indicator -->
                 {#if type === 'custom' && option.emoji}
-                  <span class="text-lg flex-shrink-0">{option.emoji}</span>
+                  <span class="text-lg shrink-0">{option.emoji}</span>
                 {/if}
 
                 <!-- Option name -->
@@ -435,7 +435,7 @@
               <!-- Selection indicator -->
               {#if isSelected}
                 <div
-                  class="w-2 h-2 rounded-full flex-shrink-0"
+                        class="w-2 h-2 rounded-full shrink-0"
                   style="background: {$colorStore.primary}"
                 ></div>
               {/if}

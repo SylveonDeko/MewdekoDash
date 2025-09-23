@@ -228,7 +228,6 @@ A unified navigation component that provides responsive navigation with server a
     };
 
     try {
-      console.log(`Nav: Checking mutual guilds for instance ${instance.botName} (${instanceId})`);
       const mutualGuilds = await api.getMutualGuilds(currentUser.id, true, fetch, customHeaders);
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
 
@@ -240,16 +239,13 @@ A unified navigation component that provides responsive navigation with server a
       };
       instanceStates = { ...instanceStates }; // Trigger reactivity
 
-      console.log(`Nav: Instance ${instance.botName}: hasMutualGuild = ${hasMutual}`);
       return hasMutual;
     } catch (err: any) {
-      console.log(`Nav: Error checking mutual guilds for instance ${instance.botName}:`, err);
 
       // Check if it's a 404 error (no mutual guilds found)
       const is404 = err?.message?.includes("404") || err?.status === 404 || err?.response?.status === 404;
 
       if (is404) {
-        console.log(`Nav: Instance ${instance.botName}: No mutual guilds (404)`);
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
@@ -440,8 +436,8 @@ A unified navigation component that provides responsive navigation with server a
     try {
       // Don't check wizard if we're already on wizard page
       if (current.startsWith('/wizard')) return;
-      
-      logger.debug("Checking wizard state for guild:", guild.name);
+
+        logger.info("Checking wizard state for guild:", guild.name);
       
       const wizardDecision = await api.shouldShowWizard(BigInt(currentUser.id), guild.id);
       
@@ -452,10 +448,10 @@ A unified navigation component that provides responsive navigation with server a
         goto(`/wizard?guild=${guild.id}&type=${wizardTypeString}`);
       } else if (wizardDecision.showSuggestion && !current.startsWith('/dashboard')) {
         // Show setup suggestion banner (will be implemented next)
-        logger.debug(`Showing setup suggestion for guild ${guild.name}: ${wizardDecision.reason}`);
+          logger.info(`Showing setup suggestion for guild ${guild.name}: ${wizardDecision.reason}`);
         showSetupSuggestion(guild, wizardDecision.context);
       } else {
-        logger.debug(`No wizard needed for guild ${guild.name}: ${wizardDecision.reason}`);
+          logger.info(`No wizard needed for guild ${guild.name}: ${wizardDecision.reason}`);
       }
     } catch (err) {
       logger.error("Error checking wizard state for guild:", guild.name, err);
@@ -488,19 +484,17 @@ A unified navigation component that provides responsive navigation with server a
 
   async function fetchGuildsIfReady() {
     if (!get(currentInstance)) {
-      logger.debug("No current instance, skipping guild fetch");
       return;
     }
 
     if (!currentUser) {
-      logger.debug("No current user, skipping guild fetch");
+        logger.info("No current user, skipping guild fetch");
       return;
     }
 
     isFetchingGuilds = true;
     guildFetchError = null;
     try {
-      logger.info("Fetching guilds for user:", currentUser.id, "and instance:", get(currentInstance).botId);
       const newGuilds = await api.getMutualGuilds(currentUser.id);
       adminGuilds = newGuilds || [];
 
@@ -509,7 +503,6 @@ A unified navigation component that provides responsive navigation with server a
       }
 
       userAdminGuilds.set(adminGuilds);
-      logger.debug("Guilds fetched successfully:", adminGuilds.length);
 
       if (initialized && lastSelectedGuild) {
         const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
@@ -596,7 +589,6 @@ A unified navigation component that provides responsive navigation with server a
             const parsedInstance = JSON.parse(storedInstance);
             const instance = visibleInstances.find(i => i.botId === parsedInstance.botId);
             if (instance) {
-              logger.debug("Restoring instance:", instance.botName);
               currentInstance.set(instance);
               setTimeout(fetchGuildsIfReady, 100);
             }
@@ -605,7 +597,6 @@ A unified navigation component that provides responsive navigation with server a
           }
         } else if (visibleInstances.length === 1) {
           // Auto-select if there's only one visible instance
-          logger.debug("Auto-selecting the only visible instance:", visibleInstances[0].botName);
           currentInstance.set(visibleInstances[0]);
           setTimeout(fetchGuildsIfReady, 100);
         }
@@ -635,7 +626,6 @@ A unified navigation component that provides responsive navigation with server a
         if (adminGuilds.length > 0) {
           const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
           if (guild) {
-            logger.debug("Restoring last guild for instance:", currentInst?.botName, "guild:", guild.name);
             await selectGuild(guild);
           }
         }
@@ -649,7 +639,6 @@ A unified navigation component that provides responsive navigation with server a
     if (!browser || initialized) return;
 
     try {
-      logger.debug("Initializing navigation component");
       if (currentUser) {
         await checkOwnership();
       }
@@ -704,48 +693,45 @@ A unified navigation component that provides responsive navigation with server a
 
 <nav
   aria-label="Main navigation"
-  class="py-4 relative z-10"
-  style="background: linear-gradient(135deg,
-    {$colorStore?.gradientStart}10,
-    {$colorStore?.gradientMid}15,
-    {$colorStore?.gradientEnd}10
-  );"
+  class="py-2 lg:py-3 relative z-10 border-b"
+  style="background: {$colorStore?.primary}05;
+         border-color: {$colorStore?.primary}15;"
 >
-  <div class="sm:container flex items-center mx-auto px-4 lg:px-6">
+    <div class="flex items-center mx-auto px-4 lg:px-8 xl:px-12 max-w-[1920px]">
     <!-- Left section - Back button for dashboard or logo for main site -->
-    <div class="w-[160px] lg:w-[200px] flex-shrink-0" class:md:w-[200px]={isDashboard}>
+        <div class="w-[140px] lg:w-[180px] xl:w-[200px] shrink-0" class:md:w-[180px]={isDashboard}>
       {#if isDashboard}
         <!-- Back button for dashboard (disabled on main dashboard) -->
         <button
-          class="flex items-center gap-2 py-2 px-3 rounded-lg transition-all duration-200"
+                class="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-200"
           class:opacity-30={isMainDashboard}
           class:cursor-not-allowed={isMainDashboard}
           class:hover:scale-105={!isMainDashboard}
-          style="background: {isMainDashboard ? $colorStore.primary + '10' : $colorStore.primary + '20'}; 
-                 color: {isMainDashboard ? $colorStore.muted : $colorStore.primary}; 
+                style="background: {isMainDashboard ? $colorStore.primary + '10' : $colorStore.primary + '20'};
+                 color: {isMainDashboard ? $colorStore.muted : $colorStore.primary};
                  border: 1px solid {isMainDashboard ? $colorStore.primary + '15' : $colorStore.primary + '30'};"
           on:click={isMainDashboard ? undefined : handleBackButton}
           disabled={isMainDashboard}
           aria-label="Go back"
         >
-          <ArrowLeft size={18} />
-          <span class="hidden sm:inline text-sm font-medium">Back</span>
+            <ArrowLeft size={16}/>
+            <span class="hidden sm:inline text-xs font-medium">Back</span>
         </button>
       {:else}
         <!-- Logo for main site only (not dashboard) -->
         <a
-          class="flex items-center py-[0.3rem] justify-start"
+                class="flex items-center py-1 justify-start"
           href="/"
           title="mewdeko-banner"
         >
           <img
             alt="Mewdeko's Avatar"
-            class="h-12 mr-3"
+            class="h-10 w-10 object-contain mr-3"
             height="1024"
             src="/img/Mewdeko.png"
             width="1024"
           />
-          <span class="hidden xs:block self-center text-xl font-semibold whitespace-nowrap text-mewd-white">
+            <span class="hidden xs:block self-center text-lg font-semibold whitespace-nowrap text-mewd-white">
             Mewdeko
           </span>
         </a>
@@ -754,16 +740,16 @@ A unified navigation component that provides responsive navigation with server a
 
     <!-- Center section (nav items) - Hidden in minimal mode -->
     {#if !isMinimalMode}
-      <div class="flex-grow flex justify-center z-20">
+        <div class="grow flex justify-center z-20">
         <div
-          class="hidden md:flex flex-row p-4 space-x-2 lg:space-x-4 text-[16px] font-medium"
+                class="hidden md:flex flex-row p-2 space-x-2 lg:space-x-4 text-[15px] font-medium"
           role="navigation"
         >
           {#each computedItems as item, i}
             {#if item.wrapped}
               <div class="relative group" in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}>
                 <button
-                  class="ripple-effect flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md transition-all duration-200 ease-in-out min-h-[40px]"
+                        class="ripple-effect flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-in-out min-h-[36px]"
                   style="color: {$colorStore.text};"
                   aria-expanded="false"
                   aria-haspopup="true"
@@ -787,7 +773,7 @@ A unified navigation component that provides responsive navigation with server a
                       href={child.href || '#'}
                       data-sveltekit-preload-data="hover"
                       data-sveltekit-noscroll
-                      class="ripple-effect flex items-center p-2 transition-colors hover:bg-[var(--hover-bg-color)]"
+                      class="ripple-effect flex items-center p-2 transition-colors hover:bg-(--hover-bg-color)"
                       style="--hover-bg-color: {$colorStore.primary}20; color: {$colorStore.text};"
                       role="menuitem"
                       on:click|preventDefault={(e) => {
@@ -831,7 +817,7 @@ A unified navigation component that provides responsive navigation with server a
                 href={item.href || '#'}
                 data-sveltekit-preload-data="hover"
                 data-sveltekit-noscroll
-                class="ripple-effect flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-md transition-all duration-200 ease-in-out min-h-[40px] hover:bg-[var(--hover-bg-color)]"
+                class="ripple-effect flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-in-out min-h-[36px] hover:bg-(--hover-bg-color)"
                 in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}
                 style:--hover-bg-color="{$colorStore.primary}20"
                 style:background-color={current === item.href ? `${$colorStore.primary}30` : 'transparent'}
@@ -874,19 +860,19 @@ A unified navigation component that provides responsive navigation with server a
       </div>
     {:else}
       <!-- Dashboard mode: centered logo with subpage name -->
-      <div class="flex-grow flex justify-center items-center relative">
+        <div class="grow flex justify-center items-center relative">
         <!-- Dashboard Logo (perfectly centered on all screen sizes) -->
         <div class="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
           <a
             href="/"
-            class="block transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+            class="block transition-all duration-200 hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-offset-2 rounded-lg"
             style:focus:ring-color={$colorStore.primary}
             title="Go to home page"
             aria-label="Return to home page"
           >
             <img
               alt="Mewdeko"
-              class="h-12 w-12 object-contain"
+              class="h-10 w-10 object-contain"
               src="/img/Mewdeko.png"
             />
           </a>
@@ -894,7 +880,9 @@ A unified navigation component that provides responsive navigation with server a
 
         <!-- Mini Music Player (positioned to the right of center, only on large screens) -->
         {#if showMiniPlayer}
-          <div class="hidden xl:block absolute right-0 top-1/2 transform -translate-y-1/2">
+            <div class="hidden xl:block absolute right-0 top-1/2 transform -translate-y-1/2"
+                 in:fade={{ duration: 300, delay: 100 }}
+                 out:fade={{ duration: 200 }}>
             <MiniMusicPlayer {musicStatus} isVisible={true} />
           </div>
         {/if}
@@ -902,11 +890,12 @@ A unified navigation component that provides responsive navigation with server a
     {/if}
 
     <!-- Right section -->
-    <div class="flex items-center gap-2 w-[160px] lg:w-[200px] justify-end" class:md:w-[200px]={isDashboard}>
+        <div class="flex items-center gap-2 w-[140px] lg:w-[180px] xl:w-[200px] justify-end"
+             class:md:w-[180px]={isDashboard}>
       {#if !currentUser}
         <form action="/api/discord/login" method="GET" data-sveltekit-reload>
           <button type="submit"
-                  class="ripple-effect rounded-lg px-4 py-2 font-medium transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg backdrop-blur-sm border"
+                  class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg backdrop-blur-xs border"
                   style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
                          color: {$colorStore.text};
                          border-color: {$colorStore.primary}50;
@@ -918,7 +907,7 @@ A unified navigation component that provides responsive navigation with server a
         <!-- Desktop User & Instance Display -->
         <div class="hidden md:flex relative" use:clickOutside on:clickoutside={() => closeDropdown()}>
           <button
-            class="ripple-effect flex items-center gap-2 p-2 pl-3 pr-4 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-sm border hover:scale-[1.02] shadow-lg hover:shadow-xl"
+                  class="ripple-effect flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-xs border hover:scale-[1.02] shadow-lg hover:shadow-xl"
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    border-color: {$colorStore.primary}40;
                    box-shadow: 0 2px 8px {$colorStore.primary}15;"
@@ -935,7 +924,7 @@ A unified navigation component that provides responsive navigation with server a
                   : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
                 : `https://cdn.discordapp.com/embed/avatars/0.png`}
               alt={currentUser.username}
-              class="w-10 h-10 rounded-full"
+              class="w-8 h-8 rounded-full"
               style:background="{$colorStore.primary}20"
             />
 
@@ -986,7 +975,7 @@ A unified navigation component that provides responsive navigation with server a
                         margin-top: -1px;"></div>
             
             <div
-              class="absolute right-0 top-full mt-1 w-80 rounded-xl p-4 flex flex-col space-y-4 shadow-2xl z-50 backdrop-blur-lg border"
+                    class="absolute right-0 top-full mt-1 w-72 rounded-xl p-3 flex flex-col space-y-3 shadow-2xl z-50 backdrop-blur-lg border"
               style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)), linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25, {$colorStore.gradientEnd}20);
                     border-color: {$colorStore.primary}50;
                     box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);"
@@ -994,10 +983,10 @@ A unified navigation component that provides responsive navigation with server a
               transition:slide|local={{ duration: 200 }}
             >
               <!-- Enhanced User Info -->
-              <div class="p-4 rounded-xl mb-4 border backdrop-blur-sm"
+                <div class="p-3 rounded-lg mb-3 border backdrop-blur-xs"
                    style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                           border-color: {$colorStore.primary}40;">
-                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2">
                   <div class="relative">
                     <img
                       src={currentUser.avatar
@@ -1006,16 +995,17 @@ A unified navigation component that provides responsive navigation with server a
                           : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
                         : `https://cdn.discordapp.com/embed/avatars/0.png`}
                       alt={currentUser.username}
-                      class="w-12 h-12 rounded-xl border-2"
+                      class="w-10 h-10 rounded-lg border-2"
                       style="border-color: {$colorStore.primary}50;"
                     />
                     <!-- Online indicator -->
-                    <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black"
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black"
                          style="background: #10b981;"></div>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="flex items-center space-x-2">
-                      <h2 class="font-bold text-lg truncate" style="color: {$colorStore.text};">{currentUser.username}</h2>
+                      <div class="flex items-center space-x-1">
+                          <h2 class="font-semibold text-base truncate"
+                              style="color: {$colorStore.text};">{currentUser.username}</h2>
                       {#if currentUser.discriminator !== "0"}
                         <span class="text-sm" style="color: {$colorStore.muted};">#{currentUser.discriminator}</span>
                       {/if}
@@ -1051,7 +1041,7 @@ A unified navigation component that provides responsive navigation with server a
                     {:else}
                       {#each visibleInstances as instance}
                         <button
-                          class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
+                                class="ripple-effect w-full text-left p-2 rounded-lg flex items-center space-x-2 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
                           style="color: {$colorStore.text};
                                  background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
                                  border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
@@ -1063,15 +1053,15 @@ A unified navigation component that provides responsive navigation with server a
                           <img
                             src={instance.botAvatar}
                             alt=""
-                            class="w-6 h-6 rounded-full"
+                            class="w-5 h-5 rounded-full"
                           />
                           <div class="flex flex-col flex-1 min-w-0">
-                            <span class="text-sm truncate">
+                            <span class="text-xs truncate">
                               {instance.botName}
                             </span>
                           </div>
                           {#if !instance.isActive}
-                            <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
+                            <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                                   style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
                               Offline
                             </span>
@@ -1085,25 +1075,27 @@ A unified navigation component that provides responsive navigation with server a
 
 
               <!-- Prominent My Settings Link -->
-              <div class="mb-4">
+                <div class="mb-3">
                 <a
                   href="/me"
-                  class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium w-full group"
+                  class="ripple-effect flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium w-full group"
                   style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                          color: {$colorStore.text};
                          border-color: {$colorStore.primary}50;
-                         box-shadow: 0 4px 12px {$colorStore.primary}20;"
+                         box-shadow: 0 2px 8px {$colorStore.primary}15;"
                   role="menuitem"
                 >
-                  <div class="p-2 rounded-lg transition-all group-hover:scale-110"
+                    <div class="p-1.5 rounded transition-all group-hover:scale-110"
                        style="background: {$colorStore.primary}30;">
-                    <Settings class="w-4 h-4" style="color: {$colorStore.primary};" />
+                        <Settings class="w-3.5 h-3.5" style="color: {$colorStore.primary};"/>
                   </div>
                   <div class="flex-1">
                     <div class="font-semibold">My Settings</div>
                     <div class="text-xs" style="color: {$colorStore.muted};">Profile, privacy & preferences</div>
                   </div>
-                  <div class="text-lg opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</div>
+                    <div class="text-base opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                        →
+                    </div>
                 </a>
               </div>
               
@@ -1116,12 +1108,11 @@ A unified navigation component that provides responsive navigation with server a
                 >
                   <button
                     type="submit"
-                    class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border font-medium"
-                    style="background: linear-gradient(135deg, {$colorStore.accent}80, rgba(239, 68, 68, 0.8));
-                           color: white;
-                           border-color: {$colorStore.accent}60;
-                           box-shadow: 0 2px 8px {$colorStore.accent}30;
-                           hover:box-shadow: 0 4px 12px {$colorStore.accent}40;"
+                    class="ripple-effect block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border text-sm font-medium"
+                    style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
+                           color: {$colorStore.background};
+                           border-color: {$colorStore.accent}50;
+                           box-shadow: 0 2px 8px {$colorStore.accent}25;"
                   >
                     Logout
                   </button>
@@ -1140,7 +1131,7 @@ A unified navigation component that provides responsive navigation with server a
                 : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
               : `https://cdn.discordapp.com/embed/avatars/0.png`}
             alt={currentUser.username}
-            class="w-8 h-8 rounded-full"
+            class="w-7 h-7 rounded-full"
             style:background="{$colorStore.primary}20"
           />
         </div>
@@ -1151,28 +1142,28 @@ A unified navigation component that provides responsive navigation with server a
             aria-controls="mobile-menu"
             aria-expanded={menuOpen || sidebarOpen}
             aria-label="Toggle navigation menu"
-            class="inline-flex items-center p-3 rounded-lg border-transparent transition-all duration-200 ease-in-out md:hidden min-h-[44px] min-w-[44px] hover:bg-[var(--hover-bg-color)]"
+            class="inline-flex items-center p-2 rounded-lg border-transparent transition-all duration-200 ease-in-out md:hidden min-h-[36px] min-w-[36px] hover:bg-(--hover-bg-color)"
             style:--hover-bg-color="{$colorStore.primary}20"
             style:border-color="{$colorStore.primary}30"
             on:click={toggleMenu}
           >
             <span class="sr-only">Toggle navigation menu</span>
-            <div class="relative w-6 h-6 flex flex-col justify-center">
+              <div class="relative w-5 h-5 flex flex-col justify-center">
               <span
-                class="block w-6 h-0.5 rounded transition-all duration-200 ease-in-out"
+                      class="block w-5 h-0.5 rounded-sm transition-all duration-200 ease-in-out"
                 class:rotate-45={menuOpen || sidebarOpen}
-                class:translate-y-2={menuOpen || sidebarOpen}
+                      class:translate-y-1.5={menuOpen || sidebarOpen}
                 style:background-color={$colorStore.text}
               ></span>
               <span
-                class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
+                      class="block w-5 h-0.5 rounded-sm mt-1 transition-all duration-200 ease-in-out"
                 class:opacity-0={menuOpen || sidebarOpen}
                 style:background-color={$colorStore.text}
               ></span>
               <span
-                class="block w-6 h-0.5 rounded mt-1.5 transition-all duration-200 ease-in-out"
+                      class="block w-5 h-0.5 rounded-sm mt-1 transition-all duration-200 ease-in-out"
                 class:-rotate-45={menuOpen || sidebarOpen}
-                class:-translate-y-2={menuOpen || sidebarOpen}
+                      class:-translate-y-1.5={menuOpen || sidebarOpen}
                 style:background-color={$colorStore.text}
               ></span>
             </div>
@@ -1185,7 +1176,8 @@ A unified navigation component that provides responsive navigation with server a
   <!-- Mobile menu -->
   {#if (menuOpen || sidebarOpen) && isMobile}
     <div
-      class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40"
+            class="fixed inset-0 backdrop-blur-sm z-40"
+            style="background: {$colorStore.background}80;"
       on:click={closeMobileMenu}
       transition:fade={{ duration: 300, easing: cubicOut }}
       aria-hidden="true"
@@ -1193,9 +1185,9 @@ A unified navigation component that provides responsive navigation with server a
 
     <div
       class="fixed inset-y-0 right-0 w-72 z-50 flex flex-col overflow-hidden backdrop-blur-lg border-l shadow-2xl"
-      style="background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.75)), linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25, {$colorStore.gradientEnd}20);
-             border-color: {$colorStore.primary}40;
-             box-shadow: -8px 0 32px rgba(0,0,0,0.5), inset 0 0 0 1px {$colorStore.primary}20;"
+      style="background: linear-gradient(135deg, {$colorStore.background}F5, {$colorStore.background}EE), linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+             border-color: {$colorStore.primary}30;
+             box-shadow: -8px 0 32px {$colorStore.primary}20, inset 0 0 0 1px {$colorStore.primary}10;"
       transition:slide={{ duration: 300, easing: cubicOut, axis: 'x' }}
       id="mobile-menu"
       role="dialog"
@@ -1216,6 +1208,7 @@ A unified navigation component that provides responsive navigation with server a
                   : `https://cdn.discordapp.com/embed/avatars/0.png`}
                 alt={currentUser.username}
                 class="w-10 h-10 rounded-full"
+                style="background: {$colorStore.primary}20;"
               />
               <div>
                 <div class="font-medium" style="color: {$colorStore.text};">{currentUser.username}</div>
@@ -1226,8 +1219,8 @@ A unified navigation component that provides responsive navigation with server a
             </div>
           {/if}
           <button
-            class="p-2 rounded-lg hover:bg-opacity-20 transition-colors"
-            style="color: {$colorStore.muted}; hover:background-color: {$colorStore.primary}20;"
+                  class="p-2 rounded-lg transition-all hover:bg-white/10"
+                  style="color: {$colorStore.text};"
             on:click={closeMobileMenu}
             aria-label="Close menu"
           >
@@ -1257,14 +1250,10 @@ A unified navigation component that provides responsive navigation with server a
             {:else}
               {#each visibleInstances as instance}
                 <button
-                  class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out border border-transparent hover:bg-[var(--hover-bg)] hover:border-color-[var(--hover-border)]"
-                  style="
-    --hover-bg: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
-    --hover-border: {$colorStore.primary}40;
-    color: {$colorStore.text};
-    background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
-    border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
-  "
+                        class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out border hover:bg-white/5"
+                        style="color: {$colorStore.text};
+                         background: {$currentInstance?.botId === instance.botId ? `${$colorStore.primary}20` : 'transparent'};
+                         border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '30' : 'transparent'};"
                   on:click={() => {
                     handleInstanceSelect(instance);
                     closeMobileMenu();
@@ -1275,6 +1264,7 @@ A unified navigation component that provides responsive navigation with server a
                     src={instance.botAvatar}
                     alt=""
                     class="w-6 h-6 rounded-full"
+                    style="background: {$colorStore.primary}15;"
                   />
                   <div class="flex flex-col flex-1 min-w-0">
                     <span class="text-sm truncate">
@@ -1282,7 +1272,7 @@ A unified navigation component that provides responsive navigation with server a
                     </span>
                   </div>
                   {#if !instance.isActive}
-                    <span class="px-1.5 py-0.5 rounded text-xs bg-opacity-10"
+                    <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                           style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
                       Offline
                     </span>
@@ -1303,12 +1293,10 @@ A unified navigation component that provides responsive navigation with server a
                   {#each item.children || [] as child}
                     <a
                       href={child.href || '#'}
-                      class="ripple-effect flex items-center px-4 py-3 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out min-h-[44px] border border-transparent"
+                      class="ripple-effect flex items-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                       style="color: {$colorStore.text};
-                    background: {current === child.href ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
-                    border-color: {current === child.href ? $colorStore.primary + '50' : 'transparent'};
-                    hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
-                    hover:border-color: {$colorStore.primary}40;"
+                             background: {current === child.href ? `${$colorStore.primary}20` : 'transparent'};
+                             border-color: {current === child.href ? $colorStore.primary + '30' : 'transparent'};"
                       on:click={closeMobileMenu}
                     >
                       {#if child.icon}
@@ -1325,12 +1313,10 @@ A unified navigation component that provides responsive navigation with server a
               {:else}
                 <a
                   href={item.href || '#'}
-                  class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-opacity-30 transition-all duration-200 ease-in-out min-h-[44px] border border-transparent"
+                  class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                   style="color: {$colorStore.text};
-                background: {current === item.href ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
-                border-color: {current === item.href ? $colorStore.primary + '50' : 'transparent'};
-                hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
-                hover:border-color: {$colorStore.primary}40;"
+                         background: {current === item.href ? `${$colorStore.primary}20` : 'transparent'};
+                         border-color: {current === item.href ? $colorStore.primary + '30' : 'transparent'};"
                   on:click={closeMobileMenu}
                 >
                   {#if item.icon}
@@ -1358,11 +1344,10 @@ A unified navigation component that provides responsive navigation with server a
           <button
             type="submit"
             class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border font-medium"
-            style="background: linear-gradient(135deg, {$colorStore.accent}80, rgba(239, 68, 68, 0.8));
-                   color: white;
-                   border-color: {$colorStore.accent}60;
-                   box-shadow: 0 2px 8px {$colorStore.accent}30;
-                   hover:box-shadow: 0 4px 12px {$colorStore.accent}40;"
+            style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
+                   color: {$colorStore.background};
+                   border-color: {$colorStore.accent}50;
+                   box-shadow: 0 2px 8px {$colorStore.accent}25;"
           >
             Logout
           </button>
@@ -1373,6 +1358,8 @@ A unified navigation component that provides responsive navigation with server a
 </nav>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(*::-webkit-scrollbar) {
         @apply w-2;
     }

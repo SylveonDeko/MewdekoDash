@@ -139,7 +139,7 @@
   role={clickable && tooltipData.length > 0 ? "button" : "region"}
 >
   <div
-    class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
     style="background: {$colorStore[iconColor]}20"
   >
     <SvelteComponent
@@ -152,7 +152,7 @@
     <div class="text-sm" style="color: {$colorStore.muted}">{label}</div>
 
     {#if isLoading}
-      <div class="h-6 bg-gray-700 animate-pulse rounded w-16 mt-1"></div>
+        <div class="h-6 bg-gray-700 animate-pulse rounded-sm w-16 mt-1"></div>
     {:else}
       <div class="font-semibold text-lg flex items-center justify-center gap-2" style="color: {$colorStore.text}">
         {#if typeof value === 'number' && !isNaN(value) && mounted}
@@ -187,7 +187,7 @@
   <!-- Tooltip -->
   {#if showTooltip && tooltipData.length > 0}
     <div
-      class="absolute z-20 bottom-full left-0 mb-2 bg-gray-800/95 backdrop-blur-sm rounded-lg p-3 shadow-xl min-w-[200px]"
+            class="absolute z-20 bottom-full left-0 mb-2 bg-gray-800/95 backdrop-blur-xs rounded-lg p-3 shadow-xl min-w-[200px]"
       transition:fade={{ duration: 200 }}
       role="dialog"
       aria-labelledby="tooltip-title"

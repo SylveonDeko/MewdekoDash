@@ -2,22 +2,22 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { AlertCircle, Award, Clock, FileSpreadsheet, Settings, User, UserPlus, Users } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import type { PageData } from "./$types";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import type {BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {AlertCircle, Award, Clock, FileSpreadsheet, Settings, User, UserPlus, Users} from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -521,8 +521,8 @@
                     type="number"
                     bind:value={minAgeDays}
                     oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                    style="border-color: {$colorStore.primary}30;
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
                     min="0"
                     aria-label="Minimum account age in days"
@@ -535,8 +535,8 @@
                     type="number"
                     bind:value={minAgeHours}
                     oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                    style="border-color: {$colorStore.primary}30;
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
                     min="0"
                     max="23"
@@ -551,8 +551,8 @@
                     type="number"
                     bind:value={minAgeMinutes}
                     oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                    style="border-color: {$colorStore.primary}30;
+                    class="w-full p-3 rounded-lg border transition-all duration-200"
+                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                            color: {$colorStore.text};"
                     min="0"
                     max="59"
@@ -747,7 +747,7 @@
                     >
                       #{i + 1 + ((leaderboardPage - 1) * leaderboardPageSize)}
                     </div>
-                    <div class="flex-grow min-w-0">
+                      <div class="grow min-w-0">
                       <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
                       <div class="flex items-center text-sm" style="color: {$colorStore.muted}">
                         <span class="font-medium" style="color: {$colorStore.secondary}">{user.inviteCount}</span>

@@ -1,33 +1,29 @@
 <!-- routes/me/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import { clickOutside } from "$lib/clickOutside";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import {
-    AlertCircle,
-    Bell,
-    Calendar,
-    CheckCircle,
-    ChevronDown,
-    Clock,
-    Hash,
-    Lightbulb,
-    Plus,
-    Save,
-    Server,
-    Settings,
-    Shield,
-    Star,
-    Trash2,
-    User,
-    XCircle
-  } from "lucide-svelte";
+    import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {clickOutside} from "$lib/clickOutside";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import {
+        Bell,
+        ChevronDown,
+        Clock,
+        Hash,
+        Lightbulb,
+        Plus,
+        Save,
+        Server,
+        Settings,
+        Shield,
+        Star,
+        Trash2,
+        User
+    } from "lucide-svelte";
 
-  let {data} = $props();
+    let {data} = $props();
 
   // State
   let loading = false;
@@ -475,7 +471,7 @@
     <!-- COMPREHENSIVE PROFILE SECTION -->
     <div class="space-y-6 mb-12">
       <!-- Personal Information -->
-      <div class="rounded-2xl p-6 border backdrop-blur-sm"
+        <div class="rounded-2xl p-6 border backdrop-blur-xs"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                   border-color: {$colorStore.primary}30;
                   box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -658,7 +654,7 @@
       <!-- Privacy & Preferences -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Privacy Settings -->
-        <div class="rounded-2xl p-6 border backdrop-blur-sm"
+          <div class="rounded-2xl p-6 border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -684,7 +680,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.greetDmsOptOut ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userProfile.greetDmsOptOut}>
                   </div>
                 </div>
@@ -707,7 +703,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.statsOptOut ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userProfile.statsOptOut}>
                   </div>
                 </div>
@@ -730,7 +726,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.birthdayAnnouncementsEnabled ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userProfile.birthdayAnnouncementsEnabled}>
                   </div>
                 </div>
@@ -740,7 +736,7 @@
         </div>
 
         <!-- Preferences -->
-        <div class="rounded-2xl p-6 border backdrop-blur-sm"
+          <div class="rounded-2xl p-6 border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -766,7 +762,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.levelUpPingsDisabled ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userPreferences.levelUpPingsDisabled}>
                   </div>
                 </div>
@@ -789,7 +785,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.pronounsDisabled ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userPreferences.pronounsDisabled}>
                   </div>
                 </div>
@@ -812,7 +808,7 @@
                 />
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.prefersGuidedSetup ? $colorStore.primary : '#374151'};">
-                  <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                        class:translate-x-5={userPreferences.prefersGuidedSetup}>
                   </div>
                 </div>
@@ -931,7 +927,7 @@
 
       {:else}
         <!-- Selected Server Header (Improved) -->
-        <div class="mb-8 p-6 rounded-2xl border backdrop-blur-sm"
+          <div class="mb-8 p-6 rounded-2xl border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}40;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1020,7 +1016,7 @@
           <!-- Settings & Activity Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Highlights -->
-            <div class="rounded-2xl p-6 border backdrop-blur-sm"
+              <div class="rounded-2xl p-6 border backdrop-blur-xs"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1056,7 +1052,7 @@
                        style="background: {$colorStore.primary}08;">
                     <span class="text-sm" style="color: {$colorStore.text}">{highlight.word}</span>
                     <button
-                      class="p-1 rounded transition-all hover:scale-110"
+                            class="p-1 rounded-sm transition-all hover:scale-110"
                       style="color: {$colorStore.accent};"
                       onclick={() => removeHighlight(highlight.id)}
                     >
@@ -1072,7 +1068,7 @@
             </div>
 
             <!-- Suggestions Activity -->
-            <div class="rounded-2xl p-6 border backdrop-blur-sm"
+              <div class="rounded-2xl p-6 border backdrop-blur-xs"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1091,7 +1087,7 @@
                           {suggestion.suggestion1?.substring(0, 60)}{suggestion.suggestion1?.length > 60 ? '...' : ''}
                         </p>
                       </div>
-                      <div class="px-2 py-1 rounded text-xs"
+                        <div class="px-2 py-1 rounded-sm text-xs"
                            style="background: {suggestion.currentState === 1 ? '#10b981' : 
                                             suggestion.currentState === 2 ? '#ef4444' : '#6b7280'}20;
                                   color: {suggestion.currentState === 1 ? '#10b981' : 
@@ -1109,7 +1105,7 @@
             </div>
 
             <!-- Currency & Transactions -->
-            <div class="rounded-2xl p-6 border backdrop-blur-sm"
+              <div class="rounded-2xl p-6 border backdrop-blur-xs"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1141,7 +1137,7 @@
             </div>
 
             <!-- AFK Status Management -->
-            <div class="rounded-2xl p-6 border backdrop-blur-sm"
+              <div class="rounded-2xl p-6 border backdrop-blur-xs"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1202,7 +1198,7 @@
             </div>
 
             <!-- Activity Summary -->
-            <div class="rounded-2xl p-6 border backdrop-blur-sm"
+              <div class="rounded-2xl p-6 border backdrop-blur-xs"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">

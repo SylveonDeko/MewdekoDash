@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { createBubbler, stopPropagation } from 'svelte/legacy';
+    import {createBubbler, stopPropagation} from 'svelte/legacy';
+    import {createEventDispatcher} from "svelte";
+    import {fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {AlertTriangle, X} from "lucide-svelte";
 
-  const bubble = createBubbler();
-  import { createEventDispatcher } from "svelte";
-  import { fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { AlertTriangle, X } from "lucide-svelte";
+    const bubble = createBubbler();
 
-  const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
   interface Props {
     isOpen?: boolean;
@@ -70,7 +70,7 @@
   >
     <!-- Modal -->
     <div
-      class="rounded-2xl border shadow-2xl max-w-md w-full backdrop-blur-sm"
+            class="rounded-2xl border shadow-2xl max-w-md w-full backdrop-blur-xs"
       style="background: {$colorStore.background}90; border-color: {$colorStore.primary}30;"
       onclick={stopPropagation(bubble('click'))}
       in:fly={{ y: 20, duration: 200 }}

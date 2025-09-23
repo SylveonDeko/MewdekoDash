@@ -54,7 +54,7 @@
     const events = {
       hover: {
         show: ['mouseenter', 'focus'],
-        hide: ['mouseleave', 'blur']
+          hide: ['mouseleave', 'blur-sm']
       },
       click: {
         show: ['click'],
@@ -62,7 +62,7 @@
       },
       focus: {
         show: ['focus'],
-        hide: ['blur']
+          hide: ['blur-sm']
       }
     };
 
@@ -127,9 +127,9 @@
     class="cursor-help"
   >
     <slot name="trigger">
-      <button 
-        type="button" 
-        class="w-5 h-5 rounded-full flex items-center justify-center text-xs border-0 outline-none transition-all duration-200 hover:scale-110"
+      <button
+              class="w-5 h-5 rounded-full flex items-center justify-center text-xs border-0 outline-hidden transition-all duration-200 hover:scale-110"
+              type="button"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
         aria-label="Show help"
       >

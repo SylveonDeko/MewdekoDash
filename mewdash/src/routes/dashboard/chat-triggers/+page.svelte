@@ -2,39 +2,36 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade, slide, fly } from "svelte/transition";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import Tooltip from "$lib/components/ui/Tooltip.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { goto } from "$app/navigation";
-  import { get } from "svelte/store";
-  import type { ChatTriggers } from "$lib/types/models";
-  import type { PageData } from "./$types";
-  import {
-    AlertTriangle,
-    Check,
-    ChevronDown,
-    ChevronUp,
-    ChevronRight,
-    Command,
-    Crown,
-    Edit,
-    MessageCircle,
-    Plus,
-    Save,
-    Settings,
-    Sparkles,
-    Trash,
-    Users,
-    X,
-    Zap
-  } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { logger } from "$lib/logger.ts";
-  import { colorStore } from "$lib/stores/colorStore.ts";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade, slide} from "svelte/transition";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import Tooltip from "$lib/components/ui/Tooltip.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {goto} from "$app/navigation";
+    import {get} from "svelte/store";
+    import type {ChatTriggers} from "$lib/types/models";
+    import type {PageData} from "./$types";
+    import {
+        AlertTriangle,
+        Check,
+        ChevronDown,
+        ChevronRight,
+        ChevronUp,
+        Command,
+        Crown,
+        MessageCircle,
+        Plus,
+        Save,
+        Settings,
+        Sparkles,
+        Trash,
+        Zap
+    } from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {logger} from "$lib/logger.ts";
+    import {colorStore} from "$lib/stores/colorStore.ts";
 
     interface Props {
         data: PageData;
@@ -895,7 +892,7 @@
            role="tabpanel" id="simple-panel" aria-labelledby="simple-tab" tabindex="0">
         
         <!-- Quick Setup Card -->
-        <div class="rounded-2xl border p-6 shadow-2xl relative z-10"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-10"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -917,7 +914,7 @@
               <input 
                 id="quick-trigger"
                 class="w-full p-3 rounded-lg border transition-all duration-200"
-                style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                 placeholder="hello"
                 bind:value={quickTriggerText}
                 aria-describedby="trigger-help"
@@ -937,7 +934,7 @@
               <textarea 
                 id="quick-response"
                 class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
                 placeholder="Hello there! 👋 (Supports plain text, embeds, and interactive components)"
                 rows="3"
                 bind:value={quickResponseText}
@@ -980,7 +977,7 @@
         </div>
 
         <!-- Template Selection -->
-        <div class="rounded-2xl border p-6 shadow-2xl relative z-5"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-5"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -1057,7 +1054,7 @@
 
         <!-- Existing Triggers (Simple View) -->
         {#if triggers.length === 0}
-          <div class="text-center py-12 rounded-2xl border shadow-2xl"
+            <div class="text-center py-12 backdrop-blur-xs rounded-2xl border shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                       border-color: {colors.primary}30;"
                transition:fade>
@@ -1069,7 +1066,7 @@
           <div class="space-y-4">
             {#each triggers as trigger (trigger.id)}
                 {@const SvelteComponent = expandedTriggerId === trigger.id ? ChevronUp : ChevronDown}
-              <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
+                <div class="trigger-card backdrop-blur-xs rounded-2xl border shadow-2xl transition-all duration-200 relative"
                    style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                           border-color: {colors.primary}30;
                           z-index: {expandedTriggerId === trigger.id ? 15 : 5};"
@@ -1128,7 +1125,7 @@
                           <input
                             id="edit-trigger-{trigger.id}"
                             class="w-full p-3 rounded-lg border transition-all duration-200"
-                            style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                            style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                             bind:value={trigger.trigger}
                             aria-describedby="edit-trigger-help-{trigger.id}"
                           />
@@ -1144,7 +1141,7 @@
                           <textarea
                             id="edit-response-{trigger.id}"
                             class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                            style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                            style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
                             bind:value={trigger.response}
                             rows="2"
                           ></textarea>
@@ -1161,7 +1158,7 @@
                                    bind:checked={trigger.autoDeleteTrigger}
                                    class="sr-only peer"
                                    aria-describedby="auto-delete-desc-{trigger.id}" />
-                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Delete trigger message</span>
                           </label>
@@ -1173,7 +1170,7 @@
                             <input type="checkbox" 
                                    bind:checked={trigger.dmResponse}
                                    class="sr-only peer" />
-                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Send as DM</span>
                           </label>
@@ -1182,7 +1179,7 @@
                             <input type="checkbox" 
                                    bind:checked={trigger.containsAnywhere}
                                    class="sr-only peer" />
-                            <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
+                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Match anywhere in message</span>
                           </label>
@@ -1262,7 +1259,7 @@
            role="tabpanel" id="advanced-panel" aria-labelledby="advanced-tab" tabindex="0">
         
         <!-- Advanced Creation Form -->
-        <div class="rounded-2xl border p-6 shadow-2xl relative z-30"
+          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-30"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -1280,7 +1277,7 @@
                 <input
                   id="new-trigger"
                   class="w-full p-3 rounded-lg border transition-all duration-200"
-                  style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}10;"
+                  style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                   bind:value={newTrigger.trigger}
                   oninput={handleNewTriggerRegexChange}
                   placeholder="Enter trigger text or regex pattern"
@@ -1306,7 +1303,7 @@
                 <textarea
                   id="new-response"
                   class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                  style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                  style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
                   bind:value={newTrigger.response}
                   placeholder="Bot's response message or JSON for rich embeds/components"
                   rows="3"
@@ -1421,7 +1418,7 @@
                     <input
                       id="regex-test-input"
                       class="w-full p-3 rounded-lg border"
-                      style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}10;"
+                      style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}08;"
                       bind:value={newTriggerRegexTestString}
                       oninput={testNewTriggerRegex}
                       placeholder="Enter text to test against your regex"
@@ -1658,7 +1655,7 @@
                         <input
                           id="custom-prefix"
                           class="w-full p-3 rounded-lg border"
-                          style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}10;"
+                          style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}08;"
                           bind:value={newTrigger.customPrefix}
                           placeholder="!"
                         />
@@ -1690,7 +1687,7 @@
                       <input
                         id="reactions"
                         class="w-full p-3 rounded-lg border"
-                        style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}10;"
+                        style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
                         bind:value={newTrigger.reactions}
                         placeholder="👍 ✅ 🎉"
                       />
@@ -1744,6 +1741,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

@@ -2,35 +2,21 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade, slide } from "svelte/transition";
-  import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { browser } from "$app/environment";
-  import { colorStore } from "$lib/stores/colorStore";
-  import {
-    AlertTriangle,
-    Archive,
-    ArrowDown,
-    ArrowUp,
-    Check,
-    Hash,
-    Inbox,
-    MessageCircle,
-    MessageSquare,
-    Settings,
-    Smile,
-    Trash2,
-    X
-  } from "lucide-svelte";
-  import { goto } from "$app/navigation";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade, slide} from "svelte/transition";
+    import {type SuggestionsModel, SuggestionState} from "$lib/types/models.ts";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {browser} from "$app/environment";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {AlertTriangle, ArrowDown, ArrowUp, Check, Inbox, MessageCircle, Settings, Trash2, X} from "lucide-svelte";
+    import {goto} from "$app/navigation";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
 
     interface Props {
         data: PageData;
@@ -986,6 +972,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

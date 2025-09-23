@@ -72,8 +72,8 @@ Wrapper component for individual wizard steps with consistent styling and animat
       </div>
 
       <!-- Step content -->
-      <div 
-        class="backdrop-blur-sm rounded-xl sm:rounded-2xl border p-4 sm:p-6 md:p-8 shadow-2xl"
+        <div
+                class="backdrop-blur-xs rounded-xl sm:rounded-2xl border p-4 sm:p-6 md:p-8 shadow-2xl"
         style="
           background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
           border-color: {$colorStore.primary}30;

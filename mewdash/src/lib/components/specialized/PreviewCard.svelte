@@ -2,12 +2,11 @@
 https://svelte.dev/e/css_expected_identifier -->
 <!-- PreviewCard.svelte -->
 <script lang="ts">
-  import { colorStore } from "$lib/stores/colorStore";
-  import { Eye } from "lucide-svelte";
-  import { marked } from "marked";
-  import DOMPurify from "dompurify";
+    import {Eye} from "lucide-svelte";
+    import {marked} from "marked";
+    import DOMPurify from "dompurify";
 
-  // Props
+    // Props
   export let content: string = "";
   export let embeds: any[] = [];
   export let components: any[] = [];
@@ -177,7 +176,7 @@ https://svelte.dev/e/css_expected_identifier -->
                 <!-- Select Menu -->
                 <div class="w-full">
                   <button
-                    class="border border-transparent bg-[#2F3136] text-white font-medium rounded cursor-pointer box-border grid grid-cols-[1fr,auto] items-center w-full text-left"
+                          class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
                     disabled
                   >
                     <span class="placeholder px-3 py-2">
@@ -205,7 +204,7 @@ https://svelte.dev/e/css_expected_identifier -->
               {:else}
                 <!-- Button -->
                 <button
-                  class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center flex-grow-0 items-center box-border border-0 rounded px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+                        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
                   disabled
                   aria-label={component.displayName}
                 >

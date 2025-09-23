@@ -2,26 +2,26 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade, slide } from "svelte/transition";
-  import type { Afk, BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-  import { AlertCircle, Clock, MessageCircle, Settings, Users, RefreshCw, Hash, UserMinus, CheckSquare, Trash2 } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade, slide} from "svelte/transition";
+    import type {Afk, BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+    import {AlertCircle, Clock, Hash, MessageCircle, RefreshCw, Settings, UserMinus, Users} from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
 
 
-  let botStatus: BotStatusModel | null = null;
+    let botStatus: BotStatusModel | null = null;
 
     interface Props {
         data: PageData;
@@ -491,7 +491,7 @@
   {#if activeTab === 'settings'}
     <!-- Basic Settings Section -->
     <section
-      class="rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -520,7 +520,7 @@
           <input
             id="afk-deletion-time"
             bind:value={afkDeletionTime}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={(e) => {
               const value = parseInt(e.currentTarget.value);
               if (isNaN(value) || value < 0) {
@@ -530,7 +530,7 @@
                 markAsChanged("deletion");
               }
             }}
-            style="border-color: {$colorStore.primary}30;
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
                    focus-visible:ring: 2px;
@@ -557,7 +557,7 @@
           <input
             id="afk-max-length"
             bind:value={afkMaxLength}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={(e) => {
               const value = parseInt(e.currentTarget.value);
               if (isNaN(value) || value < 1 || value > 4096) {
@@ -567,7 +567,7 @@
                 markAsChanged("maxLength");
               }
             }}
-            style="border-color: {$colorStore.secondary}30;
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
                    focus-visible:ring: 2px;
@@ -627,7 +627,7 @@
   {#if activeTab === 'advanced'}
     <!-- Advanced Settings Section -->
     <section
-      class="rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -656,9 +656,9 @@
           <input
             id="afk-timeout"
             value={afkTimeout}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
+            class="w-full p-3 rounded-lg border transition-all duration-200"
             oninput={handleTimeoutInput}
-            style="border-color: {$colorStore.secondary}30;
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
                    focus-visible:ring: 2px;
@@ -708,10 +708,10 @@
           <textarea
             id="custom-afk-message"
             bind:value={customAfkMessage}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[120px] resize-vertical"
+            class="w-full p-3 rounded-lg border transition-all duration-200 min-h-[120px] resize-vertical"
             oninput={() => markAsChanged("customMessage")}
             placeholder="Enter custom AFK embed message... Use '-' to reset to default."
-            style="border-color: {$colorStore.primary}30;
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                    color: {$colorStore.text};
                    focus-visible:outline: none;
                    focus-visible:ring: 2px;
@@ -744,7 +744,7 @@
   {#if activeTab === 'users'}
     <!-- User Management Section -->
     <section
-      class="rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -768,7 +768,7 @@
                 type="checkbox"
                 bind:checked={selectAllUsers}
                 onchange={toggleSelectAll}
-                class="w-4 h-4 rounded border flex-shrink-0"
+                class="w-4 h-4 rounded-sm border shrink-0"
                 style="accent-color: {$colorStore.primary};"
               />
               <span style="color: {$colorStore.text}" class="text-sm font-medium">
@@ -830,17 +830,17 @@
             >
               <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <!-- Mobile-first layout -->
-                <div class="flex items-center gap-3 flex-grow min-w-0">
+                  <div class="flex items-center gap-3 grow min-w-0">
                   <input
                     type="checkbox"
                     checked={selectedUsers.has(user.userId.toString())}
                     onchange={() => toggleUserSelection(user.userId.toString())}
-                    class="w-4 h-4 rounded border flex-shrink-0"
+                    class="w-4 h-4 rounded-sm border shrink-0"
                     style="accent-color: {$colorStore.primary};"
                   />
                   
                   <button
-                    class="flex items-center gap-3 flex-grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
+                          class="flex items-center gap-3 grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
                     style="hover:background: {$colorStore.primary}15;"
                     onclick={() => toggleUserExpand(user.userId)}
                     aria-expanded={expandedUser === user.userId}
@@ -849,21 +849,23 @@
                     <img
                       src={user.avatarUrl}
                       alt=""
-                      class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex-shrink-0"
+                      class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 shrink-0"
                       style="border-color: {$colorStore.primary}30;"
                     />
-                    
-                    <div class="flex-grow min-w-0">
+
+                      <div class="grow min-w-0">
                       <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                         <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
                         <div class="flex flex-wrap gap-1">
                           {#if user.nickname}
-                            <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.secondary}15; color: {$colorStore.secondary}">
+                            <span class="text-xs px-2 py-1 rounded-sm"
+                                  style="background: {$colorStore.secondary}15; color: {$colorStore.secondary}">
                               {user.nickname}
                             </span>
                           {/if}
                           {#if user.afkStatus?.wasTimed}
-                            <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.accent}15; color: {$colorStore.accent}">
+                            <span class="text-xs px-2 py-1 rounded-sm"
+                                  style="background: {$colorStore.accent}15; color: {$colorStore.accent}">
                               Timed
                             </span>
                           {/if}
@@ -915,7 +917,7 @@
                 
                 <!-- Remove button -->
                 <button
-                  class="px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 w-full sm:w-auto flex-shrink-0"
+                        class="px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
                   style="background: {$colorStore.accent}15;
                          color: {$colorStore.accent};
                          hover:background: {$colorStore.accent}20;"
@@ -1008,6 +1010,8 @@
 />
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

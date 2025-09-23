@@ -1,11 +1,11 @@
 <!-- lib/components/search/SearchTrigger.svelte -->
 <script lang="ts">
-  import { colorStore } from "$lib/stores/colorStore";
-  import { openSearch, searchStore } from "$lib/stores/searchStore";
-  import { Search, Command } from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {openSearch} from "$lib/stores/searchStore";
+    import {Command, Search} from "lucide-svelte";
 
-  
-  interface Props {
+
+    interface Props {
     // Props
     variant?: 'button' | 'compact' | 'mobile';
     showShortcut?: boolean;
@@ -30,7 +30,7 @@
     
     {#if showShortcut}
       <div class="hidden md:flex items-center gap-1 ml-auto">
-        <div class="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs"
+          <div class="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-xs"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
           <Command size={10} />
           <span>K</span>

@@ -2,38 +2,25 @@
 <script lang="ts">
     import {run, self} from 'svelte/legacy';
 
-  import { onMount, tick } from "svelte";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
-  import { api } from "$lib/api.ts";
-  import { fade } from "svelte/transition";
-  import {
-    AlertCircle,
-    Copy,
-    Eye,
-    EyeOff,
-    Layout,
-    MessageCircle,
-    Plus,
-    Settings,
-    Sparkles,
-    Zap
-  } from "lucide-svelte";
-  import type { DiscordGuild } from "$lib/types/discordGuild.ts";
-  import { logger } from "$lib/logger.ts";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import { browser } from "$app/environment";
-  
-  import TemplateGallery from "$lib/components/specialized/TemplateGallery.svelte";
-  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
-  import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
-  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-  import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
-  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {onMount} from "svelte";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
+    import {api} from "$lib/api.ts";
+    import {fade} from "svelte/transition";
+    import {Copy, Layout, MessageCircle, Plus, Settings, Sparkles, Zap} from "lucide-svelte";
+    import {logger} from "$lib/logger.ts";
+    import {colorStore} from "$lib/stores/colorStore.ts";
 
-  interface Author {
+    import TemplateGallery from "$lib/components/specialized/TemplateGallery.svelte";
+    import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
+    import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
+    import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+    import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
+    import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+
+    interface Author {
     name: string;
     url: string;
     icon_url: string;
@@ -630,7 +617,7 @@
   </svelte:fragment>
 
   <!-- Main Content Area -->
-  <div class="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6 h-full w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 h-full w-full">
     
     <!-- Editor Side -->
     <section
@@ -686,7 +673,7 @@
                     bind:value={content}
                   ></textarea>
                   <button
-                    class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
+                          class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
                     style="color: {$colorStore.muted};"
                     onclick={(e) => showPlaceholderFromButton(e.currentTarget, 'content')}
                     title="Insert placeholder"

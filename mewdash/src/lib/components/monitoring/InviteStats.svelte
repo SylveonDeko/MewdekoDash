@@ -1,11 +1,11 @@
 <!-- lib/components/InviteStats.svelte -->
 <script lang="ts">
-  import { Link, Users } from "lucide-svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { inviteStore } from "$lib/stores/inviteStore";
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+    import {Link, Users} from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {inviteStore} from "$lib/stores/inviteStore";
+    import StatCard from "$lib/components/monitoring/StatCard.svelte";
 
-  interface Props {
+    interface Props {
     animationDelay?: number;
   }
 
@@ -15,7 +15,7 @@
 </script>
 
 {#if stats && stats !== undefined && stats.averageJoins !== undefined}
-  <div class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+    <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                 border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-4 mb-6">

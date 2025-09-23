@@ -1,10 +1,10 @@
 <!-- routes/staff/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
+    import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
 
-  let mounted = $state(false);
+    let mounted = $state(false);
 
   onMount(() => {
     mounted = true;
@@ -103,7 +103,7 @@
         {#each staffMembers as member, index}
           <div class="group" in:fly={{ y: 40, duration: 400, delay: 200 + (index * 100) }}>
             <div
-              class="rounded-2xl p-8 backdrop-blur-sm border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                    class="rounded-2xl p-8 backdrop-blur-xs border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
 
               <!-- Profile Image -->
@@ -146,7 +146,7 @@
       </div>
 
       <!-- Thank You Section -->
-      <div class="text-center rounded-2xl p-12 backdrop-blur-sm border"
+      <div class="text-center rounded-2xl p-12 backdrop-blur-xs border"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border-color: {$colorStore.primary}20;"
            in:fly={{ y: 40, duration: 400, delay: 600 }}>
         <div class="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { loadingStore, showSpinner, loadingMessage } from "$lib/stores/loadingStore";
-  import { Loader2 } from "lucide-svelte";
-  import { fly } from "svelte/transition";
+    import {onMount} from "svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {loadingMessage, loadingStore, showSpinner} from "$lib/stores/loadingStore";
+    import {Loader2} from "lucide-svelte";
+    import {fly} from "svelte/transition";
 
-  // Loading state
+    // Loading state
   let mounted = $state(false);
   let progressValue = $state(0);
 
@@ -41,8 +41,8 @@
 </script>
 
 {#if $showSpinner}
-  <div 
-    class="fixed inset-0 z-[10000] pointer-events-none"
+    <div
+            class="fixed inset-0 z-10000 pointer-events-none"
     transition:fly={{ y: -10, duration: 200 }}
   >
     <!-- More prominent top progress bar -->
@@ -76,7 +76,7 @@
         "
       >
         <!-- Spinner -->
-        <div class="flex-shrink-0">
+          <div class="shrink-0">
           <Loader2 
             size={16}
             class="animate-spin"

@@ -2,40 +2,24 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { fade, slide } from "svelte/transition";
-  import type { PageData } from "./$types";
-  import type { 
-    CustomVoiceConfigurationResponse, 
-    CustomVoiceChannelResponse,
-    CustomVoiceConfigurationRequest 
-  } from "$lib/types/customvoice";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { browser } from "$app/environment";
-  import { 
-    Mic, 
-    Settings, 
-    Users, 
-    Hash, 
-    Volume2, 
-    VolumeX, 
-    Lock, 
-    Unlock,
-    Trash2,
-    Plus,
-    Clock,
-    User,
-    BarChart3,
-    AlertCircle,
-    CheckCircle
-  } from "lucide-svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {fade, slide} from "svelte/transition";
+    import type {PageData} from "./$types";
+    import type {
+        CustomVoiceChannelResponse,
+        CustomVoiceConfigurationRequest,
+        CustomVoiceConfigurationResponse
+    } from "$lib/types/customvoice";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {browser} from "$app/environment";
+    import {AlertCircle, CheckCircle, Lock, Mic, Settings, Trash2, Unlock, User, Volume2} from "lucide-svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
         data: PageData;
@@ -347,7 +331,8 @@
     {:else if activeTab === 'config'}
       <div class="space-y-6" transition:fade>
         <!-- Basic Configuration -->
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Configuration</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -386,7 +371,8 @@
         </div>
 
         <!-- Channel Defaults -->
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Defaults</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -446,7 +432,8 @@
         </div>
 
         <!-- Channel Management -->
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Management</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -574,8 +561,8 @@
         {:else}
           <div class="grid gap-4">
             {#each activeChannels as channel (channel.id)}
-              <div 
-                class="rounded-xl border p-4 flex items-center justify-between"
+                <div
+                        class="backdrop-blur-xs rounded-xl border p-4 flex items-center justify-between transition-all"
                 style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
                 transition:slide
               >

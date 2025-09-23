@@ -1,23 +1,23 @@
 <!-- routes/dashboard/music/+page.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade } from "svelte/transition";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import type { OptionType } from "$lib/components/forms/DiscordSelector.svelte";
-  import { browser } from "$app/environment";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import { AlertCircle, Clock, List, Music2, Settings, Sliders, Users, Volume2, Save } from "lucide-svelte";
-  import { logger } from "$lib/logger.ts";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade} from "svelte/transition";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import type {OptionType} from "$lib/components/forms/DiscordSelector.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {browser} from "$app/environment";
+    import {colorStore} from "$lib/stores/colorStore.ts";
+    import {AlertCircle, Clock, List, Music2, Save, Settings, Sliders, Users, Volume2} from "lucide-svelte";
+    import {logger} from "$lib/logger.ts";
 
-  interface Props {
+    interface Props {
     data: PageData;
   }
 
@@ -216,7 +216,7 @@
       <!-- Current Playback Section -->
       {#if musicStatus?.currentTrack}
         <div
-          class="rounded-2xl border p-6 shadow-2xl"
+                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
           transition:fade
@@ -239,7 +239,7 @@
               class="w-24 h-24 rounded-xl object-cover"
               style="border: 2px solid {colors.primary}30;"
             />
-            <div class="flex-grow">
+              <div class="grow">
               <h3 class="font-medium text-lg" style="color: {colors.text}">
                 {musicStatus.currentTrack.track.title}
               </h3>
@@ -258,7 +258,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- General Settings -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl"
+                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -359,7 +359,7 @@
 
         <!-- Advanced Settings -->
         <div
-          class="rounded-2xl border p-6 shadow-2xl"
+                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -473,6 +473,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

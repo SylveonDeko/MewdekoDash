@@ -2,17 +2,15 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import "../app.css";
-  import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
-  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-  import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
-  import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { goto, invalidateAll } from "$app/navigation";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import { logger } from "$lib/logger.ts";
-  import { userStore } from "$lib/stores/userStore.ts";
-  import { initAuthRefresh } from "$lib/authRefresh";
+    import "../app.css";
+    import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
+    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+    import type {LayoutData} from "../../.svelte-kit/types/src/routes/$types";
+    import {onMount} from "svelte";
+    import {browser} from "$app/environment";
+    import {colorStore} from "$lib/stores/colorStore.ts";
+    import {userStore} from "$lib/stores/userStore.ts";
+    import {initAuthRefresh} from "$lib/authRefresh";
 
 
     interface Props {
@@ -23,45 +21,38 @@
     let {data, children}: Props = $props();
 
   async function extractColors(user: any) {
-    if (!browser || window.location.pathname.startsWith("/dashboard")) {
+      if (!browser) {
+          return;
+      }
+
+      // Skip color extraction on dashboard pages as they use server icons
+      if (window.location.pathname.startsWith("/dashboard")) {
       return;
     }
-    
+
     try {
       if (user?.avatar) {
-        // Extract colors from user avatar
-        await colorStore.extractFromImage(
-          user.avatar.startsWith("a_")
-            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.gif`
-            : `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-        );
-      } else {
-        // Fallback to default image
+          const avatarUrl = user.avatar.startsWith("a_")
+              ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.gif`
+              : `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+
+          await colorStore.extractFromImage(avatarUrl);
+      } else if (!user) {
+          // Only fallback to default image if there's no user at all
         await colorStore.extractFromImage("/img/Mewdeko.png");
       }
     } catch (err) {
-      logger.error("Failed to extract colors:", err);
       colorStore.reset(); // Reset to default colors
     }
   }
 
   onMount(async () => {
     if (browser) {
-      // Set user from server data if available
-      if (data?.user) {
-        userStore.set(data.user);
-      }
-      
       // Initialize auth refresh system
       initAuthRefresh();
-      
-      if (window.location.toString().includes("?loggedin")) {
-        await invalidateAll();
-        await goto("/");
-      }
 
-      // Extract colors once on mount
-      await extractColors(data?.user);
+        // Initial color extraction is handled by the reactive statement
+        // to avoid duplicate extraction
     }
   });
 
@@ -89,33 +80,38 @@
     { title: "Reviews", elements: [{ href: "/reviews" }] }
   ];
 
-  // Keep user store in sync with server data
-    run(() => {
-        if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
-            console.log("Setting user store from server data:", data.user);
-            userStore.set(data.user);
-        }
-    });
+    // Keep user store in sync with server data and handle color extraction
+    let lastExtractedUserId: string | null = null;
+    let colorExtractionPromise: Promise<void> | null = null;
 
-  // Clear user store if server says no user
     run(() => {
-        if (browser && !data?.user && $userStore) {
-            console.log("Clearing user store - no server user");
+        if (!browser) return;
+
+        // Update user store if needed
+        if (data?.user) {
+            if (!$userStore || $userStore.id !== data.user.id) {
+                userStore.set(data.user);
+            }
+
+            // Only extract colors if user changed and we're not on dashboard
+            if (data.user.id !== lastExtractedUserId && !window.location.pathname.startsWith("/dashboard")) {
+                lastExtractedUserId = data.user.id;
+
+                // Extract colors and track the promise to avoid duplicates
+                colorExtractionPromise = extractColors(data.user);
+                colorExtractionPromise.finally(() => {
+                    colorExtractionPromise = null;
+                });
+            }
+        } else if ($userStore) {
+            // Clear user store if server says no user
             userStore.set(null);
-        }
-    });
+            lastExtractedUserId = null;
 
-  // Debug logging
-    run(() => {
-        if (browser) {
-            console.log("Layout reactive - server user:", data?.user ? "exists" : "null", "store user:", $userStore ? "exists" : "null");
-        }
-    });
-
-  // Extract colors when user data changes
-    run(() => {
-        if (browser && data?.user) {
-            extractColors(data.user);
+            // Reset to default colors when logged out
+            if (!window.location.pathname.startsWith("/dashboard")) {
+                colorStore.reset();
+            }
         }
     });
 </script>

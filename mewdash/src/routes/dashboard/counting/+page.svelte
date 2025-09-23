@@ -2,58 +2,52 @@
 <script lang="ts">
     import {run, stopPropagation} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { fade, slide } from "svelte/transition";
-  import type { PageData } from "./$types";
-  import {
-      type CountingChannelResponse,
-      type CountingConfigResponse,
-      type CountingStatsResponse,
-      type CountingUserStatsResponse,
-      type SavePointResponse,
-      type SetupCountingChannelRequest,
-      type UpdateCountingConfigRequest,
-      type LeaderboardType,
-      type ResetCountingChannelRequest,
-      type CreateSavePointRequest, CountingPattern
-  } from "$lib/types/counting";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { browser } from "$app/environment";
-  import { 
-    Hash, 
-    Settings, 
-    Users, 
-    BarChart3, 
-    Trophy,
-    AlertCircle,
-    CheckCircle,
-    Plus,
-    Trash2,
-    RotateCcw,
-    Save,
-    Play,
-    Pause,
-    Clock,
-    Target,
-    TrendingUp,
-    User,
-    Crown,
-    Zap,
-    Shield,
-    MessageSquare,
-    Eye,
-    EyeOff,
-    Ban,
-    Archive,
-    Milestone
-  } from "lucide-svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {fade, slide} from "svelte/transition";
+    import type {PageData} from "./$types";
+    import {
+        type CountingChannelResponse,
+        type CountingConfigResponse,
+        CountingPattern,
+        type CountingStatsResponse,
+        type CountingUserStatsResponse,
+        type CreateSavePointRequest,
+        type ResetCountingChannelRequest,
+        type SavePointResponse,
+        type SetupCountingChannelRequest,
+        type UpdateCountingConfigRequest
+    } from "$lib/types/counting";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {browser} from "$app/environment";
+    import {
+        AlertCircle,
+        Archive,
+        BarChart3,
+        CheckCircle,
+        Clock,
+        Crown,
+        Hash,
+        Milestone,
+        Play,
+        Plus,
+        RotateCcw,
+        Save,
+        Settings,
+        Shield,
+        Target,
+        Trash2,
+        TrendingUp,
+        Trophy,
+        User,
+        Users
+    } from "lucide-svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
         data: PageData;
@@ -493,7 +487,8 @@
   {:else if activeTab === 'channels'}
     <div class="space-y-6" transition:fade>
       <!-- Setup New Channel -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Setup New Counting Channel</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -553,8 +548,8 @@
       {:else}
         <div class="grid gap-4">
           {#each countingChannels as channel (channel.id)}
-            <div 
-              class="rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
+              <div
+                      class="backdrop-blur-xs rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
               style="border-color: {selectedChannel?.id === channel.id ? $colorStore.primary : $colorStore.primary + '30'}; background: {selectedChannel?.id === channel.id ? $colorStore.primary + '15' : $colorStore.primary + '05'};"
               onclick={() => {
                 selectedChannel = channel;
@@ -575,7 +570,7 @@
                   </div>
                   
                   <button
-                    class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 flex-shrink-0"
+                          class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 shrink-0"
                     onclick={stopPropagation(() => disableChannel(channel))}
                     title="Disable channel"
                   >
@@ -614,7 +609,8 @@
   {:else if activeTab === 'config' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Basic Settings -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Settings</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -710,7 +706,8 @@
       </div>
 
       <!-- Behavior Settings -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Behavior Settings</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -771,7 +768,8 @@
       </div>
 
       <!-- Role Restrictions -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Role Restrictions</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -808,7 +806,8 @@
     <div class="space-y-6" transition:fade>
       <!-- Overview Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm" style="color: {$colorStore.muted}">Current Number</p>
@@ -818,7 +817,8 @@
           </div>
         </div>
 
-        <div class="rounded-xl border p-4" style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+               style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm" style="color: {$colorStore.muted}">Total Participants</p>
@@ -828,17 +828,20 @@
           </div>
         </div>
 
-        <div class="rounded-xl border p-4" style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+               style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}05;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm" style="color: {$colorStore.muted}">Average Accuracy</p>
-              <p class="text-2xl font-bold" style="color: {$colorStore.text}">{channelStats.averageAccuracy.toFixed(1)}%</p>
+                <p class="text-2xl font-bold"
+                   style="color: {$colorStore.text}">{Number(channelStats.averageAccuracy || 0).toFixed(1)}%</p>
             </div>
             <Target size={24} style="color: {$colorStore.accent}" />
           </div>
         </div>
 
-        <div class="rounded-xl border p-4" style="border-color: #ef444430; background: #ef444405;">
+          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+               style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm" style="color: {$colorStore.muted}">Total Errors</p>
@@ -851,7 +854,8 @@
 
       <!-- Top Contributor -->
       {#if channelStats.topContributor}
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Top Contributor</h3>
           
           <div class="flex items-center gap-4">
@@ -879,7 +883,7 @@
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm" style="color: {$colorStore.muted}">
                 <span>Contributions: {formatNumber(channelStats.topContributor.contributionsCount)}</span>
                 <span>Best Streak: {formatNumber(channelStats.topContributor.highestStreak)}</span>
-                <span>Accuracy: {channelStats.topContributor.accuracy.toFixed(1)}%</span>
+                  <span>Accuracy: {Number(channelStats.topContributor.accuracy || 0).toFixed(1)}%</span>
                 <span>Numbers Counted: {formatNumber(channelStats.topContributor.totalNumbersCounted)}</span>
               </div>
             </div>
@@ -888,7 +892,8 @@
       {/if}
 
       <!-- Milestones -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Milestones</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -918,7 +923,8 @@
   {:else if activeTab === 'leaderboard' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Leaderboard Controls -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-center gap-4 mb-4">
           <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Leaderboard Settings</h3>
         </div>
@@ -970,13 +976,13 @@
       {:else}
         <div class="space-y-3">
           {#each leaderboard as entry, index (entry.userId)}
-            <div 
-              class="rounded-xl border p-4 flex items-center gap-4"
+              <div
+                      class="backdrop-blur-xs rounded-xl border p-4 flex items-center gap-4 transition-all"
               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
               transition:slide={{ delay: index * 50 }}
             >
               <!-- Rank -->
-              <div class="text-center min-w-[3rem]">
+                  <div class="text-center min-w-12">
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
                   {#if index === 0}
                     <Crown size={24} style="color: #fbbf24;" />
@@ -991,7 +997,7 @@
               </div>
 
               <!-- Avatar -->
-              <div class="min-w-[3rem]">
+                  <div class="min-w-12">
                 {#if entry.avatarUrl}
                   <img src={entry.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full" />
                 {:else}
@@ -1009,7 +1015,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm" style="color: {$colorStore.muted}">
                   <span>Contributions: {formatNumber(entry.contributionsCount)}</span>
                   <span>Best Streak: {formatNumber(entry.highestStreak)}</span>
-                  <span>Accuracy: {entry.accuracy.toFixed(1)}%</span>
+                    <span>Accuracy: {Number(entry.accuracy || 0).toFixed(1)}%</span>
                   <span>Total: {formatNumber(entry.totalNumbersCounted)}</span>
                 </div>
               </div>
@@ -1022,7 +1028,8 @@
   {:else if activeTab === 'management' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Reset Channel -->
-      <div class="rounded-xl border p-6" style="border-color: #f59e0b30; background: #f59e0b05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: #f59e0b30; background: #f59e0b05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Reset Channel</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1060,7 +1067,8 @@
       </div>
 
       <!-- Save Points -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Save Points</h3>
         
         <!-- Create Save Point -->
@@ -1093,8 +1101,8 @@
         {:else}
           <div class="space-y-3">
             {#each savePoints as savePoint (savePoint.id)}
-              <div 
-                class="rounded-lg border p-4 flex items-center justify-between"
+                <div
+                        class="backdrop-blur-xs rounded-lg border p-4 flex items-center justify-between transition-all"
                 style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08;"
                 transition:slide
               >

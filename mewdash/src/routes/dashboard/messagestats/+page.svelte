@@ -2,40 +2,31 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { fade, slide } from "svelte/transition";
-  import type { PageData } from "./$types";
-  import type { 
-    MessageStatsResponse,
-    DailyMessageStats,
-    UserMessageStats,
-    ChannelMessageStats 
-  } from "$lib/types/messagestats";
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { browser } from "$app/environment";
-  import { 
-    MessageSquare, 
-    BarChart3, 
-    TrendingUp, 
-    Users, 
-    Hash,
-    Clock,
-    Download,
-    Calendar,
-    Target,
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    RefreshCw
-  } from "lucide-svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {fade, slide} from "svelte/transition";
+    import type {PageData} from "./$types";
+    import type {ChannelMessageStats, MessageStatsResponse, UserMessageStats} from "$lib/types/messagestats";
+    import StatCard from "$lib/components/monitoring/StatCard.svelte";
+    import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {
+        AlertTriangle,
+        BarChart3,
+        CheckCircle,
+        Clock,
+        Download,
+        Hash,
+        MessageSquare,
+        RefreshCw,
+        Target,
+        Users
+    } from "lucide-svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
         data: PageData;
@@ -445,7 +436,8 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Hourly Activity -->
           {#if chartData}
-            <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+              <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+                   style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">24-Hour Activity</h3>
               <StatsGraph data={chartData} height={300} />
             </div>
@@ -453,7 +445,8 @@
 
           <!-- Weekly Trend -->
           {#if weeklyChartData}
-            <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+              <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+                   style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Weekly Trend</h3>
               <StatsGraph data={weeklyChartData} height={300} />
             </div>
@@ -463,7 +456,8 @@
 
     {:else if activeSubTab === 'users'}
       <div class="space-y-6" transition:fade>
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Top Message Senders</h3>
           
           <div class="space-y-4">
@@ -475,8 +469,8 @@
               >
                 <!-- Mobile: Top row with rank, avatar, and main stats -->
                 <div class="flex items-center gap-3 flex-1">
-                  <div 
-                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    <div
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                     style="background: {getRankBadgeColor(user.rank)}; color: #000;"
                   >
                     {user.rank}
@@ -485,7 +479,7 @@
                   <img 
                     src={user.avatarUrl} 
                     alt={user.username}
-                    class="w-10 h-10 rounded-full flex-shrink-0"
+                    class="w-10 h-10 rounded-full shrink-0"
                   />
                   
                   <div class="flex-1 min-w-0">
@@ -515,7 +509,8 @@
 
     {:else if activeSubTab === 'channels'}
       <div class="space-y-6" transition:fade>
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Most Active Channels</h3>
           
           <div class="space-y-4">
@@ -527,7 +522,7 @@
               >
                 <!-- Mobile: Top row with icon and channel info -->
                 <div class="flex items-center gap-3 flex-1">
-                  <div class="flex-shrink-0">
+                    <div class="shrink-0">
                     <Hash size={20} style="color: {$colorStore.primary}" />
                   </div>
                   
@@ -558,7 +553,8 @@
 
     {:else if activeSubTab === 'export'}
       <div class="space-y-6" transition:fade>
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Export Message Data</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -635,7 +631,8 @@
 
     {:else if activeSubTab === 'settings'}
       <div class="space-y-6" transition:fade>
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Message Count Settings</h3>
           
           {#if settingsLoading}
@@ -649,7 +646,7 @@
                   <p class="text-sm mt-1" style="color: {$colorStore.muted}">Track message statistics for this server</p>
                 </div>
                 <button
-                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {messageCountEnabled ? $colorStore.primary : $colorStore.muted}40; focus:ring-color: {$colorStore.primary};"
                   onclick={toggleMessageCount}
                   disabled={settingsLoading}
@@ -676,7 +673,8 @@
                     style="background: {$colorStore.primary}20;"
                     disabled={settingsLoading}
                   />
-                  <div class="text-sm font-mono px-2 py-1 rounded" style="background: {$colorStore.primary}20; color: {$colorStore.text}; min-width: 60px; text-align: center;">
+                    <div class="text-sm font-mono px-2 py-1 rounded-sm"
+                         style="background: {$colorStore.primary}20; color: {$colorStore.text}; min-width: 60px; text-align: center;">
                     {minMessageLength}
                   </div>
                 </div>

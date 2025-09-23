@@ -1,7 +1,7 @@
 <!-- routes/contacts/+page.svelte -->
 <script lang="ts">
-  import MailIcon from "$lib/components/icons/Mail.svelte";
-  import DiscordIcon from "$lib/components/icons/Discord.svelte";
+    import MailIcon from "$lib/components/icons/Mail.svelte";
+    import DiscordIcon from "$lib/components/icons/Discord.svelte";
 </script>
 
 <svelte:head>
@@ -49,6 +49,8 @@
 </div>
 
 <style lang="scss">
+  @reference '../../app.css';
+
   .contact-card {
     @apply bg-mewd-dark-grey bg-opacity-50 rounded-lg p-8 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:scale-105 text-mewd-white no-underline hover:text-mewd-green;
   }

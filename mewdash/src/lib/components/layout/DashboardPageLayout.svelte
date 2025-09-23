@@ -1,18 +1,18 @@
 <!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (status-messages to status_messages) making the component unusable -->
 <!-- DashboardPageLayout.svelte -->
 <script lang="ts">
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { createEventDispatcher } from 'svelte';
-  import { browser } from "$app/environment";
-  import { ChevronLeft, ChevronRight } from "lucide-svelte";
-  import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { goto } from "$app/navigation";
-  import { onDestroy } from 'svelte';
-  import { registerTabFeatures, unregisterSearchFeatures } from "$lib/stores/searchStore";
-  
-  const dispatch = createEventDispatcher();
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    // Lifecycle
+    import {createEventDispatcher, onDestroy, onMount} from 'svelte';
+    import {browser} from "$app/environment";
+    import {ChevronLeft, ChevronRight} from "lucide-svelte";
+    import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import {goto} from "$app/navigation";
+    import {registerTabFeatures, unregisterSearchFeatures} from "$lib/stores/searchStore";
+
+    const dispatch = createEventDispatcher();
 
   // Props
   export let title: string;
@@ -72,11 +72,8 @@
       }
     }, 10);
   }
-  
-  // Lifecycle
-  import { onMount } from 'svelte';
-  
-  // Handle browser back button navigation to main dashboard
+
+    // Handle browser back button navigation to main dashboard
   function handlePopState(event: PopStateEvent) {
     if (browser) {
       const currentUrl = window.location.pathname + window.location.search;
@@ -260,7 +257,7 @@
       <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
         {#each actionButtons as button}
           <button
-            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-105 min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-105 min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             disabled={button.loading || button.disabled}
             on:click={button.action}
             style="{button.style || `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`} focus:ring-color: {$colorStore.primary};"
@@ -293,7 +290,7 @@
         <!-- Left scroll button -->
         {#if tabsOverflow}
           <button
-            class="flex-shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-sm"
+                  class="shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-xs"
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             on:click={() => scrollTabs('left', tabContainer)}
             aria-label="Scroll tabs left"
@@ -312,7 +309,7 @@
         >
           {#each tabs as tab, index}
             <button
-              class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium whitespace-nowrap flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-[1.02]"
+                    class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all font-medium whitespace-nowrap shrink-0 focus:outline-hidden focus:ring-2 focus:ring-offset-2 hover:scale-[1.02]"
               class:active={activeTab === tab.id}
               style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};
@@ -335,7 +332,7 @@
         <!-- Right scroll button -->
         {#if tabsOverflow}
           <button
-            class="flex-shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-sm"
+                  class="shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-xs"
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             on:click={() => scrollTabs('right', tabContainer)}
             aria-label="Scroll tabs right"
@@ -395,7 +392,7 @@
             >
             {#each currentSubTabs as subTab, index}
               <button
-                class="relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-md min-w-max"
+                      class="relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-md min-w-max"
                 class:active={activeSubTab === subTab.id}
                 style="color: {activeSubTab === subTab.id ? $colorStore.text : $colorStore.muted};
                        background: {activeSubTab === subTab.id ? $colorStore.primary + '20' : 'transparent'};

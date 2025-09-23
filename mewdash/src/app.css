@@ -1,3 +1,33 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import '../tailwind.config.css';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentcolor);
+    }
+
+    /* Restore cursor pointer for interactive elements */
+    button:not(:disabled),
+    [role="button"]:not(:disabled),
+    [type="button"]:not(:disabled),
+    [type="submit"]:not(:disabled),
+    [type="reset"]:not(:disabled),
+    a[href],
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    select:not(:disabled),
+    label:has(input:not(:disabled)) {
+        cursor: pointer;
+    }
+}

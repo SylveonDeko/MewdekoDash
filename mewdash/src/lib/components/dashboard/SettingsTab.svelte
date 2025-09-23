@@ -145,8 +145,9 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- General Server Settings -->
-      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+             style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -209,8 +210,9 @@
       </div>
 
       <!-- Role Management -->
-      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+             style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -286,8 +288,9 @@
       </div>
 
       <!-- Integration Settings -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+             style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -326,8 +329,9 @@
       <!-- Configuration Summary -->
       <div class="space-y-3">
         <!-- Auto-Assign Roles -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
@@ -340,8 +344,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Roles given to new members</div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>
@@ -349,8 +353,9 @@
         </div>
 
         <!-- Self-Assign Roles -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
@@ -363,8 +368,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Roles users can assign themselves</div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
             </a>
@@ -372,8 +377,9 @@
         </div>
 
         <!-- Role Features -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
@@ -390,8 +396,9 @@
         </div>
 
         <!-- Integrations -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
@@ -404,8 +411,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? "Patreon active" : "None active"}</div>
             </div>
-            <a href="/dashboard/patreon" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/patreon"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
             </a>
@@ -414,8 +421,9 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+             style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
           <h3 class="font-semibold" style="color: {$colorStore.text}">Quick Actions</h3>
@@ -444,8 +452,9 @@
 
       <!-- Server Info -->
       {#if guildConfig && Object.keys(guildConfig).length > 0}
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-2xl p-6 border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Server Info</h3>
 
           <div class="space-y-2 text-sm">

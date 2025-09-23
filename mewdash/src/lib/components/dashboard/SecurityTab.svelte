@@ -2,17 +2,17 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { fly } from "svelte/transition";
-  import { onMount } from "svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import { Activity, AlertTriangle, Clock, FileText, MessageSquareWarning, Shield, UserX } from "lucide-svelte";
+    import {fly} from "svelte/transition";
+    import {onMount} from "svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {Activity, AlertTriangle, Clock, FileText, MessageSquareWarning, Shield, UserX} from "lucide-svelte";
 
-  import type { LoggingConfigurationResponse } from "$lib/types/logging.ts";
+    import type {LoggingConfigurationResponse} from "$lib/types/logging.ts";
 
-  // Security data
+    // Security data
     let moderationStats = $state({
     totalWarnings: 0,
     activeMutes: 0,
@@ -174,8 +174,9 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- Recent Moderation Actions -->
       <div
-        class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+              class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+              style="background: {$colorStore.primary}05;
+               border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -192,10 +193,10 @@
                  style="background: {$colorStore.primary}08;">
               <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
               <div class="flex-1 space-y-1">
-                <div class="h-3 rounded" style="background: {$colorStore.primary}20; width: 70%;"></div>
-                <div class="h-2 rounded" style="background: {$colorStore.primary}15; width: 50%;"></div>
+                <div class="h-3 rounded-sm" style="background: {$colorStore.primary}20; width: 70%;"></div>
+                <div class="h-2 rounded-sm" style="background: {$colorStore.primary}15; width: 50%;"></div>
               </div>
-              <div class="w-10 h-3 rounded" style="background: {$colorStore.primary}20;"></div>
+              <div class="w-10 h-3 rounded-sm" style="background: {$colorStore.primary}20;"></div>
             </div>
           {/each}
         {:else if recentModerationActions.length === 0}
@@ -253,8 +254,9 @@
       <!-- Protection Status List -->
       <div class="space-y-3">
         <!-- Anti-Raid -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiRaid?.enabled ? '#10b981' : $colorStore.muted};"></div>
@@ -264,8 +266,8 @@
                 {protectionStatus.antiRaid?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>
@@ -273,8 +275,9 @@
         </div>
 
         <!-- Anti-Spam -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiSpam?.enabled ? '#10b981' : $colorStore.muted};"></div>
@@ -284,8 +287,8 @@
                 {protectionStatus.antiSpam?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
             </a>
@@ -293,8 +296,9 @@
         </div>
 
         <!-- Anti-Alt -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiAlt?.enabled ? '#10b981' : $colorStore.muted};"></div>
@@ -304,8 +308,8 @@
                 {protectionStatus.antiAlt?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/administration"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Configure
             </a>
@@ -313,8 +317,9 @@
         </div>
 
         <!-- Anti-Mass Mention -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full"
                  style="background: {protectionStatus.antiMassMention?.enabled ? '#10b981' : $colorStore.muted};"></div>
@@ -324,8 +329,8 @@
                 {protectionStatus.antiMassMention?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>
@@ -339,8 +344,9 @@
       <!-- Security Stats List -->
       <div class="space-y-3">
         <!-- Total Warnings -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
@@ -353,8 +359,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">All time moderation actions</div>
             </div>
-            <a href="/dashboard/moderation" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/moderation"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
             </a>
@@ -362,8 +368,9 @@
         </div>
 
         <!-- Recent Actions -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
@@ -380,8 +387,9 @@
         </div>
 
         <!-- Log Channels -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
@@ -394,8 +402,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{loggingStats.totalLogTypes} event types</div>
             </div>
-            <a href="/dashboard/logging" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/logging"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
             </a>
@@ -403,8 +411,9 @@
         </div>
 
         <!-- Active Protections -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
@@ -417,8 +426,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{activeProtections}/4 protections enabled</div>
             </div>
-            <a href="/dashboard/administration" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>

@@ -341,7 +341,7 @@
         <!-- Template Header -->
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-2">
-            <div class="p-1.5 rounded" style="background: {$colorStore.primary}15;">
+              <div class="p-1.5 rounded-sm" style="background: {$colorStore.primary}15;">
               <template.icon size={14} style="color: {$colorStore.primary};" />
             </div>
             <div class="min-w-0 flex-1">
@@ -353,7 +353,7 @@
 
         <!-- Template Preview -->
         <div class="p-3">
-          <div class="bg-[#36393f] rounded p-2 text-white text-xs font-mono max-h-24 overflow-hidden">
+            <div class="bg-[#36393f] rounded-sm p-2 text-white text-xs font-mono max-h-24 overflow-hidden">
             <!-- Embed Color Bar -->
             <div class="flex">
               <div class="w-0.5 rounded-l-sm mr-2" style="background: {template.preview.color};"></div>

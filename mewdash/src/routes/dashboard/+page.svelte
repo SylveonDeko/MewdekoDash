@@ -1,37 +1,35 @@
 <!-- routes/dashboard/+page.svelte -->
 <script lang="ts">
-  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
 
-  const bubble = createBubbler();
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { fade, fly } from "svelte/transition";
-  import type { BotStatusModel, GraphStatsResponse } from "$lib/types/models";
-  import { goto } from "$app/navigation";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { Bot, ChevronDown, Code, Link, RefreshCw, Search, Server, User, Users } from "lucide-svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import { browser } from "$app/environment";
-  import { clickOutside } from "$lib/clickOutside.ts";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {fade, fly} from "svelte/transition";
+    import type {BotStatusModel, GraphStatsResponse} from "$lib/types/models";
+    import {goto} from "$app/navigation";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {Bot, ChevronDown, Code, Link, Music, RefreshCw, Search, Server, User, Users, X} from "lucide-svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger";
+    import {browser} from "$app/environment";
+    import {clickOutside} from "$lib/clickOutside.ts";
 
-  // Import  components
-  import TabbedDashboard from "$lib/components/layout/TabbedDashboard.svelte";
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-  import KeyboardShortcuts from "$lib/components/specialized/KeyboardShortcuts.svelte";
+    // Import  components
+    import TabbedDashboard from "$lib/components/layout/TabbedDashboard.svelte";
+    import StatCard from "$lib/components/monitoring/StatCard.svelte";
+    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+    import KeyboardShortcuts from "$lib/components/specialized/KeyboardShortcuts.svelte";
 
-  // Import stores
-  import { musicStore } from "$lib/stores/musicStore";
-  import { inviteStore } from "$lib/stores/inviteStore";
-  import { dashboardStore } from "$lib/stores/dashboardStore";
-  import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
+    // Import stores
+    import {musicStore} from "$lib/stores/musicStore";
+    import {inviteStore} from "$lib/stores/inviteStore";
+    import {dashboardStore} from "$lib/stores/dashboardStore";
+    import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
 
-  // Import search component
-  import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
+    // Import search component
+    import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
 
-  let { data } = $props();
+    let { data } = $props();
 
   // State management
   let currentUser = data.user;
@@ -42,9 +40,14 @@
   let joinStats: GraphStatsResponse | null = $state(null);
   let leaveStats: GraphStatsResponse | null = $state(null);
   let showShortcuts = $state(false);
+  let showMusicNotification = $state(false);
+  let musicJustStarted = $state(false);
+  let playerExists = $state(false);
 
   // Derived state
   let musicStatus = $derived($musicStore.status);
+  // Track if music player exists based on status
+  let hasMusicPlayer = $derived(!!musicStatus && (musicStatus.IsInVoiceChannel === true || !!musicStatus.CurrentTrack));
 
   // Tab state for mini player - initialize with default value
   let currentActiveTab = $state("overview");
@@ -56,6 +59,7 @@
   let showServerDropdown = $state(false);
   let serverSearchTerm = $state("");
   let serverDropdownRef: HTMLDivElement = $state();
+  let serverNameButtonRef: HTMLButtonElement = $state();
   let hasEverSelectedServer = false;
   let switchingServer = $state(false);
 
@@ -330,6 +334,59 @@
     guild.name.toLowerCase().includes(serverSearchTerm.toLowerCase())
   ).sort((a, b) => a.name.localeCompare(b.name)));
 
+  // Music event handlers
+  function handleMusicStarted(event: Event) {
+      const customEvent = event as CustomEvent;
+      logger.info("Music started event received", customEvent.detail);
+      musicJustStarted = true;
+      showMusicNotification = true;
+
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+          showMusicNotification = false;
+      }, 5000);
+
+      // Reset the "just started" flag after animation
+      setTimeout(() => {
+          musicJustStarted = false;
+      }, 1000);
+  }
+
+  function handleMusicStopped(event: Event) {
+      logger.info("Music stopped event received");
+      // Could show a "music stopped" notification if desired
+  }
+
+  function handleTrackChanged(event: Event) {
+      const customEvent = event as CustomEvent;
+      logger.info("Track changed event received", customEvent.detail);
+      // Could show track change notification
+  }
+
+  function handlePlayerCreated(event: Event) {
+      logger.info("Dashboard: Player created event received", {
+          previousPlayerExists: playerExists,
+          hasMusicPlayer
+      });
+      playerExists = true;
+
+      // Update music store to start polling
+      if (currentUser?.id) {
+          musicStore.startPolling(currentUser.id);
+      }
+  }
+
+  function handlePlayerDestroyed(event: Event) {
+      logger.info("Dashboard: Player destroyed event received", {
+          previousPlayerExists: playerExists,
+          hasMusicPlayer
+      });
+      playerExists = false;
+
+      // Stop music polling when player is destroyed
+      musicStore.stopPolling();
+  }
+
   // Server dropdown functions
   function toggleServerDropdown() {
     showServerDropdown = !showServerDropdown;
@@ -400,6 +457,13 @@
 
       // Set up keyboard event listeners
       window.addEventListener("keydown", handleServerDropdownKeydown);
+
+        // Listen for music events
+        window.addEventListener("musicStarted", handleMusicStarted);
+        window.addEventListener("musicStopped", handleMusicStopped);
+        window.addEventListener("trackChanged", handleTrackChanged);
+        window.addEventListener("playerCreated", handlePlayerCreated);
+        window.addEventListener("playerDestroyed", handlePlayerDestroyed);
     }
     
     try {
@@ -439,10 +503,15 @@
     if (browser) {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keydown", handleServerDropdownKeydown);
+        window.removeEventListener("musicStarted", handleMusicStarted);
+        window.removeEventListener("musicStopped", handleMusicStopped);
+        window.removeEventListener("trackChanged", handleTrackChanged);
+        window.removeEventListener("playerCreated", handlePlayerCreated);
+        window.removeEventListener("playerDestroyed", handlePlayerDestroyed);
     }
   });
 
-  run(() => {
+  $effect(() => {
     if ($currentInstance) {
       // Extract colors from server icon if available, otherwise use bot avatar as fallback
       if (guildInfo?.iconUrl) {
@@ -464,7 +533,7 @@
     }
   });
 
-  run(() => {
+  $effect(() => {
     if ($currentGuild) {
       // Reset music store when guild changes
       musicStore.reset();
@@ -476,7 +545,7 @@
   });
 
   // Watch for userAdminGuilds to be populated and restore saved guild if needed
-  run(() => {
+  $effect(() => {
     if (browser && $userAdminGuilds) {
       try {
         const savedGuild = localStorage.getItem("lastSelectedGuild");
@@ -491,7 +560,6 @@
           const guildExists = $userAdminGuilds.some(guild => guild.id === restoredGuild.id);
           if (guildExists) {
             currentGuild.set(restoredGuild);
-            logger.info("Restored saved guild after admin guilds loaded:", restoredGuild.name);
           } else {
             // Guild no longer available, clear saved data
             localStorage.removeItem("lastSelectedGuild");
@@ -510,17 +578,31 @@
 
 <!-- Main Dashboard -->
 <div
-  class="min-h-screen p-4 md:p-6 overflow-x-hidden w-full transition-all duration-500"
-  style="{colorStore.getCssVars()} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+        class="min-h-screen overflow-x-hidden w-full transition-all duration-500 relative"
+        style="{colorStore.getCssVars()}"
 >
-  <div class="w-full space-y-8">
-    {#if !$currentGuild}
+    <!-- Subtle mesh gradient background using colorStore -->
+    <div class="fixed inset-0 -z-10"
+         style="background: {$colorStore.primary}03;">
+        <!-- Subtle color accents -->
+        <div class="absolute inset-0"
+             style="background-image: radial-gradient(circle at 20% 30%, {$colorStore.primary}08 0%, transparent 40%),
+                radial-gradient(circle at 80% 60%, {$colorStore.secondary}06 0%, transparent 40%),
+                radial-gradient(circle at 50% 90%, {$colorStore.accent}04 0%, transparent 40%);">
+        </div>
+        <!-- Very subtle grid pattern -->
+        <div class="absolute inset-0 opacity-30"
+             style="background-image: linear-gradient(0deg, {$colorStore.primary}05 1px, transparent 1px),
+                linear-gradient(90deg, {$colorStore.primary}05 1px, transparent 1px);
+                background-size: 50px 50px;">
+        </div>
+    </div>
+    <div class="w-full p-4 md:p-6">
+        <div class="space-y-8">
+            {#if !$currentGuild}
       <!-- Welcome Dashboard -->
       <div
-        class="text-center p-8 rounded-2xl backdrop-blur-sm border flex flex-col items-center relative"
+              class="text-center p-8 rounded-2xl backdrop-blur-xs border flex flex-col items-center relative"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
            border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 300 }}
@@ -587,7 +669,8 @@
         <!-- Server Dropdown -->
         {#if showServerDropdown && $userAdminGuilds && $userAdminGuilds.length > 0}
           <div
-            class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+                  class="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-xs"
+                  style="z-index: 9999;"
             in:fade={{ duration: 200 }}
             out:fade={{ duration: 150 }}
             onclick={closeServerDropdown}
@@ -598,13 +681,16 @@
             tabindex="-1"
           >
             <div
-              class="w-96 max-w-[90vw] bg-gray-900 rounded-xl shadow-2xl border overflow-hidden"
-              style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9));"
+                    class="w-96 max-w-[90vw] rounded-xl shadow-2xl border overflow-hidden"
+                    style="border-color: {$colorStore.primary}30;
+                     background: linear-gradient(135deg, {$colorStore.background}f5, {$colorStore.background}ee);
+                     backdrop-filter: blur(10px);"
               in:fly={{ y: -20, duration: 200, delay: 100 }}
               out:fly={{ y: -20, duration: 150 }}
-              onclick={stopPropagation(bubble('click'))}
-              onkeydown={stopPropagation(bubble('keydown'))}
+                    onclick={(e) => e.stopPropagation()}
+                    onkeydown={(e) => e.stopPropagation()}
               role="listbox"
+                    tabindex="0"
             >
               <!-- Search -->
               <div class="p-4 border-b" style="border-color: {$colorStore.primary}20;">
@@ -615,8 +701,11 @@
                     type="text"
                     placeholder="Search your servers..."
                     bind:value={serverSearchTerm}
-                    class="w-full pl-11 pr-4 py-3 bg-black bg-opacity-50 rounded-lg border text-sm focus:outline-none focus:ring-2"
-                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.primary}50;"
+                    class="w-full pl-11 pr-4 py-3 rounded-lg border text-sm focus:outline-hidden focus:ring-2"
+                    style="border-color: {$colorStore.primary}30;
+                           color: {$colorStore.text};
+                           background: {$colorStore.primary}08;
+                           --tw-ring-color: {$colorStore.primary}50;"
                   />
                 </div>
                 <div class="text-xs mt-2" style="color: {$colorStore.muted};">
@@ -628,7 +717,9 @@
               <div class="max-h-80 overflow-y-auto">
                 {#each filteredGuilds as guild (guild.id)}
                   <button
-                    class="w-full flex items-center gap-4 p-4 hover:bg-black hover:bg-opacity-30 transition-colors text-left group"
+                          class="w-full flex items-center gap-4 p-4 transition-colors text-left group"
+                          onmouseenter={(e) => e.currentTarget.style.background = $colorStore.primary + '10'}
+                          onmouseleave={(e) => e.currentTarget.style.background = 'transparent'}
                     onclick={() => handleServerSelect(guild)}
                   >
                     <div class="relative">
@@ -657,7 +748,7 @@
                         <span>{guild.memberCount ? guild.memberCount.toLocaleString() : 'N/A'} members</span>
                       </div>
                     </div>
-                    <ChevronDown size={16} class="rotate-[-90deg] opacity-50 group-hover:opacity-100 transition-opacity"
+                      <ChevronDown size={16} class="-rotate-90 opacity-50 group-hover:opacity-100 transition-opacity"
                                  style="color: {$colorStore.primary}" />
                   </button>
                 {:else}
@@ -802,10 +893,10 @@
       </div>
 
       <!-- Beautiful Server Header with integrated selector -->
-      <div class="relative mb-8 overflow-visible rounded-2xl transition-all duration-500 ease-out"
+                <div class="relative mb-8 rounded-2xl transition-all duration-500 ease-out"
            class:opacity-75={switchingServer}
            class:scale-[0.98]={switchingServer}
-           style="min-height: {switchingServer ? '200px' : 'auto'};"
+                     style="min-height: {switchingServer ? '200px' : '180px'};"
            in:fly={{ y: -20, duration: 600, delay: 100 }}>
 
         {#if switchingServer}
@@ -817,20 +908,15 @@
         {:else}
           <!-- Server Banner Background (if available) -->
           {#if guildInfo?.bannerUrl}
-            <div class="absolute inset-0 rounded-2xl overflow-hidden transition-opacity duration-500"
-                 in:fade={{ duration: 400, delay: 200 }}>
+              <!-- Banner image as background (leave space for bottom border) -->
+              <div class="absolute inset-x-0 top-0 bottom-1 rounded-t-2xl overflow-hidden">
               <img
                 src="{guildInfo.bannerUrl}?size=1024"
                 alt="{guildInfo.name} banner"
-                class="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                loading="lazy"
+                class="w-full h-full object-cover"
               />
-              <!-- Dark overlay for text readability -->
-              <div class="absolute inset-0 bg-black bg-opacity-60"></div>
-              <!-- Color gradient overlay -->
-              <div class="absolute inset-0 transition-opacity duration-500"
-                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25, {$colorStore.gradientEnd}20);">
-              </div>
+                  <!-- Darker overlay for text readability -->
+                  <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/60"></div>
             </div>
           {:else}
             <!-- Fallback gradient background -->
@@ -854,24 +940,24 @@
             <!-- Loading skeleton for server switch -->
             <div class="flex flex-col md:flex-row items-start md:items-center gap-6 animate-pulse">
               <!-- Server Icon Skeleton -->
-              <div class="relative flex-shrink-0">
+                <div class="relative shrink-0">
                 <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl shadow-lg ring-2 ring-opacity-20 animate-pulse"
                      style="background: {$colorStore.primary}20; ring-color: {$colorStore.primary};">
                   <div
                     class="w-full h-full rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 animate-pulse"></div>
                 </div>
                 <div
-                  class="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-400 rounded-full border-2 border-white shadow-sm animate-pulse"></div>
+                        class="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-400 rounded-full border-2 border-white shadow-xs animate-pulse"></div>
               </div>
 
               <!-- Server Info Skeleton -->
               <div class="flex-1 min-w-0 space-y-3">
                 <div class="h-8 bg-gray-600 rounded-lg animate-pulse w-3/4"></div>
-                <div class="h-4 bg-gray-700 rounded animate-pulse w-1/2"></div>
+                  <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-1/2"></div>
                 <div class="flex gap-4">
-                  <div class="h-4 bg-gray-700 rounded animate-pulse w-24"></div>
-                  <div class="h-4 bg-gray-700 rounded animate-pulse w-20"></div>
-                  <div class="h-4 bg-gray-700 rounded animate-pulse w-16"></div>
+                    <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-24"></div>
+                    <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-20"></div>
+                    <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-16"></div>
                 </div>
               </div>
             </div>
@@ -882,7 +968,7 @@
               in:fade={{ duration: 400, delay: 200 }}>
 
               <!-- Server Icon -->
-              <div class="relative flex-shrink-0">
+                <div class="relative shrink-0">
                 <div
                   class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 transition-all duration-500 hover:scale-105"
                   style="ring-color: {$colorStore.primary};">
@@ -915,7 +1001,7 @@
 
                 <!-- Online indicator -->
                 <div
-                  class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm transition-all duration-500 hover:scale-110"
+                        class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-xs transition-all duration-500 hover:scale-110"
                   in:fade={{ delay: 300 }}></div>
               </div>
 
@@ -924,38 +1010,42 @@
                 <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
 
                   <!-- Clickable Server Name Section -->
-                  <div class="flex-1 min-w-0 relative" bind:this={serverDropdownRef}>
-                    <!-- Clickable server name -->
-                    <button
-                      class="group flex items-center gap-2 mb-2 rounded-lg p-2 -m-2 transition-all duration-300 hover:bg-black hover:bg-opacity-10"
-                      onclick={toggleServerDropdown}
-                      use:clickOutside
-                      onclickoutside={closeServerDropdown}
-                    >
-                      {#key $currentGuild?.id}
-                        <h1
-                          class="text-2xl md:text-3xl font-bold truncate text-left transition-all duration-500 transform"
-                          style="color: {$colorStore.text};"
-                          in:fade={{ duration: 400, delay: 200 }}
-                          out:fade={{ duration: 200 }}>
-                          {guildInfo?.name || $currentGuild.name}
-                        </h1>
-                      {/key}
-                      <ChevronDown
-                        size={20}
-                        style="color: {$colorStore.muted}"
-                        class="transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
-                      />
-                    </button>
+                    <div class="flex-1 min-w-0">
+                        <!-- Clickable server name with dropdown -->
+                        <div class="relative inline-block">
+                            <button
+                                    bind:this={serverNameButtonRef}
+                                    class="group flex items-center gap-2 mb-2 rounded-lg p-2 -m-2 transition-all duration-300 hover:bg-black hover:bg-opacity-10"
+                                    onclick={toggleServerDropdown}
+                                    use:clickOutside
+                                    onclickoutside={closeServerDropdown}
+                            >
+                                {#key $currentGuild?.id}
+                                    <h1
+                                            class="text-2xl md:text-3xl font-bold truncate text-left transition-all duration-500 transform"
+                                            style="color: {$colorStore.text};"
+                                            in:fade={{ duration: 400, delay: 200 }}
+                                            out:fade={{ duration: 200 }}>
+                                        {guildInfo?.name || $currentGuild.name}
+                                    </h1>
+                                {/key}
+                                <ChevronDown
+                                        size={20}
+                                        style="color: {$colorStore.muted}"
+                                        class="transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
+                                />
+                            </button>
 
-                    <!-- Server Dropdown -->
-                    {#if showServerDropdown}
-                      <div
-                        class="absolute top-full left-0 mt-2 w-80 bg-gray-900 rounded-xl shadow-2xl border z-50 overflow-hidden"
-                        style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9));"
-                        in:fade={{ duration: 150 }}
-                        out:fade={{ duration: 100 }}
-                      >
+                            <!-- Server Dropdown -->
+                            {#if showServerDropdown}
+                                <div
+                                        class="absolute top-full mt-2 left-0 w-80 rounded-xl shadow-2xl border overflow-hidden z-[100]"
+                                        style="border-color: {$colorStore.primary}30;
+                                 background: linear-gradient(135deg, {$colorStore.background}f5, {$colorStore.background}ee);
+                                 backdrop-filter: blur(10px);"
+                                        in:fade={{ duration: 150 }}
+                                        out:fade={{ duration: 100 }}
+                                >
                         <!-- Search -->
                         <div class="p-3 border-b" style="border-color: {$colorStore.primary}20;">
                           <div class="relative">
@@ -965,8 +1055,10 @@
                               type="text"
                               placeholder="Search servers..."
                               bind:value={serverSearchTerm}
-                              class="w-full pl-10 pr-4 py-2 bg-black bg-opacity-50 rounded-lg border text-sm"
-                              style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                              class="w-full pl-10 pr-4 py-2 rounded-lg border text-sm"
+                              style="border-color: {$colorStore.primary}30;
+                                     color: {$colorStore.text};
+                                     background: {$colorStore.primary}08;"
                             />
                           </div>
                         </div>
@@ -975,13 +1067,14 @@
                         <div class="max-h-60 overflow-y-auto">
                           {#each filteredGuilds as guild (guild.id)}
                             <button
-                              class="w-full flex items-center gap-3 p-3 hover:bg-black hover:bg-opacity-30 transition-colors text-left"
-                              class:bg-black={guild.id === $currentGuild.id}
-                              class:bg-opacity-20={guild.id === $currentGuild.id}
+                                    class="w-full flex items-center gap-3 p-3 transition-colors text-left"
+                                    style="background: {guild.id === $currentGuild.id ? $colorStore.primary + '15' : 'transparent'}"
+                                    onmouseenter={(e) => e.currentTarget.style.background = $colorStore.primary + '10'}
+                                    onmouseleave={(e) => e.currentTarget.style.background = guild.id === $currentGuild.id ? $colorStore.primary + '15' : 'transparent'}
                               onclick={() => handleServerSelect(guild)}
                             >
                               <img
-                                src={guild.icon ? 
+                                      src={guild.icon ?
                                   `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${guild.icon.startsWith('a_') ? 'gif' : 'png'}?size=64` :
                                   'https://cdn.discordapp.com/embed/avatars/0.png'
                                 }
@@ -1008,6 +1101,7 @@
                         </div>
                       </div>
                     {/if}
+                        </div>
 
                     {#if guildInfo?.description || $currentGuild.description}
                       <div in:fade={{ duration: 400, delay: 300 }} out:fade={{ duration: 200 }}>
@@ -1097,7 +1191,59 @@
              style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});"></div>
       </div>
 
-      <!-- Tabbed Dashboard -->
+                <!-- Music Started Notification -->
+                {#if showMusicNotification}
+                    <div
+                            class="fixed top-20 right-4 z-50 max-w-sm p-4 rounded-xl shadow-2xl border backdrop-blur-sm transition-all"
+                            style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95);
+                 border-color: {$colorStore.primary}40;"
+                            in:fly={{ x: 300, duration: 500 }}
+                            out:fly={{ x: 300, duration: 400 }}
+                    >
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-full" style="background: {$colorStore.primary}20;">
+                                <Music class="w-5 h-5" style="color: {$colorStore.primary};"/>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold" style="color: {$colorStore.text};">
+                                    Music Started Playing!
+                                </div>
+                                <div class="text-sm mt-1" style="color: {$colorStore.muted};">
+                                    Now playing music in your server
+                                </div>
+                            </div>
+                            <button
+                                    class="p-1 hover:bg-black hover:bg-opacity-10 rounded-full transition-colors"
+                                    onclick={() => showMusicNotification = false}
+                                    aria-label="Close notification"
+                            >
+                                <X class="w-4 h-4" style="color: {$colorStore.muted};"/>
+                            </button>
+                        </div>
+
+                        <div class="mt-3 flex gap-2">
+                            <button
+                                    class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                    style="background: {$colorStore.primary}; color: white;"
+                                    onclick={() => {
+                showMusicNotification = false;
+                goto('/dashboard/music');
+              }}
+                            >
+                                Open Music Player
+                            </button>
+                            <button
+                                    class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-105"
+                                    style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                    onclick={() => showMusicNotification = false}
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Tabbed Dashboard -->
       {#key $currentGuild?.id}
         <div class="transition-all duration-500 ease-out"
              class:opacity-75={switchingServer}
@@ -1114,9 +1260,11 @@
             onRefresh={fetchAllData}
             {refreshing}
             bind:activeTab={currentActiveTab}
+            showMusicPlayer={hasMusicPlayer}
           />
         </div>
       {/key}
+
     {/if}
 
     <!-- Last Updated Indicator -->
@@ -1125,14 +1273,17 @@
         Last updated: {$dashboardStore.lastUpdated.toLocaleTimeString()}
         <!-- Press R to refresh (hidden for screen readers) -->
         <span class="ml-2 hidden md:inline" aria-hidden="true">
-          (Press <kbd class="px-1 py-0.5 rounded" style="background: {$colorStore.primary}20">R</kbd> to refresh)
+          (Press <kbd class="px-1 py-0.5 rounded-sm" style="background: {$colorStore.primary}20">R</kbd> to refresh)
         </span>
       </div>
     {/if}
+        </div>
   </div>
 </div>
 
 <style lang="postcss">
+    @reference '../../app.css';
+
     :global(*::-webkit-scrollbar) {
         @apply w-2;
     }

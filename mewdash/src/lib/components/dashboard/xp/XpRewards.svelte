@@ -149,7 +149,7 @@
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div
-                  class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold flex-shrink-0"
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0"
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.primary};"
                 >
@@ -158,7 +158,7 @@
                 <span class="truncate" style="color: {$colorStore.text}">{reward.roleName || `Role ID: ${reward.roleId}`}</span>
               </div>
               <button
-                class="p-2 rounded-full transition-all duration-200 flex-shrink-0 min-w-[44px] min-h-[44px]"
+                      class="p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onRemoveRoleReward(reward.id)}
@@ -238,7 +238,7 @@
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div
-                  class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold flex-shrink-0"
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0"
                   style="background: {$colorStore.secondary}20;
                          color: {$colorStore.secondary};"
                 >
@@ -247,7 +247,7 @@
                 <span class="truncate" style="color: {$colorStore.text}">{formatNumber(reward.amount)} currency</span>
               </div>
               <button
-                class="p-2 rounded-full transition-all duration-200 flex-shrink-0 min-w-[44px] min-h-[44px]"
+                      class="p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
                 onclick={() => onRemoveCurrencyReward(reward.id)}

@@ -6,31 +6,30 @@ import type {
   ChatTriggers,
   GraphStatsResponse,
   GuildConfig,
-  Module,
   MultiGreet,
   MultiGreetType,
   PermissionCache,
   Permissionv2,
   Starboard,
-  SuggestionsModel
+  SuggestionsModel,
 } from "$lib/types/models";
 import type {
-  ProtectionStats,
+  AntiAltSettings,
+  AntiMassMentionSettings,
   AntiRaidSettings,
   AntiSpamSettings,
-  AntiAltSettings,
-  AntiMassMentionSettings
+  ProtectionStats,
 } from "$lib/types/protection";
 import type {
-  TodoList,
-  TodoItem,
-  TodoListPermission,
-  CreateTodoListRequest,
   AddTodoItemRequest,
-  UpdateTodoItemRequest,
+  CreateTodoListRequest,
+  GrantPermissionRequest,
   SetDueDateRequest,
   TagRequest,
-  GrantPermissionRequest
+  TodoItem,
+  TodoList,
+  TodoListPermission,
+  UpdateTodoItemRequest,
 } from "$lib/types/todo";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
@@ -46,14 +45,15 @@ import type {
   PatreonOperationRequest,
   PatreonSupporter,
   PatreonTier,
-  PatreonTierMappingRequest} from "$lib/types.ts";
+  PatreonTierMappingRequest,
+} from "$lib/types.ts";
 import type {
   ChatSaveData,
   ClientUserInfo,
   MusicSettings,
   RoleStateSettings,
   XpSettings,
-  XpTemplate
+  XpTemplate,
 } from "$lib/types/xp.ts";
 import type { MusicStatus, Track } from "$lib/types/music.ts";
 import type {
@@ -61,70 +61,96 @@ import type {
   BirthdayConfigRequest,
   BirthdayFeatures,
   BirthdayStats,
-  BirthdayUser
+  BirthdayUser,
 } from "$lib/types/birthday.ts";
 import type {
-  CustomVoiceConfigurationResponse,
-  CustomVoiceConfigurationRequest,
   CustomVoiceChannelResponse,
+  CustomVoiceConfigurationRequest,
+  CustomVoiceConfigurationResponse,
+  CustomVoiceUserPreference,
   UpdateCustomVoiceChannelRequest,
-  CustomVoiceUserPreference
 } from "$lib/types/customvoice.ts";
 import type {
-  LoggingConfigurationResponse,
   BulkUpdateLogChannelsRequest,
+  LoggingConfigurationResponse,
+  LogType,
   SetIgnoredChannelsRequest,
-  LogType
 } from "$lib/types/logging.ts";
 import type {
   AutomodRule,
   CreateAutomodRuleRequest,
-  FilterStats
+  FilterStats,
 } from "$lib/types/filter.ts";
 import type {
-  UserMessageStats,
   ChannelMessageStats,
   HourlyMessageStats,
+  MessageCountExportRequest,
   MessageStatsResponse,
-  MessageCountExportRequest
+  UserMessageStats,
 } from "$lib/types/messagestats.ts";
 import type {
-  SystemMetrics,
-  PerformanceData,
   DatabaseMetrics,
-  SystemHealthStatus
+  PerformanceData,
+  SystemHealthStatus,
+  SystemMetrics,
 } from "$lib/types/system.ts";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
 import { get } from "svelte/store";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import type { DiscordGuild } from "$lib/types/discordGuild.ts";
 import type {
-  AddButtonRequest, AddSelectMenuRequest, AddSelectOptionRequest, AddTagsRequest,
-  BatchAddRoleRequest, BatchMoveTicketsRequest, BatchTransferTicketsRequest,
-  BlacklistUserRequest, BlacklistedUserResponse, ClaimTicketRequest, CreateCaseRequest,
-  CreatePanelRequest, CreatePriorityRequest, CreateTagRequest, GuildStatistics,
-  PanelButton, PanelSelectMenu, PanelStatus, RecreateAllPanelsResponse, RemoveTagsRequest,
-  SetChannelRequest, SetPriorityRequest, StaffResponseStats, Ticket, TicketActivity, 
-  TicketCase, TicketPanel, TicketPriority, TicketTag, UpdateButtonRequest, UpdateCaseRequest, 
-  UpdateEmbedRequest, UpdatePlaceholderRequest, UserStatistics
+  AddButtonRequest,
+  AddSelectMenuRequest,
+  AddSelectOptionRequest,
+  AddTagsRequest,
+  BatchAddRoleRequest,
+  BatchMoveTicketsRequest,
+  BatchTransferTicketsRequest,
+  BlacklistedUserResponse,
+  BlacklistUserRequest,
+  ClaimTicketRequest,
+  CreateCaseRequest,
+  CreatePanelRequest,
+  CreatePriorityRequest,
+  CreateTagRequest,
+  GuildStatistics,
+  PanelButton,
+  PanelSelectMenu,
+  PanelStatus,
+  RecreateAllPanelsResponse,
+  RemoveTagsRequest,
+  SetChannelRequest,
+  SetPriorityRequest,
+  StaffResponseStats,
+  Ticket,
+  TicketActivity,
+  TicketCase,
+  TicketPanel,
+  TicketPriority,
+  TicketTag,
+  UpdateButtonRequest,
+  UpdateCaseRequest,
+  UpdateEmbedRequest,
+  UpdatePlaceholderRequest,
+  UserStatistics,
 } from "$lib/types/tickets.ts";
 import type {
+  BanUserRequest,
   CountingChannelResponse,
   CountingConfigResponse,
   CountingStatsResponse,
   CountingUserStatsResponse,
-  SavePointResponse,
-  LeaderboardResponse,
-  SetupCountingChannelRequest,
-  UpdateCountingConfigRequest,
-  ResetCountingChannelRequest,
   CreateSavePointRequest,
+  LeaderboardResponse,
+  PurgeChannelRequest,
+  ResetCountingChannelRequest,
   RestoreSavePointRequest,
-  BanUserRequest,
-  UnbanUserRequest,
+  SavePointResponse,
   SetCustomMessageRequest,
   SetMilestonesRequest,
-  PurgeChannelRequest,
+  SetupCountingChannelRequest,
+  UnbanUserRequest,
+  UpdateCountingConfigRequest,
 } from "$lib/types/counting.ts";
 import { LeaderboardType } from "$lib/types/counting.ts";
 
@@ -154,7 +180,7 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    logger.debug(`API error: ${response.status} - ${errorText}`);
+    logger.info(`API error: ${response.status} - ${errorText}`);
     throw new Error(`API error: ${response.status} - ${errorText}`);
   }
 

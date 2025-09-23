@@ -111,7 +111,7 @@
               class="w-10 h-10 rounded-full border-2"
               style="border-color: {$colorStore.primary}30;"
             />
-            <div class="flex-grow">
+            <div class="grow">
               <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                 <span class="font-medium" style="color: {$colorStore.text}">{activity.username}</span>
                 <span class="text-sm" style="color: {$colorStore.muted}">

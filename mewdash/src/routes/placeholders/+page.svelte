@@ -2,10 +2,10 @@
 <script lang="ts">
     import {stopPropagation} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {onDestroy, onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
     let mounted = $state(false);
     let searchQuery = $state("");
@@ -331,7 +331,7 @@
           </div>
 
           <!-- Search and Filter -->
-          <div class="flex-shrink-0 lg:max-w-md lg:w-full space-y-4">
+          <div class="shrink-0 lg:max-w-md lg:w-full space-y-4">
             <!-- Search Bar -->
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -345,7 +345,7 @@
                 type="search"
                 id="search-placeholders"
                 placeholder="Search placeholders..."
-                class="block w-full pl-12 pr-4 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+                class="block w-full pl-12 pr-4 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
                 bind:value={searchQuery}
                 aria-label="Search placeholders"
@@ -388,7 +388,7 @@
     <div class="container mx-auto px-4 py-8">
       <!-- Introduction -->
       <div class="max-w-4xl mx-auto mb-12">
-        <div class="rounded-2xl p-6 backdrop-blur-sm"
+        <div class="rounded-2xl p-6 backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
           <div class="grid md:grid-cols-3 gap-6">
             <div class="text-center">
@@ -423,10 +423,10 @@
 
       <!-- Important Note -->
       <div class="max-w-4xl mx-auto mb-8">
-        <div class="rounded-xl p-4 backdrop-blur-sm"
+        <div class="rounded-xl p-4 backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40;">
           <div class="flex items-start gap-3">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <svg class="w-6 h-6" style="color: {$colorStore.accent};" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15c-.77.833.192 2.5 1.732 2.5z" />
@@ -483,7 +483,7 @@
                   <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {#each category.placeholders as placeholder, placeholderIndex}
                       <div
-                        class="placeholder-card group rounded-xl p-4 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                              class="placeholder-card group rounded-xl p-4 backdrop-blur-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border: 1px solid {$colorStore.primary}20;"
                         in:fly={{ y: 10, duration: 200, delay: placeholderIndex * 50 }}
                         onclick={() => copyToClipboard(placeholder.code)}
@@ -505,7 +505,7 @@
                             {placeholder.code}
                           </code>
                           <button
-                            class="flex-shrink-0 p-2 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
+                                  class="shrink-0 p-2 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
                             onclick={stopPropagation(() => copyToClipboard(placeholder.code))}
                             aria-label="Copy to clipboard"

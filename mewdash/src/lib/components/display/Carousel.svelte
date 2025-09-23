@@ -1,7 +1,7 @@
 <script lang="ts" module>
-  import type { SvelteComponent } from "svelte";
+    import type {SvelteComponent} from "svelte";
 
-  export interface Item {
+    export interface Item {
     props: Record<string, any>;
     component: typeof SvelteComponent | null;
   }
@@ -131,7 +131,7 @@
       {#if navigation}{@render navigation({ scrollToIndex, currentIndex, itemCount, })}{:else}
         {#if defaultRelativeNavigation}
           <div
-            class="absolute h-[100%] w-min left-0 top-0 flex content-center mx-2"
+                  class="absolute h-full w-min left-0 top-0 flex content-center mx-2"
           >
             <button
               aria-label="Go to previous item"
@@ -152,7 +152,7 @@
             </button>
           </div>
           <div
-            class="absolute h-[100%] w-min right-0 top-0 flex content-center mx-2"
+                  class="absolute h-full w-min right-0 top-0 flex content-center mx-2"
           >
             <button
               aria-label="Go to next item"

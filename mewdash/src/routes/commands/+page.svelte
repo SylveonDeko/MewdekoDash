@@ -2,11 +2,11 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
-  import { onDestroy, onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import type { PageData } from "./$types";
+    import {createSearchStore, searchHandler} from "$lib/stores/commandSearch";
+    import {onDestroy, onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -166,7 +166,7 @@
             Explore all available commands and modules
           </p>
         </div>
-        <div class="flex-shrink-0 lg:max-w-md lg:w-full">
+        <div class="shrink-0 lg:max-w-md lg:w-full">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" style="color: {$colorStore.muted};"
@@ -178,7 +178,7 @@
             <input
               aria-label="Search commands and modules"
               bind:value={searchValue}
-              class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+              class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
               id="search"
               onblur={handleSearchBlur}
               onfocus={handleSearchFocus}
@@ -203,7 +203,7 @@
             {:else if showShortcuts}
               <div class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs"
                    style="color: {$colorStore.muted};">
-                <kbd class="px-2 py-1 rounded border"
+                <kbd class="px-2 py-1 rounded-sm border"
                      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;">Ctrl+K</kbd>
               </div>
             {/if}
@@ -281,7 +281,7 @@
               Module:</label>
             <select
               id="module-select"
-              class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+              class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
               style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
               bind:value={activeTabIndex}
             >
@@ -301,7 +301,7 @@
               style="scrollbar-color: {$colorStore.primary}30 transparent;">
               {#each filteredModules as module, index}
                 <button
-                  class="tab-button group inline-flex items-center px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        class="tab-button group inline-flex items-center px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="{index === activeTabIndex 
                     ? `border-color: ${$colorStore.primary}; color: ${$colorStore.text};` 
                     : `border-color: transparent; color: ${$colorStore.muted};`}
@@ -316,7 +316,7 @@
                   onkeydown={(e) => handleTabKeydown(e, index)}
                 >
                   <div
-                    class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform backdrop-blur-sm"
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform backdrop-blur-xs"
                     style="{index === activeTabIndex
                          ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}40, ${$colorStore.gradientMid}50); color: ${$colorStore.text};` 
                          : `background: ${$colorStore.primary}20; color: ${$colorStore.text};`}">
@@ -349,7 +349,7 @@
               <div class="mb-6">
                 <div class="flex items-center space-x-4 mb-4">
                   <div
-                    class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm"
+                          class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-xs"
                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}50);
                               border: 1px solid {$colorStore.primary}30;">
                     <span class="text-xl font-bold" style="color: {$colorStore.text}">
@@ -371,7 +371,7 @@
               <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {#each activeModule.Commands as command, cmdIndex}
                   <article
-                    class="command-card backdrop-blur-sm border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden"
+                          class="command-card backdrop-blur-xs border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden"
                     style="background: {$colorStore.primary}10;
                               border-color: {$colorStore.primary}20;
                               --tw-ring-color: {$colorStore.primary};"
@@ -432,7 +432,7 @@
                       {#if command.GuildUserPermissions || command.ChannelUserPermissions || command.GuildBotPermissions || command.ChannelBotPermissions}
                         <details class="group/perms">
                           <summary
-                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-all backdrop-blur-sm"
+                                  class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-all backdrop-blur-xs"
                             style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25);
                                           color: {$colorStore.text};
                                           border: 1px solid {$colorStore.primary}30;">
@@ -507,6 +507,8 @@
 </main>
 
 <style lang="postcss">
+  @reference '../../app.css';
+
     :global(body) {
         color: var(--color-text);
         background: var(--color-primary);
@@ -526,7 +528,8 @@
     }
 
     :global(*::-webkit-scrollbar) {
-        @apply h-2 w-2;
+      height: 0.5rem;
+      width: 0.5rem;
     }
 
     :global(*::-webkit-scrollbar-track) {
@@ -536,7 +539,7 @@
     :global(*::-webkit-scrollbar-thumb) {
         background: var(--color-primary);
         opacity: 0.2;
-        @apply rounded-full;
+      border-radius: 9999px;
     }
 
     :global(*::-webkit-scrollbar-thumb:hover) {
@@ -558,7 +561,7 @@
 
     /* Command card enhancements */
     .command-card {
-        @apply transition-all duration-200;
+      transition: all 200ms;
     }
 
     .command-card:hover {
@@ -573,7 +576,8 @@
         background: var(--color-primary, rgba(255, 255, 255, 0.1));
         color: var(--color-text);
         opacity: 0.9;
-        @apply px-1 py-0.5 rounded;
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
     }
 
     :global(.prose strong) {
@@ -604,6 +608,6 @@
 
     /* Focus management for tab panels */
     .tab-content:focus {
-        @apply outline-none;
+      outline: none;
     }
 </style>

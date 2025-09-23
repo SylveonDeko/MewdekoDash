@@ -25,11 +25,11 @@ const DEFAULT_COLORS: MusicPlayerColors = {
   text: "#ffffff",
   gradientStart: "#111111",
   gradientEnd: "#1a1a1a",
-  controlsHighlight: "#4f94ff"
+  controlsHighlight: "#4f94ff",
 };
 
 // Dark UI constants - representing the music player background
- // rgb(26, 26, 26) - music player background
+// rgb(26, 26, 26) - music player background
 const DARK_BG_LUMINANCE = 0.05; // Pre-calculated luminance for performance
 
 function createMusicPlayerColorStore() {
@@ -48,11 +48,12 @@ function createMusicPlayerColorStore() {
   let skipTransitionsUntil = 0; // Timestamp to skip transitions until
 
   // Easing function for smooth transitions (ease-in-out)
-  const easeInOut = (t: number): number => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  const easeInOut = (t: number): number =>
+    t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
   // Color conversion and utility functions
   function getLuminance(r: number, g: number, b: number): number {
-    const [rs, gs, bs] = [r, g, b].map(c => {
+    const [rs, gs, bs] = [r, g, b].map((c) => {
       const channel = c / 255;
       return channel <= 0.03928
         ? channel / 12.92
@@ -73,7 +74,9 @@ function createMusicPlayerColorStore() {
     b /= 255;
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
+    let h = 0,
+      s,
+      l = (max + min) / 2;
 
     if (max !== min) {
       const d = max - min;
@@ -127,10 +130,15 @@ function createMusicPlayerColorStore() {
   }
 
   function rgbToHex(r: number, g: number, b: number): string {
-    return "#" + [r, g, b].map(x => {
-      const hex = Math.round(x).toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    }).join("");
+    return (
+      "#" +
+      [r, g, b]
+        .map((x) => {
+          const hex = Math.round(x).toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("")
+    );
   }
 
   // For color transitions: Parse hex colors
@@ -177,45 +185,84 @@ function createMusicPlayerColorStore() {
   function detectEyeColors(palette: RGB[]): RGB[] {
     // Common anime eye colors fall in these hue ranges
     const eyeColorRanges = [
-      { name: "amber/gold", hueRange: [35, 55], minSat: 60, minLight: 40, maxLight: 70 },
-      { name: "red/ruby", hueRange: [350, 10], minSat: 70, minLight: 40, maxLight: 60 },
-      { name: "blue", hueRange: [200, 240], minSat: 50, minLight: 40, maxLight: 70 },
-      { name: "green", hueRange: [90, 150], minSat: 50, minLight: 40, maxLight: 70 },
-      { name: "purple/violet", hueRange: [250, 290], minSat: 50, minLight: 30, maxLight: 70 }
+      {
+        name: "amber/gold",
+        hueRange: [35, 55],
+        minSat: 60,
+        minLight: 40,
+        maxLight: 70,
+      },
+      {
+        name: "red/ruby",
+        hueRange: [350, 10],
+        minSat: 70,
+        minLight: 40,
+        maxLight: 60,
+      },
+      {
+        name: "blue",
+        hueRange: [200, 240],
+        minSat: 50,
+        minLight: 40,
+        maxLight: 70,
+      },
+      {
+        name: "green",
+        hueRange: [90, 150],
+        minSat: 50,
+        minLight: 40,
+        maxLight: 70,
+      },
+      {
+        name: "purple/violet",
+        hueRange: [250, 290],
+        minSat: 50,
+        minLight: 30,
+        maxLight: 70,
+      },
     ];
 
-    const potentialEyeColors: { color: RGB, score: number }[] = [];
+    const potentialEyeColors: { color: RGB; score: number }[] = [];
 
     for (const color of palette) {
       const [h, s, l] = rgbToHsl(...color);
 
       // Check each eye color range
       for (const range of eyeColorRanges) {
-        const inHueRange = (
+        const inHueRange =
           (h >= range.hueRange[0] && h <= range.hueRange[1]) ||
           // Handle wrap-around for red hues
-          (range.name === "red/ruby" && (h >= 350 || h <= 10))
-        );
+          (range.name === "red/ruby" && (h >= 350 || h <= 10));
 
-        if (inHueRange &&
+        if (
+          inHueRange &&
           s >= range.minSat &&
           l >= range.minLight &&
-          l <= range.maxLight) {
+          l <= range.maxLight
+        ) {
           // Calculate a score based on how closely it matches ideal eye color
           const saturationScore = s / 100; // Higher saturation is better
-          const lightnessScore = 1 - Math.abs((range.minLight + range.maxLight) / 2 - l) / ((range.maxLight - range.minLight) / 2);
+          const lightnessScore =
+            1 -
+            Math.abs((range.minLight + range.maxLight) / 2 - l) /
+              ((range.maxLight - range.minLight) / 2);
 
           // Bonus for exact hue matches to common anime eye colors
           let hueBonus = 0;
-          if ((h >= 40 && h <= 50) || // Gold/amber
-            (h >= 355 || h <= 5) || // Red
+          if (
+            (h >= 40 && h <= 50) || // Gold/amber
+            h >= 355 ||
+            h <= 5 || // Red
             (h >= 220 && h <= 230) || // Blue
             (h >= 110 && h <= 130) || // Green
-            (h >= 270 && h <= 280)) { // Purple
+            (h >= 270 && h <= 280)
+          ) {
+            // Purple
             hueBonus = 0.3;
           }
 
-          const totalScore = saturationScore * 0.4 + lightnessScore * 0.3 + hueBonus;
+          const totalScore =
+            saturationScore * 0.4 + lightnessScore * 0.3 + hueBonus;
           potentialEyeColors.push({ color, score: totalScore });
         }
       }
@@ -224,13 +271,16 @@ function createMusicPlayerColorStore() {
     // Sort by score and return top colors
     return potentialEyeColors
       .sort((a, b) => b.score - a.score)
-      .map(item => item.color);
+      .map((item) => item.color);
   }
 
-  function createHarmoniousColors(baseHue: number, scheme: "complementary" | "triadic" | "analogous" = "complementary"): {
-    primary: HSL,
-    secondary: HSL,
-    accent: HSL
+  function createHarmoniousColors(
+    baseHue: number,
+    scheme: "complementary" | "triadic" | "analogous" = "complementary",
+  ): {
+    primary: HSL;
+    secondary: HSL;
+    accent: HSL;
   } {
     const baseSaturation = 85;
     const baseLightness = 55;
@@ -256,14 +306,14 @@ function createMusicPlayerColorStore() {
     return {
       primary: [baseHue, baseSaturation, baseLightness],
       secondary: [secondaryHue, baseSaturation - 5, baseLightness - 5],
-      accent: [accentHue, baseSaturation - 10, baseLightness + 5]
+      accent: [accentHue, baseSaturation - 10, baseLightness + 5],
     };
   }
 
   function createVisualHierarchy(baseColor: RGB): {
-    main: string,
-    highlight: string,
-    subtle: string
+    main: string;
+    highlight: string;
+    subtle: string;
   } {
     const [h, s, l] = rgbToHsl(...baseColor);
 
@@ -278,13 +328,13 @@ function createMusicPlayerColorStore() {
     return {
       main: hslToHex(h, s, l),
       highlight: hslToHex(h, highlightSaturation, highlightLightness),
-      subtle: hslToHex(h, subtleSaturation, subtleLightness)
+      subtle: hslToHex(h, subtleSaturation, subtleLightness),
     };
   }
 
   function createSubtleGradient(baseColor: RGB): {
-    start: string,
-    end: string
+    start: string;
+    end: string;
   } {
     const [h, s, l] = rgbToHsl(...baseColor);
 
@@ -298,7 +348,7 @@ function createMusicPlayerColorStore() {
 
     return {
       start: hslToHex(h, startSaturation, startLightness),
-      end: hslToHex(h, endSaturation, endLightness)
+      end: hslToHex(h, endSaturation, endLightness),
     };
   }
 
@@ -357,7 +407,7 @@ function createMusicPlayerColorStore() {
     return rgbToHex(
       Math.round(color[0] * factor),
       Math.round(color[1] * factor),
-      Math.round(color[2] * factor)
+      Math.round(color[2] * factor),
     );
   }
 
@@ -388,7 +438,12 @@ function createMusicPlayerColorStore() {
     }
 
     // Combine scores with weights
-    return (saturationScore * 0.5) + (lightnessScore * 0.2) + (colorfulness * 0.1) + (accentBonus * 0.2);
+    return (
+      saturationScore * 0.5 +
+      lightnessScore * 0.2 +
+      colorfulness * 0.1 +
+      accentBonus * 0.2
+    );
   }
 
   // Detection for anime/cartoon album artwork
@@ -417,11 +472,18 @@ function createMusicPlayerColorStore() {
 
     // If we have some saturated colors and distinct color regions,
     // it's likely a cartoon/anime image or vibrant album art
-    return (highSaturationCount >= 2 && distinctColorCount.size >= 3) || hasVibrantColors;
+    return (
+      (highSaturationCount >= 2 && distinctColorCount.size >= 3) ||
+      hasVibrantColors
+    );
   }
 
   // NEW: Function to interpolate between two hex colors for transitions
-  function interpolateHexColors(color1: string, color2: string, progress: number): string {
+  function interpolateHexColors(
+    color1: string,
+    color2: string,
+    progress: number,
+  ): string {
     const rgb1 = parseHexColor(color1);
     const rgb2 = parseHexColor(color2);
 
@@ -434,12 +496,23 @@ function createMusicPlayerColorStore() {
     return rgbToHex(r, g, b);
   }
 
-  function interpolateColorPalettes(palette1: MusicPlayerColors, palette2: MusicPlayerColors, progress: number): MusicPlayerColors {
+  function interpolateColorPalettes(
+    palette1: MusicPlayerColors,
+    palette2: MusicPlayerColors,
+    progress: number,
+  ): MusicPlayerColors {
     const result = {} as MusicPlayerColors;
 
     for (const key in palette1) {
-      if (typeof palette1[key] === "string" && typeof palette2[key] === "string") {
-        result[key] = interpolateHexColors(palette1[key] as string, palette2[key] as string, progress);
+      if (
+        typeof palette1[key] === "string" &&
+        typeof palette2[key] === "string"
+      ) {
+        result[key] = interpolateHexColors(
+          palette1[key] as string,
+          palette2[key] as string,
+          progress,
+        );
       } else {
         // For non-color properties, just use target
         result[key] = palette2[key];
@@ -469,13 +542,20 @@ function createMusicPlayerColorStore() {
 
     function updateFrame(currentTime: number) {
       // Calculate raw progress (0 to 1)
-      const rawProgress = Math.min((currentTime - startTime) / transitionDuration, 1);
+      const rawProgress = Math.min(
+        (currentTime - startTime) / transitionDuration,
+        1,
+      );
 
       // Apply easing function
       const progress = easeInOut(rawProgress);
 
       // Calculate interpolated colors
-      const interpolatedColors = interpolateColorPalettes(currentColors, targetColors, progress);
+      const interpolatedColors = interpolateColorPalettes(
+        currentColors,
+        targetColors,
+        progress,
+      );
 
       // Update the store
       store.set(interpolatedColors);
@@ -572,7 +652,7 @@ function createMusicPlayerColorStore() {
       }
 
       // Analyze extracted colors
-      const colorAnalysis = palette.map(color => {
+      const colorAnalysis = palette.map((color) => {
         const [h, s, l] = rgbToHsl(...color);
         return { color, h, s, l, score: scoreColor(color) };
       });
@@ -584,7 +664,7 @@ function createMusicPlayerColorStore() {
       let primaryColor: RGB;
       if (isCartoonArt && eyeColors.length > 0) {
         primaryColor = eyeColors[0]; // Use the highest-scored eye color
-        //logger.debug("Using anime eye color as primary:", rgbToHex(...primaryColor));
+        //logger.info("Using anime eye color as primary:", rgbToHex(...primaryColor));
       } else {
         primaryColor = scoredColors[0].color;
       }
@@ -593,8 +673,10 @@ function createMusicPlayerColorStore() {
       let colorScheme: "complementary" | "triadic" | "analogous";
 
       // Determine best color scheme based on image characteristics
-      const hasManyDistinctColors = new Set(palette.map(c => Math.floor(rgbToHsl(...c)[0] / 30))).size >= 4;
-      const hasStrongSaturation = palette.some(c => rgbToHsl(...c)[1] > 80);
+      const hasManyDistinctColors =
+        new Set(palette.map((c) => Math.floor(rgbToHsl(...c)[0] / 30))).size >=
+        4;
+      const hasStrongSaturation = palette.some((c) => rgbToHsl(...c)[1] > 80);
 
       if (isCartoonArt && hasManyDistinctColors) {
         colorScheme = "triadic"; // Anime art often looks good with triadic
@@ -605,7 +687,10 @@ function createMusicPlayerColorStore() {
       }
 
       // Create harmonious color palette
-      const harmoniousColors = createHarmoniousColors(primaryHsl[0], colorScheme);
+      const harmoniousColors = createHarmoniousColors(
+        primaryHsl[0],
+        colorScheme,
+      );
 
       // Convert to RGB
       const foregroundColor = hslToRgb(...harmoniousColors.primary);
@@ -628,7 +713,7 @@ function createMusicPlayerColorStore() {
         text: textColor,
         gradientStart: gradient.start,
         gradientEnd: gradient.end,
-        controlsHighlight: hierarchy.highlight
+        controlsHighlight: hierarchy.highlight,
       };
     } catch (error) {
       logger.error("Error extracting colors for music player:", error);
@@ -667,7 +752,6 @@ function createMusicPlayerColorStore() {
 
       // Start transition to new colors
       animateColorTransition();
-
     } catch (err) {
       logger.error("Failed to extract colors from artwork:", err);
       store.set(DEFAULT_COLORS);
@@ -716,7 +800,7 @@ function createMusicPlayerColorStore() {
     // Access the current colors
     get current(): MusicPlayerColors {
       return get(store);
-    }
+    },
   };
 }
 

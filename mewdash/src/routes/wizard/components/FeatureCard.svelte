@@ -3,12 +3,12 @@
 Feature card for selecting features during wizard setup
 -->
 <script lang="ts">
-  import { colorStore } from "$lib/stores/colorStore";
-  import { createEventDispatcher } from "svelte";
-  import type { ComponentType } from "svelte";
-  import { Check, Clock, Star } from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import type {ComponentType} from "svelte";
+    import {createEventDispatcher} from "svelte";
+    import {Check, Clock, Star} from "lucide-svelte";
 
-  interface Props {
+    interface Props {
     id: string;
     title: string;
     description: string;
@@ -51,7 +51,7 @@ Feature card for selecting features during wizard setup
 </script>
 
 <button
-  class="feature-card group w-full text-left p-4 sm:p-6 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[160px] sm:min-h-[180px] relative overflow-hidden"
+        class="feature-card group w-full text-left p-4 sm:p-6 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[160px] sm:min-h-[180px] relative overflow-hidden"
   class:disabled
   style="
     background: {selected 
@@ -88,8 +88,8 @@ Feature card for selecting features during wizard setup
 
   <!-- Icon and header -->
   <div class="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4" class:mt-6={recommended} class:sm:mt-8={recommended}>
-    <div 
-      class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg border transition-colors flex-shrink-0"
+      <div
+              class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg border transition-colors shrink-0"
       style="
         background: {selected ? $colorStore.primary + '20' : $colorStore.primary + '08'};
         border-color: {selected ? $colorStore.primary + '40' : $colorStore.primary + '20'};

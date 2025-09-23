@@ -3,10 +3,10 @@
 Permission check component for verifying bot permissions during wizard
 -->
 <script lang="ts">
-  import { colorStore } from "$lib/stores/colorStore";
-  import { Check, X, AlertCircle, Info, ExternalLink } from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {AlertCircle, Check, Info, X} from "lucide-svelte";
 
-  interface Props {
+    interface Props {
     permission: string;
     hasPermission: boolean;
     importance?: string | number;
@@ -58,8 +58,8 @@ Permission check component for verifying bot permissions during wizard
   "
 >
   <!-- Status icon -->
-  <div 
-    class="flex items-center justify-center w-8 h-8 rounded-full border-2 flex-shrink-0"
+    <div
+            class="flex items-center justify-center w-8 h-8 rounded-full border-2 shrink-0"
     style="
       background: {statusColor}15;
       border-color: {statusColor}40;
@@ -77,7 +77,7 @@ Permission check component for verifying bot permissions during wizard
       </h4>
       
       <!-- Importance badge -->
-      <div class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium flex-shrink-0"
+        <div class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium shrink-0"
            style="background: {importanceInfo.color}15; color: {importanceInfo.color};">
         <importanceInfo.icon class="w-3 h-3" />
         {importanceInfo.label}
@@ -94,7 +94,7 @@ Permission check component for verifying bot permissions during wizard
       <div class="flex flex-wrap gap-1 mb-3">
         <span class="text-xs font-medium" style="color: {$colorStore.muted};">Required for:</span>
         {#each requiredForFeatures as feature}
-          <span class="px-2 py-1 rounded text-xs font-medium"
+          <span class="px-2 py-1 rounded-sm text-xs font-medium"
                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};">
             {feature}
           </span>
@@ -111,7 +111,7 @@ Permission check component for verifying bot permissions during wizard
       </div>
       
       {#if !hasPermission && importance === 'critical'}
-        <span class="text-xs px-2 py-1 rounded font-medium"
+        <span class="text-xs px-2 py-1 rounded-sm font-medium"
               style="background: #ef444415; color: #ef4444;">
           Action required
         </span>

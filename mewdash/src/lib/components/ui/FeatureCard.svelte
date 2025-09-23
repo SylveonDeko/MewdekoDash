@@ -1,11 +1,11 @@
 <!-- lib/components/FeatureCard.svelte -->
 <script lang="ts">
-  import { fade, scale } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import type { ComponentType } from "svelte";
+    import {fade} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import type {ComponentType} from "svelte";
 
 
-  interface Props {
+    interface Props {
       // Props
       icon: ComponentType;
       title: string;
@@ -36,9 +36,9 @@
 >
   {#if href}
       {@const SvelteComponent = icon}
-    <a 
-      {href} 
-      class="block p-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
+    <a
+            {href}
+            class="block p-3 rounded-xl transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
       class:hover:scale-105={isActive}
       class:hover:shadow-lg={isActive}
       class:ring-2={isActive}
@@ -51,7 +51,7 @@
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="flex-shrink-0">
+            <div class="shrink-0">
               <SvelteComponent
               class="w-5 h-5 transition-colors duration-300"
               style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
@@ -68,7 +68,7 @@
         </div>
 
         <!-- Status indicator -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
           {#if isActive}
             <div class="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></div>
             <span class="text-xs" style="color: #10b981" aria-label="Feature is active">Active</span>
@@ -83,8 +83,8 @@
     </a>
   {:else}
       {@const SvelteComponent_1 = icon}
-    <div 
-      class="p-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
+      <div
+              class="p-3 rounded-xl transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
       class:ring-2={isActive}
       class:ring-transparent={!isActive}
       style="background: {isActive ? $colorStore.primary + '15' : $colorStore.primary + '08'};
@@ -95,7 +95,7 @@
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="flex-shrink-0">
+            <div class="shrink-0">
               <SvelteComponent_1
               class="w-5 h-5 transition-colors duration-300"
               style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
@@ -112,7 +112,7 @@
         </div>
 
         <!-- Status indicator -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
           {#if isActive}
             <div class="w-2 h-2 bg-green-500 rounded-full"></div>
             <span class="text-xs" style="color: #10b981">Active</span>

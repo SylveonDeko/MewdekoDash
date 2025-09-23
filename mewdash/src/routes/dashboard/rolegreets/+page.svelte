@@ -2,19 +2,19 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { AlertCircle, Bot, Clock, Edit, Globe, MessageSquare, Plus, Power } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import type { PageData } from "./$types";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import type {BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import {AlertCircle, Bot, Clock, Edit, Globe, MessageSquare, Plus, Power} from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -331,7 +331,7 @@
 
     <!-- Header -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -342,7 +342,7 @@
 
     <!-- Main Content -->
     <div
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >

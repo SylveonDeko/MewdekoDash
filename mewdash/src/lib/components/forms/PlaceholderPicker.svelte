@@ -1,18 +1,18 @@
 <!-- PlaceholderPicker.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { fade, fly } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
-  import { colorStore } from "$lib/stores/colorStore";
-  import { Search, Hash, User, Server, Calendar, BarChart3, Zap } from "lucide-svelte";
-  import Portal from "$lib/components/ui/Portal.svelte";
-  import { clickOutside } from "$lib/clickOutside";
-  import type { ComponentType } from "svelte";
+    import type {ComponentType} from "svelte";
+    import {createEventDispatcher, onMount, tick} from 'svelte';
+    import {fade, fly} from 'svelte/transition';
+    import {cubicOut} from 'svelte/easing';
+    import {colorStore} from "$lib/stores/colorStore";
+    import {BarChart3, Calendar, Hash, Search, Server, User, Zap} from "lucide-svelte";
+    import Portal from "$lib/components/ui/Portal.svelte";
+    import {clickOutside} from "$lib/clickOutside";
 
 
-  // TypeScript interfaces
+    // TypeScript interfaces
   interface Placeholder {
     category: string;
     name: string;
@@ -369,7 +369,7 @@
             <input
               bind:this={searchInputRef}
               type="text"
-              class="w-full pl-10 pr-3 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2"
+              class="w-full pl-10 pr-3 py-2 rounded-lg transition-all duration-200 focus:outline-hidden focus:ring-2"
               style="background: {$colorStore.primary}20;
                      border: 1px solid {$colorStore.primary}30;
                      color: {$colorStore.text};
@@ -431,7 +431,7 @@
                 >
                   <span class="flex items-start gap-3">
                     <!-- Placeholder Icon/Preview -->
-                    <span class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono"
+                    <span class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono"
                          style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
                       %
                     </span>
@@ -504,7 +504,7 @@
           <input
             bind:this={searchInputRef}
             type="text"
-            class="w-full pl-10 pr-3 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2"
+            class="w-full pl-10 pr-3 py-2 rounded-lg transition-all duration-200 focus:outline-hidden focus:ring-2"
             style="background: {$colorStore.primary}20;
                    border: 1px solid {$colorStore.primary}30;
                    color: {$colorStore.text};
@@ -566,7 +566,7 @@
               >
                 <span class="flex items-start gap-3">
                   <!-- Placeholder Icon/Preview -->
-                  <span class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono"
+                  <span class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono"
                        style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
                     %
                   </span>

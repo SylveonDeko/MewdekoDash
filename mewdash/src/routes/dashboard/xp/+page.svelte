@@ -1,48 +1,23 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
-  import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
-  import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
-  import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
-  import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
-  import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
-  import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
-  import {
-    AlertCircle,
-    AlignCenter,
-    Award,
-    BarChart,
-    BarChart2,
-    Clock,
-    Database,
-    Grid,
-    Image,
-    Move,
-    RotateCcw,
-    Settings,
-    Star,
-    Type,
-    User,
-    Users,
-    ZoomIn,
-    ZoomOut
-  } from "lucide-svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger.ts";
-  import type { PageData } from "./$types";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import type {BotStatusModel} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
+    import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
+    import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
+    import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
+    import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
+    import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
+    import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
+    import {AlertCircle, Award, BarChart, Image as ImageIcon, Settings, Star, Users} from "lucide-svelte";
+    import {browser} from "$app/environment";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger.ts";
+    import type {PageData} from "./$types";
 
     interface Props {
         data: PageData;
@@ -154,6 +129,11 @@
     let localTemplate: any = $state(null);
   let previewContainerRef: HTMLDivElement;
   let draggingElement: any = null;
+    let showTemplateEditor = $state(false);
+    let previewCanvas: HTMLCanvasElement;
+    let previewCtx: CanvasRenderingContext2D | null = null;
+    let previewBgImage = $state<HTMLImageElement | null>(null);
+    let defaultBgImage = $state<HTMLImageElement | null>(null);
   let hoverElement: any = null;
   let dragStartPos = { x: 0, y: 0 };
   let dragStartElementPos = { x: 0, y: 0 };
@@ -378,42 +358,64 @@
 
   async function fetchXpTemplate() {
     try {
-      loading.template = true;
-      error.template = null;
+        loading = {...loading, template: true};
+        error = {...error, template: null};
+
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
 
       console.log("Fetching XP template for guild:", $currentGuild.id);
-      template = await api.getXpTemplate($currentGuild.id);
+
+        // Fetch template and settings together to ensure we have the custom image URL
+        const [templateData, settingsData] = await Promise.all([
+            api.getXpTemplate($currentGuild.id),
+            api.getXpSettings($currentGuild.id).catch(() => xpSettings) // Fallback to existing settings
+        ]);
+
+        template = templateData;
       console.log("Raw template from API:", template);
 
       localTemplate = JSON.parse(JSON.stringify(template));
       console.log("Local template after copy:", localTemplate);
 
-      // Initialize barWidth if it doesn't exist
-      if (localTemplate.templateBar && !localTemplate.templateBar.barWidth) {
-        localTemplate.templateBar.barWidth = 4; // Default to 4px
-        console.log("Added default barWidth to templateBar");
+        // Initialize missing properties with C# defaults
+        if (localTemplate.templateBar) {
+            if (!localTemplate.templateBar.barWidth) {
+                localTemplate.templateBar.barWidth = 20; // C# default
+            }
+            if (typeof localTemplate.templateBar.barLength === 'undefined') {
+                localTemplate.templateBar.barLength = 452; // C# default value from DrawXpBar
+            }
+            if (typeof localTemplate.templateBar.barDirection === 'undefined') {
+                localTemplate.templateBar.barDirection = 3; // Default to Right (3 in C# enum)
+            }
       }
 
-      localTemplate.customXpImageUrl = xpSettings.customXpImageUrl || "";
-      console.log("Set customXpImageUrl:", localTemplate.customXpImageUrl);
+        // Set customXpImageUrl from settings
+        console.log("Settings data customXpImageUrl:", settingsData?.customXpImageUrl);
+        console.log("Current xpSettings customXpImageUrl:", xpSettings.customXpImageUrl);
+
+        localTemplate.customXpImageUrl = settingsData?.customXpImageUrl || xpSettings.customXpImageUrl || "";
+        console.log("Final localTemplate.customXpImageUrl:", localTemplate.customXpImageUrl);
 
       // Update the UI variables
-      if (xpSettings.customXpImageUrl) {
-        imageUrl = xpSettings.customXpImageUrl;
-        previewBackgroundUrl = imageUrl;
-        console.log("Updated preview background URL:", previewBackgroundUrl);
+        if (localTemplate.customXpImageUrl) {
+            imageUrl = localTemplate.customXpImageUrl;
+            previewBackgroundUrl = localTemplate.customXpImageUrl;
+            console.log("Setting imageUrl to:", imageUrl);
+            console.log("Setting previewBackgroundUrl to:", previewBackgroundUrl);
+        } else {
+            console.log("No customXpImageUrl found, skipping image load");
       }
 
       console.log("Template fetch completed successfully");
     } catch (err) {
       console.error("Failed to fetch XP template:", err);
       logger.error("Failed to fetch XP template:", err);
-      error.template = err instanceof Error ? err.message : "Failed to fetch XP template";
+        error = {...error, template: err instanceof Error ? err.message : "Failed to fetch XP template"};
     } finally {
-      loading.template = false;
+        loading = {...loading, template: false};
       console.log("Template loading finished, loading.template:", loading.template);
     }
   }
@@ -1132,54 +1134,187 @@
     return `${r}, ${g}, ${b}`;
   }
 
+    // Render XP card preview
+    function renderPreview() {
+        if (!previewCanvas || !localTemplate) return;
 
-    run(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchXpSettings(),
-                fetchServerStats(),
-                fetchLeaderboard(),
-                fetchXpTemplate(),
-                fetchRewards(),
-                fetchExclusions(),
-                fetchChannelsAndRoles(),
-                fetchBotStatus()
-            ]);
+        const ctx = previewCanvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+        // Draw background
+        if (previewBgImage) {
+            // Custom background image
+            ctx.drawImage(previewBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+        } else if (defaultBgImage) {
+            // Default background with gradient (since default is transparent)
+            // First draw gradient
+            const gradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+            gradient.addColorStop(0, `${$colorStore.primary}15`);
+            gradient.addColorStop(0.5, `${$colorStore.primary}20`);
+            gradient.addColorStop(1, `${$colorStore.secondary}15`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+
+            // Then draw transparent default image on top
+            ctx.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
         }
-    });
-  // Reactive declarations for guild changes
-    run(() => {
-        if ($currentGuild) {
-            fetchXpSettings();
-            fetchServerStats();
-            fetchLeaderboard();
-            fetchXpTemplate();
-            fetchRewards();
-            fetchExclusions();
-            fetchChannelsAndRoles();
+
+        // Draw username
+        if (localTemplate.templateUser?.showText) {
+            ctx.fillStyle = `#${localTemplate.templateUser.textColor || 'FFFFFF'}`;
+            ctx.font = `${localTemplate.templateUser.fontSize || 24}px sans-serif`;
+            ctx.fillText(
+                currentUserData?.username || sampleData.username,
+                localTemplate.templateUser.textX || 120,
+                localTemplate.templateUser.textY || 50
+            );
         }
-    });
-  // Reactive declarations for instance changes
-    run(() => {
-        if ($currentInstance) {
-            fetchXpSettings();
-            fetchServerStats();
-            fetchLeaderboard();
-            fetchXpTemplate();
-            fetchRewards();
-            fetchExclusions();
-            fetchChannelsAndRoles();
+
+        // Draw progress bar (matching C# DrawXpBar method exactly)
+        if (localTemplate.templateBar?.showBar) {
+            const percent = (currentUserData?.progress || sampleData.progress) / 100;
+            const x1 = localTemplate.templateBar.barPointAx;
+            const y1 = localTemplate.templateBar.barPointAy;
+            const x2 = localTemplate.templateBar.barPointBx;
+            const y2 = localTemplate.templateBar.barPointBy;
+            const length = (localTemplate.templateBar.barLength || 452) * percent;
+            const direction = localTemplate.templateBar.barDirection ?? 3; // Default to 3 (Right) as per C#
+
+            // Calculate the four corners based on C# XpTemplateDirection enum
+            // 0=Up, 1=Down, 2=Left, 3=Right
+            let x3, x4, y3, y4;
+            switch (direction) {
+                case 1: // Down
+                    x3 = x1;
+                    x4 = x2;
+                    y3 = y1 + length;
+                    y4 = y2 + length;
+                    break;
+                case 0: // Up
+                    x3 = x1;
+                    x4 = x2;
+                    y3 = y1 - length;
+                    y4 = y2 - length;
+                    break;
+                case 2: // Left
+                    x3 = x1 - length;
+                    x4 = x2 - length;
+                    y3 = y1;
+                    y4 = y2;
+                    break;
+                default: // Right (3)
+                    x3 = x1 + length;
+                    x4 = x2 + length;
+                    y3 = y1;
+                    y4 = y2;
+                    break;
+            }
+
+            // Draw as filled path
+            ctx.save();
+
+            // Parse color - handle ARGB format (e.g., "FF000000")
+            let barColor = localTemplate.templateBar.barColor || '4CAF50';
+            if (barColor.length === 8) {
+                // Skip alpha bytes for ARGB format
+                barColor = barColor.slice(2);
+            }
+            ctx.fillStyle = `#${barColor}`;
+            ctx.globalAlpha = (localTemplate.templateBar.barTransparency || 255) / 255;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x3, y3);
+            ctx.lineTo(x4, y4);
+            ctx.lineTo(x2, y2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
         }
+
+        // Draw guild rank
+        if (localTemplate.templateGuild?.showGuildRank) {
+            ctx.fillStyle = `#${localTemplate.templateGuild.guildRankColor || 'FFFFFF'}`;
+            ctx.font = `${localTemplate.templateGuild.guildRankFontSize || 18}px sans-serif`;
+            ctx.fillText(
+                `#${currentUserData?.rank || sampleData.rank}`,
+                localTemplate.templateGuild.guildRankX || 50,
+                localTemplate.templateGuild.guildRankY || 150
+            );
+        }
+
+        // Draw guild level
+        if (localTemplate.templateGuild?.showGuildLevel) {
+            ctx.fillStyle = `#${localTemplate.templateGuild.guildLevelColor || 'FFFFFF'}`;
+            ctx.font = `${localTemplate.templateGuild.guildLevelFontSize || 18}px sans-serif`;
+            ctx.fillText(
+                `Level ${currentUserData?.level || sampleData.level}`,
+                localTemplate.templateGuild.guildLevelX || 350,
+                localTemplate.templateGuild.guildLevelY || 150
+            );
+        }
+    }
+
+    // Load default background image once
+    onMount(() => {
+        const img = new Image();
+        img.onload = () => {
+            console.log("Default XP background loaded");
+            defaultBgImage = img;
+            if (previewCanvas && localTemplate) {
+                renderPreview();
+            }
+        };
+        img.onerror = () => {
+            console.error("Failed to load default XP background");
+            defaultBgImage = null;
+        };
+        img.src = '/img/default_xp_background.png';
     });
+
   // Update preview on template change
-    run(() => {
-        if (localTemplate && previewContainerRef) {
-            setTimeout(() => updatePreviewScale(), 0);
+    $effect(() => {
+        if (localTemplate && activeTab === "template") {
+            console.log("Template effect triggered, customXpImageUrl:", localTemplate.customXpImageUrl);
+
+            // Load background image if available
+            if (localTemplate.customXpImageUrl) {
+                console.log("Loading XP background image:", localTemplate.customXpImageUrl);
+                const img = new Image();
+                img.onload = () => {
+                    console.log("XP background image loaded successfully");
+                    previewBgImage = img;
+                    renderPreview();
+                };
+                img.onerror = (err) => {
+                    console.error("Failed to load XP background image:", err);
+                    console.error("Failed URL was:", localTemplate.customXpImageUrl);
+                    previewBgImage = null;
+                    renderPreview();
+                };
+                img.src = localTemplate.customXpImageUrl;
+            } else {
+                console.log("No customXpImageUrl in template, using default background");
+                previewBgImage = null;
+                renderPreview();
+            }
         }
     });
-    run(() => {
+
+    $effect(() => {
         if (activeTab === "template" && !currentUserData) {
             fetchCurrentUserData();
+        }
+    });
+
+    $effect(() => {
+        if (previewCanvas && localTemplate && activeTab === "template") {
+            // Small delay to ensure canvas is ready
+            setTimeout(() => renderPreview(), 50);
         }
     });
 </script>
@@ -1200,7 +1335,7 @@
     {id: "stats", label: "Stats", icon: BarChart},
     {id: "leaderboard", label: "Leaderboard", icon: Users},
     {id: "rewards", label: "Rewards", icon: Star},
-    {id: "template", label: "Template", icon: Image},
+    {id: "template", label: "Template", icon: ImageIcon},
     {id: "exclusions", label: "Exclusions", icon: AlertCircle}
   ]}
   activeTab={activeTab}
@@ -1217,7 +1352,7 @@
 
   <!-- Tab Content -->
   <div
-    class="backdrop-blur-sm border shadow-2xl"
+          class="backdrop-blur-xs border shadow-2xl"
     class:rounded-2xl={activeTab !== 'template'}
     class:p-6={activeTab !== 'template'}
     class:h-[calc(100vh-200px)]={activeTab === 'template'}
@@ -1332,22 +1467,68 @@
         </div>
       {:else if template}
         {#if localTemplate}
-          {#if isMobile}
-            <!-- Mobile editor has its own header, so skip the page header -->
-            <XpMobileTemplateEditor 
-              bind:localTemplate={localTemplate}
-              bind:changedSettings={changedSettings}
-              bind:currentUserData={currentUserData}
-              bind:sampleData={sampleData}
-            />
-          {:else}
-            <XpTemplateEditor 
-              bind:localTemplate={localTemplate}
-              bind:changedSettings={changedSettings}
-              bind:isMobile={isMobile}
-              bind:currentUserData={currentUserData}
-              bind:sampleData={sampleData}
-            />
+            <!-- XP Card Preview -->
+            <div class="flex flex-col items-center gap-6 py-8">
+                <h3 class="text-xl font-semibold" style="color: {$colorStore.text}">XP Card Preview</h3>
+
+                <!-- Preview Container -->
+                <div
+                        class="relative rounded-2xl overflow-hidden shadow-2xl {isMobile ? 'max-w-full mx-4' : ''}"
+                        style="width: {isMobile ? '100%' : Math.min(localTemplate.outputSizeX, 600) + 'px'};
+                     max-width: {isMobile ? 'calc(100vw - 2rem)' : '600px'};
+                     height: {isMobile ? '200px' : 'auto'};
+                     aspect-ratio: {isMobile ? 'auto' : localTemplate.outputSizeX + ' / ' + localTemplate.outputSizeY};
+                     background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
+                     border: 2px solid {$colorStore.primary}30;"
+                >
+                    <canvas
+                            bind:this={previewCanvas}
+                            id="xp-preview-canvas"
+                            width={localTemplate.outputSizeX}
+                            height={localTemplate.outputSizeY}
+                            style="width: 100%; height: 100%; object-fit: {isMobile ? 'cover' : 'contain'}; object-position: center; image-rendering: crisp-edges;"
+                    />
+                </div>
+
+                <!-- Edit Button -->
+                <button
+                        class="px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 text-sm sm:text-base"
+                        style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
+                     color: white;"
+                        onclick={() => { showTemplateEditor = true; }}
+                >
+                    <ImageIcon class="w-4 sm:w-5 h-4 sm:h-5"/>
+                    Edit Template
+                </button>
+
+                <!-- Template Info -->
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm"
+                     style="color: {$colorStore.muted}">
+                    <span>Size: {localTemplate.outputSizeX} × {localTemplate.outputSizeY}px</span>
+                    <span class="hidden sm:inline">•</span>
+                    <span>Background: {localTemplate.customXpImageUrl ? 'Custom Image' : 'Default'}</span>
+                </div>
+            </div>
+
+            <!-- Fullscreen Template Editor -->
+            {#if showTemplateEditor}
+                {#if isMobile}
+                    <XpMobileTemplateEditor
+                            bind:localTemplate={localTemplate}
+                            bind:changedSettings={changedSettings}
+                            bind:currentUserData={currentUserData}
+                            bind:sampleData={sampleData}
+                            bind:showEditor={showTemplateEditor}
+                    />
+                {:else}
+                    <XpTemplateEditor
+                            bind:localTemplate={localTemplate}
+                            bind:changedSettings={changedSettings}
+                            bind:currentUserData={currentUserData}
+                            bind:sampleData={sampleData}
+                            bind:showEditor={showTemplateEditor}
+                    />
+                {/if}
           {/if}
         {:else}
           <div class="text-center py-12" style="color: {$colorStore.muted}">
@@ -1408,6 +1589,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

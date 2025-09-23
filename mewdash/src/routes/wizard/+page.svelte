@@ -3,36 +3,42 @@
 Main wizard page component that orchestrates the entire setup flow
 -->
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import { colorStore } from '$lib/stores/colorStore';
-  import type { PageData } from './$types';
-  import {
-      HandMetal,
-      Shield,
-      Star,
-      Settings,
-      CheckCircle,
-      ArrowRight,
-      ArrowLeft,
-      SkipForward,
-      AlertTriangle,
-      RefreshCw, ExternalLink, TrendingUp
-  } from 'lucide-svelte';
-  
-  // Components
-  import WizardProgress from './components/WizardProgress.svelte';
-  import WizardStep from './components/WizardStep.svelte';
-  import FeatureCard from './components/FeatureCard.svelte';
-  import PermissionCheck from './components/PermissionCheck.svelte';
-  import DiscordSelector from '$lib/components/forms/DiscordSelector.svelte';
-  import EmbedEditor from '$lib/components/specialized/EmbedEditor.svelte';
-  import PreviewCard from '$lib/components/specialized/PreviewCard.svelte';
-  import {api} from "$lib/api.ts";
+    import {goto} from '$app/navigation';
+    import {onMount} from 'svelte';
+    import {colorStore} from '$lib/stores/colorStore';
+    import type {PageData} from './$types';
+    // Import icons to match dashboard
+    import {
+        AlertTriangle,
+        ArrowLeft,
+        ArrowRight,
+        Badge,
+        CheckCircle,
+        ExternalLink,
+        Gift,
+        HandMetal,
+        MessageSquare,
+        RefreshCw,
+        Save,
+        Settings,
+        Shield,
+        SkipForward,
+        Star,
+        Tag
+    } from 'lucide-svelte';
+
+    // Components
+    import WizardProgress from './components/WizardProgress.svelte';
+    import WizardStep from './components/WizardStep.svelte';
+    import FeatureCard from './components/FeatureCard.svelte';
+    import PermissionCheck from './components/PermissionCheck.svelte';
+    import DiscordSelector from '$lib/components/forms/DiscordSelector.svelte';
+    import EmbedEditor from '$lib/components/specialized/EmbedEditor.svelte';
+    import PreviewCard from '$lib/components/specialized/PreviewCard.svelte';
+    import {api} from "$lib/api.ts";
 
 
-  // Wizard state
+    // Wizard state
   let currentStep = $state(1);
   let completedSteps: number[] = $state([]);
   let selectedFeatures: string[] = $state([]);
@@ -50,15 +56,8 @@ Main wizard page component that orchestrates the entire setup flow
   let currentConfigFeatureIndex = $state(0);
   let configurationComplete = false;
 
-  
 
-
-  // Import icons to match dashboard
-  import { 
-    Moon, Users, Tag, RotateCcw, Heart, MessageSquare, Link, Badge, Lock, Gift, Save
-  } from 'lucide-svelte';
-
-  interface Props {
+    interface Props {
       data: PageData;
   }
 
@@ -944,7 +943,7 @@ Main wizard page component that orchestrates the entire setup flow
           <p class="text-sm mb-3">You can always configure features later from the dashboard.</p>
           <div class="flex gap-2 justify-center">
             <button
-              class="px-3 py-1 rounded text-sm font-medium transition-all"
+                    class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
               style="background: #f59e0b25; color: #f59e0b;"
               onclick={skipWizard}
               disabled={wizardLoading}
@@ -952,7 +951,7 @@ Main wizard page component that orchestrates the entire setup flow
               {wizardLoading ? 'Skipping...' : 'Yes, Skip'}
             </button>
             <button
-              class="px-3 py-1 rounded text-sm font-medium transition-all"
+                    class="px-3 py-1 rounded-sm text-sm font-medium transition-all"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={cancelSkip}
             >
@@ -1170,7 +1169,7 @@ Main wizard page component that orchestrates the entire setup flow
                           <input 
                             type="checkbox" 
                             bind:checked={featureConfigs.multigreets.applyToMultiple}
-                            class="rounded"
+                            class="rounded-sm"
                           />
                           <span style="color: {$colorStore.muted};">Set up multiple channels</span>
                         </label>
@@ -1212,7 +1211,7 @@ Main wizard page component that orchestrates the entire setup flow
                               bind:checked={featureConfigs.multigreets.useRichMessage}
                               class="sr-only"
                             />
-                            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
+                              <div class="w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all"
                                  style="border-color: {featureConfigs.multigreets.useRichMessage ? $colorStore.primary : $colorStore.muted}; 
                                         background: {featureConfigs.multigreets.useRichMessage ? $colorStore.primary : 'transparent'};">
                               {#if featureConfigs.multigreets.useRichMessage}
@@ -1240,7 +1239,7 @@ Main wizard page component that orchestrates the entire setup flow
                           <div class="flex gap-2">
                             <button
                               type="button"
-                              class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                              class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => {
                                 featureConfigs.multigreets.embeds = [...(featureConfigs.multigreets.embeds || []), {
@@ -1255,8 +1254,8 @@ Main wizard page component that orchestrates the entire setup flow
                               + Add Embed ({(featureConfigs.multigreets.embeds?.length || 0)}/10)
                             </button>
                             <button
-                              type="button" 
-                              class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                                    type="button"
+                                    class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                               onclick={() => {
                                 featureConfigs.multigreets.components = [...(featureConfigs.multigreets.components || []), {
@@ -1278,7 +1277,7 @@ Main wizard page component that orchestrates the entire setup flow
                                     <span class="text-sm font-medium" style="color: {$colorStore.text};">Embed {index + 1}</span>
                                     <button
                                       type="button"
-                                      class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+                                      class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                       onclick={() => {
                                         featureConfigs.multigreets.embeds = featureConfigs.multigreets.embeds.filter((_, i) => i !== index);
@@ -1355,7 +1354,8 @@ Main wizard page component that orchestrates the entire setup flow
                       {#each (featureConfigs.multigreets.channelIds || []) as channelId}
                         {@const channel = availableChannels?.find(c => c.id === channelId)}
                         {#if channel}
-                          <span class="px-2 py-1 rounded text-xs font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+                          <span class="px-2 py-1 rounded-sm text-xs font-medium"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
                             #{channel.name}
                           </span>
                         {/if}
@@ -1411,7 +1411,7 @@ Main wizard page component that orchestrates the entire setup flow
                               bind:checked={featureConfigs.rolegreets.useRichMessage}
                               class="sr-only"
                             />
-                            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
+                              <div class="w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all"
                                  style="border-color: {featureConfigs.rolegreets.useRichMessage ? $colorStore.primary : $colorStore.muted}; 
                                         background: {featureConfigs.rolegreets.useRichMessage ? $colorStore.primary : 'transparent'};">
                               {#if featureConfigs.rolegreets.useRichMessage}
@@ -1439,7 +1439,7 @@ Main wizard page component that orchestrates the entire setup flow
                           <div class="flex gap-2">
                             <button
                               type="button"
-                              class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                              class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                               onclick={() => {
                                 featureConfigs.rolegreets.embeds = [...(featureConfigs.rolegreets.embeds || []), {
@@ -1454,8 +1454,8 @@ Main wizard page component that orchestrates the entire setup flow
                               + Add Embed ({(featureConfigs.rolegreets.embeds?.length || 0)}/10)
                             </button>
                             <button
-                              type="button" 
-                              class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                                    type="button"
+                                    class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                               onclick={() => {
                                 featureConfigs.rolegreets.components = [...(featureConfigs.rolegreets.components || []), {
@@ -1477,7 +1477,7 @@ Main wizard page component that orchestrates the entire setup flow
                                     <span class="text-sm font-medium" style="color: {$colorStore.text};">Embed {index + 1}</span>
                                     <button
                                       type="button"
-                                      class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+                                      class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                       onclick={() => {
                                         featureConfigs.rolegreets.embeds = featureConfigs.rolegreets.embeds.filter((_, i) => i !== index);

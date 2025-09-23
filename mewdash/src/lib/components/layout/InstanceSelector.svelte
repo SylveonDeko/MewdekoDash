@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { api } from "$lib/api.ts";
-  import type { BotInstance } from "$lib/types/models.ts";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { fade, fly } from "svelte/transition";
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { browser } from "$app/environment";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api.ts";
+    import type {BotInstance} from "$lib/types/models.ts";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {fade, fly} from "svelte/transition";
+    import {goto} from "$app/navigation";
+    import {page} from "$app/stores";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {browser} from "$app/environment";
 
-  interface Props {
+    interface Props {
     data: any;
   }
 
@@ -184,7 +184,7 @@
 >
   <div class="max-w-4xl mx-auto space-y-8">
     <div
-      class="text-center p-8 rounded-2xl backdrop-blur-sm border"
+            class="text-center p-8 rounded-2xl backdrop-blur-xs border"
       in:fly={{ y: 20, duration: 300 }}
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
@@ -196,7 +196,7 @@
 
   {#if showLoading}
     <div
-      class="flex flex-col items-center justify-center py-12 rounded-2xl backdrop-blur-sm border"
+            class="flex flex-col items-center justify-center py-12 rounded-2xl backdrop-blur-xs border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -217,7 +217,7 @@
     </div>
   {:else if error}
     <div
-      class="rounded-2xl border p-6 backdrop-blur-sm"
+            class="rounded-2xl border p-6 backdrop-blur-xs"
       style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.accent}15);
              border-color: {$colorStore.accent}30;"
       role="alert"
@@ -227,7 +227,7 @@
     </div>
   {:else if instances.length === 0}
     <div
-      class="text-center py-12 rounded-2xl backdrop-blur-sm border"
+            class="text-center py-12 rounded-2xl backdrop-blur-xs border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -237,7 +237,7 @@
     </div>
   {:else if visibleInstances.length === 0}
     <div
-      class="text-center py-12 rounded-2xl backdrop-blur-sm border"
+            class="text-center py-12 rounded-2xl backdrop-blur-xs border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -246,13 +246,13 @@
       <p class="mt-2" style="color: {$colorStore.muted}">Join a server with one of our bots to manage it</p>
 
       <!-- Debug info (remove in production) -->
-      <details class="mt-4 text-left bg-gray-800 p-4 rounded">
+        <details class="mt-4 text-left bg-gray-800 p-4 rounded-sm">
         <summary class="cursor-pointer text-gray-300">Debug Info</summary>
         <div class="mt-2 text-sm text-gray-400">
           <p>Total instances loaded: {instances.length}</p>
           <p>Instance states:</p>
           <pre
-            class="text-xs mt-2 bg-gray-900 p-2 rounded overflow-x-auto">{JSON.stringify(instanceStates, null, 2)}</pre>
+                  class="text-xs mt-2 bg-gray-900 p-2 rounded-sm overflow-x-auto">{JSON.stringify(instanceStates, null, 2)}</pre>
         </div>
       </details>
     </div>
@@ -268,7 +268,7 @@
         <button
           onclick={() => handleInstanceSelect(instance)}
           onkeydown={(e) => handleKeydown(e, instance)}
-          class="flex items-center p-6 rounded-2xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2"
+          class="flex items-center p-6 rounded-2xl backdrop-blur-xs border transition-all duration-300 hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;
                  focus:ring-color: {$colorStore.primary};
@@ -280,7 +280,7 @@
             alt="{instance.botName} avatar"
             class="w-16 h-16 rounded-full mr-6"
           />
-          <div class="text-left flex-grow">
+            <div class="text-left grow">
             <h2 class="text-xl font-semibold" style="color: {$colorStore.text}">{instance.botName}</h2>
             <p style="color: {$colorStore.muted}">Port: {instance.port}</p>
             {#if state?.error}

@@ -2,36 +2,35 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import type { MultiGreet } from "$lib/types/models.ts";
-  import { MultiGreetType } from "$lib/types/models.ts";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore.ts"; // Import the global colorStore
-  import {
-    AlertTriangle,
-    Bot,
-    Check,
-    ChevronDown,
-    Clock,
-    Edit2,
-    MessageCircle,
-    Plus,
-    Settings,
-    Trash2,
-    Users,
-    Webhook,
-    X
-  } from "lucide-svelte";
-  import { logger } from "$lib/logger.ts";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import type {MultiGreet} from "$lib/types/models.ts";
+    import {MultiGreetType} from "$lib/types/models.ts";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore.ts"; // Import the global colorStore
+    import {
+        AlertTriangle,
+        Bot,
+        Check,
+        Clock,
+        Edit2,
+        MessageCircle,
+        Plus,
+        Settings,
+        Trash2,
+        Users,
+        Webhook,
+        X
+    } from "lucide-svelte";
+    import {logger} from "$lib/logger.ts";
 
     interface Props {
         data: PageData;
@@ -272,7 +271,7 @@
       icon: Plus,
       action: addGreet,
       disabled: !selectedChannel,
-      style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
+      style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`
     }
   ]}
 >
@@ -304,12 +303,9 @@
         ] as option}
           <button
             class="flex-1 px-4 py-3 rounded-lg transition-all duration-200"
-            class:ring-2={greetType === option.type}
-            class:ring-offset-1={greetType === option.type}
-            style="background: {greetType === option.type ? $colorStore.primary : `${$colorStore.primary}20`};
-                   color: {greetType === option.type ? $colorStore.text : $colorStore.muted};
-                   ring-color: {`${$colorStore.primary}50`};
-                   ring-offset-color: #1a1b1e;"
+            style="background: {greetType === option.type ? $colorStore.primary + '30' : $colorStore.primary + '08'};
+                   color: {greetType === option.type ? $colorStore.primary : $colorStore.muted};
+                   border: 1px solid {greetType === option.type ? $colorStore.primary + '50' : $colorStore.primary + '20'};"
             onclick={() => updateGreetType(option.type)}
           >
             <div class="flex flex-col items-center gap-1">
@@ -349,7 +345,7 @@
     {:else}
       <!-- Add New Greet Section -->
       <section
-        class="mb-8 rounded-xl border p-6"
+              class="mb-8 backdrop-blur-xs rounded-xl border p-6 transition-all"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -358,7 +354,7 @@
           Add New Greet
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">
-          <div class="flex-grow">
+            <div class="grow">
             <DiscordSelector
               type="channel"
               options={channels}
@@ -375,7 +371,7 @@
       <!-- Greets List -->
       {#if !greets.length}
         <div
-          class="text-center p-8 rounded-xl border"
+                class="text-center p-8 backdrop-blur-xs rounded-xl border transition-all"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;"
           transition:fade
@@ -393,7 +389,7 @@
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {#each sortedGreets as greet (greet.id)}
             <div
-              class="rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
+                    class="backdrop-blur-xs rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
               transition:fade
@@ -460,7 +456,7 @@
                     </div>
                   {:else}
                     <div class="flex justify-between items-start gap-4">
-                      <div class="flex-grow">
+                        <div class="grow">
                         <h4 class="text-sm font-medium mb-2 flex items-center gap-2"
                             style="color: {$colorStore.text}">
                           <MessageCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
@@ -537,7 +533,7 @@
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.deleteTime}
-                            <span class="px-2 py-1 rounded"
+                            <span class="px-2 py-1 rounded-sm"
                                   style="background: {$colorStore.secondary}10;
                                          color: {$colorStore.secondary}">
                               {greet.deleteTime}s
@@ -624,7 +620,7 @@
                         </h4>
                         <p class="text-sm mt-1">
                           {#if greet.webhookUrl}
-                            <span class="px-2 py-1 rounded"
+                            <span class="px-2 py-1 rounded-sm"
                                   style="background: {$colorStore.accent}10;
                                          color: {$colorStore.accent}">
                               Configured
@@ -700,6 +696,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

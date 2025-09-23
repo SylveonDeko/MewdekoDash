@@ -1,36 +1,36 @@
 <!-- routes/dashboard/giveaways/+page.svelte -->
 <script lang="ts">
-    import {run, preventDefault} from 'svelte/legacy';
+    import {preventDefault, run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api.ts";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade, slide } from "svelte/transition";
-  import type { Giveaways } from "$lib/types";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import IntervalPicker from "$lib/components/forms/IntervalPicker.svelte";
-  import { browser } from "$app/environment";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import {
-    AlertTriangle,
-    Award,
-    Bot,
-    ChevronDown,
-    Clock,
-    Gift,
-    Hash,
-    MessageCircle,
-    Target,
-    Trophy,
-    Users,
-    X,
-    Plus
-  } from "lucide-svelte";
-  import { logger } from "$lib/logger.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api.ts";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade, slide} from "svelte/transition";
+    import type {Giveaways} from "$lib/types";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import IntervalPicker from "$lib/components/forms/IntervalPicker.svelte";
+    import {browser} from "$app/environment";
+    import {colorStore} from "$lib/stores/colorStore.ts";
+    import {
+        AlertTriangle,
+        Award,
+        Bot,
+        ChevronDown,
+        Clock,
+        Gift,
+        Hash,
+        MessageCircle,
+        Plus,
+        Target,
+        Trophy,
+        Users,
+        X
+    } from "lucide-svelte";
+    import {logger} from "$lib/logger.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
 
     let giveaways: Giveaways[] = $state([]);
     let expandedGiveaway: number | null = $state(null);
@@ -303,7 +303,7 @@
     {#if activeTab === 'create'}
       <!-- Create New Giveaway Section -->
       <section
-       class="backdrop-blur-sm rounded-xl border p-6 mb-8"
+              class="backdrop-blur-xs rounded-xl border p-6 mb-8 transition-all"
        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
        transition:fade
@@ -327,7 +327,7 @@
                bind:value={newGiveaway.item}
                placeholder="Enter the item to be given away"
                class="w-full p-3 rounded-lg border focus:ring-2"
-               style="background: {colors.primary}10;
+               style="background: {colors.primary}08;
                       border-color: {colors.primary}30;
                       color: {colors.text}"
                required
@@ -348,7 +348,7 @@
                min="1"
                onchange={handleWinnersChange}
                class="w-full p-3 rounded-lg border focus:ring-2"
-               style="background: {colors.primary}10;
+               style="background: {colors.primary}08;
                       border-color: {colors.primary}30;
                       color: {colors.text}"
                required
@@ -367,7 +367,7 @@
                bind:value={newGiveaway.channelId}
                placeholder="Enter channel ID"
                class="w-full p-3 rounded-lg border focus:ring-2"
-               style="background: {colors.primary}10;
+               style="background: {colors.primary}08;
                       border-color: {colors.primary}30;
                       color: {colors.text}"
                required
@@ -417,7 +417,7 @@
                min="0"
                onchange={handleMessageCountChange}
                class="w-full p-3 rounded-lg border focus:ring-2"
-               style="background: {colors.primary}10;
+               style="background: {colors.primary}08;
                       border-color: {colors.primary}30;
                       color: {colors.text}"
                inputmode="numeric"
@@ -469,7 +469,7 @@
     {#if activeTab === 'active'}
       <!-- Active Giveaways -->
       <section
-       class="backdrop-blur-sm rounded-xl border p-6"
+              class="backdrop-blur-xs rounded-xl border p-6"
        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
      >
@@ -578,7 +578,7 @@
     {#if activeTab === 'ended'}
       <!-- Ended Giveaways would go here -->
       <section
-        class="backdrop-blur-sm rounded-xl border p-6"
+              class="backdrop-blur-xs rounded-xl border p-6"
         style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                border-color: {colors.primary}30;"
       >
@@ -596,6 +596,8 @@
 </DashboardPageLayout>
 
 <style>
+  @reference '../../../app.css';
+
  /* Hide number input spinners */
  input[type="number"]::-webkit-inner-spin-button,
  input[type="number"]::-webkit-outer-spin-button {

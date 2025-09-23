@@ -1,17 +1,17 @@
 <!-- routes/giveaways/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { api } from "$lib/api.ts";
-  import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
-  import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
-  import type { Giveaways } from "$lib/types.ts";
-  import { Turnstile } from "svelte-turnstile";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { fade, fly } from "svelte/transition";
+    import {onMount} from "svelte";
+    import {page} from "$app/stores";
+    import {api} from "$lib/api.ts";
+    import type {PageData} from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
+    import {goto} from "$app/navigation";
+    import {browser} from "$app/environment";
+    import type {Giveaways} from "$lib/types.ts";
+    import {Turnstile} from "svelte-turnstile";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {fade, fly} from "svelte/transition";
 
-  let guildId: bigint;
+    let guildId: bigint;
   let giveawayId: number;
   let userId: bigint;
   let turnstileToken: string = $state();
@@ -219,7 +219,7 @@
           <p class="text-xl" style="color: {$colorStore.text};">Loading giveaway details...</p>
         </div>
       {:else if error}
-        <div class="rounded-2xl p-8 text-center backdrop-blur-sm border"
+        <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
              style="background: linear-gradient(135deg, #DC262620, #B9131930); border-color: #DC2626;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="mb-4">
@@ -241,7 +241,7 @@
       {:else if giveaway}
         <div class="space-y-8">
           <!-- Giveaway Details Card -->
-          <div class="rounded-2xl p-8 backdrop-blur-sm shadow-xl border"
+          <div class="rounded-2xl p-8 backdrop-blur-xs shadow-xl border"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300 }}>
 
@@ -268,7 +268,7 @@
 
             <!-- Details Grid -->
             <div class="grid md:grid-cols-3 gap-6 mb-8">
-              <div class="text-center p-4 rounded-xl backdrop-blur-sm" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">👥</span>
@@ -277,7 +277,7 @@
                 <p class="text-2xl font-bold" style="color: {$colorStore.primary};">{giveaway.winners}</p>
               </div>
 
-              <div class="text-center p-4 rounded-xl backdrop-blur-sm" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">⏰</span>
@@ -288,7 +288,7 @@
                 </p>
               </div>
 
-              <div class="text-center p-4 rounded-xl backdrop-blur-sm" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">📅</span>
@@ -303,7 +303,7 @@
 
           {#if isGiveawayActive}
             <!-- Entry Section -->
-            <div class="rounded-2xl p-8 backdrop-blur-sm shadow-xl border"
+            <div class="rounded-2xl p-8 backdrop-blur-xs shadow-xl border"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
 
@@ -318,7 +318,7 @@
 
               <!-- Captcha -->
               <div class="flex justify-center mb-8">
-                <div class="p-4 rounded-xl backdrop-blur-sm"
+                <div class="p-4 rounded-xl backdrop-blur-xs"
                      style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;">
                   <Turnstile
                     siteKey="0x4AAAAAAAAvvAPaJgbIJWh-"
@@ -361,7 +361,7 @@
             </div>
           {:else}
             <!-- Giveaway Ended -->
-            <div class="rounded-2xl p-8 text-center backdrop-blur-sm border"
+            <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
                  style="background: linear-gradient(135deg, #6B728020, #4B556330); border-color: #6B7280;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
               <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -379,7 +379,7 @@
 
           <!-- Message Display -->
           {#if message}
-            <div class="rounded-2xl p-6 backdrop-blur-sm border transition-all duration-300"
+            <div class="rounded-2xl p-6 backdrop-blur-xs border transition-all duration-300"
                  style="background: {message.includes('🎉') || message.includes('Successfully') 
                    ? 'linear-gradient(135deg, #10B98120, #059669t30)' 
                    : 'linear-gradient(135deg, #DC262620, #B9131930)'}; 
@@ -398,7 +398,7 @@
           {/if}
         </div>
       {:else}
-        <div class="rounded-2xl p-8 text-center backdrop-blur-sm border"
+        <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -443,7 +443,7 @@
 
     /* High contrast mode */
     @media (prefers-contrast: more) {
-        .backdrop-blur-sm {
+      .backdrop-blur-xs {
             border-width: 2px;
         }
     }

@@ -1,73 +1,69 @@
 <!-- routes/dashboard/repeaters/+page.svelte -->
 <script lang="ts">
-    import {run, preventDefault} from 'svelte/legacy';
+    import {preventDefault, run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import {
-    AlertCircle,
-    ArrowUp,
-    ArrowDown,
-    BarChart3,
-    Calendar,
-    CheckCircle,
-    CheckSquare,
-    Clock,
-    Code,
-    Copy,
-    Dice1,
-    Eye,
-    Hash,
-    HelpCircle,
-    List,
-    MessageCircle,
-    MessageSquare,
-    MoreHorizontal,
-    Play,
-    Plus,
-    RefreshCw,
-    RepeatIcon,
-    Settings,
-    Square,
-    Tags,
-    Timer,
-    ToggleLeft,
-    Trash2,
-    XCircle,
-    Zap,
-    Edit3,
-    Activity,
-    Users,
-    Target
-  } from "lucide-svelte";
+    import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {
+        Activity,
+        AlertCircle,
+        ArrowDown,
+        ArrowUp,
+        BarChart3,
+        Calendar,
+        CheckCircle,
+        CheckSquare,
+        Clock,
+        Code,
+        Copy,
+        Edit3,
+        Eye,
+        Hash,
+        MessageCircle,
+        MessageSquare,
+        Play,
+        Plus,
+        RefreshCw,
+        RepeatIcon,
+        Settings,
+        Square,
+        Tags,
+        Target,
+        Timer,
+        ToggleLeft,
+        Trash2,
+        Users,
+        XCircle,
+        Zap
+    } from "lucide-svelte";
 
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
-  import type {
-    RepeaterResponse,
-    RepeaterStatsResponse,
-    CreateRepeaterRequest,
-    UpdateRepeaterRequest,
-    MessageCountingStatus,
-    RepeaterFormData
-  } from "$lib/types/repeater";
-  import {
-    StickyTriggerMode,
-    getTriggerModeLabel,
-    getTriggerModeDescription,
-    formatInterval,
-    formatTimeUntilNext,
-    TIME_SCHEDULE_PRESETS
-  } from "$lib/types/repeater";
+    import StatCard from "$lib/components/monitoring/StatCard.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+    import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
+    import type {
+        CreateRepeaterRequest,
+        MessageCountingStatus,
+        RepeaterFormData,
+        RepeaterResponse,
+        RepeaterStatsResponse,
+        UpdateRepeaterRequest
+    } from "$lib/types/repeater";
+    import {
+        formatInterval,
+        formatTimeUntilNext,
+        getTriggerModeDescription,
+        getTriggerModeLabel,
+        StickyTriggerMode,
+        TIME_SCHEDULE_PRESETS
+    } from "$lib/types/repeater";
 
-  // Component state
+    // Component state
     let loading = $state(false);
     let saving = $state(false);
     let message = $state("");
@@ -983,9 +979,9 @@
                  style="background: {$colorStore.primary}08;">
               <div class="h-12 w-12 rounded-xl mb-4"
                    style="background: {$colorStore.primary}20;"></div>
-              <div class="h-6 rounded mb-2"
+                <div class="h-6 rounded-sm mb-2"
                    style="background: {$colorStore.primary}20; width: 60%;"></div>
-              <div class="h-4 rounded"
+                <div class="h-4 rounded-sm"
                    style="background: {$colorStore.primary}15; width: 80%;"></div>
             </div>
           {/each}
@@ -1130,7 +1126,7 @@
               <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3">
                   <!-- Selection Checkbox -->
-                  <label class="flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer transition-all hover:scale-110"
+                    <label class="flex items-center justify-center w-6 h-6 rounded-sm border-2 cursor-pointer transition-all hover:scale-110"
                          style="border-color: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : $colorStore.muted}; 
                                 background: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : 'transparent'};">
                     <input
@@ -1179,12 +1175,14 @@
                       <MessageSquare class="w-4 h-4" style="color: {$colorStore.primary}" />
                       <span class="text-xs font-medium" style="color: {$colorStore.primary}">Rich Message</span>
                       {#if parsedMessage.embeds.length > 0}
-                        <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                        <span class="text-xs px-2 py-1 rounded-sm"
+                              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                           {parsedMessage.embeds.length} embed{parsedMessage.embeds.length > 1 ? 's' : ''}
                         </span>
                       {/if}
                       {#if parsedMessage.components.length > 0}
-                        <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
+                        <span class="text-xs px-2 py-1 rounded-sm"
+                              style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
                           {parsedMessage.components.length} component{parsedMessage.components.length > 1 ? 's' : ''}
                         </span>
                       {/if}
@@ -1296,41 +1294,41 @@
                 <div class="text-xs font-medium mb-2" style="color: {$colorStore.muted}">Features & Settings</div>
                 <div class="flex flex-wrap gap-2">
                   {#if repeater.conversationDetection}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                       <Users class="w-3 h-3 inline mr-1" />
                       Conversation Detection
                     </span>
                   {/if}
                   {#if repeater.threadAutoSticky}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
                       <MessageCircle class="w-3 h-3 inline mr-1" />
                       Thread Auto Sticky
                     </span>
                   {/if}
                   {#if repeater.threadOnlyMode}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
                       Thread Only
                     </span>
                   {/if}
                   {#if repeater.timeConditions}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                       <Clock class="w-3 h-3 inline mr-1" />
                       Time Scheduled
                     </span>
                   {/if}
                   {#if repeater.forumTagConditions}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                       <Tags class="w-3 h-3 inline mr-1" />
                       Forum Tags
                     </span>
                   {/if}
                   {#if repeater.noRedundant}
-                    <span class="px-2 py-1 rounded text-xs"
+                    <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                       No Redundant
                     </span>
@@ -1403,7 +1401,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                   <!-- Quick Property Updates -->
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newInterval = prompt('New interval (HH:MM:SS):', repeater.interval);
@@ -1415,7 +1413,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newTime = prompt('Start time (HH:MM, leave empty to disable):', repeater.startTimeOfDay || '');
@@ -1428,7 +1426,7 @@
 
                   {#if repeater.conversationDetection}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         const newThreshold = prompt('Conversation threshold (messages/minute):', repeater.conversationThreshold.toString());
@@ -1441,7 +1439,7 @@
                   {/if}
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                     onclick={() => {
                       const maxAge = prompt('Max age (e.g., 7.00:00:00 for 7 days, empty for no limit):', repeater.maxAge || '');
@@ -1456,7 +1454,7 @@
                   <!-- Advanced Features -->
                   {#if repeater.forumTagConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1471,7 +1469,7 @@
 
                   {#if repeater.timeConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => openAdvancedTimeEditor(repeater.id)}
                     >
@@ -1482,7 +1480,7 @@
 
                   {#if repeater.threadAutoSticky || repeater.threadOnlyMode}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1541,7 +1539,8 @@
                 <div class="flex items-center gap-2">
                   <Tags class="w-4 h-4" style="color: {$colorStore.secondary}" />
                   <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Forum Tag Filters</h4>
-                  <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                    <span class="text-xs px-2 py-1 rounded-sm"
+                          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                     Optional
                   </span>
                 </div>
@@ -1549,7 +1548,7 @@
                 {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
                   <button
                     type="button"
-                    class="text-xs px-2 py-1 rounded transition-all hover:scale-105"
+                    class="text-xs px-2 py-1 rounded-sm transition-all hover:scale-105"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                     onclick={() => selectedForumTags = {required: [], excluded: []}}
                   >
@@ -1589,7 +1588,7 @@
                             }
                           }}
                         />
-                        <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                          <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                              style="border-color: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : $colorStore.muted}; 
                                     background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : 'transparent'};">
                           {#if selectedForumTags.required.includes(tag.id)}
@@ -1637,7 +1636,7 @@
                             }
                           }}
                         />
-                        <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                          <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                              style="border-color: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : $colorStore.muted}; 
                                     background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : 'transparent'};
                                     opacity: {selectedForumTags.required.includes(tag.id) ? '0.3' : '1'};">
@@ -1652,7 +1651,8 @@
                           {/if}
                           <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
                           {#if selectedForumTags.required.includes(tag.id)}
-                            <span class="text-xs px-1 rounded" style="background: {$colorStore.primary}; color: white;">Required</span>
+                              <span class="text-xs px-1 rounded-sm"
+                                    style="background: {$colorStore.primary}; color: white;">Required</span>
                           {/if}
                         </div>
                       </label>
@@ -1693,7 +1693,7 @@
 
           <!-- Message Content with Live Preview -->
           <div class="mt-6">
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8">
+              <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
               <!-- Message Input Side -->
               <div>
                 <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
@@ -1763,7 +1763,7 @@
           <!-- Advanced Embed Builder -->
           {#if showEmbedBuilder}
             <div class="mt-6 space-y-4" in:fly={{ y: 20, duration: 300 }}>
-              <div class="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                   <div class="flex items-center gap-2">
                     <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -1825,7 +1825,7 @@
                         <div class="flex gap-2">
                           <button
                             type="button"
-                            class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                             onclick={() => {
                               const duplicated = JSON.parse(JSON.stringify(embed));
@@ -1838,7 +1838,7 @@
                           </button>
                           <button
                             type="button"
-                            class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                             style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                             onclick={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
                           >
@@ -1896,7 +1896,7 @@
                   <div class="flex gap-2">
                     <button
                       type="button"
-                      class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => {
                         messageComponents = [...messageComponents, {
@@ -1920,7 +1920,7 @@
                     
                     <button
                       type="button"
-                      class="px-3 py-1 rounded text-xs font-medium transition-all hover:scale-105"
+                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={() => showComponentBuilder = false}
                     >
@@ -1939,7 +1939,7 @@
                         </span>
                         <button
                           type="button"
-                          class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+                          class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                           onclick={() => messageComponents = messageComponents.filter((_, i) => i !== index)}
                         >
@@ -1955,7 +1955,7 @@
                             type="text"
                             bind:value={component.displayName}
                             placeholder="Button label..."
-                            class="w-full p-2 rounded border text-sm"
+                            class="w-full p-2 rounded-sm border text-sm"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
                         </div>
@@ -1966,7 +1966,7 @@
                             type="url"
                             bind:value={component.url}
                             placeholder="https://..."
-                            class="w-full p-2 rounded border text-sm"
+                            class="w-full p-2 rounded-sm border text-sm"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                           />
                         </div>
@@ -2051,7 +2051,7 @@
                 bind:checked={formData.noRedundant}
                 class="sr-only"
               />
-              <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                    style="border-color: {formData.noRedundant ? $colorStore.primary : $colorStore.muted}; 
                           background: {formData.noRedundant ? $colorStore.primary : 'transparent'};">
                 {#if formData.noRedundant}
@@ -2067,7 +2067,7 @@
                 bind:checked={formData.allowMentions}
                 class="sr-only"
               />
-              <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                    style="border-color: {formData.allowMentions ? $colorStore.primary : $colorStore.muted}; 
                           background: {formData.allowMentions ? $colorStore.primary : 'transparent'};">
                 {#if formData.allowMentions}
@@ -2090,7 +2090,8 @@
               <div class="flex items-center gap-3">
                 <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
                 <span class="font-medium" style="color: {$colorStore.text}">Advanced Options</span>
-                <span class="text-xs px-2 py-1 rounded" style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
+                  <span class="text-xs px-2 py-1 rounded-sm"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                   Optional
                 </span>
               </div>
@@ -2141,7 +2142,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" bind:checked={formData.conversationDetection} class="sr-only" />
-                    <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                      <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                          style="border-color: {formData.conversationDetection ? $colorStore.primary : $colorStore.muted}; 
                                 background: {formData.conversationDetection ? $colorStore.primary : 'transparent'};">
                       {#if formData.conversationDetection}
@@ -2154,7 +2155,7 @@
                   {#if selectedChannelType === 'forum'}
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" bind:checked={formData.threadAutoSticky} class="sr-only" />
-                      <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                        <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                            style="border-color: {formData.threadAutoSticky ? $colorStore.primary : $colorStore.muted}; 
                                   background: {formData.threadAutoSticky ? $colorStore.primary : 'transparent'};">
                         {#if formData.threadAutoSticky}
@@ -2166,7 +2167,7 @@
 
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" bind:checked={formData.threadOnlyMode} class="sr-only" />
-                      <div class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+                        <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                            style="border-color: {formData.threadOnlyMode ? $colorStore.primary : $colorStore.muted}; 
                                   background: {formData.threadOnlyMode ? $colorStore.primary : 'transparent'};">
                         {#if formData.threadOnlyMode}

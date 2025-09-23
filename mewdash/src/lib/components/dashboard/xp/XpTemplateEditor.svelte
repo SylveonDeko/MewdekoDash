@@ -1,4449 +1,1624 @@
-<!-- XpTemplateEditor.svelte -->
+<!-- lib/components/dashboard/xp/XpTemplateEditor.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
-  import { fade, slide } from "svelte/transition";
   import { onMount, onDestroy } from "svelte";
-  import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import XpTemplatePreview from "./XpTemplatePreview.svelte";
+  import {fly, fade} from "svelte/transition";
   import Portal from "$lib/components/ui/Portal.svelte";
   import {
-    AlignCenter,
-    AlertCircle,
+      Palette,
+      Move,
+      Type,
+      Image as ImageIcon,
+      BarChart2,
+      Users,
+      Shield,
     Award,
-    BarChart3 as BarChart,
-    ChevronDown,
     Clock,
-    Database,
-    Grid,
-    Image,
     Maximize2,
     Minimize2,
-    Move,
+      RotateCcw,
+      Save,
+      Eye,
+      EyeOff,
+      ChevronRight,
+      ChevronDown,
     Settings,
-    Type,
-    User,
-    Users,
     ZoomIn,
     ZoomOut,
-    RotateCcw,
+      Grid3x3,
+      Crosshair,
+      Layers,
+      Lock,
+      Unlock,
+      Download,
+      Upload,
+      RefreshCw,
+      Ruler,
+      Copy,
+      Trash2,
+      X
   } from "lucide-svelte";
 
-
-    interface Props {
-        // Props
-        localTemplate: any;
-        changedSettings: Set<string>;
-        isMobile: boolean;
-        currentUserData: any;
-        sampleData: any;
-    }
-
-    let {
-        localTemplate = $bindable(),
-        changedSettings,
-        isMobile,
-        currentUserData = $bindable(),
-        sampleData = $bindable()
-    }: Props = $props();
-
-  // Template editor state
-    let editorActiveTab = $state("general");
-    let editorMobileView = $state("preview");
-    let showGrid = $state(false);
-    let gridSize = $state(20);
-    let showGuideLines = $state(false);
-    let guideLinesPos = $state({x: null, y: null});
-    let draggableElements: any[] = $state([]);
-    let isDesignMode = $state(false);
-    let draggingElement: any = $state(null);
-    let hoverElement: any = $state(null);
-    let showRealDataPreview = $state(false);
-    let showTooltips = $state(true);
-    let showCoordinateOverlay = $state(true);
-    let undoStack: string[] = $state([]);
-    let previewScale = $state(1.0);
-    let previewWidth = $state(800);
-    let previewHeight = $state(280);
-    let previewOffset = $state({x: 0, y: 0});
-    let previewBackgroundUrl: string | null = $state(null);
-    let imageUrl = $state("");
-    let imageLoading = $state(false);
-    let imageError = $state("");
-    let updateSizeFromImage = $state(false);
-    let previewContainerRef: HTMLDivElement = $state();
-  
-  // Responsive layout state
-    let isDesktop = $state(false);
-    let isTablet = $state(false);
-    let expandedCategories = $state(new Set(["canvas"])); // Canvas expanded by default
-  
-  // Settings categories for accordion layout
-  const settingsCategories = [
-    { id: "canvas", label: "Canvas & Background", icon: AlignCenter },
-    { id: "user", label: "User Elements", icon: User },
-    { id: "progress", label: "Progress Bar", icon: BarChart },
-    { id: "guild", label: "Guild Information", icon: Users },
-    { id: "time", label: "Time Display", icon: Clock },
-    { id: "club", label: "Club Features", icon: Award }
-  ];
-  
-  // Drag state
-  let dragStartPos = { x: 0, y: 0 };
-  let dragStartElementPos = { x: 0, y: 0 };
-  let lastDragUpdate = 0;
-  const THROTTLE_MS = 16;
-  let dragAnimationFrameId: number | null = null;
-  let isDragging = false;
-  let snapToGrid = false;
-  let showSnapping = false;
-    let isFullPageMode = $state(false);
-
-  // Responsive helper functions
-  function checkScreenSize() {
-    if (browser) {
-      const width = window.innerWidth;
-      isDesktop = width >= 1024;
-      isTablet = width >= 768 && width < 1024;
-    }
+  interface Props {
+      localTemplate: any;
+      changedSettings: Set<string>;
+      currentUserData: any;
+      sampleData: any;
+      showEditor: boolean;
   }
 
-  function toggleCategory(categoryId: string) {
-    if (expandedCategories.has(categoryId)) {
-      expandedCategories.delete(categoryId);
+  let {
+      localTemplate = $bindable(),
+      changedSettings = $bindable(),
+      currentUserData = $bindable(),
+      sampleData = $bindable(),
+      showEditor = $bindable()
+  }: Props = $props();
+
+  // Canvas and viewport state
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D | null = null;
+  let canvasContainer: HTMLDivElement;
+  let zoom = $state(1);
+  let panX = $state(0);
+  let panY = $state(0);
+  let isPanning = $state(false);
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  // Editor state
+  let selectedElement = $state<string | null>(null);
+  let hoveredElement = $state<string | null>(null);
+  let isDragging = $state(false);
+  let dragTarget = $state<string | null>(null);
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartElementX = 0;
+  let dragStartElementY = 0;
+  let showGrid = $state(true);
+  let snapToGrid = $state(true);
+  let gridSize = $state(10);
+  let showRulers = $state(true);
+  let lockProportions = $state(false);
+  let backgroundImage = $state<HTMLImageElement | null>(null);
+  let backgroundImageLoading = $state(false);
+  let defaultBgImage = $state<HTMLImageElement | null>(null);
+
+  // Panel states
+  let panels = $state({
+      layers: {open: true, pinned: false},
+      properties: {open: true, pinned: true},
+      user: {open: false, pinned: false},
+      bar: {open: false, pinned: false},
+      guild: {open: false, pinned: false},
+      club: {open: false, pinned: false},
+      text: {open: false, pinned: false}
+  });
+
+  // Preview mode
+  let previewMode = $state<"edit" | "preview">("edit");
+  let useRealData = $state(false);
+
+  // Undo/Redo stack
+  let undoStack: string[] = [];
+  let redoStack: string[] = [];
+
+  // Load default background image once on mount
+  let defaultImageLoaded = false;
+
+  onMount(() => {
+      if (!defaultImageLoaded) {
+          defaultImageLoaded = true;
+          const img = new Image();
+          img.onload = () => {
+              console.log("[XpTemplateEditor] Default XP background loaded");
+              defaultBgImage = img;
+              if (canvas && ctx) {
+                  redrawCanvas();
+              }
+          };
+          img.onerror = () => {
+              console.error("[XpTemplateEditor] Failed to load default XP background");
+              defaultBgImage = null;
+          };
+          img.src = '/img/default_xp_background.png';
+      }
+  });
+
+  // Load custom background image if available
+  $effect(() => {
+      if (localTemplate?.customXpImageUrl) {
+          console.log("[XpTemplateEditor] Loading custom background image:", localTemplate.customXpImageUrl);
+          backgroundImageLoading = true;
+          const img = new Image();
+          img.onload = () => {
+              console.log("[XpTemplateEditor] Custom background image loaded successfully");
+              backgroundImage = img;
+              backgroundImageLoading = false;
+              redrawCanvas();
+          };
+          img.onerror = (err) => {
+              console.error("[XpTemplateEditor] Failed to load custom background image:", err);
+              console.error("[XpTemplateEditor] Failed URL was:", localTemplate.customXpImageUrl);
+              backgroundImage = null;
+              backgroundImageLoading = false;
+              redrawCanvas();
+          };
+          img.src = localTemplate.customXpImageUrl;
     } else {
-      expandedCategories.add(categoryId);
+          console.log("[XpTemplateEditor] No customXpImageUrl in template, using default");
+          backgroundImage = null;
+          redrawCanvas();
+      }
+  });
+  let maxUndoLevels = 50;
+
+  // Element definitions for the layer system
+  let elements = $derived([
+      {
+          id: "user-icon",
+          type: "image",
+          label: "User Avatar",
+          visible: localTemplate?.templateUser?.showIcon,
+          locked: false,
+          x: localTemplate?.templateUser?.iconX || 0,
+          y: localTemplate?.templateUser?.iconY || 0,
+          width: localTemplate?.templateUser?.iconSizeX || 100,
+          height: localTemplate?.templateUser?.iconSizeY || 100
+      },
+      {
+          id: "user-text",
+          type: "text",
+          label: "Username",
+          visible: localTemplate?.templateUser?.showText,
+          locked: false,
+          x: localTemplate?.templateUser?.textX || 120,
+          y: localTemplate?.templateUser?.textY || 50,
+          fontSize: localTemplate?.templateUser?.fontSize || 24,
+          color: localTemplate?.templateUser?.textColor || "FFFFFF"
+      },
+      {
+          id: "progress-bar",
+          type: "bar",
+          label: "XP Progress Bar",
+          visible: localTemplate?.templateBar?.showBar,
+          locked: false,
+          x1: localTemplate?.templateBar?.barPointAx || 319,
+          y1: localTemplate?.templateBar?.barPointAy || 119,
+          x2: localTemplate?.templateBar?.barPointBx || 284,
+          y2: localTemplate?.templateBar?.barPointBy || 250,
+          width: localTemplate?.templateBar?.barWidth || 20,
+          length: localTemplate?.templateBar?.barLength || 452,
+          direction: localTemplate?.templateBar?.barDirection ?? 3,
+          transparency: localTemplate?.templateBar?.barTransparency || 255,
+          color: localTemplate?.templateBar?.barColor || "FF000000"
+      },
+      {
+          id: "guild-rank",
+          type: "text",
+          label: "Guild Rank",
+          visible: localTemplate?.templateGuild?.showGuildRank,
+          locked: false,
+          x: localTemplate?.templateGuild?.guildRankX || 50,
+          y: localTemplate?.templateGuild?.guildRankY || 150,
+          fontSize: localTemplate?.templateGuild?.guildRankFontSize || 18,
+          color: localTemplate?.templateGuild?.guildRankColor || "FFFFFF"
+      },
+      {
+          id: "guild-level",
+          type: "text",
+          label: "Guild Level",
+          visible: localTemplate?.templateGuild?.showGuildLevel,
+          locked: false,
+          x: localTemplate?.templateGuild?.guildLevelX || 350,
+          y: localTemplate?.templateGuild?.guildLevelY || 150,
+          fontSize: localTemplate?.templateGuild?.guildLevelFontSize || 18,
+          color: localTemplate?.templateGuild?.guildLevelColor || "FFFFFF"
+      },
+      {
+          id: "club-icon",
+          type: "image",
+          label: "Club Icon",
+          visible: localTemplate?.templateClub?.showClubIcon,
+          locked: false,
+          x: localTemplate?.templateClub?.clubIconX || 300,
+          y: localTemplate?.templateClub?.clubIconY || 30,
+          width: localTemplate?.templateClub?.clubIconSizeX || 50,
+          height: localTemplate?.templateClub?.clubIconSizeY || 50
+      },
+      {
+          id: "club-name",
+          type: "text",
+          label: "Club Name",
+          visible: localTemplate?.templateClub?.showClubName,
+          locked: false,
+          x: localTemplate?.templateClub?.clubNameX || 360,
+          y: localTemplate?.templateClub?.clubNameY || 55,
+          fontSize: localTemplate?.templateClub?.clubNameFontSize || 16,
+          color: localTemplate?.templateClub?.clubNameColor || "FFFFFF"
+      },
+      {
+          id: "time-on-level",
+          type: "text",
+          label: "Time on Level",
+          visible: localTemplate?.showTimeOnLevel,
+          locked: false,
+          x: localTemplate?.timeOnLevelX || 200,
+          y: localTemplate?.timeOnLevelY || 250,
+          fontSize: localTemplate?.timeOnLevelFontSize || 14,
+          color: localTemplate?.timeOnLevelColor || "AAAAAA"
+      },
+      {
+          id: "awarded",
+          type: "text",
+          label: "Awarded XP",
+          visible: localTemplate?.showAwarded,
+          locked: false,
+          x: localTemplate?.awardedX || 200,
+          y: localTemplate?.awardedY || 280,
+          fontSize: localTemplate?.awardedFontSize || 14,
+          color: localTemplate?.awardedColor || "FFD700"
+      }
+  ]);
+
+  // Save current state to undo stack
+  function saveUndoState() {
+      const currentState = JSON.stringify(localTemplate);
+      undoStack.push(currentState);
+      if (undoStack.length > maxUndoLevels) {
+          undoStack.shift();
+      }
+      redoStack = [];
+  }
+
+  // Undo last action
+  function undo() {
+      if (undoStack.length > 0) {
+          const currentState = JSON.stringify(localTemplate);
+          redoStack.push(currentState);
+          const previousState = undoStack.pop()!;
+          localTemplate = JSON.parse(previousState);
+          markAsChanged();
+          redrawCanvas();
+      }
+  }
+
+  // Redo last undone action
+  function redo() {
+      if (redoStack.length > 0) {
+          const currentState = JSON.stringify(localTemplate);
+          undoStack.push(currentState);
+          const nextState = redoStack.pop()!;
+          localTemplate = JSON.parse(nextState);
+          markAsChanged();
+          redrawCanvas();
     }
-    expandedCategories = expandedCategories; // Trigger reactivity
   }
 
-  // Enhanced zoom functions with instant cursor-based zooming (no animation)
-  function instantZoom(targetScale: number, centerX?: number, centerY?: number) {
-    const oldScale = previewScale;
-    previewScale = targetScale;
-
-    // If cursor position is provided, adjust offset to keep zoom point stable
-    if (centerX !== undefined && centerY !== undefined && previewContainerRef) {
-      const rect = previewContainerRef.getBoundingClientRect();
-      const containerCenterX = rect.width / 2;
-      const containerCenterY = rect.height / 2;
-      
-      // Calculate the point we want to zoom into relative to container center
-      const pointX = centerX - containerCenterX;
-      const pointY = centerY - containerCenterY;
-      
-      // Calculate new offset to keep the zoom point stable
-      const scaleDiff = targetScale - oldScale;
-      previewOffset.x = previewOffset.x - (pointX * scaleDiff) / oldScale;
-      previewOffset.y = previewOffset.y - (pointY * scaleDiff) / oldScale;
-      
-      // Constrain pan limits
-      previewOffset.x = Math.max(-2000, Math.min(2000, previewOffset.x));
-      previewOffset.y = Math.max(-2000, Math.min(2000, previewOffset.y));
-      previewOffset = { ...previewOffset }; // Trigger reactivity
-    }
+  // Mark template as changed
+  function markAsChanged() {
+      changedSettings = changedSettings.add("template");
   }
 
-  function zoomIn(amount = 0.15, centerX?: number, centerY?: number) {
-    const targetScale = Math.min(previewScale + amount, 3.0);
-    instantZoom(targetScale, centerX, centerY);
+  // Update element position
+  function updateElementPosition(elementId: string, x: number, y: number) {
+      saveUndoState();
+
+      if (snapToGrid) {
+          x = Math.round(x / gridSize) * gridSize;
+          y = Math.round(y / gridSize) * gridSize;
+      }
+
+      switch (elementId) {
+          case "user-icon":
+              localTemplate.templateUser.iconX = x;
+              localTemplate.templateUser.iconY = y;
+              break;
+          case "user-text":
+              localTemplate.templateUser.textX = x;
+              localTemplate.templateUser.textY = y;
+              break;
+          case "guild-rank":
+              localTemplate.templateGuild.guildRankX = x;
+              localTemplate.templateGuild.guildRankY = y;
+              break;
+          case "guild-level":
+              localTemplate.templateGuild.guildLevelX = x;
+              localTemplate.templateGuild.guildLevelY = y;
+              break;
+          case "club-icon":
+              localTemplate.templateClub.clubIconX = x;
+              localTemplate.templateClub.clubIconY = y;
+              break;
+          case "club-name":
+              localTemplate.templateClub.clubNameX = x;
+              localTemplate.templateClub.clubNameY = y;
+              break;
+          case "time-on-level":
+              localTemplate.timeOnLevelX = x;
+              localTemplate.timeOnLevelY = y;
+              break;
+          case "awarded":
+              localTemplate.awardedX = x;
+              localTemplate.awardedY = y;
+              break;
+      }
+
+      if (elementId === "progress-bar") {
+          const element = elements.find(e => e.id === elementId);
+          if (element && element.type === "bar") {
+              const deltaX = x - element.x1;
+              const deltaY = y - element.y1;
+              localTemplate.templateBar.barPointAx = x;
+              localTemplate.templateBar.barPointAy = y;
+              localTemplate.templateBar.barPointBx = element.x2 + deltaX;
+              localTemplate.templateBar.barPointBy = element.y2 + deltaY;
+          }
+      }
+
+      markAsChanged();
+      redrawCanvas();
   }
 
-  function zoomOut(amount = 0.15, centerX?: number, centerY?: number) {
-    const targetScale = Math.max(previewScale - amount, 0.1);
-    instantZoom(targetScale, centerX, centerY);
+  // Toggle element visibility
+  function toggleElementVisibility(elementId: string) {
+      saveUndoState();
+
+      switch (elementId) {
+          case "user-icon":
+              localTemplate.templateUser.showIcon = !localTemplate.templateUser.showIcon;
+              break;
+          case "user-text":
+              localTemplate.templateUser.showText = !localTemplate.templateUser.showText;
+              break;
+          case "progress-bar":
+              localTemplate.templateBar.showBar = !localTemplate.templateBar.showBar;
+              break;
+          case "guild-rank":
+              localTemplate.templateGuild.showGuildRank = !localTemplate.templateGuild.showGuildRank;
+              break;
+          case "guild-level":
+              localTemplate.templateGuild.showGuildLevel = !localTemplate.templateGuild.showGuildLevel;
+              break;
+          case "club-icon":
+              localTemplate.templateClub.showClubIcon = !localTemplate.templateClub.showClubIcon;
+              break;
+          case "club-name":
+              localTemplate.templateClub.showClubName = !localTemplate.templateClub.showClubName;
+              break;
+          case "time-on-level":
+              localTemplate.showTimeOnLevel = !localTemplate.showTimeOnLevel;
+              break;
+          case "awarded":
+              localTemplate.showAwarded = !localTemplate.showAwarded;
+              break;
+      }
+
+      markAsChanged();
+      redrawCanvas();
   }
 
-  function panHorizontal(deltaX: number) {
-    previewOffset.x = Math.max(-2000, Math.min(2000, previewOffset.x + deltaX));
-    previewOffset = { ...previewOffset }; // Trigger reactivity
+  // Toggle panel visibility
+  function togglePanel(panelId: keyof typeof panels) {
+      panels[panelId].open = !panels[panelId].open;
   }
 
-  function panVertical(deltaY: number) {
-    previewOffset.y = Math.max(-2000, Math.min(2000, previewOffset.y + deltaY));
-    previewOffset = { ...previewOffset }; // Trigger reactivity
+  // Pin/unpin panel
+  function togglePanelPin(panelId: keyof typeof panels) {
+      panels[panelId].pinned = !panels[panelId].pinned;
   }
 
-  // Mouse wheel handler for zoom and pan
+  // Redraw the canvas
+  function redrawCanvas() {
+      if (!ctx || !canvas) return;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Save context state
+      ctx.save();
+
+      // Apply zoom and pan
+      ctx.translate(panX, panY);
+      ctx.scale(zoom, zoom);
+
+      // Draw background
+      if (backgroundImage && !backgroundImageLoading) {
+          // Custom background image
+          ctx.drawImage(backgroundImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      } else if (defaultBgImage) {
+          // Default background with gradient (since default is transparent)
+          // First draw gradient
+          const bgGradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+          bgGradient.addColorStop(0, `${$colorStore.primary}15`);
+          bgGradient.addColorStop(0.5, `${$colorStore.primary}20`);
+          bgGradient.addColorStop(1, `${$colorStore.secondary}15`);
+          ctx.fillStyle = bgGradient;
+          ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+
+          // Then draw transparent default image on top
+          ctx.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      }
+
+      // Draw grid if enabled
+      if (showGrid && previewMode === "edit") {
+          ctx.strokeStyle = `${$colorStore.primary}20`;
+          ctx.lineWidth = 0.5;
+          ctx.setLineDash([2, 4]);
+
+          for (let x = 0; x <= localTemplate.outputSizeX; x += gridSize) {
+              ctx.beginPath();
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, localTemplate.outputSizeY);
+              ctx.stroke();
+          }
+
+          for (let y = 0; y <= localTemplate.outputSizeY; y += gridSize) {
+              ctx.beginPath();
+              ctx.moveTo(0, y);
+              ctx.lineTo(localTemplate.outputSizeX, y);
+              ctx.stroke();
+          }
+
+          ctx.setLineDash([]);
+      }
+
+      // Draw elements
+      elements.forEach(element => {
+          if (!element.visible) return;
+
+          const isSelected = selectedElement === element.id;
+          const isHovered = hoveredElement === element.id;
+
+          if (element.type === "image") {
+              // Draw placeholder image
+              ctx.fillStyle = `${$colorStore.primary}30`;
+              ctx.fillRect(element.x, element.y, element.width, element.height);
+
+              // Draw image border
+              ctx.strokeStyle = isSelected ? $colorStore.accent : isHovered ? $colorStore.primary : `${$colorStore.primary}40`;
+              ctx.lineWidth = isSelected ? 2 : 1;
+              ctx.strokeRect(element.x, element.y, element.width, element.height);
+
+              // Draw label
+              ctx.fillStyle = $colorStore.text;
+              ctx.font = "12px Inter";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(element.label, element.x + element.width / 2, element.y + element.height / 2);
+          } else if (element.type === "text") {
+              // Draw text
+              ctx.fillStyle = element.color.startsWith('#') ? element.color : `#${element.color}`;
+              ctx.font = `${element.fontSize}px Inter`;
+              ctx.textAlign = "left";
+              ctx.textBaseline = "top";
+
+              const displayText = useRealData && currentUserData
+                  ? getTextContent(element.id, currentUserData)
+                  : getTextContent(element.id, sampleData);
+
+              ctx.fillText(displayText, element.x, element.y);
+
+              // Draw selection box in edit mode
+              if (previewMode === "edit" && (isSelected || isHovered)) {
+                  const metrics = ctx.measureText(displayText);
+                  ctx.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+                  ctx.lineWidth = isSelected ? 2 : 1;
+                  ctx.setLineDash(isSelected ? [] : [4, 4]);
+                  ctx.strokeRect(
+                      element.x - 5,
+                      element.y - 5,
+                      metrics.width + 10,
+                      element.fontSize + 10
+                  );
+                  ctx.setLineDash([]);
+              }
+          } else if (element.type === "bar") {
+              // Draw progress bar as a filled polygon (matching C# DrawXpBar method)
+              const percent = (useRealData && currentUserData?.progress ? currentUserData.progress : sampleData.progress) / 100;
+              const direction = localTemplate?.templateBar?.barDirection ?? 3; // C# enum: 0=Up, 1=Down, 2=Left, 3=Right (default)
+              const barLength = localTemplate?.templateBar?.barLength || 452;
+              const transparency = localTemplate?.templateBar?.barTransparency || 255;
+
+              // Calculate progress length
+              const length = barLength * percent;
+
+              // Calculate the four corners of the progress bar based on C# XpTemplateDirection enum
+              // 0=Up, 1=Down, 2=Left, 3=Right
+              let x3, x4, y3, y4;
+              const x1 = element.x1;
+              const y1 = element.y1;
+              const x2 = element.x2;
+              const y2 = element.y2;
+
+              switch (direction) {
+                  case 1: // Down
+                      x3 = x1;
+                      x4 = x2;
+                      y3 = y1 + length;
+                      y4 = y2 + length;
+                      break;
+                  case 0: // Up
+                      x3 = x1;
+                      x4 = x2;
+                      y3 = y1 - length;
+                      y4 = y2 - length;
+                      break;
+                  case 2: // Left
+                      x3 = x1 - length;
+                      x4 = x2 - length;
+                      y3 = y1;
+                      y4 = y2;
+                      break;
+                  default: // Right (3)
+                      x3 = x1 + length;
+                      x4 = x2 + length;
+                      y3 = y1;
+                      y4 = y2;
+                      break;
+              }
+
+              // Draw the progress bar as a filled path
+              ctx.save();
+
+              // Parse color - handle ARGB format from C# (e.g., "FF000000")
+              let barColor = element.color;
+              if (!barColor.startsWith('#')) {
+                  // Convert ARGB to RGB (skip first 2 chars if 8 chars long)
+                  if (barColor.length === 8) {
+                      barColor = '#' + barColor.slice(2);
+                  } else {
+                      barColor = '#' + barColor;
+                  }
+              }
+
+              ctx.fillStyle = barColor;
+              ctx.globalAlpha = transparency / 255;
+
+              // Draw the path exactly as C# does
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x3, y3);
+              ctx.lineTo(x4, y4);
+              ctx.lineTo(x2, y2);
+              ctx.closePath();
+              ctx.fill();
+
+              ctx.restore();
+
+              // Draw selection handles in edit mode
+              if (previewMode === "edit" && (isSelected || isHovered)) {
+                  ctx.fillStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+                  ctx.beginPath();
+                  ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.beginPath();
+                  ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+                  ctx.fill();
+              }
+          }
+
+          // Draw lock indicator
+          if (element.locked && previewMode === "edit") {
+              ctx.fillStyle = $colorStore.accent;
+              ctx.font = "10px Inter";
+              ctx.textAlign = "right";
+              ctx.textBaseline = "top";
+              ctx.fillText("🔒", element.x + element.width - 5, element.y + 5);
+          }
+      });
+
+      // Draw rulers if enabled
+      if (showRulers && previewMode === "edit") {
+          // Horizontal ruler
+          ctx.fillStyle = `${$colorStore.primary}08`;
+          ctx.fillRect(0, -30, localTemplate.outputSizeX, 30);
+          ctx.strokeStyle = `${$colorStore.primary}40`;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0, -30, localTemplate.outputSizeX, 30);
+
+          // Draw ruler marks
+          ctx.fillStyle = `#${$colorStore.text}`;
+          ctx.font = "10px Inter";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          for (let x = 0; x <= localTemplate.outputSizeX; x += 50) {
+              ctx.beginPath();
+              ctx.moveTo(x, -30);
+              ctx.lineTo(x, -20);
+              ctx.stroke();
+              ctx.fillText(x.toString(), x, -10);
+          }
+
+          // Vertical ruler
+          ctx.fillStyle = `${$colorStore.primary}08`;
+          ctx.fillRect(-30, 0, 30, localTemplate.outputSizeY);
+          ctx.strokeStyle = `${$colorStore.primary}40`;
+          ctx.strokeRect(-30, 0, 30, localTemplate.outputSizeY);
+
+          // Draw ruler marks
+          ctx.save();
+          ctx.rotate(-Math.PI / 2);
+          for (let y = 0; y <= localTemplate.outputSizeY; y += 50) {
+              ctx.beginPath();
+              ctx.moveTo(-y, -30);
+              ctx.lineTo(-y, -20);
+              ctx.stroke();
+              ctx.fillText(y.toString(), -y, -10);
+          }
+          ctx.restore();
+      }
+
+      // Restore context state
+      ctx.restore();
+
+      // Draw zoom indicator
+      if (zoom !== 1) {
+          ctx.fillStyle = $colorStore.primary;
+          ctx.font = "14px Inter";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(`${Math.round(zoom * 100)}%`, canvas.width - 10, canvas.height - 10);
+      }
+  }
+
+  // Get text content for display
+  function getTextContent(elementId: string, data: any): string {
+      switch (elementId) {
+          case "user-text":
+              return data?.username || "Username";
+          case "guild-rank":
+              return `Rank #${data?.rank || 1}`;
+          case "guild-level":
+              return `Level ${data?.level || 1}`;
+          case "club-name":
+              return data?.clubName || "Club Name";
+          case "time-on-level":
+              return data?.timeOnLevel || "0d 0h 0m";
+          case "awarded":
+              return `+${data?.awardedXp || 0} XP`;
+          default:
+              return "";
+      }
+  }
+
+  // Handle canvas mouse down
+  function handleCanvasMouseDown(event: MouseEvent) {
+      if (previewMode === "preview") return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left - panX) / zoom;
+      const y = (event.clientY - rect.top - panY) / zoom;
+
+      // Check if clicking on an element
+      const clickedElement = elements.find(element => {
+          if (!element.visible) return false;
+
+          if (element.type === "image") {
+              return x >= element.x && x <= element.x + element.width &&
+                  y >= element.y && y <= element.y + element.height;
+          } else if (element.type === "text") {
+              // Approximate text bounds
+              return x >= element.x - 5 && x <= element.x + 100 &&
+                  y >= element.y - 5 && y <= element.y + element.fontSize + 5;
+          } else if (element.type === "bar") {
+              // Check if near the line
+              const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
+              const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
+              return dist1 < 10 || dist2 < 10;
+          }
+          return false;
+      });
+
+      if (clickedElement && !clickedElement.locked) {
+          selectedElement = clickedElement.id;
+          isDragging = true;
+          dragTarget = clickedElement.id;
+          dragStartX = x;
+          dragStartY = y;
+          // Store the element's initial position
+          if (clickedElement.type === "bar") {
+              dragStartElementX = clickedElement.x1;
+              dragStartElementY = clickedElement.y1;
+          } else {
+              dragStartElementX = clickedElement.x;
+              dragStartElementY = clickedElement.y;
+          }
+      } else if (!event.shiftKey) {
+          // Start panning
+          isPanning = true;
+          lastMouseX = event.clientX;
+          lastMouseY = event.clientY;
+      }
+
+      redrawCanvas();
+  }
+
+  // Handle canvas mouse move
+  function handleCanvasMouseMove(event: MouseEvent) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left - panX) / zoom;
+      const y = (event.clientY - rect.top - panY) / zoom;
+
+      if (isDragging && dragTarget) {
+          const deltaX = x - dragStartX;
+          const deltaY = y - dragStartY;
+
+          const element = elements.find(e => e.id === dragTarget);
+          if (element) {
+              // Calculate new position based on initial position + total delta
+              const newX = dragStartElementX + deltaX;
+              const newY = dragStartElementY + deltaY;
+              updateElementPosition(dragTarget, newX, newY);
+          }
+      } else if (isPanning) {
+          panX += event.clientX - lastMouseX;
+          panY += event.clientY - lastMouseY;
+          lastMouseX = event.clientX;
+          lastMouseY = event.clientY;
+          redrawCanvas();
+      } else {
+          // Check hover
+          const prevHovered = hoveredElement;
+          hoveredElement = elements.find(element => {
+              if (!element.visible) return false;
+
+              if (element.type === "image") {
+                  return x >= element.x && x <= element.x + element.width &&
+                      y >= element.y && y <= element.y + element.height;
+              } else if (element.type === "text") {
+                  return x >= element.x - 5 && x <= element.x + 100 &&
+                      y >= element.y - 5 && y <= element.y + element.fontSize + 5;
+              } else if (element.type === "bar") {
+                  const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
+                  const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
+                  return dist1 < 10 || dist2 < 10;
+              }
+              return false;
+          })?.id || null;
+
+          if (prevHovered !== hoveredElement) {
+              redrawCanvas();
+          }
+      }
+
+      // Update cursor
+      if (hoveredElement && !elements.find(e => e.id === hoveredElement)?.locked) {
+          canvas.style.cursor = "move";
+      } else if (isPanning) {
+          canvas.style.cursor = "grabbing";
+      } else {
+          canvas.style.cursor = previewMode === "edit" ? "crosshair" : "default";
+      }
+  }
+
+  // Handle canvas mouse up
+  function handleCanvasMouseUp() {
+      isDragging = false;
+      dragTarget = null;
+      isPanning = false;
+  }
+
+  // Handle wheel for zoom
   function handleWheel(event: WheelEvent) {
-    // Only handle wheel events when in full page mode or when the preview container is focused
-    if (!isFullPageMode && !previewContainerRef?.contains(event.target as Node)) {
+      if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          const delta = event.deltaY > 0 ? 0.9 : 1.1;
+          zoom = Math.max(0.1, Math.min(5, zoom * delta));
+          redrawCanvas();
+      }
+  }
+
+  // Keyboard shortcuts
+  function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+          showEditor = false;
+          event.preventDefault();
       return;
     }
 
-    event.preventDefault();
-    
-    const zoomSpeed = 0.0008;
-    const panSpeed = 0.5;
-    
     if (event.ctrlKey || event.metaKey) {
-      // Zoom with Ctrl/Cmd + scroll - zoom toward cursor
-      const rect = previewContainerRef.getBoundingClientRect();
-      const cursorX = event.clientX - rect.left;
-      const cursorY = event.clientY - rect.top;
-      
-      const zoomDelta = -event.deltaY * zoomSpeed;
-      if (zoomDelta > 0) {
-        zoomIn(Math.abs(zoomDelta), cursorX, cursorY);
-      } else {
-        zoomOut(Math.abs(zoomDelta), cursorX, cursorY);
-      }
-    } else if (event.shiftKey) {
-      // Horizontal pan with Shift + scroll
-      panHorizontal(-event.deltaY * panSpeed);
-    } else {
-      // Vertical pan with normal scroll
-      panVertical(-event.deltaY * panSpeed);
-    }
-  }
-
-  // Keyboard shortcuts handler
-  function handleKeydown(event: KeyboardEvent) {
-    if (browser) {
-      // Toggle design mode with 'D' key
-      if (event.key === 'd' || event.key === 'D') {
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          const target = event.target as HTMLElement;
-          if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-            event.preventDefault();
-            isDesignMode = !isDesignMode;
-          }
-        }
-      }
-      
-      // Toggle full page mode with 'F' key
-      if (event.key === 'f' || event.key === 'F') {
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          const target = event.target as HTMLElement;
-          if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-            event.preventDefault();
-            isFullPageMode = !isFullPageMode;
-          }
-        }
-      }
-      
-      // Exit full page mode with Escape
-      if (event.key === 'Escape') {
-        if (isFullPageMode) {
+        switch (event.key) {
+            case "z":
+                if (event.shiftKey) {
+                    redo();
+                } else {
+                    undo();
+                }
           event.preventDefault();
-          isFullPageMode = false;
-        }
-      }
-      
-      // Toggle grid with 'G' key
-      if (event.key === 'g' || event.key === 'G') {
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          const target = event.target as HTMLElement;
-          if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-            event.preventDefault();
-            showGrid = !showGrid;
-          }
-        }
-      }
-
-      // Reset zoom with 'R' key
-      if (event.key === 'r' || event.key === 'R') {
-        if (!event.ctrlKey && !event.altKey && !event.metaKey) {
-          const target = event.target as HTMLElement;
-          if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-            event.preventDefault();
-            resetZoom();
-          }
-        }
-      }
-
-      // Zoom shortcuts
-      if (event.key === '=' || event.key === '+') {
-        if (event.ctrlKey || event.metaKey) {
+                break;
+            case "s":
+                event.preventDefault();
+                // Trigger save through parent component
+                break;
+            case "g":
+                showGrid = !showGrid;
+                redrawCanvas();
           event.preventDefault();
-          zoomIn(0.2);
-        }
+                break;
+            case "r":
+                showRulers = !showRulers;
+                redrawCanvas();
+                event.preventDefault();
+                break;
       }
-      
-      if (event.key === '-' || event.key === '_') {
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          zoomOut(0.2);
-        }
-      }
-      
-      if (event.key === '0') {
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          resetZoom();
-        }
-      }
+    } else if (event.key === "Delete" && selectedElement) {
+        toggleElementVisibility(selectedElement);
+    } else if (event.key === "Escape") {
+        selectedElement = null;
+        isDragging = false;
+        dragTarget = null;
+        isPanning = false;
+        redrawCanvas();
     }
   }
 
-  // Direction options for bar direction dropdown
-  const directions = [
-    { value: 0, label: "Left to Right" },
-    { value: 1, label: "Right to Left" },
-    { value: 2, label: "Top to Bottom" },
-    { value: 3, label: "Bottom to Top" }
-  ];
+  // Initialize canvas
+  function initCanvas() {
+      if (!canvas || !canvasContainer) return;
 
-  // Editor tabs configuration
-  const editorTabs = [
-    { id: "general", label: "General", icon: Settings },
-    { id: "user", label: "User", icon: User },
-    { id: "bar", label: "Progress", icon: BarChart },
-    { id: "guild", label: "Guild", icon: Users },
-    { id: "time", label: "Time", icon: Clock },
-    { id: "club", label: "Club", icon: Award }
-  ];
+      ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-  // Event handlers
-  function handleChange(property: string, value: any) {
-    const keys = property.split('.');
-    let obj = localTemplate;
-    for (let i = 0; i < keys.length - 1; i++) {
-      obj = obj[keys[i]];
-    }
-    obj[keys[keys.length - 1]] = value;
-    changedSettings.add("template");
+      // Set canvas size
+      const containerRect = canvasContainer.getBoundingClientRect();
+      canvas.width = containerRect.width;
+      canvas.height = containerRect.height;
+
+      // Center the template
+      panX = (canvas.width - localTemplate.outputSizeX * zoom) / 2;
+      panY = (canvas.height - localTemplate.outputSizeY * zoom) / 2;
+
+      redrawCanvas();
   }
 
-  function handleColorInput(property: string) {
-    return (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      let value = target.value;
-      if (!value.startsWith('#')) value = '#' + value;
-      handleChange(property, value);
-    };
-  }
-
-  function handleInputFocus(event: Event) {
-    const target = event.target as HTMLInputElement;
-    target.select();
-  }
-
-  function formatColor(colorString: string): string {
-    if (!colorString) return "#ffffff";
-    if (colorString.startsWith('#')) return colorString;
-    return `#${colorString}`;
-  }
-
-  function calculateProgressPosition(): { x: number; y: number } {
-    if (!localTemplate?.templateBar) return { x: 0, y: 0 };
-    
-    const startX = localTemplate.templateBar.barPointAx;
-    const startY = localTemplate.templateBar.barPointAy;
-    const endX = localTemplate.templateBar.barPointBx;
-    const endY = localTemplate.templateBar.barPointBy;
-
-    // Calculate the point at the percentage position (using real or sample data)
-    const progressValue = (showRealDataPreview && currentUserData) ?
-      currentUserData.progress : sampleData.progress;
-    const progress = progressValue / 100;
-
-    const x = startX + (endX - startX) * progress;
-    const y = startY + (endY - startY) * progress;
-
-    return { x, y };
-  }
-
-  function undo() {
-    if (undoStack.length > 0) {
-      // Implementation for undo functionality would go here
-    }
-  }
-
-  function resetZoom() {
-    previewScale = 1.0;
-    previewOffset = { x: 0, y: 0 };
-  }
-
-  // Apply snap to grid
-  function applySnapToGrid(x: number, y: number) {
-    if (!snapToGrid) return { x, y };
-
-    return {
-      x: Math.round(x / gridSize) * gridSize,
-      y: Math.round(y / gridSize) * gridSize
-    };
-  }
-
-  // Start dragging an element
-  function startDrag(event: MouseEvent | TouchEvent, element: any) {
-    if (!isDesignMode) return;
-
-    // Prevent default to avoid triggering other events
-    event.preventDefault();
-    event.stopPropagation();
-
-    draggingElement = element;
-    // Get initial pointer position
-    const clientX = event.type.includes("mouse")
-      ? (event as MouseEvent).clientX
-      : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-        ? (event as TouchEvent).touches[0].clientX : 0;
-
-    const clientY = event.type.includes("mouse")
-      ? (event as MouseEvent).clientY
-      : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-        ? (event as TouchEvent).touches[0].clientY : 0;
-
-    dragStartPos = {
-      x: clientX,
-      y: clientY
-    };
-
-    // Get initial element position
-    dragStartElementPos = {
-      x: element.getX(),
-      y: element.getY()
-    };
-
-    // Show coordinate overlay during drag
-    showCoordinateOverlay = true;
-
-    document.body.classList.add("dragging-active");
-
-    // Add event listeners for drag movement and end
-    window.addEventListener("mousemove", handleDragMove, { passive: false });
-    window.addEventListener("touchmove", handleDragMove, { passive: false });
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchend", endDrag);
-
-    // Only update UI once to show initial drag state
-    localTemplate = { ...localTemplate };
-  }
-
-  // Handle drag movement
-  function handleDragMove(event: MouseEvent | TouchEvent) {
-    if (!draggingElement) return;
-
-    // Prevent default behaviors
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Throttle event handling
-    const now = Date.now();
-    if (now - lastDragUpdate < THROTTLE_MS) return;
-    lastDragUpdate = now;
-
-    // Cancel any existing animation frame to prevent queuing
-    if (dragAnimationFrameId) {
-      cancelAnimationFrame(dragAnimationFrameId);
-    }
-
-    dragAnimationFrameId = requestAnimationFrame(() => {
-      // Get current pointer position
-      const clientX = event.type.includes("mouse")
-        ? (event as MouseEvent).clientX
-        : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-          ? (event as TouchEvent).touches[0].clientX : 0;
-
-      const clientY = event.type.includes("mouse")
-        ? (event as MouseEvent).clientY
-        : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-          ? (event as TouchEvent).touches[0].clientY : 0;
-
-      // Calculate the difference in position, accounting for preview scale
-      const deltaX = (clientX - dragStartPos.x) / previewScale;
-      const deltaY = (clientY - dragStartPos.y) / previewScale;
-
-      // Calculate new element position
-      let newX = dragStartElementPos.x + deltaX;
-      let newY = dragStartElementPos.y + deltaY;
-
-      // Apply snapping if enabled
-      if (snapToGrid) {
-        const snapped = applySnapToGrid(newX, newY);
-        newX = snapped.x;
-        newY = snapped.y;
-      } else if (showSnapping) {
-        const snapResult = calculateSimplifiedSnapLines(draggingElement, newX, newY);
-
-        if (snapResult.snapX !== null) {
-          newX = snapResult.snapX;
-          guideLinesPos.x = snapResult.snapX;
-        } else {
-          guideLinesPos.x = null;
-        }
-
-        if (snapResult.snapY !== null) {
-          newY = snapResult.snapY;
-          guideLinesPos.y = snapResult.snapY;
-        } else {
-          guideLinesPos.y = null;
-        }
-
-        // Show guidelines during snapping
-        showGuideLines = (guideLinesPos.x !== null || guideLinesPos.y !== null);
-      }
-
-      // Update element position
-      draggingElement.setPos(newX, newY);
-
-      // Only update the UI elements we actually need for visual feedback during drag
-      if (localTemplate && draggingElement) {
-        // Force Svelte to update just what we need
-        localTemplate = { ...localTemplate };
-      }
-    });
-  }
-
-  // End dragging
-  function endDrag() {
-    // Cancel any pending animation frame
-    if (dragAnimationFrameId) {
-      cancelAnimationFrame(dragAnimationFrameId);
-      dragAnimationFrameId = null;
-    }
-
-    document.body.classList.remove("dragging-active");
-
-    draggingElement = null;
-    isDragging = false;
-    showCoordinateOverlay = false;
-    showGuideLines = false;
-
-    // Remove event listeners
-    window.removeEventListener("mousemove", handleDragMove);
-    window.removeEventListener("touchmove", handleDragMove);
-    window.removeEventListener("mouseup", endDrag);
-    window.removeEventListener("touchend", endDrag);
-
-    // One final update to ensure the UI is in sync
-    localTemplate = { ...localTemplate };
-  }
-
-  function calculateSimplifiedSnapLines(currentElement: any, x: number, y: number) {
-    const snapDistance = 5; // Distance in pixels to trigger snapping
-    let snapX = null;
-    let snapY = null;
-
-    // Center of the canvas
-    const canvasCenterX = localTemplate.outputSizeX / 2;
-    const canvasCenterY = localTemplate.outputSizeY / 2;
-
-    // Quick checks for basic alignment points
-
-    // Canvas center
-    if (Math.abs(x - canvasCenterX) < snapDistance) snapX = canvasCenterX;
-    if (Math.abs(y - canvasCenterY) < snapDistance) snapY = canvasCenterY;
-
-    // Canvas edges
-    if (Math.abs(x) < snapDistance) snapX = 0;
-    if (Math.abs(y) < snapDistance) snapY = 0;
-    if (Math.abs(x - localTemplate.outputSizeX) < snapDistance) snapX = localTemplate.outputSizeX;
-    if (Math.abs(y - localTemplate.outputSizeY) < snapDistance) snapY = localTemplate.outputSizeY;
-
-    // Only check other elements if we haven't found a snap yet
-    if (snapX === null || snapY === null) {
-      // Check only visible elements that aren't the current one
-      const visibleElements = draggableElements.filter(element =>
-        element !== currentElement && element.isVisible()
-      );
-
-      const limitedElements = visibleElements.slice(0, 5);
-
-      for (const element of limitedElements) {
-        const elementX = element.getX();
-        const elementY = element.getY();
-
-        // Only check for X alignment if we haven't found one yet
-        if (snapX === null && Math.abs(x - elementX) < snapDistance) {
-          snapX = elementX;
-        }
-
-        // Only check for Y alignment if we haven't found one yet
-        if (snapY === null && Math.abs(y - elementY) < snapDistance) {
-          snapY = elementY;
-        }
-
-        // If we've found both alignments, we can stop
-        if (snapX !== null && snapY !== null) break;
-      }
-    }
-
-    return { snapX, snapY };
-  }
-
-  function loadImage() {
-    if (!imageUrl) return;
-    imageLoading = true;
-    imageError = "";
-    
-    const img = new Image();
-    img.onload = () => {
-      previewBackgroundUrl = imageUrl;
-      if (updateSizeFromImage && localTemplate) {
-        handleChange('outputSizeX', img.width);
-        handleChange('outputSizeY', img.height);
-        previewWidth = img.width;
-        previewHeight = img.height;
-      }
-      imageLoading = false;
-    };
-    img.onerror = () => {
-      imageError = "Failed to load image";
-      imageLoading = false;
-    };
-    img.src = imageUrl;
-  }
-
-  // Function to calculate preview scale
-  function updatePreviewScale() {
-    if (localTemplate && previewContainerRef) {
-      previewWidth = localTemplate.outputSizeX || 800;
-      previewHeight = localTemplate.outputSizeY || 280;
-      
-      // Calculate scale to fit in container
-      const containerRect = previewContainerRef.getBoundingClientRect();
-      const containerWidth = containerRect.width - 32; // Account for padding
-      const containerHeight = containerRect.height - 32;
-      
-      const scaleX = containerWidth / previewWidth;
-      const scaleY = containerHeight / previewHeight;
-      previewScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
-      
-      console.log("XpTemplateEditor - preview scale updated:", previewScale);
-    }
-  }
-
-  // Initialize preview dimensions and scale
-    run(() => {
-        if (localTemplate) {
-            console.log("XpTemplateEditor - localTemplate updated:", localTemplate);
-            updatePreviewScale();
-        }
-    });
-
-  // Update scale on window resize
-  let resizeTimeout: number;
+  // Handle resize
   function handleResize() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = window.setTimeout(updatePreviewScale, 100);
+      if (canvas && canvasContainer) {
+          initCanvas();
+      }
   }
 
-  // Draggable elements configuration
-    run(() => {
-        draggableElements = localTemplate ? [
-            {
-                id: "username",
-                label: "Username",
-                getX: () => localTemplate?.templateUser?.textX || 0,
-                getY: () => localTemplate?.templateUser?.textY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateUser.textX", Math.round(x));
-                    handleChange("templateUser.textY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateUser?.showText,
-                getWidth: () => {
-                    // Estimate text width based on font size
-                    const fontSize = localTemplate?.templateUser?.fontSize || 20;
-                    return fontSize * 6; // Rough estimate of text width
-                },
-                getHeight: () => localTemplate?.templateUser?.fontSize || 20,
-                color: "#3B82F6",
-                tooltip: "Username text position"
-            },
-            {
-                id: "userAvatar",
-                label: "User Avatar",
-                getX: () => localTemplate?.templateUser?.iconX || 0,
-                getY: () => localTemplate?.templateUser?.iconY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateUser.iconX", Math.round(x));
-                    handleChange("templateUser.iconY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateUser?.showIcon,
-                getWidth: () => localTemplate?.templateUser?.iconSizeX || 50,
-                getHeight: () => localTemplate?.templateUser?.iconSizeY || 50,
-                color: "#10B981",
-                tooltip: "User avatar position and size"
-            },
-            {
-                id: "guildLevel",
-                label: "Guild Level",
-                getX: () => localTemplate?.templateGuild?.guildLevelX || 0,
-                getY: () => localTemplate?.templateGuild?.guildLevelY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateGuild.guildLevelX", Math.round(x));
-                    handleChange("templateGuild.guildLevelY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateGuild?.showGuildLevel,
-                getWidth: () => (localTemplate?.templateGuild?.guildLevelFontSize || 20) * 5,
-                getHeight: () => localTemplate?.templateGuild?.guildLevelFontSize || 20,
-                color: "#8B5CF6",
-                tooltip: "Guild level text position"
-            },
-            {
-                id: "guildRank",
-                label: "Guild Rank",
-                getX: () => localTemplate?.templateGuild?.guildRankX || 0,
-                getY: () => localTemplate?.templateGuild?.guildRankY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateGuild.guildRankX", Math.round(x));
-                    handleChange("templateGuild.guildRankY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateGuild?.showGuildRank,
-                getWidth: () => (localTemplate?.templateGuild?.guildRankFontSize || 20) * 4,
-                getHeight: () => localTemplate?.templateGuild?.guildRankFontSize || 20,
-                color: "#EC4899",
-                tooltip: "Guild rank position"
-            },
-            {
-                id: "timeOnLevel",
-                label: "Time On Level",
-                getX: () => localTemplate?.timeOnLevelX || 0,
-                getY: () => localTemplate?.timeOnLevelY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("timeOnLevelX", Math.round(x));
-                    handleChange("timeOnLevelY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.showTimeOnLevel,
-                getWidth: () => (localTemplate?.timeOnLevelFontSize || 20) * 6,
-                getHeight: () => localTemplate?.timeOnLevelFontSize || 20,
-                color: "#F59E0B",
-                tooltip: "Time on level display position"
-            },
-            {
-                id: "clubName",
-                label: "Club Name",
-                getX: () => localTemplate?.templateClub?.clubNameX || 0,
-                getY: () => localTemplate?.templateClub?.clubNameY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateClub.clubNameX", Math.round(x));
-                    handleChange("templateClub.clubNameY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateClub?.showClubName,
-                getWidth: () => (localTemplate?.templateClub?.clubNameFontSize || 20) * 5,
-                getHeight: () => localTemplate?.templateClub?.clubNameFontSize || 20,
-                color: "#14B8A6",
-                tooltip: "Club name text position"
-            },
-            {
-                id: "clubIcon",
-                label: "Club Icon",
-                getX: () => localTemplate?.templateClub?.clubIconX || 0,
-                getY: () => localTemplate?.templateClub?.clubIconY || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateClub.clubIconX", Math.round(x));
-                    handleChange("templateClub.clubIconY", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateClub?.showClubIcon,
-                getWidth: () => localTemplate?.templateClub?.clubIconSizeX || 50,
-                getHeight: () => localTemplate?.templateClub?.clubIconSizeY || 50,
-                color: "#6366F1",
-                tooltip: "Club icon position and size"
-            },
-            {
-                id: "progressBarStart",
-                label: "Progress Bar Start",
-                getX: () => localTemplate?.templateBar?.barPointAx || 0,
-                getY: () => localTemplate?.templateBar?.barPointAy || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateBar.barPointAx", Math.round(x));
-                    handleChange("templateBar.barPointAy", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateBar?.showBar,
-                getWidth: () => 20,
-                getHeight: () => 20,
-                color: "#EF4444",
-                tooltip: "Progress bar starting point"
-            },
-            {
-                id: "progressBarEnd",
-                label: "Progress Bar End",
-                getX: () => localTemplate?.templateBar?.barPointBx || 0,
-                getY: () => localTemplate?.templateBar?.barPointBy || 0,
-                setPos: (x: number, y: number) => {
-                    handleChange("templateBar.barPointBx", Math.round(x));
-                    handleChange("templateBar.barPointBy", Math.round(y));
-                },
-                isVisible: () => localTemplate?.templateBar?.showBar,
-                getWidth: () => 20,
-                getHeight: () => 20,
-                color: "#EF4444",
-                tooltip: "Progress bar ending point"
-            }
-        ] : [];
-    });
-
-  // Lifecycle hooks
   onMount(() => {
-    if (typeof window !== 'undefined') {
-      checkScreenSize();
-      window.addEventListener('resize', handleResize);
-      window.addEventListener('resize', checkScreenSize);
-      window.addEventListener('keydown', handleKeydown);
-      window.addEventListener('wheel', handleWheel, { passive: false });
-      // Initial scale calculation after mount
-      setTimeout(updatePreviewScale, 100);
-    }
+      initCanvas();
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("keydown", handleKeyDown);
   });
 
   onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('resize', checkScreenSize);
-      window.removeEventListener('keydown', handleKeydown);
-      window.removeEventListener('wheel', handleWheel);
-    }
-    if (resizeTimeout) {
-      clearTimeout(resizeTimeout);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", handleKeyDown);
+  });
+
+  // React to template changes
+  $effect(() => {
+      if (localTemplate && ctx) {
+          redrawCanvas();
     }
   });
 </script>
 
-{#if localTemplate}
-  <div class="space-y-6">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <h2 class="text-2xl font-bold flex items-center gap-2" style="color: {$colorStore.text}">
-        <Image size={24} style="color: {$colorStore.primary}" />
-        XP Template Editor
-      </h2>
-      
-      <!-- Controls only shown on mobile -->
-      {#if isMobile}
-        <div class="flex flex-wrap gap-2">
-          <button
-            class="px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm min-h-[44px]"
-            class:ring-2={isDesignMode}
-            style="background: {isDesignMode ? $colorStore.primary + '20' : $colorStore.secondary};
-                   border: 1px solid {isDesignMode ? $colorStore.primary : $colorStore.primary + '30'};
-                   ring-color: {$colorStore.primary}50;
-                   color: {$colorStore.text};"
-            onclick={() => isDesignMode = !isDesignMode}
-            aria-label="Toggle design mode"
-            aria-pressed={isDesignMode}
-          >
-            <Move size={16} />
-            <span>Design</span>
-          </button>
-          
-          <button
-            class="px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm min-h-[44px]"
-            class:ring-2={showRealDataPreview}
-            style="background: {showRealDataPreview ? $colorStore.secondary + '20' : 'linear-gradient(135deg, ' + $colorStore.gradientStart + '15, ' + $colorStore.gradientMid + '20, ' + $colorStore.gradientEnd + '15)'};
-                   border: 1px solid {showRealDataPreview ? $colorStore.secondary : $colorStore.secondary + '30'};
-                   ring-color: {$colorStore.secondary}50;
-                   color: {$colorStore.text};"
-            onclick={() => showRealDataPreview = !showRealDataPreview}
-            aria-label="Toggle real data preview"
-            aria-pressed={showRealDataPreview}
-          >
-            <Database size={16} />
-            <span>Data</span>
-          </button>
-          
-          <button
-            class="px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm min-h-[44px]"
-            class:ring-2={showGrid}
-            style="background: {showGrid ? $colorStore.accent + '20' : 'linear-gradient(135deg, ' + $colorStore.gradientMid + '10, ' + $colorStore.gradientEnd + '15)'};
-                   border: 1px solid {showGrid ? $colorStore.accent : $colorStore.accent + '30'};
-                   ring-color: {$colorStore.accent}50;
-                   color: {$colorStore.text};"
-            onclick={() => showGrid = !showGrid}
-            aria-label="Toggle grid"
-            aria-pressed={showGrid}
-          >
-            <Grid size={16} />
-            <span>Grid</span>
-          </button>
-        </div>
-      {/if}
-    </div>
-
-
-    {#if isMobile}
-      <div class="mb-4 flex justify-center">
-        <div class="bg-gray-800/50 rounded-lg p-1 inline-flex w-full max-w-md justify-center">
-          <button
-            class="flex-1 px-3 py-2 rounded-lg transition-all duration-200 mr-1 min-h-[44px] font-medium"
-            class:bg-opacity-100={editorMobileView === 'preview'}
-            style="background: {editorMobileView === 'preview' ? $colorStore.primary : 'transparent'};
-                   color: {editorMobileView === 'preview' ? 'white' : $colorStore.text};"
-            onclick={() => editorMobileView = 'preview'}
-            aria-label="Show preview"
-          >
-            Preview
-          </button>
-          <button
-            class="flex-1 px-3 py-2 rounded-lg transition-all duration-200 min-h-[44px] font-medium"
-            class:bg-opacity-100={editorMobileView === 'controls'}
-            style="background: {editorMobileView === 'controls' ? $colorStore.primary : 'transparent'};
-                   color: {editorMobileView === 'controls' ? 'white' : $colorStore.text};"
-            onclick={() => editorMobileView = 'controls'}
-            aria-label="Show controls"
-          >
-            Settings
-          </button>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Full Page Mode Portal -->
-    {#if isFullPageMode}
-      <Portal>
-        <div class="template-editor-fullpage" transition:fade={{ duration: 300 }}>
-          <!-- Enhanced Preview Area -->
-          <div class="preview-section-fullpage">
-            <div class="preview-container">
-              <!-- Floating Toolbar for Full Page Mode -->
-              <div class="floating-toolbar">
-                <div class="toolbar-group">
-                  <button
-                    class="toolbar-btn"
-                    class:active={isDesignMode}
-                    onclick={() => isDesignMode = !isDesignMode}
-                    title="Toggle Design Mode (D)"
-                    style="background: {isDesignMode ? $colorStore.primary + '30' : 'transparent'}; 
-                           color: {$colorStore.text}; 
-                           border-color: {$colorStore.primary}40;"
-                  >
-                    <Move size={16} />
-                  </button>
-                  <button
-                    class="toolbar-btn"
-                    class:active={showRealDataPreview}
-                    onclick={() => showRealDataPreview = !showRealDataPreview}
-                    title="Toggle Real Data Preview (R)"
-                    style="background: {showRealDataPreview ? $colorStore.secondary + '30' : 'transparent'}; 
-                           color: {$colorStore.text}; 
-                           border-color: {$colorStore.secondary}40;"
-                  >
-                    <Database size={16} />
-                  </button>
-                  <button
-                    class="toolbar-btn"
-                    class:active={showGrid}
-                    onclick={() => showGrid = !showGrid}
-                    title="Toggle Grid (G)"
-                    style="background: {showGrid ? $colorStore.accent + '30' : 'transparent'}; 
-                           color: {$colorStore.text}; 
-                           border-color: {$colorStore.accent}40;"
-                  >
-                    <Grid size={16} />
-                  </button>
-                  <button
-                    class="toolbar-btn"
-                    class:active={isFullPageMode}
-                    onclick={() => isFullPageMode = !isFullPageMode}
-                    title="Exit Full Page Mode (F / Esc)"
-                    style="background: {isFullPageMode ? $colorStore.primary + '30' : 'transparent'}; 
-                           color: {$colorStore.text}; 
-                           border-color: {$colorStore.primary}40;"
-                  >
-                    <Minimize2 size={16} />
-                  </button>
-                </div>
-                
-                <div class="toolbar-group">
-                  <button
-                    class="toolbar-btn"
-                    onclick={() => zoomIn(0.2)}
-                    title="Zoom In (Ctrl + Plus or Mouse Wheel)"
-                    style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                    disabled={previewScale >= 2.9}
-                  >
-                    <ZoomIn size={16} />
-                  </button>
-                  <span class="zoom-display" style="color: {$colorStore.muted}; min-width: 50px; text-align: center; font-weight: 500;">
-                    {Math.round(previewScale * 100)}%
-                  </span>
-                  <button
-                    class="toolbar-btn"
-                    onclick={() => zoomOut(0.2)}
-                    title="Zoom Out (Ctrl + Minus or Mouse Wheel)"
-                    style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                    disabled={previewScale <= 0.2}
-                  >
-                    <ZoomOut size={16} />
-                  </button>
-                  <button
-                    class="toolbar-btn"
-                    onclick={() => resetZoom()}
-                    title="Reset Zoom (Ctrl + 0 or R)"
-                    style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Enhanced Preview Component -->
-              <div class="preview-wrapper">
-                <XpTemplatePreview
-                  bind:localTemplate
-                  bind:previewScale
-                  bind:previewWidth
-                  bind:previewHeight
-                  bind:previewOffset
-                  bind:previewBackgroundUrl
-                  bind:showGrid
-                  bind:gridSize
-                  bind:showGuideLines
-                  bind:guideLinesPos
-                  {draggableElements}
-                  bind:isDesignMode
-                  bind:draggingElement
-                  bind:hoverElement
-                  bind:showRealDataPreview
-                  bind:currentUserData
-                  bind:sampleData
-                  bind:showTooltips
-                  bind:showCoordinateOverlay
-                  bind:undoStack
-                  bind:previewContainerRef
-                  isFullPageMode={true}
-                  {startDrag}
-                  {formatColor}
-                  {calculateProgressPosition}
-                  {undo}
-                  {resetZoom}
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Settings Panel in Full Page Mode -->
-          <div class="settings-section-fullpage">
-            <div class="border rounded-lg flex flex-col h-full"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15); border-color: {$colorStore.primary}20;">
-              
-              <div class="accordion-container">
-                {#each settingsCategories as category}
-                  <div class="border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
-                    <button
-                      class="w-full p-4 flex items-center justify-between text-left hover:bg-opacity-5 transition-all duration-200"
-                      style="background: {expandedCategories.has(category.id) ? $colorStore.primary + '10' : 'transparent'};
-                             color: {$colorStore.text};"
-                      onclick={() => toggleCategory(category.id)}
-                      aria-expanded={expandedCategories.has(category.id)}
-                      aria-controls="category-{category.id}"
+<Portal target="body">
+    <div class="fixed inset-0 z-[9999] flex flex-col" transition:fade={{ duration: 300 }}>
+        <!-- Dark base with gradient overlay -->
+        <div class="absolute inset-0" style="background: {$colorStore.background || '#0a0a0a'};"></div>
+        <div class="absolute inset-0"
+             style="background: radial-gradient(circle at center,
+              {$colorStore.gradientStart}20 0%,
+              {$colorStore.gradientEnd}15 50%,
+              {$colorStore.gradientEnd}10 100%);"></div>
+        <!-- Main Editor Container -->
+        <div class="flex-1 flex h-full w-full relative z-10">
+            <!-- Left Sidebar - Layers & Tools -->
+            <div
+                    class="w-64 border-r flex flex-col transition-all duration-300 backdrop-blur-xs"
+                    class:w-12={!panels.layers.open}
+                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}12, {$colorStore.gradientMid}18);
+           border-color: {$colorStore.primary}30;"
+            >
+                <!-- Layers Panel -->
+                <div class="flex-1 flex flex-col">
+                    <div
+                            class="flex items-center justify-between p-3 border-b cursor-pointer"
+                            onclick={() => togglePanel("layers")}
+                            style="border-color: {$colorStore.primary}20;"
                     >
-                      <div class="flex items-center gap-3">
-                          <category.icon size={18} style="color: {$colorStore.primary}"/>
-                        <span class="font-medium">{category.label}</span>
-                      </div>
-                      <ChevronDown 
-                        size={16} 
-                        style="color: {$colorStore.muted}; transform: rotate({expandedCategories.has(category.id) ? '180deg' : '0deg'}); transition: transform 0.2s ease;"
-                      />
-                    </button>
-                    
-                    {#if expandedCategories.has(category.id)}
-                      <div class="p-4 pt-0" transition:slide={{ duration: 200 }} id="category-{category.id}">
-                        {#if category.id === 'canvas'}
-                          <!-- Canvas & Background Settings -->
-                          <div class="space-y-6">
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Canvas Size</h4>
-                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label for="output-width-fp" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                                    Width
-                                  </label>
-                                  <div class="space-y-3">
-                                    <input
-                                      id="output-width-fp"
-                                      type="range"
-                                      bind:value={localTemplate.outputSizeX}
-                                      oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                                      min="300"
-                                      max="1200"
-                                      step="10"
-                                      class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                      style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 100%);"
-                                    />
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.outputSizeX}
-                                        oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                                        onfocus={handleInputFocus}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="300"
-                                        max="1200"
-                                        step="10"
-                                        aria-labelledby="output-width-fp"
-                                      />
-                                      <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div class="space-y-2">
-                                  <label for="output-height-fp" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                                    Height
-                                  </label>
-                                  <div class="space-y-3">
-                                    <input
-                                      id="output-height-fp"
-                                      type="range"
-                                      bind:value={localTemplate.outputSizeY}
-                                      oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                                      min="150"
-                                      max="600"
-                                      step="10"
-                                      class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                      style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 100%);"
-                                    />
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.outputSizeY}
-                                        oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                                        onfocus={handleInputFocus}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="150"
-                                        max="600"
-                                        step="10"
-                                        aria-labelledby="output-height-fp"
-                                      />
-                                      <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        {:else if category.id === 'user'}
-                          <!-- User Elements Settings -->
-                          <div class="space-y-6">
-                            <!-- Username Display -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Username Display</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <Type size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Username Text</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's name</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.templateUser?.showText}
-                                  onchange={() => handleChange('templateUser.showText', !localTemplate.templateUser?.showText)}
-                                  aria-label="Show username text"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.templateUser?.showText}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Text Color -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="text"
-                                        bind:value={localTemplate.templateUser.textColor}
-                                        oninput={() => handleChange('templateUser.textColor', localTemplate.templateUser.textColor)}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        placeholder="FF000000"
-                                      />
-                                      <input
-                                        type="color"
-                                        value="#{localTemplate.templateUser.textColor?.replace('FF', '') || '000000'}"
-                                        oninput={(e) => handleChange('templateUser.textColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                        class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                        style="border-color: {$colorStore.primary}30;"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <!-- Font Size -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                    <input
-                                      type="range"
-                                      bind:value={localTemplate.templateUser.fontSize}
-                                      oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                                      min="10"
-                                      max="100"
-                                      step="1"
-                                      class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                    />
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.fontSize}
-                                        oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                                        class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="10"
-                                        max="100"
-                                      />
-                                      <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Position -->
-                                  <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.textX}
-                                        oninput={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.textY}
-                                        oninput={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-
-                            <!-- User Icon Display -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">User Icon</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <User size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Show User Icon</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's avatar</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.templateUser?.showIcon}
-                                  onchange={() => handleChange('templateUser.showIcon', !localTemplate.templateUser?.showIcon)}
-                                  aria-label="Show user icon"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.templateUser?.showIcon}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Icon Position -->
-                                  <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.iconX}
-                                        oninput={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.iconY}
-                                        oninput={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <!-- Icon Size -->
-                                  <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Width</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.iconSizeX}
-                                        oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="10"
-                                      />
-                                    </div>
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Height</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateUser.iconSizeY}
-                                        oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="10"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {:else if category.id === 'progress'}
-                          <!-- Progress Bar Settings -->
-                          <div class="space-y-6">
-                            <!-- Show Progress Bar -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Progress Bar Display</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <BarChart size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Show Progress Bar</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display the XP progress bar</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.templateBar?.showBar}
-                                  onchange={() => handleChange('templateBar.showBar', !localTemplate.templateBar?.showBar)}
-                                  aria-label="Show progress bar"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.templateBar?.showBar}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Bar Color -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Bar Color</label>
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="text"
-                                        bind:value={localTemplate.templateBar.barColor}
-                                        oninput={() => handleChange('templateBar.barColor', localTemplate.templateBar.barColor)}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        placeholder="FF000000"
-                                      />
-                                      <input
-                                        type="color"
-                                        value="#{localTemplate.templateBar.barColor?.replace('FF', '') || '000000'}"
-                                        oninput={(e) => handleChange('templateBar.barColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                        class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                        style="border-color: {$colorStore.primary}30;"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <!-- Bar Direction -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Direction</label>
-                                    <select
-                                      bind:value={localTemplate.templateBar.barDirection}
-                                      onchange={() => handleChange('templateBar.barDirection', localTemplate.templateBar.barDirection)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    >
-                                      <option value={0}>Left to Right</option>
-                                      <option value={1}>Right to Left</option>
-                                      <option value={2}>Top to Bottom</option>
-                                      <option value={3}>Bottom to Top</option>
-                                    </select>
-                                  </div>
-
-                                  <!-- Bar Position -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Start Position</label>
-                                    <div class="grid grid-cols-2 gap-4">
-                                      <div class="space-y-2">
-                                        <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                        <input
-                                          type="number"
-                                          bind:value={localTemplate.templateBar.barPointAx}
-                                          oninput={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
-                                          class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        />
-                                      </div>
-                                      <div class="space-y-2">
-                                        <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                        <input
-                                          type="number"
-                                          bind:value={localTemplate.templateBar.barPointAy}
-                                          oninput={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
-                                          class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">End Position</label>
-                                    <div class="grid grid-cols-2 gap-4">
-                                      <div class="space-y-2">
-                                        <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                        <input
-                                          type="number"
-                                          bind:value={localTemplate.templateBar.barPointBx}
-                                          oninput={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
-                                          class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        />
-                                      </div>
-                                      <div class="space-y-2">
-                                        <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                        <input
-                                          type="number"
-                                          bind:value={localTemplate.templateBar.barPointBy}
-                                          oninput={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
-                                          class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {:else if category.id === 'guild'}
-                          <!-- Guild Information Settings -->
-                          <div class="space-y-6">
-                            <!-- Guild Level Display -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Guild Level</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <Users size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Show Guild Level</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's level in the guild</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.templateGuild?.showGuildLevel}
-                                  onchange={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild?.showGuildLevel)}
-                                  aria-label="Show guild level"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.templateGuild?.showGuildLevel}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Level Text Color -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="text"
-                                        bind:value={localTemplate.templateGuild.guildLevelColor}
-                                        oninput={() => handleChange('templateGuild.guildLevelColor', localTemplate.templateGuild.guildLevelColor)}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        placeholder="FF000000"
-                                      />
-                                      <input
-                                        type="color"
-                                        value="#{localTemplate.templateGuild.guildLevelColor?.replace('FF', '') || '000000'}"
-                                        oninput={(e) => handleChange('templateGuild.guildLevelColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                        class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                        style="border-color: {$colorStore.primary}30;"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <!-- Level Font Size -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                    <input
-                                      type="range"
-                                      bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                      oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                                      min="10"
-                                      max="100"
-                                      step="1"
-                                      class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                    />
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                        oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                                        class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="10"
-                                        max="100"
-                                      />
-                                      <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Level Position -->
-                                  <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateGuild.guildLevelX}
-                                        oninput={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateGuild.guildLevelY}
-                                        oninput={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {:else if category.id === 'time'}
-                          <!-- Time Display Settings -->
-                          <div class="space-y-6">
-                            <!-- Show Time on Level -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Time on Level Display</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <Clock size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Show Time on Level</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display how long the user has been at current level</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.showTimeOnLevel}
-                                  onchange={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
-                                  aria-label="Show time on level"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.showTimeOnLevel}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Time Format -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Time Format</label>
-                                    <input
-                                      type="text"
-                                      bind:value={localTemplate.timeOnLevelFormat}
-                                      oninput={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      placeholder="{0}d{1}h{2}m"
-                                    />
-                                    <p class="text-xs" style="color: {$colorStore.muted}">
-                                      Use {0} for days, {1} for hours, {2} for minutes
-                                    </p>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {:else if category.id === 'club'}
-                          <!-- Club Features Settings -->
-                          <div class="space-y-6">
-                            <!-- Club Name Display -->
-                            <div class="space-y-4">
-                              <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Club Name Display</h4>
-                              <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                                <div class="flex items-center gap-3">
-                                  <Award size={20} style="color: {$colorStore.primary}" />
-                                  <div>
-                                    <span class="block font-medium" style="color: {$colorStore.text}">Show Club Name</span>
-                                    <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's club name</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  class="w-5 h-5 rounded"
-                                  checked={localTemplate.templateClub?.showClubName}
-                                  onchange={() => handleChange('templateClub.showClubName', !localTemplate.templateClub?.showClubName)}
-                                  aria-label="Show club name"
-                                  style="accent-color: {$colorStore.primary};"
-                                />
-                              </label>
-
-                              {#if localTemplate.templateClub?.showClubName}
-                                <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                                  <!-- Club Name Text Color -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="text"
-                                        bind:value={localTemplate.templateClub.clubNameColor}
-                                        oninput={() => handleChange('templateClub.clubNameColor', localTemplate.templateClub.clubNameColor)}
-                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        placeholder="FF000000"
-                                      />
-                                      <input
-                                        type="color"
-                                        value="#{localTemplate.templateClub.clubNameColor?.replace('FF', '') || '000000'}"
-                                        oninput={(e) => handleChange('templateClub.clubNameColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                        class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                        style="border-color: {$colorStore.primary}30;"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <!-- Club Name Font Size -->
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                    <input
-                                      type="range"
-                                      bind:value={localTemplate.templateClub.clubNameFontSize}
-                                      oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                                      min="10"
-                                      max="100"
-                                      step="1"
-                                      class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                    />
-                                    <div class="flex items-center gap-2">
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateClub.clubNameFontSize}
-                                        oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                                        class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                        min="10"
-                                        max="100"
-                                      />
-                                      <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Club Name Position -->
-                                  <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateClub.clubNameX}
-                                        oninput={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                    <div class="space-y-2">
-                                      <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                      <input
-                                        type="number"
-                                        bind:value={localTemplate.templateClub.clubNameY}
-                                        oninput={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {:else}
-                          <!-- Placeholder for any remaining categories -->
-                          <div class="text-sm" style="color: {$colorStore.muted}">
-                            {category.label} settings not yet implemented...
-                          </div>
+                        <div class="flex items-center gap-2">
+                            <Layers class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                            {#if panels.layers.open}
+                                <span class="text-sm font-semibold" style="color: {$colorStore.text}">Layers</span>
+                            {/if}
+                        </div>
+                        {#if panels.layers.open}
+          <button
+                  class="p-1 rounded-lg transition-all hover:scale-110"
+                  style="background: {$colorStore.primary}10;"
+                  onclick={(e) => { e.stopPropagation(); togglePanelPin("layers"); }}
+          >
+              {#if panels.layers.pinned}
+                  <Lock class="w-3 h-3" style="color: {$colorStore.primary}"/>
+              {:else}
+                  <Unlock class="w-3 h-3" style="color: {$colorStore.muted}"/>
+              {/if}
+          </button>
                         {/if}
-                      </div>
-                    {/if}
-                  </div>
-                {/each}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Portal>
-    {/if}
+                    </div>
 
-    <!-- Regular Responsive Grid Layout -->
-    {#if !isFullPageMode}
-    <div 
-      class="template-editor-grid"
-      class:desktop-layout={isDesktop}
-      class:tablet-layout={isTablet}
-      class:mobile-layout={isMobile}
-    >
-      <!-- Enhanced Preview Area -->
-      <div
-        class="preview-section"
-        class:hidden={isMobile && editorMobileView === 'controls'}
-      >
-        <div class="preview-container">
-          <!-- Floating Toolbar for Desktop/Tablet -->
-          {#if !isMobile}
-            <div class="floating-toolbar">
-              <div class="toolbar-group">
-                <button
-                  class="toolbar-btn"
-                  class:active={isDesignMode}
-                  onclick={() => isDesignMode = !isDesignMode}
-                  title="Toggle Design Mode (D)"
-                  style="background: {isDesignMode ? $colorStore.primary + '30' : 'transparent'}; 
-                         color: {$colorStore.text}; 
-                         border-color: {$colorStore.primary}40;"
-                >
-                  <Move size={16} />
-                </button>
-                <button
-                  class="toolbar-btn"
-                  class:active={showRealDataPreview}
-                  onclick={() => showRealDataPreview = !showRealDataPreview}
-                  title="Toggle Real Data Preview (R)"
-                  style="background: {showRealDataPreview ? $colorStore.secondary + '30' : 'transparent'}; 
-                         color: {$colorStore.text}; 
-                         border-color: {$colorStore.secondary}40;"
-                >
-                  <Database size={16} />
-                </button>
-                <button
-                  class="toolbar-btn"
-                  class:active={showGrid}
-                  onclick={() => showGrid = !showGrid}
-                  title="Toggle Grid (G)"
-                  style="background: {showGrid ? $colorStore.accent + '30' : 'transparent'}; 
-                         color: {$colorStore.text}; 
-                         border-color: {$colorStore.accent}40;"
-                >
-                  <Grid size={16} />
-                </button>
-                <button
-                  class="toolbar-btn"
-                  class:active={isFullPageMode}
-                  onclick={() => isFullPageMode = !isFullPageMode}
-                  title="Toggle Full Page Mode (F)"
-                  style="background: {isFullPageMode ? $colorStore.primary + '30' : 'transparent'}; 
-                         color: {$colorStore.text}; 
-                         border-color: {$colorStore.primary}40;"
-                >
-                  {#if isFullPageMode}
-                    <Minimize2 size={16} />
-                  {:else}
-                    <Maximize2 size={16} />
-                  {/if}
-                </button>
-              </div>
-              
-              <div class="toolbar-group">
-                <button
-                  class="toolbar-btn"
-                  onclick={() => previewScale = Math.min(previewScale + 0.1, 2.0)}
-                  title="Zoom In"
-                  style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <span class="zoom-display" style="color: {$colorStore.muted};">
-                  {Math.round(previewScale * 100)}%
-                </span>
-                <button
-                  class="toolbar-btn"
-                  onclick={() => previewScale = Math.max(previewScale - 0.1, 0.2)}
-                  title="Zoom Out"
-                  style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                >
-                  <ZoomOut size={16} />
-                </button>
-                <button
-                  class="toolbar-btn"
-                  onclick={() => resetZoom()}
-                  title="Reset Zoom (R)"
-                  style="color: {$colorStore.text}; border-color: {$colorStore.primary}40;"
-                >
-                  <RotateCcw size={16} />
-                </button>
-              </div>
-            </div>
-          {/if}
-
-          <!-- Enhanced Preview Component -->
-          <div class="preview-wrapper">
-            <XpTemplatePreview
-              bind:localTemplate
-              bind:previewScale
-              bind:previewWidth
-              bind:previewHeight
-              bind:previewOffset
-              bind:previewBackgroundUrl
-              bind:showGrid
-              bind:gridSize
-              bind:showGuideLines
-              bind:guideLinesPos
-              {draggableElements}
-              bind:isDesignMode
-              bind:draggingElement
-              bind:hoverElement
-              bind:showRealDataPreview
-              bind:currentUserData
-              bind:sampleData
-              bind:showTooltips
-              bind:showCoordinateOverlay
-              bind:undoStack
-              bind:previewContainerRef
-              isFullPageMode={false}
-              {startDrag}
-              {formatColor}
-              {calculateProgressPosition}
-              {undo}
-              {resetZoom}
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Settings Panel -->
-      <div
-        class="settings-section"
-        class:hidden={isMobile && editorMobileView === 'preview'}
-      >
-        <div class="border rounded-lg flex flex-col h-full"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15); border-color: {$colorStore.primary}20;">
-          
-          <!-- Show tabs on mobile, accordion on desktop/tablet -->
-          {#if isMobile}
-            <div class="p-4">
-              <div class="overflow-x-auto -mx-2 px-2">
-                <div class="flex gap-1 border-b pb-2 min-w-max" style="border-color: {$colorStore.primary}30;">
-                  {#each editorTabs as tab}
-                    <button
-                      class="px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm min-h-[44px] whitespace-nowrap"
-                      class:font-medium={editorActiveTab === tab.id}
-                      style="background: {editorActiveTab === tab.id ? $colorStore.primary + '30' : 'transparent'};
-                             color: {editorActiveTab === tab.id ? $colorStore.text : $colorStore.muted};
-                             border-bottom: {editorActiveTab === tab.id ? '2px solid ' + $colorStore.primary : 'none'};"
-                      onclick={() => editorActiveTab = tab.id}
-                      aria-label="Switch to {tab.label} tab"
-                      aria-selected={editorActiveTab === tab.id}
-                      role="tab"
-                    >
-                        <tab.icon size={16}
-                                  style="color: {editorActiveTab === tab.id ? $colorStore.primary : $colorStore.muted}"/>
-                      <span class="hidden sm:inline">{tab.label}</span>
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            </div>
-          {/if}
-
-          <!-- Accordion Layout for Desktop/Tablet -->
-          {#if !isMobile}
-            {#each settingsCategories as category}
-              <div class="border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
-                <button
-                  class="w-full p-4 flex items-center justify-between text-left hover:bg-opacity-5 transition-all duration-200"
-                  style="background: {expandedCategories.has(category.id) ? $colorStore.primary + '10' : 'transparent'};
-                         color: {$colorStore.text};"
-                  onclick={() => toggleCategory(category.id)}
-                  aria-expanded={expandedCategories.has(category.id)}
-                  aria-controls="category-{category.id}"
-                >
-                  <div class="flex items-center gap-3">
-                      <category.icon size={18} style="color: {$colorStore.primary}"/>
-                    <span class="font-medium">{category.label}</span>
-                  </div>
-                  <ChevronDown 
-                    size={16} 
-                    style="color: {$colorStore.muted}; transform: rotate({expandedCategories.has(category.id) ? '180deg' : '0deg'}); transition: transform 0.2s ease;"
-                  />
-                </button>
-                
-                {#if expandedCategories.has(category.id)}
-                  <div class="p-4 pt-0" transition:slide={{ duration: 200 }} id="category-{category.id}">
-                    {#if category.id === 'canvas'}
-                      <!-- Canvas & Background Settings -->
-                      <div class="space-y-6">
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Canvas Size</h4>
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                              <label for="output-width" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                                Width
-                              </label>
-                              <div class="space-y-3">
-                                <input
-                                  id="output-width"
-                                  type="range"
-                                  bind:value={localTemplate.outputSizeX}
-                                  oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                                  min="300"
-                                  max="1200"
-                                  step="10"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                  style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 100%);"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.outputSizeX}
-                                    oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                                    onfocus={handleInputFocus}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="300"
-                                    max="1200"
-                                    step="10"
-                                    aria-labelledby="output-width"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="space-y-2">
-                              <label for="output-height" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                                Height
-                              </label>
-                              <div class="space-y-3">
-                                <input
-                                  id="output-height"
-                                  type="range"
-                                  bind:value={localTemplate.outputSizeY}
-                                  oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                                  min="150"
-                                  max="600"
-                                  step="10"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                  style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 100%);"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.outputSizeY}
-                                    oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                                    onfocus={handleInputFocus}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="150"
-                                    max="600"
-                                    step="10"
-                                    aria-labelledby="output-height"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    {:else if category.id === 'user'}
-                      <!-- User Elements Settings -->
-                      <div class="space-y-6">
-                        <!-- Username Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Username Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <Type size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Username Text</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's name</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateUser?.showText}
-                              onchange={() => handleChange('templateUser.showText', !localTemplate.templateUser?.showText)}
-                              aria-label="Show username text"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateUser?.showText}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.templateUser.textColor}
-                                    oninput={() => handleChange('templateUser.textColor', localTemplate.templateUser.textColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.templateUser.textColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('templateUser.textColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.primary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateUser.fontSize}
-                                  oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.fontSize}
-                                    oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.textX}
-                                    oninput={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.textY}
-                                    oninput={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-
-                        <!-- User Icon Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">User Icon</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <User size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show User Icon</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's avatar</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateUser?.showIcon}
-                              onchange={() => handleChange('templateUser.showIcon', !localTemplate.templateUser?.showIcon)}
-                              aria-label="Show user icon"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateUser?.showIcon}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Icon Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.iconX}
-                                    oninput={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.iconY}
-                                    oninput={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Icon Size -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Width</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.iconSizeX}
-                                    oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Height</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateUser.iconSizeY}
-                                    oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
-                    {:else if category.id === 'progress'}
-                      <!-- Progress Bar Settings -->
-                      <div class="space-y-6">
-                        <!-- Show Progress Bar -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Progress Bar Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <BarChart size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Progress Bar</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the XP progress bar</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateBar?.showBar}
-                              onchange={() => handleChange('templateBar.showBar', !localTemplate.templateBar?.showBar)}
-                              aria-label="Show progress bar"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateBar?.showBar}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Bar Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Bar Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.templateBar.barColor}
-                                    oninput={() => handleChange('templateBar.barColor', localTemplate.templateBar.barColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.templateBar.barColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('templateBar.barColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.primary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Bar Transparency -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Transparency</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateBar.barTransparency}
-                                  oninput={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
-                                  min="0"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateBar.barTransparency}
-                                    oninput={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="0"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">%</span>
-                                </div>
-                              </div>
-
-                              <!-- Bar Length -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Bar Length</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateBar.barLength}
-                                  oninput={() => handleChange('templateBar.barLength', localTemplate.templateBar.barLength)}
-                                  class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  min="10"
-                                />
-                              </div>
-
-                              <!-- Bar Direction -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Direction</label>
-                                <select
-                                  bind:value={localTemplate.templateBar.barDirection}
-                                  onchange={() => handleChange('templateBar.barDirection', localTemplate.templateBar.barDirection)}
-                                  class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border min-h-[44px]"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                    {#if panels.layers.open}
+                        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+                            {#each elements as element}
+                                <div
+                                        class="p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
+                                        class:opacity-50={!element.visible}
+                                        style="background: {selectedElement === element.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};
+                     border: 1px solid {selectedElement === element.id ? $colorStore.primary + '40' : 'transparent'};"
+                                        onclick={() => { selectedElement = element.id; redrawCanvas(); }}
                                 >
-                                  <option value={0}>Left to Right</option>
-                                  <option value={1}>Right to Left</option>
-                                  <option value={2}>Top to Bottom</option>
-                                  <option value={3}>Bottom to Top</option>
-                                </select>
-                              </div>
-
-                              <!-- Bar Position -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Start Position</label>
-                                <div class="grid grid-cols-2 gap-4">
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateBar.barPointAx}
-                                      oninput={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    />
-                                  </div>
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateBar.barPointAy}
-                                      oninput={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    />
-                                  </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <button
+                                                    class="p-1 rounded transition-all hover:scale-110"
+                                                    style="background: {element.visible ? $colorStore.primary + '20' : 'transparent'};"
+                                                    onclick={(e) => { e.stopPropagation(); toggleElementVisibility(element.id); }}
+                                            >
+                                                {#if element.visible}
+                                                    <Eye class="w-3 h-3" style="color: {$colorStore.primary}"/>
+                                                {:else}
+                                                    <EyeOff class="w-3 h-3" style="color: {$colorStore.muted}"/>
+                                                {/if}
+                                            </button>
+                                            <span class="text-xs"
+                                                  style="color: {$colorStore.text}">{element.label}</span>
+                                        </div>
+                                        {#if element.locked}
+                                            <Lock class="w-3 h-3" style="color: {$colorStore.accent}"/>
+                                        {/if}
+                                    </div>
                                 </div>
-                              </div>
-
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">End Position</label>
-                                <div class="grid grid-cols-2 gap-4">
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateBar.barPointBx}
-                                      oninput={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    />
-                                  </div>
-                                  <div class="space-y-2">
-                                    <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateBar.barPointBy}
-                                      oninput={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
+                            {/each}
                         </div>
-                      </div>
-                    {:else if category.id === 'guild'}
-                      <!-- Guild Information Settings -->
-                      <div class="space-y-6">
-                        <!-- Guild Level Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Guild Level</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <Users size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Guild Level</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's level in the guild</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateGuild?.showGuildLevel}
-                              onchange={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild?.showGuildLevel)}
-                              aria-label="Show guild level"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateGuild?.showGuildLevel}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Level Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.templateGuild.guildLevelColor}
-                                    oninput={() => handleChange('templateGuild.guildLevelColor', localTemplate.templateGuild.guildLevelColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.templateGuild.guildLevelColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('templateGuild.guildLevelColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.primary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Level Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                  oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                    oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Level Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildLevelX}
-                                    oninput={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildLevelY}
-                                    oninput={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-
-                        <!-- Guild Rank Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Guild Rank</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
-                            <div class="flex items-center gap-3">
-                              <Award size={20} style="color: {$colorStore.secondary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Guild Rank</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's rank in the guild</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateGuild?.showGuildRank}
-                              onchange={() => handleChange('templateGuild.showGuildRank', !localTemplate.templateGuild?.showGuildRank)}
-                              aria-label="Show guild rank"
-                              style="accent-color: {$colorStore.secondary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateGuild?.showGuildRank}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.secondary}30;">
-                              <!-- Rank Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.templateGuild.guildRankColor}
-                                    oninput={() => handleChange('templateGuild.guildRankColor', localTemplate.templateGuild.guildRankColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.templateGuild.guildRankColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('templateGuild.guildRankColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.secondary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Rank Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateGuild.guildRankFontSize}
-                                  oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildRankFontSize}
-                                    oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Rank Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildRankX}
-                                    oninput={() => handleChange('templateGuild.guildRankX', localTemplate.templateGuild.guildRankX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateGuild.guildRankY}
-                                    oninput={() => handleChange('templateGuild.guildRankY', localTemplate.templateGuild.guildRankY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
-                    {:else if category.id === 'time'}
-                      <!-- Time Display Settings -->
-                      <div class="space-y-6">
-                        <!-- Show Time on Level -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Time on Level Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <Clock size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Time on Level</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display how long the user has been at current level</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.showTimeOnLevel}
-                              onchange={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
-                              aria-label="Show time on level"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.showTimeOnLevel}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Time Format -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Time Format</label>
-                                <input
-                                  type="text"
-                                  bind:value={localTemplate.timeOnLevelFormat}
-                                  oninput={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
-                                  class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  placeholder="{0}d{1}h{2}m"
-                                />
-                                <p class="text-xs" style="color: {$colorStore.muted}">
-                                  Use {0} for days, {1} for hours, {2} for minutes
-                                </p>
-                              </div>
-
-                              <!-- Time Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.timeOnLevelColor}
-                                    oninput={() => handleChange('timeOnLevelColor', localTemplate.timeOnLevelColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.timeOnLevelColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('timeOnLevelColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.primary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Time Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.timeOnLevelFontSize}
-                                  oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.timeOnLevelFontSize}
-                                    oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Time Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.timeOnLevelX}
-                                    oninput={() => handleChange('timeOnLevelX', localTemplate.timeOnLevelX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.timeOnLevelY}
-                                    oninput={() => handleChange('timeOnLevelY', localTemplate.timeOnLevelY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-
-                        <!-- Show Awarded XP -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Awarded XP Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
-                            <div class="flex items-center gap-3">
-                              <Award size={20} style="color: {$colorStore.secondary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Awarded XP</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display recently awarded XP amount</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.showAwarded}
-                              onchange={() => handleChange('showAwarded', !localTemplate.showAwarded)}
-                              aria-label="Show awarded XP"
-                              style="accent-color: {$colorStore.secondary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.showAwarded}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.secondary}30;">
-                              <!-- Awarded Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.awardedColor}
-                                    oninput={() => handleChange('awardedColor', localTemplate.awardedColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                    placeholder="ffffffff"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.awardedColor?.substring(2) || 'ffffff'}"
-                                    oninput={(e) => handleChange('awardedColor', localTemplate.awardedColor?.substring(0, 2) + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.secondary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Awarded Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.awardedFontSize}
-                                  oninput={() => handleChange('awardedFontSize', localTemplate.awardedFontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.awardedFontSize}
-                                    oninput={() => handleChange('awardedFontSize', localTemplate.awardedFontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Awarded Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.awardedX}
-                                    oninput={() => handleChange('awardedX', localTemplate.awardedX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.awardedY}
-                                    oninput={() => handleChange('awardedY', localTemplate.awardedY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
-                    {:else if category.id === 'club'}
-                      <!-- Club Features Settings -->
-                      <div class="space-y-6">
-                        <!-- Club Name Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Club Name Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <div class="flex items-center gap-3">
-                              <Award size={20} style="color: {$colorStore.primary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Club Name</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's club name</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateClub?.showClubName}
-                              onchange={() => handleChange('templateClub.showClubName', !localTemplate.templateClub?.showClubName)}
-                              aria-label="Show club name"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateClub?.showClubName}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;">
-                              <!-- Club Name Text Color -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Text Color</label>
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    bind:value={localTemplate.templateClub.clubNameColor}
-                                    oninput={() => handleChange('templateClub.clubNameColor', localTemplate.templateClub.clubNameColor)}
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    placeholder="FF000000"
-                                  />
-                                  <input
-                                    type="color"
-                                    value="#{localTemplate.templateClub.clubNameColor?.replace('FF', '') || '000000'}"
-                                    oninput={(e) => handleChange('templateClub.clubNameColor', 'FF' + e.target.value.slice(1).toUpperCase())}
-                                    class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                                    style="border-color: {$colorStore.primary}30;"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Club Name Font Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Font Size</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateClub.clubNameFontSize}
-                                  oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                                  min="10"
-                                  max="100"
-                                  step="1"
-                                  class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div class="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateClub.clubNameFontSize}
-                                    oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                                    class="w-20 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                    min="10"
-                                    max="100"
-                                  />
-                                  <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                                </div>
-                              </div>
-
-                              <!-- Club Name Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateClub.clubNameX}
-                                    oninput={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateClub.clubNameY}
-                                    oninput={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-
-                        <!-- Club Icon Display -->
-                        <div class="space-y-4">
-                          <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Club Icon Display</h4>
-                          <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                                 style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
-                            <div class="flex items-center gap-3">
-                              <Users size={20} style="color: {$colorStore.secondary}" />
-                              <div>
-                                <span class="block font-medium" style="color: {$colorStore.text}">Show Club Icon</span>
-                                <span class="block text-xs" style="color: {$colorStore.muted}">Display the club's icon/logo</span>
-                              </div>
-                            </div>
-                            <input
-                              type="checkbox"
-                              class="w-5 h-5 rounded"
-                              checked={localTemplate.templateClub?.showClubIcon}
-                              onchange={() => handleChange('templateClub.showClubIcon', !localTemplate.templateClub?.showClubIcon)}
-                              aria-label="Show club icon"
-                              style="accent-color: {$colorStore.secondary};"
-                            />
-                          </label>
-
-                          {#if localTemplate.templateClub?.showClubIcon}
-                            <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.secondary}30;">
-                              <!-- Club Icon Position -->
-                              <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">X Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateClub.clubIconX}
-                                    oninput={() => handleChange('templateClub.clubIconX', localTemplate.templateClub.clubIconX)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div class="space-y-2">
-                                  <label class="block text-sm font-medium" style="color: {$colorStore.text}">Y Position</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateClub.clubIconY}
-                                    oninput={() => handleChange('templateClub.clubIconY', localTemplate.templateClub.clubIconY)}
-                                    class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                    style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-
-                              <!-- Club Icon Size -->
-                              <div class="space-y-2">
-                                <label class="block text-sm font-medium" style="color: {$colorStore.text}">Icon Size</label>
-                                <div class="grid grid-cols-2 gap-4">
-                                  <div class="space-y-2">
-                                    <label class="block text-xs font-medium" style="color: {$colorStore.muted}">Width</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateClub.clubIconSizeX}
-                                      oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                      min="10"
-                                    />
-                                  </div>
-                                  <div class="space-y-2">
-                                    <label class="block text-xs font-medium" style="color: {$colorStore.muted}">Height</label>
-                                    <input
-                                      type="number"
-                                      bind:value={localTemplate.templateClub.clubIconSizeY}
-                                      oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
-                                      class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                                      style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                      min="10"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
                     {/if}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          {:else}
-            <div class="accordion-container">
-              <!-- Mobile Tab Content -->
-              {#if editorActiveTab === 'general'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <div class="space-y-4">
-                <div class="flex items-center gap-2 mb-4">
-                  <AlignCenter size={20} style="color: {$colorStore.primary}" />
-                  <h3 class="text-lg font-medium" style="color: {$colorStore.text}">Canvas Size</h3>
                 </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label for="output-width" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                      Width
-                    </label>
-                    <div class="space-y-3">
-                      <input
-                        id="output-width"
-                        type="range"
-                        bind:value={localTemplate.outputSizeX}
-                        oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                        min="300"
-                        max="1200"
-                        step="10"
-                        class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                        style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 {(localTemplate.outputSizeX - 300) / 9}%, {$colorStore.muted}20 100%);"
-                      />
-                      <div class="flex items-center gap-2">
-                        <input
-                          type="number"
-                          bind:value={localTemplate.outputSizeX}
-                          oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                          onfocus={handleInputFocus}
-                          class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          min="300"
-                          max="1200"
-                          step="10"
-                          aria-labelledby="output-width"
-                        />
-                        <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="space-y-2">
-                    <label for="output-height" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                      Height
-                    </label>
-                    <div class="space-y-3">
-                      <input
-                        id="output-height"
-                        type="range"
-                        bind:value={localTemplate.outputSizeY}
-                        oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                        min="150"
-                        max="600"
-                        step="10"
-                        class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                        style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 {(localTemplate.outputSizeY - 150) / 4.5}%, {$colorStore.muted}20 100%);"
-                      />
-                      <div class="flex items-center gap-2">
-                        <input
-                          type="number"
-                          bind:value={localTemplate.outputSizeY}
-                          oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                          onfocus={handleInputFocus}
-                          class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border text-center font-mono min-h-[44px]"
-                          style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          min="150"
-                          max="600"
-                          step="10"
-                          aria-labelledby="output-height"
-                        />
-                        <span class="text-sm" style="color: {$colorStore.muted}">px</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Size Presets -->
-                <div class="flex flex-wrap gap-2 pt-2">
-                  <button
-                    class="px-3 py-1.5 rounded-lg text-sm transition-colors min-h-[36px]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                    onclick={() => { handleChange('outputSizeX', 800); handleChange('outputSizeY', 280); }}
-                  >
-                    Standard (800×280)
-                  </button>
-                  <button
-                    class="px-3 py-1.5 rounded-lg text-sm transition-colors min-h-[36px]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                    onclick={() => { handleChange('outputSizeX', 1000); handleChange('outputSizeY', 350); }}
-                  >
-                    Large (1000×350)
-                  </button>
-                  <button
-                    class="px-3 py-1.5 rounded-lg text-sm transition-colors min-h-[36px]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                    onclick={() => { handleChange('outputSizeX', 600); handleChange('outputSizeY', 210); }}
-                  >
-                    Compact (600×210)
-                  </button>
-                </div>
-              </div>
 
-              <div class="space-y-4 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-                <div class="flex items-center gap-2 mb-4">
-                  <Image size={20} style="color: {$colorStore.primary}" />
-                  <h3 class="text-lg font-medium" style="color: {$colorStore.text}">Background</h3>
+                <!-- Tools Section -->
+                <div class="border-t p-3 space-y-2" style="border-color: {$colorStore.primary}20;">
+                    {#if panels.layers.open}
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                                    style="background: {showGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {showGrid ? $colorStore.primary : $colorStore.muted};"
+                                    onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
+                            >
+                                <Grid3x3 class="w-4 h-4"/>
+                                <span class="text-xs">Grid</span>
+                            </button>
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                                    style="background: {snapToGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {snapToGrid ? $colorStore.primary : $colorStore.muted};"
+                                    onclick={() => { snapToGrid = !snapToGrid; }}
+                            >
+                                <Crosshair class="w-4 h-4"/>
+                                <span class="text-xs">Snap</span>
+                            </button>
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                                    style="background: {showRulers ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {showRulers ? $colorStore.primary : $colorStore.muted};"
+                                    onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
+                            >
+                                <Ruler class="w-4 h-4"/>
+                                <span class="text-xs">Rulers</span>
+                            </button>
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                                    style="background: {lockProportions ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {lockProportions ? $colorStore.primary : $colorStore.muted};"
+                                    onclick={() => { lockProportions = !lockProportions; }}
+                            >
+                                {#if lockProportions}
+                                    <Lock class="w-4 h-4"/>
+                                {:else}
+                                    <Unlock class="w-4 h-4"/>
+                                {/if}
+                                <span class="text-xs">Ratio</span>
+                            </button>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button
+                                    class="flex-1 p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center"
+                                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                    onclick={undo}
+                                    disabled={undoStack.length === 0}
+                            >
+                                <RotateCcw class="w-4 h-4"/>
+                            </button>
+                            <button
+                                    class="flex-1 p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center"
+                                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                    onclick={redo}
+                                    disabled={redoStack.length === 0}
+                            >
+                                <RefreshCw class="w-4 h-4"/>
+                            </button>
+                        </div>
+                    {:else}
+                        <div class="flex flex-col gap-2">
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105"
+                                    style="background: {showGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};"
+                                    onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
+                            >
+                                <Grid3x3 class="w-4 h-4"
+                                         style="color: {showGrid ? $colorStore.primary : $colorStore.muted}"/>
+                            </button>
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105"
+                                    style="background: {showRulers ? $colorStore.primary + '20' : $colorStore.primary + '10'};"
+                                    onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
+                            >
+                                <Ruler class="w-4 h-4"
+                                       style="color: {showRulers ? $colorStore.primary : $colorStore.muted}"/>
+                            </button>
+                        </div>
+                    {/if}
                 </div>
-                
-                <div class="space-y-4">
-                  <div>
-                    <label for="image-url" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                      Image URL
-                    </label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                      <input
-                        id="image-url"
-                        type="url"
-                        bind:value={imageUrl}
-                        class="flex-1 px-3 py-2 rounded-lg bg-gray-900/50 border min-h-[44px]"
-                        placeholder="https://example.com/background.jpg"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                      <button
-                        class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium min-h-[44px]"
-                        onclick={loadImage}
-                        disabled={imageLoading || !imageUrl}
-                        style="background: {$colorStore.primary}; color: white; opacity: {imageLoading || !imageUrl ? '0.5' : '1'};"
-                        aria-label="Load background image"
-                      >
-                        {#if imageLoading}
-                          <div class="w-4 h-4 border-2 rounded-full animate-spin"
-                               style="border-color: white; border-top-color: transparent;"></div>
-                        {:else}
-                          <Image size={16} />
+            </div>
+
+            <!-- Main Canvas Area -->
+            <div class="flex-1 flex flex-col relative">
+                <!-- Top Toolbar -->
+                <div
+                        class="h-14 border-b flex items-center justify-between px-4 backdrop-blur-xs"
+                        style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+             border-color: {$colorStore.primary}30;"
+                >
+                    <div class="flex items-center gap-2">
+                        <!-- Mode Toggle -->
+                        <div
+                                class="flex rounded-lg p-1"
+                                style="background: {$colorStore.primary}10;"
+                        >
+                            <button
+                                    class="px-3 py-1 rounded-md text-sm font-medium transition-all"
+                                    onclick={() => { previewMode = 'edit'; redrawCanvas(); }}
+                                    style="background: {previewMode === 'edit' ? $colorStore.primary + '30' : 'transparent'};
+                   color: {previewMode === 'edit' ? $colorStore.primary : $colorStore.muted};"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                    class="px-3 py-1 rounded-md text-sm font-medium transition-all"
+                                    onclick={() => { previewMode = 'preview'; redrawCanvas(); }}
+                                    style="background: {previewMode === 'preview' ? $colorStore.primary + '30' : 'transparent'};
+                   color: {previewMode === 'preview' ? $colorStore.primary : $colorStore.muted};"
+                            >
+                                Preview
+                            </button>
+                        </div>
+
+                        <div class="w-px h-8" style="background: {$colorStore.primary}20;"/>
+
+                        <!-- Zoom Controls -->
+                        <div class="flex items-center gap-1">
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105"
+                                    onclick={() => { zoom = Math.max(0.1, zoom - 0.1); redrawCanvas(); }}
+                                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                            >
+                                <ZoomOut class="w-4 h-4"/>
+                            </button>
+                            <button
+                                    class="px-3 py-1 rounded-lg text-sm font-medium min-w-[60px]"
+                                    onclick={() => { zoom = 1; panX = (canvas.width - localTemplate.outputSizeX) / 2; panY = (canvas.height - localTemplate.outputSizeY) / 2; redrawCanvas(); }}
+                                    style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                            >
+                                {Math.round(zoom * 100)}%
+                            </button>
+                            <button
+                                    class="p-2 rounded-lg transition-all hover:scale-105"
+                                    onclick={() => { zoom = Math.min(5, zoom + 0.1); redrawCanvas(); }}
+                                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                            >
+                                <ZoomIn class="w-4 h-4"/>
+                            </button>
+                        </div>
+
+                        <div class="w-px h-8" style="background: {$colorStore.primary}20;"/>
+
+                        <!-- Data Toggle -->
+                        <button
+                                class="px-3 py-1 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                onclick={() => { useRealData = !useRealData; redrawCanvas(); }}
+                                style="background: {useRealData ? $colorStore.secondary + '20' : $colorStore.primary + '10'};
+                 color: {useRealData ? $colorStore.secondary : $colorStore.muted};"
+                        >
+                            {useRealData ? "Real Data" : "Sample Data"}
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Canvas Size -->
+                        <div class="flex items-center gap-2 text-sm" style="color: {$colorStore.muted}">
+                            <span>{localTemplate.outputSizeX} × {localTemplate.outputSizeY}px</span>
+                        </div>
+
+                        <div class="w-px h-8" style="background: {$colorStore.primary}20;"/>
+
+                        <!-- Action Buttons -->
+                        <button
+                                class="p-2 rounded-lg transition-all hover:scale-105"
+                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                        >
+                            <Download class="w-4 h-4"/>
+                        </button>
+                        <button
+                                class="p-2 rounded-lg transition-all hover:scale-105"
+                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                        >
+                            <Upload class="w-4 h-4"/>
+                        </button>
+
+                        <div class="w-px h-8" style="background: {$colorStore.primary}20;"/>
+
+                        <!-- Close Button -->
+                        <button
+                                class="p-2 rounded-lg transition-all hover:scale-105"
+                                onclick={() => { showEditor = false; }}
+                                style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                                title="Close Editor (Esc)"
+                        >
+                            <X class="w-5 h-5"/>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas Container -->
+                <div
+                        bind:this={canvasContainer}
+                        class="flex-1 relative overflow-hidden"
+                        style="background: radial-gradient(circle at center, {$colorStore.primary}12, transparent);"
+                >
+                    <canvas
+                            bind:this={canvas}
+                            class="absolute inset-0"
+                            onmousedown={handleCanvasMouseDown}
+                            onmouseleave={handleCanvasMouseUp}
+                            onmousemove={handleCanvasMouseMove}
+                            onmouseup={handleCanvasMouseUp}
+                            onwheel={handleWheel}
+                    />
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Properties -->
+            <div
+                    class="w-80 border-l flex flex-col transition-all duration-300 backdrop-blur-xs"
+                    class:w-12={!panels.properties.open}
+                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}12, {$colorStore.gradientMid}18);
+           border-color: {$colorStore.primary}30;"
+            >
+                <div
+                        class="flex items-center justify-between p-3 border-b cursor-pointer"
+                        onclick={() => togglePanel("properties")}
+                        style="border-color: {$colorStore.primary}20;"
+                >
+                    <div class="flex items-center gap-2">
+                        <Settings class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                        {#if panels.properties.open}
+                            <span class="text-sm font-semibold" style="color: {$colorStore.text}">Properties</span>
                         {/if}
-                        <span>Load Image</span>
-                      </button>
                     </div>
-                    {#if imageError}
-                      <p class="mt-2 text-sm flex items-center gap-1" style="color: {$colorStore.accent};">
-                        <AlertCircle size={14} />
-                        {imageError}
-                      </p>
+                    {#if panels.properties.open}
+                        <button
+                                class="p-1 rounded-lg transition-all hover:scale-110"
+                                style="background: {$colorStore.primary}10;"
+                                onclick={(e) => { e.stopPropagation(); togglePanelPin("properties"); }}
+                        >
+                            {#if panels.properties.pinned}
+                                <Lock class="w-3 h-3" style="color: {$colorStore.primary}"/>
+                            {:else}
+                                <Unlock class="w-3 h-3" style="color: {$colorStore.muted}"/>
+                            {/if}
+                        </button>
                     {/if}
-                  </div>
-
-                  <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
-                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                    <input
-                      type="checkbox"
-                      id="update-size"
-                      bind:checked={updateSizeFromImage}
-                      class="w-5 h-5 rounded"
-                      style="accent-color: {$colorStore.primary};"
-                    />
-                    <div class="flex-1">
-                      <span class="block text-sm font-medium" style="color: {$colorStore.text}">
-                        Auto-resize canvas
-                      </span>
-                      <span class="block text-xs" style="color: {$colorStore.muted}">
-                        Match canvas size to loaded image dimensions
-                      </span>
-                    </div>
-                  </label>
-                  
-                  {#if previewBackgroundUrl}
-                    <div class="flex items-center justify-between p-3 rounded-lg"
-                         style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}30;">
-                      <span class="text-sm" style="color: {$colorStore.accent}">
-                        Background image loaded
-                      </span>
-                      <button
-                        class="text-sm underline"
-                        style="color: {$colorStore.accent};"
-                        onclick={() => { previewBackgroundUrl = null; imageUrl = ''; }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  {/if}
                 </div>
-              </div>
-            </div>
-            <!-- User Tab Content -->
-          {:else if editorActiveTab === 'user'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <h3 class="text-lg font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                <User size={20} style="color: {$colorStore.primary}" />
-                User Information Settings
-              </h3>
 
-              <!-- Username Settings -->
-              <div class="space-y-4">
-                <label class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors"
-                       style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                  <div class="flex items-center gap-3">
-                    <Type size={20} style="color: {$colorStore.primary}" />
-                    <div>
-                      <span class="block font-medium" style="color: {$colorStore.text}">Username Text</span>
-                      <span class="block text-xs" style="color: {$colorStore.muted}">Display the user's name</span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    class="w-5 h-5 rounded"
-                    checked={localTemplate.templateUser.showText}
-                    onchange={() => handleChange('templateUser.showText', !localTemplate.templateUser.showText)}
-                    aria-label="Show username text"
-                    style="accent-color: {$colorStore.primary};"
-                  />
-                </label>
-
-                {#if localTemplate.templateUser.showText}
-                  <div class="space-y-4 pl-4 border-l-2" style="border-color: {$colorStore.primary}30;" transition:fade={{ duration: 200 }}>
-                    <!-- Color Input -->
-                    <div class="space-y-2">
-                      <label for="username-color" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                        Text Color
-                      </label>
-                      <div class="flex items-stretch gap-2">
-                        <div class="flex-1 relative">
-                          <input
-                            id="username-color"
-                            type="text"
-                            value={formatColor(localTemplate.templateUser.textColor)}
-                            oninput={handleColorInput('templateUser.textColor')}
-                            onfocus={handleInputFocus}
-                            class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-900/50 border font-mono text-sm min-h-[44px]"
-                            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            pattern="^#?[0-9A-Fa-f]{6,8}$"
-                            placeholder="#RRGGBB"
-                          />
-                          <div class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded"
-                               style="background: {formatColor(localTemplate.templateUser.textColor)}; border: 1px solid {$colorStore.primary}50;">
-                          </div>
+                {#if panels.properties.open}
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Canvas Settings -->
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
+                                <ImageIcon class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                Canvas
+                            </h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="text-xs" style="color: {$colorStore.muted}">Width</label>
+                                    <input
+                                            type="number"
+                                            class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                            bind:value={localTemplate.outputSizeX}
+                                            onchange={() => { markAsChanged(); initCanvas(); }}
+                                    />
+                                </div>
+                                <div>
+                                    <label class="text-xs" style="color: {$colorStore.muted}">Height</label>
+                                    <input
+                                            type="number"
+                                            class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                            bind:value={localTemplate.outputSizeY}
+                                            onchange={() => { markAsChanged(); initCanvas(); }}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <input
-                          type="color"
-                          value={formatColor(localTemplate.templateUser.textColor)}
-                          oninput={handleColorInput('templateUser.textColor')}
-                          class="w-12 h-[44px] rounded-lg border cursor-pointer"
-                          style="border-color: {$colorStore.primary}30;"
-                          aria-labelledby="username-color"
-                        />
-                      </div>
-                    </div>
 
-                    <!-- Font Size with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Font Size</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="username-font-size"
-                        type="range"
-                        bind:value={localTemplate.templateUser.fontSize}
-                        oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                        min="10"
-                        max="100"
-                        step="1"
-                        class="w-full mr-2"
-                        aria-label="Username font size"
-                      />
-                      <input
-                        type="number"
-                        bind:value={localTemplate.templateUser.fontSize}
-                        oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        min="10"
-                        max="100"
-                        aria-labelledby="username-font-size"
-                      />
-                    </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
+                        {#if selectedElement}
+                            {@const element = elements.find(e => e.id === selectedElement)}
+                            {#if element}
+                                <div class="space-y-3">
+                                    <h3 class="text-sm font-semibold flex items-center gap-2"
+                                        style="color: {$colorStore.text}">
+                                        <Layers class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                        {element.label}
+                                    </h3>
 
-                  <div class="grid grid-cols-2 gap-3">
+                                    {#if element.type === "image"}
+                                        <div class="space-y-2">
+                                            <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label for="username-position-x" class="block text-sm mb-1"
-                             style="color: {$colorStore.muted}">Position X</label>
+                        <label class="text-xs" style="color: {$colorStore.muted}">X Position</label>
                       <input
-                        id="username-position-x"
                         type="number"
-                        bind:value={localTemplate.templateUser.textX}
-                        oninput={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.x}
+                        onchange={(e) => updateElementPosition(element.id, Number(e.currentTarget.value), element.y)}
                       />
                     </div>
                     <div>
-                      <label for="username-position-y" class="block text-sm mb-1"
-                             style="color: {$colorStore.muted}">Position Y</label>
+                        <label class="text-xs" style="color: {$colorStore.muted}">Y Position</label>
                       <input
-                        id="username-position-y"
                         type="number"
-                        bind:value={localTemplate.templateUser.textY}
-                        oninput={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.y}
+                        onchange={(e) => updateElementPosition(element.id, element.x, Number(e.currentTarget.value))}
                       />
                     </div>
-                  </div>
-                  </div>
-                {/if}
-              </div>
-
-              <!-- User Avatar Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                    <User size={18} style="color: {$colorStore.secondary}" />
-                    User Avatar
-                  </h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateUser.showIcon}
-                      onchange={() => handleChange('templateUser.showIcon', !localTemplate.templateUser.showIcon)}
-                      aria-label="Show user avatar"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.templateUser.showIcon}>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="avatar-position-x" class="block text-sm mb-1"
-                             style="color: {$colorStore.muted}">Position X</label>
+                                                <div>
+                                                    <label class="text-xs"
+                                                           style="color: {$colorStore.muted}">Width</label>
+                                                    <input
+                                                            type="number"
+                                                            class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                            value={element.width}
+                                                            onchange={(e) => {
+                          saveUndoState();
+                          if (element.id === "user-icon") {
+                            localTemplate.templateUser.iconSizeX = Number(e.currentTarget.value);
+                            if (lockProportions) {
+                              localTemplate.templateUser.iconSizeY = Number(e.currentTarget.value);
+                            }
+                          } else if (element.id === "club-icon") {
+                            localTemplate.templateClub.clubIconSizeX = Number(e.currentTarget.value);
+                            if (lockProportions) {
+                              localTemplate.templateClub.clubIconSizeY = Number(e.currentTarget.value);
+                            }
+                          }
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs"
+                                                           style="color: {$colorStore.muted}">Height</label>
                       <input
-                        id="avatar-position-x"
                         type="number"
-                        bind:value={localTemplate.templateUser.iconX}
-                        oninput={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.height}
+                        onchange={(e) => {
+                          saveUndoState();
+                          if (element.id === "user-icon") {
+                            localTemplate.templateUser.iconSizeY = Number(e.currentTarget.value);
+                            if (lockProportions) {
+                              localTemplate.templateUser.iconSizeX = Number(e.currentTarget.value);
+                            }
+                          } else if (element.id === "club-icon") {
+                            localTemplate.templateClub.clubIconSizeY = Number(e.currentTarget.value);
+                            if (lockProportions) {
+                              localTemplate.templateClub.clubIconSizeX = Number(e.currentTarget.value);
+                            }
+                          }
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
                       />
                     </div>
-                    <div>
-                      <label for="avatar-position-y" class="block text-sm mb-1"
-                             style="color: {$colorStore.muted}">Position Y</label>
-                      <input
-                        id="avatar-position-y"
-                        type="number"
-                        bind:value={localTemplate.templateUser.iconY}
-                        oninput={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Avatar Size with Sliders -->
-                  <div class="mt-4 p-3 rounded-lg" style="background: {$colorStore.secondary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Avatar Size</h5>
-                    <div class="grid grid-cols-2 gap-3">
-                      <div>
-                        <label for="avatar-width" class="block text-xs mb-1" style="color: {$colorStore.muted}">Width</label>
-                        <div class="flex items-center">
-                          <input
-                            id="avatar-width"
-                            type="range"
-                            bind:value={localTemplate.templateUser.iconSizeX}
-                            oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                            min="10"
-                            max="200"
-                            step="1"
-                            class="w-full mr-2"
-                          />
-                          <input
-                            type="number"
-                            bind:value={localTemplate.templateUser.iconSizeX}
-                            oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                            onfocus={handleInputFocus}
-                            class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                            min="10"
-                            aria-labelledby="avatar-width"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label for="avatar-height" class="block text-xs mb-1"
-                               style="color: {$colorStore.muted}">Height</label>
-                        <div class="flex items-center">
-                          <input
-                            id="avatar-height"
-                            type="range"
-                            bind:value={localTemplate.templateUser.iconSizeY}
-                            oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                            min="10"
-                            max="200"
-                            step="1"
-                            class="w-full mr-2"
-                          />
-                          <input
-                            type="number"
-                            bind:value={localTemplate.templateUser.iconSizeY}
-                            oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                            onfocus={handleInputFocus}
-                            class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                            min="10"
-                            aria-labelledby="avatar-height"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Progress Bar Tab Content -->
-          {:else if editorActiveTab === 'bar'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <h3 class="text-lg font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                <BarChart size={20} style="color: {$colorStore.primary}" />
-                Progress Bar Settings
-              </h3>
-
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium" style="color: {$colorStore.text}">XP Progress Bar</h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateBar.showBar}
-                      onchange={() => handleChange('templateBar.showBar', !localTemplate.templateBar.showBar)}
-                      aria-label="Show progress bar"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-4" class:opacity-50={!localTemplate.templateBar.showBar}>
-                  <div>
-                    <label for="bar-color" class="block text-sm mb-1" style="color: {$colorStore.muted}">Bar
-                      Color</label>
+                                            </div>
+                                        </div>
+                                    {:else if element.type === "text"}
+                                        <div class="space-y-2">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="text-xs" style="color: {$colorStore.muted}">X
+                                                        Position</label>
+                                                    <input
+                                                            type="number"
+                                                            class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                            value={element.x}
+                                                            onchange={(e) => updateElementPosition(element.id, Number(e.currentTarget.value), element.y)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs" style="color: {$colorStore.muted}">Y
+                                                        Position</label>
+                                                    <input
+                                                            type="number"
+                                                            class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                            value={element.y}
+                                                            onchange={(e) => updateElementPosition(element.id, element.x, Number(e.currentTarget.value))}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs" style="color: {$colorStore.muted}">Font
+                                                    Size</label>
+                                                <input
+                                                        type="number"
+                                                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                        value={element.fontSize}
+                                                        onchange={(e) => {
+                        saveUndoState();
+                        switch (element.id) {
+                          case "user-text":
+                            localTemplate.templateUser.fontSize = Number(e.currentTarget.value);
+                            break;
+                          case "guild-rank":
+                            localTemplate.templateGuild.guildRankFontSize = Number(e.currentTarget.value);
+                            break;
+                          case "guild-level":
+                            localTemplate.templateGuild.guildLevelFontSize = Number(e.currentTarget.value);
+                            break;
+                          case "club-name":
+                            localTemplate.templateClub.clubNameFontSize = Number(e.currentTarget.value);
+                            break;
+                          case "time-on-level":
+                            localTemplate.timeOnLevelFontSize = Number(e.currentTarget.value);
+                            break;
+                          case "awarded":
+                            localTemplate.awardedFontSize = Number(e.currentTarget.value);
+                            break;
+                        }
+                        markAsChanged();
+                        redrawCanvas();
+                      }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="text-xs" style="color: {$colorStore.muted}">Color</label>
                     <div class="flex gap-2">
                       <input
-                        id="bar-color"
-                        type="text"
-                        value={formatColor(localTemplate.templateBar.barColor)}
-                        oninput={handleColorInput('templateBar.barColor')}
-                        onfocus={handleInputFocus}
-                        class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        pattern="^#?[0-9A-Fa-f]{6,8}$"
-                        placeholder="#RRGGBB"
-                      />
-                      <input
                         type="color"
-                        value={formatColor(localTemplate.templateBar.barColor)}
-                        oninput={handleColorInput('templateBar.barColor')}
-                        class="w-10 h-10 rounded-lg border cursor-pointer"
+                        class="w-12 h-9 rounded-lg border cursor-pointer"
                         style="border-color: {$colorStore.primary}30;"
-                        aria-labelledby="bar-color"
+                        value={element.color.startsWith('#') ? element.color : `#${element.color}`}
+                        onchange={(e) => {
+                          saveUndoState();
+                          const color = e.currentTarget.value.substring(1);
+                          switch (element.id) {
+                            case "user-text":
+                              localTemplate.templateUser.textColor = color;
+                              break;
+                            case "guild-rank":
+                              localTemplate.templateGuild.guildRankColor = color;
+                              break;
+                            case "guild-level":
+                              localTemplate.templateGuild.guildLevelColor = color;
+                              break;
+                            case "club-name":
+                              localTemplate.templateClub.clubNameColor = color;
+                              break;
+                            case "time-on-level":
+                              localTemplate.timeOnLevelColor = color;
+                              break;
+                            case "awarded":
+                              localTemplate.awardedColor = color;
+                              break;
+                          }
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                      />
+                      <input
+                              type="text"
+                              class="flex-1 px-3 py-1.5 rounded-lg border text-sm uppercase"
+                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                              value={element.color}
+                              onchange={(e) => {
+                          saveUndoState();
+                          const color = e.currentTarget.value.replace("#", "");
+                          switch (element.id) {
+                            case "user-text":
+                              localTemplate.templateUser.textColor = color;
+                              break;
+                            case "guild-rank":
+                              localTemplate.templateGuild.guildRankColor = color;
+                              break;
+                            case "guild-level":
+                              localTemplate.templateGuild.guildLevelColor = color;
+                              break;
+                            case "club-name":
+                              localTemplate.templateClub.clubNameColor = color;
+                              break;
+                            case "time-on-level":
+                              localTemplate.timeOnLevelColor = color;
+                              break;
+                            case "awarded":
+                              localTemplate.awardedColor = color;
+                              break;
+                          }
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
                       />
                     </div>
-                  </div>
-
-                  <!-- Bar Width with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.accent}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Bar Width</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="bar-width"
-                        type="range"
-                        bind:value={localTemplate.templateBar.barWidth}
-                        oninput={() => handleChange('templateBar.barWidth', localTemplate.templateBar.barWidth)}
-                        min="1"
-                        max="30"
-                        step="1"
-                        class="w-full mr-2"
-                      />
+                                            </div>
+                                        </div>
+                                    {:else if element.type === "bar"}
+                                        <div class="space-y-2">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="text-xs" style="color: {$colorStore.muted}">Start
+                                                        X</label>
                       <input
                         type="number"
-                        bind:value={localTemplate.templateBar.barWidth}
-                        oninput={() => handleChange('templateBar.barWidth', localTemplate.templateBar.barWidth)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                        min="1"
-                        max="30"
-                        aria-labelledby="bar-width"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.x1}
+                        onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barPointAx = Number(e.currentTarget.value);
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
                       />
                     </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Thin</span>
-                      <span>Thick</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label for="bar-transparency" class="block text-sm mb-1" style="color: {$colorStore.muted}">Transparency</label>
-                    <input
-                      id="bar-transparency"
-                      type="range"
-                      bind:value={localTemplate.templateBar.barTransparency}
-                      oninput={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
-                      min="0"
-                      max="255"
-                      step="1"
-                      class="w-full"
-                    />
-                    <div class="flex justify-between text-xs" style="color: {$colorStore.muted}">
-                      <span>Transparent</span>
-                      <span>Opaque</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label for="bar-direction" class="block text-sm mb-1" style="color: {$colorStore.muted}">Bar
-                      Direction</label>
-                    <DiscordSelector
-                      id="bar-direction"
-                      options={directions}
-                      bind:value={localTemplate.templateBar.barDirection}
-                      on:change={(e) => handleChange('templateBar.barDirection', e.detail)}
-                      placeholder="Select bar direction..."
-                      searchPlaceholder="Search directions..."
-                    />
-                  </div>
-
-                  <div>
-                    <label for="bar-length" class="block text-sm mb-1" style="color: {$colorStore.muted}">Bar
-                      Length</label>
-                    <input
-                      id="bar-length"
-                      type="number"
-                      bind:value={localTemplate.templateBar.barLength}
-                      oninput={() => handleChange('templateBar.barLength', localTemplate.templateBar.barLength)}
-                      onfocus={handleInputFocus}
-                      class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      min="1"
-                    />
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Start Point</h5>
-                      <div class="grid grid-cols-2 gap-2">
-                        <div>
-                          <label for="bar-start-x" class="block text-xs mb-1"
-                                 style="color: {$colorStore.muted}">X</label>
-                          <input
-                            id="bar-start-x"
-                            type="number"
-                            bind:value={localTemplate.templateBar.barPointAx}
-                            oninput={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
-                            onfocus={handleInputFocus}
-                            class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
-                        </div>
-                        <div>
-                          <label for="bar-start-y" class="block text-xs mb-1"
-                                 style="color: {$colorStore.muted}">Y</label>
-                          <input
-                            id="bar-start-y"
-                            type="number"
-                            bind:value={localTemplate.templateBar.barPointAy}
-                            oninput={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
-                            onfocus={handleInputFocus}
-                            class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
-                        </div>
-                      </div>
+                        <label class="text-xs" style="color: {$colorStore.muted}">Start Y</label>
+                      <input
+                        type="number"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.y1}
+                        onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barPointAy = Number(e.currentTarget.value);
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                      />
                     </div>
-
-                    <div>
-                      <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">End Point</h5>
-                      <div class="grid grid-cols-2 gap-2">
-                        <div>
-                          <label for="bar-end-x" class="block text-xs mb-1"
-                                 style="color: {$colorStore.muted}">X</label>
-                          <input
-                            id="bar-end-x"
-                            type="number"
-                            bind:value={localTemplate.templateBar.barPointBx}
-                            oninput={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
-                            onfocus={handleInputFocus}
-                            class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
-                        </div>
-                        <div>
-                          <label for="bar-end-y" class="block text-xs mb-1"
-                                 style="color: {$colorStore.muted}">Y</label>
-                          <input
-                            id="bar-end-y"
-                            type="number"
-                            bind:value={localTemplate.templateBar.barPointBy}
-                            oninput={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
-                            onfocus={handleInputFocus}
-                            class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
-                        </div>
-                      </div>
+                                                <div>
+                                                    <label class="text-xs" style="color: {$colorStore.muted}">End
+                                                        X</label>
+                      <input
+                        type="number"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.x2}
+                        onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barPointBx = Number(e.currentTarget.value);
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                      />
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Guild Tab Content -->
-          {:else if editorActiveTab === 'guild'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <h3 class="text-lg font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                <Users size={20} style="color: {$colorStore.primary}" />
-                Guild Information Settings
-              </h3>
-
-              <!-- Guild Level Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium" style="color: {$colorStore.text}">Guild Level</h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateGuild.showGuildLevel}
-                      onchange={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild.showGuildLevel)}
-                      aria-label="Show guild level"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.templateGuild.showGuildLevel}>
-                  <div>
-                    <label for="guild-level-color" class="block text-sm mb-1"
-                           style="color: {$colorStore.muted}">Text Color</label>
+                                                <div>
+                                                    <label class="text-xs" style="color: {$colorStore.muted}">End
+                                                        Y</label>
+                      <input
+                        type="number"
+                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        value={element.y2}
+                        onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barPointBy = Number(e.currentTarget.value);
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                      />
+                    </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs"
+                                                       style="color: {$colorStore.muted}">Thickness</label>
+                                                <input
+                                                        type="number"
+                                                        class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                        value={element.width}
+                                                        onchange={(e) => {
+                        saveUndoState();
+                        localTemplate.templateBar.barWidth = Number(e.currentTarget.value);
+                        markAsChanged();
+                        redrawCanvas();
+                      }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="text-xs" style="color: {$colorStore.muted}">Color</label>
                     <div class="flex gap-2">
                       <input
-                        id="guild-level-color"
-                        type="text"
-                        value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                        oninput={handleColorInput('templateGuild.guildLevelColor')}
-                        onfocus={handleInputFocus}
-                        class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        pattern="^#?[0-9A-Fa-f]{6,8}$"
-                        placeholder="#RRGGBB"
-                      />
-                      <input
                         type="color"
-                        value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                        oninput={handleColorInput('templateGuild.guildLevelColor')}
-                        class="w-10 h-10 rounded-lg border cursor-pointer"
+                        class="w-12 h-9 rounded-lg border cursor-pointer"
                         style="border-color: {$colorStore.primary}30;"
-                        aria-labelledby="guild-level-color"
+                        value={element.color.startsWith('#') ? element.color : `#${element.color}`}
+                        onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barColor = e.currentTarget.value.substring(1);
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
+                      />
+                      <input
+                              type="text"
+                              class="flex-1 px-3 py-1.5 rounded-lg border text-sm uppercase"
+                              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                              value={element.color}
+                              onchange={(e) => {
+                          saveUndoState();
+                          localTemplate.templateBar.barColor = e.currentTarget.value.replace("#", "");
+                          markAsChanged();
+                          redrawCanvas();
+                        }}
                       />
                     </div>
                   </div>
-
-                  <!-- Guild Level Font Size with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Font Size</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="guild-level-font-size"
-                        type="range"
-                        bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                        oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                        min="10"
-                        max="100"
-                        step="1"
-                        class="w-full mr-2"
-                      />
-                      <input
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                        oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        min="10"
-                        max="100"
-                        aria-labelledby="guild-level-font-size"
-                      />
-                    </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="guild-level-x" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        X</label>
-                      <input
-                        id="guild-level-x"
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildLevelX}
-                        oninput={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                    <div>
-                      <label for="guild-level-y" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        Y</label>
-                      <input
-                        id="guild-level-y"
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildLevelY}
-                        oninput={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Guild Rank Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium" style="color: {$colorStore.text}">Guild Rank</h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateGuild.showGuildRank}
-                      onchange={() => handleChange('templateGuild.showGuildRank', !localTemplate.templateGuild.showGuildRank)}
-                      aria-label="Show guild rank"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.templateGuild.showGuildRank}>
-                  <div>
-                    <label for="guild-rank-color" class="block text-sm mb-1" style="color: {$colorStore.muted}">Text
-                      Color</label>
-                    <div class="flex gap-2">
-                      <input
-                        id="guild-rank-color"
-                        type="text"
-                        value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                        oninput={handleColorInput('templateGuild.guildRankColor')}
-                        onfocus={handleInputFocus}
-                        class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                        pattern="^#?[0-9A-Fa-f]{6,8}$"
-                        placeholder="#RRGGBB"
-                      />
-                      <input
-                        type="color"
-                        value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                        oninput={handleColorInput('templateGuild.guildRankColor')}
-                        class="w-10 h-10 rounded-lg border cursor-pointer"
-                        style="border-color: {$colorStore.secondary}30;"
-                        aria-labelledby="guild-rank-color"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Guild Rank Font Size with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.secondary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Font Size</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="guild-rank-font-size"
-                        type="range"
-                        bind:value={localTemplate.templateGuild.guildRankFontSize}
-                        oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
-                        min="10"
-                        max="100"
-                        step="1"
-                        class="w-full mr-2"
-                      />
-                      <input
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildRankFontSize}
-                        oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                        min="10"
-                        max="100"
-                        aria-labelledby="guild-rank-font-size"
-                      />
-                    </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="guild-rank-x" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        X</label>
-                      <input
-                        id="guild-rank-x"
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildRankX}
-                        oninput={() => handleChange('templateGuild.guildRankX', localTemplate.templateGuild.guildRankX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                    <div>
-                      <label for="guild-rank-y" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        Y</label>
-                      <input
-                        id="guild-rank-y"
-                        type="number"
-                        bind:value={localTemplate.templateGuild.guildRankY}
-                        oninput={() => handleChange('templateGuild.guildRankY', localTemplate.templateGuild.guildRankY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Time Tab Content -->
-          {:else if editorActiveTab === 'time'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <h3 class="text-lg font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                <Clock size={20} style="color: {$colorStore.primary}" />
-                Time On Level Settings
-              </h3>
-
-              <!-- Time On Level Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium" style="color: {$colorStore.text}">Time On Level</h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.showTimeOnLevel}
-                      onchange={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
-                      aria-label="Show time on level"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.showTimeOnLevel}>
-                  <div>
-                    <label for="time-format" class="block text-sm mb-1" style="color: {$colorStore.muted}">Format</label>
-                    <input
-                      id="time-format"
-                      type="text"
-                      bind:value={localTemplate.timeOnLevelFormat}
-                      oninput={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
-                      onfocus={handleInputFocus}
-                      class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="{0}d{1}h{2}m"
-                    />
-                    <p class="text-xs mt-1 px-2 py-1 rounded"
-                       style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
-                      Format uses {0} for days, {1} for hours, {2} for minutes
-                    </p>
-                  </div>
-
-                  <div>
-                    <label for="time-color" class="block text-sm mb-1" style="color: {$colorStore.muted}">Text
-                      Color</label>
-                    <div class="flex gap-2">
-                      <input
-                        id="time-color"
-                        type="text"
-                        value={formatColor(localTemplate.timeOnLevelColor)}
-                        oninput={handleColorInput('timeOnLevelColor')}
-                        onfocus={handleInputFocus}
-                        class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        pattern="^#?[0-9A-Fa-f]{6,8}$"
-                        placeholder="#RRGGBB"
-                      />
-                      <input
-                        type="color"
-                        value={formatColor(localTemplate.timeOnLevelColor)}
-                        oninput={handleColorInput('timeOnLevelColor')}
-                        class="w-10 h-10 rounded-lg border cursor-pointer"
-                        style="border-color: {$colorStore.primary}30;"
-                        aria-labelledby="time-color"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Time On Level Font Size with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Font Size</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="time-font-size"
-                        type="range"
-                        bind:value={localTemplate.timeOnLevelFontSize}
-                        oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
-                        min="10"
-                        max="100"
-                        step="1"
-                        class="w-full mr-2"
-                      />
-                      <input
-                        type="number"
-                        bind:value={localTemplate.timeOnLevelFontSize}
-                        oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        min="10"
-                        max="100"
-                        aria-labelledby="time-font-size"
-                      />
-                    </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="time-x" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        X</label>
-                      <input
-                        id="time-x"
-                        type="number"
-                        bind:value={localTemplate.timeOnLevelX}
-                        oninput={() => handleChange('timeOnLevelX', localTemplate.timeOnLevelX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                    <div>
-                      <label for="time-y" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        Y</label>
-                      <input
-                        id="time-y"
-                        type="number"
-                        bind:value={localTemplate.timeOnLevelY}
-                        oninput={() => handleChange('timeOnLevelY', localTemplate.timeOnLevelY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Club Tag Content -->
-          {:else if editorActiveTab === 'club'}
-            <div class="space-y-6" transition:fade={{ duration: 200 }}>
-              <h3 class="text-lg font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                <Award size={20} style="color: {$colorStore.primary}" />
-                Club Settings
-              </h3>
-
-              <!-- Club Name Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                    <Type size={18} style="color: {$colorStore.primary}" />
-                    Club Name
-                  </h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateClub.showClubName}
-                      onchange={() => handleChange('templateClub.showClubName', !localTemplate.templateClub.showClubName)}
-                      aria-label="Show club name"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.templateClub.showClubName}>
-                  <div>
-                    <label for="club-name-color" class="block text-sm mb-1" style="color: {$colorStore.muted}">Text
-                      Color</label>
-                    <div class="flex gap-2">
-                      <input
-                        id="club-name-color"
-                        type="text"
-                        value={formatColor(localTemplate.templateClub.clubNameColor)}
-                        oninput={handleColorInput('templateClub.clubNameColor')}
-                        onfocus={handleInputFocus}
-                        class="flex-1 p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        pattern="^#?[0-9A-Fa-f]{6,8}$"
-                        placeholder="#RRGGBB"
-                      />
-                      <input
-                        type="color"
-                        value={formatColor(localTemplate.templateClub.clubNameColor)}
-                        oninput={handleColorInput('templateClub.clubNameColor')}
-                        class="w-10 h-10 rounded-lg border cursor-pointer"
-                        style="border-color: {$colorStore.primary}30;"
-                        aria-labelledby="club-name-color"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Club Name Font Size with Slider -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Font Size</h5>
-                    <div class="flex items-center">
-                      <input
-                        id="club-name-font-size"
-                        type="range"
-                        bind:value={localTemplate.templateClub.clubNameFontSize}
-                        oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                        min="10"
-                        max="100"
-                        step="1"
-                        class="w-full mr-2"
-                      />
-                      <input
-                        type="number"
-                        bind:value={localTemplate.templateClub.clubNameFontSize}
-                        oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                        onfocus={handleInputFocus}
-                        class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        min="10"
-                        max="100"
-                        aria-labelledby="club-name-font-size"
-                      />
-                    </div>
-                    <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="club-name-x" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        X</label>
-                      <input
-                        id="club-name-x"
-                        type="number"
-                        bind:value={localTemplate.templateClub.clubNameX}
-                        oninput={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                    <div>
-                      <label for="club-name-y" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        Y</label>
-                      <input
-                        id="club-name-y"
-                        type="number"
-                        bind:value={localTemplate.templateClub.clubNameY}
-                        oninput={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Club Icon Settings -->
-              <div
-                class="border rounded-lg p-4 space-y-4"
-                style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}20;"
-              >
-                <div class="flex items-center justify-between">
-                  <h4 class="font-medium flex items-center gap-2" style="color: {$colorStore.text}">
-                    <Image size={18} style="color: {$colorStore.secondary}" />
-                    Club Icon
-                  </h4>
-                  <label class="flex items-center gap-2">
-                    <span class="text-sm" style="color: {$colorStore.muted}">Show</span>
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded"
-                      checked={localTemplate.templateClub.showClubIcon}
-                      onchange={() => handleChange('templateClub.showClubIcon', !localTemplate.templateClub.showClubIcon)}
-                      aria-label="Show club icon"
-                    />
-                  </label>
-                </div>
-
-                <div class="space-y-3" class:opacity-50={!localTemplate.templateClub.showClubIcon}>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="club-icon-x" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        X</label>
-                      <input
-                        id="club-icon-x"
-                        type="number"
-                        bind:value={localTemplate.templateClub.clubIconX}
-                        oninput={() => handleChange('templateClub.clubIconX', localTemplate.templateClub.clubIconX)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                    <div>
-                      <label for="club-icon-y" class="block text-sm mb-1" style="color: {$colorStore.muted}">Position
-                        Y</label>
-                      <input
-                        id="club-icon-y"
-                        type="number"
-                        bind:value={localTemplate.templateClub.clubIconY}
-                        oninput={() => handleChange('templateClub.clubIconY', localTemplate.templateClub.clubIconY)}
-                        onfocus={handleInputFocus}
-                        class="w-full p-2 rounded-lg bg-gray-900/70 border input-field"
-                        style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Club Icon Size with Sliders -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.secondary}15;">
-                    <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Icon Size</h5>
-                    <div class="grid grid-cols-2 gap-3">
-                      <div>
-                        <label for="club-icon-width" class="block text-xs mb-1"
-                               style="color: {$colorStore.muted}">Width</label>
-                        <div class="flex items-center">
-                          <input
-                            id="club-icon-width"
-                            type="range"
-                            bind:value={localTemplate.templateClub.clubIconSizeX}
-                            oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
-                            min="10"
-                            max="200"
-                            step="1"
-                            class="w-full mr-2"
-                          />
-                          <input
-                            type="number"
-                            bind:value={localTemplate.templateClub.clubIconSizeX}
-                            oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
-                            onfocus={handleInputFocus}
-                            class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                            min="10"
-                            aria-labelledby="club-icon-width"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label for="club-icon-height" class="block text-xs mb-1"
-                               style="color: {$colorStore.muted}">Height</label>
-                        <div class="flex items-center">
-                          <input
-                            id="club-icon-height"
-                            type="range"
-                            bind:value={localTemplate.templateClub.clubIconSizeY}
-                            oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
-                            min="10"
-                            max="200"
-                            step="1"
-                            class="w-full mr-2"
-                          />
-                          <input
-                            type="number"
-                            bind:value={localTemplate.templateClub.clubIconSizeY}
-                            oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
-                            onfocus={handleInputFocus}
-                            class="w-16 p-1 text-sm rounded-lg bg-gray-900/70 border input-field"
-                            style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                            min="10"
-                            aria-labelledby="club-icon-height"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                                            <div>
+                                                <label class="text-xs"
+                                                       style="color: {$colorStore.muted}">Opacity</label>
+                                                <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="100"
+                                                        class="w-full"
+                                                        value={localTemplate.templateBar.barTransparency}
+                                                        oninput={(e) => {
+                        saveUndoState();
+                        localTemplate.templateBar.barTransparency = Number(e.currentTarget.value);
+                        markAsChanged();
+                        redrawCanvas();
+                      }}
+                                                />
+                                                <div class="flex justify-between text-xs"
+                                                     style="color: {$colorStore.muted}">
+                                                    <span>Transparent</span>
+                                                    <span>{localTemplate.templateBar.barTransparency}%</span>
+                                                    <span>Opaque</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {/if}
             </div>
           {/if}
-            </div>
-          {/if}
-        </div>
-      </div>
-    </div>
+                        {/if}
+                    </div>
     {/if}
-
   </div>
-{:else}
-  <div class="text-center py-12" style="color: {$colorStore.muted}">
-    No template data available
-  </div>
-{/if}
-
-<style>
-  .template-editor-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  /* Mobile Layout (default) */
-  .mobile-layout {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .mobile-layout .preview-section {
-    width: 100%;
-  }
-
-  .mobile-layout .settings-section {
-    width: 100%;
-  }
-
-  /* Tablet Layout */
-  .tablet-layout {
-    display: grid;
-    grid-template-columns: 1fr 350px;
-    gap: 1.5rem;
-    align-items: start;
-  }
-
-  .tablet-layout .preview-section {
-    min-height: 600px;
-  }
-
-  .tablet-layout .settings-section {
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 120px);
-  }
-
-  /* Desktop Layout */
-  .desktop-layout {
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 2rem;
-    align-items: start;
-  }
-
-  .desktop-layout .preview-section {
-    min-height: 700px;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.02) 0%, rgba(var(--color-primary-rgb), 0.05) 100%);
-    border-radius: 0.75rem;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.1);
-  }
-
-  .desktop-layout .settings-section {
-    position: sticky;
-    top: 1rem;
-    height: calc(100vh - 120px);
-    overflow: hidden;
-  }
-
-  .preview-section {
-    transition: all 0.3s ease;
-  }
-
-  .settings-section {
-    transition: all 0.3s ease;
-  }
-
-  /* Preview Container and Toolbar Styling */
-  .preview-container {
-    position: relative;
-    height: 100%;
-  }
-
-  .floating-toolbar {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    display: flex;
-    gap: 0.5rem;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 0.75rem;
-    padding: 0.5rem;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    animation: slideInFromRight 0.3s ease-out;
-  }
-
-  @keyframes slideInFromRight {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .toolbar-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1px solid;
-    border-radius: 0.5rem;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .toolbar-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
-  }
-
-  .toolbar-btn.active {
-    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.4);
-  }
-
-  .zoom-display {
-    font-size: 0.75rem;
-    font-weight: 500;
-    min-width: 2.5rem;
-    text-align: center;
-    padding: 0 0.25rem;
-  }
-
-  .preview-wrapper {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    border-radius: 0.75rem;
-    position: relative;
-    transition: all 0.3s ease;
-  }
-
-  .preview-wrapper:hover {
-    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
-  }
-
-  /* Drag and Drop Visual Feedback */
-  :global(.dragging-active) {
-    cursor: grabbing !important;
-  }
-
-  :global(.template-element.dragging) {
-    opacity: 0.8;
-    z-index: 1000;
-    transform: scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  }
-
-  :global(.template-element.hover) {
-    outline: 2px solid rgba(var(--color-primary-rgb), 0.6);
-    outline-offset: 2px;
-  }
-
-  /* Enhanced preview styling for larger screens */
-  @media (min-width: 768px) {
-    .preview-section :global(.template-preview-container) {
-      padding: 2rem;
-      background: radial-gradient(circle at center, rgba(var(--color-primary-rgb), 0.03) 0%, transparent 70%);
-      border-radius: 1rem;
-      min-height: 400px;
-    }
-
-    .preview-wrapper {
-      background: linear-gradient(135deg, 
-        rgba(var(--color-primary-rgb), 0.02) 0%, 
-        rgba(var(--color-primary-rgb), 0.05) 100%);
-      border: 1px solid rgba(var(--color-primary-rgb), 0.1);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .preview-section :global(.template-preview-container) {
-      padding: 3rem;
-      min-height: 500px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .preview-wrapper {
-      min-height: 600px;
-    }
-
-    .floating-toolbar {
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(15px);
-    }
-  }
-
-  /* Accordion Container Styles */
-  .desktop-layout .settings-section .accordion-container,
-  .tablet-layout .settings-section .accordion-container {
-    overflow-y: auto;
-    flex: 1;
-    padding: 1rem;
-    scroll-behavior: smooth;
-  }
-
-  .tablet-layout .settings-section {
-    position: sticky;
-    top: 1rem;
-    height: calc(100vh - 120px);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tablet-layout .settings-section > div {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Mobile settings keep normal flow */
-  .mobile-layout .settings-section {
-    overflow: visible;
-    height: auto;
-  }
-
-  .mobile-layout .settings-section .p-4 {
-    padding: 1rem;
-  }
-
-  /* Custom scrollbar for settings */
-  .accordion-container::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .accordion-container::-webkit-scrollbar-track {
-    background: rgba(var(--color-primary-rgb), 0.1);
-    border-radius: 3px;
-  }
-
-  .accordion-container::-webkit-scrollbar-thumb {
-    background: rgba(var(--color-primary-rgb), 0.3);
-    border-radius: 3px;
-  }
-
-  .accordion-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--color-primary-rgb), 0.5);
-  }
-
-  /* Portal Full Page Mode Styles */
-  .template-editor-fullpage {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(20px);
-    padding: 1.5rem;
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    gap: 2rem;
-    align-items: start;
-    max-width: none;
-    max-height: none;
-  }
-
-  .preview-section-fullpage {
-    background: rgba(var(--color-primary-rgb), 0.05);
-    border-radius: 1rem;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-    min-height: calc(100vh - 3rem);
-  }
-
-  .settings-section-fullpage {
-    background: rgba(var(--color-primary-rgb), 0.02);
-    border-radius: 1rem;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.1);
-    height: calc(100vh - 3rem);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-width: 450px;
-  }
-
-  .template-editor-fullpage .floating-toolbar {
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .template-editor-fullpage .accordion-container {
-    overflow-y: auto;
-    flex: 1;
-    padding: 1rem;
-    scroll-behavior: smooth;
-  }
-
-  /* Mobile full-page mode */
-  @media (max-width: 767px) {
-    .template-editor-fullpage {
-      grid-template-columns: 1fr;
-      padding: 0.5rem;
-    }
-  }
-</style>
+        </div>
+    </div>
+</Portal>

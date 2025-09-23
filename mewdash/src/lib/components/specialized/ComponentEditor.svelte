@@ -1,21 +1,12 @@
 <!-- ComponentEditor.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { colorStore } from "$lib/stores/colorStore";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { 
-    Plus, 
-    Trash2, 
-    Edit, 
-    Copy,
-    Square,
-    ChevronDown,
-    ExternalLink,
-    Zap
-  } from "lucide-svelte";
+    import {createEventDispatcher} from 'svelte';
+    import {colorStore} from "$lib/stores/colorStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {ChevronDown, Edit, ExternalLink, Plus, Trash2, Zap} from "lucide-svelte";
 
-  
-  interface Props {
+
+    interface Props {
     // Props
     component: any;
     triggers?: any[];
@@ -246,7 +237,7 @@
                     </div>
                   </div>
                   <button
-                    class="ml-2 p-1 rounded hover:bg-black/10"
+                          class="ml-2 p-1 rounded-sm hover:bg-black/10"
                     onclick={() => dispatch('selectTrigger', { component })}
                     title="Change trigger"
                   >
@@ -350,7 +341,7 @@
                     Option {index + 1}
                   </span>
                   <button
-                    class="p-1 rounded text-red-400 hover:bg-red-400/10 transition-colors"
+                          class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                     onclick={() => removeOption(index)}
                     title="Remove option"
                   >
@@ -369,7 +360,7 @@
                     </label>
                     <input
                       type="text"
-                      class="w-full px-3 py-2 rounded border text-sm"
+                      class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Option name"
                       value={option.name || ''}
@@ -388,7 +379,7 @@
                     </label>
                     <input
                       type="text"
-                      class="w-full px-3 py-2 rounded border text-sm"
+                      class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Option description"
                       value={option.description || ''}
@@ -404,7 +395,7 @@
                     </label>
                     <input
                       type="text"
-                      class="w-full px-3 py-2 rounded border text-sm"
+                      class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="😀"
                       value={option.emoji || ''}
@@ -420,7 +411,7 @@
                     
                     {#if option.id}
                       {@const selectedTrigger = getSelectedTrigger(option.id)}
-                      <div class="p-2 rounded border text-sm" 
+                        <div class="p-2 rounded-sm border text-sm"
                            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;">
                         <div class="flex justify-between items-start">
                           <div class="flex-1">
@@ -432,7 +423,7 @@
                             </div>
                           </div>
                           <button
-                            class="ml-1 p-1 rounded hover:bg-black/10"
+                                  class="ml-1 p-1 rounded-sm hover:bg-black/10"
                             onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                             title="Change trigger"
                           >
@@ -442,7 +433,7 @@
                       </div>
                     {:else}
                       <button
-                        class="w-full px-3 py-2 rounded border border-dashed text-sm transition-all duration-200"
+                              class="w-full px-3 py-2 rounded-sm border border-dashed text-sm transition-all duration-200"
                         style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
                         onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                       >
@@ -503,7 +494,7 @@
       <!-- Select Menu Preview -->
       <div class="w-full">
         <button
-          class="border border-transparent bg-[#2F3136] text-white font-medium rounded cursor-pointer box-border grid grid-cols-[1fr,auto] items-center w-full text-left"
+                class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
           disabled
         >
           <span class="placeholder px-3 py-2">
@@ -517,7 +508,7 @@
     {:else}
       <!-- Button Preview -->
       <button
-        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center flex-grow-0 items-center box-border border-0 rounded px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+              class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
         disabled
         aria-label={component.displayName}
       >

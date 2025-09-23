@@ -1,40 +1,20 @@
 <!-- lib/components/dashboard/CommunityTab.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { fly } from "svelte/transition";
-  import { onMount } from "svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { inviteStore } from "$lib/stores/inviteStore";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import {
-    Award,
-    Cake,
-    Calendar,
-    Clock,
-    Hash,
-    Heart,
-    Lightbulb,
-    Link,
-    MessageSquare,
-    Settings,
-    Star,
-    Target,
-    Ticket,
-    TrendingUp,
-    Users
-  } from "lucide-svelte";
+    import {fly} from "svelte/transition";
+    import {onMount} from "svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {inviteStore} from "$lib/stores/inviteStore";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {Cake, Hash, Heart, Link, Star, TrendingUp, Users} from "lucide-svelte";
+    import type {SuggestionsModel} from "$lib/types/models.ts";
+    import type {MessageStatsResponse} from "$lib/types/messagestats.ts";
 
-  import InviteStats from "$lib/components/monitoring/InviteStats.svelte";
-  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import type { SuggestionsModel } from "$lib/types/models.ts";
-  import type { MessageStatsResponse, DailyMessageStats } from "$lib/types/messagestats.ts";
 
-  
-  interface Props {
+    interface Props {
     // Props from parent
     guildFeatures: any;
     memberStats: any;
@@ -230,8 +210,9 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- XP Leaderboard -->
       <div
-        class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+              class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+              style="background: {$colorStore.primary}05;
+               border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -249,10 +230,10 @@
               <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
               <div class="w-8 h-8 rounded-full" style="background: {$colorStore.primary}20;"></div>
               <div class="flex-1 space-y-1">
-                <div class="h-3 rounded" style="background: {$colorStore.primary}20; width: 60%;"></div>
-                <div class="h-2 rounded" style="background: {$colorStore.primary}15; width: 80%;"></div>
+                  <div class="h-3 rounded-sm" style="background: {$colorStore.primary}20; width: 60%;"></div>
+                  <div class="h-2 rounded-sm" style="background: {$colorStore.primary}15; width: 80%;"></div>
               </div>
-              <div class="w-10 h-4 rounded" style="background: {$colorStore.primary}20;"></div>
+                <div class="w-10 h-4 rounded-sm" style="background: {$colorStore.primary}20;"></div>
             </div>
           {/each}
         {:else if xpLeaderboard.length === 0}
@@ -290,7 +271,7 @@
               </div>
 
               <!-- Level Badge -->
-              <div class="px-2 py-1 rounded text-xs font-medium"
+                <div class="px-2 py-1 rounded-sm text-xs font-medium"
                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                 Lvl {user.level}
               </div>
@@ -312,8 +293,9 @@
       <div class="space-y-3">
 
         <!-- Birthday Celebrations Card -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Birthdays</h3>
           <a href="/dashboard/birthday" class="text-xs" style="color: {$colorStore.primary}">View all</a>
@@ -329,7 +311,7 @@
               </div>
               <div class="flex flex-wrap gap-1 mb-2">
                 {#each todaysBirthdays.slice(0, 3) as user}
-                  <div class="flex items-center gap-1 px-2 py-1 rounded" 
+                    <div class="flex items-center gap-1 px-2 py-1 rounded-sm"
                        style="background: {$colorStore.accent}15;">
                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                          alt="" class="w-4 h-4 rounded-full" />
@@ -367,8 +349,9 @@
         </div>
 
         <!-- Message Activity Card -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Message Activity</h3>
           {#if messageCountEnabled}
@@ -404,7 +387,7 @@
                 <div class="text-xs font-medium mb-1" style="color: {$colorStore.text}">Top Active</div>
                 <div class="flex flex-wrap gap-1">
                   {#each topActiveUsers.slice(0, 3) as user}
-                    <div class="flex items-center gap-1 px-2 py-1 rounded" 
+                      <div class="flex items-center gap-1 px-2 py-1 rounded-sm"
                          style="background: {$colorStore.primary}10;">
                       <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                            alt="" class="w-4 h-4 rounded-full" />
@@ -427,8 +410,9 @@
         </div>
 
         <!-- Support Tickets Card -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Support Tickets</h3>
           {#if ticketStats.totalTickets > 0}
@@ -467,8 +451,9 @@
         </div>
 
         <!-- Starboard Highlights Card -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Starboard</h3>
           {#if starboardHighlights.length > 0}
@@ -505,8 +490,9 @@
         </div>
 
         <!-- Counting Activity Card -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Counting Games</h3>
           {#if countingChannels.length > 0}
@@ -573,8 +559,9 @@
       <!-- Quick Stats List -->
       <div class="space-y-3">
         <!-- Active Members -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);"
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 0 }}>
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
@@ -590,8 +577,8 @@
                 {memberStats?.totalMembers > 0 ? `${Math.round((activeMembers / memberStats.totalMembers) * 100)}% rate` : "No data"}
               </div>
             </div>
-            <a href="/dashboard/xp" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/xp"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
             </a>
@@ -601,8 +588,9 @@
 
 
         <!-- Total Invites -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);"
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 500 }}>
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
@@ -622,8 +610,9 @@
         </div>
 
         <!-- Average Joins -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);"
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 550 }}>
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
@@ -648,8 +637,9 @@
       <div class="space-y-3">
         {#if patreonConnected}
           <!-- Patreon Supporters -->
-          <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+            <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+                 style="background: {$colorStore.primary}05;
+                      border-color: {$colorStore.primary}15;">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg"
                    style="background: {$colorStore.accent}20;">
@@ -662,8 +652,8 @@
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted}">Active patrons</div>
               </div>
-              <a href="/dashboard/patreon" 
-                 class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+                <a href="/dashboard/patreon"
+                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                 Manage
               </a>
@@ -671,8 +661,9 @@
           </div>
         {:else}
           <!-- Connect Patreon -->
-          <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+            <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+                 style="background: {$colorStore.primary}05;
+                      border-color: {$colorStore.primary}15;">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg"
                    style="background: {$colorStore.accent}20;">
@@ -685,8 +676,8 @@
                 </div>
                 <div class="text-xs" style="color: {$colorStore.muted}">Not connected</div>
               </div>
-              <a href="/dashboard/patreon" 
-                 class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+                <a href="/dashboard/patreon"
+                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                 Setup
               </a>

@@ -19,18 +19,18 @@ A modal music search component for finding and adding tracks to the music queue.
 ```
 -->
 <script lang="ts">
-  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
+    import {createEventDispatcher, onMount} from "svelte";
+    import {ExternalLink, Loader, Music, Plus, Search, X} from "lucide-svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade, fly} from "svelte/transition";
+    import {logger} from "$lib/logger";
+    import {type Requester} from "$lib/types/music";
 
-  const bubble = createBubbler();
-  import { createEventDispatcher, onMount } from "svelte";
-  import { ExternalLink, Loader, Music, Plus, Search, X } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade, fly } from "svelte/transition";
-  import { logger } from "$lib/logger";
-  import { type Requester } from "$lib/types/music";
+    const bubble = createBubbler();
 
-  interface MusicSearchColors {
+    interface MusicSearchColors {
     background: string;
     foreground: string;
     accent: string;
@@ -297,7 +297,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
 {#if isOpen}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-30 flex items-center justify-center p-0 sm:p-4"
+          class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-xs z-30 flex items-center justify-center p-0 sm:p-4"
     transition:fade={{ duration: 200 }}
     onclick={handleBackdropClick}
     onkeydown={(e) => e.key === 'Escape' && close()}
@@ -321,7 +321,7 @@ A modal music search component for finding and adding tracks to the music queue.
             Add Music
           </h2>
           <button
-            class="p-2 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors focus:outline-none focus:ring-2"
+                  class="p-2 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors focus:outline-hidden focus:ring-2"
             onclick={close}
             aria-label="Close search"
             style="color: {colors.text}; --ring-color: {colors.accent};"
@@ -342,7 +342,7 @@ A modal music search component for finding and adding tracks to the music queue.
             onkeydown={handleKeydown}
             type="text"
             placeholder="Search for songs, artists, or paste a link..."
-            class="w-full py-2 pl-10 pr-4 rounded-lg focus:outline-none focus:ring-2"
+            class="w-full py-2 pl-10 pr-4 rounded-lg focus:outline-hidden focus:ring-2"
             style="background: {colors.foreground}20; color: {colors.text}; --ring-color: {colors.accent};"
           />
         </div>
@@ -351,7 +351,7 @@ A modal music search component for finding and adding tracks to the music queue.
         <div class="flex gap-3 sm:gap-2 mt-3 sm:mt-2 overflow-x-auto py-1 no-scrollbar">
           {#each platforms as platform}
             <button
-              class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 flex-shrink-0 hover:scale-105 active:scale-95"
+                    class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 shrink-0 hover:scale-105 active:scale-95"
               class:active-platform={selectedPlatform === platform.id}
               onclick={() => {
               selectedPlatform = platform.id;
@@ -394,7 +394,7 @@ A modal music search component for finding and adding tracks to the music queue.
               <span class="flex-1">{errorMessage}</span>
               {#if searchRetryCount === 0 && addRetryCount === 0 && !isSearching && !isAdding}
                 <button
-                  class="ml-3 px-3 py-1 text-sm rounded transition-colors"
+                        class="ml-3 px-3 py-1 text-sm rounded-sm transition-colors"
                   style="background: {colors.accent}30; color: {colors.text};"
                   onclick={retrySearch}
                   aria-label="Retry search"
@@ -430,7 +430,7 @@ A modal music search component for finding and adding tracks to the music queue.
                 aria-label="Add {track.title} to queue"
               >
                 <!-- Thumbnail with hover overlay -->
-                <div class="relative flex-shrink-0">
+                  <div class="relative shrink-0">
                   <img
                     src={track.artworkUri || "/default-album.png"}
                     alt="{track.title} thumbnail"
@@ -461,7 +461,7 @@ A modal music search component for finding and adding tracks to the music queue.
                 </div>
 
                 <!-- Track info -->
-                <div class="flex-grow min-w-0">
+                  <div class="grow min-w-0">
                   <h3 class="font-semibold text-base sm:text-sm truncate mb-1 sm:mb-0" style="color: {colors.text};">
                     {track.title}
                   </h3>
@@ -491,7 +491,7 @@ A modal music search component for finding and adding tracks to the music queue.
                 </div>
 
                 <!-- Desktop duration and actions -->
-                <div class="hidden sm:flex items-center gap-2 flex-shrink-0">
+                  <div class="hidden sm:flex items-center gap-2 shrink-0">
                   <span class="text-xs opacity-70">{getFormattedDuration(track.duration)}</span>
                   {#if track.uri}
                     <a

@@ -56,7 +56,7 @@ export interface Filters {
 }
 
 export interface MusicStatus {
-  CurrentTrack: TrackInfo;
+  CurrentTrack: TrackInfo | null;
   Queue: TrackInfo[];
   State: number;
   Volume: number;
@@ -64,4 +64,8 @@ export interface MusicStatus {
   RepeatMode: number;
   Filters: Filters;
   IsInVoiceChannel: boolean;
+  BotInChannel?: boolean;
+  ChannelId?: bigint;
+  ChannelName?: string;
+  Disconnected?: boolean;
 }

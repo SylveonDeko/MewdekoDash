@@ -1,24 +1,14 @@
 <!-- EmbedEditor.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { colorStore } from "$lib/stores/colorStore";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
-  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-  import { 
-    Type, 
-    Layers, 
-    ImageIcon, 
-    Plus, 
-    Trash2, 
-    Copy,
-    Palette,
-    Eye,
-    EyeOff
-  } from "lucide-svelte";
+    import {createEventDispatcher} from 'svelte';
+    import {colorStore} from "$lib/stores/colorStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
+    import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+    import {Copy, ImageIcon, Layers, Plus, Trash2, Type} from "lucide-svelte";
 
-  
-  interface Props {
+
+    interface Props {
     // Props
     embed: any;
     index?: number;
@@ -245,7 +235,7 @@
             <input
               id="embed-title-{index}"
               type="text"
-              class="w-full px-3 py-2 pr-10 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2"
+              class="w-full px-3 py-2 pr-10 rounded-lg border transition-colors duration-200 focus:outline-hidden focus:ring-2"
               style="background: {$colorStore.primary}10; 
                      border-color: {$colorStore.primary}30; 
                      color: {$colorStore.text};"
@@ -255,7 +245,7 @@
               oninput={(e) => handleInput(e, 'title')}
             />
             <button
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
               style="color: {$colorStore.muted};"
               onclick={() => togglePlaceholderDropdown(`embed-title-${index}`)}
               title="Insert placeholder"
@@ -289,7 +279,7 @@
             <textarea
               id="embed-description-{index}"
               rows="6"
-              class="w-full px-3 py-2 pr-10 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 resize-y"
+              class="w-full px-3 py-2 pr-10 rounded-lg border transition-colors duration-200 focus:outline-hidden focus:ring-2 resize-y"
               style="background: {$colorStore.primary}10; 
                      border-color: {$colorStore.primary}30; 
                      color: {$colorStore.text};"
@@ -299,7 +289,7 @@
               oninput={(e) => handleInput(e, 'description')}
             ></textarea>
             <button
-              class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
+                    class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
               style="color: {$colorStore.muted};"
               onclick={() => togglePlaceholderDropdown(`embed-description-${index}`)}
               title="Insert placeholder"
@@ -332,7 +322,7 @@
           <input
             id="embed-url-{index}"
             type="url"
-            class="w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2"
+            class="w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-hidden focus:ring-2"
             style="background: {$colorStore.primary}10; 
                    border-color: {isValidUrl(embed.url) ? $colorStore.primary + '30' : '#ED4245'}; 
                    color: {$colorStore.text};"
@@ -369,7 +359,7 @@
             <input
               id="custom-color-{index}"
               type="color"
-              class="w-16 h-10 rounded border-2"
+              class="w-16 h-10 rounded-sm border-2"
               style="border-color: {$colorStore.primary}30;"
               value={embed.color}
               oninput={(e) => updateEmbed('color', e.target?.value)}
@@ -401,7 +391,7 @@
                   oninput={(e) => handleInput(e, 'author.name')}
                 />
                 <button
-                  class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
+                        class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={() => togglePlaceholderDropdown(`author-name-${index}`)}
                   title="Insert placeholder"
@@ -479,7 +469,7 @@
                   oninput={(e) => handleInput(e, 'footer.text')}
                 />
                 <button
-                  class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
+                        class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
                   onclick={() => togglePlaceholderDropdown(`footer-text-${index}`)}
                   title="Insert placeholder"
@@ -544,7 +534,7 @@
               <div class="flex justify-between items-center mb-3">
                 <span class="text-sm font-medium" style="color: {$colorStore.text};">Field {fieldIndex + 1}</span>
                 <button
-                  class="p-1 rounded text-red-400 hover:bg-red-400/10 transition-colors"
+                        class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                   onclick={() => removeField(fieldIndex)}
                   title="Remove field"
                 >
@@ -565,7 +555,7 @@
                     <input
                       id="field-name-{index}-{fieldIndex}"
                       type="text"
-                      class="w-full px-3 py-2 pr-10 rounded border text-sm"
+                      class="w-full px-3 py-2 pr-10 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Field name"
                       value={field.name}
@@ -573,7 +563,7 @@
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'name')}
                     />
                     <button
-                      class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-black/10"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                       style="color: {$colorStore.muted};"
                       onclick={() => togglePlaceholderDropdown(`field-name-${index}-${fieldIndex}`)}
                       title="Insert placeholder"
@@ -607,7 +597,7 @@
                     <textarea
                       id="field-value-{index}-{fieldIndex}"
                       rows="3"
-                      class="w-full px-3 py-2 pr-10 rounded border text-sm resize-y"
+                      class="w-full px-3 py-2 pr-10 rounded-sm border text-sm resize-y"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Field value"
                       value={field.value}
@@ -615,7 +605,7 @@
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
                     ></textarea>
                     <button
-                      class="absolute right-2 top-2 p-1 rounded hover:bg-black/10"
+                            class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
                       style="color: {$colorStore.muted};"
                       onclick={() => togglePlaceholderDropdown(`field-value-${index}-${fieldIndex}`)}
                       title="Insert placeholder"
@@ -642,7 +632,7 @@
                   <input
                     type="checkbox"
                     id="inline-{index}-{fieldIndex}"
-                    class="rounded"
+                    class="rounded-sm"
                     checked={field.inline}
                     onchange={(e) => updateField(fieldIndex, 'inline', e.target?.checked)}
                   />

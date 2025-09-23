@@ -40,8 +40,8 @@ Setup suggestion banner for experienced users with unconfigured guilds
 </script>
 
 {#if visible}
-  <div 
-    class="setup-suggestion-banner relative overflow-hidden backdrop-blur-sm rounded-xl border p-4 shadow-lg mb-6"
+  <div
+          class="setup-suggestion-banner relative overflow-hidden backdrop-blur-xs rounded-xl border p-4 shadow-lg mb-6"
     style="
       background: linear-gradient(135deg, {$colorStore.secondary}12, {$colorStore.primary}08);
       border-color: {$colorStore.secondary}30;
@@ -55,8 +55,8 @@ Setup suggestion banner for experienced users with unconfigured guilds
 
     <div class="relative flex items-start gap-4">
       <!-- Icon -->
-      <div 
-        class="flex items-center justify-center w-10 h-10 rounded-lg border flex-shrink-0"
+      <div
+              class="flex items-center justify-center w-10 h-10 rounded-lg border shrink-0"
         style="
           background: {$colorStore.secondary}20;
           border-color: {$colorStore.secondary}40;
@@ -115,7 +115,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
 
       <!-- Dismiss button -->
       <button
-        class="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110 flex-shrink-0"
+              class="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110 shrink-0"
         style="
           background: {$colorStore.muted}15;
           color: {$colorStore.muted};

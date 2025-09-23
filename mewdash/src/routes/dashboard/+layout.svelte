@@ -1,25 +1,24 @@
 <!-- routes/dashboard/+layout.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
-  import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
-  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { userStore } from "$lib/stores/userStore.ts";
-  import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
-  import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
-  import { browser } from "$app/environment";
-  import { api } from "$lib/api.ts";
-  import { logger } from "$lib/logger.ts";
+    import {onMount} from "svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
+    import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
+    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+    import {colorStore} from "$lib/stores/colorStore.ts";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {userStore} from "$lib/stores/userStore.ts";
+    import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
+    import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
+    import {browser} from "$app/environment";
+    import {api} from "$lib/api.ts";
+    import {logger} from "$lib/logger.ts";
 
     let {data, children} = $props();
 
   // Setup suggestion banner state
     let showSetupSuggestion = $state(false);
-    let setupSuggestionContext: any = $state(null);
+  let setupSuggestionContext = $state<any>(null);
 
   // Check for wizard or setup suggestion when guild changes
   async function checkWizardOrSuggestion() {
@@ -40,17 +39,17 @@
       
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
-        const wizardTypeString = wizardDecision.wizardType === 1 ? 'first-time' : 'quick-setup';
+          const wizardTypeString = wizardDecision.wizardType === 'FirstTime' ? 'first-time' : 'quick-setup';
         logger.info(`Dashboard triggering ${wizardTypeString} wizard for guild ${$currentGuild.name}: ${wizardDecision.reason}`);
         window.location.href = `/wizard?guild=${$currentGuild.id}&type=${wizardTypeString}`;
       } else if (wizardDecision.showSuggestion) {
         showSetupSuggestion = true;
         setupSuggestionContext = wizardDecision.context;
-        logger.debug("Showing setup suggestion for guild:", $currentGuild.name);
+          logger.info("Showing setup suggestion for guild:", $currentGuild.name);
       } else {
         showSetupSuggestion = false;
         setupSuggestionContext = null;
-        logger.debug("No wizard or suggestion needed for guild:", $currentGuild.name);
+          logger.info("No wizard or suggestion needed for guild:", $currentGuild.name);
       }
     } catch (err) {
       logger.error("Error checking wizard/suggestion:", err);
@@ -70,7 +69,7 @@
   }
 
   // Watch for guild changes to check wizard or setup suggestion
-    run(() => {
+  $effect(() => {
         if (browser && $currentGuild && $userStore) {
             checkWizardOrSuggestion();
         }
@@ -110,7 +109,7 @@
   });
 
   // Extract colors from server icon when guild changes, fallback to bot avatar
-    run(() => {
+  $effect(() => {
         if ($currentGuild?.icon) {
             // Use server icon for server-specific theming
             const iconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png`;
@@ -122,11 +121,11 @@
     });
 </script>
 
-<div class="pt-4 flex w-full">
+<div class="flex w-full">
   <!-- Main content -->
   <div class="flex-1 w-full">
     {#if !$currentInstance}
-      <InstanceSelector data="{data}" />
+        <InstanceSelector data={data}/>
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>

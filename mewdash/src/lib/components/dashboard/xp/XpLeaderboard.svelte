@@ -79,7 +79,7 @@
         >
           <div class="flex items-center gap-4">
             <div
-              class="w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold flex-shrink-0"
+                    class="w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold shrink-0"
               style="background: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary}20;
                      color: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary};"
               aria-label={`Rank ${user.rank}`}
@@ -89,10 +89,10 @@
             <img
               src={user.avatarUrl}
               alt=""
-              class="w-12 h-12 rounded-full border-2 flex-shrink-0"
+              class="w-12 h-12 rounded-full border-2 shrink-0"
               style="border-color: {$colorStore.primary}30;"
             />
-            <div class="flex-grow min-w-0">
+            <div class="grow min-w-0">
               <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
               <div class="flex flex-col sm:flex-row sm:items-center text-sm gap-1" style="color: {$colorStore.muted}">
                 <span class="font-medium" style="color: {$colorStore.secondary}">Level {user.level}</span>

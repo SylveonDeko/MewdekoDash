@@ -2,34 +2,34 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade } from "svelte/transition";
-  import type { BotStatusModel, GuildConfig } from "$lib/types/models";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import { browser } from "$app/environment";
-  import {
-    AlertTriangle,
-    Bell,
-    Bot,
-    Coins,
-    Hash,
-    Lock,
-    MessagesSquare,
-    Settings,
-    Shell,
-    Star,
-    User,
-    Users
-  } from "lucide-svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import { writable } from "svelte/store";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade} from "svelte/transition";
+    import type {BotStatusModel, GuildConfig} from "$lib/types/models";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import {browser} from "$app/environment";
+    import {
+        AlertTriangle,
+        Bell,
+        Bot,
+        Coins,
+        Hash,
+        Lock,
+        MessagesSquare,
+        Settings,
+        Shell,
+        Star,
+        User,
+        Users
+    } from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger";
+    import {writable} from "svelte/store";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
     interface Props {
         data: PageData;
@@ -245,7 +245,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
   {:else}
       <!-- Basic Settings -->
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -392,7 +392,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
 
       <!-- Role Settings -->
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -496,7 +496,7 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
 
       <!-- Additional Settings -->
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -608,6 +608,8 @@ import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svel
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

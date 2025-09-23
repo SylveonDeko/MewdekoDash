@@ -126,7 +126,7 @@
     <div class="w-5 h-5 rounded-md" style="background: #374151;"></div>
 
     <!-- Text placeholder -->
-    <div class="h-4 rounded-md flex-grow" style="background: #374151; width: 70%;"></div>
+      <div class="h-4 rounded-md grow" style="background: #374151; width: 70%;"></div>
   </div>
 {:else if type === "music"}
   <div
@@ -161,7 +161,7 @@
       <!-- Controls -->
       <div class="flex justify-between items-center pt-2">
         <div class="h-8 w-8 rounded-full animate-pulse" style="background: #374151;"></div>
-        <div class="h-2 rounded-full animate-pulse flex-grow mx-4" style="background: #374151;"></div>
+          <div class="h-2 rounded-full animate-pulse grow mx-4" style="background: #374151;"></div>
         <div class="h-8 w-8 rounded-full animate-pulse" style="background: #374151;"></div>
       </div>
     </div>

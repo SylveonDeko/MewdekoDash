@@ -1,12 +1,12 @@
 <!-- lib/components/KeyboardShortcuts.svelte -->
 <script lang="ts">
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { onDestroy, onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { X } from "lucide-svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {onDestroy, onMount} from "svelte";
+    import {browser} from "$app/environment";
+    import {X} from "lucide-svelte";
 
-  // Keyboard shortcuts
+    // Keyboard shortcuts
   const shortcuts = [
     {
       key: "?",
@@ -115,7 +115,7 @@
 {#if isVisible}
   <!-- Backdrop -->
   <div
-    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
     onclick={closeDialog}
     onkeydown={(e) => e.key === 'Escape' && closeDialog()}
     role="button"
@@ -178,7 +178,7 @@
         <div class="grid gap-2">
           {#each filteredShortcuts as shortcut}
             <div
-              class="flex items-center justify-between p-2 rounded hover:bg-gray-800/50 transition-colors"
+                    class="flex items-center justify-between p-2 rounded-sm hover:bg-gray-800/50 transition-colors"
               class:opacity-70={activeContext === 'All' && shortcut.context !== 'Global'}
             >
               <div style="color: {$colorStore.text}">
@@ -192,7 +192,7 @@
               </div>
 
               <kbd
-                class="px-2 py-0.5 rounded border text-sm font-mono"
+                      class="px-2 py-0.5 rounded-sm border text-sm font-mono"
                 style="background: {$colorStore.primary}20;
                        border-color: {$colorStore.primary}40;
                        color: {$colorStore.text}"
@@ -207,7 +207,7 @@
       <!-- Footer -->
       <div class="p-4 border-t border-gray-800 text-sm text-center">
         <span style="color: {$colorStore.muted}">
-          Press <kbd class="px-1 bg-gray-800 rounded" style="color: {$colorStore.text}">?</kbd>
+          Press <kbd class="px-1 bg-gray-800 rounded-sm" style="color: {$colorStore.text}">?</kbd>
           at any time to show this dialog
         </span>
       </div>

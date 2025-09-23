@@ -1,19 +1,19 @@
 <!-- lib/components/search/SearchModal.svelte -->
 <script lang="ts">
-  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
+    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
+    import {onDestroy, onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {browser} from "$app/environment";
+    import {goto} from "$app/navigation";
+    import {clickOutside} from "$lib/clickOutside";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {closeSearch, getSearchableFeatures, type SearchableItem, searchStore} from "$lib/stores/searchStore";
+    import {ArrowDown, ArrowUp, CornerDownLeft, Search, Sparkles, X} from "lucide-svelte";
+    import Portal from "$lib/components/ui/Portal.svelte";
 
-  const bubble = createBubbler();
-  import { onMount, onDestroy } from "svelte";
-  import { fly, fade } from "svelte/transition";
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import { clickOutside } from "$lib/clickOutside";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { searchStore, getSearchableFeatures, closeSearch, type SearchableItem } from "$lib/stores/searchStore";
-  import { Search, Command, ArrowUp, ArrowDown, CornerDownLeft, Hash, Sparkles, X } from "lucide-svelte";
-  import Portal from "$lib/components/ui/Portal.svelte";
+    const bubble = createBubbler();
 
-  // No props needed - using store state
+    // No props needed - using store state
 
   // State
   let searchInput: HTMLInputElement = $state();
@@ -211,7 +211,7 @@
             bind:value={query}
             type="text"
             placeholder="Search dashboard features..."
-            class="flex-1 bg-transparent text-xl outline-none"
+            class="flex-1 bg-transparent text-xl outline-hidden"
             style="color: {$colorStore.text}; font-weight: 300;"
           />
         </div>
@@ -230,7 +230,7 @@
       <div class="flex gap-2 px-6 py-4 border-b overflow-x-auto" style="border-color: {$colorStore.primary}15;">
         {#each categories as category}
           <button
-            class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105"
+                  class="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105"
             class:active={activeCategory === category}
             style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'}; 
                    color: {activeCategory === category ? $colorStore.primary : $colorStore.muted};
@@ -311,7 +311,7 @@
                 onclick={() => selectResult(result)}
               >
                 <!-- Icon -->
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                      style="background: {index === selectedIndex 
                        ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` 
                        : `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`};">
@@ -343,7 +343,7 @@
 
                 <!-- Keyboard hint -->
                 {#if index === selectedIndex}
-                  <div class="flex items-center gap-1 text-xs flex-shrink-0" style="color: {$colorStore.muted};">
+                    <div class="flex items-center gap-1 text-xs shrink-0" style="color: {$colorStore.muted};">
                     <CornerDownLeft size={14} />
                   </div>
                 {/if}

@@ -1,10 +1,10 @@
 <!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { Calendar, Clock, Clock3, Timer } from "lucide-svelte";
-  import { fade } from "svelte/transition";
+    import {createEventDispatcher, onDestroy, onMount} from "svelte";
+    import {Calendar, Clock, Clock3, Timer} from "lucide-svelte";
+    import {fade} from "svelte/transition";
 
-  const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
   let days: number = $state(0);
   let hours: number = $state(0);
@@ -79,7 +79,7 @@
 </script>
 
 <div
-  class="backdrop-blur-sm rounded-xl border p-6 relative overflow-hidden"
+        class="backdrop-blur-xs rounded-xl border p-6 relative overflow-hidden"
   style="background: linear-gradient(135deg, var(--color-primary)08, var(--color-secondary)08);
          border-color: var(--color-primary)20;"
   transition:fade
@@ -130,7 +130,7 @@
               value={value}
               oninput={(e) => validateInput(e, unit)}
               class="w-full px-3 py-2.5 rounded-lg border-2 bg-transparent text-center text-lg font-medium
-                     focus:outline-none transition-all duration-200"
+                     focus:outline-hidden transition-all duration-200"
               style="border-color: var(--color-primary)20;
                      color: var(--color-text);
                      focus:border-color: var(--color-primary);"
@@ -179,6 +179,8 @@
 </div>
 
 <style>
+    @reference '../../../app.css';
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;

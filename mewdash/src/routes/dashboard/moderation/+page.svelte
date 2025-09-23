@@ -2,15 +2,15 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import { AlertTriangle, CheckCircle, Clock, Shield, User, XCircle, BarChart3, Users, RefreshCw } from "lucide-svelte";
-  import { fade, fly } from "svelte/transition";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { loadingStore } from "$lib/stores/loadingStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger";
+    import {AlertTriangle, BarChart3, CheckCircle, Clock, RefreshCw, Shield, User, XCircle} from "lucide-svelte";
+    import {fade, fly} from "svelte/transition";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {loadingStore} from "$lib/stores/loadingStore";
 
     let {data} = $props();
 
@@ -122,7 +122,7 @@
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" in:fly={{ y: 20, duration: 300, delay: 100 }}>
         <!-- Total Warnings -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -136,7 +136,7 @@
         </div>
 
         <!-- Active Warnings -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -150,7 +150,7 @@
         </div>
 
         <!-- Forgiven Warnings -->
-        <div class="backdrop-blur-sm rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -167,7 +167,7 @@
     
     {#if activeTab === 'warnings'}
       <!-- All Warnings Section -->
-      <section class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+        <section class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -189,7 +189,7 @@
           <div class="space-y-4 max-h-96 overflow-y-auto">
             {#each warnings as warning (warning.id)}
               <div
-                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg backdrop-blur-sm border"
+                      class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                 in:fade={{ duration: 200 }}>
                 <div class="p-2 rounded-lg"
@@ -230,7 +230,7 @@
     
     {#if activeTab === 'activity'}
       <!-- Recent Activity -->
-      <section class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all"
+        <section class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -253,7 +253,7 @@
           <div class="space-y-4 max-h-96 overflow-y-auto">
             {#each recentActivity as warning (warning.id)}
               <div
-                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20 backdrop-blur-sm border hover:border-opacity-40"
+                      class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20 backdrop-blur-xs border hover:border-opacity-40"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                 in:fade={{ duration: 200 }}>
 
@@ -299,6 +299,8 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(*::-webkit-scrollbar) {
         @apply w-2;
     }

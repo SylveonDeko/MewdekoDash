@@ -246,9 +246,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('error').bgDark}; 
                           border-color: {getColors('error').text};">
-                <AlertCircle 
-                  size={16} 
-                  class="flex-shrink-0 mt-0.5"
+                <AlertCircle
+                        size={16}
+                        class="shrink-0 mt-0.5"
                   style="color: {getColors('error').icon};" 
                 />
                 
@@ -264,7 +264,7 @@
                   
                   {#if error.action}
                     <button
-                      class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
+                            class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('error').text}; border: 1px solid {getColors('error').text}30;"
                       onclick={() => executeAction('error', error.id, error.action.handler)}
                     >
@@ -276,7 +276,7 @@
 
                 {#if dismissible}
                   <button
-                    class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
+                          class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('error', error.id)}
                     title="Dismiss error"
                     aria-label="Dismiss error"
@@ -304,9 +304,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('warning').bgDark}; 
                           border-color: {getColors('warning').text};">
-                <AlertTriangle 
-                  size={16} 
-                  class="flex-shrink-0 mt-0.5"
+                <AlertTriangle
+                        size={16}
+                        class="shrink-0 mt-0.5"
                   style="color: {getColors('warning').icon};" 
                 />
                 
@@ -322,7 +322,7 @@
                   
                   {#if warning.action}
                     <button
-                      class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
+                            class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('warning').text}; border: 1px solid {getColors('warning').text}30;"
                       onclick={() => executeAction('warning', warning.id, warning.action.handler)}
                     >
@@ -334,7 +334,7 @@
 
                 {#if dismissible}
                   <button
-                    class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
+                          class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('warning', warning.id)}
                     title="Dismiss warning"
                     aria-label="Dismiss warning"
@@ -362,9 +362,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('suggestion').bgDark}; 
                           border-color: {getColors('suggestion').text};">
-                <Lightbulb 
-                  size={16} 
-                  class="flex-shrink-0 mt-0.5"
+                <Lightbulb
+                        size={16}
+                        class="shrink-0 mt-0.5"
                   style="color: {getColors('suggestion').icon};" 
                 />
                 
@@ -375,7 +375,7 @@
                   
                   {#if suggestion.action}
                     <button
-                      class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-black/10"
+                            class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('suggestion').text}; border: 1px solid {getColors('suggestion').text}30;"
                       onclick={() => executeAction('suggestion', suggestion.id, suggestion.action.handler)}
                     >
@@ -387,7 +387,7 @@
 
                 {#if dismissible}
                   <button
-                    class="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
+                          class="shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors"
                     onclick={() => dismissIssue('suggestion', suggestion.id)}
                     title="Dismiss suggestion"
                     aria-label="Dismiss suggestion"

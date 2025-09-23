@@ -9,7 +9,7 @@ const converter = new showdown.Converter();
 export const load: PageServerLoad = async (): Promise<{
   modules: Module[];
 }> => {
-  let modules: Module[] = json;
+  let modules: Module[] = json as any;
   modules.sort((a, b) => a.Name.localeCompare(b.Name));
 
   modules = modules.map((module) => {

@@ -96,7 +96,7 @@
        aria-label={ariaLabel}>
     {#each tabs as tab}
       <button
-        class="flex items-center gap-2 {sizeClasses[size]} whitespace-nowrap transition-all font-medium border-b-2 flex-shrink-0"
+              class="flex items-center gap-2 {sizeClasses[size]} whitespace-nowrap transition-all font-medium border-b-2 shrink-0"
         class:active={activeTab === tab.id}
         style="color: {activeTab === tab.id ? $colorStore.primary : $colorStore.muted};
                border-color: {activeTab === tab.id ? $colorStore.primary : 'transparent'};"

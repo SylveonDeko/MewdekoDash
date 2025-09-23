@@ -2,12 +2,12 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-    import { onMount } from "svelte";
-    import { fly, fade } from "svelte/transition";
-    import { colorStore } from "$lib/stores/colorStore";
-    import { currentGuild } from "$lib/stores/currentGuild";
-    import { api } from "$lib/api";
-    import { logger } from "$lib/logger";
+    import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
     import {
         AlertCircle,
         AtSign,
@@ -33,8 +33,8 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import type {
-        BirthdayConfigResponse,
         BirthdayConfigRequest,
+        BirthdayConfigResponse,
         BirthdayFeatures,
         BirthdayStatsResponse,
         BirthdayUserResponse
@@ -345,8 +345,9 @@
             <!-- Configuration Form -->
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20 rounded-2xl p-6 md:p-8 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+                <div class="relative z-20 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                            border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
@@ -458,9 +459,9 @@
                 </div>
 
                 <!-- Custom Message -->
-                <div class="relative z-10 rounded-2xl p-6 md:p-8 shadow-2xl border"
+                <div class="relative z-10 backdrop-blur-xs rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
-                    border-color: {$colorStore.primary}20;">
+                    border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Message</h2>
@@ -511,8 +512,9 @@
             <!-- Feature Toggles & Preview -->
             <div class="space-y-6">
                 <!-- Feature Controls -->
-                <div class="rounded-2xl p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+                <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                            border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <Gift class="w-5 h-5" style="color: {$colorStore.primary}" />
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Features</h2>
@@ -538,7 +540,7 @@
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.Announcements)}
                                     />
                                     <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
                                 </label>
                             </div>
@@ -561,7 +563,7 @@
                                             disabled={!configForm.birthdayRoleId}
                                     />
                                     <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
+                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
                                 </label>
                             </div>
@@ -583,7 +585,7 @@
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.Reminders)}
                                     />
                                     <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
                                 </label>
                             </div>
@@ -606,7 +608,7 @@
                                             disabled={!configForm.birthdayPingRoleId}
                                     />
                                     <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
+                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
                                 </label>
                             </div>
@@ -628,7 +630,7 @@
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.TimezoneSupport)}
                                     />
                                     <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
                                 </label>
                             </div>
@@ -637,8 +639,9 @@
                 </div>
 
                 <!-- Configuration Preview -->
-                <div class="rounded-2xl p-6 shadow-2xl"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+                <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                            border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Current Configuration</h2>
@@ -676,8 +679,9 @@
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                 <!-- Upcoming Birthdays -->
-                <div class="rounded-2xl p-6 md:p-8 shadow-2xl relative z-20"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+                <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                            border-color: {$colorStore.primary}30;">
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
                             <Calendar class="w-5 h-5" style="color: {$colorStore.primary}" />
@@ -703,10 +707,12 @@
                                      style="background: {$colorStore.primary}08;">
                                     <div class="w-12 h-12 rounded-full" style="background: {$colorStore.primary}20;"></div>
                                     <div class="flex-1 space-y-2">
-                                        <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 70%;"></div>
-                                        <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 50%;"></div>
+                                        <div class="h-4 rounded-sm"
+                                             style="background: {$colorStore.primary}20; width: 70%;"></div>
+                                        <div class="h-3 rounded-sm"
+                                             style="background: {$colorStore.primary}15; width: 50%;"></div>
                                     </div>
-                                    <div class="w-16 h-6 rounded" style="background: {$colorStore.primary}20;"></div>
+                                    <div class="w-16 h-6 rounded-sm" style="background: {$colorStore.primary}20;"></div>
                                 </div>
                             {/each}
                         {:else if upcomingBirthdays.length === 0}
@@ -749,8 +755,9 @@
                 </div>
 
                 <!-- All Users with Birthdays -->
-                <div class="rounded-2xl p-6 md:p-8 shadow-2xl relative z-10"
-                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+                <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                            border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
                         <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Users ({birthdayUsers.length})</h2>
@@ -809,7 +816,7 @@
                             icon={Cake}
                             label="Birthdays Set"
                             value={birthdayStats.usersWithBirthdays}
-                            subtitle={`${(birthdayStats.birthdaySetPercentage || 0).toFixed(1)}% of members`}
+                            subtitle={`${Number(birthdayStats.birthdaySetPercentage || 0).toFixed(1)}% of members`}
                             iconColor="secondary"
                             animationDelay={100}
                     />

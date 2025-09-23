@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { browser } from "$app/environment";
-  import { onMount } from "svelte";
+    import {browser} from "$app/environment";
+    import {onMount} from "svelte";
 
-  interface Props {
+    interface Props {
     fallback?: string;
     showDetails?: boolean;
     children?: import('svelte').Snippet;
@@ -95,13 +95,13 @@
       <div class="space-x-2 mb-4">
         <button
           onclick={retry}
-          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+          class="px-4 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors text-sm"
         >
           Try Again
         </button>
         <button
           onclick={reload}
-          class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
+          class="px-4 py-2 bg-gray-600 text-white rounded-sm hover:bg-gray-700 transition-colors text-sm"
         >
           Reload Page
         </button>
@@ -117,7 +117,7 @@
           </button>
 
           {#if showErrorDetails}
-            <div class="mt-2 p-3 bg-red-100 dark:bg-red-900/40 rounded text-left">
+              <div class="mt-2 p-3 bg-red-100 dark:bg-red-900/40 rounded-sm text-left">
               <pre class="text-xs text-red-800 dark:text-red-200 whitespace-pre-wrap break-words">
                 {JSON.stringify(errorDetails, null, 2)}
               </pre>

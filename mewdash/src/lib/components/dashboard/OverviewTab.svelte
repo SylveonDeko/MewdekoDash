@@ -1,17 +1,17 @@
 <!-- lib/components/dashboard/OverviewTab.svelte -->
 <script lang="ts">
-  import { fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { musicStore } from "$lib/stores/musicStore";
-  import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
-  import { BarChart3, Bot, ChartBar, Code, Library, Music, RefreshCw, Shield, Users } from "lucide-svelte";
+    import {fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {musicStore} from "$lib/stores/musicStore";
+    import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
+    import {BarChart3, Bot, ChartBar, Code, Library, Music, RefreshCw, Shield, Users} from "lucide-svelte";
 
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
-  import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
-  import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
+    import StatCard from "$lib/components/monitoring/StatCard.svelte";
+    import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
+    import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
 
-  
-  interface Props {
+
+    interface Props {
     // Props from parent
     botStatus: any;
     guildMemberStats: any;
@@ -105,8 +105,9 @@
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
     <!-- Bot Status Column -->
-    <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+         style="background: {$colorStore.primary}05;
+                border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -137,8 +138,9 @@
     </div>
 
     <!-- Server Stats Column -->
-    <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+         style="background: {$colorStore.primary}05;
+                border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -173,8 +175,9 @@
     </div>
 
     <!-- Bot Info Column -->
-    <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+         style="background: {$colorStore.primary}05;
+                border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -209,8 +212,9 @@
     </div>
 
     <!-- Quick Actions Column -->
-    <div class="backdrop-blur-sm rounded-2xl p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+         style="background: {$colorStore.primary}05;
+                border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -260,9 +264,9 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {#if joinStats}
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-              border-color: {$colorStore.primary}30;"
+              class="backdrop-blur-xs rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+              style="background: {$colorStore.primary}05;
+              border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 400 }}
       >
         <StatsGraph data={joinStats} type="join" />
@@ -271,9 +275,9 @@
 
     {#if leaveStats}
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px]"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-              border-color: {$colorStore.primary}30;"
+              class="backdrop-blur-xs rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+              style="background: {$colorStore.primary}05;
+              border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 500 }}
       >
         <StatsGraph data={leaveStats} type="leave" />

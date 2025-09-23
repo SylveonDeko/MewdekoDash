@@ -1,22 +1,15 @@
 <!-- routes/leaderboard/[guildId]/+page.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { fade, fly } from "svelte/transition";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentInstance } from "$lib/stores/instanceStore";
-  import {
-    Award,
-    Crown,
-    Star,
-    TrendingUp,
-    Users,
-    Zap
-  } from "lucide-svelte";
+    import {onMount} from "svelte";
+    import {page} from "$app/stores";
+    import {fade, fly} from "svelte/transition";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentInstance} from "$lib/stores/instanceStore";
+    import {Award, Crown, Star, TrendingUp, Users, Zap} from "lucide-svelte";
 
-  let {data} = $props();
+    let {data} = $props();
 
   // Authentication required
   let currentUser = data.user;
@@ -429,7 +422,7 @@
 
       <!-- Server Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" in:fly={{ y: 20, duration: 400, delay: 100 }}>
-        <div class="p-6 rounded-2xl text-center border backdrop-blur-sm"
+          <div class="p-6 rounded-2xl text-center border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -438,7 +431,7 @@
           <div class="text-sm" style="color: {$colorStore.muted}">Total Users</div>
         </div>
 
-        <div class="p-6 rounded-2xl text-center border backdrop-blur-sm"
+          <div class="p-6 rounded-2xl text-center border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}15);
                     border-color: {$colorStore.secondary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -447,7 +440,7 @@
           <div class="text-sm" style="color: {$colorStore.muted}">Total XP</div>
         </div>
 
-        <div class="p-6 rounded-2xl text-center border backdrop-blur-sm"
+          <div class="p-6 rounded-2xl text-center border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}15);
                     border-color: {$colorStore.accent}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -456,7 +449,7 @@
           <div class="text-sm" style="color: {$colorStore.muted}">Avg Level</div>
         </div>
 
-        <div class="p-6 rounded-2xl text-center border backdrop-blur-sm"
+          <div class="p-6 rounded-2xl text-center border backdrop-blur-xs"
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -467,7 +460,7 @@
       </div>
 
       <!-- Leaderboard -->
-      <div class="rounded-2xl border backdrop-blur-sm overflow-hidden"
+        <div class="rounded-2xl border backdrop-blur-xs overflow-hidden"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                   border-color: {$colorStore.primary}30;
                   box-shadow: 0 8px 32px rgba(0,0,0,0.3);"

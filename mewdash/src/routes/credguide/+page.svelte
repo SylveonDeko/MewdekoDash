@@ -1,10 +1,10 @@
 <!-- routes/credguide/+page.svelte -->
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
+    import {onDestroy, onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
 
-  let mounted = $state(false);
+    let mounted = $state(false);
   let currentStep = $state(0);
   let completedSteps: Set<number> = $state(new Set());
   let showAllSteps = $state(false);
@@ -344,7 +344,7 @@
           </div>
 
           <!-- Progress bar -->
-          <div class="flex-shrink-0 lg:max-w-md lg:w-full">
+          <div class="shrink-0 lg:max-w-md lg:w-full">
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium" style="color: {$colorStore.text};">
                 Progress: {completedRequiredSteps}/{requiredSteps} required steps
@@ -373,7 +373,7 @@
             <!-- Mobile Step Selector -->
             <div class="lg:hidden mb-6">
               <select
-                class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-none backdrop-blur-sm"
+                      class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
                 bind:value={currentStep}
               >
@@ -423,7 +423,7 @@
               </nav>
 
               <!-- Quick Actions -->
-              <div class="mt-6 p-4 rounded-xl backdrop-blur-sm"
+              <div class="mt-6 p-4 rounded-xl backdrop-blur-xs"
                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                 <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
                 <div class="space-y-2">
@@ -453,7 +453,7 @@
             <!-- All Steps View -->
             <div class="space-y-8" in:fade={{ duration: 300 }}>
               {#each steps as step, index}
-                <div class="rounded-2xl p-6 backdrop-blur-sm border"
+                <div class="rounded-2xl p-6 backdrop-blur-xs border"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text};">
@@ -487,19 +487,19 @@
                   {:else if step.id === 'bot-token'}
                     <div class="space-y-2">
                       <p style="color: {$colorStore.text};">Get your Discord bot token from the Developer Portal</p>
-                      <code class="block p-2 rounded"
+                      <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.example}</code>
                     </div>
                   {:else if step.id === 'database'}
                     <div class="space-y-2">
                       <p style="color: {$colorStore.text};">Configure PostgreSQL for data storage</p>
-                      <code class="block p-2 rounded"
+                      <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.connectionString}</code>
                     </div>
                   {:else if step.id === 'owner-id'}
                     <div class="space-y-2">
                       <p style="color: {$colorStore.text};">Set up bot owner permissions</p>
-                      <code class="block p-2 rounded"
+                      <code class="block p-2 rounded-sm"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.singleOwner}</code>
                     </div>
                   {:else if step.id === 'api-keys'}
@@ -524,7 +524,7 @@
           {:else}
             <!-- Wizard Step View -->
             <div class="wizard-content" in:fade={{ duration: 300 }}>
-              <div class="rounded-2xl p-6 sm:p-8 backdrop-blur-sm border"
+              <div class="rounded-2xl p-6 sm:p-8 backdrop-blur-xs border"
                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
 
                 <!-- Step Header -->
@@ -590,7 +590,7 @@
 
                       <div class="mb-8 p-5 rounded-xl" style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40;">
                         <div class="flex items-start gap-3">
-                          <span class="text-xl flex-shrink-0" style="color: {$colorStore.accent};">⚠️</span>
+                          <span class="text-xl shrink-0" style="color: {$colorStore.accent};">⚠️</span>
                           <p class="text-lg"><strong>Security Warning:</strong> {currentStepData.content.warning}</p>
                         </div>
                       </div>
@@ -599,7 +599,8 @@
                         {#each currentStepData.content.steps as step, index}
                           <div class="flex items-start gap-4">
                             <div
-                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid})">
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                                    style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid})">
                               
                               {index + 1}
                             </div>
@@ -675,7 +676,7 @@
                                     <div class="mt-4 p-3 rounded-lg"
                                          style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="flex-shrink-0" style="color: {$colorStore.accent};">💡</span>
+                                        <span class="shrink-0" style="color: {$colorStore.accent};">💡</span>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
@@ -714,7 +715,7 @@
                                     <div class="mt-4 p-3 rounded-lg"
                                          style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="flex-shrink-0" style="color: {$colorStore.accent};">💡</span>
+                                        <span class="shrink-0" style="color: {$colorStore.accent};">💡</span>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
@@ -740,7 +741,7 @@
                         </div>
                         <div class="mt-6 p-4 rounded-lg" style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                           <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                            <span class="flex-shrink-0" style="color: {$colorStore.accent};">⚠️</span>
+                            <span class="shrink-0" style="color: {$colorStore.accent};">⚠️</span>
                             <span>Replace "your_secure_password" with the actual password you set for the mewdeko user.</span>
                           </p>
                         </div>
@@ -754,7 +755,8 @@
                         {#each currentStepData.content.steps as step, index}
                           <div class="flex items-start gap-4">
                             <div
-                              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                                    style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
                               {index + 1}
                             </div>
                             <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
@@ -821,7 +823,8 @@
                               {#each key.steps as step, index}
                                 <li class="flex gap-3">
                                   <span
-                                    class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style="color: {$colorStore.text}; background: {$colorStore.primary};">
+                                          class="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                                          style="color: {$colorStore.text}; background: {$colorStore.primary};">
                                     {index + 1}
                                   </span>
                                   <p class="text-sm">{step}</p>
@@ -848,7 +851,7 @@
                               <p class="text-sm mb-2" style="color: {$colorStore.muted};">
                                 {setting.purpose}
                               </p>
-                              <code class="block p-2 rounded text-sm"
+                              <code class="block p-2 rounded-sm text-sm"
                                     style="background: {$colorStore.primary}15; color: {$colorStore.text};">
                                 {setting.example}
                               </code>

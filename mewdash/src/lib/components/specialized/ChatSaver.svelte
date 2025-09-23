@@ -2,32 +2,32 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import {
-    Calendar,
-    Clock,
-    Download,
-    Edit,
-    ExternalLink,
-    Folder,
-    Hash,
-    Link,
-    MessageSquare,
-    Save,
-    Search,
-    Trash2,
-    X
-  } from "lucide-svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { logger } from "$lib/logger";
-  import { goto } from "$app/navigation";
-  import { loadingStore } from "$lib/stores/loadingStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {
+        Calendar,
+        Clock,
+        Download,
+        Edit,
+        ExternalLink,
+        Folder,
+        Hash,
+        Link,
+        MessageSquare,
+        Save,
+        Search,
+        Trash2,
+        X
+    } from "lucide-svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {logger} from "$lib/logger";
+    import {goto} from "$app/navigation";
+    import {loadingStore} from "$lib/stores/loadingStore";
 
     interface Props {
         data: { user?: { id: string } };
@@ -550,6 +550,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Log - #${channelName} - ${$currentGuild?.name || ""}</title>
   <style>
+  @reference '../../../app.css';
+
     :root {
       --primary-color: ${$colorStore.primary};
       --background-color: #36393f;
@@ -928,7 +930,7 @@
   {#if activeTab === 'fetch'}
     <!-- Fetch Messages Tab -->
     <section
-      class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -972,10 +974,10 @@
           </div>
           <input
             bind:value={timeAmount}
-            class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[44px]"
+            class="w-full p-3 rounded-lg border transition-all duration-200 min-h-[44px]"
             max={timeUnit === "days" ? 3 : (timeUnit === "hours" ? 72 : 4320)}
             min="1"
-            style="border-color: {$colorStore.secondary}30;
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};"
             type="number"
           />
@@ -1005,7 +1007,7 @@
 
       <div class="flex flex-wrap justify-center sm:justify-end gap-4 mt-6">
         <button
-          class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
+                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
           disabled={loading}
           onclick={fetchMessages}
           style="background: linear-gradient(to right, {$colorStore.primary}40, {$colorStore.secondary}40);
@@ -1023,7 +1025,7 @@
     <!-- Saved Logs Tab -->
     {#if savedLogs.length > 0}
       <section
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -1046,14 +1048,14 @@
                      border: 1px solid {currentLogId === log.id ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
             >
               <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                <div class="flex-grow">
+                  <div class="grow">
                   {#if editingLogName === log.id}
                     <div class="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         bind:value={newLogName}
-                        class="flex-grow p-2 rounded-lg bg-gray-900/50 border min-h-[44px]"
-                        style="border-color: {$colorStore.primary}30;
+                        class="grow p-2 rounded-lg border min-h-[44px]"
+                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                               color: {$colorStore.text};"
                         onkeydown={(e) => e.key === 'Enter' && saveLogName()}
                       />
@@ -1086,7 +1088,7 @@
                   </p>
                 </div>
 
-                <div class="flex gap-2 flex-shrink-0">
+                  <div class="flex gap-2 shrink-0">
                   <button
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.primary}20;
@@ -1132,7 +1134,7 @@
     <!-- Message Display Tab -->
     {#if messages.length > 0}
       <section
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -1153,7 +1155,7 @@
           <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {#if !currentLogId}
               <button
-                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] justify-center"
+                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] justify-center"
                 style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                       color: {$colorStore.text};"
                 onclick={saveLog}
@@ -1164,7 +1166,7 @@
             {/if}
 
             <button
-              class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm flex items-center gap-2 min-h-[44px] justify-center"
+                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] justify-center"
               style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                     color: {$colorStore.text};"
               onclick={exportAsHTML}
@@ -1219,14 +1221,14 @@
                   <img
                     src={messageGroup[0].author.avatarUrl}
                     alt={messageGroup[0].author.username}
-                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover mt-4 flex-shrink-0"
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover mt-4 shrink-0"
                   />
-                  <div class="flex-grow pt-4 min-w-0">
+                    <div class="grow pt-4 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-semibold text-sm sm:text-base truncate" style="color: {$colorStore.text}">
                         {messageGroup[0].author.username}
                       </span>
-                      <span class="text-xs flex-shrink-0" style="color: {$colorStore.muted}">
+                        <span class="text-xs shrink-0" style="color: {$colorStore.muted}">
                         {formatTimestamp(messageGroup[0].timestamp)}
                       </span>
                     </div>
@@ -1251,7 +1253,7 @@
                         <div class="mt-2 space-y-2">
                           {#each message.attachments as attachment}
                             {#if isImageUrl(attachment.url)}
-                              <div class="rounded overflow-hidden max-w-full sm:max-w-md">
+                                <div class="rounded-sm overflow-hidden max-w-full sm:max-w-md">
                                 <a href={attachment.url} target="_blank" rel="noopener noreferrer">
                                   <img
                                     src={attachment.proxyUrl || attachment.url}
@@ -1262,10 +1264,10 @@
                               </div>
                             {:else}
                               <div
-                                class="flex items-center gap-2 p-2 rounded max-w-full overflow-hidden"
+                                      class="flex items-center gap-2 p-2 rounded-sm max-w-full overflow-hidden"
                                 style="background: {$colorStore.primary}15;"
                               >
-                                <Link class="w-4 h-4 flex-shrink-0" style="color: {$colorStore.primary}" />
+                                  <Link class="w-4 h-4 shrink-0" style="color: {$colorStore.primary}"/>
                                 <a
                                   href={attachment.url}
                                   target="_blank"
@@ -1289,14 +1291,14 @@
                               style="background: {$colorStore.primary}15; border-left-color: {$colorStore.primary};"
                             >
                               <div class="flex flex-col sm:flex-row gap-3">
-                                <div class="flex-grow min-w-0 overflow-hidden">
+                                  <div class="grow min-w-0 overflow-hidden">
                                   {#if embed.author}
                                     <div class="flex items-center gap-2 mb-2">
                                       {#if embed.author.iconUrl}
                                         <img
                                           src={embed.author.iconUrl}
                                           alt="Author"
-                                          class="w-5 h-5 rounded-full flex-shrink-0"
+                                          class="w-5 h-5 rounded-full shrink-0"
                                         />
                                       {/if}
                                       <span class="text-sm font-medium truncate" style="color: {$colorStore.text}">
@@ -1316,7 +1318,7 @@
                                           class="flex items-center gap-1 break-all"
                                         >
                                           <span class="break-words">{embed.title}</span>
-                                          <ExternalLink class="w-3 h-3 inline-block flex-shrink-0" />
+                                            <ExternalLink class="w-3 h-3 inline-block shrink-0"/>
                                         </a>
                                       {:else}
                                         <span class="break-words">{embed.title}</span>
@@ -1336,7 +1338,7 @@
                                 </div>
 
                                 {#if embed.thumbnail}
-                                  <div class="flex-shrink-0">
+                                    <div class="shrink-0">
                                     <img
                                       src={embed.thumbnail}
                                       alt="Thumbnail"

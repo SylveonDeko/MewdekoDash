@@ -1,48 +1,48 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade } from "svelte/transition";
-  import { goto } from "$app/navigation";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { browser } from "$app/environment";
-  import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { colorStore } from "$lib/stores/colorStore.ts";
-  import { loadingStore } from "$lib/stores/loadingStore";
-  import {
-    AlertTriangle,
-    BarChart3,
-    Bot,
-    Calendar,
-    Check,
-    Clock,
-    Copy,
-    FileText,
-    Flag,
-    MessageCircle,
-    Plus,
-    Settings,
-    Shield,
-    Tag,
-    Ticket,
-    Trash2,
-    Users,
-    RefreshCw
-  } from "lucide-svelte";
-  import { logger } from "$lib/logger.ts";
-  import type {
-    BlacklistedUserResponse,
-    GuildStatistics,
-    TicketCase,
-    TicketPanel,
-    TicketPriority,
-    TicketTag
-  } from "$lib/types/tickets.ts";
+    import {onDestroy, onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild.ts";
+    import {fade} from "svelte/transition";
+    import {goto} from "$app/navigation";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {browser} from "$app/environment";
+    import {currentInstance} from "$lib/stores/instanceStore.ts";
+    import {colorStore} from "$lib/stores/colorStore.ts";
+    import {loadingStore} from "$lib/stores/loadingStore";
+    import {
+        AlertTriangle,
+        BarChart3,
+        Bot,
+        Calendar,
+        Check,
+        Clock,
+        Copy,
+        FileText,
+        Flag,
+        MessageCircle,
+        Plus,
+        RefreshCw,
+        Settings,
+        Shield,
+        Tag,
+        Ticket,
+        Trash2,
+        Users
+    } from "lucide-svelte";
+    import {logger} from "$lib/logger.ts";
+    import type {
+        BlacklistedUserResponse,
+        GuildStatistics,
+        TicketCase,
+        TicketPanel,
+        TicketPriority,
+        TicketTag
+    } from "$lib/types/tickets.ts";
 
     interface Props {
         data: PageData;
@@ -695,7 +695,7 @@
                             {ticketCase.title}
                           </h3>
                           <span
-                            class="px-2 py-1 rounded text-xs font-medium"
+                                  class="px-2 py-1 rounded-sm text-xs font-medium"
                             style="background: {getPriorityColor(ticketCase.priority)}20;
                                    color: {getPriorityColor(ticketCase.priority)}"
                           >
@@ -1068,6 +1068,8 @@
 {/if}
 
 <style lang="postcss">
+    @reference '../../../app.css';
+
     :global(body) {
         background-color: #1a202c;
         color: #ffffff;

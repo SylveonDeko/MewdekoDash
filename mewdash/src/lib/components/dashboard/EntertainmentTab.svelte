@@ -1,20 +1,19 @@
 <!-- lib/components/dashboard/EntertainmentTab.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+    import {run} from 'svelte/legacy';
 
-  import { fly } from "svelte/transition";
-  import { onMount } from "svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { musicStore } from "$lib/stores/musicStore";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import { Gift, Music, Play, Mic } from "lucide-svelte";
+    import {fly} from "svelte/transition";
+    import {onMount} from "svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {musicStore} from "$lib/stores/musicStore";
+    import {api} from "$lib/api";
+    import {logger} from "$lib/logger";
+    import {Gift, Mic, Music, Play} from "lucide-svelte";
 
-  import MusicPlayer from "$lib/components/music/MusicPlayer.svelte";
-  import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
+    import MusicPlayer from "$lib/components/music/MusicPlayer.svelte";
 
-  // Props from parent
+    // Props from parent
 
 
   // Derived state
@@ -74,8 +73,9 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- Main Music Player -->
-      <div class="backdrop-blur-sm rounded-xl p-4 shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px]"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+      <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+           style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
@@ -111,14 +111,15 @@
 
       <!-- Music Queue Preview (if music is playing) -->
       {#if hasActiveMusic && musicStatus?.Queue?.length > 0}
-        <div class="backdrop-blur-sm rounded-lg p-4 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-4 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Coming Up</h3>
           <div class="space-y-2">
             {#each musicStatus.Queue.slice(0, 3) as track, index}
               <div class="flex items-center gap-3 p-2 rounded-lg"
                    style="background: {$colorStore.primary}08;">
-                <div class="w-6 h-6 rounded flex items-center justify-center text-xs font-semibold"
+                <div class="w-6 h-6 rounded-sm flex items-center justify-center text-xs font-semibold"
                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                   {index + 1}
                 </div>
@@ -151,8 +152,9 @@
       <!-- Entertainment Features -->
       <div class="space-y-3">
         <!-- Custom Voice Channels -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
@@ -167,8 +169,8 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Temporary voice channels</div>
             </div>
-            <a href="/dashboard/customvoice" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/customvoice"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
             </a>
@@ -176,8 +178,9 @@
         </div>
 
         <!-- Giveaways -->
-        <div class="backdrop-blur-sm rounded-lg p-3 shadow-md transition-all hover:scale-[1.01]"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
@@ -192,8 +195,8 @@
                 {giveaways.length > 0 ? `${giveaways[0]?.participants || 0} participants` : 'Host contests & prizes'}
               </div>
             </div>
-            <a href="/dashboard/giveaways" 
-               class="px-2 py-1 rounded text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/giveaways"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
             </a>
@@ -203,8 +206,9 @@
 
       <!-- Active Giveaways Details -->
       {#if giveaways.length > 0}
-        <div class="backdrop-blur-sm rounded-lg p-4 shadow-md"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+        <div class="backdrop-blur-xs rounded-lg p-4 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
           <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">Active Giveaways</h3>
 
           <div class="space-y-2">

@@ -1,7 +1,6 @@
 import { writable } from "svelte/store";
 // @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
-import { logger } from "$lib/logger";
 
 // Types
 type RGB = [number, number, number];
@@ -19,33 +18,53 @@ interface ColorPalette {
 }
 
 const DEFAULT_PALETTE: ColorPalette = {
-  primary: '#3b82f6',
-  secondary: '#8b5cf6',
-  accent: '#ec4899',
-  text: '#ffffff',
-  muted: '#9ca3af',
-  gradientStart: '#3a86ff',
-  gradientMid: '#8338ec',
-  gradientEnd: '#ff006e'
+  primary: "#3b82f6",
+  secondary: "#8b5cf6",
+  accent: "#ec4899",
+  text: "#ffffff",
+  muted: "#9ca3af",
+  gradientStart: "#3a86ff",
+  gradientMid: "#8338ec",
+  gradientEnd: "#ff006e",
 };
 
 // Dark UI constants - representing the background color of your UI
- // rgb(18, 24, 40) - your dark UI background
+// rgb(18, 24, 40) - your dark UI background
 const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
 let currentPalette = DEFAULT_PALETTE;
 
-
 function createColorStore() {
-  const store = writable<ColorPalette>(DEFAULT_PALETTE);
+  // Try to load colors from sessionStorage to prevent flash
+  let initialPalette = DEFAULT_PALETTE;
+  if (typeof window !== "undefined" && window.sessionStorage) {
+    try {
+      const stored = window.sessionStorage.getItem("mewdeko-colors");
+      if (stored) {
+        initialPalette = JSON.parse(stored);
+      }
+    } catch (err) {
+      // Ignore errors, use default
+    }
+  }
 
-  // Update current palette when store changes
-  store.subscribe(value => {
+  const store = writable<ColorPalette>(initialPalette);
+
+  // Update current palette and persist when store changes
+  store.subscribe((value) => {
     currentPalette = value;
+    // Persist to session storage
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      try {
+        window.sessionStorage.setItem("mewdeko-colors", JSON.stringify(value));
+      } catch (err) {
+        // Ignore storage errors
+      }
+    }
   });
 
   // Color conversion and contrast utilities
   function getLuminance(r: number, g: number, b: number): number {
-    const [rs, gs, bs] = [r, g, b].map(c => {
+    const [rs, gs, bs] = [r, g, b].map((c) => {
       const channel = c / 255;
       return channel <= 0.03928
         ? channel / 12.92
@@ -66,15 +85,23 @@ function createColorStore() {
     b /= 255;
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
+    let h = 0,
+      s,
+      l = (max + min) / 2;
 
     if (max !== min) {
       const d = max - min;
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
       switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
       }
       h /= 6;
     } else {
@@ -97,27 +124,32 @@ function createColorStore() {
       const hue2rgb = (p: number, q: number, t: number) => {
         if (t < 0) t += 1;
         if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
         return p;
       };
 
       const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
+      r = hue2rgb(p, q, h + 1 / 3);
       g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
+      b = hue2rgb(p, q, h - 1 / 3);
     }
 
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
   }
 
   function rgbToHex(r: number, g: number, b: number): string {
-    return '#' + [r, g, b].map(x => {
-      const hex = Math.round(x).toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('');
+    return (
+      "#" +
+      [r, g, b]
+        .map((x) => {
+          const hex = Math.round(x).toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("")
+    );
   }
 
   function hslToString(h: number, s: number, l: number): string {
@@ -256,7 +288,12 @@ function createColorStore() {
     }
 
     // Combine scores with weights prioritizing saturation and accents for anime
-    return (saturationScore * 0.5) + (lightnessScore * 0.2) + (colorfulness * 0.1) + (accentBonus * 0.2);
+    return (
+      saturationScore * 0.5 +
+      lightnessScore * 0.2 +
+      colorfulness * 0.1 +
+      accentBonus * 0.2
+    );
   }
 
   // Enhanced detection for anime/cartoon characters with better handling for light characters
@@ -286,35 +323,44 @@ function createColorStore() {
       distinctColorCount.add(hueRegion);
 
       // Check for typical anime skin tones (light peachy colors)
-      if ((h >= 10 && h <= 40) && s < 40 && l > 70) {
+      if (h >= 10 && h <= 40 && s < 40 && l > 70) {
         hasSkinTones = true;
       }
 
       // Check for typical anime eye colors
       // Yellow-gold, amber, red, blue, green, purple
-      if (((h >= 35 && h <= 55) || // Gold/amber
-          (h >= 0 && h <= 10) ||  // Red
+      if (
+        ((h >= 35 && h <= 55) || // Gold/amber
+          (h >= 0 && h <= 10) || // Red
           (h >= 200 && h <= 240) || // Blue
           (h >= 90 && h <= 150) || // Green
           (h >= 250 && h <= 290)) && // Purple
-        s > 50 && l > 30 && l < 75) {
+        s > 50 &&
+        l > 30 &&
+        l < 75
+      ) {
         hasEyeColors = true;
       }
 
       // Check for common anime color patterns
       // White/light hair + colorful eyes + clothing color
-      if ((l > 80 && s < 20) || // White/light hair or skin
+      if (
+        (l > 80 && s < 20) || // White/light hair or skin
         (s > 70 && l > 50 && l < 65) || // Vibrant eyes/accessories
-        (s > 50 && l > 40 && l < 70)) { // Clothing colors
+        (s > 50 && l > 40 && l < 70)
+      ) {
+        // Clothing colors
         hasAnimeColorPattern = true;
       }
     }
 
     // Enhanced cartoon detection logic
     // Multiple conditions to catch different anime styles
-    return (highSaturationCount >= 1 && distinctColorCount.size >= 3) || // Traditional detection
+    return (
+      (highSaturationCount >= 1 && distinctColorCount.size >= 3) || // Traditional detection
       (hasSkinTones && hasEyeColors) || // Character face detection
-      (hasAnimeColorPattern && distinctColorCount.size >= 2); // Simplified anime pattern
+      (hasAnimeColorPattern && distinctColorCount.size >= 2)
+    ); // Simplified anime pattern
   }
 
   // Create optimized cartoon-friendly colors
@@ -357,20 +403,11 @@ function createColorStore() {
 
       // For cartoon images, we need special handling
       if (isCartoonImage) {
-        logger.debug("Detected cartoon/anime style image");
-
         // Analyze extracted colors
-        const colorAnalysis = palette.map(color => {
+        const colorAnalysis = palette.map((color) => {
           const [h, s, l] = rgbToHsl(...color);
           return { color, h, s, l, score: scoreColor(color) };
         });
-
-        // Log color analysis for debugging
-        logger.debug("Anime color analysis:",
-          colorAnalysis.map(({ color, h, s, l, score }) =>
-            `${rgbToHex(...color)} (h:${Math.round(h)}° s:${Math.round(s)}% l:${Math.round(l)}%) score:${score.toFixed(2)}`
-          )
-        );
 
         // Sort colors by score
         const scoredColors = colorAnalysis.sort((a, b) => b.score - a.score);
@@ -379,13 +416,16 @@ function createColorStore() {
         const topColors = scoredColors.slice(0, 5); // Take top 5 colors for more diversity
 
         // Find warm and cool accent colors
-        const warmAccents = colorAnalysis.filter(({ h, s }) =>
-          ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) && s > 50
-        ).sort((a, b) => b.score - a.score);
+        const warmAccents = colorAnalysis
+          .filter(
+            ({ h, s }) =>
+              ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) && s > 50,
+          )
+          .sort((a, b) => b.score - a.score);
 
-        const coolAccents = colorAnalysis.filter(({ h, s }) =>
-          (h >= 180 && h <= 300) && s > 40
-        ).sort((a, b) => b.score - a.score);
+        const coolAccents = colorAnalysis
+          .filter(({ h, s }) => h >= 180 && h <= 300 && s > 40)
+          .sort((a, b) => b.score - a.score);
 
         // Ensure we have both warm and cool colors
         let primary, secondary, accent;
@@ -405,7 +445,10 @@ function createColorStore() {
           const [primaryHue] = rgbToHsl(...primary);
 
           // If palette is heavily skewed to one temperature, create better contrast
-          if ((primaryHue >= 0 && primaryHue <= 60) || (primaryHue >= 300 && primaryHue <= 360)) {
+          if (
+            (primaryHue >= 0 && primaryHue <= 60) ||
+            (primaryHue >= 300 && primaryHue <= 360)
+          ) {
             // Primary is warm, make secondary cool
             secondary = hslToRgb((primaryHue + 180) % 360, 85, 60);
           } else {
@@ -415,32 +458,26 @@ function createColorStore() {
         }
 
         // Special handling for anime eye colors - often golden/amber
-        const eyeColorCandidates = colorAnalysis.filter(({ h, s, l }) =>
-          // Yellow/golden hue range typical for anime eyes
-          ((h >= 35 && h <= 55) || (h >= 0 && h <= 30 && s > 70)) &&
-          // Not too dark or light
-          l > 40 && l < 75 &&
-          // Reasonably saturated
-          s > 50
+        const eyeColorCandidates = colorAnalysis.filter(
+          ({ h, s, l }) =>
+            // Yellow/golden hue range typical for anime eyes
+            ((h >= 35 && h <= 55) || (h >= 0 && h <= 30 && s > 70)) &&
+            // Not too dark or light
+            l > 40 &&
+            l < 75 &&
+            // Reasonably saturated
+            s > 50,
         );
 
         // If we found likely eye colors, prioritize them for accent
         if (eyeColorCandidates.length > 0) {
           accent = eyeColorCandidates[0].color;
-          logger.debug("Found anime eye color:", rgbToHex(...accent));
         }
 
         // Adjust colors for better contrast with dark background
         const adjustedPrimary = adjustForContrast(primary, 4.5);
         const adjustedSecondary = adjustForContrast(secondary, 4.5);
         const adjustedAccent = adjustForContrast(accent, 4.5);
-
-        // Log our choices
-        logger.debug("Selected anime palette colors:", {
-          primary: rgbToHex(...adjustedPrimary),
-          secondary: rgbToHex(...adjustedSecondary),
-          accent: rgbToHex(...adjustedAccent)
-        });
 
         // For dark UI, always use white text since text sits on dark backgrounds, not on the primary color
         const textColor = "#ffffff";
@@ -450,16 +487,28 @@ function createColorStore() {
         const [primaryHsl, secondaryHsl, accentHsl] = [
           rgbToHsl(...adjustedPrimary),
           rgbToHsl(...adjustedSecondary),
-          rgbToHsl(...adjustedAccent)
+          rgbToHsl(...adjustedAccent),
         ];
 
         // Use higher saturation for gradients to make them pop
         const gradientSaturation = 90;
         const gradientLightness = 65;
 
-        const gradientStart = hslToString(primaryHsl[0], gradientSaturation, gradientLightness);
-        const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
-        const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
+        const gradientStart = hslToString(
+          primaryHsl[0],
+          gradientSaturation,
+          gradientLightness,
+        );
+        const gradientMid = hslToString(
+          secondaryHsl[0],
+          gradientSaturation,
+          gradientLightness,
+        );
+        const gradientEnd = hslToString(
+          accentHsl[0],
+          gradientSaturation,
+          gradientLightness,
+        );
 
         return {
           primary: rgbToHex(...adjustedPrimary),
@@ -469,23 +518,14 @@ function createColorStore() {
           muted: muted,
           gradientStart,
           gradientMid,
-          gradientEnd
+          gradientEnd,
         };
       }
 
       // Generic image handling (non-cartoon)
       // Sort colors by score
-      const sortedColors = [...palette].sort((a, b) =>
-        scoreColor(b) - scoreColor(a)
-      );
-
-      // Log the top colors for debugging
-      logger.debug("Top extracted colors:",
-        sortedColors.slice(0, 3).map(color => {
-          const hex = rgbToHex(...color);
-          const [h, s, l] = rgbToHsl(...color);
-          return `${hex} (h:${Math.round(h)}° s:${Math.round(s)}% l:${Math.round(l)}%)`;
-        })
+      const sortedColors = [...palette].sort(
+        (a, b) => scoreColor(b) - scoreColor(a),
       );
 
       // Use the top colors for our palette
@@ -505,16 +545,28 @@ function createColorStore() {
       const [primaryHsl, secondaryHsl, accentHsl] = [
         rgbToHsl(...adjustedPrimary),
         rgbToHsl(...adjustedSecondary),
-        rgbToHsl(...adjustedAccent)
+        rgbToHsl(...adjustedAccent),
       ];
 
       // Create visually distinct gradients
       const gradientSaturation = 80;
       const gradientLightness = 60;
 
-      const gradientStart = hslToString(primaryHsl[0], gradientSaturation, gradientLightness);
-      const gradientMid = hslToString(secondaryHsl[0], gradientSaturation, gradientLightness);
-      const gradientEnd = hslToString(accentHsl[0], gradientSaturation, gradientLightness);
+      const gradientStart = hslToString(
+        primaryHsl[0],
+        gradientSaturation,
+        gradientLightness,
+      );
+      const gradientMid = hslToString(
+        secondaryHsl[0],
+        gradientSaturation,
+        gradientLightness,
+      );
+      const gradientEnd = hslToString(
+        accentHsl[0],
+        gradientSaturation,
+        gradientLightness,
+      );
 
       return {
         primary: rgbToHex(...adjustedPrimary),
@@ -524,10 +576,9 @@ function createColorStore() {
         muted: createMutedColor(adjustedPrimary, textColor),
         gradientStart,
         gradientMid,
-        gradientEnd
+        gradientEnd,
       };
     } catch (error) {
-      logger.error("Error extracting colors:", error);
       return DEFAULT_PALETTE;
     }
   }
@@ -560,6 +611,14 @@ function createColorStore() {
     // Reset to default palette
     reset(): void {
       store.set(DEFAULT_PALETTE);
+      // Also clear session storage
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        try {
+          window.sessionStorage.removeItem("mewdeko-colors");
+        } catch (err) {
+          // Ignore storage errors
+        }
+      }
     },
 
     // Extract colors from image (server icon or fallback to bot avatar)
@@ -573,13 +632,14 @@ function createColorStore() {
         const palette = await extractColors(imageUrl);
         store.set(palette);
       } catch (err) {
-        logger.error('Failed to extract colors:', err);
         store.set(DEFAULT_PALETTE);
       }
     },
 
     // Extract colors from server icon specifically
-    async extractFromServerIcon(iconUrl: string | null | undefined): Promise<void> {
+    async extractFromServerIcon(
+      iconUrl: string | null | undefined,
+    ): Promise<void> {
       if (!iconUrl) {
         store.set(DEFAULT_PALETTE);
         return;
@@ -589,10 +649,9 @@ function createColorStore() {
         const palette = await extractColors(iconUrl);
         store.set(palette);
       } catch (err) {
-        logger.error("Failed to extract colors from server icon:", err);
         store.set(DEFAULT_PALETTE);
       }
-    }
+    },
   };
 }
 

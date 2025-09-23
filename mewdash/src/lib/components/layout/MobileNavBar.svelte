@@ -1,43 +1,44 @@
 <!-- lib/components/MobileNavBar.svelte -->
 <script lang="ts">
-  import { run, stopPropagation, preventDefault } from 'svelte/legacy';
+    import {preventDefault, run, stopPropagation} from 'svelte/legacy';
 
-  import { fade, scale, slide } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
-  import {
-    Bell,
-    Gift,
-    Heart,
-    Home,
-    Lightbulb,
-    Link,
-    List,
-    Menu,
-    MessageSquare,
-    Music,
-    RepeatIcon,
-    Save,
-    Server,
-    Settings,
-    Shield,
-    Star, Ticket,
-    Users,
-    ZapOff
-  } from "lucide-svelte";
-  import { page } from "$app/stores";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { currentInstance } from "$lib/stores/instanceStore";
-  import { musicStore } from "$lib/stores/musicStore";
-  import { userStore } from "$lib/stores/userStore";
-  import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import { api } from "$lib/api";
-  import type { BotInstance } from "$lib/types/models";
+    import {fade, scale, slide} from "svelte/transition";
+    import {cubicOut} from "svelte/easing";
+    import {
+        Bell,
+        Gift,
+        Heart,
+        Home,
+        Lightbulb,
+        Link,
+        List,
+        Menu,
+        MessageSquare,
+        Music,
+        RepeatIcon,
+        Save,
+        Server,
+        Settings,
+        Shield,
+        Star,
+        Ticket,
+        Users,
+        ZapOff
+    } from "lucide-svelte";
+    import {page} from "$app/stores";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {currentInstance} from "$lib/stores/instanceStore";
+    import {musicStore} from "$lib/stores/musicStore";
+    import {userStore} from "$lib/stores/userStore";
+    import {onMount} from "svelte";
+    import {browser} from "$app/environment";
+    import {goto} from "$app/navigation";
+    import {api} from "$lib/api";
+    import type {BotInstance} from "$lib/types/models";
 
-  
-  interface Props {
+
+    interface Props {
     // Props
     showInstanceSelector?: boolean;
     data?: any;
@@ -418,7 +419,7 @@
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden bg-cover bg-center"
+                  class="w-8 h-8 rounded-lg shrink-0 overflow-hidden bg-cover bg-center"
             style="background-image: url('{$musicStore.status?.CurrentTrack?.AlbumArt || '/img/music-placeholder.png'}');"
           >
             <!-- Animated equalizer bars -->
@@ -581,7 +582,7 @@
                                 <div class="text-xs" style:color={$colorStore.muted}>Port: {instance.port}</div>
                               </div>
                               {#if !instance.isActive}
-                                <span class="px-2 py-1 rounded text-xs"
+                                <span class="px-2 py-1 rounded-sm text-xs"
                                       style="color: {$colorStore.accent}; background: {$colorStore.accent}15;">
                                   Offline
                                 </span>
@@ -599,7 +600,7 @@
                           href={moreItem.href}
                           data-sveltekit-preload-data="hover"
                           data-sveltekit-noscroll
-                          class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:bg-[var(--hover-bg)] focus:ring-color-[var(--focus-ring-color)]"
+                          class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2 hover:bg-(--hover-bg) focus:ring-color-[var(--focus-ring-color)]"
                           style="
       --hover-bg: {$colorStore.primary}15;
       --focus-ring-color: {$colorStore.primary};
@@ -652,7 +653,7 @@
             <!-- Regular nav item -->
             <a
               href={item.href}
-              class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
               class:opacity-60={isNavigating && navigationLoadingTarget !== item.label}
               class:scale-110={isNavigating && navigationLoadingTarget === item.label}
               aria-current={activeIndex === i ? 'page' : undefined}

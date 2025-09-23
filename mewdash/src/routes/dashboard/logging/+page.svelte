@@ -2,46 +2,40 @@
 <script lang="ts">
     import {run} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { fade, slide } from "svelte/transition";
-  import type { PageData } from "./$types";
-  import type { 
-    LoggingConfigurationResponse,
-    LogType,
-    LogTypeMapping 
-  } from "$lib/types/logging";
-  import { LOG_TYPE_MAPPINGS } from "$lib/types/logging";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import Notification from "$lib/components/ui/Notification.svelte";
-  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import { browser } from "$app/environment";
-  import { 
-    FileText, 
-    Settings, 
-    Trash2, 
-    Edit, 
-    UserPlus, 
-    UserMinus,
-    Ban,
-    MessageSquare,
-    Hash,
-    Mic,
-    MicOff,
-    Shield,
-    AlertTriangle,
-    CheckCircle,
-    X,
-    Plus,
-    Save,
-    Star,
-    Search,
-    Trash2 as TrashIcon
-  } from "lucide-svelte";
-  import { currentInstance } from "$lib/stores/instanceStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {fade, slide} from "svelte/transition";
+    import type {PageData} from "./$types";
+    import type {LoggingConfigurationResponse, LogType} from "$lib/types/logging";
+    import {LOG_TYPE_MAPPINGS} from "$lib/types/logging";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
+    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import {
+        AlertTriangle,
+        Ban,
+        CheckCircle,
+        Edit,
+        FileText,
+        Hash,
+        MessageSquare,
+        Mic,
+        MicOff,
+        Plus,
+        Save,
+        Search,
+        Settings,
+        Shield,
+        Star,
+        Trash2,
+        UserMinus,
+        UserPlus,
+        X
+    } from "lucide-svelte";
+    import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
         data: PageData;
@@ -360,8 +354,8 @@
       <div class="grid gap-4">
         {#each filteredLogTypes as mapping (mapping.logType)}
             {@const SvelteComponent = getIconComponent(mapping.icon)}
-          <div 
-            class="rounded-xl border p-4"
+            <div
+                    class="backdrop-blur-xs rounded-xl border p-4 transition-all"
             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
             transition:slide
           >
@@ -414,7 +408,8 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Currently Ignored Channels -->
-        <div class="rounded-xl border p-6" style="border-color: #ef444430; background: #ef444405;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center gap-3 mb-4">
             <X class="w-5 h-5" style="color: #ef4444" />
             <h3 class="font-bold" style="color: {$colorStore.text}">Ignored Channels ({ignoredChannelList.length})</h3>
@@ -436,9 +431,9 @@
                     <Hash size={14} style="color: #ef4444" />
                     <span class="text-sm font-medium" style="color: {$colorStore.text}">#{channel.name}</span>
                   </div>
-                  
-                  <button 
-                    class="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:scale-105"
+
+                    <button
+                            class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => removeFromIgnored(channel.id)}
                   >
@@ -452,7 +447,8 @@
         </div>
 
         <!-- Available Channels to Ignore -->
-        <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-4">
             <Hash class="w-5 h-5" style="color: {$colorStore.primary}" />
             <h3 class="font-bold" style="color: {$colorStore.text}">Active Channels ({activeChannelList.length})</h3>
@@ -486,9 +482,9 @@
                     <Hash size={14} style="color: {$colorStore.primary}" />
                     <span class="text-sm font-medium" style="color: {$colorStore.text}">#{channel.name}</span>
                   </div>
-                  
-                  <button 
-                    class="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:scale-105"
+
+                    <button
+                            class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                     style="background: #ef444420; color: #ef4444;"
                     onclick={() => addToIgnored(channel.id)}
                   >

@@ -2,43 +2,43 @@
 <script lang="ts">
     import {preventDefault} from 'svelte/legacy';
 
-  import { onMount } from "svelte";
-  import { api } from "$lib/api";
-  import type { PageData } from "./$types";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { fade, fly } from "svelte/transition";
-  import { goto, invalidateAll } from "$app/navigation";
-  import { page } from "$app/stores";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { browser } from "$app/environment";
-  import {
-    Award,
-    CheckCircle,
-    DollarSign,
-    Heart,
-    LucideFolderSync,
-    MessageCircle,
-    Plus,
-    RefreshCw,
-    Save,
-    Settings,
-    Unlink,
-    Users,
-    XCircle
-  } from "lucide-svelte";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { logger } from "$lib/logger";
-  import type {
-    PatreonAnalytics,
-    PatreonConfig,
-    PatreonConfigUpdateRequest,
-    PatreonCreator,
-    PatreonOAuthStatusResponse,
-    PatreonSupporter,
-    PatreonTier
-  } from "$lib/types";
-  import { userStore } from "$lib/stores/userStore";
+    import {onMount} from "svelte";
+    import {api} from "$lib/api";
+    import type {PageData} from "./$types";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {fade, fly} from "svelte/transition";
+    import {goto, invalidateAll} from "$app/navigation";
+    import {page} from "$app/stores";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import {browser} from "$app/environment";
+    import {
+        Award,
+        CheckCircle,
+        DollarSign,
+        Heart,
+        LucideFolderSync,
+        MessageCircle,
+        Plus,
+        RefreshCw,
+        Save,
+        Settings,
+        Unlink,
+        Users,
+        XCircle
+    } from "lucide-svelte";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {logger} from "$lib/logger";
+    import type {
+        PatreonAnalytics,
+        PatreonConfig,
+        PatreonConfigUpdateRequest,
+        PatreonCreator,
+        PatreonOAuthStatusResponse,
+        PatreonSupporter,
+        PatreonTier
+    } from "$lib/types";
+    import {userStore} from "$lib/stores/userStore";
 
     interface Props {
         data: PageData;
@@ -423,7 +423,7 @@
 
     {#if loading}
       <div
-        class="backdrop-blur-sm rounded-2xl border p-8 shadow-2xl text-center"
+              class="backdrop-blur-xs rounded-2xl border p-8 shadow-2xl transition-all text-center"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
         in:fade
@@ -434,7 +434,7 @@
       </div>
     {:else if error}
       <div
-        class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: #ef444430;"
         in:fade
@@ -455,7 +455,7 @@
     {:else if !patreonStatus?.isConfigured}
       <!-- Connection Setup -->
       <div
-        class="backdrop-blur-sm rounded-2xl border p-8 shadow-2xl text-center"
+              class="backdrop-blur-xs rounded-2xl border p-8 shadow-2xl transition-all text-center"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
         in:fade
@@ -482,7 +482,7 @@
 
         <!-- Information Card -->
         <div
-          class="mt-8 rounded-2xl border p-6 text-left"
+                class="mt-8 backdrop-blur-xs rounded-2xl border p-6 text-left transition-all"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
                  border-color: {$colorStore.primary}20;"
         >
@@ -490,7 +490,7 @@
           <div class="space-y-3">
             <div class="flex items-start gap-3">
               <div
-                class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5"
                 style="background: {$colorStore.primary};"
               >1
               </div>
@@ -499,7 +499,7 @@
             </div>
             <div class="flex items-start gap-3">
               <div
-                class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5"
                 style="background: {$colorStore.primary};"
               >2
               </div>
@@ -508,7 +508,7 @@
             </div>
             <div class="flex items-start gap-3">
               <div
-                class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5"
                 style="background: {$colorStore.primary};"
               >3
               </div>
@@ -517,7 +517,7 @@
             </div>
             <div class="flex items-start gap-3">
               <div
-                class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5"
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5"
                 style="background: {$colorStore.primary};"
               >4
               </div>
@@ -535,7 +535,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Status Card -->
             <div
-              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -563,7 +563,7 @@
             <!-- Analytics Cards -->
             {#if patreonAnalytics}
               <div
-                class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -578,7 +578,7 @@
               </div>
 
               <div
-                class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -595,7 +595,7 @@
             <!-- Creator Card -->
             {#if patreonCreator}
               <div
-                class="backdrop-blur-sm rounded-2xl border p-4 md:p-6 shadow-2xl col-span-1 md:col-span-2 lg:col-span-1"
+                      class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl transition-all col-span-1 md:col-span-2 lg:col-span-1"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -608,14 +608,14 @@
                 <div class="space-y-3">
                   <div class="flex items-center gap-3">
                     {#if patreonCreator.attributes?.image_url}
-                      <img 
-                        src={patreonCreator.attributes.image_url} 
-                        alt="Creator avatar" 
-                        class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+                      <img
+                              src={patreonCreator.attributes.image_url}
+                              alt="Creator avatar"
+                              class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shrink-0"
                       />
                     {:else}
-                      <div 
-                        class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                        <div
+                                class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shrink-0"
                         style="background: {$colorStore.primary}20;"
                       >
                         <Heart class="w-6 h-6 md:w-7 md:h-7" style="color: {$colorStore.primary};" />
@@ -677,7 +677,7 @@
 
           <!-- Quick Actions -->
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                  class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -738,7 +738,7 @@
         {:else if activeTab === "supporters"}
           <!-- Supporters Tab -->
           <div
-            class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                  class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
             in:fly={{ y: 20, duration: 300 }}
@@ -808,7 +808,7 @@
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Tier Mapping -->
             <div
-              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -861,7 +861,7 @@
 
             <!-- Tiers List -->
             <div
-              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -901,7 +901,7 @@
           <!-- Settings Tab -->
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <div
-              class="backdrop-blur-sm rounded-2xl border p-6 shadow-2xl"
+                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -953,7 +953,7 @@
                     <input
                       type="checkbox"
                       bind:checked={configForm.toggleAnnouncements}
-                      class="rounded"
+                      class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     />
                     <span style="color: {$colorStore.text};">Enable Announcements</span>
@@ -963,7 +963,7 @@
                     <input
                       type="checkbox"
                       bind:checked={configForm.toggleRoleSync}
-                      class="rounded"
+                      class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
                     />
                     <span style="color: {$colorStore.text};">Enable Role Sync</span>

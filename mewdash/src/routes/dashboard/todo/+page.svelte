@@ -1,52 +1,46 @@
 <!-- routes/dashboard/todo/+page.svelte -->
 <script lang="ts">
-    import {run, stopPropagation, createBubbler} from 'svelte/legacy';
+    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
+    import {onMount} from "svelte";
+    import {fly, scale} from "svelte/transition";
+    import {colorStore} from "$lib/stores/colorStore";
+    import {currentGuild} from "$lib/stores/currentGuild";
+    import {userStore} from "$lib/stores/userStore";
+    import {api} from "$lib/api";
+    import {
+        AlertTriangle,
+        BarChart3,
+        Calendar,
+        CheckSquare,
+        Edit,
+        Filter,
+        Globe,
+        List,
+        Lock,
+        Plus,
+        Search,
+        Settings,
+        Shield,
+        Target,
+        Trash2
+    } from "lucide-svelte";
+
+    import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
+    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+
+    import type {
+        AddTodoItemRequest,
+        CreateTodoListRequest,
+        TodoFilterOptions,
+        TodoItem,
+        TodoList,
+        TodoStats,
+        UserPermissions
+    } from "$lib/types/todo";
 
     const bubble = createBubbler();
-  import { onMount } from "svelte";
-  import { fly, scale } from "svelte/transition";
-  import { colorStore } from "$lib/stores/colorStore";
-  import { currentGuild } from "$lib/stores/currentGuild";
-  import { userStore } from "$lib/stores/userStore";
-  import { api } from "$lib/api";
-  import { logger } from "$lib/logger";
-  import { 
-    List, 
-    Plus, 
-    Search, 
-    Filter, 
-    Settings, 
-    Users,
-    CheckSquare,
-    Clock,
-    AlertTriangle,
-    Target,
-    BarChart3,
-    Calendar,
-    Tag,
-    Edit,
-    Trash2,
-    Globe,
-    Lock,
-    Shield,
-    Eye,
-    MoreVertical
-  } from "lucide-svelte";
-
-  import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
-  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-
-  import type { 
-    TodoList, 
-    TodoItem, 
-    UserPermissions, 
-    TodoStats,
-    TodoFilterOptions,
-    CreateTodoListRequest,
-    AddTodoItemRequest 
-  } from "$lib/types/todo";
 
     let {data} = $props();
 
@@ -458,7 +452,7 @@
         <div class="flex flex-wrap items-center gap-4">
           <label class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-105"
                  style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
-            <input type="checkbox" bind:checked={includeCompleted} class="rounded w-5 h-5" />
+              <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5"/>
             <span style="color: {$colorStore.text}" class="font-medium">Show completed items</span>
           </label>
 
@@ -707,14 +701,14 @@
                   type="text"
                   placeholder="What needs to be done?"
                   bind:value={newItemTitle}
-                  class="w-full px-4 py-3 rounded-xl border text-lg backdrop-blur-sm"
+                  class="w-full px-4 py-3 rounded-xl border text-lg backdrop-blur-xs"
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 />
                 <textarea
                   placeholder="Add a description (optional)..."
                   bind:value={newItemDescription}
                   rows="2"
-                  class="w-full px-4 py-3 rounded-xl border resize-none backdrop-blur-sm"
+                  class="w-full px-4 py-3 rounded-xl border resize-none backdrop-blur-xs"
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 ></textarea>
                 <div class="flex items-center justify-between">
@@ -799,7 +793,7 @@
                   <div class="flex items-start gap-4">
                     <!-- Completion Checkbox -->
                     <button
-                      class="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-1"
+                            class="shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-1"
                       style="border-color: {item.isCompleted ? '#10b981' : $colorStore.primary}; 
                              background: {item.isCompleted ? '#10b981' : 'transparent'};"
                       onclick={() => handleCompleteItem({ detail: { itemId: item.id } })}
@@ -902,7 +896,7 @@
   {#if showNewListModal}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
          onclick={() => showNewListModal = false}
          in:fly={{ opacity: 0, duration: 200 }}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -929,7 +923,7 @@
                 type="text"
                 placeholder="Enter list name..."
                 bind:value={newListName}
-                class="w-full px-4 py-3 rounded-lg border backdrop-blur-sm"
+                class="w-full px-4 py-3 rounded-lg border backdrop-blur-xs"
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
                 required
               />
@@ -943,7 +937,7 @@
                 placeholder="Optional description..."
                 bind:value={newListDescription}
                 rows="3"
-                class="w-full px-4 py-3 rounded-lg border resize-none backdrop-blur-sm"
+                class="w-full px-4 py-3 rounded-lg border resize-none backdrop-blur-xs"
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
               ></textarea>
             </div>

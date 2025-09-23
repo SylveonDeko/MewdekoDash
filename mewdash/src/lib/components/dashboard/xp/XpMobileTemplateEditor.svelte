@@ -1,1895 +1,1503 @@
-<!-- XpMobileTemplateEditor.svelte -->
+<!-- lib/components/dashboard/xp/XpMobileTemplateEditor.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
-  import { createEventDispatcher, onMount, onDestroy } from "svelte";
-  import { fade, slide } from "svelte/transition";
+    import {onMount, onDestroy} from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import XpMobileTemplatePreview from "$lib/components/dashboard/xp/XpMobileTemplatePreview.svelte";
+    import {fly, fade, slide} from "svelte/transition";
+    import Portal from "$lib/components/ui/Portal.svelte";
   import {
-    ChevronDown,
-    ChevronUp,
+      Palette,
     Move,
-    Grid,
-    Database,
-    Save,
-    RotateCcw,
-    ZoomIn,
-    ZoomOut,
-    Maximize2,
-    Settings,
-    User,
-    BarChart3,
+      Type,
+      Image as ImageIcon,
+      BarChart2,
     Users,
-    Clock,
+      Shield,
     Award,
-    Type,
-    Image,
-    Palette,
+      Clock,
+      Maximize2,
+      Minimize2,
+      RotateCcw,
+      Save,
     Eye,
-    EyeOff
+      EyeOff,
+      ChevronRight,
+      ChevronDown,
+      ChevronUp,
+      Settings,
+      ZoomIn,
+      ZoomOut,
+      Grid3x3,
+      Crosshair,
+      Layers,
+      Lock,
+      Unlock,
+      Download,
+      Upload,
+      RefreshCw,
+      Ruler,
+      Copy,
+      Trash2,
+      X,
+      Menu,
+      ArrowLeft,
+      Sliders,
+      Database,
+      PaintBucket
   } from "lucide-svelte";
 
-  const dispatch = createEventDispatcher();
-
-  
   interface Props {
-    // Props
     localTemplate: any;
     changedSettings: Set<string>;
-    currentUserData?: any;
+      currentUserData: any;
     sampleData: any;
+      showEditor: boolean;
   }
 
-  let {
-    localTemplate = $bindable(),
-    changedSettings,
-    currentUserData = null,
-    sampleData
-  }: Props = $props();
+    let {
+        localTemplate = $bindable(),
+        changedSettings = $bindable(),
+        currentUserData = $bindable(),
+        sampleData = $bindable(),
+        showEditor = $bindable()
+    }: Props = $props();
 
+    // Canvas and viewport state
+    let canvas: HTMLCanvasElement;
+    let ctx: CanvasRenderingContext2D | null = null;
+    let canvasContainer: HTMLDivElement;
+    let zoom = $state(1);
+    let panX = $state(0);
+    let panY = $state(0);
+    let isPanning = $state(false);
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    let lastTouchDistance = 0;
 
-  // Mobile-first state management
-  let viewMode: "preview" | "edit" | "fullscreen" = $state("preview");
-  let activePanel: string | null = $state(null);
-  let isDesignMode = $state(false);
-  let showRealDataPreview = $state(false);
+    // Editor state
+    let selectedElement = $state<string | null>(null);
+    let hoveredElement = $state<string | null>(null);
+    let isDragging = $state(false);
+    let dragTarget = $state<string | null>(null);
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartElementX = 0;
+    let dragStartElementY = 0;
   let showGrid = $state(false);
-  let gridSize = 20;
-  let previewScale = $state(1);
-  let isDragging = false;
-  let dragElement: any = null;
-  let selectedElement: any = $state(null);
+    let snapToGrid = $state(true);
+    let gridSize = $state(10);
+    let showRulers = $state(false);
+    let lockProportions = $state(false);
+    let backgroundImage = $state<HTMLImageElement | null>(null);
+    let backgroundImageLoading = $state(false);
+    let defaultBgImage = $state<HTMLImageElement | null>(null);
 
-  // Touch interaction state
-  let touchStartTime = 0;
-  let touchStartPos = { x: 0, y: 0 };
-  let lastTouchPos = { x: 0, y: 0 };
-  let touchDistance = 0;
-  let initialPinchDistance = 0;
-  let isPinching = false;
-  let isLongPress = false;
-  let longPressTimer: number;
+    // Mobile UI state
+    let bottomSheetOpen = $state(false);
+    let bottomSheetTab = $state<"layers" | "properties" | "tools">("layers");
+    let toolbarExpanded = $state(false);
+    let showQuickActions = $state(true);
 
-  // Panel states
-  let panelStates: Record<string, boolean> = $state({
-    general: false,
-    user: false,
-    bar: false,
-    guild: false,
-    time: false,
-    club: false
-  });
+    // Preview mode
+    let previewMode = $state<"edit" | "preview">("edit");
+    let useRealData = $state(false);
 
-  // Element positioning  
-  let elementBounds: DOMRect | null = null;
+    // Undo/Redo stack
+    let undoStack: string[] = [];
+    let redoStack: string[] = [];
+    let maxUndoLevels = 30;
 
-  // Mobile-optimized panels configuration
-  const panels = [
-    {
-      id: "general",
-      title: "Canvas & Background",
-      icon: Settings,
-      color: "primary"
-    },
-    {
-      id: "user",
-      title: "User Information",
-      icon: User,
-      color: "secondary"
-    },
-    {
-      id: "bar",
-      title: "Progress Bar",
-      icon: BarChart3,
-      color: "primary"
-    },
-    {
-      id: "guild",
-      title: "Guild Information",
-      icon: Users,
-      color: "secondary"
-    },
-    {
-      id: "time",
-      title: "Time Display",
-      icon: Clock,
-      color: "accent"
-    },
-    {
-      id: "club",
-      title: "Club Settings",
-      icon: Award,
-      color: "primary"
+    // Load default background image
+    let defaultImageLoaded = false;
+
+    onMount(() => {
+        if (!defaultImageLoaded) {
+            defaultImageLoaded = true;
+            const img = new Image();
+            img.onload = () => {
+                defaultBgImage = img;
+                if (canvas && ctx) {
+                    redrawCanvas();
+                }
+            };
+            img.onerror = () => {
+                defaultBgImage = null;
+            };
+            img.src = '/img/default_xp_background.png';
+        }
+    });
+
+    // Load custom background image
+    $effect(() => {
+        if (localTemplate?.customXpImageUrl) {
+            backgroundImageLoading = true;
+            const img = new Image();
+            img.onload = () => {
+                backgroundImage = img;
+                backgroundImageLoading = false;
+                redrawCanvas();
+            };
+            img.onerror = () => {
+                backgroundImage = null;
+                backgroundImageLoading = false;
+                redrawCanvas();
+            };
+            img.src = localTemplate.customXpImageUrl;
+        } else {
+            backgroundImage = null;
+            redrawCanvas();
+        }
+    });
+
+    // Element definitions
+    let elements = $derived([
+        {
+            id: "user-icon",
+            type: "image",
+            label: "User Avatar",
+            visible: localTemplate?.templateUser?.showIcon,
+            locked: false,
+            x: localTemplate?.templateUser?.iconX || 0,
+            y: localTemplate?.templateUser?.iconY || 0,
+            width: localTemplate?.templateUser?.iconSizeX || 100,
+            height: localTemplate?.templateUser?.iconSizeY || 100
+        },
+        {
+            id: "user-text",
+            type: "text",
+            label: "Username",
+            visible: localTemplate?.templateUser?.showText,
+            locked: false,
+            x: localTemplate?.templateUser?.textX || 120,
+            y: localTemplate?.templateUser?.textY || 50,
+            fontSize: localTemplate?.templateUser?.fontSize || 24,
+            color: localTemplate?.templateUser?.textColor || "FFFFFF"
+        },
+        {
+            id: "progress-bar",
+            type: "bar",
+            label: "XP Progress Bar",
+            visible: localTemplate?.templateBar?.showBar,
+            locked: false,
+            x1: localTemplate?.templateBar?.barPointAx || 319,
+            y1: localTemplate?.templateBar?.barPointAy || 119,
+            x2: localTemplate?.templateBar?.barPointBx || 284,
+            y2: localTemplate?.templateBar?.barPointBy || 250,
+            width: localTemplate?.templateBar?.barWidth || 20,
+            length: localTemplate?.templateBar?.barLength || 452,
+            direction: localTemplate?.templateBar?.barDirection ?? 3,
+            transparency: localTemplate?.templateBar?.barTransparency || 255,
+            color: localTemplate?.templateBar?.barColor || "FF000000"
+        },
+        {
+            id: "guild-rank",
+            type: "text",
+            label: "Guild Rank",
+            visible: localTemplate?.templateGuild?.showGuildRank,
+            locked: false,
+            x: localTemplate?.templateGuild?.guildRankX || 50,
+            y: localTemplate?.templateGuild?.guildRankY || 150,
+            fontSize: localTemplate?.templateGuild?.guildRankFontSize || 18,
+            color: localTemplate?.templateGuild?.guildRankColor || "FFFFFF"
+        },
+        {
+            id: "guild-level",
+            type: "text",
+            label: "Guild Level",
+            visible: localTemplate?.templateGuild?.showGuildLevel,
+            locked: false,
+            x: localTemplate?.templateGuild?.guildLevelX || 350,
+            y: localTemplate?.templateGuild?.guildLevelY || 150,
+            fontSize: localTemplate?.templateGuild?.guildLevelFontSize || 18,
+            color: localTemplate?.templateGuild?.guildLevelColor || "FFFFFF"
+        },
+        {
+            id: "club-icon",
+            type: "image",
+            label: "Club Icon",
+            visible: localTemplate?.templateClub?.showClubIcon,
+            locked: false,
+            x: localTemplate?.templateClub?.clubIconX || 300,
+            y: localTemplate?.templateClub?.clubIconY || 30,
+            width: localTemplate?.templateClub?.clubIconSizeX || 50,
+            height: localTemplate?.templateClub?.clubIconSizeY || 50
+        },
+        {
+            id: "club-name",
+            type: "text",
+            label: "Club Name",
+            visible: localTemplate?.templateClub?.showClubName,
+            locked: false,
+            x: localTemplate?.templateClub?.clubNameX || 360,
+            y: localTemplate?.templateClub?.clubNameY || 55,
+            fontSize: localTemplate?.templateClub?.clubNameFontSize || 16,
+            color: localTemplate?.templateClub?.clubNameColor || "FFFFFF"
+        },
+        {
+            id: "time-on-level",
+            type: "text",
+            label: "Time on Level",
+            visible: localTemplate?.showTimeOnLevel,
+            locked: false,
+            x: localTemplate?.timeOnLevelX || 200,
+            y: localTemplate?.timeOnLevelY || 250,
+            fontSize: localTemplate?.timeOnLevelFontSize || 14,
+            color: localTemplate?.timeOnLevelColor || "AAAAAA"
+        },
+        {
+            id: "awarded",
+            type: "text",
+            label: "Awarded XP",
+            visible: localTemplate?.showAwarded,
+            locked: false,
+            x: localTemplate?.awardedX || 200,
+            y: localTemplate?.awardedY || 280,
+            fontSize: localTemplate?.awardedFontSize || 14,
+            color: localTemplate?.awardedColor || "FFD700"
+        }
+    ]);
+
+    // Save undo state
+    function saveUndoState() {
+        const currentState = JSON.stringify(localTemplate);
+        undoStack.push(currentState);
+        if (undoStack.length > maxUndoLevels) {
+            undoStack.shift();
+        }
+        redoStack = [];
     }
-  ];
 
-
-  // Event handlers
-  function handleChange(property: string, value: any) {
-    const keys = property.split('.');
-    let obj = localTemplate;
-    for (let i = 0; i < keys.length - 1; i++) {
-      obj = obj[keys[i]];
+    // Undo action
+    function undo() {
+        if (undoStack.length > 0) {
+            const currentState = JSON.stringify(localTemplate);
+            redoStack.push(currentState);
+            const previousState = undoStack.pop()!;
+            localTemplate = JSON.parse(previousState);
+            markAsChanged();
+            redrawCanvas();
+        }
     }
-    obj[keys[keys.length - 1]] = value;
-    changedSettings.add("template");
-    localTemplate = { ...localTemplate };
-  }
 
-  function handleColorInput(property: string) {
-    return (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      let value = target.value;
-      if (!value.startsWith('#')) value = '#' + value;
-      handleChange(property, value);
-    };
-  }
+    // Redo action
+    function redo() {
+        if (redoStack.length > 0) {
+            const currentState = JSON.stringify(localTemplate);
+            undoStack.push(currentState);
+            const nextState = redoStack.pop()!;
+            localTemplate = JSON.parse(nextState);
+            markAsChanged();
+            redrawCanvas();
+        }
+    }
 
-  function formatColor(colorString: string): string {
-    if (!colorString) return "#ffffff";
-    if (colorString.startsWith('#')) return colorString;
-    return `#${colorString}`;
-  }
+    // Mark as changed
+    function markAsChanged() {
+        changedSettings = changedSettings.add("template");
+    }
 
-  function handleInputFocus(event: Event) {
-    const target = event.target as HTMLInputElement;
-    target.select();
-  }
+    // Update element position
+    function updateElementPosition(elementId: string, x: number, y: number) {
+        saveUndoState();
 
-  // Background image variables
-  let imageUrl = $state("");
-  let imageLoading = $state(false);
-  let imageError = $state("");
-  let updateSizeFromImage = $state(false);
-  let previewBackgroundUrl: string | null = $state(null);
+        if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+        }
 
-  function loadImage() {
-    if (!imageUrl) return;
-    imageLoading = true;
-    imageError = "";
-    
-    const img = new Image();
-    img.onload = () => {
-      previewBackgroundUrl = imageUrl;
-      if (updateSizeFromImage && localTemplate) {
-        handleChange('outputSizeX', img.width);
-        handleChange('outputSizeY', img.height);
-      }
-      imageLoading = false;
-    };
-    img.onerror = () => {
-      imageError = "Failed to load image";
-      imageLoading = false;
-    };
-    img.src = imageUrl;
-  }
+        switch (elementId) {
+            case "user-icon":
+                localTemplate.templateUser.iconX = x;
+                localTemplate.templateUser.iconY = y;
+                break;
+            case "user-text":
+                localTemplate.templateUser.textX = x;
+                localTemplate.templateUser.textY = y;
+                break;
+            case "guild-rank":
+                localTemplate.templateGuild.guildRankX = x;
+                localTemplate.templateGuild.guildRankY = y;
+                break;
+            case "guild-level":
+                localTemplate.templateGuild.guildLevelX = x;
+                localTemplate.templateGuild.guildLevelY = y;
+                break;
+            case "club-icon":
+                localTemplate.templateClub.clubIconX = x;
+                localTemplate.templateClub.clubIconY = y;
+                break;
+            case "club-name":
+                localTemplate.templateClub.clubNameX = x;
+                localTemplate.templateClub.clubNameY = y;
+                break;
+            case "time-on-level":
+                localTemplate.timeOnLevelX = x;
+                localTemplate.timeOnLevelY = y;
+                break;
+            case "awarded":
+                localTemplate.awardedX = x;
+                localTemplate.awardedY = y;
+                break;
+        }
 
-  function togglePanel(panelId: string) {
-    if (activePanel === panelId) {
-      activePanel = null;
-    } else {
-      activePanel = panelId;
-      // Close all other panels for mobile
-      Object.keys(panelStates).forEach(key => {
-        panelStates[key] = key === panelId;
-      });
+        if (elementId === "progress-bar") {
+            const element = elements.find(e => e.id === elementId);
+            if (element && element.type === "bar") {
+                const deltaX = x - element.x1;
+                const deltaY = y - element.y1;
+                localTemplate.templateBar.barPointAx = x;
+                localTemplate.templateBar.barPointAy = y;
+                localTemplate.templateBar.barPointBx = element.x2 + deltaX;
+                localTemplate.templateBar.barPointBy = element.y2 + deltaY;
+            }
+        }
+
+        markAsChanged();
+        redrawCanvas();
+    }
+
+    // Toggle element visibility
+    function toggleElementVisibility(elementId: string) {
+        saveUndoState();
+
+        switch (elementId) {
+            case "user-icon":
+                localTemplate.templateUser.showIcon = !localTemplate.templateUser.showIcon;
+                break;
+            case "user-text":
+                localTemplate.templateUser.showText = !localTemplate.templateUser.showText;
+                break;
+            case "progress-bar":
+                localTemplate.templateBar.showBar = !localTemplate.templateBar.showBar;
+                break;
+            case "guild-rank":
+                localTemplate.templateGuild.showGuildRank = !localTemplate.templateGuild.showGuildRank;
+                break;
+            case "guild-level":
+                localTemplate.templateGuild.showGuildLevel = !localTemplate.templateGuild.showGuildLevel;
+                break;
+            case "club-icon":
+                localTemplate.templateClub.showClubIcon = !localTemplate.templateClub.showClubIcon;
+                break;
+            case "club-name":
+                localTemplate.templateClub.showClubName = !localTemplate.templateClub.showClubName;
+                break;
+            case "time-on-level":
+                localTemplate.showTimeOnLevel = !localTemplate.showTimeOnLevel;
+                break;
+            case "awarded":
+                localTemplate.showAwarded = !localTemplate.showAwarded;
+                break;
+        }
+
+        markAsChanged();
+        redrawCanvas();
+    }
+
+    // Redraw canvas
+    function redrawCanvas() {
+        if (!ctx || !canvas) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+
+        // Apply zoom and pan
+        ctx.translate(panX, panY);
+        ctx.scale(zoom, zoom);
+
+        // Draw background
+        if (backgroundImage && !backgroundImageLoading) {
+            ctx.drawImage(backgroundImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+        } else if (defaultBgImage) {
+            // Draw gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+            bgGradient.addColorStop(0, `${$colorStore.primary}15`);
+            bgGradient.addColorStop(0.5, `${$colorStore.primary}20`);
+            bgGradient.addColorStop(1, `${$colorStore.secondary}15`);
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+            ctx.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+        }
+
+        // Draw grid if enabled
+        if (showGrid && previewMode === "edit") {
+            ctx.strokeStyle = `${$colorStore.primary}20`;
+            ctx.lineWidth = 0.5;
+            ctx.setLineDash([2, 4]);
+
+            for (let x = 0; x <= localTemplate.outputSizeX; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, localTemplate.outputSizeY);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= localTemplate.outputSizeY; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(localTemplate.outputSizeX, y);
+                ctx.stroke();
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        // Draw elements
+        elements.forEach(element => {
+            if (!element.visible) return;
+
+            const isSelected = selectedElement === element.id;
+            const isHovered = hoveredElement === element.id;
+
+            if (element.type === "image") {
+                ctx.fillStyle = `${$colorStore.primary}30`;
+                ctx.fillRect(element.x, element.y, element.width, element.height);
+
+                ctx.strokeStyle = isSelected ? $colorStore.accent : isHovered ? $colorStore.primary : `${$colorStore.primary}40`;
+                ctx.lineWidth = isSelected ? 2 : 1;
+                ctx.strokeRect(element.x, element.y, element.width, element.height);
+
+                ctx.fillStyle = $colorStore.text;
+                ctx.font = "12px Inter";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(element.label, element.x + element.width / 2, element.y + element.height / 2);
+            } else if (element.type === "text") {
+                ctx.fillStyle = element.color.startsWith('#') ? element.color : `#${element.color}`;
+                ctx.font = `${element.fontSize}px Inter`;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+
+                const displayText = useRealData && currentUserData
+                    ? getTextContent(element.id, currentUserData)
+                    : getTextContent(element.id, sampleData);
+
+                ctx.fillText(displayText, element.x, element.y);
+
+                if (previewMode === "edit" && (isSelected || isHovered)) {
+                    const metrics = ctx.measureText(displayText);
+                    ctx.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+                    ctx.lineWidth = isSelected ? 2 : 1;
+                    ctx.setLineDash(isSelected ? [] : [4, 4]);
+                    ctx.strokeRect(
+                        element.x - 5,
+                        element.y - 5,
+                        metrics.width + 10,
+                        element.fontSize + 10
+                    );
+                    ctx.setLineDash([]);
+                }
+            } else if (element.type === "bar") {
+                const percent = (useRealData && currentUserData?.progress ? currentUserData.progress : sampleData.progress) / 100;
+                const direction = localTemplate?.templateBar?.barDirection ?? 3;
+                const barLength = localTemplate?.templateBar?.barLength || 452;
+                const transparency = localTemplate?.templateBar?.barTransparency || 255;
+
+                const length = barLength * percent;
+
+                let x3, x4, y3, y4;
+                const x1 = element.x1;
+                const y1 = element.y1;
+                const x2 = element.x2;
+                const y2 = element.y2;
+
+                switch (direction) {
+                    case 1: // Down
+                        x3 = x1;
+                        x4 = x2;
+                        y3 = y1 + length;
+                        y4 = y2 + length;
+                        break;
+                    case 0: // Up
+                        x3 = x1;
+                        x4 = x2;
+                        y3 = y1 - length;
+                        y4 = y2 - length;
+                        break;
+                    case 2: // Left
+                        x3 = x1 - length;
+                        x4 = x2 - length;
+                        y3 = y1;
+                        y4 = y2;
+                        break;
+                    default: // Right
+                        x3 = x1 + length;
+                        x4 = x2 + length;
+                        y3 = y1;
+                        y4 = y2;
+                        break;
+                }
+
+                ctx.save();
+
+                let barColor = element.color;
+                if (!barColor.startsWith('#')) {
+                    if (barColor.length === 8) {
+                        barColor = '#' + barColor.slice(2);
+                    } else {
+                        barColor = '#' + barColor;
+                    }
+                }
+
+                ctx.fillStyle = barColor;
+                ctx.globalAlpha = transparency / 255;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x3, y3);
+                ctx.lineTo(x4, y4);
+                ctx.lineTo(x2, y2);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+
+                if (previewMode === "edit" && (isSelected || isHovered)) {
+                    ctx.fillStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+                    ctx.beginPath();
+                    ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            if (element.locked && previewMode === "edit") {
+                ctx.fillStyle = $colorStore.accent;
+                ctx.font = "10px Inter";
+                ctx.textAlign = "right";
+                ctx.textBaseline = "top";
+                ctx.fillText("🔒", element.x + element.width - 5, element.y + 5);
+            }
+        });
+
+        // Draw rulers if enabled
+        if (showRulers && previewMode === "edit") {
+            ctx.fillStyle = `${$colorStore.primary}08`;
+            ctx.fillRect(0, -30, localTemplate.outputSizeX, 30);
+            ctx.strokeStyle = `${$colorStore.primary}40`;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, -30, localTemplate.outputSizeX, 30);
+
+            ctx.fillStyle = `#${$colorStore.text}`;
+            ctx.font = "10px Inter";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            for (let x = 0; x <= localTemplate.outputSizeX; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, -30);
+                ctx.lineTo(x, -20);
+                ctx.stroke();
+                ctx.fillText(x.toString(), x, -10);
+            }
+
+            ctx.fillStyle = `${$colorStore.primary}08`;
+            ctx.fillRect(-30, 0, 30, localTemplate.outputSizeY);
+            ctx.strokeStyle = `${$colorStore.primary}40`;
+            ctx.strokeRect(-30, 0, 30, localTemplate.outputSizeY);
+
+            ctx.save();
+            ctx.rotate(-Math.PI / 2);
+            for (let y = 0; y <= localTemplate.outputSizeY; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(-y, -30);
+                ctx.lineTo(-y, -20);
+                ctx.stroke();
+                ctx.fillText(y.toString(), -y, -10);
+            }
+            ctx.restore();
+        }
+
+        ctx.restore();
+
+        // Draw zoom indicator
+        if (zoom !== 1) {
+            ctx.fillStyle = $colorStore.primary;
+            ctx.font = "12px Inter";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(`${Math.round(zoom * 100)}%`, canvas.width - 10, canvas.height - 10);
     }
   }
 
-  function toggleDesignMode() {
-    isDesignMode = !isDesignMode;
-    if (isDesignMode && viewMode === "edit") {
-      viewMode = "preview";
+    // Get text content
+    function getTextContent(elementId: string, data: any): string {
+        switch (elementId) {
+            case "user-text":
+                return data?.username || "Username";
+            case "guild-rank":
+                return `Rank #${data?.rank || 1}`;
+            case "guild-level":
+                return `Level ${data?.level || 1}`;
+            case "club-name":
+                return data?.clubName || "Club Name";
+            case "time-on-level":
+                return data?.timeOnLevel || "0d 0h 0m";
+            case "awarded":
+                return `+${data?.awardedXp || 0} XP`;
+            default:
+                return "";
     }
   }
 
-  function toggleDataPreview() {
-    showRealDataPreview = !showRealDataPreview;
-  }
-
-  function toggleGrid() {
-    showGrid = !showGrid;
-  }
-
-  function zoomIn() {
-    previewScale = Math.min(previewScale * 1.2, 3);
-  }
-
-  function zoomOut() {
-    previewScale = Math.max(previewScale / 1.2, 0.3);
-  }
-
-  function resetZoom() {
-    previewScale = 1;
-  }
-
-  function enterFullscreen() {
-    viewMode = "fullscreen";
-  }
-
-  function exitFullscreen() {
-    viewMode = "preview";
-  }
-
-  // Event handlers for mobile preview component
-  function handleElementTapped(detail: any) {
-    if (isDesignMode) {
-      selectedElement = detail.element;
-    }
-  }
-
-  function handleCanvasTapped(detail: any) {
-    if (isDesignMode) {
-      selectedElement = null;
-    }
-  }
-
-  // Legacy touch event handlers (unused but kept for reference)
+    // Handle touch start
   function handleTouchStart(event: TouchEvent) {
-    touchStartTime = Date.now();
-    
-    if (event.touches.length === 1) {
+      if (previewMode === "preview") return;
+
       const touch = event.touches[0];
-      touchStartPos = { x: touch.clientX, y: touch.clientY };
-      lastTouchPos = { x: touch.clientX, y: touch.clientY };
-      
-      // Start long press timer
-      longPressTimer = window.setTimeout(() => {
-        isLongPress = true;
-        if (!isDesignMode) {
-          toggleDesignMode();
-          // Haptic feedback if available
-          if (navigator.vibrate) {
-            navigator.vibrate(50);
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left - panX) / zoom;
+      const y = (touch.clientY - rect.top - panY) / zoom;
+
+      // Check if touching an element
+      const touchedElement = elements.find(element => {
+          if (!element.visible) return false;
+
+          if (element.type === "image") {
+              return x >= element.x && x <= element.x + element.width &&
+                  y >= element.y && y <= element.y + element.height;
+          } else if (element.type === "text") {
+              return x >= element.x - 10 && x <= element.x + 120 &&
+                  y >= element.y - 10 && y <= element.y + element.fontSize + 10;
+          } else if (element.type === "bar") {
+              const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
+              const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
+              return dist1 < 15 || dist2 < 15;
           }
-        }
-      }, 500);
+          return false;
+      });
+
+      if (touchedElement && !touchedElement.locked) {
+          selectedElement = touchedElement.id;
+          isDragging = true;
+          dragTarget = touchedElement.id;
+          dragStartX = x;
+          dragStartY = y;
+          if (touchedElement.type === "bar") {
+              dragStartElementX = touchedElement.x1;
+              dragStartElementY = touchedElement.y1;
+          } else {
+              dragStartElementX = touchedElement.x;
+              dragStartElementY = touchedElement.y;
+          }
+          bottomSheetOpen = true;
+          bottomSheetTab = "properties";
+      } else if (event.touches.length === 1) {
+          isPanning = true;
+          lastTouchX = touch.clientX;
+          lastTouchY = touch.clientY;
     } else if (event.touches.length === 2) {
-      // Pinch gesture
-      clearTimeout(longPressTimer);
-      isPinching = true;
-      const touch1 = event.touches[0];
-      const touch2 = event.touches[1];
-      initialPinchDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
+          const dx = event.touches[0].clientX - event.touches[1].clientX;
+          const dy = event.touches[0].clientY - event.touches[1].clientY;
+          lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
     }
+
+      redrawCanvas();
   }
 
+    // Handle touch move
   function handleTouchMove(event: TouchEvent) {
-    if (event.touches.length === 1 && !isPinching) {
-      const touch = event.touches[0];
-      const deltaX = touch.clientX - lastTouchPos.x;
-      const deltaY = touch.clientY - lastTouchPos.y;
-      const distance = Math.hypot(deltaX, deltaY);
-      
-      if (distance > 10) {
-        clearTimeout(longPressTimer);
-        isLongPress = false;
-      }
-      
-      lastTouchPos = { x: touch.clientX, y: touch.clientY };
-      
-      if (isDragging && dragElement) {
-        event.preventDefault();
-        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = (touch.clientX - rect.left) / previewScale;
-        const y = (touch.clientY - rect.top) / previewScale;
-        dragElement.setPos(x, y);
-      }
-    } else if (event.touches.length === 2 && isPinching) {
       event.preventDefault();
-      const touch1 = event.touches[0];
-      const touch2 = event.touches[1];
-      const currentDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
-      
-      const scaleChange = currentDistance / initialPinchDistance;
-      previewScale = Math.max(0.3, Math.min(3, previewScale * scaleChange));
-      initialPinchDistance = currentDistance;
-    }
-  }
 
-  function handleTouchEnd(event: TouchEvent) {
-    clearTimeout(longPressTimer);
-    
-    const touchDuration = Date.now() - touchStartTime;
-    const distance = Math.hypot(
-      lastTouchPos.x - touchStartPos.x,
-      lastTouchPos.y - touchStartPos.y
-    );
-    
-    if (touchDuration < 200 && distance < 10 && !isLongPress) {
-      // Quick tap
-      if (isDesignMode) {
-        // Select element or toggle panel
-        const target = event.target as HTMLElement;
-        const elementId = target.getAttribute('data-element-id');
-        if (elementId) {
-          selectedElement = draggableElements.find(el => el.id === elementId);
-        }
+      if (event.touches.length === 1) {
+          const touch = event.touches[0];
+          const rect = canvas.getBoundingClientRect();
+          const x = (touch.clientX - rect.left - panX) / zoom;
+          const y = (touch.clientY - rect.top - panY) / zoom;
+
+          if (isDragging && dragTarget) {
+              const deltaX = x - dragStartX;
+              const deltaY = y - dragStartY;
+
+              const element = elements.find(e => e.id === dragTarget);
+              if (element) {
+                  const newX = dragStartElementX + deltaX;
+                  const newY = dragStartElementY + deltaY;
+                  updateElementPosition(dragTarget, newX, newY);
+              }
+          } else if (isPanning) {
+              panX += touch.clientX - lastTouchX;
+              panY += touch.clientY - lastTouchY;
+              lastTouchX = touch.clientX;
+              lastTouchY = touch.clientY;
+              redrawCanvas();
+          }
+      } else if (event.touches.length === 2) {
+          const dx = event.touches[0].clientX - event.touches[1].clientX;
+          const dy = event.touches[0].clientY - event.touches[1].clientY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (lastTouchDistance > 0) {
+              const scale = distance / lastTouchDistance;
+              zoom = Math.max(0.5, Math.min(3, zoom * scale));
+              redrawCanvas();
+          }
+
+          lastTouchDistance = distance;
       }
-    }
-    
+  }
+
+    // Handle touch end
+    function handleTouchEnd() {
     isDragging = false;
-    dragElement = null;
-    isPinching = false;
-    isLongPress = false;
+        dragTarget = null;
+        isPanning = false;
+        lastTouchDistance = 0;
+    }
+
+    // Initialize canvas
+    function initCanvas() {
+        if (!canvas || !canvasContainer) return;
+
+        ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const containerRect = canvasContainer.getBoundingClientRect();
+        canvas.width = containerRect.width;
+        canvas.height = containerRect.height;
+
+        // Center template
+        panX = (canvas.width - localTemplate.outputSizeX * zoom) / 2;
+        panY = (canvas.height - localTemplate.outputSizeY * zoom) / 2;
+
+        // Add non-passive touch event listeners
+        canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+
+        redrawCanvas();
   }
 
-  // Save function
-  function handleSave() {
-    dispatch('save');
-  }
+    // Handle resize
+    function handleResize() {
+        if (canvas && canvasContainer) {
+            initCanvas();
+        }
+    }
 
-  // Reset function
-  function handleReset() {
-    dispatch('reset');
+    // Update element property
+    function updateElementProperty(elementId: string, property: string, value: any) {
+        saveUndoState();
+
+        const element = elements.find(e => e.id === elementId);
+        if (!element) return;
+
+        switch (property) {
+            case "fontSize":
+                switch (elementId) {
+                    case "user-text":
+                        localTemplate.templateUser.fontSize = value;
+                        break;
+                    case "guild-rank":
+                        localTemplate.templateGuild.guildRankFontSize = value;
+                        break;
+                    case "guild-level":
+                        localTemplate.templateGuild.guildLevelFontSize = value;
+                        break;
+                    case "club-name":
+                        localTemplate.templateClub.clubNameFontSize = value;
+                        break;
+                    case "time-on-level":
+                        localTemplate.timeOnLevelFontSize = value;
+                        break;
+                    case "awarded":
+                        localTemplate.awardedFontSize = value;
+                        break;
+                }
+                break;
+            case "color":
+                const color = value.replace("#", "");
+                switch (elementId) {
+                    case "user-text":
+                        localTemplate.templateUser.textColor = color;
+                        break;
+                    case "guild-rank":
+                        localTemplate.templateGuild.guildRankColor = color;
+                        break;
+                    case "guild-level":
+                        localTemplate.templateGuild.guildLevelColor = color;
+                        break;
+                    case "club-name":
+                        localTemplate.templateClub.clubNameColor = color;
+                        break;
+                    case "time-on-level":
+                        localTemplate.timeOnLevelColor = color;
+                        break;
+                    case "awarded":
+                        localTemplate.awardedColor = color;
+                        break;
+                    case "progress-bar":
+                        localTemplate.templateBar.barColor = color;
+                        break;
+                }
+                break;
+            case "width":
+                if (elementId === "user-icon") {
+                    localTemplate.templateUser.iconSizeX = value;
+                    if (lockProportions) {
+                        localTemplate.templateUser.iconSizeY = value;
+                    }
+                } else if (elementId === "club-icon") {
+                    localTemplate.templateClub.clubIconSizeX = value;
+                    if (lockProportions) {
+                        localTemplate.templateClub.clubIconSizeY = value;
+                    }
+                } else if (elementId === "progress-bar") {
+                    localTemplate.templateBar.barWidth = value;
+                }
+                break;
+            case "height":
+                if (elementId === "user-icon") {
+                    localTemplate.templateUser.iconSizeY = value;
+                    if (lockProportions) {
+                        localTemplate.templateUser.iconSizeX = value;
+                    }
+                } else if (elementId === "club-icon") {
+                    localTemplate.templateClub.clubIconSizeY = value;
+                    if (lockProportions) {
+                        localTemplate.templateClub.clubIconSizeX = value;
+                    }
+                }
+                break;
+            case "transparency":
+                if (elementId === "progress-bar") {
+                    localTemplate.templateBar.barTransparency = value;
+                }
+                break;
+            case "direction":
+                if (elementId === "progress-bar") {
+                    localTemplate.templateBar.barDirection = value;
+                }
+                break;
+            case "length":
+                if (elementId === "progress-bar") {
+                    localTemplate.templateBar.barLength = value;
+                }
+                break;
+        }
+
+        markAsChanged();
+        redrawCanvas();
   }
 
   onMount(() => {
-    // Prevent default touch behaviors
-    document.addEventListener('touchmove', (e) => {
-      if (viewMode === 'fullscreen') {
-        e.preventDefault();
-      }
-    }, { passive: false });
+      initCanvas();
+      window.addEventListener("resize", handleResize);
   });
 
   onDestroy(() => {
-    clearTimeout(longPressTimer);
-  });
-  // Debug logging
-  run(() => {
-    if (localTemplate) {
-      console.log("Mobile editor received template:", localTemplate);
+      window.removeEventListener("resize", handleResize);
+      if (canvas) {
+          canvas.removeEventListener('touchmove', handleTouchMove);
     }
   });
-  // Draggable elements configuration for mobile
-  let draggableElements = $derived(localTemplate ? [
-    {
-      id: "username",
-      label: "Username",
-      icon: Type,
-      getX: () => localTemplate?.templateUser?.textX || 0,
-      getY: () => localTemplate?.templateUser?.textY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateUser.textX", Math.round(x));
-        handleChange("templateUser.textY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateUser?.showText,
-      color: "#3B82F6",
-      bounds: { width: 120, height: 24 }
-    },
-    {
-      id: "userAvatar",
-      label: "Avatar",
-      icon: User,
-      getX: () => localTemplate?.templateUser?.iconX || 0,
-      getY: () => localTemplate?.templateUser?.iconY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateUser.iconX", Math.round(x));
-        handleChange("templateUser.iconY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateUser?.showIcon,
-      color: "#10B981",
-      bounds: { 
-        width: localTemplate?.templateUser?.iconSizeX || 50, 
-        height: localTemplate?.templateUser?.iconSizeY || 50 
-      }
-    },
-    {
-      id: "guildLevel",
-      label: "Level",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateGuild?.guildLevelX || 0,
-      getY: () => localTemplate?.templateGuild?.guildLevelY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateGuild.guildLevelX", Math.round(x));
-        handleChange("templateGuild.guildLevelY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateGuild?.showGuildLevel,
-      color: "#8B5CF6",
-      bounds: { width: 80, height: 20 }
-    },
-    {
-      id: "guildRank",
-      label: "Rank",
-      icon: Award,
-      getX: () => localTemplate?.templateGuild?.guildRankX || 0,
-      getY: () => localTemplate?.templateGuild?.guildRankY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateGuild.guildRankX", Math.round(x));
-        handleChange("templateGuild.guildRankY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateGuild?.showGuildRank,
-      color: "#EC4899",
-      bounds: { width: 60, height: 20 }
-    },
-    {
-      id: "timeOnLevel",
-      label: "Time",
-      icon: Clock,
-      getX: () => localTemplate?.timeOnLevelX || 0,
-      getY: () => localTemplate?.timeOnLevelY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("timeOnLevelX", Math.round(x));
-        handleChange("timeOnLevelY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.showTimeOnLevel,
-      color: "#F59E0B",
-      bounds: { width: 100, height: 20 }
-    },
-    {
-      id: "clubName",
-      label: "Club",
-      icon: Users,
-      getX: () => localTemplate?.templateClub?.clubNameX || 0,
-      getY: () => localTemplate?.templateClub?.clubNameY || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateClub.clubNameX", Math.round(x));
-        handleChange("templateClub.clubNameY", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateClub?.showClubName,
-      color: "#14B8A6",
-      bounds: { width: 80, height: 20 }
-    },
-    {
-      id: "progressBarStart",
-      label: "Bar Start",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateBar?.barPointAx || 0,
-      getY: () => localTemplate?.templateBar?.barPointAy || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateBar.barPointAx", Math.round(x));
-        handleChange("templateBar.barPointAy", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateBar?.showBar,
-      color: "#EF4444",
-      bounds: { width: 20, height: 20 }
-    },
-    {
-      id: "progressBarEnd",
-      label: "Bar End",
-      icon: BarChart3,
-      getX: () => localTemplate?.templateBar?.barPointBx || 0,
-      getY: () => localTemplate?.templateBar?.barPointBy || 0,
-      setPos: (x: number, y: number) => {
-        handleChange("templateBar.barPointBx", Math.round(x));
-        handleChange("templateBar.barPointBy", Math.round(y));
-      },
-      isVisible: () => localTemplate?.templateBar?.showBar,
-      color: "#EF4444",
-      bounds: { width: 20, height: 20 }
-    }
-  ] : []);
+
+    $effect(() => {
+        if (localTemplate && ctx) {
+            redrawCanvas();
+        }
+    });
 </script>
 
-{#if localTemplate}
-  <div 
-    class="flex flex-col bg-gray-900 text-white touch-manipulation"
-    class:h-full={viewMode !== 'fullscreen'}
-    class:min-h-[calc(100vh-200px)]={viewMode !== 'fullscreen'}
-    class:fixed={viewMode === 'fullscreen'}
-    class:inset-0={viewMode === 'fullscreen'}
-    class:z-50={viewMode === 'fullscreen'}
-  >
-    <!-- Mobile Header -->
-    <div 
-      class="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="p-2 rounded-lg"
-          style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-        >
-          <Image size={20} />
-        </div>
-        <div>
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text}">
-            XP Template
-          </h2>
-          <p class="text-xs" style="color: {$colorStore.muted}">
-            {localTemplate.outputSizeX}×{localTemplate.outputSizeY}px
-          </p>
-        </div>
-      </div>
+<Portal target="body">
+    <div class="fixed inset-0 z-[9999] flex flex-col" transition:fade={{ duration: 300 }}>
+        <!-- Background -->
+        <div class="absolute inset-0" style="background: {$colorStore.background || '#0a0a0a'};"></div>
+        <div class="absolute inset-0"
+             style="background: radial-gradient(circle at center,
+              {$colorStore.gradientStart}20 0%,
+              {$colorStore.gradientEnd}15 50%,
+              {$colorStore.gradientEnd}10 100%);"></div>
 
+        <!-- Top Toolbar -->
+        <div class="relative z-10">
+            <div
+                    class="flex items-center justify-between px-3 py-2 border-b backdrop-blur-xs"
+                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+             border-color: {$colorStore.primary}30;"
+            >
+                <!-- Left section -->
       <div class="flex items-center gap-2">
-        <!-- Quick Actions -->
         <button
-          class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
-          class:ring-2={isDesignMode}
-          style="background: {isDesignMode ? $colorStore.primary + '30' : 'transparent'}; 
-                 ring-color: {$colorStore.primary}; color: {$colorStore.text};"
-          onclick={toggleDesignMode}
-          aria-label="Toggle design mode"
+                class="p-2 rounded-lg transition-all hover:scale-105"
+                onclick={() => { showEditor = false; }}
+                style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
         >
-          <Move size={20} />
+            <ArrowLeft class="w-5 h-5"/>
         </button>
 
-        <button
-          class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
-          class:ring-2={showRealDataPreview}
-          style="background: {showRealDataPreview ? $colorStore.secondary + '30' : $colorStore.primary + '10'}; 
-                 ring-color: {$colorStore.secondary}; color: {$colorStore.text};"
-          onclick={toggleDataPreview}
-          aria-label="Toggle real data preview"
-        >
-          {#if showRealDataPreview}
-            <Eye size={20} />
-          {:else}
-            <EyeOff size={20} />
-          {/if}
-        </button>
+          <div class="w-px h-6" style="background: {$colorStore.primary}20;"/>
 
-        {#if viewMode === 'fullscreen'}
+          <!-- Mode toggle -->
+          <div class="flex rounded-lg p-0.5" style="background: {$colorStore.primary}10;">
+              <button
+                      class="px-2 py-1 rounded-md text-xs font-medium transition-all"
+                      onclick={() => { previewMode = 'edit'; redrawCanvas(); }}
+                      style="background: {previewMode === 'edit' ? $colorStore.primary + '30' : 'transparent'};
+                   color: {previewMode === 'edit' ? $colorStore.primary : $colorStore.muted};"
+              >
+                  Edit
+              </button>
           <button
-            class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
-            style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-            onclick={exitFullscreen}
-            aria-label="Exit fullscreen"
+                  class="px-2 py-1 rounded-md text-xs font-medium transition-all"
+                  onclick={() => { previewMode = 'preview'; redrawCanvas(); }}
+                  style="background: {previewMode === 'preview' ? $colorStore.primary + '30' : 'transparent'};
+                   color: {previewMode === 'preview' ? $colorStore.primary : $colorStore.muted};"
           >
-            <Maximize2 size={20} class="rotate-45" />
+              Preview
           </button>
-        {/if}
+          </div>
       </div>
-    </div>
 
-    <!-- Mobile View Toggle -->
-    {#if viewMode !== 'fullscreen'}
-      <div class="flex bg-gray-800 border-b border-gray-700">
+                <!-- Right section -->
+                <div class="flex items-center gap-2">
+                    <!-- Toolbar toggle -->
         <button
-          class="flex-1 py-3 px-4 text-center transition-all duration-200 touch-manipulation"
-          class:font-semibold={viewMode === 'preview'}
-          style="background: {viewMode === 'preview' ? $colorStore.primary + '20' : 'transparent'};
-                 color: {viewMode === 'preview' ? $colorStore.primary : $colorStore.muted};
-                 border-bottom: {viewMode === 'preview' ? '2px solid ' + $colorStore.primary : 'none'};"
-          onclick={() => viewMode = 'preview'}
+                class="p-1.5 rounded-lg transition-all hover:scale-105"
+                onclick={() => { toolbarExpanded = !toolbarExpanded; }}
+                style="background: {toolbarExpanded ? $colorStore.primary + '20' : $colorStore.primary + '10'}; color: {$colorStore.primary};"
         >
-          Preview
-        </button>
-        <button
-          class="flex-1 py-3 px-4 text-center transition-all duration-200 touch-manipulation"
-          class:font-semibold={viewMode === 'edit'}
-          style="background: {viewMode === 'edit' ? $colorStore.primary + '20' : 'transparent'};
-                 color: {viewMode === 'edit' ? $colorStore.primary : $colorStore.muted};
-                 border-bottom: {viewMode === 'edit' ? '2px solid ' + $colorStore.primary : 'none'};"
-          onclick={() => viewMode = 'edit'}
-        >
-          Settings
-        </button>
-      </div>
-    {/if}
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      {#if viewMode === 'preview' || viewMode === 'fullscreen'}
-        <!-- Preview Mode -->
-        <div class="flex-1 relative">
-          <!-- Zoom Controls -->
-          <div class="absolute top-4 right-4 z-10 flex flex-col gap-2">
-            <button
-              class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; 
-                     border: 1px solid {$colorStore.primary}30; backdrop-filter: blur(8px);"
-              onclick={zoomIn}
-              aria-label="Zoom in"
-            >
-              <ZoomIn size={20} />
-            </button>
-            <button
-              class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; 
-                     border: 1px solid {$colorStore.primary}30; backdrop-filter: blur(8px);"
-              onclick={zoomOut}
-              aria-label="Zoom out"
-            >
-              <ZoomOut size={20} />
-            </button>
-            <button
-              class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
-              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; 
-                     border: 1px solid {$colorStore.secondary}30; backdrop-filter: blur(8px);"
-              onclick={resetZoom}
-              aria-label="Reset zoom"
-            >
-              <Maximize2 size={20} />
-            </button>
-            {#if viewMode === 'preview'}
-              <button
-                class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
-                style="background: {$colorStore.primary}90; color: white; 
-                       backdrop-filter: blur(8px);"
-                onclick={enterFullscreen}
-                aria-label="Enter fullscreen"
-              >
-                <Maximize2 size={20} />
-              </button>
+            {#if toolbarExpanded}
+                <ChevronUp class="w-4 h-4"/>
+            {:else}
+                <ChevronDown class="w-4 h-4"/>
             {/if}
-          </div>
+        </button>
 
-          <!-- Grid Toggle -->
-          {#if isDesignMode}
-            <div class="absolute top-4 left-4 z-10">
-              <button
-                class="p-3 rounded-full shadow-lg transition-all duration-200 touch-manipulation"
-                class:ring-2={showGrid}
-                style="background: {showGrid ? $colorStore.accent + '30' : $colorStore.accent + '20'}; 
-                       color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;
-                       backdrop-filter: blur(8px); ring-color: {$colorStore.accent};"
-                onclick={toggleGrid}
-                aria-label="Toggle grid"
-              >
-                <Grid size={20} />
-              </button>
-            </div>
-          {/if}
-
-          <!-- Template Preview -->
-          <XpMobileTemplatePreview
-            template={localTemplate}
-            userData={showRealDataPreview ? currentUserData : sampleData}
-            scale={previewScale}
-            {showGrid}
-            {gridSize}
-            {isDesignMode}
-            {selectedElement}
-            viewMode={viewMode}
-            touchZoomEnabled={true}
-            panEnabled={true}
-            on:elementSelected={(e) => selectedElement = e.detail.element}
-            on:elementTapped={(e) => handleElementTapped(e.detail)}
-            on:canvasTapped={(e) => handleCanvasTapped(e.detail)}
-            on:scaleChanged={(e) => previewScale = e.detail.scale}
-          />
-
-          <!-- Element Info Overlay -->
-          {#if selectedElement && isDesignMode}
-            <div 
-              class="absolute bottom-4 left-4 right-4 z-10 p-4 rounded-lg shadow-lg"
-              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}40;
-                     backdrop-filter: blur(8px);"
-              transition:slide={{ duration: 200 }}
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="p-2 rounded-lg"
-                    style="background: {selectedElement.color}20; color: {selectedElement.color};"
-                  >
-                    <selectedElement.icon size={16} />
-                  </div>
-                  <div>
-                    <p class="font-medium" style="color: {$colorStore.text}">
-                      {selectedElement.label}
-                    </p>
-                    <p class="text-sm" style="color: {$colorStore.muted}">
-                      X: {Math.round(selectedElement.getX())}, Y: {Math.round(selectedElement.getY())}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  class="p-2 rounded-lg transition-all duration-200 touch-manipulation"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                  onclick={() => selectedElement = null}
-                  aria-label="Deselect element"
-                >
-                  <ChevronDown size={16} />
-                </button>
-              </div>
-            </div>
-          {/if}
-        </div>
-
-      {:else if viewMode === 'edit'}
-        <!-- Edit Mode - Mobile-optimized panels -->
-        <div class="flex-1 overflow-y-auto">
-          <!-- Quick Elements Bar -->
-          {#if isDesignMode}
-            <div class="p-4 bg-gray-800 border-b border-gray-700">
-              <p class="text-sm font-medium mb-3" style="color: {$colorStore.text}">
-                Tap elements to position:
-              </p>
-              <div class="flex gap-2 overflow-x-auto pb-2">
-                {#each draggableElements.filter(el => el.isVisible()) as element (element.id)}
-                  <button
-                    class="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 touch-manipulation"
-                    class:ring-2={selectedElement?.id === element.id}
-                    style="background: {element.color}20; color: {element.color}; 
-                           ring-color: {element.color};"
-                    onclick={() => selectedElement = element}
-                  >
-                    <element.icon size={16} />
-                    <span class="whitespace-nowrap">{element.label}</span>
-                  </button>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <!-- Settings Panels -->
-          <div class="space-y-2 p-4">
-            {#each panels as panel (panel.id)}
-              <div class="rounded-lg overflow-hidden" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                <!-- Panel Header -->
-                <button
-                  class="w-full flex items-center justify-between p-4 transition-all duration-200 touch-manipulation"
-                  style="background: {panelStates[panel.id] ? (panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent) + '20' : 'transparent'};"
-                  onclick={() => {
-                    panelStates[panel.id] = !panelStates[panel.id];
-                    activePanel = panelStates[panel.id] ? panel.id : null;
-                  }}
-                >
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="p-2 rounded-lg"
-                      style="background: {(panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent)}20; color: {(panel.color === 'primary' ? $colorStore.primary : panel.color === 'secondary' ? $colorStore.secondary : $colorStore.accent)};"
+                    <!-- Zoom controls -->
+        <button
+                class="p-1.5 rounded-lg transition-all hover:scale-105"
+                onclick={() => { zoom = Math.max(0.5, zoom - 0.1); redrawCanvas(); }}
+                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+        >
+            <ZoomOut class="w-4 h-4"/>
+        </button>
+                    <span class="text-xs min-w-[40px] text-center" style="color: {$colorStore.text}">
+          {Math.round(zoom * 100)}%
+        </span>
+                    <button
+                            class="p-1.5 rounded-lg transition-all hover:scale-105"
+                            onclick={() => { zoom = Math.min(3, zoom + 0.1); redrawCanvas(); }}
+                            style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                     >
-                      <panel.icon size={20} />
+                        <ZoomIn class="w-4 h-4"/>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expanded toolbar -->
+            {#if toolbarExpanded}
+                <div
+                        class="px-3 py-2 border-b backdrop-blur-xs"
+                        style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
+                        transition:slide={{ duration: 200 }}
+                >
+                    <div class="flex items-center gap-2 overflow-x-auto">
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                                style="background: {useRealData ? $colorStore.secondary + '20' : $colorStore.primary + '10'};
+                   color: {useRealData ? $colorStore.secondary : $colorStore.muted};"
+                                onclick={() => { useRealData = !useRealData; redrawCanvas(); }}
+                        >
+                            {useRealData ? "Real Data" : "Sample Data"}
+                        </button>
+
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                                style="background: {showGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {showGrid ? $colorStore.primary : $colorStore.muted};"
+                                onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
+                        >
+                            <Grid3x3 class="w-3 h-3 inline mr-1"/>
+                            Grid
+                        </button>
+
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                                style="background: {snapToGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {snapToGrid ? $colorStore.primary : $colorStore.muted};"
+                                onclick={() => { snapToGrid = !snapToGrid; }}
+                        >
+                            <Crosshair class="w-3 h-3 inline mr-1"/>
+                            Snap
+                        </button>
+
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                                style="background: {showRulers ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                   color: {showRulers ? $colorStore.primary : $colorStore.muted};"
+                                onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
+                        >
+                            <Ruler class="w-3 h-3 inline mr-1"/>
+                            Rulers
+                        </button>
                     </div>
-                    <span class="font-medium" style="color: {$colorStore.text}">
-                      {panel.title}
-                    </span>
-                  </div>
-                  <div style="color: {$colorStore.muted};">
-                    {#if panelStates[panel.id]}
-                      <ChevronUp size={20} />
-                    {:else}
-                      <ChevronDown size={20} />
-                    {/if}
-                  </div>
-                </button>
+                </div>
+            {/if}
 
-                <!-- Panel Content -->
-                {#if panelStates[panel.id]}
-                  <div class="p-4 border-t" style="border-color: {$colorStore.primary}20;" transition:slide>
-                    {#if panel.id === 'general'}
-                      <!-- Canvas Size Controls -->
-                      <div class="space-y-4">
-                        <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            Canvas Size
-                          </label>
-                          <div class="grid grid-cols-2 gap-3">
-                            <div>
-                              <label class="block text-xs mb-1" style="color: {$colorStore.muted}">Width</label>
-                              <input
-                                type="number"
-                                bind:value={localTemplate.outputSizeX}
-                                oninput={() => handleChange('outputSizeX', localTemplate.outputSizeX)}
-                                class="w-full p-3 rounded-lg bg-gray-800 border text-center font-mono touch-manipulation"
-                                style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                min="300"
-                                max="1200"
-                              />
-                            </div>
-                            <div>
-                              <label class="block text-xs mb-1" style="color: {$colorStore.muted}">Height</label>
-                              <input
-                                type="number"
-                                bind:value={localTemplate.outputSizeY}
-                                oninput={() => handleChange('outputSizeY', localTemplate.outputSizeY)}
-                                class="w-full p-3 rounded-lg bg-gray-800 border text-center font-mono touch-manipulation"
-                                style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                min="150"
-                                max="600"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Size Presets -->
-                        <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            Quick Sizes
-                          </label>
-                          <div class="grid grid-cols-1 gap-2">
-                            <button
-                              class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
-                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
-                                     border: 1px solid {$colorStore.primary}30;"
-                              onclick={() => {
-                                handleChange('outputSizeX', 800);
-                                handleChange('outputSizeY', 280);
-                              }}
-                            >
-                              Standard (800×280)
-                            </button>
-                            <button
-                              class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
-                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
-                                     border: 1px solid {$colorStore.primary}30;"
-                              onclick={() => {
-                                handleChange('outputSizeX', 1000);
-                                handleChange('outputSizeY', 350);
-                              }}
-                            >
-                              Large (1000×350)
-                            </button>
-                            <button
-                              class="p-3 rounded-lg text-sm transition-all duration-200 touch-manipulation"
-                              style="background: {$colorStore.primary}10; color: {$colorStore.text}; 
-                                     border: 1px solid {$colorStore.primary}30;"
-                              onclick={() => {
-                                handleChange('outputSizeX', 600);
-                                handleChange('outputSizeY', 210);
-                              }}
-                            >
-                              Compact (600×210)
-                            </button>
-                          </div>
-                        </div>
-
-                        <!-- Background Image Section -->
-                        <div class="space-y-4 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-                          <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                              Background Image
-                            </label>
-                            <div class="space-y-3">
-                              <div class="flex flex-col gap-3">
-                                <input
-                                  type="url"
-                                  bind:value={imageUrl}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  placeholder="https://example.com/background.jpg"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                                <button
-                                  class="px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium touch-manipulation"
-                                  onclick={loadImage}
-                                  disabled={imageLoading || !imageUrl}
-                                  style="background: {$colorStore.primary}; color: white; opacity: {imageLoading || !imageUrl ? '0.5' : '1'};"
-                                  aria-label="Load background image"
-                                >
-                                  {#if imageLoading}
-                                    <div class="w-4 h-4 border-2 rounded-full animate-spin"
-                                         style="border-color: white; border-top-color: transparent;"></div>
-                                  {:else}
-                                    <Image size={16} />
-                                  {/if}
-                                  <span>Load Image</span>
-                                </button>
-                              </div>
-                              {#if imageError}
-                                <p class="text-sm flex items-center gap-1 p-2 rounded"
-                                   style="color: {$colorStore.accent}; background: {$colorStore.accent}10;">
-                                  ⚠️ {imageError}
-                                </p>
-                              {/if}
-                            </div>
-                          </div>
-
-                          <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors touch-manipulation"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            <input
-                              type="checkbox"
-                              bind:checked={updateSizeFromImage}
-                              class="w-5 h-5 rounded"
-                              style="accent-color: {$colorStore.primary};"
-                            />
-                            <div class="flex-1">
-                              <span class="block text-sm font-medium" style="color: {$colorStore.text}">
-                                Auto-resize canvas
-                              </span>
-                              <span class="block text-xs" style="color: {$colorStore.muted}">
-                                Match canvas size to loaded image dimensions
-                              </span>
-                            </div>
-                          </label>
-                          
-                          {#if previewBackgroundUrl}
-                            <div class="flex items-center justify-between p-3 rounded-lg"
-                                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;">
-                              <span class="text-sm" style="color: {$colorStore.text}">
-                                Background image loaded
-                              </span>
-                              <button
-                                class="text-sm underline touch-manipulation"
-                                style="color: {$colorStore.accent};"
-                                onclick={() => { previewBackgroundUrl = null; imageUrl = ''; }}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          {/if}
-                        </div>
-                      </div>
-
-                    {:else if panel.id === 'user'}
-                      <!-- User Settings -->
-                      <div class="space-y-6">
-                        <!-- Username Toggle -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.primary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Username Text</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Display user's name</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateUser.showText}
-                              onchange={() => handleChange('templateUser.showText', !localTemplate.templateUser.showText)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.primary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateUser.showText}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Text Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Text Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.templateUser.textColor)}
-                                  oninput={handleColorInput('templateUser.textColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.templateUser.textColor)}
-                                  oninput={handleColorInput('templateUser.textColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Font Size -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Font Size: {localTemplate.templateUser.fontSize}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateUser.fontSize}
-                                oninput={() => handleChange('templateUser.fontSize', localTemplate.templateUser.fontSize)}
-                                min="10"
-                                max="100"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                                style="background: linear-gradient(to right, {$colorStore.primary}40 0%, {$colorStore.primary}40 {(localTemplate.templateUser.fontSize - 10) / 0.9}%, {$colorStore.muted}20 {(localTemplate.templateUser.fontSize - 10) / 0.9}%, {$colorStore.muted}20 100%);"
-                              />
-                            </div>
-
-                            <!-- Position Controls -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.textX}
-                                  oninput={() => handleChange('templateUser.textX', localTemplate.templateUser.textX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.textY}
-                                  oninput={() => handleChange('templateUser.textY', localTemplate.templateUser.textY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-
-                        <!-- Avatar Toggle -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.secondary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">User Avatar</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Display user's avatar</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateUser.showIcon}
-                              onchange={() => handleChange('templateUser.showIcon', !localTemplate.templateUser.showIcon)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.secondary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateUser.showIcon}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Avatar Size -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Width</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateUser.iconSizeX}
-                                  oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                                  min="10"
-                                  max="200"
-                                  class="w-full touch-manipulation"
-                                />
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.iconSizeX}
-                                  oninput={() => handleChange('templateUser.iconSizeX', localTemplate.templateUser.iconSizeX)}
-                                  class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Height</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateUser.iconSizeY}
-                                  oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                                  min="10"
-                                  max="200"
-                                  class="w-full touch-manipulation"
-                                />
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.iconSizeY}
-                                  oninput={() => handleChange('templateUser.iconSizeY', localTemplate.templateUser.iconSizeY)}
-                                  class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Position Controls -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.iconX}
-                                  oninput={() => handleChange('templateUser.iconX', localTemplate.templateUser.iconX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateUser.iconY}
-                                  oninput={() => handleChange('templateUser.iconY', localTemplate.templateUser.iconY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
-
-                    {:else if panel.id === 'bar'}
-                      <!-- Progress Bar Settings -->
-                      <div class="space-y-6">
-                        <!-- Progress Bar Toggle -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.accent}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">XP Progress Bar</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show experience progress</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateBar.showBar}
-                              onchange={() => handleChange('templateBar.showBar', !localTemplate.templateBar.showBar)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.accent};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateBar.showBar}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Bar Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Bar Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.templateBar.barColor)}
-                                  oninput={handleColorInput('templateBar.barColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.templateBar.barColor)}
-                                  oninput={handleColorInput('templateBar.barColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Bar Width -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Bar Width: {localTemplate.templateBar.barWidth || 4}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateBar.barWidth}
-                                oninput={() => handleChange('templateBar.barWidth', localTemplate.templateBar.barWidth)}
-                                min="1"
-                                max="30"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Bar Transparency -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Transparency: {Math.round((localTemplate.templateBar.barTransparency / 255) * 100)}%
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateBar.barTransparency}
-                                oninput={() => handleChange('templateBar.barTransparency', localTemplate.templateBar.barTransparency)}
-                                min="0"
-                                max="255"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Bar Length -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Bar Length: {localTemplate.templateBar.barLength}px
-                              </label>
-                              <input
-                                type="number"
-                                bind:value={localTemplate.templateBar.barLength}
-                                oninput={() => handleChange('templateBar.barLength', localTemplate.templateBar.barLength)}
-                                class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                min="1"
-                              />
-                            </div>
-
-                            <!-- Start Point -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Start Point
-                              </label>
-                              <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted}">X</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateBar.barPointAx}
-                                    oninput={() => handleChange('templateBar.barPointAx', localTemplate.templateBar.barPointAx)}
-                                    class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                    style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted}">Y</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateBar.barPointAy}
-                                    oninput={() => handleChange('templateBar.barPointAy', localTemplate.templateBar.barPointAy)}
-                                    class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                    style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            <!-- End Point -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                End Point
-                              </label>
-                              <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted}">X</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateBar.barPointBx}
-                                    oninput={() => handleChange('templateBar.barPointBx', localTemplate.templateBar.barPointBx)}
-                                    class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                    style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                                <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted}">Y</label>
-                                  <input
-                                    type="number"
-                                    bind:value={localTemplate.templateBar.barPointBy}
-                                    oninput={() => handleChange('templateBar.barPointBy', localTemplate.templateBar.barPointBy)}
-                                    class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                    style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
-
-                    {:else if panel.id === 'guild'}
-                      <!-- Guild Settings -->
-                      <div class="space-y-6">
-                        <!-- Guild Level -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.primary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Guild Level</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show server level</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateGuild.showGuildLevel}
-                              onchange={() => handleChange('templateGuild.showGuildLevel', !localTemplate.templateGuild.showGuildLevel)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.primary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateGuild.showGuildLevel}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Guild Level Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Text Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                  oninput={handleColorInput('templateGuild.guildLevelColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.templateGuild.guildLevelColor)}
-                                  oninput={handleColorInput('templateGuild.guildLevelColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Guild Level Font Size -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Font Size: {localTemplate.templateGuild.guildLevelFontSize}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateGuild.guildLevelFontSize}
-                                oninput={() => handleChange('templateGuild.guildLevelFontSize', localTemplate.templateGuild.guildLevelFontSize)}
-                                min="10"
-                                max="100"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Guild Level Position -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateGuild.guildLevelX}
-                                  oninput={() => handleChange('templateGuild.guildLevelX', localTemplate.templateGuild.guildLevelX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateGuild.guildLevelY}
-                                  oninput={() => handleChange('templateGuild.guildLevelY', localTemplate.templateGuild.guildLevelY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-
-                        <!-- Guild Rank -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.secondary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Guild Rank</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show user's rank</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateGuild.showGuildRank}
-                              onchange={() => handleChange('templateGuild.showGuildRank', !localTemplate.templateGuild.showGuildRank)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.secondary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateGuild.showGuildRank}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Guild Rank Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Text Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                  oninput={handleColorInput('templateGuild.guildRankColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.templateGuild.guildRankColor)}
-                                  oninput={handleColorInput('templateGuild.guildRankColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Guild Rank Font Size -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Font Size: {localTemplate.templateGuild.guildRankFontSize}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateGuild.guildRankFontSize}
-                                oninput={() => handleChange('templateGuild.guildRankFontSize', localTemplate.templateGuild.guildRankFontSize)}
-                                min="10"
-                                max="100"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Guild Rank Position -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateGuild.guildRankX}
-                                  oninput={() => handleChange('templateGuild.guildRankX', localTemplate.templateGuild.guildRankX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateGuild.guildRankY}
-                                  oninput={() => handleChange('templateGuild.guildRankY', localTemplate.templateGuild.guildRankY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
-
-                    {:else if panel.id === 'time'}
-                      <!-- Time Display Settings -->
-                      <div class="space-y-6">
-                        <!-- Time on Level Toggle -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.accent}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Time on Level</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show time spent on current level</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.showTimeOnLevel}
-                              onchange={() => handleChange('showTimeOnLevel', !localTemplate.showTimeOnLevel)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.accent};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.showTimeOnLevel}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Time Format -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Format
-                              </label>
-                              <input
-                                type="text"
-                                bind:value={localTemplate.timeOnLevelFormat}
-                                oninput={() => handleChange('timeOnLevelFormat', localTemplate.timeOnLevelFormat)}
-                                class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                placeholder="{0}d{1}h{2}m"
-                              />
-                              <p class="text-xs mt-1 p-2 rounded" style="background: {$colorStore.accent}10; color: {$colorStore.muted};">
-                                Format uses {'{0}'} for days, {'{1}'} for hours, {'{2}'} for minutes
-                              </p>
-                            </div>
-
-                            <!-- Time Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Text Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.timeOnLevelColor)}
-                                  oninput={handleColorInput('timeOnLevelColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.timeOnLevelColor)}
-                                  oninput={handleColorInput('timeOnLevelColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Time Font Size -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Font Size: {localTemplate.timeOnLevelFontSize}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.timeOnLevelFontSize}
-                                oninput={() => handleChange('timeOnLevelFontSize', localTemplate.timeOnLevelFontSize)}
-                                min="10"
-                                max="100"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Time Position -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.timeOnLevelX}
-                                  oninput={() => handleChange('timeOnLevelX', localTemplate.timeOnLevelX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.timeOnLevelY}
-                                  oninput={() => handleChange('timeOnLevelY', localTemplate.timeOnLevelY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.accent}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
-
-                    {:else if panel.id === 'club'}
-                      <!-- Club Settings -->
-                      <div class="space-y-6">
-                        <!-- Club Name -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.primary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Club Name</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show club name text</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateClub.showClubName}
-                              onchange={() => handleChange('templateClub.showClubName', !localTemplate.templateClub.showClubName)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.primary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateClub.showClubName}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Club Name Color -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Text Color
-                              </label>
-                              <div class="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                  oninput={handleColorInput('templateClub.clubNameColor')}
-                                  class="flex-1 p-3 rounded-lg bg-gray-800 border font-mono text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  placeholder="#FFFFFF"
-                                />
-                                <input
-                                  type="color"
-                                  value={formatColor(localTemplate.templateClub.clubNameColor)}
-                                  oninput={handleColorInput('templateClub.clubNameColor')}
-                                  class="w-14 h-12 rounded-lg border cursor-pointer touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30;"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Club Name Font Size -->
-                            <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                Font Size: {localTemplate.templateClub.clubNameFontSize}px
-                              </label>
-                              <input
-                                type="range"
-                                bind:value={localTemplate.templateClub.clubNameFontSize}
-                                oninput={() => handleChange('templateClub.clubNameFontSize', localTemplate.templateClub.clubNameFontSize)}
-                                min="10"
-                                max="100"
-                                class="w-full h-3 rounded-lg appearance-none cursor-pointer touch-manipulation"
-                              />
-                            </div>
-
-                            <!-- Club Name Position -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubNameX}
-                                  oninput={() => handleChange('templateClub.clubNameX', localTemplate.templateClub.clubNameX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubNameY}
-                                  oninput={() => handleChange('templateClub.clubNameY', localTemplate.templateClub.clubNameY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-
-                        <!-- Club Icon -->
-                        <div class="flex items-center justify-between p-4 rounded-lg" 
-                             style="background: {$colorStore.secondary}10;">
-                          <div>
-                            <p class="font-medium" style="color: {$colorStore.text}">Club Icon</p>
-                            <p class="text-sm" style="color: {$colorStore.muted}">Show club icon</p>
-                          </div>
-                          <label class="relative inline-flex items-center cursor-pointer touch-manipulation">
-                            <input
-                              type="checkbox"
-                              class="sr-only peer"
-                              checked={localTemplate.templateClub.showClubIcon}
-                              onchange={() => handleChange('templateClub.showClubIcon', !localTemplate.templateClub.showClubIcon)}
-                            />
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                 style="peer-checked:bg-color: {$colorStore.secondary};">
-                            </div>
-                          </label>
-                        </div>
-
-                        {#if localTemplate.templateClub.showClubIcon}
-                          <div class="space-y-4" transition:slide>
-                            <!-- Club Icon Size -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Width</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateClub.clubIconSizeX}
-                                  oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
-                                  min="10"
-                                  max="200"
-                                  class="w-full touch-manipulation"
-                                />
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubIconSizeX}
-                                  oninput={() => handleChange('templateClub.clubIconSizeX', localTemplate.templateClub.clubIconSizeX)}
-                                  class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Height</label>
-                                <input
-                                  type="range"
-                                  bind:value={localTemplate.templateClub.clubIconSizeY}
-                                  oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
-                                  min="10"
-                                  max="200"
-                                  class="w-full touch-manipulation"
-                                />
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubIconSizeY}
-                                  oninput={() => handleChange('templateClub.clubIconSizeY', localTemplate.templateClub.clubIconSizeY)}
-                                  class="w-full p-2 mt-1 rounded-lg bg-gray-800 border text-sm touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-
-                            <!-- Club Icon Position -->
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position X</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubIconX}
-                                  oninput={() => handleChange('templateClub.clubIconX', localTemplate.templateClub.clubIconX)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                              <div>
-                                <label class="block text-sm mb-1" style="color: {$colorStore.muted}">Position Y</label>
-                                <input
-                                  type="number"
-                                  bind:value={localTemplate.templateClub.clubIconY}
-                                  oninput={() => handleChange('templateClub.clubIconY', localTemplate.templateClub.clubIconY)}
-                                  class="w-full p-3 rounded-lg bg-gray-800 border touch-manipulation"
-                                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
-
-                    {:else}
-                      <!-- Placeholder for future panels -->
-                      <div class="text-center py-8">
-                        <p style="color: {$colorStore.muted}">
-                          {panel.title} settings will be implemented here
-                        </p>
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          </div>
         </div>
-      {/if}
+
+        <!-- Canvas Area -->
+        <div class="flex-1 relative overflow-hidden">
+            <div
+                    bind:this={canvasContainer}
+                    class="w-full h-full"
+                    style="background: radial-gradient(circle at center, {$colorStore.primary}12, transparent);"
+            >
+                <canvas
+                        bind:this={canvas}
+                        class="w-full h-full touch-none"
+                        ontouchend={handleTouchEnd}
+                        ontouchstart={handleTouchStart}
+                />
+            </div>
+
+            <!-- Quick Action Buttons -->
+            {#if showQuickActions && previewMode === "edit"}
+                <div class="absolute right-3 top-3 flex flex-col gap-2">
+                    <button
+                            class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
+                            onclick={() => { bottomSheetOpen = true; bottomSheetTab = "layers"; }}
+                    >
+                        <Layers class="w-5 h-5"/>
+                    </button>
+
+                    <button
+                            class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
+                            onclick={() => { bottomSheetOpen = true; bottomSheetTab = "tools"; }}
+                    >
+                        <Sliders class="w-5 h-5"/>
+                    </button>
+
+                    {#if undoStack.length > 0}
+                        <button
+                                class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
+                                onclick={undo}
+                        >
+                            <RotateCcw class="w-5 h-5"/>
+                        </button>
+                    {/if}
+
+                    {#if redoStack.length > 0}
+                        <button
+                                class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
+                                onclick={redo}
+                        >
+                            <RefreshCw class="w-5 h-5"/>
+                        </button>
+                    {/if}
+                </div>
+            {/if}
+        </div>
+
+        <!-- Bottom Sheet -->
+        {#if bottomSheetOpen}
+            <div
+                    class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all backdrop-blur-md"
+                    style="background: {$colorStore.background}E6; border-color: {$colorStore.primary}30;
+             max-height: 70vh;"
+                    transition:fly={{ y: 100, duration: 300 }}
+            >
+                <!-- Sheet Handle -->
+                <div class="flex justify-center py-2">
+                    <div
+                            class="w-12 h-1.5 rounded-full"
+                            style="background: {$colorStore.primary}30;"
+                    />
+                </div>
+
+                <!-- Sheet Tabs -->
+                <div class="flex items-center justify-between px-4 pb-2">
+                    <div class="flex gap-2">
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                                style="background: {bottomSheetTab === 'layers' ? $colorStore.primary + '20' : 'transparent'};
+                   color: {bottomSheetTab === 'layers' ? $colorStore.primary : $colorStore.muted};"
+                                onclick={() => { bottomSheetTab = 'layers'; }}
+                        >
+                            Layers
+                        </button>
+                        {#if selectedElement}
+                            <button
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                                    style="background: {bottomSheetTab === 'properties' ? $colorStore.primary + '20' : 'transparent'};
+                     color: {bottomSheetTab === 'properties' ? $colorStore.primary : $colorStore.muted};"
+                                    onclick={() => { bottomSheetTab = 'properties'; }}
+                            >
+                                Properties
+                            </button>
+                        {/if}
+                        <button
+                                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                                style="background: {bottomSheetTab === 'tools' ? $colorStore.primary + '20' : 'transparent'};
+                   color: {bottomSheetTab === 'tools' ? $colorStore.primary : $colorStore.muted};"
+                                onclick={() => { bottomSheetTab = 'tools'; }}
+                        >
+                            Tools
+                        </button>
+                    </div>
+
+                    <button
+                            class="p-2 rounded-lg transition-all hover:scale-105"
+                            style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                            onclick={() => { bottomSheetOpen = false; }}
+                    >
+                        <X class="w-4 h-4"/>
+                    </button>
+                </div>
+
+                <!-- Sheet Content -->
+                <div class="px-4 pb-4 overflow-y-auto" style="max-height: calc(70vh - 80px);">
+                    {#if bottomSheetTab === "layers"}
+                        <div class="space-y-2">
+                            {#each elements as element}
+                                <div
+                                        class="p-3 rounded-xl transition-all"
+                                        class:opacity-50={!element.visible}
+                                        style="background: {selectedElement === element.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};
+                       border: 1px solid {selectedElement === element.id ? $colorStore.primary + '40' : 'transparent'};"
+                                        onclick={() => { selectedElement = element.id; bottomSheetTab = "properties"; redrawCanvas(); }}
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <button
+                                                    class="p-2 rounded-lg transition-all hover:scale-110"
+                                                    style="background: {element.visible ? $colorStore.primary + '20' : 'transparent'};"
+                                                    onclick={(e) => { e.stopPropagation(); toggleElementVisibility(element.id); }}
+                                            >
+                                                {#if element.visible}
+                                                    <Eye class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                                {:else}
+                                                    <EyeOff class="w-4 h-4" style="color: {$colorStore.muted}"/>
+                                                {/if}
+                                            </button>
+                                            <div>
+                                                <div class="text-sm font-medium"
+                                                     style="color: {$colorStore.text}">{element.label}</div>
+                                                <div class="text-xs" style="color: {$colorStore.muted}">
+                                                    {#if element.type === "image"}
+                                                        {element.width} × {element.height}px
+                                                    {:else if element.type === "text"}
+                                                        {element.fontSize}px
+                                                    {:else if element.type === "bar"}
+                                                        Progress Bar
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {#if element.locked}
+                                            <Lock class="w-4 h-4" style="color: {$colorStore.accent}"/>
+                                        {/if}
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else if bottomSheetTab === "properties" && selectedElement}
+                        {@const element = elements.find(e => e.id === selectedElement)}
+                        {#if element}
+                            <div class="space-y-4">
+                                <h3 class="text-sm font-semibold flex items-center gap-2"
+                                    style="color: {$colorStore.text}">
+                                    <Layers class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                    {element.label}
+                                </h3>
+
+                                <!-- Position -->
+                                <div>
+                                    <label class="text-xs" style="color: {$colorStore.muted}">Position</label>
+                                    <div class="grid grid-cols-2 gap-2 mt-1">
+                                        <div>
+                                            <input
+                                                    type="number"
+                                                    class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                    placeholder="X"
+                                                    value={element.type === "bar" ? element.x1 : element.x}
+                                                    onchange={(e) => updateElementPosition(element.id, Number(e.currentTarget.value), element.type === "bar" ? element.y1 : element.y)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                    type="number"
+                                                    class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                    placeholder="Y"
+                                                    value={element.type === "bar" ? element.y1 : element.y}
+                                                    onchange={(e) => updateElementPosition(element.id, element.type === "bar" ? element.x1 : element.x, Number(e.currentTarget.value))}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {#if element.type === "image"}
+                                    <!-- Size -->
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Size</label>
+                                        <div class="grid grid-cols-2 gap-2 mt-1">
+                                            <div>
+                                                <input
+                                                        type="number"
+                                                        class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                        placeholder="Width"
+                                                        value={element.width}
+                                                        onchange={(e) => updateElementProperty(element.id, "width", Number(e.currentTarget.value))}
+                                                />
+                                            </div>
+                                            <div>
+                                                <input
+                                                        type="number"
+                                                        class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                        placeholder="Height"
+                                                        value={element.height}
+                                                        onchange={(e) => updateElementProperty(element.id, "height", Number(e.currentTarget.value))}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <button
+                                                    class="flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2"
+                                                    style="background: {lockProportions ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                             color: {lockProportions ? $colorStore.primary : $colorStore.muted};"
+                                                    onclick={() => { lockProportions = !lockProportions; }}
+                                            >
+                                                {#if lockProportions}
+                                                    <Lock class="w-3 h-3"/>
+                                                {:else}
+                                                    <Unlock class="w-3 h-3"/>
+                                                {/if}
+                                                Proportions
+                                            </button>
+                                        </div>
+                                    </div>
+                                {:else if element.type === "text"}
+                                    <!-- Font Size -->
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Font Size</label>
+                                        <input
+                                                type="number"
+                                                class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
+                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                value={element.fontSize}
+                                                onchange={(e) => updateElementProperty(element.id, "fontSize", Number(e.currentTarget.value))}
+                                        />
+                                    </div>
+
+                                    <!-- Color -->
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Color</label>
+                                        <div class="flex gap-2 mt-1">
+                                            <input
+                                                    type="color"
+                                                    class="w-12 h-10 rounded-lg border cursor-pointer"
+                                                    style="border-color: {$colorStore.primary}30;"
+                                                    value={element.color.startsWith('#') ? element.color : `#${element.color}`}
+                                                    onchange={(e) => updateElementProperty(element.id, "color", e.currentTarget.value)}
+                                            />
+                                            <input
+                                                    type="text"
+                                                    class="flex-1 px-3 py-2 rounded-lg border text-sm uppercase"
+                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                    value={element.color}
+                                                    onchange={(e) => updateElementProperty(element.id, "color", e.currentTarget.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                {:else if element.type === "bar"}
+                                    <!-- Bar Settings -->
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Bar Thickness</label>
+                                        <input
+                                                type="number"
+                                                class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
+                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                value={element.width}
+                                                onchange={(e) => updateElementProperty(element.id, "width", Number(e.currentTarget.value))}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Bar Length</label>
+                                        <input
+                                                type="number"
+                                                class="w-full px-3 py-2 rounded-lg border text-sm mt-1"
+                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                value={element.length}
+                                                onchange={(e) => updateElementProperty(element.id, "length", Number(e.currentTarget.value))}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Direction</label>
+                                        <div class="grid grid-cols-2 gap-2 mt-1">
+                                            {#each [{id: 3, label: "Right"}, {id: 2, label: "Left"}, {
+                                                id: 1,
+                                                label: "Down"
+                                            }, {id: 0, label: "Up"}] as dir}
+                                                <button
+                                                        class="py-2 px-3 rounded-lg text-xs font-medium transition-all"
+                                                        style="background: {element.direction === dir.id ? $colorStore.primary + '20' : $colorStore.primary + '10'};
+                               color: {element.direction === dir.id ? $colorStore.primary : $colorStore.muted};"
+                                                        onclick={() => updateElementProperty(element.id, "direction", dir.id)}
+                                                >
+                                                    {dir.label}
+                                                </button>
+                                            {/each}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Color</label>
+                                        <div class="flex gap-2 mt-1">
+                                            <input
+                                                    type="color"
+                                                    class="w-12 h-10 rounded-lg border cursor-pointer"
+                                                    style="border-color: {$colorStore.primary}30;"
+                                                    value={element.color.startsWith('#') ? element.color : `#${element.color}`}
+                                                    onchange={(e) => updateElementProperty(element.id, "color", e.currentTarget.value)}
+                                            />
+                                            <input
+                                                    type="text"
+                                                    class="flex-1 px-3 py-2 rounded-lg border text-sm uppercase"
+                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                    value={element.color}
+                                                    onchange={(e) => updateElementProperty(element.id, "color", e.currentTarget.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">
+                                            Opacity: {element.transparency}%
+                                        </label>
+                                        <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                class="w-full mt-1"
+                                                value={element.transparency}
+                                                oninput={(e) => updateElementProperty(element.id, "transparency", Number(e.currentTarget.value))}
+                                        />
+                                    </div>
+                                {/if}
+                            </div>
+                        {/if}
+                    {:else if bottomSheetTab === "tools"}
+                        <div class="space-y-4">
+                            <!-- Canvas Settings -->
+                            <div>
+                                <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
+                                    style="color: {$colorStore.text}">
+                                    <ImageIcon class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                    Canvas Size
+                                </h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Width</label>
+                                        <input
+                                                type="number"
+                                                class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                bind:value={localTemplate.outputSizeX}
+                                                onchange={() => { markAsChanged(); initCanvas(); }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="text-xs" style="color: {$colorStore.muted}">Height</label>
+                                        <input
+                                                type="number"
+                                                class="w-full px-3 py-2 rounded-lg border text-sm"
+                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                                bind:value={localTemplate.outputSizeY}
+                                                onchange={() => { markAsChanged(); initCanvas(); }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Background -->
+                            <div>
+                                <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
+                                    style="color: {$colorStore.text}">
+                                    <PaintBucket class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                    Background
+                                </h3>
+                                <div class="space-y-2">
+                                    <input
+                                            type="url"
+                                            class="w-full px-3 py-2 rounded-lg border text-sm"
+                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                            placeholder="Custom background URL..."
+                                            value={localTemplate.customXpImageUrl || ""}
+                                            onchange={(e) => {
+                    saveUndoState();
+                    localTemplate.customXpImageUrl = e.currentTarget.value;
+                    markAsChanged();
+                  }}
+                                    />
+                                    <div class="flex gap-2">
+                                        <button
+                                                class="flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2"
+                                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                        >
+                                            <Upload class="w-4 h-4"/>
+                                            Upload
+                                        </button>
+                                        <button
+                                                class="flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2"
+                                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                        >
+                                            <Download class="w-4 h-4"/>
+                                            Export
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Grid Settings -->
+                            <div>
+                                <h3 class="text-sm font-semibold flex items-center gap-2 mb-3"
+                                    style="color: {$colorStore.text}">
+                                    <Grid3x3 class="w-4 h-4" style="color: {$colorStore.primary}"/>
+                                    Grid Size
+                                </h3>
+                                <input
+                                        type="range"
+                                        min="5"
+                                        max="50"
+                                        step="5"
+                                        class="w-full"
+                                        bind:value={gridSize}
+                                        oninput={() => redrawCanvas()}
+                                />
+                                <div class="flex justify-between text-xs mt-1" style="color: {$colorStore.muted}">
+                                    <span>5px</span>
+                                    <span>{gridSize}px</span>
+                                    <span>50px</span>
+                                </div>
+                            </div>
+
+                            <!-- Reset -->
+                            <button
+                                    class="w-full py-3 px-4 rounded-lg font-medium transition-all hover:scale-105 flex items-center justify-center gap-2"
+                                    style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
+                                    onclick={() => {
+                zoom = 1;
+                panX = (canvas.width - localTemplate.outputSizeX) / 2;
+                panY = (canvas.height - localTemplate.outputSizeY) / 2;
+                redrawCanvas();
+              }}
+                            >
+                                <Maximize2 class="w-4 h-4"/>
+                                Reset View
+                            </button>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+        {/if}
     </div>
-
-    <!-- Mobile Action Bar -->
-    {#if changedSettings.has('template')}
-      <div 
-        class="flex gap-3 p-4 bg-gray-800 border-t border-gray-700 safe-area-inset-bottom"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20);"
-        transition:slide
-      >
-        <button
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 touch-manipulation"
-          style="background: {$colorStore.accent}30; color: {$colorStore.accent};"
-          onclick={handleReset}
-          aria-label="Reset changes"
-        >
-          <RotateCcw size={20} />
-          <span>Reset</span>
-        </button>
-        <button
-          class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200 touch-manipulation"
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
-          onclick={handleSave}
-          aria-label="Save changes"
-        >
-          <Save size={20} />
-          <span>Save</span>
-        </button>
-      </div>
-    {/if}
-  </div>
-{:else}
-  <div class="flex items-center justify-center h-64">
-    <p style="color: {$colorStore.muted}">No template data available</p>
-  </div>
-{/if}
-
-<style lang="postcss">
-  .touch-manipulation {
-    touch-action: manipulation;
-  }
-  
-  .safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /* Custom range slider styling for mobile */
-  input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    background: #374151;
-    height: 6px;
-    border-radius: 3px;
-    cursor: pointer;
-    outline: none;
-  }
-
-  input[type="range"]::-webkit-slider-track {
-    -webkit-appearance: none;
-    appearance: none;
-    background: #374151;
-    height: 6px;
-    border-radius: 3px;
-    border: none;
-    outline: none;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid #3b82f6;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    margin-top: -7px; /* Center the thumb on the track */
-  }
-
-  input[type="range"]::-moz-range-track {
-    background: #374151;
-    height: 6px;
-    border-radius: 3px;
-    border: none;
-    outline: none;
-  }
-
-  input[type="range"]::-moz-range-thumb {
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid #3b82f6;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    border: none; /* Remove default border */
-  }
-
-  /* Firefox specific fixes */
-  input[type="range"]::-moz-range-progress {
-    background: #3b82f6;
-    height: 6px;
-    border-radius: 3px;
-  }
-
-  /* Edge/IE specific */
-  input[type="range"]::-ms-track {
-    background: #374151;
-    height: 6px;
-    border-radius: 3px;
-    border: none;
-    color: transparent;
-  }
-
-  input[type="range"]::-ms-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid #3b82f6;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  /* Improve touch targets on mobile */
-  @media (pointer: coarse) {
-    button, input, select {
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    .touch-manipulation {
-      touch-action: manipulation;
-    }
-  }
-
-  /* Custom scrollbar for mobile */
-  :global(::-webkit-scrollbar) {
-    width: 4px;
-  }
-  
-  :global(::-webkit-scrollbar-track) {
-    background: #1f2937;
-  }
-  
-  :global(::-webkit-scrollbar-thumb) {
-    background: #4b5563;
-    border-radius: 2px;
-  }
-  
-  :global(::-webkit-scrollbar-thumb:hover) {
-    background: #6b7280;
-  }
-</style>
+</Portal>
