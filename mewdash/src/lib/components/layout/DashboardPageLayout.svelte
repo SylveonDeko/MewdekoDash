@@ -1,18 +1,18 @@
 <!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (status-messages to status_messages) making the component unusable -->
 <!-- DashboardPageLayout.svelte -->
 <script lang="ts">
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    // Lifecycle
-    import {createEventDispatcher, onDestroy, onMount} from 'svelte';
-    import {browser} from "$app/environment";
-    import {ChevronLeft, ChevronRight} from "lucide-svelte";
-    import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import {goto} from "$app/navigation";
-    import {registerTabFeatures, unregisterSearchFeatures} from "$lib/stores/searchStore";
+  import {fade, fly} from "svelte/transition";
+  import {colorStore} from "$lib/stores/colorStore";
+  // Lifecycle
+  import {createEventDispatcher, onDestroy, onMount} from 'svelte';
+  import {browser} from "$app/environment";
+  import {ChevronLeft, ChevronRight} from "lucide-svelte";
+  import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import {goto} from "$app/navigation";
+  import {registerTabFeatures, unregisterSearchFeatures} from "$lib/stores/searchStore";
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
 
   // Props
   export let title: string;
@@ -383,20 +383,20 @@
           
           <!-- Sub-tab list with pill style -->
           <div class="flex justify-center">
-            <div 
+            <div
               bind:this={subTabContainer}
-              class="grid grid-cols-{currentSubTabs.length} gap-1 overflow-x-auto scrollbar-hide scroll-smooth p-1 rounded-lg {subTabsOverflow ? 'mx-8 md:mx-0' : ''}"
-              style="background: {$colorStore.primary}05;"
+              class="flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-smooth p-1.5 rounded-xl {subTabsOverflow ? 'mx-8 md:mx-0' : ''}"
+              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;"
               role="tablist"
               aria-label="Sub navigation tabs"
             >
             {#each currentSubTabs as subTab, index}
               <button
-                      class="relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-md min-w-max"
+                      class="relative flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-lg hover:scale-105"
                 class:active={activeSubTab === subTab.id}
                 style="color: {activeSubTab === subTab.id ? $colorStore.text : $colorStore.muted};
-                       background: {activeSubTab === subTab.id ? $colorStore.primary + '20' : 'transparent'};
-                       {activeSubTab === subTab.id ? `box-shadow: 0 0 0 1px ${$colorStore.primary}30;` : ''};
+                       background: {activeSubTab === subTab.id ? $colorStore.primary + '25' : 'transparent'};
+                       {activeSubTab === subTab.id ? `border: 1px solid ${$colorStore.primary}30;` : 'border: 1px solid transparent;'};
                        focus:ring-color: {$colorStore.primary};"
                 on:click={() => handleSubTabChange(subTab.id)}
                 on:keydown={(e) => handleKeyDown(e, currentSubTabs, activeSubTab, true)}

@@ -1,15 +1,15 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {api} from "$lib/api.ts";
-    import type {BotInstance} from "$lib/types/models.ts";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
-    import {fade, fly} from "svelte/transition";
-    import {goto} from "$app/navigation";
-    import {page} from "$app/stores";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {browser} from "$app/environment";
+  import {onMount} from "svelte";
+  import {api} from "$lib/api.ts";
+  import type {BotInstance} from "$lib/types/models.ts";
+  import {currentInstance} from "$lib/stores/instanceStore.ts";
+  import {fade, fly} from "svelte/transition";
+  import {goto} from "$app/navigation";
+  import {page} from "$app/stores";
+  import {colorStore} from "$lib/stores/colorStore";
+  import {browser} from "$app/environment";
 
-    interface Props {
+  interface Props {
     data: any;
   }
 
@@ -46,10 +46,7 @@
     };
 
     try {
-      console.log(`Checking mutual guilds for instance ${instance.botName} (${instanceId})`);
-      const mutualGuilds = await api.getMutualGuilds(BigInt(data.user.id), undefined, customHeaders);
-
-      console.log(`Instance ${instance.botName}: mutualGuilds =`, mutualGuilds);
+        const mutualGuilds = await api.getMutualGuilds(data.user.id, true, fetch, customHeaders);
 
       // Check if mutualGuilds is null, undefined, or empty
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
@@ -62,10 +59,8 @@
       };
       instanceStates = { ...instanceStates }; // Trigger reactivity
 
-      console.log(`Instance ${instance.botName}: hasMutualGuild = ${hasMutual}`);
       return hasMutual;
     } catch (err: any) {
-      console.log(`Error checking mutual guilds for instance ${instance.botName}:`, err);
 
       // Check if it's a 404 error (no mutual guilds found)
       const is404 = err?.message?.includes("404") || err?.status === 404 || err?.response?.status === 404;
@@ -244,17 +239,6 @@
     >
       <p class="text-xl" style="color: {$colorStore.text}">No bot instances found in your servers</p>
       <p class="mt-2" style="color: {$colorStore.muted}">Join a server with one of our bots to manage it</p>
-
-      <!-- Debug info (remove in production) -->
-        <details class="mt-4 text-left bg-gray-800 p-4 rounded-sm">
-        <summary class="cursor-pointer text-gray-300">Debug Info</summary>
-        <div class="mt-2 text-sm text-gray-400">
-          <p>Total instances loaded: {instances.length}</p>
-          <p>Instance states:</p>
-          <pre
-                  class="text-xs mt-2 bg-gray-900 p-2 rounded-sm overflow-x-auto">{JSON.stringify(instanceStates, null, 2)}</pre>
-        </div>
-      </details>
     </div>
   {:else}
     <div
