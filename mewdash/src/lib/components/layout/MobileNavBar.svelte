@@ -268,7 +268,7 @@
     };
 
     try {
-      const mutualGuilds = await api.getMutualGuilds(BigInt(userData.id), undefined, customHeaders);
+        const mutualGuilds = await api.getMutualGuilds(userData.id, true, fetch, customHeaders);
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
 
       instanceStates[instanceId] = {
@@ -384,16 +384,17 @@
 <!-- Only show on mobile -->
 <div class="md:hidden">
   {#if $currentInstance}
-    <!-- Music Mini Player -->
+      <!-- Music Mini Player - Floating above nav -->
     {#if musicPlaying}
-      <div
-        class="fixed bottom-16 left-0 right-0 border-t z-40 py-2 px-3 backdrop-blur-md"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);"
-        style:border-color="{$colorStore.primary}30"
-        transition:slide={{ duration: 200, axis: 'y' }}
-        role="status"
-        aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
-      >
+        <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-40"
+             style="padding-bottom: calc(80px + env(safe-area-inset-bottom));">
+            <div
+                    class="pointer-events-auto mx-4 w-full max-w-md py-2 px-3 backdrop-blur-md rounded-2xl shadow-lg"
+                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
+                    transition:slide={{ duration: 200, axis: 'y' }}
+                    role="status"
+                    aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
+            >
         <div class="flex items-center gap-3">
           <div
                   class="w-8 h-8 rounded-lg shrink-0 overflow-hidden bg-cover bg-center"
@@ -426,21 +427,21 @@
               <i class="fa-solid fa-music text-sm" style="color: {$colorStore.primary}" aria-hidden="true"></i>
           </a>
         </div>
+            </div>
       </div>
     {/if}
 
-    <!-- Bottom Navigation Bar -->
-    <nav
-      class="fixed bottom-0 left-0 right-0 border-t z-50 transition-all duration-300 ease-out backdrop-blur-md"
-      class:translate-y-0={visible}
-      class:translate-y-full={!visible}
-      class:opacity-95={isNavigating}
-      class:scale-[0.98]={isNavigating}
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}80);"
-      style:border-color="{$colorStore.primary}30"
-      aria-label="Mobile navigation"
-    >
-      <div class="flex justify-around">
+      <!-- Bottom Navigation Bar - Floating Pill Style -->
+      <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-50"
+           style="padding-bottom: calc(12px + env(safe-area-inset-bottom));">
+          <nav
+                  class="pointer-events-auto mx-4 w-full max-w-md transition-all duration-300 ease-out backdrop-blur-md rounded-full shadow-2xl"
+                  class:translate-y-0={visible}
+                  class:translate-y-full={!visible}
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
+                  aria-label="Mobile navigation"
+          >
+              <div class="flex justify-around py-1.5 px-2">
         {#each effectiveNavItems as item, i}
           {#if item.isMore || item.isInstanceSelector}
             <!-- More menu / Instance selector button -->
@@ -487,8 +488,6 @@
               <a
                       href={item.href}
                       class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      class:opacity-60={isNavigating && navigationLoadingTarget !== item.label}
-                      class:scale-110={isNavigating && navigationLoadingTarget === item.label}
                       aria-current={activeIndex === i ? 'page' : undefined}
                       style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
                       style:focus:ring-color={$colorStore.primary}
@@ -518,28 +517,17 @@
               })}
               >
                   <div class="relative">
-                      <i class="{item.icon} text-xl" aria-hidden="true"></i>
+                      <i class="{item.icon} text-xl {isNavigating && navigationLoadingTarget === item.label ? 'animate-pulse' : ''}"
+                         aria-hidden="true"
+                         style="color: {isNavigating && navigationLoadingTarget === item.label ? $colorStore.primary : 'inherit'}"></i>
 
                       <!-- Active indicator dot -->
-                      {#if activeIndex === i}
+                      {#if activeIndex === i && !(isNavigating && navigationLoadingTarget === item.label)}
                           <div
                                   class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
                                   style:background={$colorStore.primary}
                                   transition:scale={{ duration: 300, easing: cubicOut }}
                           ></div>
-                      {/if}
-
-                      <!-- Loading indicator -->
-                      {#if isNavigating && navigationLoadingTarget === item.label}
-                          <div
-                                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-lg"
-                                  transition:fade={{ duration: 150 }}
-                          >
-                              <div
-                                      class="w-4 h-4 border-2 rounded-full animate-spin"
-                                      style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"
-                              ></div>
-                          </div>
                       {/if}
 
                       <!-- Music playing indicator -->
@@ -566,14 +554,15 @@
           {/if}
         {/each}
       </div>
-    </nav>
+          </nav>
+      </div>
 
       <!-- Menus rendered outside nav to avoid blur stacking -->
       {#if activeMenuType && (showInstanceMenu || showMoreMenu)}
           <!-- Backdrop -->
           <div
-                  class="fixed inset-0 z-40"
-                  style="background: {$colorStore.background}60; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
+                  class="fixed inset-0 z-40 backdrop-blur-md"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}60 0%, {$colorStore.gradientMid}50 50%, {$colorStore.gradientEnd}60 100%);"
                   onclick={() => {
           showMoreMenu = false;
           showInstanceMenu = false;
@@ -585,11 +574,10 @@
 
           <!-- Menu -->
           <div
-                  class="fixed left-4 right-4 rounded-2xl shadow-2xl border z-50"
-                  style="bottom: 70px; max-height: 60vh;
-         background: linear-gradient(135deg, {$colorStore.background}F5, {$colorStore.background}EE);
-         border-color: {$colorStore.primary}50;
-         box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);"
+                  class="fixed left-4 right-4 rounded-2xl shadow-2xl border z-50 backdrop-blur-md"
+                  style="bottom: calc(80px + env(safe-area-inset-bottom)); max-height: 60vh;
+         background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95, {$colorStore.gradientEnd}95);
+         border-color: {$colorStore.primary}50;"
                   transition:slide={{ duration: 250, axis: 'y', easing: cubicOut }}
                   role="menu"
                   aria-label="{activeMenuType === 'instance' ? 'Instance selection' : 'Additional navigation options'}"

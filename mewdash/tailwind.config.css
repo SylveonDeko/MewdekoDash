@@ -19,3 +19,20 @@
 
 /* Import typography plugin */
 @plugin "@tailwindcss/typography";
+
+/* Safe area utilities */
+@utility pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@utility pt-safe {
+    padding-top: env(safe-area-inset-top, 0);
+}
+
+@utility pl-safe {
+    padding-left: env(safe-area-inset-left, 0);
+}
+
+@utility pr-safe {
+    padding-right: env(safe-area-inset-right, 0);
+}
