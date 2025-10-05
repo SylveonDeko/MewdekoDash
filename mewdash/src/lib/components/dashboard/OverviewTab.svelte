@@ -9,6 +9,7 @@
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
     import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
+    import BotGuildProfile from "$lib/components/settings/BotGuildProfile.svelte";
 
 
     interface Props {
@@ -100,6 +101,9 @@
 </script>
 
 <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
+
+  <!-- Bot Guild Profile -->
+  <BotGuildProfile />
 
   <!-- 4-Column Desktop Grid Layout -->
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

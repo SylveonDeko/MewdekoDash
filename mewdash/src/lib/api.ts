@@ -1091,6 +1091,26 @@ export const api = {
   getGuildInfo: (guildId: bigint) =>
     apiRequest<import("$lib/types/discordGuild").GuildInfo>(`guild/${guildId}/info`),
 
+  // Bot Guild Profile
+  getBotGuildProfile: (guildId: bigint) =>
+    apiRequest<{
+      avatar: string | null;
+      avatarUrl: string | null;
+      banner: string | null;
+      bannerUrl: string | null;
+      bio: string | null;
+      nickname: string | null;
+    }>(`guild/${guildId}/bot-profile`),
+
+  setBotGuildAvatar: (guildId: bigint, avatarUrl: string) =>
+    apiRequest<{ success: boolean; message: string }>(`guild/${guildId}/bot-profile`, "POST", { avatarUrl }),
+
+  setBotGuildBanner: (guildId: bigint, bannerUrl: string) =>
+    apiRequest<{ success: boolean; message: string }>(`guild/${guildId}/bot-profile`, "POST", { bannerUrl }),
+
+  setBotGuildBio: (guildId: bigint, bio: string) =>
+    apiRequest<{ success: boolean; message: string }>(`guild/${guildId}/bot-profile`, "POST", { bio }),
+
   getGuildTextChannels: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
       `ClientOperations/textchannels/${guildId}`

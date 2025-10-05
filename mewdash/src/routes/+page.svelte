@@ -671,6 +671,49 @@
           </p>
         </div>
       </div>
+
+      <!-- Bot Customization Callout -->
+      <div class="mb-16 px-4">
+        <div class="rounded-2xl border p-6 sm:p-8 max-w-4xl mx-auto"
+             style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}12);
+                    border-color: {$colorStore.primary}30;"
+             in:fly={{ y: 20, duration: 400 }}>
+          <div class="flex flex-col md:flex-row items-center gap-6">
+            <!-- Icon/Visual -->
+            <div class="flex-shrink-0">
+              <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl"
+                   style="background: {$colorStore.primary}15; border: 2px solid {$colorStore.primary}30;">
+                🎨
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 text-center md:text-left">
+              <div class="inline-block px-3 py-1 rounded-full mb-3"
+                   style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30;">
+                <span class="text-xs font-semibold" style="color: {$colorStore.primary}">Unique Feature</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold mb-2" style="color: {$colorStore.text}">
+                Don't like the default avatar? <span style="color: {$colorStore.primary}">Change it!</span>
+              </h3>
+              <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">
+                Customize the bot's <span class="font-semibold" style="color: {$colorStore.text}">avatar, banner, and bio</span> in <span class="font-semibold" style="color: {$colorStore.text}">every server you invite it to</span> — completely free.
+                Make Mewdeko truly yours with per-server customization!
+              </p>
+            </div>
+
+            <!-- CTA -->
+            <div class="flex-shrink-0">
+              <a href="/dashboard"
+                 class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105"
+                 style="background: {$colorStore.primary}; color: {$colorStore.text}; box-shadow: 0 4px 20px {$colorStore.primary}30;">
+                Try Now
+                <span>→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <!-- Top 4 Core Features -->
       <div class="px-4 mb-16">
