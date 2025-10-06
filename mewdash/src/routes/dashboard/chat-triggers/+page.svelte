@@ -1149,7 +1149,7 @@
                           <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
                             <input type="checkbox" 
                                    bind:checked={trigger.dmResponse}
-                                   class="sr-only peer"></i>
+                                   class="sr-only peer" />
                               <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Send as DM</span>
@@ -1158,7 +1158,7 @@
                           <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
                             <input type="checkbox" 
                                    bind:checked={trigger.containsAnywhere}
-                                   class="sr-only peer"></i>
+                                   class="sr-only peer" />
                               <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Match anywhere in message</span>
@@ -1275,9 +1275,9 @@
                 <label for="new-response" class="flex items-center gap-2 text-sm font-medium mb-2" style="color: {colors.text}">
                   Response Message
                   <abbr title="required" aria-label="required">*</abbr>
-                  <Tooltip 
-                    placement="bottom" 
-                    text="Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!"></i>
+                  <Tooltip
+                    placement="bottom"
+                    text="Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!" />
                 </label>
                 <textarea
                   id="new-response"
@@ -1310,16 +1310,16 @@
             <div class="space-y-3">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
                 Valid Trigger Types
-                <Tooltip 
-                  placement="bottom" 
-                  text="Choose how this trigger activates: Messages (regular chat), Slash Commands (requires setup), Buttons (interactive), or Reactions (emoji responses). Multiple types can be enabled."></i>
+                <Tooltip
+                  placement="bottom"
+                  text="Choose how this trigger activates: Messages (regular chat), Slash Commands (requires setup), Buttons (interactive), or Reactions (emoji responses). Multiple types can be enabled." />
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesMessage}
                          onchange={validateTriggerOptions}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1334,7 +1334,7 @@
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesInteraction}
                          onchange={validateTriggerOptions}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1349,7 +1349,7 @@
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesButton}
                          onchange={validateTriggerOptions}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1364,7 +1364,7 @@
                   <input type="checkbox" 
                          bind:checked={newTrigger.validTriggerTypesReactions}
                          onchange={validateTriggerOptions}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1385,9 +1385,9 @@
               <div class="space-y-3" transition:slide>
                 <h4 class="font-semibold flex items-center gap-2" style="color: {colors.text}">
                   Regular Expression Testing
-                  <Tooltip 
-                    placement="bottom" 
-                    text="Test your regex pattern against sample text to ensure it matches correctly and prevents unexpected behavior."></i>
+                  <Tooltip
+                    placement="bottom"
+                    text="Test your regex pattern against sample text to ensure it matches correctly and prevents unexpected behavior." />
                 </h4>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
@@ -1429,9 +1429,9 @@
             <div class="space-y-4">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
                 Role Management
-                <Tooltip 
-                  placement="bottom" 
-                  text="Grant or remove Discord roles when triggered. Useful for role reactions, access controls, and rewards."></i>
+                <Tooltip
+                  placement="bottom"
+                  text="Grant or remove Discord roles when triggered. Useful for role reactions, access controls, and rewards." />
               </h3>
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
@@ -1483,7 +1483,7 @@
                          bind:checked={newTrigger.autoDeleteTrigger}
                          onchange={validateTriggerOptions}
                          disabled={newTrigger.reactToTrigger}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1494,16 +1494,16 @@
                   </div>
                   <span style="color: {colors.text}">Auto-delete trigger message</span>
                   <div class="ml-auto">
-                    <Tooltip 
-                      placement="top" 
-                      text="Automatically deletes the user's message that triggered this response. Cannot be used with 'React to trigger'."></i>
+                    <Tooltip
+                      placement="top"
+                      text="Automatically deletes the user's message that triggered this response. Cannot be used with 'React to trigger'." />
                   </div>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.dmResponse}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1518,7 +1518,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.containsAnywhere}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1529,9 +1529,9 @@
                   </div>
                   <span style="color: {colors.text}">Match anywhere in message</span>
                   <div class="ml-auto">
-                    <Tooltip 
-                      placement="top" 
-                      text="When enabled, the trigger can be found anywhere within a message. When disabled, the message must start with the trigger text."></i>
+                    <Tooltip
+                      placement="top"
+                      text="When enabled, the trigger can be found anywhere within a message. When disabled, the message must start with the trigger text." />
                   </div>
                 </label>
 
@@ -1541,7 +1541,7 @@
                          bind:checked={newTrigger.reactToTrigger}
                          onchange={validateTriggerOptions}
                          disabled={newTrigger.autoDeleteTrigger}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1552,16 +1552,16 @@
                   </div>
                   <span style="color: {colors.text}">React to trigger message</span>
                   <div class="ml-auto">
-                    <Tooltip 
-                      placement="top" 
-                      text="Adds reaction emojis to the user's message instead of the bot's response. Cannot be used with 'Auto-delete trigger'."></i>
+                    <Tooltip
+                      placement="top"
+                      text="Adds reaction emojis to the user's message instead of the bot's response. Cannot be used with 'Auto-delete trigger'." />
                   </div>
                 </label>
 
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.noRespond}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1576,7 +1576,7 @@
                 <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
                   <input type="checkbox" 
                          bind:checked={newTrigger.ownerOnly}
-                         class="sr-only peer"></i>
+                         class="sr-only peer" />
                   <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                             after:content-[''] after:absolute after:top-[2px]
                             after:left-[2px] after:bg-white after:rounded-full
@@ -1601,9 +1601,9 @@
               >
                 <i class="fa-solid {showAdvancedOptions ? 'fa-chevron-up' : 'fa-chevron-right'}" style="font-size: 20px;"></i>
                 Advanced Configuration
-                <Tooltip 
-                  placement="bottom" 
-                  text="Advanced options for prefix requirements, role targeting, and interaction commands. Most users won't need these."></i>
+                <Tooltip
+                  placement="bottom"
+                  text="Advanced options for prefix requirements, role targeting, and interaction commands. Most users won't need these." />
               </button>
 
               {#if showAdvancedOptions}
@@ -1674,7 +1674,7 @@
                       <label class="flex items-center gap-3">
                         <input type="checkbox" 
                                bind:checked={newTrigger.allowTarget}
-                               class="sr-only peer"></i>
+                               class="sr-only peer" />
                         <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
                                   after:content-[''] after:absolute after:top-[2px]
                                   after:left-[2px] after:bg-white after:rounded-full
