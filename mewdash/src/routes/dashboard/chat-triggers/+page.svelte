@@ -1134,10 +1134,10 @@
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
-                            <input type="checkbox" 
+                            <input type="checkbox"
                                    bind:checked={trigger.autoDeleteTrigger}
                                    class="sr-only peer"
-                                   aria-describedby="auto-delete-desc-{trigger.id}"></i>
+                                   aria-describedby="auto-delete-desc-{trigger.id}" />
                               <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
                                  style="peer-checked:bg-color: {colors.primary}; {trigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
                             <span style="color: {colors.text}">Delete trigger message</span>
