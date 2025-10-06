@@ -15,19 +15,19 @@
 
   // Category options for DiscordSelector
   const categoryOptions = [
-    { id: "all", name: "All Categories", emoji: "🌐" },
-    { id: "afk", name: "AFK", emoji: "💤" },
-    { id: "suggest", name: "Suggestions", emoji: "💡" },
-    { id: "user", name: "User", emoji: "👤" },
-    { id: "server", name: "Server", emoji: "🏠" },
-    { id: "stream", name: "Stream", emoji: "📺" },
-    { id: "birthday", name: "Birthday", emoji: "🎂" },
-    { id: "chat-trigger", name: "Chat Triggers", emoji: "⚡" },
-    { id: "giveaway", name: "Giveaway", emoji: "🎁" },
-    { id: "ban", name: "Moderation/Ban", emoji: "🔨" },
-    { id: "inviter", name: "Inviter", emoji: "📨" },
-    { id: "xp", name: "XP System", emoji: "⭐" },
-    { id: "random", name: "Random", emoji: "🎲" }
+    { id: "all", name: "All Categories", icon: "fa-globe" },
+    { id: "afk", name: "AFK", icon: "fa-moon" },
+    { id: "suggest", name: "Suggestions", icon: "fa-lightbulb" },
+    { id: "user", name: "User", icon: "fa-user" },
+    { id: "server", name: "Server", icon: "fa-server" },
+    { id: "stream", name: "Stream", icon: "fa-video" },
+    { id: "birthday", name: "Birthday", icon: "fa-cake-candles" },
+    { id: "chat-trigger", name: "Chat Triggers", icon: "fa-bolt" },
+    { id: "giveaway", name: "Giveaway", icon: "fa-gift" },
+    { id: "ban", name: "Moderation/Ban", icon: "fa-gavel" },
+    { id: "inviter", name: "Inviter", icon: "fa-envelope" },
+    { id: "xp", name: "XP System", icon: "fa-star" },
+    { id: "random", name: "Random", icon: "fa-dice" }
   ];
 
   // Placeholder data structure
@@ -335,11 +335,7 @@
             <!-- Search Bar -->
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg class="h-5 w-5" style="color: {$colorStore.muted};" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <i class="fa-solid fa-magnifying-glass" style="color: {$colorStore.muted}; font-size: 20px;"></i>
               </div>
               <input
                 type="search"
@@ -357,9 +353,7 @@
                   onclick={() => searchQuery = ''}
                   aria-label="Clear search"
                 >
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                 </button>
               {/if}
             </div>
@@ -394,7 +388,7 @@
             <div class="text-center">
               <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
-                <span class="text-2xl">💬</span>
+                <i class="fa-solid fa-comment text-2xl" style="color: {$colorStore.primary};"></i>
               </div>
               <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Messages & Greets</h3>
               <p class="text-sm" style="color: {$colorStore.muted};">Use in welcome messages, custom reactions, and chat
@@ -403,7 +397,7 @@
             <div class="text-center">
               <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
-                <span class="text-2xl">📋</span>
+                <i class="fa-solid fa-code text-2xl" style="color: {$colorStore.primary};"></i>
               </div>
               <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Embeds</h3>
               <p class="text-sm" style="color: {$colorStore.muted};">Perfect for rich embeds and formatted content</p>
@@ -411,7 +405,7 @@
             <div class="text-center">
               <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
-                <span class="text-2xl">🎲</span>
+                <i class="fa-solid fa-dice text-2xl" style="color: {$colorStore.primary};"></i>
               </div>
               <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Dynamic Content</h3>
               <p class="text-sm" style="color: {$colorStore.muted};">Generate random content and user-specific
@@ -427,10 +421,7 @@
              style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40;">
           <div class="flex items-start gap-3">
             <div class="shrink-0">
-              <svg class="w-6 h-6" style="color: {$colorStore.accent};" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 15c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+              <i class="fa-solid fa-triangle-exclamation text-2xl" style="color: {$colorStore.accent};"></i>
             </div>
             <div>
               <h3 class="font-bold mb-1" style="color: {$colorStore.text};">Important Note</h3>
@@ -446,11 +437,8 @@
         {#if totalResults === 0}
           <div class="text-center py-16" in:fade={{ duration: 300 }}>
             <div class="mb-6">
-              <svg class="mx-auto h-16 w-16" style="color: {$colorStore.muted};" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.529-.901-6.172-2.379C5.448 12.287 5.241 12 5 12H4a1 1 0 01-1-1V9a1 1 0 011-1h1c.241 0 .448-.287.828-.621C7.471 5.901 9.66 5 12 5s4.529.901 6.172 2.379c.38.334.587.621.828.621h1a1 1 0 011 1v2a1 1 0 01-1 1h-1c-.241 0-.448.287-.828.621z" />
-              </svg>
+              <i class="fa-utility-duo fa-regular fa-robot text-6xl mx-auto mb-4 block"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             </div>
             <h3 class="text-2xl font-bold mb-3" style="color: {$colorStore.text};">
               No placeholders found
@@ -511,16 +499,9 @@
                             aria-label="Copy to clipboard"
                           >
                             {#if copiedPlaceholder === placeholder.code && showCopyFeedback}
-                              <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M5 13l4 4L19 7" />
-                              </svg>
+                              <i class="fa-solid fa-check text-green-500" style="font-size: 16px;"></i>
                             {:else}
-                              <svg class="w-4 h-4" style="color: {$colorStore.text};" fill="none" viewBox="0 0 24 24"
-                                   stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
+                              <i class="fa-solid fa-copy" style="color: {$colorStore.text}; font-size: 16px;"></i>
                             {/if}
                           </button>
                         </div>

@@ -9,7 +9,6 @@
     import {inviteStore} from "$lib/stores/inviteStore";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {Cake, Hash, Heart, Link, Star, TrendingUp, Users} from "lucide-svelte";
     import type {SuggestionsModel} from "$lib/types/models.ts";
     import type {MessageStatsResponse} from "$lib/types/messagestats.ts";
 
@@ -216,7 +215,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Star class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-star text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
         </div>
@@ -239,7 +239,8 @@
         {:else if xpLeaderboard.length === 0}
           <!-- Empty state -->
           <div class="text-center py-6">
-            <Star class="w-10 h-10 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+            <i class="fa-utility-duo fa-regular fa-star text-4xl mx-auto mb-3 block"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">No XP Data</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
               No members have earned XP yet. Get active in the server!
@@ -284,7 +285,8 @@
       <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
          href="/dashboard/xp"
          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-        <TrendingUp size={14} />
+        <i class="fa-utility-duo fa-regular fa-arrow-right"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         View Full XP Dashboard
       </a>
     </div>
@@ -306,7 +308,8 @@
             {#if todaysBirthdays.length > 0}
               <!-- Today's Birthdays (Compact) -->
               <div class="flex items-center gap-2 mb-2">
-                <Cake size={14} style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-birthday-cake text-sm"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
                 <span class="text-xs font-medium" style="color: {$colorStore.text}">Today</span>
               </div>
               <div class="flex flex-wrap gap-1 mb-2">
@@ -499,7 +502,7 @@
             <a href="/dashboard/counting" class="text-xs" style="color: {$colorStore.primary}">Manage</a>
           {/if}
         </div>
-        
+
         {#if countingChannels.length === 0}
           <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
             <p class="text-xs" style="color: {$colorStore.muted}">No counting channels setup</p>
@@ -511,7 +514,8 @@
         {:else}
           <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
             <div class="flex items-center gap-2 mb-2">
-              <Hash size={14} style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-hashtag text-sm"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               <span class="text-sm font-medium" style="color: {$colorStore.text}">
                 #{topCountingChannel.channelName}
               </span>
@@ -521,7 +525,7 @@
                 </span>
               {/if}
             </div>
-            
+
             <div class="grid grid-cols-2 gap-2 mb-2">
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.primary}">
@@ -536,13 +540,13 @@
                 <div class="text-xs" style="color: {$colorStore.muted}">Record</div>
               </div>
             </div>
-            
+
             {#if topCountingChannel.lastUsername}
               <div class="pt-2 border-t text-xs" style="border-color: {$colorStore.primary}15; color: {$colorStore.muted}">
                 Last count by <span style="color: {$colorStore.text}">{topCountingChannel.lastUsername}</span>
               </div>
             {/if}
-            
+
             {#if countingChannels.length > 1}
               <div class="text-xs mt-1" style="color: {$colorStore.muted}">
                 +{countingChannels.length - 1} other channel{countingChannels.length > 2 ? 's' : ''}
@@ -566,7 +570,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-users text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -595,7 +600,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Link class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-link text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -617,7 +623,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-user-plus text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -630,8 +637,115 @@
             </div>
           </div>
         </div>
+
       </div>
 
+      <!-- Additional Features -->
+      <div class="space-y-3">
+        <!-- Reputation System -->
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
+             in:fly={{ y: 20, duration: 300, delay: 600 }}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <i class="fa-utility-duo fa-regular fa-star text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Reputation</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">User reputation system</div>
+            </div>
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/reputation"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- Confessions -->
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
+             in:fly={{ y: 20, duration: 300, delay: 650 }}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <i class="fa-utility-duo fa-regular fa-comment text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Confessions</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Anonymous confessions</div>
+            </div>
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/confessions"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- Highlights -->
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
+             in:fly={{ y: 20, duration: 300, delay: 700 }}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <i class="fa-utility-duo fa-regular fa-bolt text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Highlights</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Keyword notifications</div>
+            </div>
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/highlights"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- Stream Notifications -->
+          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+               style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;"
+             in:fly={{ y: 20, duration: 300, delay: 750 }}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <i class="fa-utility-duo fa-regular fa-video text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Streams</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Twitch/YouTube alerts</div>
+            </div>
+              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                 href="/dashboard/streams"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
+            </a>
+          </div>
+        </div>
+      </div>
 
       <!-- Community Support -->
       <div class="space-y-3">
@@ -643,7 +757,8 @@
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg"
                    style="background: {$colorStore.accent}20;">
-                <Heart class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-heart text-xl"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               </div>
               <div class="flex-1">
                 <div class="flex items-baseline gap-3">
@@ -667,7 +782,8 @@
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg"
                    style="background: {$colorStore.accent}20;">
-                <Heart class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-heart text-xl"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               </div>
               <div class="flex-1">
                 <div class="flex items-baseline gap-3">

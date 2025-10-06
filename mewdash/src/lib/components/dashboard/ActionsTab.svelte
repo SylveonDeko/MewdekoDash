@@ -8,17 +8,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        Activity,
-        Bell,
-        Clock,
-        Code,
-        MessageSquare,
-        RepeatIcon,
-        RotateCcw,
-        ToggleLeft,
-        UserCheck
-    } from "lucide-svelte";
 
     // Actions data
   let roleGreets: any[] = [];
@@ -134,7 +123,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-chart-line text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Activity</h2>
         </div>
@@ -156,7 +146,8 @@
         {:else if recentGreetings.length === 0}
           <!-- Empty state -->
           <div class="text-center py-6">
-            <Bell class="w-10 h-10 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+            <i class="fa-utility-duo fa-regular fa-bell text-4xl mx-auto mb-3 block"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">No Recent Activity</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
               Set up greetings and role actions to see activity here.
@@ -170,7 +161,8 @@
               <!-- Action Icon -->
               <div class="w-6 h-6 rounded-full flex items-center justify-center"
                    style="background: {greeting.isEnabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};">
-                <Bell size={14} style="color: {greeting.isEnabled ? $colorStore.primary : $colorStore.muted}" />
+                <i class="fa-utility-duo fa-regular fa-bell text-sm"
+                   style="--fa-primary-color: {greeting.isEnabled ? $colorStore.primary : $colorStore.muted}; --fa-secondary-color: {greeting.isEnabled ? $colorStore.primary : $colorStore.muted};"></i>
               </div>
 
               <!-- Greeting Details -->
@@ -185,7 +177,7 @@
 
               <!-- Timestamp -->
               <div class="text-xs flex items-center gap-1" style="color: {$colorStore.muted}">
-                <Clock size={10} />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 10px;"></i>
                 {formatRelativeTime(greeting.timestamp)}
               </div>
             </div>
@@ -195,7 +187,8 @@
           <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
              href="/dashboard/rolegreets"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-            <UserCheck size={14} />
+            <i class="fa-utility-duo fa-regular fa-user-check text-sm"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             Manage Role Greets
           </a>
         {/if}
@@ -211,7 +204,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Bell class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-bell text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -237,7 +231,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <RotateCcw class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -263,7 +258,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <ToggleLeft class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-toggle-off text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -295,7 +291,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-comment text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -319,7 +316,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <Code class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-code text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -343,7 +341,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <RepeatIcon class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-repeat text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -354,6 +353,81 @@
             </div>
             <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
                href="/dashboard/repeaters"
+               style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- RSS Feeds -->
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.primary}20;">
+              <i class="fa-utility-duo fa-regular fa-rss text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">RSS Feeds</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Subscribe to RSS feeds</div>
+            </div>
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/feeds"
+               style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- Status Roles -->
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.secondary}20;">
+              <i class="fa-utility-duo fa-regular fa-user-check text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Status Roles</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Custom status-based roles</div>
+            </div>
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/statusroles"
+               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+              Manage
+            </a>
+          </div>
+        </div>
+
+        <!-- Vote System -->
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                    border-color: {$colorStore.primary}15;">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg"
+                 style="background: {$colorStore.accent}20;">
+              <i class="fa-utility-duo fa-regular fa-check-to-slot text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-3">
+                <span class="text-lg font-bold" style="color: {$colorStore.text}">Active</span>
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">Vote Rewards</span>
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted}">Reward users for voting</div>
+            </div>
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+               href="/dashboard/votes"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
             </a>

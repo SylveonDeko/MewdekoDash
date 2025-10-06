@@ -2,12 +2,11 @@
 <script lang="ts">
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
-    import type {ComponentType} from "svelte";
 
 
     interface Props {
       // Props
-      icon: ComponentType;
+      icon: string;  // Font Awesome icon class name (e.g., "fa-bell")
       title: string;
       isActive?: boolean;
       description?: string;
@@ -35,7 +34,6 @@
   role="listitem"
 >
   {#if href}
-      {@const SvelteComponent = icon}
     <a
             {href}
             class="block p-3 rounded-xl transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
@@ -52,10 +50,8 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
             <div class="shrink-0">
-              <SvelteComponent
-              class="w-5 h-5 transition-colors duration-300"
-              style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
-            />
+              <i class="fa-utility-duo fa-regular {icon} text-xl transition-colors duration-300"
+                 style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted}; --fa-secondary-color: {isActive ? $colorStore.primary : $colorStore.muted};"></i>
           </div>
 
           <span
@@ -82,7 +78,6 @@
       </div>
     </a>
   {:else}
-      {@const SvelteComponent_1 = icon}
       <div
               class="p-3 rounded-xl transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
       class:ring-2={isActive}
@@ -96,10 +91,8 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
             <div class="shrink-0">
-              <SvelteComponent_1
-              class="w-5 h-5 transition-colors duration-300"
-              style="color: {isActive ? $colorStore.primary : $colorStore.muted}"
-            />
+              <i class="fa-utility-duo fa-regular {icon} text-xl transition-colors duration-300"
+                 style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted}; --fa-secondary-color: {isActive ? $colorStore.primary : $colorStore.muted};"></i>
           </div>
 
           <span

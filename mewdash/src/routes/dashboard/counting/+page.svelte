@@ -25,28 +25,6 @@
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {browser} from "$app/environment";
-    import {
-        AlertCircle,
-        Archive,
-        BarChart3,
-        CheckCircle,
-        Clock,
-        Crown,
-        Hash,
-        Milestone,
-        Play,
-        Plus,
-        RotateCcw,
-        Save,
-        Settings,
-        Shield,
-        Target,
-        Trash2,
-        TrendingUp,
-        Trophy,
-        User,
-        Users
-    } from "lucide-svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -432,20 +410,20 @@
 <DashboardPageLayout 
   title="Counting Channels" 
   subtitle="Manage counting games and competitions in your server" 
-  icon={Hash}
+  icon="fa-hashtag"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={[
-    { id: "channels", label: `Channels (${countingChannels.length || 0})`, icon: Hash },
-    { id: "config", label: "Configuration", icon: Settings, disabled: !selectedChannel },
-    { id: "stats", label: "Statistics", icon: BarChart3, disabled: !selectedChannel },
-    { id: "leaderboard", label: "Leaderboard", icon: Trophy, disabled: !selectedChannel },
-    { id: "management", label: "Management", icon: Shield, disabled: !selectedChannel }
+    { id: "channels", label: `Channels (${countingChannels.length || 0})`, icon: "fa-hashtag" },
+    { id: "config", label: "Configuration", icon: "fa-gear", disabled: !selectedChannel },
+    { id: "stats", label: "Statistics", icon: "fa-chart-column", disabled: !selectedChannel },
+    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy", disabled: !selectedChannel },
+    { id: "management", label: "Management", icon: "fa-shield", disabled: !selectedChannel }
   ]}
   bind:activeTab
   actionButtons={hasChanges ? [
     {
       label: "Save Configuration",
-      icon: CheckCircle,
+      icon: "fa-circle-check",
       action: saveConfiguration,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
@@ -461,14 +439,14 @@
     
     {#if selectedChannel}
       <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: {getChannelStatus(selectedChannel).color}15; border: 1px solid {getChannelStatus(selectedChannel).color}30;">
-        <CheckCircle size={16} style="color: {getChannelStatus(selectedChannel).color}" />
+        <i class="fa-solid fa-circle-check" style="color: {getChannelStatus(selectedChannel).color}; font-size: 16px;"></i>
         <span class="text-sm" style="color: {getChannelStatus(selectedChannel).color}">
           Selected: #{selectedChannel.channelName} - {getChannelStatus(selectedChannel).text}
         </span>
       </div>
     {:else if countingChannels.length === 0}
       <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #f59e0b15; border: 1px solid #f59e0b30;">
-        <AlertCircle size={16} style="color: #f59e0b" />
+        <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
         <span class="text-sm" style="color: #f59e0b">No counting channels configured</span>
       </div>
     {/if}
@@ -480,7 +458,7 @@
   {:else if error}
     <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
       <div class="flex items-center gap-3">
-        <AlertCircle size={20} style="color: #ef4444" />
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
         <span style="color: #ef4444">{error}</span>
       </div>
     </div>
@@ -533,7 +511,7 @@
           onclick={setupChannel}
           disabled={!setupChannelId}
         >
-          <Plus size={16} />
+          <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
           Setup Channel
         </button>
       </div>
@@ -541,7 +519,7 @@
       <!-- Existing Channels -->
       {#if countingChannels.length === 0}
         <div class="text-center py-12">
-          <Hash size={48} style="color: {$colorStore.muted}; margin: 0 auto 16px;" />
+          <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No counting channels</h3>
           <p style="color: {$colorStore.muted}">Setup your first counting channel to get started</p>
         </div>
@@ -562,7 +540,7 @@
                 <!-- Header Row -->
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <Hash size={20} style="color: {$colorStore.primary}" />
+                    <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h3 class="font-medium truncate" style="color: {$colorStore.text}">{channel.channelName}</h3>
                     <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap" style="background: {getChannelStatus(channel).color}20; color: {getChannelStatus(channel).color};">
                       {getChannelStatus(channel).text}
@@ -574,7 +552,7 @@
                     onclick={stopPropagation(() => disableChannel(channel))}
                     title="Disable channel"
                   >
-                    <Trash2 size={16} />
+                    <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
                 </div>
                 
@@ -618,7 +596,7 @@
             <label class="block mb-2" style="color: {$colorStore.text}">Counting Pattern</label>
             <DiscordSelector
               type="custom"
-              customIcon={Hash}
+              customIcon="fa-hashtag"
               options={[
                 { id: "0", name: "Normal (1, 2, 3...)", label: "Normal" },
                 { id: "1", name: "Roman (I, II, III...)", label: "Roman" },
@@ -813,7 +791,7 @@
               <p class="text-sm" style="color: {$colorStore.muted}">Current Number</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.currentNumber)}</p>
             </div>
-            <Hash size={24} style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
         </div>
 
@@ -824,7 +802,7 @@
               <p class="text-sm" style="color: {$colorStore.muted}">Total Participants</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.totalParticipants)}</p>
             </div>
-            <Users size={24} style="color: {$colorStore.secondary}" />
+            <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           </div>
         </div>
 
@@ -836,7 +814,7 @@
                 <p class="text-2xl font-bold"
                    style="color: {$colorStore.text}">{Number(channelStats.averageAccuracy || 0).toFixed(1)}%</p>
             </div>
-            <Target size={24} style="color: {$colorStore.accent}" />
+            <i class="fa-utility-duo fa-regular fa-bullseye" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           </div>
         </div>
 
@@ -847,7 +825,7 @@
               <p class="text-sm" style="color: {$colorStore.muted}">Total Errors</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.totalErrors)}</p>
             </div>
-            <AlertCircle size={24} style="color: #ef4444" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 24px;"></i>
           </div>
         </div>
       </div>
@@ -863,13 +841,13 @@
               <img src={channelStats.topContributor.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full" />
             {:else}
               <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
-                <User size={20} style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
             {/if}
             
             <div class="flex-1">
               <div class="flex items-center gap-2">
-                <Crown size={16} style="color: #fbbf24" />
+                <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 16px;"></i>
                 <span class="font-bold" style="color: {$colorStore.text}">
                   {channelStats.topContributor.username || "Unknown User"}
                 </span>
@@ -898,19 +876,19 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="text-center">
-            <Milestone size={32} style="color: {$colorStore.primary}; margin: 0 auto 8px;" />
+            <i class="fa-utility-duo fa-regular fa-flag-checkered" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p class="text-sm" style="color: {$colorStore.muted}">Milestones Reached</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.milestonesReached)}</p>
           </div>
           
           <div class="text-center">
-            <TrendingUp size={32} style="color: {$colorStore.secondary}; margin: 0 auto 8px;" />
+            <i class="fa-utility-duo fa-regular fa-chart-line" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p class="text-sm" style="color: {$colorStore.muted}">Highest Number</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.highestNumber)}</p>
           </div>
           
           <div class="text-center">
-            <Clock size={32} style="color: {$colorStore.accent}; margin: 0 auto 8px;" />
+            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p class="text-sm" style="color: {$colorStore.muted}">Last Activity</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">
               {channelStats.lastActivity ? getTimeAgo(channelStats.lastActivity) : "Never"}
@@ -934,7 +912,7 @@
             <label class="block mb-2" style="color: {$colorStore.text}">Sort By</label>
             <DiscordSelector
               type="custom"
-              customIcon={Trophy}
+              customIcon="fa-trophy"
               options={[
                 { id: "contributions", name: "Contributions", label: "Contributions" },
                 { id: "streak", name: "Highest Streak", label: "Streak" },
@@ -969,7 +947,7 @@
       <!-- Leaderboard -->
       {#if leaderboard.length === 0}
         <div class="text-center py-12">
-          <Trophy size={48} style="color: {$colorStore.muted}; margin: 0 auto 16px;" />
+          <i class="fa-utility-duo fa-regular fa-trophy" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No leaderboard data</h3>
           <p style="color: {$colorStore.muted}">No users have participated in counting yet</p>
         </div>
@@ -985,7 +963,7 @@
                   <div class="text-center min-w-12">
                 <div class="text-2xl font-bold" style="color: {$colorStore.text}">
                   {#if index === 0}
-                    <Crown size={24} style="color: #fbbf24;" />
+                    <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 24px;"></i>
                   {:else if index === 1}
                     <span style="color: #c0c0c0;">2</span>
                   {:else if index === 2}
@@ -1002,7 +980,7 @@
                   <img src={entry.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full" />
                 {:else}
                   <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
-                    <User size={20} style="color: {$colorStore.primary}" />
+                    <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                   </div>
                 {/if}
               </div>
@@ -1061,7 +1039,7 @@
           style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
           onclick={resetChannel}
         >
-          <RotateCcw size={16} />
+          <i class="fa-solid fa-arrow-rotate-left" style="font-size: 16px;"></i>
           Reset Channel
         </button>
       </div>
@@ -1086,7 +1064,7 @@
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={createSavePoint}
             >
-              <Save size={16} />
+              <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
               Create Save Point
             </button>
           </div>
@@ -1095,7 +1073,7 @@
         <!-- Save Points List -->
         {#if savePoints.length === 0}
           <div class="text-center py-8">
-            <Archive size={32} style="color: {$colorStore.muted}; margin: 0 auto 8px;" />
+            <i class="fa-utility-duo fa-regular fa-box-archive" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p style="color: {$colorStore.muted}">No save points created</p>
           </div>
         {:else}
@@ -1108,7 +1086,7 @@
               >
                 <div>
                   <div class="flex items-center gap-2">
-                    <Save size={16} style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-floppy-disk" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     <span class="font-medium" style="color: {$colorStore.text}">
                       Number: {formatNumber(savePoint.savedNumber)}
                     </span>
@@ -1131,7 +1109,7 @@
                       }
                     }}
                   >
-                    <Play size={14} />
+                    <i class="fa-solid fa-play" style="font-size: 14px;"></i>
                   </button>
                   
                   <button
@@ -1142,7 +1120,7 @@
                       }
                     }}
                   >
-                    <Trash2 size={14} />
+                    <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
                   </button>
                 </div>
               </div>
@@ -1154,7 +1132,7 @@
 
   {:else}
     <div class="text-center py-12">
-      <Settings size={48} style="color: {$colorStore.muted}; margin: 0 auto 16px;" />
+      <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
       <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">Select a Channel</h3>
       <p style="color: {$colorStore.muted}">Choose a counting channel to configure settings</p>
     </div>

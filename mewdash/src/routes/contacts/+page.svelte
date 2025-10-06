@@ -1,7 +1,6 @@
 <!-- routes/contacts/+page.svelte -->
 <script lang="ts">
-    import MailIcon from "$lib/components/icons/Mail.svelte";
-    import DiscordIcon from "$lib/components/icons/Discord.svelte";
+    import {colorStore} from "$lib/stores/colorStore";
 </script>
 
 <svelte:head>
@@ -23,13 +22,13 @@
 
   <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
     <a href="mailto:sylveon@mewdeko.tech" target="_new" class="contact-card">
-      <MailIcon class="w-12 h-12 mb-4 text-mewd-offwhite" />
+      <i class="fa-solid fa-envelope text-5xl mb-4 text-mewd-offwhite"></i>
       <span class="text-lg font-semibold">Sylveon</span>
       <span class="text-sm text-mewd-offwhite mt-2">sylveon@mewdeko.tech</span>
     </a>
 
     <a href="mailto:cottage@mewdeko.tech" target="_new" class="contact-card">
-      <MailIcon class="w-12 h-12 mb-4 text-mewd-offwhite" />
+      <i class="fa-solid fa-envelope text-5xl mb-4 text-mewd-offwhite"></i>
       <span class="text-lg font-semibold">GraveyardDwellingCat</span>
       <span class="text-sm text-mewd-offwhite mt-2">cottage@mewdeko.tech</span>
     </a>
@@ -39,7 +38,7 @@
       target="_new"
       class="contact-card"
     >
-      <DiscordIcon class="w-12 h-12 mb-4 text-mewd-offwhite" />
+      <i class="fa-brands fa-discord text-5xl mb-4 text-mewd-offwhite"></i>
       <span class="text-lg font-semibold">Join Our Discord</span>
       <span class="text-sm text-mewd-offwhite mt-2"
       >https://discord.gg/Z9DYApMXFN</span

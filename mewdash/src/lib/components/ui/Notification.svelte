@@ -3,7 +3,6 @@
     import {fly} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
     import {colorStore} from "$lib/stores/colorStore";
-    import {AlertCircle, CheckCircle, X} from "lucide-svelte";
     import {onDestroy, onMount} from "svelte";
 
     interface Props {
@@ -102,15 +101,9 @@
         style="background-color: {type === 'success' ? successColor : errorColor}20;"
       >
         {#if type === 'success'}
-          <CheckCircle 
-            size={16} 
-            style="color: {successColor};" 
-          />
+          <i class="fa-solid fa-circle-check" style="color: {successColor}; font-size: 16px;"></i>
         {:else}
-          <AlertCircle 
-            size={16} 
-            style="color: {errorColor};" 
-          />
+          <i class="fa-solid fa-circle-exclamation" style="color: {errorColor}; font-size: 16px;"></i>
         {/if}
       </div>
 
@@ -127,13 +120,13 @@
       <!-- Dismiss Button -->
       <button
               class="shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
-        style="color: {$colorStore.muted}; 
+        style="color: {$colorStore.muted};
                hover:background-color: {type === 'success' ? successColor : errorColor}20;
                hover:color: {$colorStore.text};"
         onclick={handleDismiss}
         aria-label="Dismiss notification"
       >
-        <X size={16} />
+        <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
       </button>
     </div>
 

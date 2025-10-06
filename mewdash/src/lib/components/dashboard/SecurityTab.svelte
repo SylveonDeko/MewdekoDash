@@ -8,7 +8,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {Activity, AlertTriangle, Clock, FileText, MessageSquareWarning, Shield, UserX} from "lucide-svelte";
 
     import type {LoggingConfigurationResponse} from "$lib/types/logging.ts";
 
@@ -119,18 +118,18 @@
     });
 
   // Helper functions
-  function getActionIcon(action: string) {
+  function getActionIcon(action: string): string {
     switch (action?.toLowerCase()) {
       case "warn":
       case "warning":
-        return MessageSquareWarning;
+        return "fa-message-exclamation";
       case "mute":
       case "timeout":
-        return UserX;
+        return "fa-user-xmark";
       case "ban":
-        return Shield;
+        return "fa-shield";
       default:
-        return AlertTriangle;
+        return "fa-triangle-exclamation";
     }
   }
 
@@ -180,7 +179,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-chart-line text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Actions</h2>
         </div>
@@ -202,7 +202,8 @@
         {:else if recentModerationActions.length === 0}
           <!-- Empty state -->
           <div class="text-center py-6">
-            <Shield class="w-10 h-10 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+            <i class="fa-utility-duo fa-regular fa-shield text-4xl mx-auto mb-3 block"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             <h3 class="text-base font-semibold mb-1" style="color: {$colorStore.text}">All Clear</h3>
             <p class="text-xs" style="color: {$colorStore.muted}">
               No recent moderation actions. Your server is running smoothly!
@@ -210,16 +211,16 @@
           </div>
         {:else}
           {#each recentModerationActions as action}
-              {@const SvelteComponent = getActionIcon(action.punishment || action.action)}
+              {@const iconClass = getActionIcon(action.punishment || action.action)}
+              {@const iconColor = getActionColor(action.punishment || action.action)}
             <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}08;">
 
               <!-- Action Icon -->
               <div class="w-6 h-6 rounded-full flex items-center justify-center"
-                   style="background: {getActionColor(action.punishment || action.action)}20;">
-                  <SvelteComponent
-                                  size={14}
-                                  style="color: {getActionColor(action.punishment || action.action)}" />
+                   style="background: {iconColor}20;">
+                  <i class="fa-utility-duo fa-regular {iconClass} text-sm"
+                     style="--fa-primary-color: {iconColor}; --fa-secondary-color: {iconColor};"></i>
               </div>
 
               <!-- Action Details -->
@@ -234,7 +235,7 @@
 
               <!-- Timestamp -->
               <div class="text-xs flex items-center gap-1" style="color: {$colorStore.muted}">
-                <Clock size={10} />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 10px;"></i>
                 {formatRelativeTime(action.dateAdded)}
               </div>
             </div>
@@ -246,7 +247,8 @@
         <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
            href="/dashboard/moderation"
            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
-          <Shield size={14} />
+          <i class="fa-utility-duo fa-regular fa-shield text-sm"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           Full Moderation Dashboard
         </a>
       </div>
@@ -350,7 +352,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <MessageSquareWarning class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-message-exclamation text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -374,7 +377,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-chart-line text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -393,7 +397,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <FileText class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-file-lines text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -417,7 +422,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-shield text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">

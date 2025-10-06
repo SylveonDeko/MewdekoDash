@@ -14,18 +14,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {
-        AlertTriangle,
-        BarChart3,
-        CheckCircle,
-        Clock,
-        Download,
-        Hash,
-        MessageSquare,
-        RefreshCw,
-        Target,
-        Users
-    } from "lucide-svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -333,26 +321,26 @@
 
   // Tab configuration
   const tabs = [
-    { id: "stats", label: "Statistics", icon: BarChart3 },
-    { id: "manage", label: "Management", icon: Target }
+    { id: "stats", label: "Statistics", icon: "fa-chart-column" },
+    { id: "manage", label: "Management", icon: "fa-bullseye" }
   ];
 
   const subTabs = [
     // Statistics subtabs
-    { id: "overview", label: "Overview", icon: MessageSquare, parentTab: "stats" },
-    { id: "users", label: "Top Users", icon: Users, parentTab: "stats" },
-    { id: "channels", label: "Top Channels", icon: Hash, parentTab: "stats" },
+    { id: "overview", label: "Overview", icon: "fa-message", parentTab: "stats" },
+    { id: "users", label: "Top Users", icon: "fa-users", parentTab: "stats" },
+    { id: "channels", label: "Top Channels", icon: "fa-hashtag", parentTab: "stats" },
     
     // Management subtabs
-    { id: "settings", label: "Settings", icon: CheckCircle, parentTab: "manage" },
-    { id: "export", label: "Export Data", icon: Download, parentTab: "manage" }
+    { id: "settings", label: "Settings", icon: "fa-circle-check", parentTab: "manage" },
+    { id: "export", label: "Export Data", icon: "fa-download", parentTab: "manage" }
   ];
 
   // Action buttons configuration
     let actionButtons = $derived([
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: loadData,
       loading: loading
     }
@@ -373,7 +361,7 @@
 <DashboardPageLayout 
   title="Message Statistics"
   subtitle="Analyze server message activity and user engagement"
-  icon={BarChart3}
+  icon="fa-chart-column"
   {tabs}
   {subTabs}
   {activeTab}
@@ -396,7 +384,7 @@
     {:else if error}
       <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
         <div class="flex items-center gap-3">
-          <AlertTriangle size={20} style="color: #ef4444" />
+          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
           <span style="color: #ef4444">{error}</span>
         </div>
       </div>
@@ -408,25 +396,25 @@
             <StatCard
               label="Daily Messages"
               value={formatNumber(messageStats.dailyMessages)}
-              icon={MessageSquare}
+              icon="fa-message"
               iconColor="primary"
             />
             <StatCard
               label="Total Messages"
               value={formatNumber(messageStats.totalMessages)}
-              icon={BarChart3}
+              icon="fa-chart-column"
               iconColor="secondary"
             />
             <StatCard
               label="Last Updated"
               value={new Date(messageStats.lastUpdated).toLocaleDateString()}
-              icon={Clock}
+              icon="fa-clock"
               iconColor="accent"
             />
             <StatCard
               label="Status"
               value={messageStats.enabled ? "Enabled" : "Disabled"}
-              icon={Target}
+              icon="fa-bullseye"
               iconColor={messageStats.enabled ? "primary" : "secondary"}
             />
           </div>
@@ -523,7 +511,7 @@
                 <!-- Mobile: Top row with icon and channel info -->
                 <div class="flex items-center gap-3 flex-1">
                     <div class="shrink-0">
-                    <Hash size={20} style="color: {$colorStore.primary}" />
+                    <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                   </div>
                   
                   <div class="flex-1 min-w-0">
@@ -621,7 +609,7 @@
                 <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                 Exporting...
               {:else}
-                <Download size={16} />
+                <i class="fa-solid fa-download" style="font-size: 16px;"></i>
                 Export Data
               {/if}
             </button>
@@ -695,7 +683,7 @@
                     {#if resetLoading}
                       <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                     {:else}
-                      <AlertTriangle size={16} />
+                      <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
                     {/if}
                     Reset All Server Counts
                   </button>

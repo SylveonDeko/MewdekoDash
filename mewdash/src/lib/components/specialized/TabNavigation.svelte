@@ -5,7 +5,7 @@
   import type { ComponentType } from 'svelte';
 
   interface Props {
-    tabs: { id: string; label: string; icon?: ComponentType }[];
+    tabs: { id: string; label: string; icon?: ComponentType | string }[];
     activeTab: string;
     variant?: 'desktop' | 'mobile';
     orientation?: 'horizontal' | 'vertical';
@@ -80,7 +80,11 @@
         tabindex={activeTab === tab.id ? 0 : -1}
       >
         {#if tab.icon}
-          <tab.icon size={16} />
+          {#if typeof tab.icon === 'string'}
+            <i class="fa-solid {tab.icon}" style="font-size: 16px;"></i>
+          {:else}
+            <svelte:component this={tab.icon} size={16} />
+          {/if}
         {/if}
         <span class="font-medium">{tab.label}</span>
       </button>
@@ -109,7 +113,11 @@
         tabindex={activeTab === tab.id ? 0 : -1}
       >
         {#if tab.icon}
-          <tab.icon size={16} />
+          {#if typeof tab.icon === 'string'}
+            <i class="fa-solid {tab.icon}" style="font-size: 16px;"></i>
+          {:else}
+            <svelte:component this={tab.icon} size={16} />
+          {/if}
         {/if}
         <span class="font-medium">{tab.label}</span>
       </button>

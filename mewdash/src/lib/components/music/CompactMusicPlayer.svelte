@@ -3,17 +3,6 @@
 
     import {onDestroy, onMount} from "svelte";
     import {fly, slide} from "svelte/transition";
-    import {
-        ChevronDown,
-        ChevronUp,
-        ExternalLink,
-        Music,
-        Pause,
-        Play,
-        SkipBack,
-        SkipForward,
-        Volume2
-    } from "lucide-svelte";
     import {api} from "$lib/api";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
@@ -478,7 +467,8 @@
                 class="w-full h-full flex items-center justify-center"
                 style="background: {colors.primary}20;"
               >
-                <Music size={24} style="color: {colors.primary}" />
+                <i class="fa-utility-duo fa-regular fa-music text-2xl"
+                   style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary};"></i>
               </div>
             {/if}
           </div>
@@ -534,7 +524,8 @@
               onclick={previousTrack}
               aria-label="Previous track"
             >
-              <SkipBack size={14} class="md:w-4 md:h-4" />
+              <i class="fa-utility-duo fa-regular fa-step-backward text-sm md:text-base"
+                 style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
             </button>
 
             <!-- Play/Pause Button -->
@@ -545,9 +536,11 @@
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {#if isPlaying}
-                <Pause size={16} class="md:w-[18px] md:h-[18px]" />
+                <i class="fa-utility-duo fa-regular fa-pause text-base md:text-lg"
+                   style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.accent};"></i>
               {:else}
-                <Play size={16} class="md:w-[18px] md:h-[18px]" style="margin-left: 2px;" />
+                <i class="fa-utility-duo fa-regular fa-play text-base md:text-lg"
+                   style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.accent}; margin-left: 2px;"></i>
               {/if}
             </button>
 
@@ -558,7 +551,8 @@
               onclick={skipTrack}
               aria-label="Skip track"
             >
-              <SkipForward size={14} class="md:w-4 md:h-4" />
+              <i class="fa-utility-duo fa-regular fa-step-forward text-sm md:text-base"
+                 style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
             </button>
 
             <!-- Desktop: Expand/Collapse Button -->
@@ -569,9 +563,11 @@
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {#if isExpanded}
-                <ChevronUp size={16} />
+                <i class="fa-utility-duo fa-regular fa-chevron-up"
+                   style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               {:else}
-                <ChevronDown size={16} />
+                <i class="fa-utility-duo fa-regular fa-chevron-down"
+                   style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               {/if}
             </button>
 
@@ -582,7 +578,8 @@
               onclick={openMusicDashboard}
               aria-label="Open music dashboard"
             >
-              <ExternalLink size={14} class="md:w-4 md:h-4" />
+              <i class="fa-utility-duo fa-regular fa-external-link-alt text-sm md:text-base"
+                 style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
             </button>
           </div>
         </div>
@@ -595,7 +592,8 @@
                             class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30 flex items-center justify-center"
                             style="ring-color: {colors.accent}; background: {colors.primary}20;"
                     >
-                        <Music size={24} style="color: {colors.primary}"/>
+                        <i class="fa-utility-duo fa-regular fa-music text-2xl"
+                           style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary};"></i>
                     </div>
                 </div>
 
@@ -622,7 +620,8 @@
                             onclick={openMusicDashboard}
                             aria-label="Open music dashboard"
                     >
-                        <ExternalLink size={16} class="md:w-[18px] md:h-[18px]"/>
+                        <i class="fa-utility-duo fa-regular fa-external-link-alt text-base md:text-lg"
+                           style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
                     </button>
                 </div>
             </div>
@@ -694,7 +693,8 @@
           <div class="flex items-center gap-3">
             <!-- Volume -->
             <div class="flex items-center gap-2">
-              <Volume2 size={16} style="color: {colors.text}60;" />
+              <i class="fa-utility-duo fa-regular fa-volume-up"
+                 style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.text}; --fa-primary-opacity: 0.6; --fa-secondary-opacity: 0.4;"></i>
               <span class="text-sm" style="color: {colors.text}60;">
                 {Math.round((musicStatus?.Volume || 0) * 100)}%
               </span>
@@ -716,7 +716,8 @@
               border-color: {colors.foreground}30;"
          in:fly={{ y: 10, duration: 400, delay: 100 }}
          out:fly={{ y: -10, duration: 300 }}>
-    <Music class="w-12 h-12 mx-auto mb-4" style="color: {colors.foreground}50;" />
+    <i class="fa-utility-duo fa-regular fa-music text-5xl mx-auto mb-4 block"
+       style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.foreground}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
     <h3 class="text-xl font-semibold" style="color: {colors.text};">
         Bot is not in a voice channel
     </h3>

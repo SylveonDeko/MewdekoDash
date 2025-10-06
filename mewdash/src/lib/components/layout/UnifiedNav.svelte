@@ -41,28 +41,6 @@ A unified navigation component that provides responsive navigation with server a
   import { musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
-  import {
-    ArrowLeft,
-    Badge,
-    BarChart3,
-    Gift,
-    HandMetal,
-    Heart,
-    Lightbulb,
-    Link,
-    Lock,
-    MessageSquare,
-    Moon,
-    Music,
-    RotateCcw,
-    Save,
-    Settings,
-    Shield,
-    Star,
-    Tag,
-    TrendingUp,
-    Users
-  } from "lucide-svelte";
 
   // Types
   type NavItem = {
@@ -273,48 +251,48 @@ A unified navigation component that provides responsive navigation with server a
       {
         category: "Core",
         items: [
-          { title: "Dashboard", href: "/dashboard", icon: BarChart3 },
-          { title: "Settings", href: "/dashboard/settings", icon: Settings }
+          { title: "Dashboard", href: "/dashboard", icon: "fa-chart-bar" },
+          { title: "Settings", href: "/dashboard/settings", icon: "fa-gear" }
         ]
       },
       {
         category: "Community",
         items: [
-          { title: "AFK", href: "/dashboard/afk", icon: Moon },
-          { title: "XP", href: "/dashboard/xp", icon: Star },
-          { title: "Suggestions", href: "/dashboard/suggestions", icon: Lightbulb },
-          { title: "MultiGreets", href: "/dashboard/multigreets", icon: HandMetal },
-          { title: "Invites", href: "/dashboard/invites", icon: Users },
-          { title: "Role Greets", href: "/dashboard/rolegreets", icon: Tag },
-          { title: "Role States", href: "/dashboard/rolestates", icon: RotateCcw },
-          { title: "Starboard", href: "/dashboard/starboard", icon: Star },
-          { title: "Patreon", href: "/dashboard/patreon", icon: Heart }
+          { title: "AFK", href: "/dashboard/afk", icon: "fa-moon" },
+          { title: "XP", href: "/dashboard/xp", icon: "fa-star" },
+          { title: "Suggestions", href: "/dashboard/suggestions", icon: "fa-lightbulb" },
+          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "fa-hand-horns" },
+          { title: "Invites", href: "/dashboard/invites", icon: "fa-users" },
+          { title: "Role Greets", href: "/dashboard/rolegreets", icon: "fa-tag" },
+          { title: "Role States", href: "/dashboard/rolestates", icon: "fa-rotate-left" },
+          { title: "Starboard", href: "/dashboard/starboard", icon: "fa-star" },
+          { title: "Patreon", href: "/dashboard/patreon", icon: "fa-heart" }
         ]
       },
       {
         category: "Content",
         items: [
-          { title: "Music", href: "/dashboard/music", icon: Music },
-          { title: "Triggers", href: "/dashboard/chat-triggers", icon: MessageSquare },
-          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: Link }
+          { title: "Music", href: "/dashboard/music", icon: "fa-music" },
+          { title: "Triggers", href: "/dashboard/chat-triggers", icon: "fa-comment" },
+          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: "fa-link" }
         ]
       },
       {
         category: "Management",
         items: [
-          { title: "Moderation", href: "/dashboard/moderation", icon: Shield },
-          { title: "Administration", href: "/dashboard/administration", icon: Badge },
-          { title: "Permissions", href: "/dashboard/permissions", icon: Lock },
-          { title: "Tickets", href: "/dashboard/tickets", icon: MessageSquare },
-          { title: "Giveaways", href: "/dashboard/giveaways", icon: Gift },
-          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: Save }
+          { title: "Moderation", href: "/dashboard/moderation", icon: "fa-shield" },
+          { title: "Administration", href: "/dashboard/administration", icon: "fa-badge" },
+          { title: "Permissions", href: "/dashboard/permissions", icon: "fa-lock" },
+          { title: "Tickets", href: "/dashboard/tickets", icon: "fa-comment" },
+          { title: "Giveaways", href: "/dashboard/giveaways", icon: "fa-gift" },
+          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "fa-floppy-disk" }
         ]
       }
     ];
 
     if (isOwner) {
       items.find(item => item.category === "Management")?.items.push(
-        { title: "Performance", href: "/dashboard/performance", icon: TrendingUp }
+        { title: "Performance", href: "/dashboard/performance", icon: "fa-arrow-trend-up" }
       );
     }
 
@@ -323,7 +301,7 @@ A unified navigation component that provides responsive navigation with server a
 
   function buildDashboardItems(isOwner: boolean = false): ProcessedItem[] {
     if (!get(currentGuild)) {
-      return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: BarChart3 }];
+      return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: "fa-chart-bar" }];
     }
 
     const items = getDashboardItems(isOwner);
@@ -714,7 +692,7 @@ A unified navigation component that provides responsive navigation with server a
           disabled={isMainDashboard}
           aria-label="Go back"
         >
-            <ArrowLeft size={16}/>
+            <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
             <span class="hidden sm:inline text-xs font-medium">Back</span>
         </button>
       {:else}
@@ -801,11 +779,9 @@ A unified navigation component that provides responsive navigation with server a
       }}
                     >
                       {#if child.icon}
-                        {#if typeof child.icon === 'string'}
-                          <span aria-hidden="true" class="mr-2">{child.icon}</span>
-                        {:else}
-                          <svelte:component this={child.icon} class="mr-2 w-4 h-4" aria-hidden="true" />
-                        {/if}
+                        <i class="fa-utility-duo fa-regular {child.icon} mr-2 text-base"
+                           aria-hidden="true"
+                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                       {/if}
                       {child.title}
                     </a>
@@ -846,11 +822,9 @@ A unified navigation component that provides responsive navigation with server a
       }}
               >
                 {#if item.icon}
-                  {#if typeof item.icon === 'string'}
-                    <span aria-hidden="true" class="mr-2">{item.icon}</span>
-                  {:else}
-                    <svelte:component this={item.icon} class="w-4 h-4 mr-2" aria-hidden="true" />
-                  {/if}
+                  <i class="fa-utility-duo fa-regular {item.icon} mr-2 text-base"
+                     aria-hidden="true"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 {/if}
                 <span>{item.title}</span>
               </a>
@@ -1087,7 +1061,7 @@ A unified navigation component that provides responsive navigation with server a
                 >
                     <div class="p-1.5 rounded transition-all group-hover:scale-110"
                        style="background: {$colorStore.primary}30;">
-                        <Settings class="w-3.5 h-3.5" style="color: {$colorStore.primary};"/>
+                        <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 14px;"></i>
                   </div>
                   <div class="flex-1">
                     <div class="font-semibold">My Settings</div>
@@ -1300,11 +1274,9 @@ A unified navigation component that provides responsive navigation with server a
                       on:click={closeMobileMenu}
                     >
                       {#if child.icon}
-                        {#if typeof child.icon === 'string'}
-                          <span class="mr-3 text-lg" aria-hidden="true">{child.icon}</span>
-                        {:else}
-                          <svelte:component this={child.icon} class="mr-3 w-5 h-5" aria-hidden="true" />
-                        {/if}
+                        <i class="fa-utility-duo fa-regular {child.icon} mr-3 text-xl"
+                           aria-hidden="true"
+                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                       {/if}
                       <span class="font-medium">{child.title}</span>
                     </a>
@@ -1320,11 +1292,9 @@ A unified navigation component that provides responsive navigation with server a
                   on:click={closeMobileMenu}
                 >
                   {#if item.icon}
-                    {#if typeof item.icon === 'string'}
-                      <span class="text-lg" aria-hidden="true">{item.icon}</span>
-                    {:else}
-                      <svelte:component this={item.icon} class="w-5 h-5" aria-hidden="true" />
-                    {/if}
+                    <i class="fa-utility-duo fa-regular {item.icon} text-xl"
+                       aria-hidden="true"
+                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                   {/if}
                   <span class="font-medium">{item.title}</span>
                 </a>

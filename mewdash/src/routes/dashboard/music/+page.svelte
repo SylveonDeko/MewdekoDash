@@ -14,7 +14,6 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import {browser} from "$app/environment";
     import {colorStore} from "$lib/stores/colorStore.ts";
-    import {AlertCircle, Clock, List, Music2, Save, Settings, Sliders, Users, Volume2} from "lucide-svelte";
     import {logger} from "$lib/logger.ts";
 
     interface Props {
@@ -162,7 +161,7 @@
   let actionButtons = $derived([
     {
       label: "Save Changes",
-      icon: Save,
+      icon: "fa-floppy-disk",
       action: updateSettings,
       loading: false,
       style: `background: linear-gradient(to right, ${colors.primary}, ${colors.secondary}); color: ${colors.text}; box-shadow: 0 0 20px ${colors.primary}20;`
@@ -182,7 +181,7 @@
 <DashboardPageLayout 
   title="Music Player Settings" 
   subtitle="Configure music playback settings and controls"
-  icon={Music2}
+  icon="fa-music"
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
 >
@@ -209,7 +208,7 @@
         style="background: {colors.accent}10;"
         role="alert"
       >
-        <AlertCircle class="w-5 h-5" style="color: {colors.accent}" />
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
         <p style="color: {colors.accent}">{error}</p>
       </div>
     {:else}
@@ -227,7 +226,7 @@
               style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                      color: {colors.primary};"
             >
-              <Music2 class="w-6 h-6" />
+              <i class="fa-utility-duo fa-regular fa-music" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">Now Playing</h2>
           </div>
@@ -245,7 +244,7 @@
               </h3>
               <p style="color: {colors.muted}">{musicStatus.currentTrack.track.author}</p>
               <div class="flex items-center gap-2 mt-2">
-                <List class="w-4 h-4" style="color: {colors.primary}" />
+                <i class="fa-solid fa-list" style="color: {colors.primary}; font-size: 16px;"></i>
                 <span class="text-sm" style="color: {colors.muted}">
                   Queue: {musicStatus.queue.length} tracks
                 </span>
@@ -268,7 +267,7 @@
               style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                      color: {colors.primary};"
             >
-              <Settings class="w-6 h-6" />
+              <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">General Settings</h2>
           </div>
@@ -277,7 +276,7 @@
             <!-- Volume -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Volume2 class="w-4 h-4" style="color: {colors.primary}" />
+                <i class="fa-solid fa-volume" style="color: {colors.primary}; font-size: 16px;"></i>
                 <label for="default-volume" class="font-medium" style="color: {colors.text}">
                   Default Volume
                 </label>
@@ -297,7 +296,7 @@
             <!-- Music Channel -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
+                <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
                 <label class="font-medium" style="color: {colors.text}">
                   Music Channel
                 </label>
@@ -316,7 +315,7 @@
             <!-- DJ Role -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Users class="w-4 h-4" style="color: {colors.accent}" />
+                <i class="fa-solid fa-users" style="color: {colors.accent}; font-size: 16px;"></i>
                 <label class="font-medium" style="color: {colors.text}">
                   DJ Role
                 </label>
@@ -335,7 +334,7 @@
             <!-- Player Repeat -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Clock class="w-4 h-4" style="color: {colors.primary}" />
+                <i class="fa-solid fa-clock" style="color: {colors.primary}; font-size: 16px;"></i>
                 <label class="font-medium" style="color: {colors.text}">
                   Repeat Mode
                 </label>
@@ -369,7 +368,7 @@
               style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                      color: {colors.secondary};"
             >
-              <Sliders class="w-6 h-6" />
+              <i class="fa-utility-duo fa-regular fa-sliders" style="--fa-primary-color: {colors.secondary}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">Advanced Settings</h2>
           </div>
@@ -378,7 +377,7 @@
             <!-- Auto Disconnect -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Users class="w-4 h-4" style="color: {colors.primary}" />
+                <i class="fa-solid fa-users" style="color: {colors.primary}; font-size: 16px;"></i>
                 <label class="font-medium" style="color: {colors.text}">
                   Auto Disconnect
                 </label>
@@ -402,7 +401,7 @@
             <!-- Auto Play -->
             <div>
               <div class="flex items-center gap-2 mb-2">
-                <Music2 class="w-4 h-4" style="color: {colors.secondary}" />
+                <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
                 <label class="font-medium" style="color: {colors.text}">
                   Auto Play Similar
                 </label>
@@ -445,7 +444,7 @@
               {#if settings.voteSkipEnabled}
                 <div>
                   <div class="flex items-center gap-2 mb-2">
-                    <Settings class="w-4 h-4" style="color: {colors.accent}" />
+                    <i class="fa-solid fa-gear" style="color: {colors.accent}; font-size: 16px;"></i>
                     <label for="vote-skip-threshold" class="font-medium" style="color: {colors.text}">
                       Vote Skip Threshold
                     </label>

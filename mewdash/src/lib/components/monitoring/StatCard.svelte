@@ -11,7 +11,7 @@
   
   interface Props {
     // Props
-    icon: ComponentType;
+    icon: ComponentType | string;
     label: string;
     value: string | number;
     subtitle?: string;
@@ -39,6 +39,9 @@
     tooltipData = [],
     clickable = false
   }: Props = $props();
+
+  // Check if icon is a string (Font Awesome) or component (Lucide)
+  let isFontAwesome = $derived(typeof icon === 'string');
 
   // State
   let animatedValue: number = $state(0);
@@ -123,7 +126,7 @@
     return ArrowRight;
   }
 
-  const SvelteComponent = $derived(icon);
+  const SvelteComponent = $derived(!isFontAwesome ? icon : null);
 </script>
 
 <div
@@ -142,10 +145,15 @@
           class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
     style="background: {$colorStore[iconColor]}20"
   >
-    <SvelteComponent
-      class="w-5 h-5"
-      style="color: {$colorStore[iconColor]}"
-    />
+    {#if isFontAwesome}
+      <i class="fa-utility-duo fa-regular {icon} text-xl"
+         style="--fa-primary-color: {$colorStore[iconColor]}; --fa-secondary-color: {$colorStore.secondary}; --fa-secondary-opacity: 0.5;"></i>
+    {:else}
+      <SvelteComponent
+        class="w-5 h-5"
+        style="color: {$colorStore[iconColor]}"
+      />
+    {/if}
   </div>
 
   <div class="flex-1 min-w-0 flex flex-col items-center justify-center">

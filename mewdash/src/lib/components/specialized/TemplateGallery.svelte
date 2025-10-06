@@ -2,20 +2,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { colorStore } from "$lib/stores/colorStore";
-  import { 
-    MessageCircle, 
-    Bell, 
-    Shield, 
-    Info, 
-    Sparkles, 
-    Users, 
-    Trophy,
-    Heart,
-    Zap,
-    Gift,
-    Crown,
-    Calendar
-  } from "lucide-svelte";
 
   interface Props {
     selectedCategory?: string;
@@ -53,7 +39,7 @@
       name: 'Basic Welcome',
       description: 'Simple welcome message for new members',
       category: 'welcome',
-      icon: Users,
+      icon: "fa-users",
       preview: {
         title: 'Welcome to the Server! 👋',
         description: 'Hey %user.mention%, welcome to **%server.name%**!\n\nWe\'re glad to have you here. Make sure to read our rules and introduce yourself!',
@@ -76,7 +62,7 @@
       name: 'Detailed Welcome',
       description: 'Comprehensive welcome with server info',
       category: 'welcome',
-      icon: Crown,
+      icon: "fa-crown",
       preview: {
         title: 'Welcome to %server.name%! ✨',
         description: 'Hello %user.mention%! We\'re excited to have you join our community.',
@@ -112,7 +98,7 @@
       name: 'Basic Announcement',
       description: 'Simple server announcement',
       category: 'announcements',
-      icon: Bell,
+      icon: "fa-bell",
       preview: {
         title: '📢 Server Announcement',
         description: 'Important information for all members of %server.name%.',
@@ -135,7 +121,7 @@
       name: 'Event Announcement',
       description: 'Announce upcoming events',
       category: 'announcements',
-      icon: Calendar,
+      icon: "fa-calendar",
       preview: {
         title: '🎉 Upcoming Event!',
         description: 'Join us for an exciting community event!',
@@ -169,7 +155,7 @@
       name: 'Server Rules',
       description: 'Basic server rules layout',
       category: 'rules',
-      icon: Shield,
+      icon: "fa-shield",
       preview: {
         title: '📜 Server Rules',
         description: 'Please follow these rules to keep our community safe and fun for everyone.',
@@ -202,7 +188,7 @@
       name: 'Information Card',
       description: 'General information layout',
       category: 'info',
-      icon: Info,
+      icon: "fa-circle-info",
       preview: {
         title: 'ℹ️ Information',
         description: 'Here\'s some important information you should know.',
@@ -227,7 +213,7 @@
       name: 'Poll Template',
       description: 'Interactive poll with reactions',
       category: 'interactive',
-      icon: Zap,
+      icon: "fa-bolt",
       preview: {
         title: '📊 Community Poll',
         description: 'Vote on this important community decision!',
@@ -259,7 +245,7 @@
       name: 'Celebration',
       description: 'Celebrate achievements and milestones',
       category: 'fun',
-      icon: Trophy,
+      icon: "fa-trophy",
       preview: {
         title: '🎉 Congratulations!',
         description: 'Let\'s celebrate this amazing achievement!',
@@ -281,13 +267,13 @@
   ];
 
   const categories = [
-    { id: 'all', name: 'All Templates', icon: Sparkles },
-    { id: 'welcome', name: 'Welcome', icon: Users },
-    { id: 'announcements', name: 'Announcements', icon: Bell },
-    { id: 'rules', name: 'Rules', icon: Shield },
-    { id: 'info', name: 'Information', icon: Info },
-    { id: 'interactive', name: 'Interactive', icon: Zap },
-    { id: 'fun', name: 'Fun', icon: Trophy }
+    { id: 'all', name: 'All Templates', icon: "fa-sparkles" },
+    { id: 'welcome', name: 'Welcome', icon: "fa-users" },
+    { id: 'announcements', name: 'Announcements', icon: "fa-bell" },
+    { id: 'rules', name: 'Rules', icon: "fa-shield" },
+    { id: 'info', name: 'Information', icon: "fa-circle-info" },
+    { id: 'interactive', name: 'Interactive', icon: "fa-bolt" },
+    { id: 'fun', name: 'Fun', icon: "fa-trophy" }
   ];
 
   let filteredTemplates = $derived(selectedCategory === 'all' 
@@ -319,7 +305,7 @@
         onclick={() => selectedCategory = category.id}
         onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedCategory = category.id)}
       >
-        <category.icon size={14} />
+        <i class="fa-solid {category.icon}" style="font-size: 14px;"></i>
         {category.name}
       </button>
     {/each}
@@ -342,7 +328,7 @@
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-2">
               <div class="p-1.5 rounded-sm" style="background: {$colorStore.primary}15;">
-              <template.icon size={14} style="color: {$colorStore.primary};" />
+              <i class="fa-solid {template.icon}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
             </div>
             <div class="min-w-0 flex-1">
               <h3 class="font-medium text-sm truncate" style="color: {$colorStore.text};">{template.name}</h3>
@@ -388,7 +374,7 @@
     <div class="text-center py-12">
       <div class="mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-4"
            style="background: {$colorStore.primary}10;">
-        <Sparkles size={32} style="color: {$colorStore.primary};" />
+        <i class="fa-utility-duo fa-regular fa-sparkles" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px;"></i>
       </div>
       <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No templates found</h3>
       <p class="text-sm" style="color: {$colorStore.muted};">Try selecting a different category</p>

@@ -114,6 +114,17 @@
             }
         }
     });
+
+    // Sync colorStore to CSS custom properties for Font Awesome Jelly Duo icons
+    $effect(() => {
+        if (browser && document.documentElement) {
+            document.documentElement.style.setProperty('--color-primary', $colorStore.primary);
+            document.documentElement.style.setProperty('--color-secondary', $colorStore.secondary);
+            document.documentElement.style.setProperty('--color-accent', $colorStore.accent);
+            document.documentElement.style.setProperty('--color-text', $colorStore.text);
+            document.documentElement.style.setProperty('--color-muted', $colorStore.muted);
+        }
+    });
 </script>
 
 <svelte:head>

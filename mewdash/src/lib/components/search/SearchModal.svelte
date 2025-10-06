@@ -8,7 +8,6 @@
     import {clickOutside} from "$lib/clickOutside";
     import {colorStore} from "$lib/stores/colorStore";
     import {closeSearch, getSearchableFeatures, type SearchableItem, searchStore} from "$lib/stores/searchStore";
-    import {ArrowDown, ArrowUp, CornerDownLeft, Search, Sparkles, X} from "lucide-svelte";
     import Portal from "$lib/components/ui/Portal.svelte";
 
     const bubble = createBubbler();
@@ -28,13 +27,13 @@
   // Fuzzy search implementation
   function searchFeatures(searchQuery: string, category: string): SearchableItem[] {
     const allFeatures = getSearchableFeatures(); // Get dynamic features
-    
+
     if (!searchQuery.trim()) {
       // Show all features when no query, filtered by category
-      const filtered = category === 'All' 
-        ? allFeatures 
+      const filtered = category === 'All'
+        ? allFeatures
         : allFeatures.filter(item => item.category === category);
-      return filtered.slice(0, 8); // Limit initial results
+      return category === 'All' ? filtered : filtered.slice(0, 8); // Show all for "All" category, limit others
     }
 
     const query = searchQuery.toLowerCase();
@@ -155,6 +154,15 @@
       window.removeEventListener('keydown', handleKeydown);
     }
   });
+
+  // Prevent body scroll when modal is open
+  $effect(() => {
+    if (browser && $searchStore.isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else if (browser) {
+      document.body.style.overflow = '';
+    }
+  });
   // Reactive updates
   run(() => {
     $searchStore.isOpen && focusInput();
@@ -171,8 +179,8 @@
 
 {#if $searchStore.isOpen}
   <Portal>
-    <div 
-      class="fixed inset-0 flex items-start justify-center pt-20 px-4"
+    <div
+      class="fixed inset-0 flex items-start justify-center pt-12 md:pt-20 px-2 md:px-4 pb-4"
       style="z-index: 100000; background: rgba(0, 0, 0, 0.3);"
       in:fade={{ duration: 150 }}
       out:fade={{ duration: 100 }}
@@ -183,12 +191,12 @@
       aria-label="Search dashboard features"
       tabindex="-1"
     >
-      <div 
-        class="w-full max-w-2xl rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-xl"
+      <div
+        class="w-full max-w-2xl rounded-xl md:rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-xl max-h-[calc(100vh-6rem)] md:max-h-[90vh] flex flex-col"
         style="background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(0,0,0,0.9)), linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                backdrop-filter: blur(20px);
                border: 1px solid {$colorStore.primary}30;
-               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 
+               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8),
                           0 0 0 1px {$colorStore.primary}10,
                           inset 0 1px 0 {$colorStore.primary}15;"
         in:fly={{ y: -30, duration: 300, delay: 50 }}
@@ -200,39 +208,41 @@
         onclickoutside={handleClickOutside}
       >
       <!-- Search Header -->
-      <div class="flex items-center gap-4 p-6 border-b" style="border-color: {$colorStore.primary}20;">
-        <div class="flex items-center gap-4 flex-1">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center"
+      <div class="flex items-center gap-2 md:gap-4 p-3 md:p-6 border-b" style="border-color: {$colorStore.primary}20;">
+        <div class="flex items-center gap-2 md:gap-4 flex-1">
+          <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center"
                style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
-            <Search size={20} style="color: {$colorStore.text};" />
+            <i class="fa-utility-duo fa-regular fa-magnifying-glass text-base md:text-xl"
+               style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
           </div>
           <input
             bind:this={searchInput}
             bind:value={query}
             type="text"
-            placeholder="Search dashboard features..."
-            class="flex-1 bg-transparent text-xl outline-hidden"
+            placeholder="Search..."
+            class="flex-1 bg-transparent text-base md:text-xl outline-hidden"
             style="color: {$colorStore.text}; font-weight: 300;"
           />
         </div>
-        
+
         <!-- Close Button -->
         <button
-          class="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+          class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
           style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}10;"
           onclick={closeSearch}
         >
-          <X size={18} />
+          <i class="fa-utility-duo fa-regular fa-times text-sm md:text-base"
+             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
         </button>
       </div>
 
       <!-- Category Filters -->
-      <div class="flex gap-2 px-6 py-4 border-b overflow-x-auto" style="border-color: {$colorStore.primary}15;">
+      <div class="flex items-center gap-1 md:gap-2 px-3 md:px-6 py-2 md:py-3 border-b overflow-x-auto shrink-0" style="border-color: {$colorStore.primary}15;">
         {#each categories as category}
           <button
-                  class="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105"
+                  class="shrink-0 px-2 md:px-4 py-2 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all hover:scale-105"
             class:active={activeCategory === category}
-            style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'}; 
+            style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'};
                    color: {activeCategory === category ? $colorStore.primary : $colorStore.muted};
                    border: 1px solid {activeCategory === category ? $colorStore.primary + '40' : $colorStore.primary + '15'};"
             onclick={() => { activeCategory = category; selectedIndex = 0; }}
@@ -243,21 +253,23 @@
       </div>
 
       <!-- Search Results -->
-      <div class="max-h-80 overflow-y-auto pt-2">
+      <div class="overflow-y-auto flex-1 min-h-0">
         {#if results.length === 0 && query.trim()}
           <!-- No Results -->
-          <div class="p-12 text-center">
-            <Search class="w-16 h-16 mx-auto mb-6" style="color: {$colorStore.primary}40;" />
-            <h3 class="text-xl font-light mb-3" style="color: {$colorStore.text};">No results found</h3>
-            <p class="text-sm" style="color: {$colorStore.muted};">
+          <div class="p-6 md:p-12 text-center">
+            <i class="fa-utility-duo fa-regular fa-magnifying-glass text-4xl md:text-6xl mx-auto mb-4 md:mb-6 block"
+               style="--fa-primary-color: {$colorStore.primary}40; --fa-secondary-color: {$colorStore.primary}40;"></i>
+            <h3 class="text-lg md:text-xl font-light mb-2 md:mb-3" style="color: {$colorStore.text};">No results found</h3>
+            <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
               Try adjusting your search or browse by category
             </p>
           </div>
         {:else if results.length === 0 && !query.trim()}
           <!-- Recent Searches -->
-          <div class="p-6 pb-0">
+          <div class="p-3 md:p-6 pb-0">
             <div class="flex items-center gap-3 mb-4">
-              <Sparkles size={18} style="color: {$colorStore.primary};" />
+              <i class="fa-utility-duo fa-regular fa-star"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               <span class="text-base font-light" style="color: {$colorStore.text};">Quick Access</span>
             </div>
             
@@ -287,7 +299,8 @@
                 >
                   <div class="w-10 h-10 rounded-xl flex items-center justify-center"
                        style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
-                    <feature.icon size={18} style="color: {$colorStore.text};" />
+                    <i class="fa-utility-duo fa-regular {feature.icon}"
+                       style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                   </div>
                   <div class="flex-1 text-left">
                     <div class="font-medium" style="color: {$colorStore.text};">{feature.title}</div>
@@ -299,41 +312,42 @@
           </div>
         {:else}
           <!-- Results List -->
-          <div class="px-4 pb-2">
+          <div class="px-2 md:px-4 pb-2">
             {#each results as result, index}
               <button
-                class="search-result-item flex items-center gap-4 w-full p-4 rounded-xl transition-all duration-200 ease-in-out mb-2 border border-transparent relative group"
+                class="search-result-item flex items-center gap-2 md:gap-4 w-full p-2 md:p-4 rounded-lg md:rounded-xl transition-all duration-200 ease-in-out mb-2 border border-transparent relative group"
                 class:selected={index === selectedIndex}
-                style="background: {index === selectedIndex 
-                  ? `linear-gradient(135deg, ${$colorStore.primary}20, ${$colorStore.secondary}20)` 
+                style="background: {index === selectedIndex
+                  ? `linear-gradient(135deg, ${$colorStore.primary}20, ${$colorStore.secondary}20)`
                   : $colorStore.primary + '03'};
                        border-color: {index === selectedIndex ? $colorStore.primary + '30' : 'transparent'};"
                 onclick={() => selectResult(result)}
               >
                 <!-- Icon -->
-                  <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                     style="background: {index === selectedIndex 
-                       ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` 
+                  <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center shrink-0"
+                     style="background: {index === selectedIndex
+                       ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)`
                        : `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`};">
-                  <result.icon size={20} style="color: {$colorStore.text};" />
+                  <i class="fa-utility-duo fa-regular {result.icon} text-sm md:text-xl"
+                     style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                 </div>
 
                 <!-- Content -->
                 <div class="flex-1 text-left min-w-0">
-                  <div class="font-medium truncate" 
-                       style="font-size: 15px; color: {index === selectedIndex ? $colorStore.primary : $colorStore.text};">
+                  <div class="font-medium truncate text-sm md:text-base"
+                       style="color: {index === selectedIndex ? $colorStore.primary : $colorStore.text};">
                     {result.title}
                   </div>
-                  <div class="text-sm truncate mt-0.5" style="color: {$colorStore.muted};">
+                  <div class="text-xs md:text-sm truncate mt-0.5 hidden md:block" style="color: {$colorStore.muted};">
                     {result.description}
                   </div>
-                  <div class="flex items-center gap-2 mt-2">
-                    <div class="text-xs px-2 py-1 rounded-full"
+                  <div class="flex items-center gap-1 md:gap-2 mt-1 md:mt-2">
+                    <div class="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full"
                          style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};">
                       {result.category}
                     </div>
                     {#if result.tab}
-                      <div class="text-xs px-2 py-1 rounded-full"
+                      <div class="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full hidden md:block"
                            style="background: {$colorStore.accent}10; color: {$colorStore.accent};">
                         {result.tab}
                       </div>
@@ -343,8 +357,9 @@
 
                 <!-- Keyboard hint -->
                 {#if index === selectedIndex}
-                    <div class="flex items-center gap-1 text-xs shrink-0" style="color: {$colorStore.muted};">
-                    <CornerDownLeft size={14} />
+                    <div class="hidden md:flex items-center gap-1 text-xs shrink-0" style="color: {$colorStore.muted};">
+                    <i class="fa-utility-duo fa-regular fa-arrow-turn-down-left text-sm"
+                       style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                   </div>
                 {/if}
               </button>
@@ -354,28 +369,31 @@
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between px-6 py-4 border-t text-xs" 
+      <div class="flex items-center justify-between px-3 md:px-6 py-2 md:py-4 border-t text-xs"
            style="border-color: {$colorStore.primary}15; color: {$colorStore.muted};">
-        <div class="flex items-center gap-6">
-          <div class="flex items-center gap-2">
-            <div class="flex items-center">
-              <ArrowUp size={12} class="mr-1" />
-              <ArrowDown size={12} />
+        <div class="flex items-center gap-2 md:gap-6">
+          <div class="hidden md:flex items-center gap-2">
+            <div class="flex items-center gap-1">
+              <i class="fa-utility-duo fa-regular fa-arrow-up text-xs"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
+              <i class="fa-utility-duo fa-regular fa-arrow-down text-xs"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
             </div>
             <span>Navigate</span>
           </div>
-          <div class="flex items-center gap-2">
-            <CornerDownLeft size={12} />
+          <div class="hidden md:flex items-center gap-2">
+            <i class="fa-utility-duo fa-regular fa-arrow-turn-down-left text-xs"
+               style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
             <span>Select</span>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-1 rounded-md border font-mono text-xs" 
+          <div class="hidden md:flex items-center gap-2">
+            <span class="px-2 py-1 rounded-md border font-mono text-xs"
                   style="border-color: {$colorStore.primary}30; color: {$colorStore.text};">Tab</span>
             <span>Categories</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span class="px-2 py-1 rounded-md border font-mono text-xs"
+          <span class="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md border font-mono text-xs"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};">Esc</span>
           <span>Close</span>
         </div>
@@ -457,6 +475,16 @@
 
   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Hide scrollbar on category pills */
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+
+  .overflow-x-auto {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* Ensure proper stacking context */

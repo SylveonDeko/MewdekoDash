@@ -7,7 +7,6 @@
     import {fade, fly} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
     import {colorStore} from "$lib/stores/colorStore";
-    import {BarChart3, Calendar, Hash, Search, Server, User, Zap} from "lucide-svelte";
     import Portal from "$lib/components/ui/Portal.svelte";
     import {clickOutside} from "$lib/clickOutside";
 
@@ -64,18 +63,18 @@
   let filteredPlaceholders: Placeholder[] = $state([]);
 
   // Category icons mapping
-  const categoryIcons: Record<string, ComponentType> = {
-    'user': User,
-    'server': Server,
-    'guild': Server,
-    'channel': Hash,
-    'date': Calendar,
-    'time': Calendar,
-    'stats': BarChart3,
-    'bot': Zap,
-    'afk': User,
-    'suggest': BarChart3,
-    'default': Hash
+  const categoryIcons: Record<string, string> = {
+    'user': "fa-user",
+    'server': "fa-server",
+    'guild': "fa-server",
+    'channel': "fa-hashtag",
+    'date': "fa-calendar",
+    'time': "fa-calendar",
+    'stats': "fa-chart-column",
+    'bot': "fa-bolt",
+    'afk': "fa-user",
+    'suggest': "fa-chart-column",
+    'default': "fa-hashtag"
   };
 
   // Filter placeholders based on search term
@@ -104,7 +103,7 @@
   }, {} as Record<string, Placeholder[]>));
 
   // Get icon for category
-  function getCategoryIcon(category: string): ComponentType {
+  function getCategoryIcon(category: string): string {
     const key = category.toLowerCase();
     return categoryIcons[key] || categoryIcons.default;
   }
@@ -361,11 +360,8 @@
         <!-- Search Header -->
         <div class="p-3 border-b" style="border-color: {$colorStore.primary}30;">
           <div class="relative">
-            <Search 
-              size={16} 
-              class="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              style="color: {$colorStore.muted};" 
-            />
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+               style="color: {$colorStore.muted}; font-size: 16px;"></i>
             <input
               bind:this={searchInputRef}
               type="text"
@@ -387,7 +383,7 @@
           {#if filteredPlaceholders.length === 0}
             <!-- No Results -->
             <div class="p-6 text-center">
-              <Search size={32} class="mx-auto mb-3 opacity-50" style="color: {$colorStore.muted};" />
+              <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
               <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">No placeholders found</p>
               <p class="text-xs" style="color: {$colorStore.muted};">
                 Try adjusting your search terms
@@ -397,14 +393,10 @@
             <!-- Group by Categories -->
             {#each Object.entries(groupedPlaceholders) as [category, categoryPlaceholders]}
               <!-- Category Header -->
-              {@const SvelteComponent = getCategoryIcon(category)}
               <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
                 <div class="flex items-center gap-2">
-                  <SvelteComponent 
-                    size={14} 
-                    style="color: {$colorStore.primary};" 
-                  />
-                  <span class="text-xs font-semibold uppercase tracking-wide" 
+                  <i class="fa-solid {getCategoryIcon(category)}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                  <span class="text-xs font-semibold uppercase tracking-wide"
                         style="color: {$colorStore.primary};">
                     {category}
                   </span>
@@ -496,11 +488,8 @@
       <!-- Search Header -->
       <div class="p-3 border-b" style="border-color: {$colorStore.primary}30;">
         <div class="relative">
-          <Search 
-            size={16} 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-            style="color: {$colorStore.muted};" 
-          />
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+             style="color: {$colorStore.muted}; font-size: 16px;"></i>
           <input
             bind:this={searchInputRef}
             type="text"
@@ -522,7 +511,7 @@
         {#if filteredPlaceholders.length === 0}
           <!-- No Results -->
           <div class="p-6 text-center">
-            <Search size={32} class="mx-auto mb-3 opacity-50" style="color: {$colorStore.muted};" />
+            <i class="fa-utility-duo fa-regular fa-magnifying-glass" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
             <p class="text-sm font-medium mb-1" style="color: {$colorStore.text};">No placeholders found</p>
             <p class="text-xs" style="color: {$colorStore.muted};">
               Try adjusting your search terms
@@ -532,14 +521,10 @@
           <!-- Group by Categories -->
           {#each Object.entries(groupedPlaceholders) as [category, categoryPlaceholders]}
             <!-- Category Header -->
-            {@const SvelteComponent_1 = getCategoryIcon(category)}
             <div class="px-3 py-2 border-b border-opacity-20" style="border-color: {$colorStore.primary}20;">
               <div class="flex items-center gap-2">
-                <SvelteComponent_1 
-                  size={14} 
-                  style="color: {$colorStore.primary};" 
-                />
-                <span class="text-xs font-semibold uppercase tracking-wide" 
+                <i class="fa-solid {getCategoryIcon(category)}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide"
                       style="color: {$colorStore.primary};">
                   {category}
                 </span>

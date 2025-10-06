@@ -206,12 +206,8 @@
 
               <div class="relative">
                   <div class="flex items-start justify-between mb-3">
-                      <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.primary}"
-                           viewBox="0 0 24 24">
-                          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="2"/>
-                      </svg>
+                      <i class="fa-utility-duo fa-regular fa-house text-3xl"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                       <span class="text-xs px-2 py-1 rounded-full"
                             style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                 Manage
@@ -240,12 +236,8 @@
 
               <div class="relative">
                   <div class="flex items-start justify-between mb-3">
-                      <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.secondary}"
-                           viewBox="0 0 24 24">
-                          <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="2"/>
-                      </svg>
+                      <i class="fa-utility-duo fa-regular fa-user-plus text-3xl"
+                         style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
                       <span class="text-xs px-2 py-1 rounded-full"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                 Free
@@ -274,10 +266,7 @@
                        style="background: {$colorStore.primary}12;"></div>
 
                   <div class="relative">
-                      <svg class="w-6 h-6 mb-2" fill="currentColor" style="color: {$colorStore.text}"
-                           viewBox="0 0 24 24">
-                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                      </svg>
+                      <i class="fa-brands fa-discord text-2xl mb-2" style="color: {$colorStore.text}"></i>
                       <p class="font-semibold text-sm" style="color: {$colorStore.text}">Discord</p>
                       <p class="text-xs mt-1" style="color: {$colorStore.muted}">Join us</p>
                   </div>
@@ -299,10 +288,7 @@
                        style="background: {$colorStore.secondary}12;"></div>
 
                   <div class="relative">
-                      <svg class="w-6 h-6 mb-2" fill="currentColor" style="color: {$colorStore.text}"
-                           viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
+                      <i class="fa-solid fa-heart text-2xl mb-2" style="color: {$colorStore.text}"></i>
                       <p class="font-semibold text-sm" style="color: {$colorStore.text}">Support</p>
                       <p class="text-xs mt-1" style="color: {$colorStore.muted}">Donate</p>
                   </div>
@@ -343,12 +329,8 @@
 
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-3">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" style="color: {$colorStore.primary}"
-                                 viewBox="0 0 24 24">
-                                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                      stroke-linecap="round" stroke-linejoin="round"
-                                      stroke-width="2"/>
-                            </svg>
+                            <i class="fa-utility-duo fa-regular fa-house text-3xl"
+                               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                             <span class="text-xs px-2 py-1 rounded-full"
                                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
                   Manage
@@ -390,12 +372,8 @@
 
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-3">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor"
-                                 style="color: {$colorStore.secondary}" viewBox="0 0 24 24">
-                                <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                      stroke-linecap="round" stroke-linejoin="round"
-                                      stroke-width="2"/>
-                            </svg>
+                            <i class="fa-utility-duo fa-regular fa-user-plus text-3xl"
+                               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
                             <span class="text-xs px-2 py-1 rounded-full"
                                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
                   Free
@@ -436,10 +414,7 @@
                          style="background: {$colorStore.primary}12;"></div>
 
                     <div class="relative z-10 flex items-center gap-3">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" style="color: {$colorStore.text}"
-                             viewBox="0 0 24 24">
-                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                        </svg>
+                        <i class="fa-brands fa-discord text-2xl flex-shrink-0" style="color: {$colorStore.text}"></i>
                         <div>
                             <p class="font-semibold" style="color: {$colorStore.text}">Join Community</p>
                             <p class="text-xs" style="color: {$colorStore.muted}">Get help & chat</p>
@@ -476,10 +451,7 @@
                          style="background: {$colorStore.secondary}12;"></div>
 
                     <div class="relative z-10 flex items-center gap-3">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" style="color: {$colorStore.text}"
-                             viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
+                        <i class="fa-solid fa-heart text-2xl flex-shrink-0" style="color: {$colorStore.text}"></i>
                         <div>
                             <p class="font-semibold" style="color: {$colorStore.text}">Support Us</p>
                             <p class="text-xs" style="color: {$colorStore.muted}">Buy us a coffee</p>
@@ -549,10 +521,7 @@
                                     {guild.Name}
                                 </h3>
                                 <div class="flex items-center gap-1 mt-1">
-                                    <svg class="w-3 h-3 sm:w-4 sm:h-4" style="color: {$colorStore.muted}"
-                                         fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                                    </svg>
+                                    <i class="fa-solid fa-users text-xs sm:text-sm" style="color: {$colorStore.muted}"></i>
                                     <span class="text-xs sm:text-sm" style="color: {$colorStore.muted}">
                             {guild.MemberCount.toLocaleString()}
                           </span>

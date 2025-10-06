@@ -23,36 +23,26 @@
   // Check for wizard or setup suggestion when guild changes
   async function checkWizardOrSuggestion() {
     if (!$currentGuild || !$userStore || !browser) return;
-    
-    console.log('Dashboard layout: Checking wizard for guild:', $currentGuild.name, 'user:', $userStore.id);
-    
+
     try {
       // Don't check if we're already on wizard page
       if (window.location.pathname.startsWith('/wizard')) {
-        console.log('Already on wizard page, skipping check');
         return;
       }
-      
-      console.log('Making API call to shouldShowWizard...');
       const wizardDecision = await api.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
-      console.log('Wizard decision received:', wizardDecision);
-      
+
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
           const wizardTypeString = wizardDecision.wizardType === 'FirstTime' ? 'first-time' : 'quick-setup';
-        logger.info(`Dashboard triggering ${wizardTypeString} wizard for guild ${$currentGuild.name}: ${wizardDecision.reason}`);
         window.location.href = `/wizard?guild=${$currentGuild.id}&type=${wizardTypeString}`;
       } else if (wizardDecision.showSuggestion) {
         showSetupSuggestion = true;
         setupSuggestionContext = wizardDecision.context;
-          logger.info("Showing setup suggestion for guild:", $currentGuild.name);
       } else {
         showSetupSuggestion = false;
         setupSuggestionContext = null;
-          logger.info("No wizard or suggestion needed for guild:", $currentGuild.name);
       }
     } catch (err) {
-      logger.error("Error checking wizard/suggestion:", err);
       showSetupSuggestion = false;
     }
   }

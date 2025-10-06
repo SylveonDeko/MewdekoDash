@@ -4,7 +4,6 @@
     import {colorStore} from "$lib/stores/colorStore";
     import {musicStore} from "$lib/stores/musicStore";
     import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
-    import {BarChart3, Bot, ChartBar, Code, Library, Music, RefreshCw, Shield, Users} from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import CompactMusicPlayer from "$lib/components/music/CompactMusicPlayer.svelte";
@@ -115,7 +114,8 @@
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Bot class="w-6 h-6" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-circle text-2xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Bot Status</h2>
       </div>
@@ -123,7 +123,7 @@
       <div class="space-y-4">
         <StatCard
           animationDelay={0}
-          icon={Bot}
+          icon="fa-wifi"
           iconColor="primary"
           label="Latency"
           trend={botStatus?.botLatency < 100 ? "up" : botStatus?.botLatency > 200 ? "down" : "neutral"}
@@ -133,7 +133,7 @@
 
         <StatCard
           animationDelay={100}
-          icon={Code}
+          icon="fa-check-circle"
           iconColor="secondary"
           label="Status"
           value={botStatus?.botStatus || 'Unknown'}
@@ -148,7 +148,8 @@
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <BarChart3 class="w-6 h-6" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-server text-2xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Server Stats</h2>
       </div>
@@ -156,7 +157,7 @@
       <div class="space-y-4">
         <StatCard
           animationDelay={200}
-          icon={Users}
+          icon="fa-users"
           iconColor="primary"
           label="Members"
           subtitle={`${guildMemberStats.humanMembers} humans, ${guildMemberStats.botMembers} bots`}
@@ -166,7 +167,7 @@
 
         <StatCard
           animationDelay={300}
-          icon={Shield}
+          icon="fa-shield"
           iconColor="accent"
           label="Roles"
           subtitle={`${roleStats.savedRoles} saved`}
@@ -185,7 +186,8 @@
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <ChartBar class="w-6 h-6" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-info-circle text-2xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Bot Info</h2>
       </div>
@@ -193,7 +195,7 @@
       <div class="space-y-4">
         <StatCard
           animationDelay={400}
-          icon={Code}
+          icon="fa-code"
           iconColor="primary"
           label="Commands"
           tooltipData={[
@@ -206,7 +208,7 @@
 
         <StatCard
           animationDelay={500}
-          icon={Library}
+          icon="fa-book"
           iconColor="secondary"
           label="Discord.NET"
           subtitle={botStatus?.commitHash?.substring(0, 7) || ""}
@@ -222,7 +224,8 @@
       <div class="flex items-center gap-4 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <RefreshCw class="w-6 h-6" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-bolt text-2xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Quick Actions</h2>
       </div>
@@ -234,9 +237,8 @@
           onclick={onRefresh}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         >
-          <span class:animate-spin={refreshing}>
-            <RefreshCw size={18} />
-          </span>
+          <i class="fa-utility-duo fa-regular fa-sync {refreshing ? 'fa-spin' : ''}"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           {refreshing ? 'Refreshing...' : 'Refresh Data'}
         </button>
 
@@ -245,7 +247,8 @@
           href="/dashboard/music"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         >
-          <Music size={18} />
+          <i class="fa-utility-duo fa-regular fa-music"
+             style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
           Music Player
         </a>
 
@@ -254,7 +257,8 @@
           href="/dashboard/moderation"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
         >
-          <Shield size={18} />
+          <i class="fa-utility-duo fa-regular fa-flag"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
           Moderation
         </a>
       </div>

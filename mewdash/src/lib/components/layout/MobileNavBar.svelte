@@ -4,9 +4,6 @@
 
     import {fade, scale, slide} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
-
-    // Import Font Awesome CSS
-    import '@fortawesome/fontawesome-free/css/all.min.css';
     import {page} from "$app/stores";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
@@ -30,33 +27,51 @@
 
   // Define navigation items (main visible buttons)
   const navItems = [
-      {label: "Home", icon: "fa-solid fa-house", href: "/dashboard", priority: 1},
-      {label: "Settings", icon: "fa-solid fa-gear", href: "/dashboard/settings", priority: 2},
-      {label: "Music", icon: "fa-solid fa-music", href: "/dashboard/music", priority: 3},
-      {label: "XP", icon: "fa-solid fa-star", href: "/dashboard/xp", priority: 4},
-      {label: "Instance", icon: "fa-solid fa-server", href: "#", isInstanceSelector: true, priority: 5},
-      {label: "More", icon: "fa-solid fa-bars", href: "#", isMore: true, priority: 6}
+      {label: "Home", icon: "fa-utility-duo fa-regular fa-home", href: "/dashboard", priority: 1},
+      {label: "Settings", icon: "fa-utility-duo fa-regular fa-cog", href: "/dashboard/settings", priority: 2},
+      {label: "Music", icon: "fa-utility-duo fa-regular fa-music", href: "/dashboard/music", priority: 3},
+      {label: "XP", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/xp", priority: 4},
+      {label: "Instance", icon: "fa-utility-duo fa-regular fa-database", href: "#", isInstanceSelector: true, priority: 5},
+      {label: "More", icon: "fa-utility-duo fa-regular fa-bars", href: "#", isMore: true, priority: 6}
   ];
 
-  // Secondary items shown in expanded "More" state - organized by category
-  const moreItems = [
-      {label: "AFK", icon: "fa-solid fa-moon", href: "/dashboard/afk", category: "Community"},
-      {label: "Greets", icon: "fa-solid fa-bell", href: "/dashboard/multigreets", category: "Community"},
-      {label: "Invites", icon: "fa-solid fa-users", href: "/dashboard/invites", category: "Community"},
-      {label: "Suggestions", icon: "fa-solid fa-lightbulb", href: "/dashboard/suggestions", category: "Community"},
-      {label: "Todo Lists", icon: "fa-solid fa-list", href: "/dashboard/todo", category: "Community"},
-      {label: "Triggers", icon: "fa-solid fa-comment-dots", href: "/dashboard/chat-triggers", category: "Content"},
-      {label: "Repeaters", icon: "fa-solid fa-repeat", href: "/dashboard/repeaters", category: "Content"},
-      {label: "Embeds", icon: "fa-solid fa-link", href: "/dashboard/embedbuilder", category: "Content"},
-      {label: "Perms", icon: "fa-solid fa-shield", href: "/dashboard/permissions", category: "Management"},
-      {label: "Protection", icon: "fa-solid fa-shield-halved", href: "/dashboard/protection", category: "Management"},
-      {label: "Moderation", icon: "fa-solid fa-shield-halved", href: "/dashboard/moderation", category: "Management"},
-      {label: "Administration", icon: "fa-solid fa-gear", href: "/dashboard/administration", category: "Management"},
-      {label: "Tickets", icon: "fa-solid fa-ticket", href: "/dashboard/tickets", category: "Management"},
-      {label: "Giveaways", icon: "fa-solid fa-gift", href: "/dashboard/giveaways", category: "Management"},
-      {label: "Chat Saver", icon: "fa-solid fa-floppy-disk", href: "/dashboard/chatsaver", category: "Management"},
-      {label: "Patreon", icon: "fa-solid fa-heart", href: "/dashboard/patreon", category: "Premium"}
+  // Base items for more menu
+  const baseMoreItems = [
+      {label: "Administration", icon: "fa-utility-duo fa-regular fa-cog", href: "/dashboard/administration", category: "Security"},
+      {label: "AFK System", icon: "fa-utility-duo fa-regular fa-moon", href: "/dashboard/afk", category: "Actions"},
+      {label: "Birthdays", icon: "fa-utility-duo fa-regular fa-birthday-cake", href: "/dashboard/birthday", category: "Community"},
+      {label: "Chat Saver", icon: "fa-utility-duo fa-regular fa-folder", href: "/dashboard/chatsaver", category: "Security"},
+      {label: "Confessions", icon: "fa-utility-duo fa-regular fa-comment", href: "/dashboard/confessions", category: "Community"},
+      {label: "Counting", icon: "fa-utility-duo fa-regular fa-hashtag", href: "/dashboard/counting", category: "Community"},
+      {label: "Custom Voice", icon: "fa-utility-duo fa-regular fa-microphone", href: "/dashboard/customvoice", category: "Entertainment"},
+      {label: "Embeds", icon: "fa-utility-duo fa-regular fa-link", href: "/dashboard/embedbuilder", category: "Actions"},
+      {label: "Feeds", icon: "fa-utility-duo fa-regular fa-newspaper", href: "/dashboard/feeds", category: "Actions"},
+      {label: "Giveaways", icon: "fa-utility-duo fa-regular fa-gift", href: "/dashboard/giveaways", category: "Entertainment"},
+      {label: "Greets", icon: "fa-utility-duo fa-regular fa-bell", href: "/dashboard/multigreets", category: "Actions"},
+      {label: "Highlights", icon: "fa-utility-duo fa-regular fa-bolt", href: "/dashboard/highlights", category: "Community"},
+      {label: "Invites", icon: "fa-utility-duo fa-regular fa-users", href: "/dashboard/invites", category: "Community"},
+      {label: "Logging", icon: "fa-utility-duo fa-regular fa-file", href: "/dashboard/logging", category: "Security"},
+      {label: "Message Stats", icon: "fa-utility-duo fa-regular fa-envelope", href: "/dashboard/messagestats", category: "Analytics"},
+      {label: "Moderation", icon: "fa-utility-duo fa-regular fa-flag", href: "/dashboard/moderation", category: "Security"},
+      {label: "Patreon", icon: "fa-utility-duo fa-regular fa-heart", href: "/dashboard/patreon", category: "Community"},
+      {label: "Performance", icon: "fa-utility-duo fa-regular fa-clock", href: "/dashboard/performance", category: "Analytics", ownerOnly: true},
+      {label: "Repeaters", icon: "fa-utility-duo fa-regular fa-sync", href: "/dashboard/repeaters", category: "Actions"},
+      {label: "Reputation", icon: "fa-utility-duo fa-regular fa-trophy", href: "/dashboard/reputation", category: "Community"},
+      {label: "Role Greets", icon: "fa-utility-duo fa-regular fa-user", href: "/dashboard/rolegreets", category: "Actions"},
+      {label: "Role States", icon: "fa-utility-duo fa-regular fa-tag", href: "/dashboard/rolestates", category: "Actions"},
+      {label: "Starboard", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/starboard", category: "Community"},
+      {label: "Status Roles", icon: "fa-utility-duo fa-regular fa-user-circle", href: "/dashboard/statusroles", category: "Actions"},
+      {label: "Streams", icon: "fa-utility-duo fa-regular fa-video", href: "/dashboard/streams", category: "Community"},
+      {label: "Suggestions", icon: "fa-utility-duo fa-regular fa-lightbulb", href: "/dashboard/suggestions", category: "Community"},
+      {label: "Tickets", icon: "fa-utility-duo fa-regular fa-ticket", href: "/dashboard/tickets", category: "Entertainment"},
+      {label: "Todo Lists", icon: "fa-utility-duo fa-regular fa-check", href: "/dashboard/todo", category: "Community"},
+      {label: "Triggers", icon: "fa-utility-duo fa-regular fa-comments", href: "/dashboard/chat-triggers", category: "Actions"},
+      {label: "Votes", icon: "fa-utility-duo fa-regular fa-thumbs-up", href: "/dashboard/votes", category: "Community"},
+      {label: "XP System", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/xp", category: "Community"},
   ];
+
+  // Filter items based on ownership
+  let moreItems = $derived(baseMoreItems.filter(item => !item.ownerOnly || isOwner));
 
   // State
   let showLabels = true;
@@ -81,6 +96,7 @@
     error: string | null;
     checked: boolean;
   }> = $state({});
+  let isOwner = $state(false);
 
   // Derived state
   let currentPath = $derived($page.url.pathname);
@@ -349,6 +365,18 @@
     }
   }
 
+  async function checkOwnership() {
+    const userData = $userStore || data?.user;
+    if (!userData?.id) return;
+
+    try {
+      isOwner = await api.isOwner(BigInt(userData.id));
+    } catch (err) {
+      console.error("Error checking owner status:", err);
+      isOwner = false;
+    }
+  }
+
   // Close the menus when clicking anywhere else
   function handleClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -362,6 +390,9 @@
     if (browser) {
       window.addEventListener("scroll", handleScroll);
       document.addEventListener("click", handleClick);
+
+      // Check if user is owner
+      checkOwnership();
 
       // Always load instances since we now show instance selector in regular nav
       loadInstances();
@@ -424,7 +455,7 @@
             style:background="{$colorStore.primary}30"
             aria-label="Go to music player"
           >
-              <i class="fa-solid fa-music text-sm" style="color: {$colorStore.primary}" aria-hidden="true"></i>
+              <i class="fa-utility-duo fa-regular fa-music text-sm" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};" aria-hidden="true"></i>
           </a>
         </div>
             </div>
@@ -707,6 +738,14 @@
 </div>
 
 <style>
+    /* Jelly Duo icon color theming */
+    :global(.fa-utility-duo) {
+        --fa-primary-color: var(--color-primary);
+        --fa-secondary-color: var(--color-secondary);
+        --fa-primary-opacity: 1.0;
+        --fa-secondary-opacity: 0.5;
+    }
+
     /* Animated equalizer bars */
     .bar-1 {
         height: 30%;

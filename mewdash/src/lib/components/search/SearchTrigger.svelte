@@ -2,7 +2,6 @@
 <script lang="ts">
     import {colorStore} from "$lib/stores/colorStore";
     import {openSearch} from "$lib/stores/searchStore";
-    import {Command, Search} from "lucide-svelte";
 
 
     interface Props {
@@ -25,15 +24,15 @@
     style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
     onclick={handleOpenSearch}
   >
-    <Search size={18} style="color: {$colorStore.primary}" />
+    <i class="fa-utility-duo fa-regular fa-magnifying-glass"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
     <span class="text-sm font-medium">Search features...</span>
-    
+
     {#if showShortcut}
       <div class="hidden md:flex items-center gap-1 ml-auto">
           <div class="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-xs"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-          <Command size={10} />
-          <span>K</span>
+          <span>⌘K</span>
         </div>
       </div>
     {/if}
@@ -47,7 +46,8 @@
     onclick={handleOpenSearch}
     title="Search dashboard (⌘K)"
   >
-    <Search size={16} />
+    <i class="fa-utility-duo fa-regular fa-magnifying-glass"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
     <span class="text-sm">Search</span>
   </button>
 
@@ -59,7 +59,8 @@
     onclick={handleOpenSearch}
     aria-label="Search dashboard features"
   >
-    <Search size={20} />
+    <i class="fa-utility-duo fa-regular fa-magnifying-glass text-xl"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
   </button>
 {/if}
 

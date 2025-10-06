@@ -5,7 +5,6 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
     import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-    import {Copy, ImageIcon, Layers, Plus, Trash2, Type} from "lucide-svelte";
 
 
     interface Props {
@@ -34,10 +33,10 @@
 
   // Tabs configuration
   const tabs = [
-    { id: 'content', label: 'Content', icon: Type },
-    { id: 'appearance', label: 'Appearance', icon: Layers },
-    { id: 'fields', label: 'Fields', icon: Layers },
-    { id: 'media', label: 'Media', icon: ImageIcon }
+    { id: 'content', label: 'Content', icon: "fa-text" },
+    { id: 'appearance', label: 'Appearance', icon: "fa-layer-group" },
+    { id: 'fields', label: 'Fields', icon: "fa-table-cells" },
+    { id: 'media', label: 'Media', icon: "fa-image" }
   ];
 
   // Discord color options
@@ -196,7 +195,7 @@
         title="Duplicate embed"
         aria-label="Duplicate embed"
       >
-        <Copy size={16} />
+        <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
       </button>
       
       <button
@@ -206,7 +205,7 @@
         title="Remove embed"
         aria-label="Remove embed"
       >
-        <Trash2 size={16} />
+        <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
       </button>
     </div>
   </div>
@@ -522,7 +521,7 @@
             disabled={(embed.fields?.length || 0) >= 25}
             onclick={addField}
           >
-            <Plus size={16} />
+            <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
             Add Field
           </button>
         </div>
@@ -538,7 +537,7 @@
                   onclick={() => removeField(fieldIndex)}
                   title="Remove field"
                 >
-                  <Trash2 size={14} />
+                  <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
                 </button>
               </div>
 

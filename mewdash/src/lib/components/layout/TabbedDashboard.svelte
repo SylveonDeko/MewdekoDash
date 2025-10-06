@@ -5,11 +5,7 @@
   import {pushState, replaceState} from "$app/navigation";
   import {fly, slide, fade} from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import {ChevronLeft, ChevronRight} from "lucide-svelte";
   import {logger} from "$lib/logger";
-
-  // Import Font Awesome CSS
-  import '@fortawesome/fontawesome-free/css/all.min.css';
 
   // Import search components
   import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
@@ -79,42 +75,42 @@
     {
       id: "overview",
       label: "Overview",
-        icon: "fa-solid fa-chart-line",
+        icon: "fa-utility-duo fa-regular fa-home",
       component: OverviewTab,
       description: "Server stats and bot status"
     },
     {
       id: "community",
       label: "Community",
-        icon: "fa-solid fa-users",
+        icon: "fa-utility-duo fa-regular fa-users",
       component: CommunityTab,
       description: "XP, suggestions, tickets"
     },
     {
       id: "entertainment",
       label: "Entertainment",
-        icon: "fa-solid fa-music",
+        icon: "fa-utility-duo fa-regular fa-music",
       component: EntertainmentTab,
       description: "Music, voice, giveaways"
     },
     {
       id: "actions",
       label: "Actions",
-        icon: "fa-solid fa-bolt",
+        icon: "fa-utility-duo fa-regular fa-bolt",
       component: ActionsTab,
       description: "Greets, triggers, embeds"
     },
     {
       id: "security",
       label: "Security",
-        icon: "fa-solid fa-shield-halved",
+        icon: "fa-utility-duo fa-regular fa-shield",
       component: SecurityTab,
       description: "Moderation and protection"
     },
     {
       id: "settings",
       label: "Settings",
-        icon: "fa-solid fa-gear",
+        icon: "fa-utility-duo fa-regular fa-cog",
       component: SettingsTab,
       description: "Bot config and roles"
     }
@@ -479,7 +475,9 @@
                                     disabled={isChangingTab}
                             >
                                 <i class="{tab.icon} text-lg transition-all duration-200 {isActive ? 'fa-beat' : ''}"
-                                   style="color: {isActive ? $colorStore.primary : $colorStore.muted};
+                                   style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
+                            --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
+                            --fa-secondary-opacity: {isActive ? 0.5 : 0.3};
                             opacity: {isActive ? 1 : 0.7};
                             --fa-animation-duration: 2s;
                             --fa-beat-scale: 1.1;"></i>
@@ -598,7 +596,9 @@
                         >
                             <!-- Icon with Animation -->
                             <i class="{tab.icon} text-sm {isActive ? 'fa-beat' : ''}"
-                               style="color: {isActive ? $colorStore.primary : $colorStore.muted};
+                               style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
+                          --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
+                          --fa-secondary-opacity: {isActive ? 0.5 : 0.3};
                           --fa-animation-duration: 2s;
                           --fa-beat-scale: 1.05;"></i>
 
@@ -698,6 +698,14 @@
 <SearchModal />
 
 <style>
+    /* Jelly Duo icon color theming */
+    :global(.fa-utility-duo) {
+        --fa-primary-color: var(--color-primary);
+        --fa-secondary-color: var(--color-secondary);
+        --fa-primary-opacity: 1.0;
+        --fa-secondary-opacity: 0.5;
+    }
+
     /* Hide scrollbar for mobile tab navigation */
     .scrollbar-hide {
         scrollbar-width: none; /* Firefox */

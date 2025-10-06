@@ -4,6 +4,8 @@
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
   import { formatDistanceToNow } from "date-fns";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { RefreshCw, Trash2, Activity } from "lucide-svelte";
 
   let { data } = $props();
 
@@ -22,16 +24,21 @@
   let refreshInProgress = $state(false);
   let userId = data?.user?.id ? BigInt(data.user.id) : null;
 
+  // Ensure performanceData is always an array
+  let safePerformanceData = $derived(Array.isArray(performanceData) ? performanceData : []);
+
   const fetchPerformanceData = async () => {
     if (!userId || refreshInProgress) return;
 
     try {
       refreshInProgress = true;
       error = null;
-      performanceData = await api.getPerformanceData(userId);
+      const response = await api.getPerformanceData(userId);
+      performanceData = Array.isArray(response) ? response : [];
     } catch (err) {
       logger.error("Error fetching performance data:", err);
       error = "Failed to load performance data";
+      performanceData = [];
     } finally {
       loading = false;
       refreshInProgress = false;
@@ -87,88 +94,113 @@
   });
 </script>
 
-<div class="max-w-4xl mx-auto p-6 bg-gray-800 rounded-lg shadow-md mb-8">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-white">Method Performance</h2>
-    <div class="flex space-x-4">
-      <button
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-        disabled={refreshInProgress}
-        onclick={fetchPerformanceData}
-      >
-        {refreshInProgress ? 'Refreshing...' : 'Refresh'}
-      </button>
-      <button
-        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-        disabled={refreshInProgress}
-        onclick={clearPerformanceData}
-      >
-        Clear Data
-      </button>
+<div class="w-full">
+  <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+              border-color: {$colorStore.primary}30;">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg"
+             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+          <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+        </div>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Method Performance</h2>
+      </div>
+      <div class="flex gap-3">
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+          disabled={refreshInProgress}
+          onclick={fetchPerformanceData}
+        >
+          <div class:animate-spin={refreshInProgress}>
+            <RefreshCw class="w-4 h-4" />
+          </div>
+          {refreshInProgress ? 'Refreshing...' : 'Refresh'}
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+          style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
+          disabled={refreshInProgress}
+          onclick={clearPerformanceData}
+        >
+          <Trash2 class="w-4 h-4" />
+          Clear Data
+        </button>
+      </div>
     </div>
+
+    {#if error}
+      <div class="p-4 rounded-xl mb-6 border"
+           style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;">
+        {error}
+      </div>
+    {/if}
+
+    {#if loading && safePerformanceData.length === 0}
+      <div class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-12 w-12 border-2"
+             style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
+      </div>
+    {:else if safePerformanceData.length === 0}
+      <div class="text-center p-8">
+        <Activity class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+        <p class="font-medium mb-2" style="color: {$colorStore.text}">No performance data available yet.</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">Run some commands to generate performance metrics.</p>
+      </div>
+    {:else}
+      <div class="overflow-x-auto rounded-xl" style="background: {$colorStore.primary}05;">
+        <table class="w-full">
+          <thead>
+            <tr style="background: {$colorStore.primary}15; border-bottom: 1px solid {$colorStore.primary}20;">
+              <th class="px-4 py-3 text-left">
+                <button class="text-left font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('methodName')}>Method</button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('callCount')}>Calls</button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('avgExecutionTime')}>Avg Time</button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('totalTime')}>Total Time</button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('lastExecuted')}>Last Executed</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each safePerformanceData as method, i}
+              <tr class="border-b transition-all hover:scale-[1.01]"
+                  style="background: {i % 2 === 0 ? $colorStore.primary + '08' : 'transparent'};
+                         border-color: {$colorStore.primary}10;">
+                <td class="px-4 py-3 font-mono text-sm" style="color: {$colorStore.text}">{method.methodName}</td>
+                <td class="px-4 py-3 text-right" style="color: {$colorStore.text}">{method.callCount.toLocaleString()}</td>
+                <td class="px-4 py-3 text-right font-mono" style="color: {$colorStore.primary}">
+                  {formatTime(method.avgExecutionTime)}
+                </td>
+                <td class="px-4 py-3 text-right font-mono" style="color: {$colorStore.secondary}">
+                  {formatTime(method.totalTime)}
+                </td>
+                <td class="px-4 py-3 text-right text-sm" style="color: {$colorStore.muted}">
+                  {formatDate(method.lastExecuted)}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {/if}
   </div>
-
-  {#if error}
-    <div class="bg-red-500/10 text-red-400 p-4 rounded-md mb-6">
-      {error}
-    </div>
-  {/if}
-
-  {#if loading && performanceData.length === 0}
-    <div class="flex justify-center items-center h-64">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  {:else if performanceData.length === 0}
-    <div class="text-center p-8 text-gray-400">
-      <p>No performance data available yet.</p>
-      <p class="mt-2 text-sm">Run some commands to generate performance metrics.</p>
-    </div>
-  {:else}
-    <div class="overflow-x-auto">
-      <table class="w-full text-gray-200">
-        <thead>
-        <tr class="bg-gray-700">
-          <th class="px-4 py-3 text-left">
-            <button class="text-left font-bold" onclick={() => sortBy('methodName')}>Method</button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" onclick={() => sortBy('callCount')}>Calls</button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" onclick={() => sortBy('avgExecutionTime')}>Avg Time</button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" onclick={() => sortBy('totalTime')}>Total Time</button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold" onclick={() => sortBy('lastExecuted')}>Last Executed</button>
-          </th>
-        </tr>
-        </thead>
-        <tbody>
-        {#each performanceData as method, i}
-          <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
-            <td class="px-4 py-3 font-mono text-sm">{method.methodName}</td>
-            <td class="px-4 py-3 text-right">{method.callCount.toLocaleString()}</td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(method.avgExecutionTime)}
-            </td>
-            <td class="px-4 py-3 text-right font-mono">
-              {formatTime(method.totalTime)}
-            </td>
-            <td class="px-4 py-3 text-right text-sm">
-              {formatDate(method.lastExecuted)}
-            </td>
-          </tr>
-        {/each}
-        </tbody>
-      </table>
-    </div>
-  {/if}
 </div>
-
-<style>
-    .bg-gray-750 {
-        background-color: #2d3748;
-    }
-</style>

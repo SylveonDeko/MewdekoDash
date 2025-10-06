@@ -2845,5 +2845,427 @@ export const api = {
       guildName?: string;
       memberCount?: number;
       iconUrl?: string;
-    }>(`ClientOperations/hasguild/${guildId}`, "GET", undefined, additionalHeaders, customFetch)
+    }>(`ClientOperations/hasguild/${guildId}`, "GET", undefined, additionalHeaders, customFetch),
+
+  // Votes endpoints
+  getVoteRoles: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      roleId: bigint;
+      timer: number;
+      roleName?: string;
+    }>>(`Votes/${guildId}/roles`),
+
+  addVoteRole: (guildId: bigint, roleId: bigint, seconds: number = 0) =>
+    apiRequest<void>(`Votes/${guildId}/roles/${roleId}`, "POST", seconds),
+
+  removeVoteRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`Votes/${guildId}/roles/${roleId}`, "DELETE"),
+
+  updateVoteRoleTimer: (guildId: bigint, roleId: bigint, seconds: number) =>
+    apiRequest<void>(`Votes/${guildId}/roles/${roleId}`, "PATCH", seconds),
+
+  clearVoteRoles: (guildId: bigint) =>
+    apiRequest<void>(`Votes/${guildId}/roles`, "DELETE"),
+
+  getVoteMessage: (guildId: bigint) =>
+    apiRequest<string>(`Votes/${guildId}/message`),
+
+  setVoteMessage: (guildId: bigint, message: string) =>
+    apiRequest<void>(`Votes/${guildId}/message`, "POST", message),
+
+  getVotePassword: (guildId: bigint) =>
+    apiRequest<string>(`Votes/${guildId}/password`),
+
+  setVotePassword: (guildId: bigint, password: string) =>
+    apiRequest<void>(`Votes/${guildId}/password`, "POST", password),
+
+  getVoteChannel: (guildId: bigint) =>
+    apiRequest<bigint>(`Votes/${guildId}/channel`),
+
+  setVoteChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`Votes/${guildId}/channel`, "POST", channelId),
+
+  getVotes: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      userId: bigint;
+      dateAdded: string;
+    }>>(`Votes/${guildId}/votes`),
+
+  getUserVotes: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      userId: bigint;
+      dateAdded: string;
+    }>>(`Votes/${guildId}/votes/${userId}`),
+
+  getVoteStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      userId: bigint;
+      username: string;
+      votesThisMonth: number;
+      totalVotes: number;
+    }>(`Votes/${guildId}/stats/${userId}`),
+
+  getVoteLeaderboard: (guildId: bigint, limit: number = 10) =>
+    apiRequest<Array<{
+      userId: bigint;
+      voteCount: number;
+    }>>(`Votes/${guildId}/leaderboard?limit=${limit}`),
+
+  // Status Roles endpoints
+  getStatusRoles: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      guildId: bigint;
+      status: string;
+      toAdd: string;
+      toRemove: string;
+      readdRemoved: boolean;
+      removeAdded: boolean;
+      statusChannelId: bigint;
+      statusEmbed: string;
+    }>>(`StatusRoles/${guildId}`),
+
+  addStatusRole: (guildId: bigint, status: string) =>
+    apiRequest<void>(`StatusRoles/${guildId}`, "POST", status),
+
+  removeStatusRole: (guildId: bigint, id: number) =>
+    apiRequest<void>(`StatusRoles/${guildId}/${id}`, "DELETE"),
+
+  setStatusRoleAddRoles: (guildId: bigint, id: number, roleIds: string) =>
+    apiRequest<void>(`StatusRoles/${guildId}/${id}/addRoles`, "POST", roleIds),
+
+  setStatusRoleRemoveRoles: (guildId: bigint, id: number, roleIds: string) =>
+    apiRequest<void>(`StatusRoles/${guildId}/${id}/removeRoles`, "POST", roleIds),
+
+  setStatusRoleChannel: (guildId: bigint, id: number, channelId: bigint) =>
+    apiRequest<void>(`StatusRoles/${guildId}/${id}/channel`, "POST", channelId),
+
+  setStatusRoleEmbed: (guildId: bigint, id: number, embedText: string) =>
+    apiRequest<void>(`StatusRoles/${guildId}/${id}/embed`, "POST", embedText),
+
+  toggleStatusRoleRemoveAdded: (guildId: bigint, id: number) =>
+    apiRequest<{ removeAdded: boolean }>(`StatusRoles/${guildId}/${id}/toggleRemoveAdded`, "POST"),
+
+  toggleStatusRoleReaddRemoved: (guildId: bigint, id: number) =>
+    apiRequest<{ readdRemoved: boolean }>(`StatusRoles/${guildId}/${id}/toggleReaddRemoved`, "POST"),
+
+  // Confessions endpoints
+  getConfessions: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      confessNumber: number;
+      confession: string;
+      dateAdded: string;
+      messageId: bigint;
+      channelId: bigint;
+    }>>(`Confessions/${guildId}`),
+
+  getConfession: (guildId: bigint, confessionNumber: number) =>
+    apiRequest<{
+      id: number;
+      confessNumber: number;
+      confession: string;
+      dateAdded: string;
+      messageId: bigint;
+      channelId: bigint;
+      userId: bigint;
+    }>(`Confessions/${guildId}/${confessionNumber}`),
+
+  getConfessionChannel: (guildId: bigint) =>
+    apiRequest<bigint>(`Confessions/${guildId}/channel`),
+
+  setConfessionChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`Confessions/${guildId}/channel`, "POST", channelId),
+
+  getConfessionLogChannel: (guildId: bigint) =>
+    apiRequest<bigint>(`Confessions/${guildId}/logChannel`),
+
+  setConfessionLogChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<void>(`Confessions/${guildId}/logChannel`, "POST", channelId),
+
+  getConfessionBlacklist: (guildId: bigint) =>
+    apiRequest<bigint[]>(`Confessions/${guildId}/blacklist`),
+
+  toggleConfessionBlacklistRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<{ roleId: bigint; isBlacklisted: boolean }>(`Confessions/${guildId}/blacklist/${roleId}`, "POST"),
+
+  getConfessionStats: (guildId: bigint) =>
+    apiRequest<{
+      totalConfessions: number;
+      confessionsThisMonth: number;
+      confessionsToday: number;
+      lastConfessionNumber: number;
+      lastConfessionDate: string | null;
+    }>(`Confessions/${guildId}/stats`),
+
+  deleteConfession: (guildId: bigint, confessionNumber: number) =>
+    apiRequest<void>(`Confessions/${guildId}/${confessionNumber}`, "DELETE"),
+
+  // Feeds endpoints
+  getFeeds: (guildId: bigint) =>
+    apiRequest<Array<{
+      index: number;
+      id: number;
+      channelId: bigint;
+      url: string;
+      message: string;
+      dateAdded: string;
+      channelName: string;
+    }>>(`Feeds/${guildId}`),
+
+  addFeed: (guildId: bigint, channelId: bigint, url: string) =>
+    apiRequest<void>(`Feeds/${guildId}`, "POST", { channelId, url }),
+
+  updateFeedMessage: (guildId: bigint, index: number, message: string) =>
+    apiRequest<void>(`Feeds/${guildId}/${index}/message`, "PUT", message),
+
+  removeFeed: (guildId: bigint, index: number) =>
+    apiRequest<void>(`Feeds/${guildId}/${index}`, "DELETE"),
+
+  getFeedStats: (guildId: bigint) =>
+    apiRequest<{
+      totalFeeds: number;
+      feedsByChannel: Record<string, number>;
+      oldestFeed: string | null;
+    }>(`Feeds/${guildId}/stats`),
+
+  getFeedUrls: (guildId: bigint) =>
+    apiRequest<string[]>(`Feeds/${guildId}/urls`),
+
+  // Stream Notifications endpoints
+  getStreamNotifications: (guildId: bigint) =>
+    apiRequest<Array<{
+      index: number;
+      id: number;
+      channelId: bigint;
+      username: string;
+      type: number;
+      typeName: string;
+      onlineMessage: string;
+      offlineMessage: string;
+      dateAdded: string;
+      channelName: string;
+    }>>(`StreamNotifications/${guildId}`),
+
+  followStream: (guildId: bigint, channelId: bigint, url: string) =>
+    apiRequest<{
+      platform: string;
+      username: string;
+      streamUrl: string;
+    }>(`StreamNotifications/${guildId}`, "POST", { channelId, url }),
+
+  unfollowStream: (guildId: bigint, index: number) =>
+    apiRequest<void>(`StreamNotifications/${guildId}/${index}`, "DELETE"),
+
+  clearAllStreams: (guildId: bigint) =>
+    apiRequest<{ removedCount: number }>(`StreamNotifications/${guildId}`, "DELETE"),
+
+  setStreamOnlineMessage: (guildId: bigint, index: number, message: string) =>
+    apiRequest<void>(`StreamNotifications/${guildId}/${index}/onlineMessage`, "PUT", message),
+
+  setStreamOfflineMessage: (guildId: bigint, index: number, message: string) =>
+    apiRequest<void>(`StreamNotifications/${guildId}/${index}/offlineMessage`, "PUT", message),
+
+  getStreamCustomMessage: (guildId: bigint) =>
+    apiRequest<string>(`StreamNotifications/${guildId}/customMessage`),
+
+  setStreamCustomMessage: (guildId: bigint, message: string) =>
+    apiRequest<void>(`StreamNotifications/${guildId}/customMessage`, "POST", message),
+
+  getStreamOfflineNotifications: (guildId: bigint) =>
+    apiRequest<boolean>(`StreamNotifications/${guildId}/offlineNotifications`),
+
+  toggleStreamOfflineNotifications: (guildId: bigint) =>
+    apiRequest<{ offlineNotificationsEnabled: boolean }>(`StreamNotifications/${guildId}/offlineNotifications/toggle`, "POST"),
+
+  getStreamStats: (guildId: bigint) =>
+    apiRequest<{
+      totalStreams: number;
+      streamsByType: Record<string, number>;
+      streamsByChannel: Record<string, number>;
+      oldestStream: string | null;
+    }>(`StreamNotifications/${guildId}/stats`),
+
+  getStreamers: (guildId: bigint) =>
+    apiRequest<Array<{
+      username: string;
+      type: number;
+      typeName: string;
+      followCount: number;
+    }>>(`StreamNotifications/${guildId}/streamers`),
+
+  // Highlights endpoints
+  getGuildHighlights: (guildId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      userId: bigint;
+      username: string;
+      word: string;
+      dateAdded: string;
+    }>>(`Highlights/${guildId}`),
+
+  getUserHighlightsInGuild: (guildId: bigint, userId: bigint) =>
+    apiRequest<Array<{
+      id: number;
+      word: string;
+      dateAdded: string;
+    }>>(`Highlights/${guildId}/user/${userId}`),
+
+  getUserHighlightSettingsInGuild: (guildId: bigint, userId: bigint) =>
+    apiRequest<{
+      highlightsEnabled: boolean;
+      ignoredChannels: string[];
+      ignoredUsers: string[];
+    }>(`Highlights/${guildId}/user/${userId}/settings`),
+
+  getHighlightStats: (guildId: bigint) =>
+    apiRequest<{
+      totalHighlights: number;
+      totalUsers: number;
+      topHighlightedWords: Array<{ word: string; count: number }>;
+      topUsers: Array<{ userId: bigint; username: string; highlightCount: number }>;
+      recentHighlights: Array<{ word: string; userId: bigint; username: string; dateAdded: string }>;
+    }>(`Highlights/${guildId}/stats`),
+
+  deleteHighlight: (guildId: bigint, highlightId: number) =>
+    apiRequest<void>(`Highlights/${guildId}/${highlightId}`, "DELETE"),
+
+  deleteUserHighlights: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ removedCount: number }>(`Highlights/${guildId}/user/${userId}`, "DELETE"),
+
+  getDisabledHighlightUsers: (guildId: bigint) =>
+    apiRequest<Array<{
+      userId: bigint;
+      username: string;
+      ignoredChannelsCount: number;
+      ignoredUsersCount: number;
+    }>>(`Highlights/${guildId}/disabled`),
+
+  searchHighlights: (guildId: bigint, searchTerm: string) =>
+    apiRequest<Array<{
+      id: number;
+      userId: bigint;
+      username: string;
+      word: string;
+      dateAdded: string;
+    }>>(`Highlights/${guildId}/search?searchTerm=${encodeURIComponent(searchTerm)}`),
+
+  // Reputation endpoints
+  getReputationConfig: (guildId: bigint) =>
+    apiRequest<{
+      guildId: bigint;
+      enabled: boolean;
+      defaultCooldownMinutes: number;
+      dailyLimit: number;
+      weeklyLimit: number | null;
+      minAccountAgeDays: number;
+      minServerMembershipHours: number;
+      minMessageCount: number;
+      enableNegativeRep: boolean;
+      enableAnonymous: boolean;
+      enableDecay: boolean;
+      decayType: string;
+      decayAmount: number;
+      decayInactiveDays: number;
+      notificationChannel: bigint | null;
+    }>(`Reputation/${guildId}/config`),
+
+  setReputationEnabled: (guildId: bigint, enabled: boolean) =>
+    apiRequest<{ enabled: boolean }>(`Reputation/${guildId}/enabled`, "POST", enabled),
+
+  setReputationCooldown: (guildId: bigint, minutes: number) =>
+    apiRequest<{ cooldownMinutes: number }>(`Reputation/${guildId}/cooldown`, "POST", minutes),
+
+  setReputationDailyLimit: (guildId: bigint, limit: number) =>
+    apiRequest<{ dailyLimit: number }>(`Reputation/${guildId}/dailyLimit`, "POST", limit),
+
+  setReputationWeeklyLimit: (guildId: bigint, limit: number | null) =>
+    apiRequest<{ weeklyLimit: number | null }>(`Reputation/${guildId}/weeklyLimit`, "POST", limit),
+
+  setReputationMinAccountAge: (guildId: bigint, days: number) =>
+    apiRequest<{ minAccountAgeDays: number }>(`Reputation/${guildId}/minAccountAge`, "POST", days),
+
+  setReputationMinServerMembership: (guildId: bigint, hours: number) =>
+    apiRequest<{ minServerMembershipHours: number }>(`Reputation/${guildId}/minServerMembership`, "POST", hours),
+
+  setReputationMinMessageCount: (guildId: bigint, count: number) =>
+    apiRequest<{ minMessageCount: number }>(`Reputation/${guildId}/minMessageCount`, "POST", count),
+
+  setReputationNegativeRep: (guildId: bigint, enabled: boolean) =>
+    apiRequest<{ negativeRepEnabled: boolean }>(`Reputation/${guildId}/negativeRep`, "POST", enabled),
+
+  setReputationAnonymousRep: (guildId: bigint, enabled: boolean) =>
+    apiRequest<{ anonymousRepEnabled: boolean }>(`Reputation/${guildId}/anonymousRep`, "POST", enabled),
+
+  setReputationNotificationChannel: (guildId: bigint, channelId: bigint | null) =>
+    apiRequest<{ notificationChannelId: bigint | null }>(`Reputation/${guildId}/notificationChannel`, "POST", channelId),
+
+  getReputationLeaderboard: (guildId: bigint, page: number = 1, pageSize: number = 20) =>
+    apiRequest<Array<{
+      rank: number;
+      userId: bigint;
+      username: string;
+      reputation: number;
+    }>>(`Reputation/${guildId}/leaderboard?page=${page}&pageSize=${pageSize}`),
+
+  getReputationRoleRewards: (guildId: bigint) =>
+    apiRequest<Array<{
+      roleId: bigint;
+      roleName: string;
+      repRequired: number;
+      removeOnDrop: boolean;
+      announceChannel: bigint | null;
+      announceDM: boolean;
+      xpReward: number | null;
+    }>>(`Reputation/${guildId}/roleRewards`),
+
+  addReputationRoleReward: (guildId: bigint, request: {
+    roleId: bigint;
+    repRequired: number;
+    removeOnDrop?: boolean;
+    announceChannelId?: bigint | null;
+    announceDM?: boolean;
+    xpReward?: number | null;
+  }) =>
+    apiRequest<void>(`Reputation/${guildId}/roleRewards`, "POST", request),
+
+  removeReputationRoleReward: (guildId: bigint, roleId: bigint) =>
+    apiRequest<void>(`Reputation/${guildId}/roleRewards/${roleId}`, "DELETE"),
+
+  getReputationHistory: (guildId: bigint, userId: bigint, page: number = 1, pageSize: number = 20) =>
+    apiRequest<Array<{
+      giverId: bigint;
+      receiverId: bigint;
+      amount: number;
+      timestamp: string;
+      reason: string | null;
+      repType: string;
+      isAnonymous: boolean;
+    }>>(`Reputation/${guildId}/history/${userId}?page=${page}&pageSize=${pageSize}`),
+
+  getReputationStats: (guildId: bigint) =>
+    apiRequest<{
+      totalUsers: number;
+      totalRepGiven: number;
+      totalTransactions: number;
+      averageRepPerUser: number;
+      recentActivity: Array<{
+        fromUserId: bigint;
+        toUserId: bigint;
+        amount: number;
+        timestamp: string;
+        reason: string | null;
+      }>;
+      topGivers: Array<{
+        userId: bigint;
+        totalGiven: number;
+      }>;
+    }>(`Reputation/${guildId}/stats`),
+
+  getReputationCustomTypes: (guildId: bigint) =>
+    apiRequest<string[]>(`Reputation/${guildId}/customTypes`)
 };

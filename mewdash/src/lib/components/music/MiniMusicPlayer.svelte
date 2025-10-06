@@ -1,7 +1,6 @@
 <!-- lib/components/MiniMusicPlayer.svelte -->
 <script lang="ts">
     import {fly} from "svelte/transition";
-    import {Music, Pause, Play, SkipBack, SkipForward} from "lucide-svelte";
     import {api} from "$lib/api";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
@@ -99,7 +98,8 @@
             class="w-full h-full flex items-center justify-center"
             style="background: {colors.primary}20;"
           >
-              <Music size={16} style="color: {colors.primary}"/>
+              <i class="fa-utility-duo fa-regular fa-music"
+                 style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary};"></i>
           </div>
         {/if}
       </div>
@@ -165,7 +165,8 @@
                       onclick={previousTrack}
                       aria-label="Previous track"
               >
-                  <SkipBack size={12}/>
+                  <i class="fa-utility-duo fa-regular fa-step-backward text-xs"
+                     style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
               </button>
 
               <!-- Play/Pause Button -->
@@ -176,9 +177,11 @@
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {#if isPlaying}
-            <Pause size={13}/>
+            <i class="fa-utility-duo fa-regular fa-pause text-sm"
+               style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.accent};"></i>
         {:else}
-            <Play size={13} style="margin-left: 1px;"/>
+            <i class="fa-utility-duo fa-regular fa-play text-sm"
+               style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.accent}; margin-left: 1px;"></i>
         {/if}
       </button>
 
@@ -189,7 +192,8 @@
         onclick={skipTrack}
         aria-label="Skip track"
       >
-          <SkipForward size={12}/>
+          <i class="fa-utility-duo fa-regular fa-step-forward text-xs"
+             style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
       </button>
           </div>
       {:else}
@@ -201,9 +205,8 @@
                       onclick={openMusicDashboard}
                       aria-label="Open music dashboard"
               >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
+                  <i class="fa-utility-duo fa-regular fa-arrow-right text-sm"
+                     style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               </button>
     </div>
       {/if}

@@ -7,7 +7,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
-    import {AlertTriangle, BarChart3, CheckCircle, Clock, RefreshCw, Shield, User, XCircle} from "lucide-svelte";
     import {fade, fly} from "svelte/transition";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {loadingStore} from "$lib/stores/loadingStore";
@@ -23,9 +22,9 @@
     let activeTab = $state("overview");
   
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "warnings", label: "Warnings", icon: AlertTriangle },
-    { id: "activity", label: "Recent Activity", icon: Clock }
+    { id: "overview", label: "Overview", icon: "fa-chart-column" },
+    { id: "warnings", label: "Warnings", icon: "fa-triangle-exclamation" },
+    { id: "activity", label: "Recent Activity", icon: "fa-clock" }
   ];
   
   // Stats
@@ -81,13 +80,13 @@
 <DashboardPageLayout 
   title="Moderation Dashboard" 
   subtitle="Manage warnings, punishments, and moderation activity"
-  icon={Shield}
+  icon="fa-shield"
   {tabs}
   bind:activeTab
   actionButtons={[
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: fetchModerationData,
       loading: loading
     }
@@ -102,7 +101,7 @@
       <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
            style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
         <div class="flex items-center gap-3">
-          <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           <div style="color: {$colorStore.accent}">
             <div class="font-semibold text-lg">Error Occurred</div>
             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -130,7 +129,7 @@
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{totalWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}20;">
-              <AlertTriangle class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
           </div>
         </div>
@@ -144,7 +143,7 @@
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{activeWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.accent}20;">
-              <XCircle class="w-6 h-6" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
         </div>
@@ -158,7 +157,7 @@
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{forgivenWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.secondary}20;">
-              <CheckCircle class="w-6 h-6" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
         </div>
@@ -174,14 +173,14 @@
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <AlertTriangle class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Warnings</h2>
         </div>
         
         {#if warnings.length === 0}
           <div class="text-center py-8">
-            <Shield class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+            <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg font-medium" style="color: {$colorStore.text}">No warnings found</p>
             <p class="text-sm" style="color: {$colorStore.muted}">This server has been peaceful!</p>
           </div>
@@ -195,14 +194,14 @@
                 <div class="p-2 rounded-lg"
                      style="background: {warning.forgiven ? $colorStore.secondary + '20' : $colorStore.accent + '20'};">
                   {#if warning.forgiven}
-                    <CheckCircle class="w-5 h-5" style="color: {$colorStore.secondary}" />
+                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {:else}
-                    <AlertTriangle class="w-5 h-5" style="color: {$colorStore.accent}" />
+                    <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {/if}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <User class="w-4 h-4" style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-user" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     <span class="font-medium" style="color: {$colorStore.text}">
                       User ID: {warning.userId}
                     </span>
@@ -238,14 +237,14 @@
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Clock class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Recent Moderation Activity</h2>
         </div>
 
         {#if recentActivity.length === 0}
           <div class="text-center py-8">
-            <Shield class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+            <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <p class="text-lg font-medium" style="color: {$colorStore.text}">No recent moderation activity</p>
             <p class="text-sm" style="color: {$colorStore.muted}">This server has been peaceful!</p>
           </div>
@@ -260,15 +259,15 @@
                 <div class="p-2 rounded-lg"
                      style="background: {warning.forgiven ? $colorStore.secondary + '20' : $colorStore.accent + '20'};">
                   {#if warning.forgiven}
-                    <CheckCircle class="w-5 h-5" style="color: {$colorStore.secondary}" />
+                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {:else}
-                    <AlertTriangle class="w-5 h-5" style="color: {$colorStore.accent}" />
+                    <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {/if}
                 </div>
 
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <User class="w-4 h-4" style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-user" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     <span class="font-medium" style="color: {$colorStore.text}">
                       User ID: {warning.userId}
                     </span>

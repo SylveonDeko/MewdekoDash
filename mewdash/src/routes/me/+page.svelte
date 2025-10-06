@@ -7,21 +7,6 @@
     import {logger} from "$lib/logger";
     import {clickOutside} from "$lib/clickOutside";
     import Notification from "$lib/components/ui/Notification.svelte";
-    import {
-        Bell,
-        ChevronDown,
-        Clock,
-        Hash,
-        Lightbulb,
-        Plus,
-        Save,
-        Server,
-        Settings,
-        Shield,
-        Star,
-        Trash2,
-        User
-    } from "lucide-svelte";
 
     let {data} = $props();
 
@@ -457,7 +442,8 @@
     <div class="flex items-center gap-4 mb-8">
       <div class="p-4 rounded-xl"
            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        <User class="w-8 h-8" style="color: {$colorStore.primary}" />
+        <i class="fa-utility-duo fa-regular fa-user text-3xl"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <div>
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">My Settings</h1>
@@ -477,7 +463,8 @@
                   box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: {$colorStore.text}">
-            <User class="w-5 h-5" />
+            <i class="fa-utility-duo fa-regular fa-user text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             Personal Information
           </h2>
           {#if !editingProfile}
@@ -610,7 +597,7 @@
                 onclick={saveProfile}
                 disabled={saving}
               >
-                <Save class="w-3 h-3" />
+                <i class="fa-solid fa-floppy-disk" style="font-size: 12px;"></i>
                 {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
@@ -659,7 +646,8 @@
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-            <Shield class="w-5 h-5" />
+            <i class="fa-utility-duo fa-regular fa-shield text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             Privacy
           </h3>
 
@@ -741,7 +729,8 @@
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
           <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-            <Settings class="w-5 h-5" />
+            <i class="fa-utility-duo fa-regular fa-gear text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             Preferences
           </h3>
 
@@ -844,7 +833,8 @@
       <div class="flex items-center gap-3 mb-6">
         <div class="p-3 rounded-xl"
              style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.accent}20);">
-          <Server class="w-6 h-6" style="color: {$colorStore.secondary}" />
+          <i class="fa-utility-duo fa-regular fa-server text-2xl"
+             style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
         </div>
         <div>
           <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">Server Settings</h2>
@@ -857,7 +847,8 @@
         <div class="text-center p-8 rounded-2xl border"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                     border-color: {$colorStore.primary}30;">
-          <Server class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-server text-6xl mx-auto mb-4 block"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">Choose a Server</h3>
           <p class="mb-6" style="color: {$colorStore.muted}">
             Select a server to manage your highlights, AFK status, and view your activity
@@ -870,9 +861,9 @@
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showGuildDropdown = !showGuildDropdown}
               >
-                <Server size={20} />
+                <i class="fa-solid fa-server" style="font-size: 20px;"></i>
                 Choose Server
-                <ChevronDown size={16} class="transition-transform {showGuildDropdown ? 'rotate-180' : ''}" />
+                <i class="fa-solid fa-chevron-down transition-transform {showGuildDropdown ? 'rotate-180' : ''}" style="font-size: 16px;"></i>
               </button>
 
               {#if showGuildDropdown}
@@ -957,10 +948,10 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}40;"
                 onclick={changeServer}
               >
-                <Server class="w-4 h-4" />
+                <i class="fa-solid fa-server" style="font-size: 16px;"></i>
                 Change Server
               </button>
-              
+
               <!-- Guild Wizard Reset (only for admins with completed/skipped wizard) -->
               {#if selectedGuild.hasAdminAccess && (guildConfig?.wizardCompleted || guildConfig?.wizardSkipped)}
                 <button
@@ -970,7 +961,7 @@
                   disabled={saving}
                   title="Reset setup wizard for this server"
                 >
-                  <Settings class="w-4 h-4" />
+                  <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
                   <span class="hidden sm:inline">Reset Wizard</span>
                 </button>
               {/if}
@@ -987,7 +978,8 @@
             {#if serverData.xpStats}
               <div class="p-4 rounded-xl text-center border"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
-                <Star class="w-6 h-6 mx-auto mb-2" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-star text-2xl mx-auto mb-2 block"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 <div class="text-xl font-bold" style="color: {$colorStore.text}">Level {serverData.xpStats.level}</div>
                 <div class="text-sm" style="color: {$colorStore.muted}">Rank #{serverData.xpStats.rank}</div>
                 <div class="text-xs" style="color: {$colorStore.muted}">{serverData.xpStats.totalXp.toLocaleString()} XP</div>
@@ -997,7 +989,8 @@
             <!-- Reputation -->
             <div class="p-4 rounded-xl text-center border"
                  style="background: {$colorStore.secondary}08; border-color: {$colorStore.secondary}20;">
-              <Star class="w-6 h-6 mx-auto mb-2" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-star text-2xl mx-auto mb-2 block"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
               <div class="text-xl font-bold" style="color: {$colorStore.text}">{serverData.reputation.totalRep}</div>
               <div class="text-sm" style="color: {$colorStore.muted}">Reputation</div>
               <div class="text-xs" style="color: {$colorStore.muted}">Rank #{serverData.reputation.rank}</div>
@@ -1006,7 +999,8 @@
             <!-- Message Stats -->
             <div class="p-4 rounded-xl text-center border"
                  style="background: {$colorStore.accent}08; border-color: {$colorStore.accent}20;">
-              <Hash class="w-6 h-6 mx-auto mb-2" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-hashtag text-2xl mx-auto mb-2 block"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               <div class="text-xl font-bold" style="color: {$colorStore.text}">{serverData.messages.totalMessages?.toLocaleString() || '0'}</div>
               <div class="text-sm" style="color: {$colorStore.muted}">Messages</div>
               <div class="text-xs" style="color: {$colorStore.muted}">{serverData.invites.inviteCount || 0} invites</div>
@@ -1021,7 +1015,8 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Lightbulb class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-lightbulb text-xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 Highlights ({serverData.highlights.length})
               </h3>
 
@@ -1041,7 +1036,7 @@
                   onclick={addHighlight}
                   disabled={!newHighlightWord.trim()}
                 >
-                  <Plus class="w-4 h-4" />
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                 </button>
               </div>
 
@@ -1056,7 +1051,7 @@
                       style="color: {$colorStore.accent};"
                       onclick={() => removeHighlight(highlight.id)}
                     >
-                      <Trash2 class="w-3 h-3" />
+                      <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                     </button>
                   </div>
                 {:else}
@@ -1073,7 +1068,8 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Hash class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-hashtag text-xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 Suggestions ({serverData.suggestions.length})
               </h3>
 
@@ -1110,7 +1106,8 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Star class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-star text-xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 Currency: {serverData.currency.balance.toLocaleString()}
               </h3>
 
@@ -1142,7 +1139,8 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Clock class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-clock text-xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 AFK Status
               </h3>
 
@@ -1203,7 +1201,8 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Bell class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-bell text-xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 Recent Activity
               </h3>
 

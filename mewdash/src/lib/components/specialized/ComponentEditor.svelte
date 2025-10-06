@@ -3,7 +3,6 @@
     import {createEventDispatcher} from 'svelte';
     import {colorStore} from "$lib/stores/colorStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {ChevronDown, Edit, ExternalLink, Plus, Trash2, Zap} from "lucide-svelte";
 
 
     interface Props {
@@ -241,7 +240,7 @@
                     onclick={() => dispatch('selectTrigger', { component })}
                     title="Change trigger"
                   >
-                    <Edit size={14} />
+                    <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
                   </button>
                 </div>
               </div>
@@ -251,7 +250,7 @@
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
                 onclick={() => dispatch('selectTrigger', { component })}
               >
-                <Zap size={16} class="inline mr-2" />
+                <i class="fa-solid fa-bolt inline mr-2" style="font-size: 16px;"></i>
                 Select Trigger
               </button>
             {/if}
@@ -326,7 +325,7 @@
               disabled={(component.options?.length || 0) >= 25}
               onclick={addOption}
             >
-              <Plus size={14} />
+              <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
               Add Option
             </button>
           </div>
@@ -345,7 +344,7 @@
                     onclick={() => removeOption(index)}
                     title="Remove option"
                   >
-                    <Trash2 size={14} />
+                    <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
                   </button>
                 </div>
 
@@ -427,7 +426,7 @@
                             onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                             title="Change trigger"
                           >
-                            <Edit size={12} />
+                            <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
                           </button>
                         </div>
                       </div>
@@ -437,7 +436,7 @@
                         style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
                         onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                       >
-                        <Zap size={14} class="inline mr-1" />
+                        <i class="fa-solid fa-bolt inline mr-1" style="font-size: 14px;"></i>
                         Select Trigger
                       </button>
                     {/if}
@@ -501,7 +500,7 @@
             {component.displayName || "Select an option..."}
           </span>
           <div class="icon-container px-2">
-            <ChevronDown size={18} />
+            <i class="fa-solid fa-chevron-down" style="font-size: 18px;"></i>
           </div>
         </button>
       </div>
@@ -521,7 +520,7 @@
             {/if}
             <span class="truncate">{component.displayName}</span>
             {#if component.style === 5}
-              <ExternalLink size={12} />
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px;"></i>
             {/if}
           </div>
         </div>
@@ -537,7 +536,7 @@
         title="Edit component"
         aria-label="Edit component"
       >
-        <Edit size={12} />
+        <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
       </button>
       
       <button
@@ -547,7 +546,7 @@
         title="Remove component"
         aria-label="Remove component"
       >
-        <Trash2 size={12} />
+        <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
       </button>
     </div>
 

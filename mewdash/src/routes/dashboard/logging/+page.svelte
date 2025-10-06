@@ -14,27 +14,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {
-        AlertTriangle,
-        Ban,
-        CheckCircle,
-        Edit,
-        FileText,
-        Hash,
-        MessageSquare,
-        Mic,
-        MicOff,
-        Plus,
-        Save,
-        Search,
-        Settings,
-        Shield,
-        Star,
-        Trash2,
-        UserMinus,
-        UserPlus,
-        X
-    } from "lucide-svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -72,37 +51,37 @@
 
   // Categories for organization
   const categories = [
-    { id: "popular", name: "Popular", icon: Star },
-    { id: "users", name: "Users", icon: UserPlus },
-    { id: "messages", name: "Messages", icon: MessageSquare },
-    { id: "moderation", name: "Moderation", icon: Shield },
-    { id: "server", name: "Server", icon: Hash },
-    { id: "voice", name: "Voice", icon: Mic },
-    { id: "all", name: "All Events", icon: FileText }
+    { id: "popular", name: "Popular", icon: "fa-star" },
+    { id: "users", name: "Users", icon: "fa-user-plus" },
+    { id: "messages", name: "Messages", icon: "fa-message" },
+    { id: "moderation", name: "Moderation", icon: "fa-shield" },
+    { id: "server", name: "Server", icon: "fa-hashtag" },
+    { id: "voice", name: "Voice", icon: "fa-microphone" },
+    { id: "all", name: "All Events", icon: "fa-file-lines" }
   ];
 
   // Icon mapping for log types
-  const iconMap: Record<string, any> = {
-    "trash-2": Trash2,
-    "edit": Edit,
-    "trash": Trash2,
-    "user-plus": UserPlus,
-    "user-minus": UserMinus,
-    "user": UserPlus,
-    "ban": Ban,
-    "user-check": CheckCircle,
-    "user-x": X,
-    "volume-x": MicOff,
-    "volume-2": Mic,
-    "alert-triangle": AlertTriangle,
-    "plus-circle": Plus,
-    "minus-circle": X,
-    "edit-3": Edit,
-    "hash": Hash,
-    "settings": Settings,
-    "mic": Mic,
-    "mic-off": MicOff,
-    "move": Edit
+  const iconMap: Record<string, string> = {
+    "trash-2": "fa-trash",
+    "edit": "fa-pen",
+    "trash": "fa-trash",
+    "user-plus": "fa-user-plus",
+    "user-minus": "fa-user-minus",
+    "user": "fa-user-plus",
+    "ban": "fa-ban",
+    "user-check": "fa-user-check",
+    "user-x": "fa-xmark",
+    "volume-x": "fa-volume-xmark",
+    "volume-2": "fa-volume",
+    "alert-triangle": "fa-triangle-exclamation",
+    "plus-circle": "fa-circle-plus",
+    "minus-circle": "fa-circle-minus",
+    "edit-3": "fa-pen",
+    "hash": "fa-hashtag",
+    "settings": "fa-gear",
+    "mic": "fa-microphone",
+    "mic-off": "fa-microphone-slash",
+    "move": "fa-arrows-up-down-left-right"
   };
 
   // Popular log types to highlight for new users
@@ -126,8 +105,8 @@
     hasChanges = true;
   }
 
-  function getIconComponent(iconName: string) {
-    return iconMap[iconName] || FileText;
+  function getIconComponent(iconName: string): string {
+    return iconMap[iconName] || "fa-file-lines";
   }
 
   // API Functions
@@ -237,14 +216,14 @@
     let isLoggingEnabled = $derived(Object.values(logChannels).some(channelId => channelId && channelId !== '0'));
     // Tab configuration for DashboardPageLayout
     let tabs = $derived([
-        {id: "channels", label: "Log Channels", icon: Hash},
-        {id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: X}
+        {id: "channels", label: "Log Channels", icon: "fa-hashtag"},
+        {id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: "fa-xmark"}
     ]);
     // Action buttons for save functionality
     let actionButtons = $derived(hasChanges ? [
         {
             label: "Save Configuration",
-            icon: Save,
+            icon: "fa-floppy-disk",
             action: saveConfiguration,
             style: `background: ${$colorStore.primary}; color: white; box-shadow: 0 4px 12px ${$colorStore.primary}30;`
         }
@@ -276,7 +255,7 @@
 <DashboardPageLayout 
   title="Logging Configuration"
   subtitle="Configure event logging channels and settings"
-  icon={FileText}
+  icon="fa-file-lines"
   {tabs}
   {activeTab}
   {actionButtons}
@@ -298,7 +277,7 @@
       <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
            style="background: #10b98120; border: 1px solid #10b98130;"
            in:fade={{ duration: 300 }}>
-        <CheckCircle size={16} style="color: #10b981" />
+        <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 16px;"></i>
         <span style="color: #10b981">
           Logging is active • {Object.values(logChannels).filter(ch => ch && ch !== '0').length} event types configured
         </span>
@@ -308,7 +287,7 @@
            style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10); border: 1px solid {$colorStore.primary}30;"
            in:fade={{ duration: 300 }}>
         <div class="flex items-start gap-4">
-          <FileText size={20} style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-file-lines" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <div>
             <h3 class="font-semibold mb-2" style="color: {$colorStore.text}">Set up Event Logging</h3>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
@@ -329,7 +308,7 @@
   {:else if error}
     <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
       <div class="flex items-center gap-3">
-        <AlertTriangle size={20} style="color: #ef4444" />
+        <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
         <span style="color: #ef4444">{error}</span>
       </div>
     </div>
@@ -344,7 +323,7 @@
                    color: {selectedCategory === category.id ? $colorStore.text : $colorStore.muted};"
             onclick={() => selectedCategory = category.id}
           >
-              <category.icon size={16}/>
+              <i class="fa-solid {category.icon}" style="font-size: 16px;"></i>
             {category.name}
           </button>
         {/each}
@@ -353,7 +332,6 @@
       <!-- Log Channel Configuration -->
       <div class="grid gap-4">
         {#each filteredLogTypes as mapping (mapping.logType)}
-            {@const SvelteComponent = getIconComponent(mapping.icon)}
             <div
                     class="backdrop-blur-xs rounded-xl border p-4 transition-all"
             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
@@ -362,7 +340,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                    <SvelteComponent size={20} style="color: {$colorStore.primary}"/>
+                    <i class="fa-solid {getIconComponent(mapping.icon)}" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                 </div>
                 <div>
                   <h3 class="font-medium" style="color: {$colorStore.text}">{mapping.displayName}</h3>
@@ -390,7 +368,7 @@
       <!-- Info Section -->
       <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-start gap-4 mb-4">
-          <X class="w-5 h-5 mt-1" style="color: {$colorStore.primary}" />
+          <i class="fa-solid fa-xmark mt-1" style="color: {$colorStore.primary}; font-size: 20px;"></i>
           <div>
             <h3 class="text-lg font-bold mb-2" style="color: {$colorStore.text}">Channel Exclusions</h3>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
@@ -411,13 +389,13 @@
           <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
                style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center gap-3 mb-4">
-            <X class="w-5 h-5" style="color: #ef4444" />
+            <i class="fa-solid fa-xmark" style="color: #ef4444; font-size: 20px;"></i>
             <h3 class="font-bold" style="color: {$colorStore.text}">Ignored Channels ({ignoredChannelList.length})</h3>
           </div>
           
           {#if ignoredChannelList.length === 0}
             <div class="text-center py-8">
-              <CheckCircle class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
               <p class="text-sm" style="color: {$colorStore.muted}">
                 No channels are ignored. All events will be logged according to your channel configurations.
               </p>
@@ -428,7 +406,7 @@
                 <div class="flex items-center justify-between p-3 rounded-lg" 
                      style="background: #ef444410; border: 1px solid #ef444420;">
                   <div class="flex items-center gap-3">
-                    <Hash size={14} style="color: #ef4444" />
+                    <i class="fa-solid fa-hashtag" style="color: #ef4444; font-size: 14px;"></i>
                     <span class="text-sm font-medium" style="color: {$colorStore.text}">#{channel.name}</span>
                   </div>
 
@@ -437,7 +415,7 @@
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => removeFromIgnored(channel.id)}
                   >
-                    <Plus size={12} />
+                    <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
                     <span>Log</span>
                   </button>
                 </div>
@@ -450,13 +428,13 @@
           <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-4">
-            <Hash class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-bold" style="color: {$colorStore.text}">Active Channels ({activeChannelList.length})</h3>
           </div>
 
           <!-- Search Box -->
           <div class="relative mb-4">
-            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style="color: {$colorStore.muted}" />
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
             <input
               type="text"
               placeholder="Search channels..."
@@ -468,7 +446,7 @@
 
           {#if activeChannelList.length === 0}
             <div class="text-center py-8">
-              <X class="w-8 h-8 mx-auto mb-3" style="color: {$colorStore.muted}" />
+              <i class="fa-utility-duo fa-regular fa-xmark" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
               <p class="text-sm" style="color: {$colorStore.muted}">
                 All channels are ignored. Consider enabling logging for important channels.
               </p>
@@ -479,7 +457,7 @@
                 <div class="flex items-center justify-between p-3 rounded-lg" 
                      style="background: {$colorStore.primary}08;">
                   <div class="flex items-center gap-3">
-                    <Hash size={14} style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-hashtag" style="color: {$colorStore.primary}; font-size: 14px;"></i>
                     <span class="text-sm font-medium" style="color: {$colorStore.text}">#{channel.name}</span>
                   </div>
 
@@ -488,7 +466,7 @@
                     style="background: #ef444420; color: #ef4444;"
                     onclick={() => addToIgnored(channel.id)}
                   >
-                    <X size={12} />
+                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                     <span>Ignore</span>
                   </button>
                 </div>

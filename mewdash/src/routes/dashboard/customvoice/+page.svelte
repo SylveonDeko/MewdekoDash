@@ -18,7 +18,6 @@
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {browser} from "$app/environment";
-    import {AlertCircle, CheckCircle, Lock, Mic, Settings, Trash2, Unlock, User, Volume2} from "lucide-svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -279,18 +278,18 @@
 <DashboardPageLayout 
   title="Custom Voice Channels" 
   subtitle="Create and manage temporary voice channels" 
-  icon={Mic}
+  icon="fa-microphone"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={[
-    { id: "config", label: "Configuration", icon: Settings },
-    { id: "channels", label: `Active Channels (${activeChannels.length || 0})`, icon: Mic },
-    { id: "preferences", label: "User Preferences", icon: User }
+    { id: "config", label: "Configuration", icon: "fa-gear" },
+    { id: "channels", label: `Active Channels (${activeChannels.length || 0})`, icon: "fa-microphone" },
+    { id: "preferences", label: "User Preferences", icon: "fa-user" }
   ]}
   bind:activeTab
   actionButtons={hasChanges ? [
     {
       label: "Save Configuration",
-      icon: CheckCircle,
+      icon: "fa-circle-check",
       action: saveConfiguration,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
@@ -307,12 +306,12 @@
     
     {#if config && config.enabled}
       <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #22c55e15; border: 1px solid #22c55e30;">
-        <CheckCircle size={16} style="color: #22c55e" />
+        <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 16px;"></i>
         <span class="text-sm" style="color: #22c55e">Custom Voice is enabled</span>
       </div>
     {:else}
       <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #f59e0b15; border: 1px solid #f59e0b30;">
-        <AlertCircle size={16} style="color: #f59e0b" />
+        <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
         <span class="text-sm" style="color: #f59e0b">Custom Voice is not configured</span>
       </div>
     {/if}
@@ -324,7 +323,7 @@
     {:else if error}
       <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
         <div class="flex items-center gap-3">
-          <AlertCircle size={20} style="color: #ef4444" />
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
           <span style="color: #ef4444">{error}</span>
         </div>
       </div>
@@ -411,7 +410,7 @@
               <label class="block mb-2" style="color: {$colorStore.text}">Default Bitrate</label>
               <DiscordSelector
                 type="custom"
-                customIcon={Volume2}
+                customIcon="fa-volume"
                 options={[
                   { id: "64000", name: "64kbps", label: "64kbps" },
                   { id: "96000", name: "96kbps", label: "96kbps" },
@@ -554,7 +553,7 @@
       <div class="space-y-6" transition:fade>
         {#if activeChannels === undefined || !activeChannels || activeChannels.length === 0}
           <div class="text-center py-12">
-            <Mic size={48} style="color: {$colorStore.muted}; margin: 0 auto 16px;" />
+            <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
             <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No active channels</h3>
             <p style="color: {$colorStore.muted}">Custom voice channels will appear here when users create them</p>
           </div>
@@ -569,9 +568,9 @@
                 <div class="flex items-center gap-4">
                   <div class="flex items-center gap-2">
                     {#if channel.isLocked}
-                      <Lock size={20} style="color: #f59e0b" />
+                      <i class="fa-solid fa-lock" style="color: #f59e0b; font-size: 20px;"></i>
                     {:else}
-                      <Unlock size={20} style="color: {$colorStore.primary}" />
+                      <i class="fa-solid fa-unlock" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                     {/if}
                     <h3 class="font-medium" style="color: {$colorStore.text}">{channel.channelName}</h3>
                   </div>
@@ -592,9 +591,9 @@
                     title={channel.isLocked ? "Unlock channel" : "Lock channel"}
                   >
                     {#if channel.isLocked}
-                      <Unlock size={16} />
+                      <i class="fa-solid fa-unlock" style="font-size: 16px;" />
                     {:else}
-                      <Lock size={16} />
+                      <i class="fa-solid fa-lock" style="font-size: 16px;" />
                     {/if}
                   </button>
                   
@@ -603,7 +602,7 @@
                     onclick={() => deleteChannel(channel.id)}
                     title="Delete channel"
                   >
-                    <Trash2 size={16} />
+                    <i class="fa-solid fa-trash" style="font-size: 16px;" />
                   </button>
                 </div>
               </div>
@@ -615,7 +614,7 @@
     {:else if activeTab === 'preferences'}
       <div class="space-y-6" transition:fade>
         <div class="text-center py-12">
-          <User size={48} style="color: {$colorStore.muted}; margin: 0 auto 16px;" />
+          <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">User Preferences</h3>
           <p style="color: {$colorStore.muted}">Individual user preferences will be displayed here</p>
         </div>

@@ -1,37 +1,5 @@
 // lib/stores/searchStore.ts
 import { writable } from 'svelte/store';
-import { 
-  BarChart3, 
-  Users, 
-  Music, 
-  Zap, 
-  Shield, 
-  Settings,
-  Star,
-  MessageSquare,
-  Lightbulb,
-  Cake,
-  Ticket,
-  Heart,
-  Bot,
-  Code,
-  Bell,
-  UserCheck,
-  ToggleLeft,
-  Gift,
-  Mic,
-  MessageSquareWarning,
-  FileText,
-  Lock,
-  Activity,
-  Database,
-  Globe,
-  Palette,
-  RotateCcw,
-  RefreshCw,
-  TrendingUp,
-  Award
-} from 'lucide-svelte';
 
 export interface SearchableItem {
   id: string;
@@ -40,7 +8,7 @@ export interface SearchableItem {
   type: 'tab' | 'feature' | 'page' | 'setting';
   path: string;
   tab?: string;
-  icon: any;
+  icon: string; // Font Awesome icon class name
   keywords: string[];
   category: string;
 }
@@ -57,7 +25,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'Server stats and bot status',
     type: 'tab',
     path: '/dashboard?tab=overview',
-    icon: BarChart3,
+    icon: 'fa-home',
     keywords: ['overview', 'dashboard', 'stats', 'home', 'main'],
     category: 'Navigation'
   },
@@ -67,7 +35,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'XP, suggestions, tickets, birthdays',
     type: 'tab',
     path: '/dashboard?tab=community',
-    icon: Users,
+    icon: 'fa-users',
     keywords: ['community', 'users', 'xp', 'experience', 'suggestions', 'tickets'],
     category: 'Navigation'
   },
@@ -77,7 +45,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'Music, voice, giveaways',
     type: 'tab',
     path: '/dashboard?tab=entertainment',
-    icon: Music,
+    icon: 'fa-music',
     keywords: ['entertainment', 'music', 'voice', 'giveaways', 'fun'],
     category: 'Navigation'
   },
@@ -87,7 +55,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'Greets, triggers, embeds',
     type: 'tab',
     path: '/dashboard?tab=actions',
-    icon: Zap,
+    icon: 'fa-bolt',
     keywords: ['actions', 'automation', 'triggers', 'greets', 'embeds'],
     category: 'Navigation'
   },
@@ -97,7 +65,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'Moderation and protection',
     type: 'tab',
     path: '/dashboard?tab=security',
-    icon: Shield,
+    icon: 'fa-shield',
     keywords: ['security', 'moderation', 'protection', 'safety', 'admin'],
     category: 'Navigation'
   },
@@ -107,44 +75,33 @@ const staticSearchableFeatures: SearchableItem[] = [
     description: 'Bot config and roles',
     type: 'tab',
     path: '/dashboard?tab=settings',
-    icon: Settings,
+    icon: 'fa-cog',
     keywords: ['settings', 'config', 'configuration', 'roles', 'setup'],
     category: 'Navigation'
   },
 
-  // Community Features
+  // All Features (alphabetical)
   {
-    id: 'xp-system',
-    title: 'XP System',
-    description: 'Experience points and leveling',
+    id: 'administration',
+    title: 'Administration',
+    description: 'Server administration and roles',
     type: 'feature',
-    path: '/dashboard/xp',
-    tab: 'community',
-    icon: Star,
-    keywords: ['xp', 'experience', 'levels', 'ranking', 'leaderboard'],
-    category: 'Community'
+    path: '/dashboard/administration',
+    tab: 'security',
+    icon: 'fa-cog',
+    keywords: ['admin', 'administration', 'protection', 'roles'],
+    category: 'Security'
   },
   {
-    id: 'suggestions',
-    title: 'Suggestions',
-    description: 'User suggestion voting system',
+    id: 'afk-system',
+    title: 'AFK System',
+    description: 'Away status management',
     type: 'feature',
-    path: '/dashboard/suggestions',
-    tab: 'community',
-    icon: Lightbulb,
-    keywords: ['suggestions', 'voting', 'ideas', 'feedback'],
-    category: 'Community'
-  },
-  {
-    id: 'starboard',
-    title: 'Starboard',
-    description: 'Highlight popular messages',
-    type: 'feature',
-    path: '/dashboard/starboard',
-    tab: 'community',
-    icon: Star,
-    keywords: ['starboard', 'stars', 'popular', 'messages', 'highlights'],
-    category: 'Community'
+    path: '/dashboard/afk',
+    tab: 'actions',
+    icon: 'fa-moon',
+    keywords: ['afk', 'away', 'status', 'idle'],
+    category: 'Actions'
   },
   {
     id: 'birthdays',
@@ -153,66 +110,75 @@ const staticSearchableFeatures: SearchableItem[] = [
     type: 'feature',
     path: '/dashboard/birthday',
     tab: 'community',
-    icon: Cake,
+    icon: 'fa-birthday-cake',
     keywords: ['birthday', 'birthdays', 'celebrate', 'anniversary'],
     category: 'Community'
   },
   {
-    id: 'tickets',
-    title: 'Support Tickets',
-    description: 'Community help and assistance',
+    id: 'chat-saver',
+    title: 'Chat Saver',
+    description: 'Audit trails and message history',
     type: 'feature',
-    path: '/dashboard/tickets',
+    path: '/dashboard/chatsaver',
+    tab: 'security',
+    icon: 'fa-folder',
+    keywords: ['chat saver', 'audit', 'history', 'messages'],
+    category: 'Security'
+  },
+  {
+    id: 'confessions',
+    title: 'Confessions',
+    description: 'Anonymous confession system',
+    type: 'feature',
+    path: '/dashboard/confessions',
     tab: 'community',
-    icon: Ticket,
-    keywords: ['tickets', 'support', 'help', 'assistance'],
+    icon: 'fa-comment',
+    keywords: ['confessions', 'anonymous', 'secrets'],
     category: 'Community'
   },
   {
-    id: 'invite-tracking',
-    title: 'Invite Tracking',
-    description: 'Track who invited users',
+    id: 'counting',
+    title: 'Counting',
+    description: 'Number counting game channel',
     type: 'feature',
-    path: '/dashboard/invites',
+    path: '/dashboard/counting',
     tab: 'community',
-    icon: Users,
-    keywords: ['invites', 'tracking', 'referrals', 'recruitment'],
+    icon: 'fa-hashtag',
+    keywords: ['counting', 'numbers', 'game', 'channel'],
     category: 'Community'
-  },
-  {
-    id: 'patreon',
-    title: 'Patreon Integration',
-    description: 'Supporter tier management',
-    type: 'feature',
-    path: '/dashboard/patreon',
-    tab: 'community',
-    icon: Heart,
-    keywords: ['patreon', 'supporters', 'donations', 'premium'],
-    category: 'Community'
-  },
-
-  // Entertainment Features
-  {
-    id: 'music-player',
-    title: 'Music Player',
-    description: 'Control bot music playback',
-    type: 'feature',
-    path: '/dashboard/music',
-    tab: 'entertainment',
-    icon: Music,
-    keywords: ['music', 'player', 'songs', 'queue', 'audio'],
-    category: 'Entertainment'
   },
   {
     id: 'custom-voice',
-    title: 'Custom Voice Channels',
+    title: 'Custom Voice',
     description: 'Temporary voice channels',
     type: 'feature',
     path: '/dashboard/customvoice',
     tab: 'entertainment',
-    icon: Mic,
+    icon: 'fa-microphone',
     keywords: ['voice', 'channels', 'temporary', 'custom'],
     category: 'Entertainment'
+  },
+  {
+    id: 'embeds',
+    title: 'Embeds',
+    description: 'Create custom embeds',
+    type: 'feature',
+    path: '/dashboard/embedbuilder',
+    tab: 'actions',
+    icon: 'fa-link',
+    keywords: ['embeds', 'builder', 'custom', 'messages'],
+    category: 'Actions'
+  },
+  {
+    id: 'feeds',
+    title: 'Feeds',
+    description: 'Subscribe to RSS feeds',
+    type: 'feature',
+    path: '/dashboard/feeds',
+    tab: 'actions',
+    icon: 'fa-newspaper',
+    keywords: ['feeds', 'rss', 'news', 'updates'],
+    category: 'Actions'
   },
   {
     id: 'giveaways',
@@ -221,33 +187,119 @@ const staticSearchableFeatures: SearchableItem[] = [
     type: 'feature',
     path: '/dashboard/giveaways',
     tab: 'entertainment',
-    icon: Gift,
+    icon: 'fa-gift',
     keywords: ['giveaways', 'contests', 'prizes', 'events'],
     category: 'Entertainment'
   },
-
-  // Actions Features
   {
-    id: 'chat-triggers',
-    title: 'Chat Triggers',
-    description: 'Automated responses and reactions',
-    type: 'feature',
-    path: '/dashboard/chat-triggers',
-    tab: 'actions',
-    icon: MessageSquare,
-    keywords: ['triggers', 'autoresponder', 'reactions', 'chat'],
-    category: 'Actions'
-  },
-  {
-    id: 'multi-greets',
-    title: 'Multi Greets',
+    id: 'greets',
+    title: 'Greets',
     description: 'Welcome and goodbye messages',
     type: 'feature',
     path: '/dashboard/multigreets',
     tab: 'actions',
-    icon: Bell,
+    icon: 'fa-bell',
     keywords: ['greets', 'welcome', 'goodbye', 'messages'],
     category: 'Actions'
+  },
+  {
+    id: 'highlights',
+    title: 'Highlights',
+    description: 'Keyword notification system',
+    type: 'feature',
+    path: '/dashboard/highlights',
+    tab: 'community',
+    icon: 'fa-bolt',
+    keywords: ['highlights', 'keywords', 'notifications', 'mentions'],
+    category: 'Community'
+  },
+  {
+    id: 'invites',
+    title: 'Invites',
+    description: 'Track who invited users',
+    type: 'feature',
+    path: '/dashboard/invites',
+    tab: 'community',
+    icon: 'fa-users',
+    keywords: ['invites', 'tracking', 'referrals', 'recruitment'],
+    category: 'Community'
+  },
+  {
+    id: 'logging',
+    title: 'Logging',
+    description: 'Track server events and activities',
+    type: 'feature',
+    path: '/dashboard/logging',
+    tab: 'security',
+    icon: 'fa-file',
+    keywords: ['logging', 'events', 'audit', 'history'],
+    category: 'Security'
+  },
+  {
+    id: 'message-stats',
+    title: 'Message Stats',
+    description: 'Track message activity',
+    type: 'feature',
+    path: '/dashboard/messagestats',
+    tab: 'analytics',
+    icon: 'fa-envelope',
+    keywords: ['message stats', 'activity', 'tracking', 'analytics'],
+    category: 'Analytics'
+  },
+  {
+    id: 'moderation',
+    title: 'Moderation',
+    description: 'User warnings and punishments',
+    type: 'feature',
+    path: '/dashboard/moderation',
+    tab: 'security',
+    icon: 'fa-flag',
+    keywords: ['moderation', 'warnings', 'punishments', 'discipline'],
+    category: 'Security'
+  },
+  {
+    id: 'music-player',
+    title: 'Music Player',
+    description: 'Control bot music playback',
+    type: 'feature',
+    path: '/dashboard/music',
+    tab: 'entertainment',
+    icon: 'fa-music',
+    keywords: ['music', 'player', 'songs', 'queue', 'audio'],
+    category: 'Entertainment'
+  },
+  {
+    id: 'patreon',
+    title: 'Patreon',
+    description: 'Supporter tier management',
+    type: 'feature',
+    path: '/dashboard/patreon',
+    tab: 'community',
+    icon: 'fa-heart',
+    keywords: ['patreon', 'supporters', 'donations', 'premium'],
+    category: 'Community'
+  },
+  {
+    id: 'repeaters',
+    title: 'Repeaters',
+    description: 'Automated recurring messages',
+    type: 'feature',
+    path: '/dashboard/repeaters',
+    tab: 'actions',
+    icon: 'fa-sync',
+    keywords: ['repeaters', 'recurring', 'scheduled', 'messages'],
+    category: 'Actions'
+  },
+  {
+    id: 'reputation',
+    title: 'Reputation',
+    description: 'User reputation and rewards',
+    type: 'feature',
+    path: '/dashboard/reputation',
+    tab: 'community',
+    icon: 'fa-trophy',
+    keywords: ['reputation', 'rep', 'rewards', 'karma'],
+    category: 'Community'
   },
   {
     id: 'role-greets',
@@ -256,7 +308,7 @@ const staticSearchableFeatures: SearchableItem[] = [
     type: 'feature',
     path: '/dashboard/rolegreets',
     tab: 'actions',
-    icon: UserCheck,
+    icon: 'fa-user',
     keywords: ['role greets', 'welcome', 'roles', 'messages'],
     category: 'Actions'
   },
@@ -267,91 +319,111 @@ const staticSearchableFeatures: SearchableItem[] = [
     type: 'feature',
     path: '/dashboard/rolestates',
     tab: 'actions',
-    icon: RotateCcw,
+    icon: 'fa-tag',
     keywords: ['role states', 'persistence', 'memory', 'restore'],
     category: 'Actions'
   },
   {
-    id: 'embed-builder',
-    title: 'Embed Builder',
-    description: 'Create custom embeds',
+    id: 'starboard',
+    title: 'Starboard',
+    description: 'Highlight popular messages',
     type: 'feature',
-    path: '/dashboard/embedbuilder',
+    path: '/dashboard/starboard',
+    tab: 'community',
+    icon: 'fa-star',
+    keywords: ['starboard', 'stars', 'popular', 'messages', 'highlights'],
+    category: 'Community'
+  },
+  {
+    id: 'status-roles',
+    title: 'Status Roles',
+    description: 'Custom status-based role assignment',
+    type: 'feature',
+    path: '/dashboard/statusroles',
     tab: 'actions',
-    icon: Code,
-    keywords: ['embeds', 'builder', 'custom', 'messages'],
+    icon: 'fa-user-circle',
+    keywords: ['status roles', 'custom status', 'roles', 'automation'],
     category: 'Actions'
   },
   {
-    id: 'afk-system',
-    title: 'AFK System',
-    description: 'Away status management',
+    id: 'streams',
+    title: 'Streams',
+    description: 'Twitch/YouTube stream alerts',
     type: 'feature',
-    path: '/dashboard/afk',
+    path: '/dashboard/streams',
+    tab: 'community',
+    icon: 'fa-video',
+    keywords: ['streams', 'twitch', 'youtube', 'notifications'],
+    category: 'Community'
+  },
+  {
+    id: 'suggestions',
+    title: 'Suggestions',
+    description: 'User suggestion voting system',
+    type: 'feature',
+    path: '/dashboard/suggestions',
+    tab: 'community',
+    icon: 'fa-lightbulb',
+    keywords: ['suggestions', 'voting', 'ideas', 'feedback'],
+    category: 'Community'
+  },
+  {
+    id: 'tickets',
+    title: 'Tickets',
+    description: 'Community help and assistance',
+    type: 'feature',
+    path: '/dashboard/tickets',
+    tab: 'entertainment',
+    icon: 'fa-ticket',
+    keywords: ['tickets', 'support', 'help', 'assistance'],
+    category: 'Entertainment'
+  },
+  {
+    id: 'todo',
+    title: 'Todo Lists',
+    description: 'Server todo list management',
+    type: 'feature',
+    path: '/dashboard/todo',
+    tab: 'community',
+    icon: 'fa-check',
+    keywords: ['todo', 'tasks', 'lists', 'management'],
+    category: 'Community'
+  },
+  {
+    id: 'triggers',
+    title: 'Triggers',
+    description: 'Automated responses and reactions',
+    type: 'feature',
+    path: '/dashboard/chat-triggers',
     tab: 'actions',
-    icon: ToggleLeft,
-    keywords: ['afk', 'away', 'status', 'idle'],
+    icon: 'fa-comments',
+    keywords: ['triggers', 'autoresponder', 'reactions', 'chat'],
     category: 'Actions'
   },
-
-  // Security Features
   {
-    id: 'moderation',
-    title: 'Moderation',
-    description: 'User warnings and punishments',
+    id: 'votes',
+    title: 'Votes',
+    description: 'Reward users for voting',
     type: 'feature',
-    path: '/dashboard/moderation',
-    tab: 'security',
-    icon: MessageSquareWarning,
-    keywords: ['moderation', 'warnings', 'punishments', 'discipline'],
-    category: 'Security'
+    path: '/dashboard/votes',
+    tab: 'community',
+    icon: 'fa-thumbs-up',
+    keywords: ['votes', 'voting', 'rewards', 'incentives'],
+    category: 'Community'
   },
   {
-    id: 'administration',
-    title: 'Administration',
-    description: 'Server protection and roles',
+    id: 'xp-system',
+    title: 'XP System',
+    description: 'Experience points and leveling',
     type: 'feature',
-    path: '/dashboard/administration',
-    tab: 'security',
-    icon: Shield,
-    keywords: ['admin', 'administration', 'protection', 'roles'],
-    category: 'Security'
-  },
-  {
-    id: 'logging',
-    title: 'Event Logging',
-    description: 'Track server events and activities',
-    type: 'feature',
-    path: '/dashboard/logging',
-    tab: 'security',
-    icon: FileText,
-    keywords: ['logging', 'events', 'audit', 'history'],
-    category: 'Security'
-  },
-  {
-    id: 'permissions',
-    title: 'Permissions',
-    description: 'Command access control',
-    type: 'feature',
-    path: '/dashboard/permissions',
-    tab: 'security',
-    icon: Lock,
-    keywords: ['permissions', 'access', 'control', 'commands'],
-    category: 'Security'
-  },
-  {
-    id: 'chat-saver',
-    title: 'Chat Saver',
-    description: 'Audit trails and message history',
-    type: 'feature',
-    path: '/dashboard/chatsaver',
-    tab: 'security',
-    icon: Database,
-    keywords: ['chat saver', 'audit', 'history', 'messages'],
-    category: 'Security'
+    path: '/dashboard/xp',
+    tab: 'community',
+    icon: 'fa-star',
+    keywords: ['xp', 'experience', 'levels', 'ranking', 'leaderboard'],
+    category: 'Community'
   },
 
-  // Settings Features
+  // Settings
   {
     id: 'general-settings',
     title: 'General Settings',
@@ -359,22 +431,10 @@ const staticSearchableFeatures: SearchableItem[] = [
     type: 'feature',
     path: '/dashboard/settings',
     tab: 'settings',
-    icon: Settings,
+    icon: 'fa-cog',
     keywords: ['settings', 'config', 'general', 'bot'],
     category: 'Settings'
   },
-  {
-    id: 'message-stats',
-    title: 'Message Statistics',
-    description: 'Track message activity',
-    type: 'feature',
-    path: '/dashboard/messagestats',
-    tab: 'community',
-    icon: BarChart3,
-    keywords: ['message stats', 'activity', 'tracking', 'analytics'],
-    category: 'Analytics'
-  },
-
 ];
 
 // Registration functions for dynamic features

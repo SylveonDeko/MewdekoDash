@@ -21,7 +21,6 @@ A modal music search component for finding and adding tracks to the music queue.
 <script lang="ts">
     import {createBubbler, run, stopPropagation} from 'svelte/legacy';
     import {createEventDispatcher, onMount} from "svelte";
-    import {ExternalLink, Loader, Music, Plus, Search, X} from "lucide-svelte";
     import {api} from "$lib/api";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, fly} from "svelte/transition";
@@ -326,14 +325,14 @@ A modal music search component for finding and adding tracks to the music queue.
             aria-label="Close search"
             style="color: {colors.text}; --ring-color: {colors.accent};"
           >
-            <X class="w-5 h-5" />
+            <i class="fa-solid fa-xmark" style="font-size: 20px;"></i>
           </button>
         </div>
 
         <!-- Search input -->
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search class="w-5 h-5" style="color: {colors.foreground}80;" />
+            <i class="fa-solid fa-magnifying-glass" style="color: {colors.foreground}80; font-size: 20px;"></i>
           </div>
           <input
             bind:this={searchInputElement}
@@ -408,7 +407,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
         {#if isSearching}
           <div class="flex justify-center items-center py-8">
-            <Loader class="w-8 h-8 animate-spin" style="color: {colors.accent}" aria-hidden="true" />
+            <i class="fa-solid fa-spinner fa-spin" style="color: {colors.accent}; font-size: 32px;" aria-hidden="true" />
             <span class="ml-2">
               {#if searchRetryCount > 0}
                 Retrying search... ({searchRetryCount}/{MAX_RETRIES})
@@ -441,7 +440,7 @@ A modal music search component for finding and adding tracks to the music queue.
                     class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg sm:rounded-md"
                     style="background: rgba(0,0,0,0.6);"
                   >
-                    <Plus class="w-8 h-8 sm:w-6 sm:h-6 text-white drop-shadow-lg" />
+                    <i class="fa-solid fa-plus text-white drop-shadow-lg" style="font-size: 32px;"></i>
                   </div>
 
                   <!-- Platform indicator -->
@@ -484,7 +483,7 @@ A modal music search component for finding and adding tracks to the music queue.
                         onclick={stopPropagation(bubble('click'))}
                         aria-label="Open in {track.provider || 'original source'}"
                       >
-                        <ExternalLink class="w-4 h-4" />
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                       </a>
                     {/if}
                   </div>
@@ -502,7 +501,7 @@ A modal music search component for finding and adding tracks to the music queue.
                       onclick={stopPropagation(bubble('click'))}
                       aria-label="Open in {track.provider || 'original source'}"
                     >
-                      <ExternalLink class="w-3 h-3 opacity-70" />
+                      <i class="fa-solid fa-arrow-up-right-from-square opacity-70" style="font-size: 12px;"></i>
                     </a>
                   {/if}
                 </div>
@@ -511,14 +510,14 @@ A modal music search component for finding and adding tracks to the music queue.
           </div>
         {:else if searchQuery.trim()}
           <div class="py-12 sm:py-8 text-center px-4">
-            <Music class="w-16 h-16 sm:w-12 sm:h-12 mx-auto mb-4 sm:mb-2 opacity-50" style="color: {colors.accent};" />
+            <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>
             <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">No results found</p>
             <p class="text-sm opacity-70" style="color: {colors.text};">Try different keywords or check your
               spelling</p>
           </div>
         {:else}
           <div class="py-12 sm:py-8 text-center px-4">
-            <Music class="w-16 h-16 sm:w-12 sm:h-12 mx-auto mb-4 sm:mb-2 opacity-50" style="color: {colors.accent};" />
+            <i class="fa-utility-duo fa-regular fa-music mx-auto mb-4 sm:mb-2 opacity-50" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.accent}; font-size: 64px; display: block;"></i>
             <p class="text-lg sm:text-base mb-2" style="color: {colors.text};">Search for music</p>
             <p class="text-sm opacity-70 mb-4" style="color: {colors.text};">Type artist name, song title or paste a
               link</p>

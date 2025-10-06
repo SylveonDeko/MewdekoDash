@@ -6,7 +6,6 @@
   // Lifecycle
   import {createEventDispatcher, onDestroy, onMount} from 'svelte';
   import {browser} from "$app/environment";
-  import {ChevronLeft, ChevronRight} from "lucide-svelte";
   import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import {goto} from "$app/navigation";
@@ -17,16 +16,16 @@
   // Props
   export let title: string;
   export let subtitle: string;
-  export let icon: any; // Lucide icon component
+  export let icon: any; // Lucide icon component or Font Awesome class string
   export let tabs: Array<{id: string, label: string, icon: any}> = [];
   export let activeTab: string = "";
   export let subTabs: Array<{id: string, label: string, icon?: any, parentTab: string}> = [];
   export let activeSubTab: string = "";
   export let actionButtons: Array<{
-    label: string, 
-    icon: any, 
-    action: () => void, 
-    loading?: boolean, 
+    label: string,
+    icon: any, // Lucide component or Font Awesome class string
+    action: () => void,
+    loading?: boolean,
     style?: string,
     disabled?: boolean
   }> = [];
@@ -243,7 +242,12 @@
     <div class="flex items-center gap-4">
       <div class="p-4 rounded-xl"
            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        <svelte:component this={icon} class="w-8 h-8" style="color: {$colorStore.primary}" />
+        {#if typeof icon === 'string'}
+          <i class="fa-utility-duo fa-regular {icon} text-3xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+        {:else}
+          <svelte:component this={icon} class="w-8 h-8" style="color: {$colorStore.primary}" />
+        {/if}
       </div>
       <div>
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{title}</h1>
@@ -263,7 +267,13 @@
             style="{button.style || `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`} focus:ring-color: {$colorStore.primary};"
             aria-busy={button.loading}
           >
-            <svelte:component this={button.icon} class="w-4 h-4 sm:w-5 sm:h-5 {button.loading ? 'animate-spin' : ''}" aria-hidden="true" />
+            {#if typeof button.icon === 'string'}
+              <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''}"
+                 style="font-size: 18px;"
+                 aria-hidden="true"></i>
+            {:else}
+              <svelte:component this={button.icon} class="w-4 h-4 sm:w-5 sm:h-5 {button.loading ? 'animate-spin' : ''}" aria-hidden="true" />
+            {/if}
             <span class="text-sm sm:text-base">{button.label}</span>
           </button>
         {/each}
@@ -295,7 +305,7 @@
             on:click={() => scrollTabs('left', tabContainer)}
             aria-label="Scroll tabs left"
           >
-            <ChevronLeft size={16} style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 16px;"></i>
           </button>
         {/if}
         
@@ -323,7 +333,11 @@
               id="tab-{tab.id}"
               tabindex={activeTab === tab.id ? 0 : -1}
             >
-              <svelte:component this={tab.icon} size={16} class="sm:w-[18px] sm:h-[18px]" aria-hidden="true" />
+              {#if typeof tab.icon === 'string'}
+                <i class="fa-solid {tab.icon}" style="font-size: 16px;" aria-hidden="true"></i>
+              {:else}
+                <svelte:component this={tab.icon} size={16} class="sm:w-[18px] sm:h-[18px]" aria-hidden="true" />
+              {/if}
               <span class="text-sm sm:text-base">{tab.label}</span>
             </button>
           {/each}
@@ -337,7 +351,7 @@
             on:click={() => scrollTabs('right', tabContainer)}
             aria-label="Scroll tabs right"
           >
-            <ChevronRight size={16} style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 16px;"></i>
           </button>
         {/if}
       </div>
@@ -368,16 +382,16 @@
               on:click={() => scrollTabs('left', subTabContainer)}
               aria-label="Scroll sub-tabs left"
             >
-              <ChevronLeft size={14} style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 14px;"></i>
             </button>
-            
+
             <button
               class="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg md:hidden transition-opacity"
               style="background: #0f172a; border: 1px solid {$colorStore.primary}20;"
               on:click={() => scrollTabs('right', subTabContainer)}
               aria-label="Scroll sub-tabs right"
             >
-              <ChevronRight size={14} style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 14px;"></i>
             </button>
           {/if}
           
@@ -407,7 +421,11 @@
                 tabindex={activeSubTab === subTab.id ? 0 : -1}
               >
                 {#if subTab.icon}
-                  <svelte:component this={subTab.icon} size={14} aria-hidden="true" />
+                  {#if typeof subTab.icon === 'string'}
+                    <i class="fa-solid {subTab.icon}" style="font-size: 14px;" aria-hidden="true"></i>
+                  {:else}
+                    <svelte:component this={subTab.icon} size={14} aria-hidden="true" />
+                  {/if}
                 {/if}
                 <span>{subTab.label}</span>
               </button>

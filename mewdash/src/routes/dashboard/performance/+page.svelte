@@ -8,8 +8,9 @@
     import {api} from "$lib/api.ts";
     import {onMount} from "svelte";
     import {goto} from "$app/navigation";
-    import {Activity, BarChart3, Package, Zap} from "lucide-svelte";
+    import {Activity, BarChart3, Package, Zap, Cpu} from "lucide-svelte";
     import {loadingStore} from "$lib/stores/loadingStore";
+    import {colorStore} from "$lib/stores/colorStore";
 
     let {data} = $props();
 
@@ -50,28 +51,7 @@
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
   {#if activeTab === 'overview'}
-    <div class="space-y-8">
-      <SystemInfoMonitor {data} />
-
-      <!-- Quick Stats Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="backdrop-blur-xs bg-gray-800 p-6 rounded-lg border transition-all"
-               style="border-color: #37415130;">
-          <h3 class="text-lg font-semibold text-white mb-2">System Health</h3>
-          <p class="text-gray-300 text-sm">CPU usage, memory consumption, and system uptime</p>
-        </div>
-          <div class="backdrop-blur-xs bg-gray-800 p-6 rounded-lg border transition-all"
-               style="border-color: #37415130;">
-          <h3 class="text-lg font-semibold text-white mb-2">Event Processing</h3>
-          <p class="text-gray-300 text-sm">Discord events handled and processing efficiency</p>
-        </div>
-          <div class="backdrop-blur-xs bg-gray-800 p-6 rounded-lg border transition-all"
-               style="border-color: #37415130;">
-          <h3 class="text-lg font-semibold text-white mb-2">Module Performance</h3>
-          <p class="text-gray-300 text-sm">Individual module execution times and error rates</p>
-        </div>
-      </div>
-    </div>
+    <SystemInfoMonitor {data} />
   {:else if activeTab === 'methods'}
     <PerformanceMonitor {data} />
   {:else if activeTab === 'events'}

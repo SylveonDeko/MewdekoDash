@@ -8,7 +8,6 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Bell, Database, Globe, MessageSquare, Palette, RotateCcw, Settings, Shield, Users, FileText, Ticket } from "lucide-svelte";
 
   import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -151,7 +150,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-gear text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">General Settings</h2>
         </div>
@@ -162,7 +162,7 @@
             animationDelay={0}
             description="Multiple greeting channels and messages"
             href="/dashboard/multigreets"
-            icon={Bell}
+            icon="fa-bell"
             isActive={getFeatureStatus('multigreets')}
             title="Multi Greets"
           />
@@ -172,7 +172,7 @@
             animationDelay={50}
             description="Highlight popular messages"
             href="/dashboard/starboard"
-            icon={Palette}
+            icon="fa-palette"
             isActive={getFeatureStatus('starboard')}
             title="Starboard"
           />
@@ -182,7 +182,7 @@
             animationDelay={100}
             description="User suggestion voting system"
             href="/dashboard/suggestions"
-            icon={MessageSquare}
+            icon="fa-comment"
             isActive={getFeatureStatus('suggestions')}
             title="Suggestions"
           />
@@ -192,7 +192,7 @@
             animationDelay={150}
             description="Event logging and audit trails"
             href="/dashboard/logging"
-            icon={FileText}
+            icon="fa-file-lines"
             isActive={getFeatureStatus('logging')}
             title="Logging"
           />
@@ -202,7 +202,7 @@
             animationDelay={200}
             description="Away from keyboard status"
             href="/dashboard/afk"
-            icon={Globe}
+            icon="fa-globe"
             isActive={getFeatureStatus('afk')}
             title="AFK System"
           />
@@ -216,7 +216,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-users text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Role Management</h2>
         </div>
@@ -226,7 +227,8 @@
           <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
             <div class="flex items-center gap-3 mb-3">
-              <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-shield text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.primary}">
@@ -245,7 +247,8 @@
           <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
                style="background: {$colorStore.secondary}08; border-color: {$colorStore.secondary}20;">
             <div class="flex items-center gap-3 mb-3">
-              <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-users text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Self-Assign</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.secondary}">
@@ -264,7 +267,8 @@
           <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
                style="background: {$colorStore.accent}08; border-color: {$colorStore.accent}20;">
             <div class="flex items-center gap-3 mb-3">
-              <RotateCcw class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Role Features</h3>
             </div>
             <div class="text-2xl font-bold mb-1" style="color: {$colorStore.accent}">
@@ -294,7 +298,8 @@
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Database class="w-6 h-6" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-database text-2xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Integrations</h2>
         </div>
@@ -305,7 +310,7 @@
             animationDelay={0}
             description="Supporter tier management"
             href="/dashboard/patreon"
-            icon={Database}
+            icon="fa-database"
             isActive={integrationSettings.patreonEnabled}
             title="Patreon"
           />
@@ -315,7 +320,7 @@
             animationDelay={50}
             description="Core bot settings"
             href="/dashboard/settings"
-            icon={Settings}
+            icon="fa-gear"
             isActive={true}
             title="Bot Configuration"
           />
@@ -335,7 +340,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-shield text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -359,7 +365,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-utility-duo fa-regular fa-users text-xl"
+                 style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -383,7 +390,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <RotateCcw class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -402,7 +410,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Database class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-database text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -425,7 +434,8 @@
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
-          <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-gear text-xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           <h3 class="font-semibold" style="color: {$colorStore.text}">Quick Actions</h3>
         </div>
 

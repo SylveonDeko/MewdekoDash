@@ -169,11 +169,7 @@
         <div class="shrink-0 lg:max-w-md lg:w-full">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" style="color: {$colorStore.muted};"
-                   viewBox="0 0 24 24">
-                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"
-                      stroke-width="2" />
-              </svg>
+              <i class="fa-solid fa-magnifying-glass" style="color: {$colorStore.muted}; font-size: 20px;"></i>
             </div>
             <input
               aria-label="Search commands and modules"
@@ -196,9 +192,7 @@
                 onclick={clearSearch}
                 aria-label="Clear search"
               >
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
               </button>
             {:else if showShortcuts}
               <div class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs"
@@ -232,11 +226,8 @@
         <div class="flex items-center justify-center flex-1" in:fade={{ duration: 300 }}>
           <div class="text-center max-w-md">
             <div class="mb-6">
-              <svg class="mx-auto h-20 w-20 mb-4" style="color: {$colorStore.muted};" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.529-.901-6.172-2.379C5.448 12.287 5.241 12 5 12H4a1 1 0 01-1-1V9a1 1 0 011-1h1c.241 0 .448-.287.828-.621C7.471 5.901 9.66 5 12 5s4.529.901 6.172 2.379c.38.334.587.621.828.621h1a1 1 0 011 1v2a1 1 0 01-1 1h-1c-.241 0-.448.287-.828.621z" />
-              </svg>
+              <i class="fa-utility-duo fa-regular fa-robot text-7xl mx-auto mb-4 block"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             </div>
             <h3 class="text-2xl font-bold mb-3" style="color: {$colorStore.text};">
               No commands found
@@ -421,10 +412,7 @@
                       {#if command.BotVersion && command.BotVersion.length > 0 && command.BotVersion.at(0) !== ""}
                         <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md"
                               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-                          <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
+                          <i class="fa-solid fa-lightbulb mr-1" style="font-size: 12px;"></i>
                           {command.BotVersion}
                         </span>
                       {/if}
@@ -436,16 +424,9 @@
                             style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25);
                                           color: {$colorStore.text};
                                           border: 1px solid {$colorStore.primary}30;">
-                            <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                            <i class="fa-solid fa-lock mr-1" style="font-size: 12px;"></i>
                             Permissions
-                            <svg class="w-3 h-3 ml-1 transform transition-transform group-open/perms:rotate-180"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <i class="fa-solid fa-chevron-down ml-1 transform transition-transform group-open/perms:rotate-180" style="font-size: 12px;"></i>
                           </summary>
                           <div class="mt-2 p-2 rounded-lg text-xs space-y-1"
                                style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
@@ -487,10 +468,7 @@
                                      color: {$colorStore.text};
                                      border: 1px solid {$colorStore.primary}20;"
                               title="Has selectable options">
-                          <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
+                          <i class="fa-solid fa-terminal mr-1" style="font-size: 12px;"></i>
                           Options Available
                         </span>
                       {/if}

@@ -8,26 +8,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        AlertCircle,
-        AtSign,
-        BarChart3,
-        Bell,
-        Cake,
-        Calendar,
-        CheckCircle,
-        Clock,
-        Crown,
-        Gift,
-        Hash,
-        MapPin,
-        MessageSquare,
-        RefreshCw,
-        Save,
-        Settings,
-        Users,
-        XCircle
-    } from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -273,16 +253,16 @@
 
     // Tabs configuration
     const tabs = [
-        { id: "config", label: "Configuration", icon: Settings },
-        { id: "users", label: "Users", icon: Users },
-        { id: "stats", label: "Statistics", icon: BarChart3 }
+        { id: "config", label: "Configuration", icon: "fa-gear" },
+        { id: "users", label: "Users", icon: "fa-users" },
+        { id: "stats", label: "Statistics", icon: "fa-chart-column" }
     ];
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
             label: "Refresh",
-            icon: RefreshCw,
+            icon: "fa-arrows-rotate",
             action: loadAllBirthdayData,
             loading: loading
         }
@@ -297,7 +277,7 @@
 <DashboardPageLayout
         title="Birthday Management"
         subtitle="Configure birthday announcements and celebrations"
-        icon={Cake}
+        icon="fa-cake-candles"
         {tabs}
         {activeTab}
         {actionButtons}
@@ -314,11 +294,11 @@
                   border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
                  in:fly={{ x: 20, duration: 300 }}>
                 {#if messageType === 'success'}
-                    <CheckCircle class="w-5 h-5" style="color: #10b981" />
+                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
                 {:else if messageType === 'error'}
-                    <XCircle class="w-5 h-5" style="color: #ef4444" />
+                    <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
                 {:else}
-                    <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+                    <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 {/if}
                 <span
                         style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
@@ -330,7 +310,7 @@
             <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
                  style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
                  in:fly={{ x: -20, duration: 300 }}>
-                <Gift class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                 <span style="color: {$colorStore.text}">
           🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
         </span>
@@ -349,7 +329,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+                        <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
                     </div>
 
@@ -357,7 +337,7 @@
                         <!-- Channel Selection -->
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Hash class="w-4 h-4 inline mr-1" />
+                                <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
                                 Birthday Channel
                             </label>
                             <div class="min-h-[44px]">
@@ -377,7 +357,7 @@
                         <!-- Birthday Role -->
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Crown class="w-4 h-4 inline mr-1" />
+                                <i class="fa-solid fa-crown" style="font-size: 14px;"></i>
                                 Birthday Role (24-hour temporary)
                             </label>
                             <div class="min-h-[44px]">
@@ -397,7 +377,7 @@
                         <!-- Ping Role -->
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Bell class="w-4 h-4 inline mr-1" />
+                                <i class="fa-solid fa-bell" style="font-size: 14px;"></i>
                                 Ping Role (notifies when announcing)
                             </label>
                             <div class="min-h-[44px]">
@@ -417,7 +397,7 @@
                         <!-- Timezone -->
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <MapPin class="w-4 h-4 inline mr-1" />
+                                <i class="fa-solid fa-location-dot" style="font-size: 14px;"></i>
                                 Server Timezone
                             </label>
                             <div class="min-h-[44px]">
@@ -443,7 +423,7 @@
                         <!-- Reminder Days -->
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Clock class="w-4 h-4 inline mr-1" />
+                                <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
                                 Reminder Days Before Birthday
                             </label>
                             <input
@@ -463,7 +443,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+                        <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Message</h2>
                     </div>
 
@@ -493,7 +473,7 @@
                             onclick={saveConfig}
                             disabled={saving}
                     >
-                        <Save class="w-5 h-5" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
                         {saving ? "Saving..." : "Save Configuration"}
                     </button>
 
@@ -503,7 +483,7 @@
                             onclick={resetConfig}
                             disabled={saving}
                     >
-                        <RefreshCw class="w-5 h-5" />
+                        <i class="fa-solid fa-arrows-rotate" style="font-size: 20px;"></i>
                         Reset to Default
                     </button>
                 </div>
@@ -516,7 +496,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <Gift class="w-5 h-5" style="color: {$colorStore.primary}" />
+                        <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Birthday Features</h2>
                     </div>
 
@@ -526,7 +506,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                    <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Announcements</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Send birthday messages in channel</div>
@@ -548,7 +528,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <Crown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                    <i class="fa-utility-duo fa-regular fa-crown" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Birthday Role</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Assign temporary role for 24 hours</div>
@@ -571,7 +551,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <Bell class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                    <i class="fa-utility-duo fa-regular fa-bell" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Reminders</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Send birthday reminders to users</div>
@@ -593,7 +573,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <AtSign class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                    <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Ping Role</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Ping specified role with announcements</div>
@@ -616,7 +596,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <MapPin class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                    <i class="fa-utility-duo fa-regular fa-location-dot" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Timezone Support</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Respect user-specific timezones</div>
@@ -643,7 +623,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+                        <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Current Configuration</h2>
                     </div>
 
@@ -684,7 +664,7 @@
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
-                            <Calendar class="w-5 h-5" style="color: {$colorStore.primary}" />
+                            <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Upcoming Birthdays</h2>
                         </div>
                         <div class="min-w-[140px]">
@@ -718,7 +698,7 @@
                         {:else if upcomingBirthdays.length === 0}
                             <!-- Empty state -->
                             <div class="text-center py-8">
-                                <Calendar class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                                <i class="fa-utility-duo fa-regular fa-calendar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
                                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Upcoming Birthdays</h3>
                                 <p class="text-sm" style="color: {$colorStore.muted}">
                                     No birthdays in the next {upcomingDays} days.
@@ -759,14 +739,14 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <Users class="w-5 h-5" style="color: {$colorStore.primary}" />
+                        <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Users ({birthdayUsers.length})</h2>
                     </div>
 
                     <div class="space-y-3 max-h-96 overflow-y-auto">
                         {#if birthdayUsers.length === 0}
                             <div class="text-center py-8">
-                                <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
                                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Birthdays Set</h3>
                                 <p class="text-sm" style="color: {$colorStore.muted}">
                                     No users have configured their birthdays yet.
@@ -804,7 +784,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                 {#if birthdayStats}
                     <StatCard
-                            icon={Users}
+                            icon="fa-users"
                             label="Total Users"
                             value={birthdayStats.totalUsers}
                             subtitle="server members"
@@ -813,7 +793,7 @@
                     />
 
                     <StatCard
-                            icon={Cake}
+                            icon="fa-cake-candles"
                             label="Birthdays Set"
                             value={birthdayStats.usersWithBirthdays}
                             subtitle={`${Number(birthdayStats.birthdaySetPercentage || 0).toFixed(1)}% of members`}
@@ -822,7 +802,7 @@
                     />
 
                     <StatCard
-                            icon={Gift}
+                            icon="fa-gift"
                             label="Public Birthdays"
                             value={birthdayStats.usersWithAnnouncementsEnabled || 0}
                             subtitle="announcements enabled"
@@ -831,7 +811,7 @@
                     />
 
                     <StatCard
-                            icon={Calendar}
+                            icon="fa-calendar"
                             label="Today's Birthdays"
                             value={birthdayStats.todaysBirthdayCount}
                             subtitle="celebrating today"
@@ -840,7 +820,7 @@
                     />
                 {:else}
                     <div class="col-span-full text-center py-12">
-                        <BarChart3 class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                        <i class="fa-utility-duo fa-regular fa-chart-column" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5;"></i>
                         <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                         <p style="color: {$colorStore.muted}">
                             Birthday statistics will appear here once the system is configured.

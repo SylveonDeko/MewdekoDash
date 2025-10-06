@@ -16,20 +16,6 @@
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore.ts"; // Import the global colorStore
-    import {
-        AlertTriangle,
-        Bot,
-        Check,
-        Clock,
-        Edit2,
-        MessageCircle,
-        Plus,
-        Settings,
-        Trash2,
-        Users,
-        Webhook,
-        X
-    } from "lucide-svelte";
     import {logger} from "$lib/logger.ts";
 
     interface Props {
@@ -263,12 +249,12 @@
 <DashboardPageLayout 
   title="MultiGreets Configuration" 
   subtitle="Configure multiple greeting messages for your server" 
-  icon={MessageCircle}
+  icon="fa-comment"
   guildName={$currentGuild?.name || "Dashboard"}
   actionButtons={[
     {
       label: "Add Greet",
-      icon: Plus,
+      icon: "fa-plus",
       action: addGreet,
       disabled: !selectedChannel,
       style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`
@@ -292,7 +278,7 @@
       transition:fade
     >
       <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-        <Settings class="h-5 w-5" style="color: {$colorStore.primary}" />
+        <i class="fa-utility-duo fa-regular fa-gear h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
         Greet Type Configuration
       </h2>
       <div class="flex flex-col sm:flex-row gap-3">
@@ -335,7 +321,7 @@
         role="alert"
       >
         <div class="flex items-center gap-3">
-          <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           <div style="color: {$colorStore.accent}">
             <div class="font-semibold text-lg">Error Occurred</div>
             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -350,7 +336,7 @@
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-          <Plus class="h-5 w-5" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-plus h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           Add New Greet
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">
@@ -376,10 +362,7 @@
                  border-color: {$colorStore.primary}30;"
           transition:fade
         >
-          <MessageCircle
-            class="h-16 w-16 mx-auto mb-4"
-            style="color: {$colorStore.muted}"
-          />
+          <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <p class="text-lg font-medium" style="color: {$colorStore.text}">No Greets Configured</p>
           <p class="text-sm mt-2" style="color: {$colorStore.muted}">
             Add your first greet message using the form above.
@@ -403,7 +386,7 @@
                 <div class="flex justify-between items-start">
                   <div>
                     <h3 class="font-medium flex items-center gap-2">
-                      <MessageCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
+                      <i class="fa-solid fa-comment" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                       <span class="truncate max-w-[180px]">#{greet.channelId}</span>
                       <span class="text-sm" style="color: {$colorStore.muted}">#{greet.id}</span>
                     </h3>
@@ -413,7 +396,7 @@
                     style="color: {$colorStore.muted}"
                     onclick={() => removeGreet(greet.id)}
                   >
-                    <Trash2 class="w-5 h-5" />
+                    <i class="fa-solid fa-trash" style="font-size: 20px;"></i>
                   </button>
                 </div>
               </div>
@@ -441,7 +424,7 @@
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           onclick={() => updateMessage(greet.id, editMessage.message)}
                         >
-                          <Check class="w-4 h-4" />
+                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                           Save
                         </button>
                         <button
@@ -449,7 +432,7 @@
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           onclick={() => editMessage = null}
                         >
-                          <X class="w-4 h-4" />
+                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                           Cancel
                         </button>
                       </div>
@@ -459,7 +442,7 @@
                         <div class="grow">
                         <h4 class="text-sm font-medium mb-2 flex items-center gap-2"
                             style="color: {$colorStore.text}">
-                          <MessageCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
+                          <i class="fa-solid fa-comment" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                           Message
                         </h4>
                         <div
@@ -479,7 +462,7 @@
                                color: {$colorStore.muted}"
                         onclick={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
                       >
-                        <Edit2 class="w-4 h-4" />
+                        <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                       </button>
                     </div>
                   {/if}
@@ -499,10 +482,7 @@
                                  border-color: {$colorStore.primary}30;
                                  color: {$colorStore.text}"
                         />
-                        <Clock
-                          class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                          style="color: {$colorStore.muted}"
-                        />
+                        <i class="fa-solid fa-clock absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                       </div>
                       <div class="flex gap-2">
                         <button
@@ -510,7 +490,7 @@
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           onclick={() => updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
-                          <Check class="w-4 h-4" />
+                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                           Save
                         </button>
                         <button
@@ -518,7 +498,7 @@
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           onclick={() => editDeleteTime = null}
                         >
-                          <X class="w-4 h-4" />
+                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                           Cancel
                         </button>
                       </div>
@@ -528,7 +508,7 @@
                       <div>
                         <h4 class="text-sm font-medium flex items-center gap-2"
                             style="color: {$colorStore.text}">
-                          <Clock class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                          <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                           Delete After
                         </h4>
                         <p class="text-sm mt-1">
@@ -549,7 +529,7 @@
                                color: {$colorStore.muted}"
                         onclick={() => editDeleteTime = { id: greet.id, time: String(greet.deleteTime || "") }}
                       >
-                        <Edit2 class="w-4 h-4" />
+                        <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                       </button>
                     </div>
                   {/if}
@@ -570,10 +550,7 @@
                                    border-color: {$colorStore.primary}30;
                                    color: {$colorStore.text}"
                           />
-                          <Bot
-                            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                            style="color: {$colorStore.muted}"
-                          />
+                          <i class="fa-solid fa-robot absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                         </div>
                         <div class="relative">
                           <input
@@ -585,10 +562,7 @@
                                    border-color: {$colorStore.primary}30;
                                    color: {$colorStore.text}"
                           />
-                          <Users
-                            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                            style="color: {$colorStore.muted}"
-                          />
+                          <i class="fa-solid fa-users absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                         </div>
                       </div>
                       <div class="flex gap-2">
@@ -597,7 +571,7 @@
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
                           onclick={() => updateWebhook(greet.id)}
                         >
-                          <Check class="w-4 h-4" />
+                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                           Save
                         </button>
                         <button
@@ -605,7 +579,7 @@
                           style="background: {$colorStore.primary}20; color: {$colorStore.text}"
                           onclick={() => editWebhook = null}
                         >
-                          <X class="w-4 h-4" />
+                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                           Cancel
                         </button>
                       </div>
@@ -615,7 +589,7 @@
                       <div>
                         <h4 class="text-sm font-medium flex items-center gap-2"
                             style="color: {$colorStore.text}">
-                          <Webhook class="w-4 h-4" style="color: {$colorStore.accent}" />
+                          <i class="fa-solid fa-webhook" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                           Webhook
                         </h4>
                         <p class="text-sm mt-1">
@@ -640,7 +614,7 @@
                           avatarUrl: ""
                         }}
                       >
-                        <Edit2 class="w-4 h-4" />
+                        <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                       </button>
                     </div>
                   {/if}

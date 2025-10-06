@@ -3,6 +3,8 @@
   import { onDestroy, onMount } from "svelte";
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { Zap, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-svelte";
 
   let { data } = $props();
 
@@ -104,10 +106,10 @@
 
   const getErrorRateColor = (errorRate: number) => {
     const rate = Number(errorRate) || 0;
-    if (rate === 0) return "text-green-400";
-    if (rate < 1) return "text-yellow-400";
-    if (rate < 5) return "text-orange-400";
-    return "text-red-400";
+    if (rate === 0) return $colorStore.primary;
+    if (rate < 1) return '#f59e0b';
+    if (rate < 5) return '#fb923c';
+    return $colorStore.accent;
   };
 
   const safeToFixed = (value: any, decimals: number = 2): string => {
@@ -134,129 +136,157 @@
   });
 </script>
 
-<div class="max-w-6xl mx-auto p-6 bg-gray-800 rounded-lg shadow-md mb-8">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-white">Event Metrics</h2>
-    <button
-      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-      disabled={refreshInProgress}
-      onclick={fetchEventMetrics}
-    >
-      {refreshInProgress ? 'Refreshing...' : 'Refresh'}
-    </button>
-  </div>
-
-  {#if error}
-    <div class="bg-red-500/10 text-red-400 p-4 rounded-md mb-6">
-      {error}
-    </div>
-  {/if}
-
-  {#if loading && safeEventMetrics.length === 0}
-    <div class="flex justify-center items-center h-64">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  {:else if safeEventMetrics.length === 0}
-    <div class="text-center p-8 text-gray-400">
-      <p>No event metrics available yet.</p>
-      <p class="mt-2 text-sm">Event metrics will appear as your bot processes Discord events.</p>
-    </div>
-  {:else}
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-gray-750 p-4 rounded-lg">
-        <h3 class="text-sm font-medium text-gray-300 mb-1">Total Events</h3>
-        <div class="text-2xl font-bold text-white">
-          {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalProcessed), 0))}
+<div class="w-full">
+  <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+              border-color: {$colorStore.primary}30;">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg"
+             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+          <Zap class="w-5 h-5" style="color: {$colorStore.primary}" />
         </div>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Event Metrics</h2>
       </div>
-      <div class="bg-gray-750 p-4 rounded-lg">
-        <h3 class="text-sm font-medium text-gray-300 mb-1">Total Errors</h3>
-        <div class="text-2xl font-bold text-red-400">
-          {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalErrors), 0))}
+      <button
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+        disabled={refreshInProgress}
+        onclick={fetchEventMetrics}
+      >
+        <div class:animate-spin={refreshInProgress}>
+          <RefreshCw class="w-4 h-4" />
         </div>
-      </div>
-      <div class="bg-gray-750 p-4 rounded-lg">
-        <h3 class="text-sm font-medium text-gray-300 mb-1">Event Types</h3>
-        <div class="text-2xl font-bold text-blue-400">
-          {safeEventMetrics.length}
-        </div>
-      </div>
-      <div class="bg-gray-750 p-4 rounded-lg">
-        <h3 class="text-sm font-medium text-gray-300 mb-1">Avg Error Rate</h3>
-        <div class="text-2xl font-bold text-yellow-400">
-          {safeToFixed(safeEventMetrics.length > 0 ? safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errorRate), 0) / safeEventMetrics.length : 0)}
-          %
-        </div>
-      </div>
+        {refreshInProgress ? 'Refreshing...' : 'Refresh'}
+      </button>
     </div>
 
-    <!-- Events Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-gray-200">
-        <thead>
-        <tr class="bg-gray-700">
-          <th class="px-4 py-3 text-left">
-            <button class="text-left font-bold hover:text-blue-300" onclick={() => sortBy('eventType')}>
-              Event Type {getSortIcon('eventType')}
-            </button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('totalProcessed')}>
-              Processed {getSortIcon('totalProcessed')}
-            </button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('totalErrors')}>
-              Errors {getSortIcon('totalErrors')}
-            </button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('errorRate')}>
-              Error Rate {getSortIcon('errorRate')}
-            </button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('averageExecutionTime')}>
-              Avg Time {getSortIcon('averageExecutionTime')}
-            </button>
-          </th>
-          <th class="px-4 py-3 text-right">
-            <button class="text-right font-bold hover:text-blue-300" onclick={() => sortBy('totalExecutionTime')}>
-              Total Time {getSortIcon('totalExecutionTime')}
-            </button>
-          </th>
-        </tr>
-        </thead>
-        <tbody>
-        {#each safeEventMetrics as metric, i}
-          {#if metric}
-            <tr class={i % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
-              <td class="px-4 py-3 font-mono text-sm">{metric.eventType || 'Unknown'}</td>
-              <td class="px-4 py-3 text-right">{formatNumber(safeNumber(metric.totalProcessed))}</td>
-              <td class="px-4 py-3 text-right {safeNumber(metric.totalErrors) > 0 ? 'text-red-400' : 'text-green-400'}">
-                {formatNumber(safeNumber(metric.totalErrors))}
-              </td>
-              <td class="px-4 py-3 text-right {getErrorRateColor(safeNumber(metric.errorRate))}">
-                {safeToFixed(metric.errorRate)}%
-              </td>
-              <td class="px-4 py-3 text-right font-mono">
-                {formatTime(safeNumber(metric.averageExecutionTime))}
-              </td>
-              <td class="px-4 py-3 text-right font-mono">
-                {formatTime(safeNumber(metric.totalExecutionTime))}
-              </td>
+    {#if error}
+      <div class="p-4 rounded-xl mb-6 border"
+           style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;">
+        {error}
+      </div>
+    {/if}
+
+    {#if loading && safeEventMetrics.length === 0}
+      <div class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-12 w-12 border-2"
+             style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
+      </div>
+    {:else if safeEventMetrics.length === 0}
+      <div class="text-center p-8">
+        <Zap class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+        <p class="font-medium mb-2" style="color: {$colorStore.text}">No event metrics available yet.</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">Event metrics will appear as your bot processes Discord events.</p>
+      </div>
+    {:else}
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+             style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Events</h3>
+          <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+            {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalProcessed), 0))}
+          </div>
+        </div>
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+             style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Errors</h3>
+          <div class="text-2xl font-bold" style="color: {$colorStore.accent}">
+            {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalErrors), 0))}
+          </div>
+        </div>
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+             style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Event Types</h3>
+          <div class="text-2xl font-bold" style="color: {$colorStore.secondary}">
+            {safeEventMetrics.length}
+          </div>
+        </div>
+        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+             style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+          <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Avg Error Rate</h3>
+          <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+            {safeToFixed(safeEventMetrics.length > 0 ? safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.errorRate), 0) / safeEventMetrics.length : 0)}%
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Table -->
+      <div class="overflow-x-auto rounded-xl" style="background: {$colorStore.primary}05;">
+        <table class="w-full">
+          <thead>
+            <tr style="background: {$colorStore.primary}15; border-bottom: 1px solid {$colorStore.primary}20;">
+              <th class="px-4 py-3 text-left">
+                <button class="text-left font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('eventType')}>
+                  Event Type {getSortIcon('eventType')}
+                </button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('totalProcessed')}>
+                  Processed {getSortIcon('totalProcessed')}
+                </button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('totalErrors')}>
+                  Errors {getSortIcon('totalErrors')}
+                </button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('errorRate')}>
+                  Error Rate {getSortIcon('errorRate')}
+                </button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('averageExecutionTime')}>
+                  Avg Time {getSortIcon('averageExecutionTime')}
+                </button>
+              </th>
+              <th class="px-4 py-3 text-right">
+                <button class="text-right font-bold hover:opacity-80 transition-opacity"
+                        style="color: {$colorStore.text}"
+                        onclick={() => sortBy('totalExecutionTime')}>
+                  Total Time {getSortIcon('totalExecutionTime')}
+                </button>
+              </th>
             </tr>
-          {/if}
-        {/each}
-        </tbody>
-      </table>
-    </div>
-  {/if}
+          </thead>
+          <tbody>
+            {#each safeEventMetrics as metric, i}
+              {#if metric}
+                <tr class="border-b transition-all hover:scale-[1.01]"
+                    style="background: {i % 2 === 0 ? $colorStore.primary + '08' : 'transparent'};
+                           border-color: {$colorStore.primary}10;">
+                  <td class="px-4 py-3 font-mono text-sm" style="color: {$colorStore.text}">{metric.eventType || 'Unknown'}</td>
+                  <td class="px-4 py-3 text-right" style="color: {$colorStore.text}">{formatNumber(safeNumber(metric.totalProcessed))}</td>
+                  <td class="px-4 py-3 text-right" style="color: {safeNumber(metric.totalErrors) > 0 ? $colorStore.accent : '#10b981'}">
+                    {formatNumber(safeNumber(metric.totalErrors))}
+                  </td>
+                  <td class="px-4 py-3 text-right" style="color: {getErrorRateColor(safeNumber(metric.errorRate))}">
+                    {safeToFixed(metric.errorRate)}%
+                  </td>
+                  <td class="px-4 py-3 text-right font-mono" style="color: {$colorStore.primary}">
+                    {formatTime(safeNumber(metric.averageExecutionTime))}
+                  </td>
+                  <td class="px-4 py-3 text-right font-mono" style="color: {$colorStore.secondary}">
+                    {formatTime(safeNumber(metric.totalExecutionTime))}
+                  </td>
+                </tr>
+              {/if}
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {/if}
+  </div>
 </div>
-
-<style>
-    .bg-gray-750 {
-        background-color: #2d3748;
-    }
-</style>

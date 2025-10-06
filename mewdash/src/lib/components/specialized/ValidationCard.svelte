@@ -4,16 +4,6 @@
 
   import { createEventDispatcher } from 'svelte';
   import { colorStore } from "$lib/stores/colorStore";
-  import { 
-    AlertTriangle, 
-    AlertCircle, 
-    Info, 
-    CheckCircle, 
-    X, 
-    Lightbulb,
-    ExternalLink,
-    ArrowRight
-  } from "lucide-svelte";
 
   
   interface Props {
@@ -114,13 +104,13 @@
   function getIcon(type: 'error' | 'warning' | 'suggestion') {
     switch (type) {
       case 'error':
-        return AlertCircle;
+        return "fa-circle-exclamation";
       case 'warning':
-        return AlertTriangle;
+        return "fa-triangle-exclamation";
       case 'suggestion':
-        return Lightbulb;
+        return "fa-lightbulb";
       default:
-        return Info;
+        return "fa-circle-info";
     }
   }
 
@@ -181,8 +171,7 @@
   >
     <!-- Header -->
     {#if title || collapsible}
-      {@const SvelteComponent = getIcon(severityLevel)}
-      <div 
+      <div
         class="flex items-center justify-between p-3 border-b cursor-pointer"
         class:cursor-pointer={collapsible}
         style="border-color: {getColors(severityLevel).border}30;"
@@ -193,10 +182,7 @@
         aria-expanded={collapsible ? !collapsed : undefined}
       >
         <div class="flex items-center gap-2">
-          <SvelteComponent 
-            size={16} 
-            style="color: {getColors(severityLevel).icon};" 
-          />
+          <i class="fa-solid {getIcon(severityLevel)}" style="color: {getColors(severityLevel).icon}; font-size: 16px;"></i>
           <h3 class="text-sm font-medium" style="color: {getColors(severityLevel).text};">
             {title || 'Validation Issues'}
           </h3>
@@ -221,7 +207,7 @@
 
         {#if collapsible}
           <div class="transform transition-transform duration-200" class:rotate-180={collapsed}>
-            <ArrowRight size={16} style="color: {getColors(severityLevel).text};" />
+            <i class="fa-solid fa-arrow-right" style="color: {getColors(severityLevel).text}; font-size: 16px;"></i>
           </div>
         {/if}
       </div>
@@ -237,7 +223,7 @@
             {#if localWarnings.length > 0 || localSuggestions.length > 0}
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('error').text};">
-                <AlertCircle size={12} />
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 12px;"></i>
                 Errors ({localErrors.length})
               </h4>
             {/if}
@@ -246,10 +232,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('error').bgDark}; 
                           border-color: {getColors('error').text};">
-                <AlertCircle
-                        size={16}
-                        class="shrink-0 mt-0.5"
-                  style="color: {getColors('error').icon};" 
+                <i class="fa-solid fa-circle-exclamation shrink-0 mt-0.5" style="color: {getColors('error').icon}; font-size: 16px;" 
                 />
                 
                 <div class="flex-1 min-w-0">
@@ -269,7 +252,7 @@
                       onclick={() => executeAction('error', error.id, error.action.handler)}
                     >
                       {error.action.label}
-                      <ExternalLink size={10} />
+                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
                     </button>
                   {/if}
                 </div>
@@ -281,7 +264,7 @@
                     title="Dismiss error"
                     aria-label="Dismiss error"
                   >
-                    <X size={14} style="color: {getColors('error').text};" />
+                    <i class="fa-solid fa-xmark" style="color: {getColors('error').text}; font-size: 14px;"></i>
                   </button>
                 {/if}
               </div>
@@ -295,7 +278,7 @@
             {#if (localErrors.length > 0 || localSuggestions.length > 0)}
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('warning').text};">
-                <AlertTriangle size={12} />
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 12px;"></i>
                 Warnings ({localWarnings.length})
               </h4>
             {/if}
@@ -304,10 +287,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('warning').bgDark}; 
                           border-color: {getColors('warning').text};">
-                <AlertTriangle
-                        size={16}
-                        class="shrink-0 mt-0.5"
-                  style="color: {getColors('warning').icon};" 
+                <i class="fa-solid fa-triangle-exclamation shrink-0 mt-0.5" style="color: {getColors('warning').icon}; font-size: 16px;" 
                 />
                 
                 <div class="flex-1 min-w-0">
@@ -327,7 +307,7 @@
                       onclick={() => executeAction('warning', warning.id, warning.action.handler)}
                     >
                       {warning.action.label}
-                      <ExternalLink size={10} />
+                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
                     </button>
                   {/if}
                 </div>
@@ -339,7 +319,7 @@
                     title="Dismiss warning"
                     aria-label="Dismiss warning"
                   >
-                    <X size={14} style="color: {getColors('warning').text};" />
+                    <i class="fa-solid fa-xmark" style="color: {getColors('warning').text}; font-size: 14px;"></i>
                   </button>
                 {/if}
               </div>
@@ -353,7 +333,7 @@
             {#if (localErrors.length > 0 || localWarnings.length > 0)}
               <h4 class="text-xs font-semibold uppercase tracking-wide flex items-center gap-1"
                   style="color: {getColors('suggestion').text};">
-                <Lightbulb size={12} />
+                <i class="fa-solid fa-lightbulb" style="font-size: 12px;"></i>
                 Suggestions ({localSuggestions.length})
               </h4>
             {/if}
@@ -362,10 +342,7 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('suggestion').bgDark}; 
                           border-color: {getColors('suggestion').text};">
-                <Lightbulb
-                        size={16}
-                        class="shrink-0 mt-0.5"
-                  style="color: {getColors('suggestion').icon};" 
+                <i class="fa-solid fa-lightbulb shrink-0 mt-0.5" style="color: {getColors('suggestion').icon}; font-size: 16px;" 
                 />
                 
                 <div class="flex-1 min-w-0">
@@ -380,7 +357,7 @@
                       onclick={() => executeAction('suggestion', suggestion.id, suggestion.action.handler)}
                     >
                       {suggestion.action.label}
-                      <ExternalLink size={10} />
+                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
                     </button>
                   {/if}
                 </div>
@@ -392,7 +369,7 @@
                     title="Dismiss suggestion"
                     aria-label="Dismiss suggestion"
                   >
-                    <X size={14} style="color: {getColors('suggestion').text};" />
+                    <i class="fa-solid fa-xmark" style="color: {getColors('suggestion').text}; font-size: 14px;"></i>
                   </button>
                 {/if}
               </div>

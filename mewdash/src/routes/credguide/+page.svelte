@@ -15,7 +15,7 @@
     {
       id: "overview",
       title: "Overview",
-      icon: "📋",
+      icon: "fa-clipboard-list",
       description: "Understanding credentials setup",
       required: true,
       estimatedTime: "2 min",
@@ -33,7 +33,7 @@
     {
       id: "bot-token",
       title: "Bot Token",
-      icon: "🤖",
+      icon: "fa-robot",
       description: "Get your Discord bot token",
       required: true,
       estimatedTime: "5 min",
@@ -54,7 +54,7 @@
     {
       id: "database",
       title: "Database Setup",
-      icon: "🗄️",
+      icon: "fa-database",
       description: "Configure PostgreSQL database",
       required: true,
       estimatedTime: "15 min",
@@ -146,7 +146,7 @@
     {
       id: "owner-id",
       title: "Owner ID",
-      icon: "👑",
+      icon: "fa-crown",
       description: "Configure bot owner permissions",
       required: true,
       estimatedTime: "3 min",
@@ -166,7 +166,7 @@
     {
       id: "api-keys",
       title: "API Keys",
-      icon: "🔑",
+      icon: "fa-key",
       description: "Optional API keys for enhanced features",
       required: false,
       estimatedTime: "10 min",
@@ -216,7 +216,7 @@
     {
       id: "final-config",
       title: "Final Configuration",
-      icon: "✅",
+      icon: "fa-circle-check",
       description: "Complete your setup",
       required: true,
       estimatedTime: "5 min",
@@ -379,7 +379,7 @@
               >
                 {#each steps as step, index}
                   <option value={index}>
-                    {step.icon} {step.title} {step.required ? '*' : ''}
+                    {step.title} {step.required ? '*' : ''}
                   </option>
                 {/each}
               </select>
@@ -399,7 +399,7 @@
                   >
                     <div class="flex items-center justify-between">
                       <div class="flex items-center space-x-3">
-                        <span class="text-xl">{step.icon}</span>
+                        <i class="fa-solid {step.icon} text-xl" style="color: {index === currentStep ? $colorStore.primary : $colorStore.muted};"></i>
                         <div>
                           <div class="font-medium text-sm">
                             {step.title}
@@ -412,9 +412,7 @@
                       </div>
                       {#if completedSteps.has(index)}
                         <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: {$colorStore.secondary};">
-                          <svg class="w-3 h-3" style="color: {$colorStore.text};" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                          </svg>
+                          <i class="fa-solid fa-check" style="color: {$colorStore.text}; font-size: 12px;"></i>
                         </div>
                       {/if}
                     </div>
@@ -428,18 +426,20 @@
                 <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
                 <div class="space-y-2">
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => showAllSteps = !showAllSteps}
                   >
-                    {showAllSteps ? '📋 Show Wizard' : '📜 Show All Steps'}
+                    <i class="fa-solid {showAllSteps ? 'fa-clipboard-list' : 'fa-scroll'}"></i>
+                    {showAllSteps ? 'Show Wizard' : 'Show All Steps'}
                   </button>
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => completedSteps = new Set()}
                   >
-                    🔄 Reset Progress
+                    <i class="fa-solid fa-rotate-right"></i>
+                    Reset Progress
                   </button>
                 </div>
               </div>
@@ -457,7 +457,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text};">
-                      <span class="text-3xl">{step.icon}</span>
+                      <i class="fa-solid {step.icon} text-3xl" style="color: {$colorStore.primary};"></i>
                       {step.title}
                       {#if step.required}
                         <span style="color: {$colorStore.accent};">*</span>
@@ -476,12 +476,9 @@
 
                   <!-- Simplified content for overview -->
                   {#if step.id === 'overview'}
-                    <ul class="space-y-2">
+                    <ul class="space-y-2 list-disc list-inside">
                       {#each step.content.highlights as highlight}
-                        <li class="flex items-center gap-2" style="color: {$colorStore.text};">
-                          <span style="color: {$colorStore.secondary};">✓</span>
-                          {highlight}
-                        </li>
+                        <li style="color: {$colorStore.text};">{highlight}</li>
                       {/each}
                     </ul>
                   {:else if step.id === 'bot-token'}
@@ -530,9 +527,9 @@
                 <!-- Step Header -->
                 <div class="flex items-center justify-between mb-6">
                   <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}40);">
-                      {currentStepData.icon}
+                      <i class="fa-solid {currentStepData.icon} text-3xl" style="color: {$colorStore.text};"></i>
                     </div>
                     <div>
                       <h2 class="text-3xl font-bold" style="color: {$colorStore.text};">
@@ -545,17 +542,24 @@
                         {currentStepData.description}
                       </p>
                       <div class="flex items-center gap-4 mt-2 text-sm" style="color: {$colorStore.muted};">
-                        <span>⏱️ {currentStepData.estimatedTime}</span>
-                        <span>📍 Step {currentStep + 1} of {steps.length}</span>
+                        <span class="flex items-center gap-1">
+                          <i class="fa-solid fa-clock"></i>
+                          {currentStepData.estimatedTime}
+                        </span>
+                        <span class="flex items-center gap-1">
+                          <i class="fa-solid fa-location-dot"></i>
+                          Step {currentStep + 1} of {steps.length}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <button
-                    class="px-4 py-2 rounded-lg transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg transition-all hover:scale-105 flex items-center gap-2"
                     style="background: {completedSteps.has(currentStep) ? $colorStore.secondary : $colorStore.primary + '20'}; color: {$colorStore.text};"
                     onclick={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
-                    {completedSteps.has(currentStep) ? '✅ Completed' : '⭕ Mark Complete'}
+                    <i class="fa-solid {completedSteps.has(currentStep) ? 'fa-circle-check' : 'fa-circle'}"></i>
+                    {completedSteps.has(currentStep) ? 'Completed' : 'Mark Complete'}
                   </button>
                 </div>
 
@@ -568,12 +572,9 @@
                       <div class="grid md:grid-cols-2 gap-6 mb-8">
                         <div class="p-4 rounded-xl" style="background: {$colorStore.primary}08;">
                           <h3 class="font-semibold mb-4" style="color: {$colorStore.text};">What you'll configure:</h3>
-                          <ul class="space-y-2">
+                          <ul class="space-y-2 list-disc list-inside">
                             {#each currentStepData.content.highlights as highlight}
-                              <li class="flex items-center gap-2">
-                                <span style="color: {$colorStore.secondary};">✓</span>
-                                {highlight}
-                              </li>
+                              <li style="color: {$colorStore.text};">{highlight}</li>
                             {/each}
                           </ul>
                         </div>
@@ -590,24 +591,16 @@
 
                       <div class="mb-8 p-5 rounded-xl" style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}40;">
                         <div class="flex items-start gap-3">
-                          <span class="text-xl shrink-0" style="color: {$colorStore.accent};">⚠️</span>
+                          <i class="fa-solid fa-triangle-exclamation text-xl shrink-0" style="color: {$colorStore.accent};"></i>
                           <p class="text-lg"><strong>Security Warning:</strong> {currentStepData.content.warning}</p>
                         </div>
                       </div>
 
-                      <div class="space-y-6 mb-10">
-                        {#each currentStepData.content.steps as step, index}
-                          <div class="flex items-start gap-4">
-                            <div
-                                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                                    style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid})">
-                              
-                              {index + 1}
-                            </div>
-                            <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
-                          </div>
+                      <ol class="space-y-3 mb-10 list-decimal list-inside">
+                        {#each currentStepData.content.steps as step}
+                          <li class="text-base" style="color: {$colorStore.text};">{step}</li>
                         {/each}
-                      </div>
+                      </ol>
 
                       <div class="p-8 rounded-xl border"
                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
@@ -631,18 +624,20 @@
                           System:</h3>
                         <div class="flex flex-col sm:flex-row gap-4 mb-6">
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'linux' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'linux'}
                           >
-                            🐧 Linux (Ubuntu/Debian)
+                            <i class="fa-brands fa-linux"></i>
+                            Linux (Ubuntu/Debian)
                           </button>
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'windows' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'windows'}
                           >
-                            🪟 Windows
+                            <i class="fa-brands fa-windows"></i>
+                            Windows
                           </button>
                         </div>
                       </div>
@@ -651,20 +646,12 @@
                         <div class="mb-12" in:fly={{ x: -20, duration: 300 }}>
                           <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Linux Installation
                             Steps:</h3>
-                          <div class="space-y-8">
-                            {#each currentStepData.content.linuxSteps as step, index}
-                              <div class="relative">
-                                <!-- Step Number Badge -->
-                                <div class="flex items-center mb-4">
-                                  <div
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
-                                    {index + 1}
-                                  </div>
-                                  <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
-                                </div>
+                          <ol class="space-y-6 list-decimal list-inside">
+                            {#each currentStepData.content.linuxSteps as step}
+                              <li class="list-item">
+                                <h4 class="inline text-base font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
 
-                                <!-- Command Block -->
-                                <div class="ml-14">
+                                <div class="mt-3">
                                   <div class="p-4 rounded-xl border"
                                        style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}25;">
                                     <code class="block text-sm overflow-x-auto whitespace-pre-wrap font-mono"
@@ -673,37 +660,29 @@
                                     </code>
                                   </div>
                                   {#if step.note}
-                                    <div class="mt-4 p-3 rounded-lg"
+                                    <div class="mt-3 p-3 rounded-lg"
                                          style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="shrink-0" style="color: {$colorStore.accent};">💡</span>
+                                        <i class="fa-solid fa-lightbulb shrink-0" style="color: {$colorStore.accent};"></i>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
                                   {/if}
                                 </div>
-                              </div>
+                              </li>
                             {/each}
-                          </div>
+                          </ol>
                         </div>
                       {:else}
                         <div class="mb-12" in:fly={{ x: 20, duration: 300 }}>
                           <h3 class="text-xl font-semibold mb-8" style="color: {$colorStore.text};">Windows Installation
                             Steps:</h3>
-                          <div class="space-y-8">
-                            {#each currentStepData.content.windowsSteps as step, index}
-                              <div class="relative">
-                                <!-- Step Number Badge -->
-                                <div class="flex items-center mb-4">
-                                  <div
-                                    class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mr-4" style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
-                                    {index + 1}
-                                  </div>
-                                  <h4 class="text-lg font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
-                                </div>
+                          <ol class="space-y-6 list-decimal list-inside">
+                            {#each currentStepData.content.windowsSteps as step}
+                              <li class="list-item">
+                                <h4 class="inline text-base font-semibold" style="color: {$colorStore.text};">{step.step}</h4>
 
-                                <!-- Command Block -->
-                                <div class="ml-14">
+                                <div class="mt-3">
                                   <div class="p-4 rounded-xl border"
                                        style="background: {$colorStore.primary}12; border-color: {$colorStore.primary}25;">
                                     <code class="block text-sm overflow-x-auto whitespace-pre-wrap font-mono"
@@ -712,18 +691,18 @@
                                     </code>
                                   </div>
                                   {#if step.note}
-                                    <div class="mt-4 p-3 rounded-lg"
+                                    <div class="mt-3 p-3 rounded-lg"
                                          style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                                       <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                                        <span class="shrink-0" style="color: {$colorStore.accent};">💡</span>
+                                        <i class="fa-solid fa-lightbulb shrink-0" style="color: {$colorStore.accent};"></i>
                                         <span>{step.note}</span>
                                       </p>
                                     </div>
                                   {/if}
                                 </div>
-                              </div>
+                              </li>
                             {/each}
-                          </div>
+                          </ol>
                         </div>
                       {/if}
 
@@ -741,7 +720,7 @@
                         </div>
                         <div class="mt-6 p-4 rounded-lg" style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
                           <p class="text-sm flex items-start gap-2" style="color: {$colorStore.text};">
-                            <span class="shrink-0" style="color: {$colorStore.accent};">⚠️</span>
+                            <i class="fa-solid fa-triangle-exclamation shrink-0" style="color: {$colorStore.accent};"></i>
                             <span>Replace "your_secure_password" with the actual password you set for the mewdeko user.</span>
                           </p>
                         </div>
@@ -751,18 +730,11 @@
                     <div in:fly={{ y: 20, duration: 300 }}>
                       <p class="text-lg mb-8">{currentStepData.content.intro}</p>
 
-                      <div class="space-y-6 mb-10">
-                        {#each currentStepData.content.steps as step, index}
-                          <div class="flex items-start gap-4">
-                            <div
-                                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                                    style="color: {$colorStore.text}; background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid});">
-                              {index + 1}
-                            </div>
-                            <p class="text-base pt-1" style="color: {$colorStore.text};">{step}</p>
-                          </div>
+                      <ol class="space-y-3 mb-10 list-decimal list-inside">
+                        {#each currentStepData.content.steps as step}
+                          <li class="text-base" style="color: {$colorStore.text};">{step}</li>
                         {/each}
-                      </div>
+                      </ol>
 
                       <div class="grid md:grid-cols-2 gap-8">
                         <div class="p-6 rounded-xl border"
@@ -819,16 +791,9 @@
                               <strong>Purpose:</strong> {key.purpose}
                             </p>
 
-                            <ol class="space-y-2">
-                              {#each key.steps as step, index}
-                                <li class="flex gap-3">
-                                  <span
-                                          class="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                                          style="color: {$colorStore.text}; background: {$colorStore.primary};">
-                                    {index + 1}
-                                  </span>
-                                  <p class="text-sm">{step}</p>
-                                </li>
+                            <ol class="space-y-2 list-decimal list-inside">
+                              {#each key.steps as step}
+                                <li class="text-sm" style="color: {$colorStore.text};">{step}</li>
                               {/each}
                             </ol>
                           </div>

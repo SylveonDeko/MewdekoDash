@@ -13,7 +13,6 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-    import {AlertCircle, Clock, Hash, MessageCircle, RefreshCw, Settings, UserMinus, Users} from "lucide-svelte";
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
@@ -70,9 +69,9 @@
     let activeTab = $state("settings");
   
   const tabs = [
-    { id: "settings", label: "Basic Settings", icon: Settings },
-    { id: "advanced", label: "Advanced Settings", icon: Clock },
-    { id: "users", label: "User Management", icon: Users }
+    { id: "settings", label: "Basic Settings", icon: "fa-gear" },
+    { id: "advanced", label: "Advanced Settings", icon: "fa-clock" },
+    { id: "users", label: "User Management", icon: "fa-users" }
   ];
   
   // AFK type options for DiscordSelector
@@ -450,7 +449,7 @@
     let actionButtons = $derived([
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: async () => {
         loading = true;
         await Promise.all([fetchAfkUsers(), fetchAfkSettings(), fetchBotStatus()]);
@@ -460,7 +459,7 @@
     },
     ...(activeTab === "users" && selectedUsers.size > 0 ? [{
       label: `Remove AFK (${selectedUsers.size})`,
-      icon: UserMinus,
+      icon: "fa-user-minus",
       action: showBulkRemoveConfirm,
       loading: false,
       variant: "danger" as const
@@ -468,10 +467,10 @@
     ]);
 </script>
 
-<DashboardPageLayout 
+<DashboardPageLayout
   title="AFK Management"
   subtitle="Configure AFK settings and manage AFK users"
-  icon={Clock}
+  icon="fa-clock"
   {tabs}
   bind:activeTab
   {actionButtons}
@@ -501,7 +500,7 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <Settings class="w-6 h-6" />
+          <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic AFK Settings</h2>
       </div>
@@ -513,7 +512,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Clock class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-deletion Time</h3>
           </div>
           <label for="afk-deletion-time" class="sr-only">Auto-deletion Time</label>
@@ -550,7 +549,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <MessageCircle class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Max Message Length</h3>
           </div>
           <label for="afk-max-length" class="sr-only">Max Message Length</label>
@@ -588,14 +587,14 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Settings class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Removal Type</h3>
           </div>
           <label for="afk-type" class="sr-only">AFK Type</label>
           <DiscordSelector
             type="custom"
             options={afkTypeOptions}
-            customIcon={Settings}
+            customIcon="fa-gear"
             placeholder="Select AFK removal behavior"
             selected={afkType.toString()}
             on:change={(e) => {
@@ -637,7 +636,7 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <Clock class="w-6 h-6" />
+          <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Advanced AFK Settings</h2>
       </div>
@@ -649,7 +648,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Clock class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Timeout</h3>
           </div>
           <label for="afk-timeout" class="sr-only">AFK Timeout</label>
@@ -678,7 +677,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Hash class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Disabled Channels</h3>
           </div>
           <label for="disabled-channels" class="sr-only">Disabled Channels</label>
@@ -701,7 +700,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <MessageCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Custom AFK Embed Message</h3>
           </div>
           <label for="custom-afk-message" class="sr-only">Custom AFK Message</label>
@@ -755,7 +754,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Users class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">AFK User Management</h2>
         </div>
@@ -784,7 +783,7 @@
                        hover:background: {$colorStore.accent}20;"
                 onclick={showBulkRemoveConfirm}
               >
-                <UserMinus class="w-4 h-4" />
+                <i class="fa-utility-duo fa-regular fa-user-minus" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
                 <span class="sm:hidden">Remove Selected ({selectedUsers.size})</span>
                 <span class="hidden sm:inline">Remove AFK ({selectedUsers.size})</span>
               </button>
@@ -808,7 +807,7 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" />
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
           <p style="color: {$colorStore.accent}">{error}</p>
         </div>
       {:else if afkUsers.length === 0}
@@ -816,7 +815,7 @@
           class="text-center py-12"
           transition:fade
         >
-          <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+          <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5;"></i>
           <p style="color: {$colorStore.muted}">No users are currently AFK</p>
         </div>
       {:else}
@@ -923,7 +922,7 @@
                          hover:background: {$colorStore.accent}20;"
                   onclick={() => showClearAfkConfirm(user.userId)}
                 >
-                  <UserMinus class="w-4 h-4" />
+                  <i class="fa-utility-duo fa-regular fa-user-minus" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
                   <span class="sm:hidden">Remove AFK</span>
                   <span class="hidden sm:inline">Remove</span>
                 </button>

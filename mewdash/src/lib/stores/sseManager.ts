@@ -35,7 +35,6 @@ class SSEManager {
 
   // Clean up all connections (for app teardown)
   destroy() {
-    console.log("[SSEManager] Destroying all SSE connections");
     this.connections.forEach((eventSource, key) => {
       eventSource.close();
     });
@@ -50,24 +49,12 @@ class SSEManager {
     this.closeConnection(guildId);
 
     const url = `/api/music/events?guildId=${guildId}`;
-    console.log(`[SSEManager] Creating SSE connection for guild ${guildId}`);
 
     try {
       const eventSource = new EventSource(url);
-
-      eventSource.onopen = () => {
-        console.log(
-          `[SSEManager] SSE connection established for guild ${guildId}`,
-        );
-      };
-
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log(
-            `[SSEManager] Received event for guild ${guildId}:`,
-            data,
-          );
 
           // Notify all listeners for this guild
           const listeners = this.listeners.get(key);
@@ -76,24 +63,18 @@ class SSEManager {
               try {
                 callback(data);
               } catch (err) {
-                console.error("[SSEManager] Error in listener callback:", err);
               }
             });
           }
         } catch (err) {
-          console.error("[SSEManager] Error parsing SSE message:", err);
         }
       };
 
       eventSource.onerror = (err) => {
-        console.error(`[SSEManager] SSE error for guild ${guildId}:`, err);
 
         // Reconnect after 5 seconds if there are still listeners
         const listeners = this.listeners.get(key);
         if (listeners && listeners.size > 0) {
-          console.log(
-            `[SSEManager] Reconnecting SSE for guild ${guildId} in 5 seconds...`,
-          );
           setTimeout(() => {
             if (this.listeners.get(key)?.size) {
               this.createConnection(guildId);
@@ -104,10 +85,7 @@ class SSEManager {
 
       this.connections.set(key, eventSource);
     } catch (err) {
-      console.error(
-        `[SSEManager] Failed to create EventSource for guild ${guildId}:`,
-        err,
-      );
+
     }
   }
 
@@ -116,7 +94,6 @@ class SSEManager {
     const eventSource = this.connections.get(key);
 
     if (eventSource) {
-      console.log(`[SSEManager] Closing SSE connection for guild ${guildId}`);
       eventSource.close();
       this.connections.delete(key);
     }

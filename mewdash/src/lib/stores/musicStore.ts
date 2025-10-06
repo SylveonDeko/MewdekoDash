@@ -110,7 +110,6 @@ function createMusicStore() {
       webSocket = new WebSocket(wsUrl);
 
       webSocket.onopen = () => {
-        console.log(`WebSocket connection established successfully (was explicitly disconnected: ${wasExplicitlyDisconnected})`);
         update(state => ({
           ...state,
           isPolling: true,
@@ -121,11 +120,6 @@ function createMusicStore() {
         // Start heartbeat monitoring
         startHeartbeat();
 
-        // If we're reconnecting after an explicit disconnection,
-        // the first message will tell us if the bot has rejoined
-        if (wasExplicitlyDisconnected) {
-          console.log("Reconnected after player destruction - waiting for status update to detect if bot rejoined");
-        }
       };
 
       webSocket.onmessage = (event) => {
@@ -138,18 +132,7 @@ function createMusicStore() {
 
           // Log full data once to see structure
           if (!(window as any)._musicDataLogged) {
-            console.log("Full music data structure:", data);
             (window as any)._musicDataLogged = true;
-          }
-
-          // Log position data to debug progress bar
-          if (data.Position) {
-            console.log("Music position data received:", data.Position);
-          }
-
-          // Log player existence data
-          if (data.hasOwnProperty('IsInVoiceChannel')) {
-            console.log("IsInVoiceChannel status:", data.IsInVoiceChannel, "CurrentTrack exists:", !!data.CurrentTrack);
           }
 
           // Get current state before any updates
@@ -157,7 +140,6 @@ function createMusicStore() {
 
           // Check for explicit disconnection signal from backend
           if (data.Disconnected === true) {
-            console.log("Received explicit disconnection signal from backend");
 
             // Mark as explicitly disconnected
             wasExplicitlyDisconnected = true;
@@ -199,7 +181,6 @@ function createMusicStore() {
 
           // Check if we're receiving messages after a silence period, disconnection, or explicit disconnection
           if ((wasDestroyedDueToSilence || wasExplicitlyDisconnected || !currentState.playerExists) && playerExists) {
-            console.log(`Music player recreated - bot joined voice channel (silence: ${wasDestroyedDueToSilence}, explicit: ${wasExplicitlyDisconnected})`);
             wasDestroyedDueToSilence = false; // Reset flag
             wasExplicitlyDisconnected = false; // Reset explicit disconnection flag
 
@@ -210,7 +191,6 @@ function createMusicStore() {
               }));
             }
           } else if (currentState.playerExists && !playerExists) {
-            console.log("Music player destroyed - bot left voice channel");
             wasDestroyedDueToSilence = false; // Not due to silence, actual leave
             // Emit player destroyed event
             if (typeof window !== 'undefined') {
@@ -223,7 +203,6 @@ function createMusicStore() {
           // Check for explicit disconnection (when bot leaves channel)
           if (!data.BotInChannel && !data.IsInVoiceChannel && !data.CurrentTrack) {
             // Bot is not in channel at all - clear everything
-            console.log("Bot disconnected from voice channel - clearing status");
             wasDestroyedDueToSilence = false;
           }
 
@@ -264,7 +243,6 @@ function createMusicStore() {
       };
 
       webSocket.onclose = (event) => {
-        console.log(`Music WebSocket closed: Code=${event.code}, Reason='${event.reason}'`);
 
         // Stop heartbeat monitoring
         stopHeartbeat();
@@ -273,7 +251,6 @@ function createMusicStore() {
 
         // If we had a player when the connection closed, it means the player was destroyed
         if (currentState.playerExists) {
-          console.log("WebSocket closed with active player - player was destroyed");
 
           // Mark as explicitly disconnected since backend closed the connection
           wasExplicitlyDisconnected = true;
@@ -299,11 +276,9 @@ function createMusicStore() {
         const isStillPolling = get({ subscribe }).isPolling;
         if (useWebSocket && isStillPolling && activeUserId) {
           // Schedule reconnection to detect when bot rejoins
-          console.log("WebSocket closed. Scheduling reconnection to monitor for bot rejoining.");
           scheduleReconnect(userId);
         } else {
           // We stopped polling entirely
-          console.log("WebSocket closed, not reconnecting (polling stopped)");
         }
       };
     } catch (err) {
@@ -317,7 +292,6 @@ function createMusicStore() {
   function startHeartbeat() {
     stopHeartbeat();
     lastMessageTime = Date.now();
-    console.log("Starting heartbeat monitoring");
 
     heartbeatInterval = window.setInterval(() => {
       const timeSinceLastMessage = Date.now() - lastMessageTime;
@@ -334,21 +308,18 @@ function createMusicStore() {
 
         // Only timeout if we're expecting updates (i.e., playing music)
         if (currentState.playerExists && currentState.status?.CurrentTrack) {
-          console.log(`No messages for ${timeSinceLastMessage}ms - connection may be dead`);
 
           // Mark as potentially dead
           wasDestroyedDueToSilence = true;
 
           // Close the WebSocket to force reconnection
           if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            console.log("Closing potentially dead WebSocket, will attempt reconnect");
             webSocket.close(1000, "Heartbeat timeout");
           }
 
           // Schedule reconnect attempt
           setTimeout(() => {
             if (activeUserId && useWebSocket) {
-              console.log("Attempting to reconnect WebSocket after heartbeat timeout");
               connectWebSocket(activeUserId);
             }
           }, 2000);
@@ -366,7 +337,6 @@ function createMusicStore() {
       clearTimeout(heartbeatTimeout);
       heartbeatTimeout = null;
     }
-    console.log("Stopped heartbeat monitoring");
   }
 
   // SSE connection for Redis events
@@ -374,14 +344,11 @@ function createMusicStore() {
     // Clean up existing subscription
     stopEventSource();
 
-    console.log(`Subscribing to Redis events for guild ${guildId}`);
 
     // Subscribe to SSE events via the singleton manager
     sseUnsubscribe = sseManager.subscribe(guildId.toString(), (data) => {
-      console.log("Received Redis event via SSE manager:", data);
 
       if (data.event === "playerCreated") {
-        console.log("Player created event received from Redis");
         wasExplicitlyDisconnected = false;
 
         // Mark player as existing again
@@ -399,7 +366,6 @@ function createMusicStore() {
 
         // If we don't have an active WebSocket, try to reconnect
         if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-          console.log("Reconnecting WebSocket after player created event");
           if (activeUserId) {
             // Small delay to ensure bot is fully connected
             setTimeout(() => {
@@ -408,7 +374,6 @@ function createMusicStore() {
           }
         }
       } else if (data.event === "playerDestroyed") {
-        console.log("Player destroyed event received from Redis");
 
         // Clear the music status and mark player as destroyed
         update(state => ({
@@ -428,7 +393,6 @@ function createMusicStore() {
 
         // Close WebSocket if it's still open
         if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-          console.log("Closing WebSocket after Redis playerDestroyed event");
           webSocket.close(1000, "Player destroyed");
         }
       }
@@ -437,7 +401,6 @@ function createMusicStore() {
 
   function stopEventSource() {
     if (sseUnsubscribe) {
-      console.log("Unsubscribing from Redis events");
       sseUnsubscribe();
       sseUnsubscribe = null;
     }
@@ -452,11 +415,9 @@ function createMusicStore() {
     // Use shorter reconnect time when explicitly disconnected (player destroyed)
     // to quickly detect when bot rejoins
     const reconnectDelay = wasExplicitlyDisconnected ? 2000 : 5000;
-    console.log(`Scheduling WebSocket reconnect in ${reconnectDelay}ms (explicit disconnect: ${wasExplicitlyDisconnected})`);
 
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;
-      console.log("Attempting WebSocket reconnect now.");
       connectWebSocket(userId);
     }, reconnectDelay) as unknown as NodeJS.Timeout;
   }
@@ -497,7 +458,6 @@ function createMusicStore() {
 
       // Check if player was destroyed
       if (state.playerExists && !playerExists) {
-        console.log("Music player destroyed - bot left voice channel (polling)");
         wasDestroyedDueToSilence = false; // Not due to silence, actual leave
         // Emit player destroyed event
         if (typeof window !== 'undefined') {
@@ -506,7 +466,6 @@ function createMusicStore() {
           }));
         }
       } else if ((!state.playerExists || wasDestroyedDueToSilence || wasExplicitlyDisconnected) && playerExists) {
-        console.log(`Music player created - bot joined voice channel (polling, silence: ${wasDestroyedDueToSilence}, explicit: ${wasExplicitlyDisconnected})`);
         wasDestroyedDueToSilence = false; // Reset flag
         wasExplicitlyDisconnected = false; // Reset explicit disconnection flag
         // Emit player created event
@@ -636,7 +595,6 @@ function createMusicStore() {
 
       // Try WebSocket connection first
       if (useWebSocket) {
-        console.log("(Deferred) Attempting to connect via WebSocket.");
         connectWebSocket(userId);
       } else {
         // Fall back to traditional polling

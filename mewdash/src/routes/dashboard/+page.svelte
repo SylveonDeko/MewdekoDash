@@ -7,7 +7,6 @@
     import type {BotStatusModel, GraphStatsResponse} from "$lib/types/models";
     import {goto} from "$app/navigation";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {Bot, ChevronDown, Link, Music, RefreshCw, Search, Server, User, Users, X} from "lucide-svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
@@ -41,6 +40,8 @@
     let showMusicNotification = $state(false);
     let musicJustStarted = $state(false);
     let playerExists = $state(false);
+    let compactMode = $state(false);
+    let showDetails = $state(true); // Controls visibility of description/stats
 
     // Derived state
     let musicStatus = $derived($musicStore.status);
@@ -401,6 +402,24 @@
         serverSearchTerm = "";
     }
 
+    // Compact mode toggle
+    async function toggleCompactMode() {
+        if (!compactMode) {
+            // Entering compact mode: fade out first, then compact
+            showDetails = false;
+            await new Promise(resolve => setTimeout(resolve, 250)); // Wait for fade out
+            compactMode = true;
+        } else {
+            // Expanding: expand first, then fade in (works naturally)
+            compactMode = false;
+            showDetails = true;
+        }
+
+        if (browser) {
+            localStorage.setItem("compactHeaderMode", compactMode.toString());
+        }
+    }
+
     // Handle escape key for server dropdown
     function handleServerDropdownKeydown(event: KeyboardEvent) {
         if (event.key === "Escape" && showServerDropdown) {
@@ -455,6 +474,11 @@
         // Check for previously selected server
         if (browser) {
             hasEverSelectedServer = localStorage.getItem("hasEverSelectedServer") === "true";
+
+            // Restore compact mode preference
+            compactMode = localStorage.getItem("compactHeaderMode") === "true";
+            // Sync showDetails with compactMode on page load
+            showDetails = !compactMode;
 
             // Set up keyboard event listeners
             window.addEventListener("keydown", handleServerDropdownKeydown);
@@ -671,7 +695,8 @@
                 <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
                     <div class="flex items-center gap-3">
-                        <Bot class="w-6 h-6" style="color: {$colorStore.accent}"/>
+                        <i class="fa-utility-duo fa-regular fa-robot text-2xl"
+                           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
                         <div style="color: {$colorStore.accent}">
                             <div class="font-semibold text-lg">Error Occurred</div>
                             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -684,7 +709,8 @@
                                 onclick={fetchAllData}
                                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}"
                         >
-                            <RefreshCw size={18}/>
+                            <i class="fa-utility-duo fa-regular fa-sync"
+                               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
                             Retry
                         </button>
                     </div>
@@ -699,16 +725,17 @@
                             aria-label="Refresh dashboard data"
                     >
           <span class:animate-spin={refreshing}>
-            <RefreshCw size={20} />
+            <i class="fa-utility-duo fa-regular fa-sync"
+               style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
           </span>
                     </button>
                 </div>
 
                 <!-- Unified Server Banner - Always shown -->
-                <div class="relative mb-8 transition-all duration-500 ease-out"
+                <div class="relative mb-4 ease-out"
                      class:opacity-75={switchingServer}
                      class:scale-[0.98]={switchingServer}
-                     style="min-height: 200px;"
+                     style="min-height: {compactMode ? '80px' : '200px'}; transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                      in:fly={{ y: -20, duration: 600, delay: 100 }}>
 
                     <!-- Background container with overflow hidden -->
@@ -770,43 +797,70 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="relative p-6 md:p-8 transition-all duration-500">
+                    <div class="relative p-6 md:p-8 ease-out"
+                         class:!p-3={compactMode}
+                         class:md:!px-6={compactMode}
+                         class:md:!py-3={compactMode}
+                         style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
                         {#if switchingServer}
                             <!-- Loading skeleton for server switch -->
-                            <div class="flex flex-col md:flex-row items-start md:items-center gap-6 animate-pulse">
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-6 animate-pulse"
+                                 class:!flex-row={compactMode}
+                                 class:!items-center={compactMode}
+                                 class:!gap-3={compactMode}>
                                 <!-- Server Icon Skeleton -->
                                 <div class="relative shrink-0">
                                     <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl shadow-lg ring-2 ring-opacity-20 animate-pulse"
+                                         class:!w-12={compactMode}
+                                         class:!h-12={compactMode}
+                                         class:!rounded-xl={compactMode}
                                          style="background: {$colorStore.primary}20; ring-color: {$colorStore.primary};">
                                         <div
-                                                class="w-full h-full rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 animate-pulse"></div>
+                                                class="w-full h-full rounded-2xl bg-gradient-to-br from-gray-600 to-gray-700 animate-pulse"
+                                                class:!rounded-xl={compactMode}></div>
                                     </div>
-                                    <div
-                                            class="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-400 rounded-full border-2 border-white shadow-xs animate-pulse"></div>
+                                    {#if !compactMode}
+                                        <div
+                                                class="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-400 rounded-full border-2 border-white shadow-xs animate-pulse"></div>
+                                    {/if}
                                 </div>
 
                                 <!-- Server Info Skeleton -->
-                                <div class="flex-1 min-w-0 space-y-3">
-                                    <div class="h-8 bg-gray-600 rounded-lg animate-pulse w-3/4"></div>
-                                    <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-1/2"></div>
-                                    <div class="flex gap-4">
-                                        <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-24"></div>
-                                        <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-20"></div>
-                                        <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-16"></div>
-                                    </div>
+                                <div class="flex-1 min-w-0 space-y-3"
+                                     class:!space-y-0={compactMode}
+                                     class:!min-w-fit={compactMode}
+                                     class:!flex-none={compactMode}>
+                                    <div class="h-8 bg-gray-600 rounded-lg animate-pulse w-3/4"
+                                         class:!h-5={compactMode}
+                                         class:!w-32={compactMode}></div>
+                                    {#if !compactMode}
+                                        <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-1/2"></div>
+                                        <div class="flex gap-4">
+                                            <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-24"></div>
+                                            <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-20"></div>
+                                            <div class="h-4 bg-gray-700 rounded-sm animate-pulse w-16"></div>
+                                        </div>
+                                    {/if}
                                 </div>
                             </div>
                         {:else if $currentGuild}
                             <!-- Selected Server Display -->
                             <div
-                                    class="flex flex-col md:flex-row items-start md:items-center gap-6 transition-all duration-500 ease-out"
+                                    class="flex flex-col md:flex-row items-start md:items-center gap-6 ease-out"
+                                    class:!flex-row={compactMode}
+                                    class:!items-center={compactMode}
+                                    class:!gap-3={compactMode}
+                                    style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                     in:fade={{ duration: 400, delay: 200 }}>
 
                                 <!-- Server Icon -->
                                 <div class="relative shrink-0">
                                     <div
-                                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 transition-all duration-500 hover:scale-105"
-                                            style="ring-color: {$colorStore.primary};">
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 hover:scale-105"
+                                            class:!w-12={compactMode}
+                                            class:!h-12={compactMode}
+                                            class:!rounded-xl={compactMode}
+                                            style="ring-color: {$colorStore.primary}; transition: width 500ms {compactMode ? '250ms' : '0ms'}, height 500ms {compactMode ? '250ms' : '0ms'}, border-radius 500ms {compactMode ? '250ms' : '0ms'};">
                                         {#key $currentGuild?.id}
                                             <div in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 150 }}>
                                                 {#if guildInfo?.iconUrl}
@@ -827,7 +881,8 @@
                                                     <div
                                                             class="w-full h-full flex items-center justify-center text-2xl font-bold transition-all duration-500 hover:scale-110"
                                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-                                                        <Server size={32}/>
+                                                        <i class="fa-utility-duo fa-regular fa-server text-4xl"
+                                                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                                                     </div>
                                                 {/if}
                                             </div>
@@ -836,40 +891,57 @@
                                 </div>
 
                                 <!-- Server Info -->
-                                <div class="flex-1 min-w-0 transition-all duration-500">
-                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                <div class="flex-1 min-w-0 ease-out" style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 ease-out"
+                                         class:!flex-row={compactMode}
+                                         class:!items-center={compactMode}
+                                         class:!gap-3={compactMode}
+                                         style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
 
                                         <!-- Clickable Server Name Section -->
-                                        <div class="flex-1 min-w-0">
+                                        <div class="flex-1 min-w-0"
+                                             class:!min-w-fit={compactMode}
+                                             class:!flex-none={compactMode}>
                                             <!-- Clickable server name with dropdown -->
                                             <div class="relative inline-block">
                                                 <button
                                                         bind:this={serverNameButtonRef}
                                                         class="group flex items-center gap-2 mb-2 rounded-lg p-2 -m-2 transition-all duration-300 hover:bg-black hover:bg-opacity-10"
+                                                        class:!mb-0={compactMode}
+                                                        class:!p-1={compactMode}
+                                                        class:!gap-1={compactMode}
                                                         onclick={toggleServerDropdown}
                                                         use:clickOutside
                                                         onclickoutside={closeServerDropdown}
                                                 >
                                                     {#key $currentGuild?.id}
                                                         <h1
-                                                                class="text-2xl md:text-3xl font-bold truncate text-left transition-all duration-500 transform"
-                                                                style="color: {$colorStore.text};"
+                                                                class="text-2xl md:text-3xl font-bold truncate text-left transform"
+                                                                class:!text-base={compactMode}
+                                                                class:!font-semibold={compactMode}
+                                                                style="color: {$colorStore.text}; transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};"
                                                                 in:fade={{ duration: 300, delay: 250 }}
                                                                 out:fade={{ duration: 150 }}>
                                                             {guildInfo?.name || $currentGuild.name}
                                                         </h1>
                                                     {/key}
-                                                    <ChevronDown
-                                                            size={20}
-                                                            style="color: {$colorStore.muted}"
-                                                            class="transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
-                                                    />
+                                                    <i class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
+                                                       style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                                                 </button>
+
+                                                <!-- Backdrop for mobile -->
+                                                {#if showServerDropdown}
+                                                    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] md:hidden"
+                                                         in:fade={{ duration: 200 }}
+                                                         out:fade={{ duration: 150 }}
+                                                         onclick={closeServerDropdown}>
+                                                    </div>
+                                                {/if}
 
                                                 <!-- Server Dropdown -->
                                                 {#if showServerDropdown}
                                                     <div
-                                                            class="absolute top-full mt-2 left-0 w-80 rounded-xl shadow-2xl border overflow-hidden z-[100]"
+                                                            class="fixed md:absolute left-4 right-4 md:left-0 md:right-auto top-32 md:top-full mt-0 md:mt-2 md:w-80 rounded-xl shadow-2xl border overflow-hidden z-[100]"
                                                             style="border-color: {$colorStore.primary}30;
                                  background: linear-gradient(135deg, {$colorStore.background}f5, {$colorStore.background}ee);
                                  backdrop-filter: blur(10px);"
@@ -880,14 +952,12 @@
                                                         <div class="p-3 border-b"
                                                              style="border-color: {$colorStore.primary}20;">
                                                             <div class="relative">
-                                                                <Search size={16}
-                                                                        class="absolute left-3 top-1/2 transform -translate-y-1/2"
-                                                                        style="color: {$colorStore.muted}"/>
                                                                 <input
                                                                         type="text"
                                                                         placeholder="Search servers..."
                                                                         bind:value={serverSearchTerm}
-                                                                        class="w-full pl-10 pr-4 py-2 rounded-lg border text-sm"
+                                                                        onclick={(e) => e.stopPropagation()}
+                                                                        class="w-full px-4 py-2 rounded-lg border text-sm"
                                                                         style="border-color: {$colorStore.primary}30;
                                      color: {$colorStore.text};
                                      background: {$colorStore.primary}08;"
@@ -939,9 +1009,9 @@
                                                 {/if}
                                             </div>
 
-                                            {#if guildInfo?.description || $currentGuild.description}
+                                            {#if (guildInfo?.description || $currentGuild.description) && showDetails}
                                                 <div in:fade={{ duration: 300, delay: 300 }}
-                                                     out:fade={{ duration: 150 }}>
+                                                     out:fade={{ duration: 200 }}>
                                                     <p class="text-sm md:text-base mb-3 line-clamp-2 transition-all duration-300"
                                                        style="color: {$colorStore.muted};">
                                                         {guildInfo?.description || $currentGuild.description}
@@ -950,50 +1020,67 @@
                                             {/if}
 
                                             <!-- Quick stats -->
-                                            <div class="flex flex-wrap items-center gap-4 text-sm transition-all duration-500"
-                                                 in:fade={{ duration: 300, delay: 350 }} out:fade={{ duration: 150 }}>
-                                                <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-                                                    <Users size={16} style="color: {$colorStore.primary}"/>
-                                                    <span style="color: {$colorStore.text}">
-                          {(guildInfo?.memberCount || guildMemberStats.totalMembers).toLocaleString()} members
-                        </span>
-                                                </div>
-
-                                                <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-                                                    <User size={16} style="color: {$colorStore.secondary}"/>
-                                                    <span style="color: {$colorStore.text}">
-                          {guildMemberStats.humanMembers.toLocaleString()} humans
-                        </span>
-                                                </div>
-
-                                                {#if botStatus?.isReady}
+                                            {#if showDetails}
+                                                <div class="flex flex-wrap items-center gap-4 text-sm transition-all duration-500"
+                                                     in:fade={{ duration: 300, delay: 350 }} out:fade={{ duration: 200 }}>
                                                     <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-                                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                                        <span style="color: {$colorStore.text}">Bot Online</span>
+                                                        <i class="fa-utility-duo fa-regular fa-users"
+                                                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+                                                        <span style="color: {$colorStore.text}">
+                              {(guildInfo?.memberCount || guildMemberStats.totalMembers).toLocaleString()} members
+                            </span>
                                                     </div>
-                                                {/if}
-                                            </div>
+
+                                                    <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                        <i class="fa-utility-duo fa-regular fa-user"
+                                                           style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
+                                                        <span style="color: {$colorStore.text}">
+                              {guildMemberStats.humanMembers.toLocaleString()} humans
+                            </span>
+                                                    </div>
+
+                                                    {#if botStatus?.isReady}
+                                                        <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                            <span style="color: {$colorStore.text}">Bot Online</span>
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            {/if}
                                         </div>
 
                                         <!-- Action buttons and Mini Music Player Container -->
-                                        <div class="flex items-start gap-3 transition-all duration-500 ease-in-out"
+                                        <div class="flex items-start gap-3 ease-in-out"
+                                             class:!gap-2={compactMode}
+                                             style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                              in:fade={{ duration: 300, delay: 400 }} out:fade={{ duration: 150 }}>
                                             <!-- Action buttons section -->
-                                            <div class="flex items-center gap-3 flex-wrap transition-all duration-500 ease-in-out">
+                                            <div class="flex items-center gap-3 flex-wrap ease-in-out"
+                                                 class:!gap-2={compactMode}
+                                                 style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
                                                 {#if $currentGuild.owner}
-                                                    <div
-                                                            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105"
-                                                            style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
+                                                    <div in:fade={{ duration: 200, delay: 200 }}
+                                                         out:fade={{ duration: 200 }}
+                                                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105"
+                                                         class:!px-2={compactMode}
+                                                         class:!py-1={compactMode}
+                                                         style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                                                         Owner
                                                     </div>
                                                 {/if}
 
                                                 <button
+                                                        in:fade={{ duration: 200, delay: 200 }}
+                                                        out:fade={{ duration: 200 }}
                                                         class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform"
+                                                        class:!px-3={compactMode}
+                                                        class:!py-1.5={compactMode}
+                                                        class:!text-sm={compactMode}
                                                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                                         onclick={() => window.open(`https://discord.com/channels/${$currentGuild.id}`, '_blank')}
                                                 >
-                                                    <Link size={16}/>
+                                                    <i class="fa-utility-duo fa-regular fa-link {compactMode ? 'text-sm' : ''}"
+                                                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                                                     <span class="hidden sm:inline">View Server</span>
                                                 </button>
                                             </div>
@@ -1004,53 +1091,78 @@
                         {:else}
                             <!-- No Server Selected State - Same layout as selected state -->
                             <div
-                                    class="flex flex-col md:flex-row items-start md:items-center gap-6 transition-all duration-500 ease-out"
+                                    class="flex flex-col md:flex-row items-start md:items-center gap-6 ease-out"
+                                    class:!flex-row={compactMode}
+                                    class:!items-center={compactMode}
+                                    class:!gap-3={compactMode}
+                                    style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                     in:fade={{ duration: 400, delay: 200 }}>
 
                                 <!-- Server Icon Placeholder -->
                                 <div class="relative shrink-0">
                                     <div
-                                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 transition-all duration-500"
-                                            style="ring-color: {$colorStore.primary};">
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20"
+                                            class:!w-12={compactMode}
+                                            class:!h-12={compactMode}
+                                            class:!rounded-xl={compactMode}
+                                            style="ring-color: {$colorStore.primary}; transition: width 500ms {compactMode ? '250ms' : '0ms'}, height 500ms {compactMode ? '250ms' : '0ms'}, border-radius 500ms {compactMode ? '250ms' : '0ms'};">
                                         <div
                                                 class="w-full h-full flex items-center justify-center text-2xl font-bold"
                                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}30, {$colorStore.gradientMid}30); color: {$colorStore.primary};">
-                                            <Server size={32}/>
+                                            <i class="fa-utility-duo fa-regular fa-server {compactMode ? 'text-2xl' : 'text-4xl'}"
+                                               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Server Info - Same layout as selected state -->
-                                <div class="flex-1 min-w-0 transition-all duration-500">
-                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                <div class="flex-1 min-w-0 ease-out" style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 ease-out"
+                                         class:!flex-row={compactMode}
+                                         class:!items-center={compactMode}
+                                         class:!gap-3={compactMode}
+                                         style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
 
                                         <!-- Clickable Server Name Section (same as when server is selected) -->
-                                        <div class="flex-1 min-w-0">
+                                        <div class="flex-1 min-w-0"
+                                             class:!min-w-fit={compactMode}
+                                             class:!flex-none={compactMode}>
                                             <!-- Clickable server name with dropdown -->
                                             <div class="relative inline-block">
                                                 <button
                                                         bind:this={serverNameButtonRef}
                                                         class="group flex items-center gap-2 mb-2 rounded-lg p-2 -m-2 transition-all duration-300 hover:bg-black hover:bg-opacity-10"
+                                                        class:!mb-0={compactMode}
+                                                        class:!p-1={compactMode}
+                                                        class:!gap-1={compactMode}
                                                         onclick={toggleServerDropdown}
                                                         use:clickOutside
                                                         onclickoutside={closeServerDropdown}
                                                 >
                                                     <h1
-                                                            class="text-2xl md:text-3xl font-bold truncate text-left transition-all duration-500 transform"
-                                                            style="color: {$colorStore.text};">
+                                                            class="text-2xl md:text-3xl font-bold truncate text-left transform"
+                                                            class:!text-base={compactMode}
+                                                            class:!font-semibold={compactMode}
+                                                            style="color: {$colorStore.text}; transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};">
                                                         Select a Server
                                                     </h1>
-                                                    <ChevronDown
-                                                            size={20}
-                                                            style="color: {$colorStore.muted}"
-                                                            class="transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
-                                                    />
+                                                    <i class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
+                                                       style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                                                 </button>
+
+                                                <!-- Backdrop for mobile -->
+                                                {#if showServerDropdown}
+                                                    <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] md:hidden"
+                                                         in:fade={{ duration: 200 }}
+                                                         out:fade={{ duration: 150 }}
+                                                         onclick={closeServerDropdown}>
+                                                    </div>
+                                                {/if}
 
                                                 <!-- Server Dropdown (same as when server is selected) -->
                                                 {#if showServerDropdown}
                                                     <div
-                                                            class="absolute top-full mt-2 left-0 w-80 rounded-xl shadow-2xl border overflow-hidden z-[100]"
+                                                            class="fixed md:absolute left-4 right-4 md:left-0 md:right-auto top-32 md:top-full mt-0 md:mt-2 md:w-80 rounded-xl shadow-2xl border overflow-hidden z-[100]"
                                                             style="border-color: {$colorStore.primary}30;
                                  background: linear-gradient(135deg, {$colorStore.background}f5, {$colorStore.background}ee);
                                  backdrop-filter: blur(10px);"
@@ -1061,9 +1173,8 @@
                                                         <div class="p-3 border-b"
                                                              style="border-color: {$colorStore.primary}20;">
                                                             <div class="relative">
-                                                                <Search size={16}
-                                                                        class="absolute left-3 top-1/2 transform -translate-y-1/2"
-                                                                        style="color: {$colorStore.muted}"/>
+                                                                <i class="fa-utility-duo fa-regular fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                                                                   style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; display: inline-block;"></i>
                                                                 <input
                                                                         type="text"
                                                                         placeholder="Search servers..."
@@ -1116,30 +1227,36 @@
                                                 {/if}
                                             </div>
 
-                                            <p class="text-sm md:text-base mb-3 transition-all duration-300"
-                                               style="color: {$colorStore.muted};">
-                                                Select a server from the dropdown to view its settings
-                                            </p>
+                                            {#if !compactMode}
+                                                <p class="text-sm md:text-base mb-3 transition-all duration-300"
+                                                   style="color: {$colorStore.muted};">
+                                                    Select a server from the dropdown to view its settings
+                                                </p>
+                                            {/if}
 
                                             <!-- Quick stats placeholder -->
-                                            <div class="flex flex-wrap items-center gap-4 text-sm transition-all duration-500">
-                                                <div class="flex items-center gap-2 opacity-50">
-                                                    <Users size={16} style="color: {$colorStore.primary}"/>
-                                                    <span style="color: {$colorStore.text}">-- members</span>
-                                                </div>
-
-                                                <div class="flex items-center gap-2 opacity-50">
-                                                    <User size={16} style="color: {$colorStore.secondary}"/>
-                                                    <span style="color: {$colorStore.text}">-- humans</span>
-                                                </div>
-
-                                                {#if botStatus?.isReady}
-                                                    <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-                                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                                        <span style="color: {$colorStore.text}">Bot Online</span>
+                                            {#if !compactMode}
+                                                <div class="flex flex-wrap items-center gap-4 text-sm transition-all duration-500">
+                                                    <div class="flex items-center gap-2 opacity-50">
+                                                        <i class="fa-utility-duo fa-regular fa-users"
+                                                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+                                                        <span style="color: {$colorStore.text}">-- members</span>
                                                     </div>
-                                                {/if}
-                                            </div>
+
+                                                    <div class="flex items-center gap-2 opacity-50">
+                                                        <i class="fa-utility-duo fa-regular fa-user"
+                                                           style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
+                                                        <span style="color: {$colorStore.text}">-- humans</span>
+                                                    </div>
+
+                                                    {#if botStatus?.isReady}
+                                                        <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                            <span style="color: {$colorStore.text}">Bot Online</span>
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            {/if}
                                         </div>
 
                                         <!-- Action buttons -->
@@ -1163,7 +1280,8 @@
                     >
                         <div class="flex items-center gap-3">
                             <div class="p-2 rounded-full" style="background: {$colorStore.primary}20;">
-                                <Music class="w-5 h-5" style="color: {$colorStore.primary};"/>
+                                <i class="fa-utility-duo fa-regular fa-music text-xl"
+                                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                             </div>
                             <div class="flex-1">
                                 <div class="font-semibold" style="color: {$colorStore.text};">
@@ -1178,7 +1296,8 @@
                                     onclick={() => showMusicNotification = false}
                                     aria-label="Close notification"
                             >
-                                <X class="w-4 h-4" style="color: {$colorStore.muted};"/>
+                                <i class="fa-utility-duo fa-regular fa-times"
+                                   style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                             </button>
                         </div>
 
@@ -1203,6 +1322,19 @@
                         </div>
                     </div>
                 {/if}
+
+                <!-- Compact Mode Toggle - positioned between banner and tabs -->
+                <div class="flex justify-center mb-1">
+                    <button
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all duration-300 hover:opacity-100 opacity-40"
+                            style="color: {$colorStore.muted};"
+                            onclick={toggleCompactMode}
+                            title={compactMode ? "Show header details" : "Hide header details"}
+                    >
+                        <span>{compactMode ? 'Expand' : 'Compact'}</span>
+                        <i class="fa-solid fa-angles-{compactMode ? 'down' : 'up'} text-[10px]"></i>
+                    </button>
+                </div>
 
                 <!-- Tabbed Dashboard -->
                 {#key $currentGuild?.id}

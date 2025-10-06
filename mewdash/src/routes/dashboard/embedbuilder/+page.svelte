@@ -7,7 +7,6 @@
     import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
     import {api} from "$lib/api.ts";
     import {fade} from "svelte/transition";
-    import {Copy, Layout, MessageCircle, Plus, Settings, Sparkles, Zap} from "lucide-svelte";
     import {logger} from "$lib/logger.ts";
     import {colorStore} from "$lib/stores/colorStore.ts";
 
@@ -140,9 +139,9 @@
 
   // Main tab configuration for DashboardPageLayout
   const mainTabs = [
-    { id: "templates", label: "Templates", icon: Sparkles },
-    { id: "editor", label: "Editor", icon: Layout },
-    { id: "components", label: "Components", icon: MessageCircle }
+    { id: "templates", label: "Templates", icon: "fa-sparkles" },
+    { id: "editor", label: "Editor", icon: "fa-layer-group" },
+    { id: "components", label: "Components", icon: "fa-comment" }
   ];
 
 
@@ -577,7 +576,7 @@
     let actionButtons = $derived([
     {
       label: isSimpleMode ? "Switch to Advanced" : "Switch to Simple",
-      icon: isSimpleMode ? Settings : Zap,
+      icon: isSimpleMode ? "fa-gear" : "fa-bolt",
       action: () => {
         isSimpleMode = !isSimpleMode;
         if (isSimpleMode && activeMainTab === 'components') {
@@ -588,7 +587,7 @@
     },
     {
       label: jsonCopied ? 'Copied!' : 'Copy JSON',
-      icon: Copy,
+      icon: "fa-copy",
       action: copyJson,
       disabled: !canCopyJson,
       loading: false,
@@ -597,10 +596,10 @@
     ]);
 </script>
 
-<DashboardPageLayout 
-  title="Discord Embed Builder" 
+<DashboardPageLayout
+  title="Discord Embed Builder"
   subtitle="Create and customize embeds for your Discord server"
-  icon={Layout}
+  icon="fa-layer-group"
   guildName="Embed Builder"
   tabs={isSimpleMode ? mainTabs.filter(t => t.id !== 'components') : mainTabs}
   activeTab={activeMainTab}
@@ -644,12 +643,12 @@
             <div class="text-center pt-6 border-t" style="border-color: {$colorStore.primary}20;">
               <button
                 class="px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 mx-auto"
-                style="background: {$colorStore.primary}20; 
+                style="background: {$colorStore.primary}20;
                        color: {$colorStore.primary};
                        border: 1px solid {$colorStore.primary}30;"
                 onclick={() => activeMainTab = "editor"}
               >
-                <Layout size={16} />
+                <i class="fa-solid fa-layer-group" style="font-size: 16px;"></i>
                 Start from Scratch
               </button>
             </div>
@@ -700,7 +699,7 @@
                     disabled={embeds.length >= 10}
                     onclick={addEmbed}
                   >
-                    <Plus size={16} />
+                    <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     Add Embed
                   </button>
                 {/if}
@@ -740,7 +739,7 @@
                   disabled={components.length >= 25}
                   onclick={() => addComponent('button')}
                 >
-                  <Plus size={14} />
+                  <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
                   Button
                 </button>
                 <button
@@ -749,7 +748,7 @@
                   disabled={components.length >= 25}
                   onclick={() => addComponent('select')}
                 >
-                  <Plus size={14} />
+                  <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
                   Select
                 </button>
               </div>
@@ -757,7 +756,7 @@
 
             {#if components.length === 0}
               <div class="text-center py-12">
-                <MessageCircle size={48} class="mx-auto mb-4 opacity-50" style="color: {$colorStore.muted};" />
+                <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                 <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No components yet</h4>
                 <p class="text-sm mb-4" style="color: {$colorStore.muted};">
                   Add buttons or select menus to make your message interactive
@@ -934,7 +933,7 @@
             style="background: {$colorStore.primary}10;
                    border-color: {$colorStore.primary}30;"
           >
-            <MessageCircle class="w-12 h-12 mx-auto mb-3" style="color: {$colorStore.muted}" />
+            <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 12px;"></i>
             <p class="mb-2" style="color: {$colorStore.text};">No Triggers Available</p>
             <p class="text-sm" style="color: {$colorStore.muted};">
               Create chat triggers to use with your components

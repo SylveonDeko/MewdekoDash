@@ -1,7 +1,5 @@
 <!-- lib/components/dashboard/EntertainmentTab.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
@@ -9,7 +7,6 @@
     import {musicStore} from "$lib/stores/musicStore";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {Gift, Mic, Music, Play} from "lucide-svelte";
 
     import MusicPlayer from "$lib/components/music/MusicPlayer.svelte";
 
@@ -51,7 +48,7 @@
     fetchContentData();
   });
 
-  run(() => {
+  $effect(() => {
     if ($currentGuild) {
       fetchContentData();
     }
@@ -79,7 +76,8 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <Music class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-music text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Music Player</h2>
         </div>
@@ -91,7 +89,8 @@
           <div class="text-center py-12">
             <div class="w-20 h-20 rounded-full mb-6 flex items-center justify-center mx-auto"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Music class="w-10 h-10" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-music text-5xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <h3 class="text-xl font-semibold mb-3" style="color: {$colorStore.text}">
               No music playing
@@ -102,7 +101,8 @@
             <a href="/dashboard/music"
                class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all hover:scale-105"
                style="background: {$colorStore.primary}; color: white; box-shadow: 0 4px 12px {$colorStore.primary}30;">
-              <Play size={18} />
+              <i class="fa-utility-duo fa-regular fa-play"
+                 style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
               Open Music Dashboard
             </a>
           </div>
@@ -158,7 +158,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <Mic class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-microphone text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">
@@ -184,7 +185,8 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <Gift class="w-5 h-5" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-gift text-xl"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
               <div class="flex items-baseline gap-3">

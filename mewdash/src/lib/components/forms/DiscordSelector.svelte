@@ -16,7 +16,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
-  import { Hash, Crown, Users, MapPin, ChevronDown, Search, X } from "lucide-svelte";
   import Portal from "$lib/components/ui/Portal.svelte";
 
   
@@ -61,17 +60,17 @@
   function getTypeIcon() {
     switch (type) {
       case "channel":
-        return Hash;
+        return "fa-hashtag";
       case "role":
-        return Crown;
+        return "fa-crown";
       case "user":
-        return Users;
+        return "fa-users";
       case "timezone":
-        return MapPin;
+        return "fa-location-dot";
       case "custom":
-        return customIcon || Hash;
+        return customIcon || "fa-hashtag";
       default:
-        return Hash;
+        return "fa-hashtag";
     }
   }
 
@@ -277,11 +276,12 @@
       {#if type === 'custom' && selectedOption?.emoji}
         <span class="text-lg shrink-0">{selectedOption.emoji}</span>
       {:else}
-        {@const SvelteComponent = getTypeIcon()}
-        <SvelteComponent
-          size={16}
-          style="color: {$colorStore.primary}"
-        />
+        {@const iconValue = getTypeIcon()}
+        {#if typeof iconValue === 'string'}
+          <i class="fa-utility-duo fa-regular {iconValue}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
+        {:else}
+          <svelte:component this={iconValue} size={16} style="color: {$colorStore.primary}" />
+        {/if}
       {/if}
 
       <!-- Selected content -->
@@ -301,7 +301,7 @@
                     class="hover:bg-black/20 rounded-sm p-0.5"
                     onclick={(e) => removeOption(selectedId, e)}
                   >
-                    <X size={12} />
+                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                   </button>
                 </span>
               {/if}
@@ -332,7 +332,7 @@
           onclick={clearAll}
           title="Clear selection"
         >
-          <X size={14} style="color: {$colorStore.muted}" />
+          <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 14px;"></i>
         </button>
       {/if}
 
@@ -340,10 +340,7 @@
               class="transition-transform duration-200 shrink-0"
         class:rotate-180={isOpen}
       >
-        <ChevronDown
-          size={14}
-          style="color: {$colorStore.muted}"
-        />
+        <i class="fa-solid fa-chevron-down" style="color: {$colorStore.muted}; font-size: 14px;"></i>
       </div>
     </div>
   </button>
@@ -365,16 +362,16 @@
       {#if searchable}
         <div class="pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
           <div class="relative">
-            <Search size={16} class="absolute left-3 top-1/2 transform -translate-y-1/2"
-                    style="color: {$colorStore.muted}" />
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2"
+               style="color: {$colorStore.muted}; font-size: 16px;"></i>
             <input
               bind:this={searchInputRef}
               bind:value={searchTerm}
               type="text"
               placeholder="Search..."
               class="w-full pl-10 pr-3 py-2 rounded-lg border transition-all duration-200"
-              style="background: {$colorStore.primary}08; 
-                     border-color: {$colorStore.primary}30; 
+              style="background: {$colorStore.primary}08;
+                     border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
             />
           </div>

@@ -2,7 +2,6 @@
 https://svelte.dev/e/css_expected_identifier -->
 <!-- PreviewCard.svelte -->
 <script lang="ts">
-    import {Eye} from "lucide-svelte";
     import {marked} from "marked";
     import DOMPurify from "dompurify";
 
@@ -229,7 +228,7 @@ https://svelte.dev/e/css_expected_identifier -->
   {:else if showEmpty}
     <!-- Empty State -->
     <div class="text-center py-12">
-      <Eye size={48} class="mx-auto mb-4 opacity-30" />
+      <i class="fa-solid fa-eye" style="font-size: 48px; opacity: 0.3; display: block; margin: 0 auto 16px;"></i>
       <p class="text-gray-400">{emptyMessage}</p>
     </div>
   {/if}

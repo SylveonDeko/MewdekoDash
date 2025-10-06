@@ -11,7 +11,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {AlertCircle, Award, Clock, FileSpreadsheet, Settings, User, UserPlus, Users} from "lucide-svelte";
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
@@ -35,11 +34,11 @@
   
   // Layout configuration
   const tabs = [
-    { id: "settings", label: "Settings", icon: Settings },
-    { id: "stats", label: "Statistics", icon: FileSpreadsheet },
-    { id: "leaderboard", label: "Leaderboard", icon: Award },
-    { id: "inviter", label: "Find Inviter", icon: User },
-    { id: "invited", label: "Invited Users", icon: UserPlus }
+    { id: "settings", label: "Settings", icon: "fa-gear" },
+    { id: "stats", label: "Statistics", icon: "fa-file-spreadsheet" },
+    { id: "leaderboard", label: "Leaderboard", icon: "fa-award" },
+    { id: "inviter", label: "Find Inviter", icon: "fa-user" },
+    { id: "invited", label: "Invited Users", icon: "fa-user-plus" }
   ];
 
   // Invite Settings
@@ -393,7 +392,7 @@
 <DashboardPageLayout 
   title="Invite Tracking" 
   subtitle="Monitor and manage server invites and user referrals" 
-  icon={UserPlus}
+  icon="fa-user-plus"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
@@ -416,7 +415,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Settings aria-hidden="true" class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Tracking Settings</h2>
         </div>
@@ -437,7 +436,7 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
             <p style="color: {$colorStore.accent}">{error.settings}</p>
           </div>
         {:else}
@@ -449,7 +448,7 @@
             >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <Settings class="w-5 h-5" style="color: {$colorStore.primary}" aria-hidden="true" />
+                  <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;" aria-hidden="true" />
                   <h3 class="font-semibold" style="color: {$colorStore.text}">Enable Invite Tracking</h3>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -480,7 +479,7 @@
             >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <Settings class="w-5 h-5" style="color: {$colorStore.secondary}" aria-hidden="true" />
+                  <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
                   <h3 class="font-semibold" style="color: {$colorStore.text}">Remove Invite On Leave</h3>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -510,7 +509,7 @@
               style="background: {$colorStore.primary}10;"
             >
               <div class="flex items-center gap-2 mb-3">
-                <Clock class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
                 <h3 class="font-semibold" style="color: {$colorStore.text}">Minimum Account Age</h3>
               </div>
               <div class="grid grid-cols-3 gap-4">
@@ -593,7 +592,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <FileSpreadsheet aria-hidden="true" class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-file-spreadsheet" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Statistics</h2>
         </div>
@@ -614,7 +613,7 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
             <p style="color: {$colorStore.accent}">{error.stats}</p>
           </div>
         {:else}
@@ -697,7 +696,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Award aria-hidden="true" class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-award" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Leaderboard</h2>
         </div>
@@ -718,7 +717,7 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
             <p style="color: {$colorStore.accent}">{error.leaderboard}</p>
           </div>
         {:else}
@@ -727,7 +726,7 @@
               class="text-center py-12"
               transition:fade
             >
-              <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;" aria-hidden="true" />
               <p style="color: {$colorStore.muted}">No invite data available</p>
             </div>
           {:else}
@@ -804,7 +803,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <User aria-hidden="true" class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Who Invited a User</h2>
         </div>
@@ -824,7 +823,7 @@
                   name: member.username,
                   avatarUrl: member.avatarUrl
                 }))}
-                customIcon={User}
+                customIcon="fa-user"
                 placeholder="Select a User"
                 bind:selectedId={selectedUserId}
                 aria-label="Select a user to find their inviter"
@@ -859,7 +858,7 @@
               style="background: {$colorStore.accent}10;"
               role="alert"
             >
-              <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
               <p style="color: {$colorStore.accent}">{inviterError}</p>
             </div>
           {:else if inviterInfo && selectedUserId}
@@ -899,7 +898,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <UserPlus aria-hidden="true" class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-user-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Users Invited By</h2>
         </div>
@@ -919,7 +918,7 @@
                   name: member.username,
                   avatarUrl: member.avatarUrl
                 }))}
-                customIcon={UserPlus}
+                customIcon="fa-user-plus"
                 placeholder="Select a User"
                 bind:selectedId={selectedUserId}
                 aria-label="Select a user to find who they invited"
@@ -954,7 +953,7 @@
               style="background: {$colorStore.accent}10;"
               role="alert"
             >
-              <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
               <p style="color: {$colorStore.accent}">{invitedError}</p>
             </div>
           {:else if invitedUsers.length > 0 && selectedUserId}
@@ -987,7 +986,7 @@
             </div>
           {:else if selectedUserId && !invitedLoading}
             <div class="text-center py-8">
-              <UserPlus class="w-12 h-12 mx-auto mb-3" style="color: {$colorStore.muted}" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-user-plus" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 12px;" aria-hidden="true" />
               <p style="color: {$colorStore.muted}">
                 {guildMembers.find(m => m.id === selectedUserId)?.username || 'This user'} hasn't invited anyone yet
               </p>

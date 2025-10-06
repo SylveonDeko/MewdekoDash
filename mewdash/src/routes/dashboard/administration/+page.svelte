@@ -7,36 +7,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
-    import {
-        Activity,
-        AlertTriangle,
-        AtSign,
-        BarChart3,
-        Bot,
-        Check,
-        ChevronDown,
-        ChevronRight,
-        ChevronUp,
-        Crown,
-        Gamepad2,
-        Globe,
-        Key,
-        Layers,
-        MessageSquare,
-        Plus,
-        RefreshCw,
-        Save,
-        Settings,
-        Shield,
-        Timer,
-        ToggleLeft,
-        ToggleRight,
-        Trash2,
-        UserCheck,
-        Users,
-        Volume2,
-        Zap
-    } from "lucide-svelte";
     import {fly, slide} from "svelte/transition";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -53,11 +23,11 @@
     let activeTab = $state("overview");
   
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "protection", label: "Protection Systems", icon: Shield },
-    { id: "roles", label: "Roles & Permissions", icon: Users },
-    { id: "automation", label: "Automation & Settings", icon: Settings },
-    { id: "advanced", label: "Advanced Operations", icon: Zap }
+    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
+    { id: "protection", label: "Protection Systems", icon: "fa-shield" },
+    { id: "roles", label: "Roles & Permissions", icon: "fa-users" },
+    { id: "automation", label: "Automation & Settings", icon: "fa-gear" },
+    { id: "advanced", label: "Advanced Operations", icon: "fa-bolt" }
   ];
 
   // Server Management
@@ -918,10 +888,10 @@
     ));
 </script>
 
-<DashboardPageLayout 
-  title="Administration" 
-  subtitle="Manage all server administration settings and features" 
-  icon={Settings}
+<DashboardPageLayout
+  title="Administration"
+  subtitle="Manage all server administration settings and features"
+  icon="fa-gear"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
@@ -937,7 +907,7 @@
       <div class="backdrop-blur-xs p-6 rounded-xl mb-6 transition-all" role="alert"
          style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
       <div class="flex items-center gap-3">
-        <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+        <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         <div style="color: {$colorStore.accent}">
           <div class="font-semibold text-lg">Error Occurred</div>
           <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -959,7 +929,7 @@
                onclick={() => activeTab = 'protection'}>
             <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div class="p-1.5 sm:p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                <Shield class="w-4 h-4 sm:w-5 sm:h-5" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
               <h3 class="font-semibold text-sm sm:text-base" style="color: {$colorStore.text}">Protection</h3>
             </div>
@@ -977,7 +947,7 @@
                       border-color: {$colorStore.secondary}30;">
             <div class="flex items-center gap-3 mb-4">
               <div class="p-2 rounded-lg" style="background: {$colorStore.secondary}20;">
-                <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Roles</h3>
             </div>
@@ -995,7 +965,7 @@
                       border-color: {$colorStore.accent}30;">
             <div class="flex items-center gap-3 mb-4">
               <div class="p-2 rounded-lg" style="background: {$colorStore.accent}20;">
-                <Activity class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-chart-line" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
             </div>
@@ -1013,7 +983,7 @@
                       border-color: {$colorStore.primary}30;">
             <div class="flex items-center gap-3 mb-4">
               <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                <Timer class="w-5 h-5" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Cooldowns</h3>
             </div>
@@ -1033,7 +1003,7 @@
           <div class="flex items-center gap-3 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Zap class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Quick Actions</h2>
           </div>
@@ -1045,7 +1015,7 @@
               onclick={() => activeTab = 'protection'}
             >
               <div class="flex items-center gap-3 mb-2">
-                <Shield class="w-5 h-5" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 <span class="font-medium" style="color: {$colorStore.text}">Configure Protection</span>
               </div>
               <p class="text-sm" style="color: {$colorStore.muted}">
@@ -1059,7 +1029,7 @@
               onclick={() => activeTab = 'roles'}
             >
               <div class="flex items-center gap-3 mb-2">
-                <Users class="w-5 h-5" style="color: {$colorStore.secondary}" />
+                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 <span class="font-medium" style="color: {$colorStore.text}">Manage Roles</span>
               </div>
               <p class="text-sm" style="color: {$colorStore.muted}">
@@ -1073,7 +1043,7 @@
               onclick={() => activeTab = 'automation'}
             >
               <div class="flex items-center gap-3 mb-2">
-                <Settings class="w-5 h-5" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 <span class="font-medium" style="color: {$colorStore.text}">Server Settings</span>
               </div>
               <p class="text-sm" style="color: {$colorStore.muted}">
@@ -1092,7 +1062,7 @@
             <div class="flex items-center gap-3 mb-6">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Globe class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Server Configuration</h3>
             </div>
@@ -1124,7 +1094,7 @@
             <div class="flex items-center gap-3 mb-6">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Shield class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Protection Status</h3>
             </div>
@@ -1156,8 +1126,6 @@
 
     {#if activeTab === 'roles'}
       <!-- Roles & Permissions Section -->
-        {@const SvelteComponent = expandedRoleCard === 'autoBan' ? ChevronUp : Plus}
-        {@const SvelteComponent_1 = expandedRoleCard === 'voiceChannel' ? ChevronUp : Plus}
       <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
         
         <!-- Auto-Assign Roles -->
@@ -1171,7 +1139,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Users class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Auto-Assign Roles</h2>
           </div>
@@ -1180,7 +1148,7 @@
             <!-- Normal Users -->
             <div class="space-y-4">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                <Users class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 Normal Users
               </h3>
 
@@ -1208,7 +1176,7 @@
             <!-- Bot Users -->
             <div class="space-y-4">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                <Bot class="w-5 h-5" />
+                <i class="fa-utility-duo fa-regular fa-user-robot" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 Bot Users
               </h3>
 
@@ -1245,7 +1213,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
-                <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+                <i class="fa-utility-duo fa-regular fa-shield-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Auto-Ban Roles</h2>
             </div>
@@ -1255,7 +1223,11 @@
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={() => expandedRoleCard = expandedRoleCard === 'autoBan' ? null : 'autoBan'}
             >
-                <SvelteComponent class="w-4 h-4"/>
+              {#if expandedRoleCard === 'autoBan'}
+                <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+              {:else}
+                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+              {/if}
               {expandedRoleCard === 'autoBan' ? 'Collapse' : 'Add Role'}
             </button>
           </div>
@@ -1267,8 +1239,8 @@
 
             {#if autoBanRoles.length === 0}
               <div class="text-center py-8">
-                <AlertTriangle class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.accent}50" />
-                <p class="text-lg font-medium" style="color: {$colorStore.text}">No auto-ban roles configured</p>
+                <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No auto-ban roles configured</p>
                 <p class="text-sm" style="color: {$colorStore.muted}">Add roles that should trigger automatic bans</p>
               </div>
             {:else}
@@ -1305,7 +1277,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <UserCheck class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Self-Assignable Roles</h2>
             </div>
@@ -1318,9 +1290,9 @@
                 onclick={toggleSelfAssignableRolesExclusive}
               >
                 {#if selfAssignableRoles.exclusive}
-                  <ToggleRight class="w-6 h-6" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
-                  <ToggleLeft class="w-6 h-6" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                 {/if}
               </button>
             </div>
@@ -1328,8 +1300,8 @@
 
           {#if !Array.isArray(selfAssignableRoles.roles) || selfAssignableRoles.roles.length === 0}
             <div class="text-center py-8">
-              <UserCheck class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">No self-assignable roles configured</p>
+              <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+              <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No self-assignable roles configured</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Users can't assign roles to themselves yet</p>
             </div>
           {:else}
@@ -1414,7 +1386,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Volume2 class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-volume" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Voice Channel Roles</h2>
             </div>
@@ -1424,7 +1396,11 @@
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={() => expandedRoleCard = expandedRoleCard === 'voiceChannel' ? null : 'voiceChannel'}
             >
-                <SvelteComponent_1 class="w-4 h-4"/>
+              {#if expandedRoleCard === 'voiceChannel'}
+                <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+              {:else}
+                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+              {/if}
               {expandedRoleCard === 'voiceChannel' ? 'Collapse' : 'Add Mapping'}
             </button>
           </div>
@@ -1436,8 +1412,8 @@
 
             {#if voiceChannelRoles.length === 0}
               <div class="text-center py-8">
-                <Volume2 class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-                <p class="text-lg font-medium" style="color: {$colorStore.text}">No voice channel roles configured</p>
+                <i class="fa-utility-duo fa-regular fa-volume" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No voice channel roles configured</p>
                 <p class="text-sm" style="color: {$colorStore.muted}">Add voice channel to role mappings</p>
               </div>
             {:else}
@@ -1512,9 +1488,9 @@
                       disabled={!newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId || saving}
                     >
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Plus class="w-4 h-4" />
+                        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       {/if}
                       Add Mapping
                     </button>
@@ -1534,7 +1510,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <AtSign class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reaction Roles</h2>
           </div>
@@ -1546,8 +1522,8 @@
 
             {#if !reactionRoles.success || reactionRoles.reactionRoles.length === 0}
               <div class="text-center py-8">
-                <AtSign class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-                <p class="text-lg font-medium" style="color: {$colorStore.text}">No reaction roles configured</p>
+                <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No reaction roles configured</p>
                 <p class="text-sm" style="color: {$colorStore.muted}">Set up reaction-based role assignment</p>
               </div>
             {:else}
@@ -1609,7 +1585,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Shield class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <div>
                 <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Raid Protection</h2>
@@ -1620,28 +1596,31 @@
             <div class="flex flex-wrap items-center gap-2">
               <button
                 class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiRaid.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                       color: {protectionStatus.antiRaid.enabled ? $colorStore.accent : $colorStore.secondary}; 
+                style="background: {protectionStatus.antiRaid.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
+                       color: {protectionStatus.antiRaid.enabled ? $colorStore.accent : $colorStore.secondary};
                        border: 1px solid {protectionStatus.antiRaid.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
                 onclick={() => toggleProtection('antiRaid')}
               >
                 {#if protectionStatus.antiRaid.enabled}
-                  <ToggleRight class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
                   Enabled
                 {:else}
-                  <ToggleLeft class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                   Disabled
                 {/if}
               </button>
               
               {#if protectionStatus.antiRaid.enabled}
-                  {@const SvelteComponent_2 = expandedProtectionCard === 'antiRaid' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={() => toggleProtectionCard('antiRaid')}
                 >
-                    <SvelteComponent_2 class="w-4 h-4"/>
+                  {#if expandedProtectionCard === 'antiRaid'}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
+                  {/if}
                   {expandedProtectionCard === 'antiRaid' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -1735,9 +1714,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Save class="w-4 h-4" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                       {/if}
                       <span>Save Configuration</span>
                     </div>
@@ -1747,8 +1726,8 @@
             {/if}
           {:else}
             <div class="text-center py-8">
-              <Shield class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Raid Protection Disabled</p>
+              <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+              <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">Anti-Raid Protection Disabled</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Enable to protect against mass user joins</p>
             </div>
           {/if}
@@ -1764,7 +1743,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <MessageSquare class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <div>
                 <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Spam Protection</h2>
@@ -1781,22 +1760,25 @@
                 onclick={() => toggleProtection('antiSpam')}
               >
                 {#if protectionStatus.antiSpam.enabled}
-                  <ToggleRight class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
                   Enabled
                 {:else}
-                  <ToggleLeft class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                   Disabled
                 {/if}
               </button>
               
               {#if protectionStatus.antiSpam.enabled}
-                  {@const SvelteComponent_3 = expandedProtectionCard === 'antiSpam' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={() => toggleProtectionCard('antiSpam')}
                 >
-                    <SvelteComponent_3 class="w-4 h-4"/>
+                  {#if expandedProtectionCard === 'antiSpam'}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
+                  {/if}
                   {expandedProtectionCard === 'antiSpam' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -1875,9 +1857,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Save class="w-4 h-4" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                       {/if}
                       <span>Save Configuration</span>
                     </div>
@@ -1887,7 +1869,7 @@
             {/if}
           {:else}
             <div class="text-center py-8">
-              <MessageSquare class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Spam Protection Disabled</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Enable to prevent message spam</p>
             </div>
@@ -1904,7 +1886,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Timer class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <div>
                 <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Alt Protection</h2>
@@ -1921,22 +1903,25 @@
                 onclick={() => toggleProtection('antiAlt')}
               >
                 {#if protectionStatus.antiAlt.enabled}
-                  <ToggleRight class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
                   Enabled
                 {:else}
-                  <ToggleLeft class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                   Disabled
                 {/if}
               </button>
               
               {#if protectionStatus.antiAlt.enabled}
-                  {@const SvelteComponent_4 = expandedProtectionCard === 'antiAlt' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={() => toggleProtectionCard('antiAlt')}
                 >
-                    <SvelteComponent_4 class="w-4 h-4"/>
+                  {#if expandedProtectionCard === 'antiAlt'}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
+                  {/if}
                   {expandedProtectionCard === 'antiAlt' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -2015,9 +2000,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Save class="w-4 h-4" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                       {/if}
                       <span>Save Configuration</span>
                     </div>
@@ -2027,7 +2012,7 @@
             {/if}
           {:else}
             <div class="text-center py-8">
-              <Timer class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Alt Protection Disabled</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Enable to block young accounts</p>
             </div>
@@ -2044,7 +2029,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Layers class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-layer-group" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <div>
                 <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Pattern Protection</h2>
@@ -2061,31 +2046,37 @@
                 onclick={() => toggleProtection('antiPattern')}
               >
                 {#if protectionStatus.antiPattern.enabled}
-                  <ToggleRight class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
                   Enabled
                 {:else}
-                  <ToggleLeft class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                   Disabled
                 {/if}
               </button>
               
               {#if protectionStatus.antiPattern.enabled}
-                  {@const SvelteComponent_5 = expandedProtectionCard === 'antiPattern' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={() => toggleProtectionCard('antiPattern')}
                 >
-                    <SvelteComponent_5 class="w-4 h-4"/>
+                  {#if expandedProtectionCard === 'antiPattern'}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
+                  {/if}
                   {expandedProtectionCard === 'antiPattern' ? 'Collapse' : 'Configure'}
                 </button>
-                  {@const SvelteComponent_6 = showPatternManagement ? ChevronUp : ChevronRight}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => showPatternManagement = !showPatternManagement}
                 >
-                    <SvelteComponent_6 class="w-4 h-4"/>
+                  {#if showPatternManagement}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-right" style="font-size: 16px;"></i>
+                  {/if}
                   Patterns
                 </button>
               {/if}
@@ -2166,7 +2157,7 @@
                            style="border-color: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkAccountAge}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Check Account Age</span>
@@ -2181,7 +2172,7 @@
                            style="border-color: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkJoinTiming}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Check Join Timing</span>
@@ -2196,7 +2187,7 @@
                            style="border-color: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkBatchCreation}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Check Batch Creation</span>
@@ -2211,7 +2202,7 @@
                            style="border-color: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkOfflineStatus}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Check Offline Status</span>
@@ -2226,7 +2217,7 @@
                            style="border-color: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.checkNewAccounts}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Check New Accounts</span>
@@ -2299,9 +2290,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Save class="w-4 h-4" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                       {/if}
                       <span>Save Configuration</span>
                     </div>
@@ -2355,7 +2346,7 @@
                         <input type="checkbox" bind:checked={newPattern.checkUsername} class="sr-only peer" />
                           <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
-                          {#if newPattern.checkUsername}<Check class="w-3 h-3 text-white" />{/if}
+                          {#if newPattern.checkUsername}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
                         </div>
                         <span class="text-sm" style="color: {$colorStore.text}">Username</span>
                       </label>
@@ -2364,7 +2355,7 @@
                         <input type="checkbox" bind:checked={newPattern.checkDisplayName} class="sr-only peer" />
                           <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
-                          {#if newPattern.checkDisplayName}<Check class="w-3 h-3 text-white" />{/if}
+                          {#if newPattern.checkDisplayName}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
                         </div>
                         <span class="text-sm" style="color: {$colorStore.text}">Display Name</span>
                       </label>
@@ -2378,7 +2369,7 @@
                       onclick={addAntiPatternPattern}
                       disabled={!newPattern.name.trim() || !newPattern.pattern.trim() || saving}
                     >
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       Add Pattern
                     </button>
                   </div>
@@ -2420,7 +2411,7 @@
             {/if}
           {:else}
             <div class="text-center py-8">
-              <Layers class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-layer-group" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Pattern Protection Disabled</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Enable to analyze user behavior patterns</p>
             </div>
@@ -2437,7 +2428,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <AtSign class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <div>
                 <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Mass Mention</h2>
@@ -2454,22 +2445,25 @@
                 onclick={() => toggleProtection('antiMassMention')}
               >
                 {#if protectionStatus.antiMassMention.enabled}
-                  <ToggleRight class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
                   Enabled
                 {:else}
-                  <ToggleLeft class="w-4 h-4" />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                   Disabled
                 {/if}
               </button>
               
               {#if protectionStatus.antiMassMention.enabled}
-                  {@const SvelteComponent_7 = expandedProtectionCard === 'antiMassMention' ? ChevronUp : ChevronDown}
                 <button
                   class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                   onclick={() => toggleProtectionCard('antiMassMention')}
                 >
-                    <SvelteComponent_7 class="w-4 h-4"/>
+                  {#if expandedProtectionCard === 'antiMassMention'}
+                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                  {:else}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
+                  {/if}
                   {expandedProtectionCard === 'antiMassMention' ? 'Collapse' : 'Configure'}
                 </button>
               {/if}
@@ -2570,7 +2564,7 @@
                            style="border-color: {tempProtectionConfig.ignoreBots ? $colorStore.primary : $colorStore.muted}; 
                                   background: {tempProtectionConfig.ignoreBots ? $colorStore.primary : 'transparent'};">
                         {#if tempProtectionConfig.ignoreBots}
-                          <Check class="w-3 h-3 text-white" />
+                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
                         {/if}
                       </div>
                       <span style="color: {$colorStore.text}">Ignore Bot Mentions</span>
@@ -2594,9 +2588,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Save class="w-4 h-4" />
+                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                       {/if}
                       <span>Save Configuration</span>
                     </div>
@@ -2606,7 +2600,7 @@
             {/if}
           {:else}
             <div class="text-center py-8">
-              <AtSign class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Mass Mention Disabled</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Enable to prevent mention spam</p>
             </div>
@@ -2617,8 +2611,6 @@
 
     {#if activeTab === 'automation'}
       <!-- Automation & Settings Section -->
-        {@const SvelteComponent_8 = expandedRoleCard === 'commandCooldown' ? ChevronUp : Plus}
-        {@const SvelteComponent_9 = expandedRoleCard === 'permissionOverride' ? ChevronUp : Plus}
       <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
         
         <!-- Staff & Member Roles -->
@@ -2630,7 +2622,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Crown class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-crown" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Staff & Member Roles</h2>
           </div>
@@ -2678,9 +2670,9 @@
                 disabled={saving}
               >
                 {#if saving}
-                  <RefreshCw class="w-4 h-4 animate-spin" />
+                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
                 {:else}
-                  <Save class="w-4 h-4" />
+                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                 {/if}
                 Save Changes
               </button>
@@ -2697,7 +2689,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Globe class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Timezone Settings</h2>
           </div>
@@ -2727,9 +2719,9 @@
                 disabled={saving}
               >
                 {#if saving}
-                  <RefreshCw class="w-4 h-4 animate-spin" />
+                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
                 {:else}
-                  <Save class="w-4 h-4" />
+                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                 {/if}
                 Save Timezone
               </button>
@@ -2747,7 +2739,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Timer class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Command Cooldowns</h2>
             </div>
@@ -2758,7 +2750,11 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                 onclick={() => expandedRoleCard = expandedRoleCard === 'commandCooldown' ? null : 'commandCooldown'}
               >
-                  <SvelteComponent_8 class="w-4 h-4"/>
+                {#if expandedRoleCard === 'commandCooldown'}
+                  <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                {:else}
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                {/if}
                 {expandedRoleCard === 'commandCooldown' ? 'Collapse' : 'Add Cooldown'}
               </button>
             </div>
@@ -2766,7 +2762,7 @@
 
           {#if commandCooldowns.length === 0}
             <div class="text-center py-8">
-              <Timer class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">No command cooldowns configured</p>
               <p class="text-sm" style="color: {$colorStore.muted}">Add cooldowns to prevent command spam</p>
             </div>
@@ -2849,9 +2845,9 @@
                     disabled={!newCommandCooldown.command || newCommandCooldown.seconds <= 0 || saving}
                   >
                     {#if saving}
-                      <RefreshCw class="w-4 h-4 animate-spin" />
+                      <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
                     {:else}
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     {/if}
                     Add Cooldown
                   </button>
@@ -2871,7 +2867,7 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <Key class="w-6 h-6" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Permission Overrides</h2>
             </div>
@@ -2882,7 +2878,11 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                 onclick={() => expandedRoleCard = expandedRoleCard === 'permissionOverride' ? null : 'permissionOverride'}
               >
-                  <SvelteComponent_9 class="w-4 h-4"/>
+                {#if expandedRoleCard === 'permissionOverride'}
+                  <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
+                {:else}
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                {/if}
                 {expandedRoleCard === 'permissionOverride' ? 'Collapse' : 'Add Override'}
               </button>
               
@@ -2892,7 +2892,7 @@
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   onclick={() => showConfirm("Delete Selected Overrides", `Delete ${selectedPermissionOverrides.length} selected permission override${selectedPermissionOverrides.length > 1 ? 's' : ''}?`, deleteSelectedPermissionOverrides)}
                 >
-                  <Trash2 class="w-4 h-4" />
+                  <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   Delete Selected ({selectedPermissionOverrides.length})
                 </button>
               {/if}
@@ -2903,7 +2903,7 @@
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                   onclick={() => showConfirm("Clear All Overrides", "Are you sure you want to clear all permission overrides?", resetPermissionOverrides)}
                 >
-                  <Trash2 class="w-4 h-4" />
+                  <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   Clear All
                 </button>
               {/if}
@@ -2917,7 +2917,7 @@
 
             {#if permissionOverrides.length === 0}
               <div class="text-center py-8">
-                <Key class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
                 <p class="text-lg font-medium" style="color: {$colorStore.text}">No permission overrides configured</p>
                 <p class="text-sm" style="color: {$colorStore.muted}">Add command permission overrides using actual bot commands</p>
               </div>
@@ -2992,9 +2992,9 @@
                       disabled={!newPermissionOverride.command || saving}
                     >
                       {#if saving}
-                        <RefreshCw class="w-4 h-4 animate-spin" />
+                        <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
                       {:else}
-                        <Plus class="w-4 h-4" />
+                        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       {/if}
                       Add Override
                     </button>
@@ -3014,7 +3014,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Globe class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Timezone Settings</h2>
           </div>
@@ -3044,9 +3044,9 @@
                 disabled={saving}
               >
                 {#if saving}
-                  <RefreshCw class="w-4 h-4 animate-spin" />
+                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
                 {:else}
-                  <Save class="w-4 h-4" />
+                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                 {/if}
                 Save Timezone
               </button>
@@ -3063,7 +3063,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <Gamepad2 class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-duotone fa-solid fa-headset" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Game Voice Channel</h2>
           </div>
@@ -3134,7 +3134,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <MessageSquare class="w-6 h-6" style="color: {$colorStore.primary}" />
+              <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Ban Message</h2>
           </div>
@@ -3163,7 +3163,7 @@
                 onclick={saveBanMessage}
                 disabled={saving}
               >
-                <Save class="w-4 h-4" />
+                <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                 Save Message
               </button>
             </div>
@@ -3179,7 +3179,7 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
-              <Zap class="w-6 h-6" style="color: {$colorStore.accent}" />
+              <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Mass Operations</h2>
           </div>

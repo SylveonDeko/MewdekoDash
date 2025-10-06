@@ -6,7 +6,6 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
   import { logger } from "$lib/logger";
-  import { Bot, ImagePlus, Upload, X, Check, AlertCircle } from "lucide-svelte";
 
   // State
   let profile = $state({
@@ -206,7 +205,8 @@
   <div class="flex items-center gap-3 mb-4">
     <div class="p-2 rounded-lg"
          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-      <Bot class="w-5 h-5" style="color: {$colorStore.primary}" />
+      <i class="fa-utility-duo fa-regular fa-user-circle text-xl"
+         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
     </div>
     <div class="flex-1">
       <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Bot Guild Profile</h2>
@@ -219,7 +219,8 @@
     <div class="mb-4 p-3 rounded-lg flex items-center gap-2"
          style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;"
          transition:fly={{ y: -10, duration: 200 }}>
-      <AlertCircle size={16} style="color: {$colorStore.accent}" />
+      <i class="fa-utility-duo fa-regular fa-exclamation-circle"
+         style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
       <span class="text-sm" style="color: {$colorStore.text}">{error}</span>
     </div>
   {/if}
@@ -228,7 +229,8 @@
     <div class="mb-4 p-3 rounded-lg flex items-center gap-2"
          style="background: {$colorStore.secondary}15; border: 1px solid {$colorStore.secondary}30;"
          transition:fly={{ y: -10, duration: 200 }}>
-      <Check size={16} style="color: {$colorStore.secondary}" />
+      <i class="fa-utility-duo fa-regular fa-check-circle"
+         style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       <span class="text-sm" style="color: {$colorStore.text}">{success}</span>
     </div>
   {/if}
@@ -253,7 +255,8 @@
             {:else}
               <div class="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
-                <Bot size={24} style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-user-circle text-3xl"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               </div>
             {/if}
             <div class="flex-1">
@@ -268,7 +271,8 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                 onclick={() => avatarFileInput?.click()}>
                 <span class="flex items-center gap-1.5">
-                  <Upload size={14} />
+                  <i class="fa-utility-duo fa-regular fa-file"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                   <span class="hidden md:inline">Upload</span>
                 </span>
               </button>
@@ -277,7 +281,8 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => editingAvatar = true}>
                 <span class="flex items-center gap-1.5">
-                  <ImagePlus size={14} />
+                  <i class="fa-utility-duo fa-regular fa-image"
+                     style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
                   <span class="hidden md:inline">URL</span>
                 </span>
               </button>
@@ -336,7 +341,8 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                   onclick={() => bannerFileInput?.click()}>
                   <span class="flex items-center gap-1.5">
-                    <Upload size={14} />
+                    <i class="fa-utility-duo fa-regular fa-file"
+                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                     <span class="hidden md:inline">Upload</span>
                   </span>
                 </button>
@@ -345,7 +351,8 @@
                   style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                   onclick={() => editingBanner = true}>
                   <span class="flex items-center gap-1.5">
-                    <ImagePlus size={14} />
+                    <i class="fa-utility-duo fa-regular fa-image"
+                       style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
                     <span class="hidden md:inline">URL</span>
                   </span>
                 </button>
