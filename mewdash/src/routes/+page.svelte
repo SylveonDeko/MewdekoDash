@@ -119,23 +119,23 @@
   <meta
     content="Mewdeko - The Most Customizable Free Open Source Bot for Discord"
     property="og:title"
-  />
+  >
   <meta
     content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     name="description"
-  />
+  >
   <meta
     content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     property="og:description"
-  />
+  >
   <meta
     content="Discover Mewdeko, the ultimate open-source Discord bot with 34 feature modules including XP/Leveling, Economy, Music, Tickets, Moderation, Giveaways, and more. Join 11,000+ servers!"
     name="twitter:description"
-  />
+  >
   <meta
     content="Mewdeko, free Discord bot, open source Discord bot, XP leveling bot, Discord economy bot, Discord music bot, Discord moderation bot, ticket system, giveaway bot, suggestion bot, starboard, custom commands, multi-purpose bot, Discord reputation system"
     name="keywords"
-  />
+  >
 </svelte:head>
 
 <main
@@ -508,7 +508,7 @@
                                         loading="lazy"
                                         class="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-opacity-20"
                                         style="ring-color: {$colorStore.primary};"
-                                />
+                                >
                                 <!-- Online indicator -->
                                 <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full ring-2 ring-opacity-90"
                                      style="ring-color: {$colorStore.background};"></div>
@@ -945,10 +945,6 @@
         }
     }
 
-    .animate-pulse-border {
-        animation: pulse-border 3s ease-in-out infinite;
-    }
-
     .animate-float {
         animation: float 20s ease-in-out infinite;
     }
@@ -991,22 +987,14 @@
 
     @keyframes gradient-shift {
         0% {
-            background-position: 0% 50%;
+            background-position: 0 50%;
         }
         50% {
             background-position: 100% 50%;
         }
         100% {
-            background-position: 0% 50%;
+            background-position: 0 50%;
         }
-    }
-
-    .animate-gradient-bg {
-        animation: gradient-shift 8s ease infinite;
-    }
-
-    .animate-gradient {
-        animation: gradient-shift 6s ease infinite;
     }
 
     @keyframes fade-in {

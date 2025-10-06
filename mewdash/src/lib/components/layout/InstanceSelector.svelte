@@ -263,7 +263,7 @@
             src={instance.botAvatar}
             alt="{instance.botName} avatar"
             class="w-16 h-16 rounded-full mr-6"
-          />
+          >
             <div class="text-left grow">
             <h2 class="text-xl font-semibold" style="color: {$colorStore.text}">{instance.botName}</h2>
             <p style="color: {$colorStore.muted}">Port: {instance.port}</p>

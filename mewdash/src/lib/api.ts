@@ -180,7 +180,10 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    logger.info(`API error: ${response.status} - ${errorText}`);
+    // Only log non-404 errors to reduce console noise for expected "not found" responses
+    if (response.status !== 404) {
+      logger.info(`API error: ${response.status} - ${errorText}`);
+    }
     throw new Error(`API error: ${response.status} - ${errorText}`);
   }
 

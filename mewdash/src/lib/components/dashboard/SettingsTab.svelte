@@ -192,7 +192,7 @@
             animationDelay={150}
             description="Event logging and audit trails"
             href="/dashboard/logging"
-            icon="fa-file-lines"
+            icon="fa-file"
             isActive={getFeatureStatus('logging')}
             title="Logging"
           />
@@ -267,7 +267,7 @@
           <div class="p-4 rounded-xl border transition-all hover:scale-[1.02]"
                style="background: {$colorStore.accent}08; border-color: {$colorStore.accent}20;">
             <div class="flex items-center gap-3 mb-3">
-              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+              <i class="fa-utility-duo fa-regular fa-star text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Role Features</h3>
             </div>
@@ -390,7 +390,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+              <i class="fa-utility-duo fa-regular fa-star text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">

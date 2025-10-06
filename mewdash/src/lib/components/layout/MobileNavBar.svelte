@@ -432,7 +432,7 @@
             style="background-image: url('{$musicStore.status?.CurrentTrack?.AlbumArt || '/img/music-placeholder.png'}');"
           >
             <!-- Animated equalizer bars -->
-            <div class="w-full h-full bg-black bg-opacity-50 flex items-end justify-center p-1" aria-hidden="true">
+            <div class="w-full h-full bg-black opacity-50 flex items-end justify-center p-1" aria-hidden="true">
               <div class="bar-1 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
               <div class="bar-2 w-1 mx-px rounded-t" style="background-color: {$colorStore.secondary};"></div>
               <div class="bar-3 w-1 mx-px rounded-t" style="background-color: {$colorStore.accent};"></div>
@@ -662,7 +662,7 @@
                                               src={instance.botAvatar}
                                               alt=""
                                               class="w-8 h-8 rounded-full"
-                                      />
+                                      >
                                       <div class="flex-1 text-left">
                                           <div class="text-sm font-medium">{instance.botName}</div>
                                           <div class="text-xs" style="color: {$colorStore.muted};">

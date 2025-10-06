@@ -18,7 +18,7 @@ https://svelte.dev/e/attribute_invalid_event_handler -->
     height="150"
     src={profileData.image}
     width="150"
-  />
+  >
   <p class="font-bold text-2xl">{profileData.name}</p>
   <p
     class="mb-2"

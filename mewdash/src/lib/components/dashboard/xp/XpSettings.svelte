@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { AlertCircle, Settings } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -36,7 +35,9 @@
     style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
            color: {$colorStore.primary};"
   >
-    <Settings aria-hidden="true" class="w-6 h-6" />
+    <i aria-hidden="true"
+       class="fa-utility-duo fa-regular fa-gear"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
   <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Settings</h2>
 </div>
@@ -57,7 +58,9 @@
     style="background: {$colorStore.accent}10;"
     role="alert"
   >
-    <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+    <i class="fa-utility-duo fa-regular fa-bell"
+       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+       aria-hidden="true"></i>
     <p style="color: {$colorStore.accent}">{error}</p>
   </div>
 {:else}
@@ -68,7 +71,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">XP Per Message</h3>
       </div>
       <input
@@ -85,7 +90,7 @@
         min="0"
         max="50"
         aria-label="XP per message"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         Amount of XP users earn per message (max 50).
       </p>
@@ -97,7 +102,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.secondary}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">Message XP Cooldown</h3>
       </div>
       <input
@@ -113,7 +120,7 @@
         type="number"
         min="0"
         aria-label="Message XP cooldown in seconds"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         Cooldown in seconds between messages that can earn XP.
       </p>
@@ -125,7 +132,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">Voice XP Per Minute</h3>
       </div>
       <input
@@ -142,7 +151,7 @@
         min="0"
         max="10"
         aria-label="Voice XP per minute"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         Amount of XP users earn per minute in voice channels (max 10).
       </p>
@@ -154,7 +163,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">Voice XP Timeout</h3>
       </div>
       <input
@@ -170,7 +181,7 @@
         type="number"
         min="0"
         aria-label="Voice XP timeout in minutes"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         Time in minutes before a voice session expires if user is inactive.
       </p>
@@ -182,7 +193,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.secondary}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">Global XP Multiplier</h3>
       </div>
       <input
@@ -199,7 +212,7 @@
         min="0.1"
         step="0.1"
         aria-label="Global XP multiplier"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         Global multiplier applied to all XP gains.
       </p>
@@ -211,7 +224,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">XP Curve Type</h3>
       </div>
       <DiscordSelector
@@ -236,7 +251,9 @@
       style="background: {$colorStore.primary}10;"
     >
       <div class="flex items-center gap-2 mb-3">
-        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" aria-hidden="true" />
+        <i class="fa-utility-duo fa-regular fa-gear"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
+           aria-hidden="true"></i>
         <h3 class="font-semibold" style="color: {$colorStore.text}">Custom XP Card Background</h3>
       </div>
       <input
@@ -252,7 +269,7 @@
         type="url"
         placeholder="https://example.com/image.png"
         aria-label="Custom XP card background URL"
-      />
+      >
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
         URL to a custom background image for XP cards. Recommended size: 797x279 pixels.
       </p>
@@ -265,7 +282,9 @@
     >
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-2">
-          <Settings class="w-5 h-5" style="color: {$colorStore.secondary}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-gear"
+             style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"
+             aria-hidden="true"></i>
           <h3 class="font-semibold" style="color: {$colorStore.text}">Server XP Exclusion</h3>
         </div>
         <label class="relative inline-flex items-center cursor-pointer">

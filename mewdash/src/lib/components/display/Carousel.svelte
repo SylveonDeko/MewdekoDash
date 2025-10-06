@@ -112,7 +112,7 @@
           : 'scroll-smooth'}"
         bind:this={carousel}
         onscroll={() => (carouselScroll = carousel.scrollLeft)}
-        tabindex="0"
+        tabindex="-1"
         onkeydown={handleKeydown}
       >
       {#each items as { props, component }, index}

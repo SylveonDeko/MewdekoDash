@@ -7,23 +7,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {userStore} from "$lib/stores/userStore";
     import {api} from "$lib/api";
-    import {
-        AlertTriangle,
-        BarChart3,
-        Calendar,
-        CheckSquare,
-        Edit,
-        Filter,
-        Globe,
-        List,
-        Lock,
-        Plus,
-        Search,
-        Settings,
-        Shield,
-        Target,
-        Trash2
-    } from "lucide-svelte";
 
     import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
     import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
@@ -399,32 +382,33 @@
 </svelte:head>
 
 <ErrorBoundary fallback="Todo dashboard failed to load. Please refresh the page.">
-  <DashboardPageLayout 
-    title="Todo Lists" 
-    subtitle="Organize and track your server's collaborative tasks" 
-    icon={List}
-    guildName={$currentGuild?.name || "Dashboard"}
+  <DashboardPageLayout
     actionButtons={[
       {
         label: "Create List",
-        icon: Plus,
+        icon: "fa-plus",
         action: () => showNewListModal = true,
         style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
       },
       {
         label: "Filters",
-        icon: Filter,
+        icon: "fa-filter",
         action: () => showFilters = !showFilters,
         variant: "secondary"
       }
     ]}
+    icon="fa-list"
+    subtitle="Organize and track your server's collaborative tasks"
+    guildName={$currentGuild?.name || "Dashboard"}
+    title="Todo Lists"
   >
       <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
       <svelte:fragment slot="status-messages">
       {#if error}
         <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
           <div class="flex items-center gap-2">
-            <AlertTriangle size={16} />
+            <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+               style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 16px;"></i>
             <span>{error}</span>
           </div>
         </div>
@@ -434,14 +418,15 @@
     <!-- Search Bar -->
     <div class="mb-8">
       <div class="relative max-w-md">
-        <Search size={18} class="absolute left-4 top-1/2 transform -translate-y-1/2 z-10" style="color: {$colorStore.primary}" />
+        <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 z-10"
+           style="color: {$colorStore.primary}; font-size: 18px;"></i>
         <input
           type="text"
           placeholder="Search todo lists..."
           bind:value={searchQuery}
           class="w-full pl-12 pr-4 py-4 rounded-2xl border text-lg"
           style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
-        />
+        >
       </div>
     </div>
 
@@ -450,15 +435,16 @@
       <div class="mb-8 p-6 rounded-2xl" style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}08);" 
            in:fly={{ y: -20, duration: 300 }}>
         <div class="flex flex-wrap items-center gap-4">
-          <label class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-105"
+          <span id="input-typecheckbox-bindcheckedincludecompleted-cla-label"
+                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-105"
                  style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
-              <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5"/>
+              <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5">
             <span style="color: {$colorStore.text}" class="font-medium">Show completed items</span>
-          </label>
+          </span>
 
           <DiscordSelector
             type="custom"
-            customIcon={BarChart3}
+            customIcon="fa-chart-column"
             placeholder="Sort by"
             searchable={false}
             options={[
@@ -473,7 +459,7 @@
 
           <DiscordSelector
             type="custom"
-            customIcon={Filter}
+            customIcon="fa-filter"
             placeholder="Order"
             searchable={false}
             options={[
@@ -509,7 +495,8 @@
       <div class="text-center py-20">
         <div class="inline-flex p-6 rounded-3xl mb-6" 
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);">
-          <List class="w-16 h-16" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-list"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px;"></i>
         </div>
         <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
           {searchQuery ? "No Lists Found" : "No Todo Lists Yet"}
@@ -553,7 +540,8 @@
               <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <div class="p-2.5 rounded-xl" style="background: {list.color || $colorStore.primary}20;">
-                    <List size={20} style="color: {list.color || $colorStore.primary}" />
+                    <i class="fa-solid fa-list"
+                       style="color: {list.color || $colorStore.primary}; font-size: 20px;"></i>
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="font-bold text-lg truncate" style="color: {$colorStore.text}">
@@ -570,24 +558,24 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                   {#if listPermissions.canView}
-                    <button
+                    <button aria-label="Permissions"
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                       onclick={stopPropagation(() => handleShowPermissions({ detail: { listId: list.id } }))}
                       title="Manage permissions"
                     >
-                      <Shield size={16} />
+                      <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
                     </button>
                   {/if}
-                  
+
                   {#if listPermissions.canManage}
-                    <button
+                    <button aria-label="Button action"
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}20); color: {$colorStore.secondary};"
                       onclick={stopPropagation(bubble('click'))}
                       title="List settings"
                     >
-                      <Settings size={16} />
+                      <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
                     </button>
                   {/if}
                 </div>
@@ -599,10 +587,10 @@
                      style="background: {list.isPublic ? $colorStore.secondary + '20' : $colorStore.muted + '20'}; 
                             color: {list.isPublic ? $colorStore.secondary : $colorStore.muted};">
                   {#if list.isPublic}
-                    <Globe size={10} />
+                    <i class="fa-solid fa-globe" style="font-size: 10px;"></i>
                     <span>Public</span>
                   {:else}
-                    <Lock size={10} />
+                    <i class="fa-solid fa-lock" style="font-size: 10px;"></i>
                     <span>Private</span>
                   {/if}
                 </div>
@@ -685,7 +673,7 @@
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                 onclick={() => showQuickAdd = !showQuickAdd}
               >
-                <Plus size={16} />
+                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                 <span>Add Item</span>
               </button>
             {/if}
@@ -703,7 +691,7 @@
                   bind:value={newItemTitle}
                   class="w-full px-4 py-3 rounded-xl border text-lg backdrop-blur-xs"
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
-                />
+                >
                 <textarea
                   placeholder="Add a description (optional)..."
                   bind:value={newItemDescription}
@@ -714,7 +702,7 @@
                 <div class="flex items-center justify-between">
                   <DiscordSelector
                     type="custom"
-                    customIcon={Target}
+                    customIcon="fa-bullseye"
                     placeholder="Select Priority"
                     searchable={false}
                     options={[
@@ -752,7 +740,7 @@
                       }}
                       disabled={!newItemTitle.trim()}
                     >
-                      <Plus size={16} />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       <span>Add Item</span>
                     </button>
                     <button
@@ -772,7 +760,8 @@
           <div class="space-y-3">
             {#if filteredItems.length === 0}
               <div class="text-center py-12">
-                <CheckSquare class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                <i class="fa-utility-duo fa-regular fa-square-check"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">
                   {todoItems.length === 0 ? "No Items Yet" : "No Items Match Filters"}
                 </h3>
@@ -800,7 +789,7 @@
                       disabled={!currentPermissions.canComplete && !currentPermissions.canEdit}
                     >
                       {#if item.isCompleted}
-                        <CheckSquare size={14} color="white" />
+                        <i class="fa-solid fa-check" style="color: white; font-size: 14px;"></i>
                       {/if}
                     </button>
                     
@@ -844,7 +833,7 @@
                             {#if item.dueDate}
                               {@const isOverdue = new Date(item.dueDate) < new Date() && !item.isCompleted}
                               <span class="flex items-center gap-1">
-                                <Calendar size={10} />
+                                <i class="fa-solid fa-calendar" style="font-size: 10px;"></i>
                                 <span class={isOverdue ? 'text-red-500' : ''}>
                                   {new Date(item.dueDate).toLocaleDateString()}
                                 </span>
@@ -859,23 +848,23 @@
                         {#if currentPermissions.canEdit || currentPermissions.canDelete}
                           <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                             {#if currentPermissions.canEdit}
-                              <button
+                              <button aria-label="Button action"
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                                 title="Edit item"
                               >
-                                <Edit size={12} />
+                                <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
                               </button>
                             {/if}
-                            
+
                             {#if currentPermissions.canDelete}
-                              <button
+                              <button aria-label="Delete"
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, #ef444420, #dc262620); color: #ef4444;"
                                 onclick={() => handleDeleteItem({ detail: { itemId: item.id } })}
                                 title="Delete item"
                               >
-                                <Trash2 size={12} />
+                                <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                               </button>
                             {/if}
                           </div>
@@ -898,16 +887,20 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
          onclick={() => showNewListModal = false}
-         in:fly={{ opacity: 0, duration: 200 }}>
+           in:fly={{ opacity: 0, duration: 200 }}
+           role="button"
+           tabindex="0"
+           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showNewListModal = false; } }}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md"
            onclick={stopPropagation(bubble('click'))}
-           in:fly={{ y: 20, duration: 300, delay: 100 }}>
+           in:fly={{ y: 20, duration: 300, delay: 100 }} role="button" tabindex="0"
+           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
             <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-              <Plus size={20} style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
             </div>
             <h3 class="text-xl font-bold" style="color: {$colorStore.text}">
               Create New Todo List
@@ -916,24 +909,24 @@
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="input-6264" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                 List Name *
               </label>
-              <input
+              <input id="input-6264"
                 type="text"
                 placeholder="Enter list name..."
                 bind:value={newListName}
                 class="w-full px-4 py-3 rounded-lg border backdrop-blur-xs"
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
                 required
-              />
+              >
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="list-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                 Description
               </label>
-              <textarea
+              <textarea id="list-name"
                 placeholder="Optional description..."
                 bind:value={newListDescription}
                 rows="3"
@@ -1010,8 +1003,12 @@
 
   /* Beautiful gradient animations */
   @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
+      0% {
+          background-position: 0 50%;
+      }
     50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+      100% {
+          background-position: 0 50%;
+      }
   }
 </style>

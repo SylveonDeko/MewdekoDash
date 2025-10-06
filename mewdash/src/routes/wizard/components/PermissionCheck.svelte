@@ -4,7 +4,6 @@ Permission check component for verifying bot permissions during wizard
 -->
 <script lang="ts">
     import {colorStore} from "$lib/stores/colorStore";
-    import {AlertCircle, Check, Info, X} from "lucide-svelte";
 
     interface Props {
     permission: string;
@@ -35,13 +34,13 @@ Permission check component for verifying bot permissions during wizard
         ? '#f59e0b' 
         : $colorStore.muted);
 
-  let statusIcon = $derived(hasPermission ? Check : X);
+    let statusIcon = $derived(hasPermission ? "fa-check" : "fa-xmark");
 
   let importanceInfo = $derived({
-    'critical': { label: 'Critical', color: '#ef4444', icon: AlertCircle },
-    'recommended': { label: 'Recommended', color: '#f59e0b', icon: AlertCircle },
-    'optional': { label: 'Optional', color: $colorStore.muted, icon: Info }
-  }[importanceString] || { label: 'Unknown', color: $colorStore.muted, icon: Info });
+    "critical": { label: "Critical", color: "#ef4444", icon: "fa-bell" },
+    "recommended": { label: "Recommended", color: "#f59e0b", icon: "fa-bell" },
+    "optional": { label: "Optional", color: $colorStore.muted, icon: "fa-circle-info" }
+  }[importanceString] || { label: "Unknown", color: $colorStore.muted, icon: "fa-circle-info" });
 
   const SvelteComponent = $derived(statusIcon);
 </script>
@@ -66,7 +65,7 @@ Permission check component for verifying bot permissions during wizard
       color: {statusColor};
     "
   >
-    <SvelteComponent class="w-4 h-4" />
+      <i class="fa-solid {statusIcon}" style="font-size: 16px;"></i>
   </div>
 
   <!-- Permission details -->
@@ -79,7 +78,7 @@ Permission check component for verifying bot permissions during wizard
       <!-- Importance badge -->
         <div class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium shrink-0"
            style="background: {importanceInfo.color}15; color: {importanceInfo.color};">
-        <importanceInfo.icon class="w-3 h-3" />
+          <i class="fa-solid {importanceInfo.icon}" style="font-size: 12px;"></i>
         {importanceInfo.label}
       </div>
     </div>
@@ -106,7 +105,7 @@ Permission check component for verifying bot permissions during wizard
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-1 text-sm font-medium"
            style="color: {statusColor};">
-        <SvelteComponent class="w-4 h-4" />
+        <i class="fa-solid {statusIcon}" style="font-size: 16px;"></i>
         {hasPermission ? 'Permission granted' : 'Permission missing'}
       </div>
       

@@ -260,7 +260,7 @@
   tabindex={disabled ? -1 : 0}
 >
   <!-- Main selector button -->
-  <button
+  <button aria-label="Button action"
     class="w-full p-3 rounded-xl border transition-all duration-200 text-left flex items-center min-h-[50px] backdrop-blur-md"
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
@@ -277,11 +277,7 @@
         <span class="text-lg shrink-0">{selectedOption.emoji}</span>
       {:else}
         {@const iconValue = getTypeIcon()}
-        {#if typeof iconValue === 'string'}
           <i class="fa-utility-duo fa-regular {iconValue}" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
-        {:else}
-          <svelte:component this={iconValue} size={16} style="color: {$colorStore.primary}" />
-        {/if}
       {/if}
 
       <!-- Selected content -->
@@ -296,13 +292,16 @@
                   style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                 >
                   <span class="truncate">{getOptionDisplayName(option)}</span>
-                  <button
-                    type="button"
-                    class="hover:bg-black/20 rounded-sm p-0.5"
+                  <span
+                    class="hover:bg-black/20 rounded-sm p-0.5 cursor-pointer"
                     onclick={(e) => removeOption(selectedId, e)}
+                    onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); removeOption(selectedId, e); } }}
+                    role="button"
+                    tabindex="0"
+                    aria-label="Remove {getOptionDisplayName(option)}"
                   >
                     <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
-                  </button>
+                  </span>
                 </span>
               {/if}
             {/each}
@@ -326,14 +325,16 @@
     <!-- Right side controls -->
     <div class="flex items-center gap-1 shrink-0 ml-2">
       {#if hasSelection && !disabled}
-        <button
-          type="button"
-          class="p-1 hover:bg-black/20 rounded-sm shrink-0"
+        <span
+          class="p-1 hover:bg-black/20 rounded-sm shrink-0 cursor-pointer"
           onclick={clearAll}
-          title="Clear selection"
+          onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clearAll(e); } }}
+          role="button"
+          tabindex="0"
+          aria-label="Clear selection"
         >
           <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 14px;"></i>
-        </button>
+        </span>
       {/if}
 
       <div

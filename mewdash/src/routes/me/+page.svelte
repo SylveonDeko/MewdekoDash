@@ -482,7 +482,8 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Bio -->
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Bio</label>
+              <label for="input-9136" class="block text-sm font-medium mb-2"
+                     style="color: {$colorStore.text}">Bio</label>
               <textarea
                 bind:value={profileForm.bio}
                 placeholder="Tell others about yourself..."
@@ -494,19 +495,21 @@
 
             <!-- Pronouns -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Pronouns</label>
-              <input
+              <label for="input-9136" class="block text-sm font-medium mb-2"
+                     style="color: {$colorStore.text}">Pronouns</label>
+              <input id="input-9136"
                 type="text"
                 bind:value={profileForm.pronouns}
                 placeholder="they/them, she/her, he/him..."
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              />
+              >
             </div>
 
             <!-- Zodiac Sign -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Zodiac Sign</label>
+              <label for="input-1516" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Zodiac
+                Sign</label>
               <select
                 bind:value={profileForm.zodiacSign}
                 class="w-full px-3 py-2 rounded-lg border"
@@ -530,18 +533,20 @@
 
             <!-- Birthday -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Birthday</label>
-              <input
+              <label for="input-1516" class="block text-sm font-medium mb-2"
+                     style="color: {$colorStore.text}">Birthday</label>
+              <input id="input-1516"
                 type="date"
                 bind:value={profileForm.birthday}
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              />
+              >
             </div>
 
             <!-- Timezone -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Timezone</label>
+              <label for="input-4352" class="block text-sm font-medium mb-2"
+                     style="color: {$colorStore.text}">Timezone</label>
               <select
                 bind:value={profileForm.birthdayTimezone}
                 class="w-full px-3 py-2 rounded-lg border"
@@ -560,25 +565,27 @@
 
             <!-- Switch Friend Code -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Switch Friend Code</label>
-              <input
+              <label for="input-4352" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Switch
+                Friend Code</label>
+              <input id="input-4352"
                 type="text"
                 bind:value={profileForm.switchFriendCode}
                 placeholder="SW-0000-0000-0000"
                 class="w-full px-3 py-2 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              />
+              >
             </div>
 
             <!-- Profile Color -->
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Profile Color</label>
-              <input
+              <label for="input-8750" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Profile
+                Color</label>
+              <input id="input-8750"
                 type="color"
                 bind:value={profileForm.profileColor}
                 class="w-full h-10 rounded-lg border"
                 style="border-color: {$colorStore.primary}30;"
-              />
+              >
             </div>
 
             <!-- Action buttons -->
@@ -591,7 +598,7 @@
               >
                 Cancel
               </button>
-              <button
+              <button aria-label="Button action"
                 class="px-4 py-2 rounded-lg text-sm flex items-center gap-2"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={saveProfile}
@@ -665,7 +672,7 @@
                   onchange={toggleGreetDms}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.greetDmsOptOut ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -688,7 +695,7 @@
                   onchange={toggleStats}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.statsOptOut ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -711,7 +718,7 @@
                   onchange={toggleBirthdayAnnouncements}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userProfile.birthdayAnnouncementsEnabled ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -748,7 +755,7 @@
                   onchange={toggleLevelUpPings}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.levelUpPingsDisabled ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -771,7 +778,7 @@
                   onchange={togglePronouns}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.pronounsDisabled ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -794,7 +801,7 @@
                   onchange={toggleGuidedSetup}
                   disabled={saving}
                   class="sr-only"
-                />
+                >
                 <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
                      style="background: {userPreferences.prefersGuidedSetup ? $colorStore.primary : '#374151'};">
                     <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
@@ -879,7 +886,7 @@
                       bind:value={guildSearchTerm}
                       class="w-full px-3 py-2 rounded-lg border text-sm"
                       style="background: rgba(0,0,0,0.5); border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
 
                   <!-- Server List -->
@@ -896,7 +903,7 @@
                           }
                           alt=""
                           class="w-10 h-10 rounded-lg"
-                        />
+                        >
                         <div class="flex-1 min-w-0">
                           <div class="font-medium truncate" style="color: {$colorStore.text}">
                             {guild.name}
@@ -932,7 +939,7 @@
                 alt=""
                 class="w-16 h-16 rounded-2xl border-2"
                 style="border-color: {$colorStore.primary}50;"
-              />
+              >
               <div class="text-center sm:text-left">
                 <h3 class="text-xl font-bold" style="color: {$colorStore.text}">{selectedGuild.name}</h3>
                 <p class="text-sm" style="color: {$colorStore.muted}">
@@ -1029,8 +1036,8 @@
                   class="flex-1 px-3 py-2 rounded-lg border text-sm"
                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                   onkeydown={(e) => e.key === 'Enter' && addHighlight()}
-                />
-                <button
+                >
+                <button aria-label="Add"
                   class="px-4 py-2 rounded-lg transition-all hover:scale-105"
                   style="background: {$colorStore.primary}; color: white;"
                   onclick={addHighlight}
@@ -1046,7 +1053,7 @@
                   <div class="flex items-center justify-between p-2 rounded-lg"
                        style="background: {$colorStore.primary}08;">
                     <span class="text-sm" style="color: {$colorStore.text}">{highlight.word}</span>
-                    <button
+                    <button aria-label="Delete"
                             class="p-1 rounded-sm transition-all hover:scale-110"
                       style="color: {$colorStore.accent};"
                       onclick={() => removeHighlight(highlight.id)}
@@ -1243,11 +1250,4 @@
 {/if}
 
 <style>
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
 </style>

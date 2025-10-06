@@ -53,11 +53,11 @@
 
 {:else if variant === 'mobile'}
   <!-- Mobile Button -->
-  <button
+  <button aria-label="Button action"
     class="flex items-center justify-center w-10 h-10 rounded-xl transition-all hover:scale-105"
     style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
     onclick={handleOpenSearch}
-    aria-label="Search dashboard features"
+
   >
     <i class="fa-utility-duo fa-regular fa-magnifying-glass text-xl"
        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>

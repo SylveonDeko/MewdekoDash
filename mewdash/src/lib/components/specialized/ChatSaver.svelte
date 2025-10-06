@@ -7,21 +7,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
-    import {
-        Calendar,
-        Clock,
-        Download,
-        Edit,
-        ExternalLink,
-        Folder,
-        Hash,
-        Link,
-        MessageSquare,
-        Save,
-        Search,
-        Trash2,
-        X
-    } from "lucide-svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -98,9 +83,9 @@
     let activeTab = $state("fetch");
   
   const tabs = [
-    { id: "fetch", label: "Fetch Messages", icon: Search },
-    { id: "saved", label: "Saved Logs", icon: Folder },
-    { id: "view", label: "View Messages", icon: MessageSquare }
+    { id: "fetch", label: "Fetch Messages", icon: "fa-search" },
+    { id: "saved", label: "Saved Logs", icon: "fa-folder" },
+    { id: "view", label: "View Messages", icon: "fa-envelope" }
   ];
     let timeAmount: number = $state(1);
     let timeUnit: "minutes" | "hours" | "days" = $state("hours");
@@ -172,13 +157,11 @@
 
       // Check if the date is valid
       if (isNaN(parsedDate.getTime())) {
-        console.warn("Invalid date string:", dateString);
         return new Date(); // Return current date as fallback
       }
 
       return parsedDate;
     } catch (err) {
-      console.warn("Error parsing date:", err);
       return new Date(); // Return current date as fallback
     }
   }
@@ -369,7 +352,6 @@
       msg && msg.author && typeof msg.author.id !== "undefined"
     );
 
-    console.log(validMessages);
 
     if (validMessages.length === 0) return [];
 
@@ -911,8 +893,8 @@
 
 <DashboardPageLayout 
   title="Chat Saver" 
-  subtitle="Save and view chat logs from your Discord channels" 
-  icon={MessageSquare}
+  icon="fa-envelope"
+  subtitle="Save and view chat logs from your Discord channels"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
@@ -940,7 +922,7 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <MessageSquare class="w-6 h-6" />
+          <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
         </div>
         <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">Chat Options</h2>
       </div>
@@ -952,7 +934,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Hash class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-hashtag" style="color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Channel</h3>
           </div>
           <DiscordSelector
@@ -969,7 +951,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Clock class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Time Amount</h3>
           </div>
           <input
@@ -980,7 +962,7 @@
             style="background: {$colorStore.primary}08; border-color: {$colorStore.secondary}30;
                    color: {$colorStore.text};"
             type="number"
-          />
+          >
         </div>
 
         <!-- Time Unit -->
@@ -989,7 +971,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Calendar class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <i class="fa-solid fa-calendar" style="color: {$colorStore.accent}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Time Unit</h3>
           </div>
           <DiscordSelector
@@ -998,7 +980,7 @@
               id: unit.value,
               name: unit.label
             }))}
-            customIcon={Calendar}
+            customIcon="fa-calendar"
             placeholder="Select time unit"
             bind:selected={timeUnit}
           />
@@ -1014,7 +996,7 @@
                  color: {$colorStore.text};
                  box-shadow: 0 0 20px {$colorStore.primary}20;"
         >
-          <Search class="w-5 h-5" />
+          <i class="fa-solid fa-search" style="font-size: 20px;"></i>
           {loading ? 'Loading...' : 'Load Messages'}
         </button>
       </div>
@@ -1035,7 +1017,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Folder class="w-6 h-6" />
+            <i class="fa-solid fa-folder" style="font-size: 24px;"></i>
           </div>
           <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">Saved Logs</h2>
         </div>
@@ -1058,23 +1040,23 @@
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
                               color: {$colorStore.text};"
                         onkeydown={(e) => e.key === 'Enter' && saveLogName()}
-                      />
+                      >
                       <div class="flex gap-2">
-                        <button
+                        <button aria-label="Save"
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.primary}20;
                                 color: {$colorStore.text};"
                           onclick={saveLogName}
                         >
-                          <Save class="w-4 h-4" />
+                          <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                         </button>
-                        <button
+                        <button aria-label="Cancel"
                           class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                           style="background: {$colorStore.accent}20;
                                 color: {$colorStore.accent};"
                           onclick={() => editingLogName = false}
                         >
-                          <X class="w-4 h-4" />
+                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                         </button>
                       </div>
                     </div>
@@ -1089,32 +1071,32 @@
                 </div>
 
                   <div class="flex gap-2 shrink-0">
-                  <button
+                    <button aria-label="View log"
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.primary}20;
                            color: {$colorStore.primary};"
                     onclick={() => loadLog(log.id)}
                     title="View Log"
                   >
-                    <Search class="w-4 h-4" />
+                      <i class="fa-solid fa-search" style="font-size: 16px;"></i>
                   </button>
-                  <button
+                    <button aria-label="Rename log"
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: {$colorStore.secondary}20;
                            color: {$colorStore.secondary};"
                     onclick={() => startEditingLogName(log.id)}
                     title="Rename Log"
                   >
-                    <Edit class="w-4 h-4" />
+                      <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                   </button>
-                  <button
+                    <button aria-label="Delete log"
                     class="p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
                     style="background: rgba(244, 67, 54, 0.2);
                            color: #f44336;"
                     onclick={() => deleteLog(log.id)}
                     title="Delete Log"
                   >
-                    <Trash2 class="w-4 h-4" />
+                      <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
                 </div>
               </div>
@@ -1124,7 +1106,8 @@
       </section>
     {:else}
       <div class="text-center py-12 px-4">
-        <Folder class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+        <i class="fa-solid fa-folder"
+           style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
         <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">No saved logs yet</p>
       </div>
     {/if}
@@ -1145,7 +1128,7 @@
               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                     color: {$colorStore.primary};"
             >
-              <MessageSquare class="w-6 h-6" />
+              <i class="fa-solid fa-envelope" style="font-size: 24px;"></i>
             </div>
             <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text}">
               #{getSelectedChannelName()} - {messages.length} messages
@@ -1160,7 +1143,7 @@
                       color: {$colorStore.text};"
                 onclick={saveLog}
               >
-                <Save class="w-5 h-5" />
+                <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
                 Save Log
               </button>
             {/if}
@@ -1171,7 +1154,7 @@
                     color: {$colorStore.text};"
               onclick={exportAsHTML}
             >
-              <Download class="w-5 h-5" />
+              <i class="fa-solid fa-download" style="font-size: 20px;"></i>
               Export HTML
             </button>
           </div>
@@ -1222,7 +1205,7 @@
                     src={messageGroup[0].author.avatarUrl}
                     alt={messageGroup[0].author.username}
                     class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover mt-4 shrink-0"
-                  />
+                  >
                     <div class="grow pt-4 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-semibold text-sm sm:text-base truncate" style="color: {$colorStore.text}">
@@ -1259,7 +1242,7 @@
                                     src={attachment.proxyUrl || attachment.url}
                                     alt={attachment.filename}
                                     class="max-h-64 sm:max-h-96 max-w-full object-contain"
-                                  />
+                                  >
                                 </a>
                               </div>
                             {:else}
@@ -1267,7 +1250,7 @@
                                       class="flex items-center gap-2 p-2 rounded-sm max-w-full overflow-hidden"
                                 style="background: {$colorStore.primary}15;"
                               >
-                                  <Link class="w-4 h-4 shrink-0" style="color: {$colorStore.primary}"/>
+                                <i class="fa-solid fa-link" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                                 <a
                                   href={attachment.url}
                                   target="_blank"
@@ -1299,7 +1282,7 @@
                                           src={embed.author.iconUrl}
                                           alt="Author"
                                           class="w-5 h-5 rounded-full shrink-0"
-                                        />
+                                        >
                                       {/if}
                                       <span class="text-sm font-medium truncate" style="color: {$colorStore.text}">
                                         {embed.author.name}
@@ -1318,7 +1301,8 @@
                                           class="flex items-center gap-1 break-all"
                                         >
                                           <span class="break-words">{embed.title}</span>
-                                            <ExternalLink class="w-3 h-3 inline-block shrink-0"/>
+                                          <i class="fa-solid fa-arrow-up-right-from-square"
+                                             style="font-size: 12px;"></i>
                                         </a>
                                       {:else}
                                         <span class="break-words">{embed.title}</span>
@@ -1343,7 +1327,7 @@
                                       src={embed.thumbnail}
                                       alt="Thumbnail"
                                       class="w-16 h-16 sm:w-20 sm:h-20 rounded-md object-cover"
-                                    />
+                                    >
                                   </div>
                                 {/if}
                               </div>
@@ -1374,7 +1358,8 @@
       </section>
     {:else}
       <div class="text-center py-12 px-4">
-        <MessageSquare class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+        <i class="fa-solid fa-envelope"
+           style="color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
         <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">No messages to display</p>
         <p class="text-sm mt-2" style="color: {$colorStore.muted}">Use the "Fetch Messages" tab to load messages</p>
       </div>
@@ -1384,17 +1369,17 @@
 
 <style lang="postcss">
     :global(*::-webkit-scrollbar) {
-        @apply w-2;
+        width: 0.5rem;
     }
 
     :global(*::-webkit-scrollbar-track) {
         background: var(--color-primary) 10;
-        @apply rounded-full;
+        border-radius: 9999px;
     }
 
     :global(*::-webkit-scrollbar-thumb) {
         background: var(--color-primary) 30;
-        @apply rounded-full;
+        border-radius: 9999px;
     }
 
     :global(*::-webkit-scrollbar-thumb:hover) {

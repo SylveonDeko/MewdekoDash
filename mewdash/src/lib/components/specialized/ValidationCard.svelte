@@ -172,13 +172,13 @@
     <!-- Header -->
     {#if title || collapsible}
       <div
-        class="flex items-center justify-between p-3 border-b cursor-pointer"
+        class="flex items-center justify-between p-3 border-b"
         class:cursor-pointer={collapsible}
         style="border-color: {getColors(severityLevel).border}30;"
-        onclick={toggleCollapsed}
-        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && collapsible && toggleCollapsed()}
+        onclick={collapsible ? toggleCollapsed : undefined}
+        onkeydown={collapsible ? (e) => (e.key === 'Enter' || e.key === ' ') && toggleCollapsed() : undefined}
         role={collapsible ? 'button' : undefined}
-        tabindex={collapsible ? 0 : undefined}
+        {...(collapsible ? { tabindex: 0 } : {})}
         aria-expanded={collapsible ? !collapsed : undefined}
       >
         <div class="flex items-center gap-2">
@@ -232,8 +232,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('error').bgDark}; 
                           border-color: {getColors('error').text};">
-                <i class="fa-solid fa-circle-exclamation shrink-0 mt-0.5" style="color: {getColors('error').icon}; font-size: 16px;" 
-                />
+                <i class="fa-solid fa-circle-exclamation shrink-0 mt-0.5"
+                   style="color: {getColors('error').icon}; font-size: 16px;"
+                ></i>
                 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm" style="color: {getColors('error').text};">
@@ -287,8 +288,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('warning').bgDark}; 
                           border-color: {getColors('warning').text};">
-                <i class="fa-solid fa-triangle-exclamation shrink-0 mt-0.5" style="color: {getColors('warning').icon}; font-size: 16px;" 
-                />
+                <i class="fa-solid fa-triangle-exclamation shrink-0 mt-0.5"
+                   style="color: {getColors('warning').icon}; font-size: 16px;"
+                ></i>
                 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm" style="color: {getColors('warning').text};">
@@ -342,8 +344,9 @@
               <div class="flex items-start gap-3 p-3 rounded-lg border-l-4"
                    style="background: {getColors('suggestion').bgDark}; 
                           border-color: {getColors('suggestion').text};">
-                <i class="fa-solid fa-lightbulb shrink-0 mt-0.5" style="color: {getColors('suggestion').icon}; font-size: 16px;" 
-                />
+                <i class="fa-solid fa-lightbulb shrink-0 mt-0.5"
+                   style="color: {getColors('suggestion').icon}; font-size: 16px;"
+                ></i>
                 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm" style="color: {getColors('suggestion').text};">

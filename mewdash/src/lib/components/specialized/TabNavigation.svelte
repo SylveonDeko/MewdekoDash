@@ -80,11 +80,7 @@
         tabindex={activeTab === tab.id ? 0 : -1}
       >
         {#if tab.icon}
-          {#if typeof tab.icon === 'string'}
             <i class="fa-solid {tab.icon}" style="font-size: 16px;"></i>
-          {:else}
-            <svelte:component this={tab.icon} size={16} />
-          {/if}
         {/if}
         <span class="font-medium">{tab.label}</span>
       </button>
@@ -113,11 +109,7 @@
         tabindex={activeTab === tab.id ? 0 : -1}
       >
         {#if tab.icon}
-          {#if typeof tab.icon === 'string'}
             <i class="fa-solid {tab.icon}" style="font-size: 16px;"></i>
-          {:else}
-            <svelte:component this={tab.icon} size={16} />
-          {/if}
         {/if}
         <span class="font-medium">{tab.label}</span>
       </button>

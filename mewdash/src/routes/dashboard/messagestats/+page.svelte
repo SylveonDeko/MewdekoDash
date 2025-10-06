@@ -15,6 +15,7 @@
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
     interface Props {
         data: PageData;
@@ -178,7 +179,6 @@
       }
 
     } catch (err) {
-      console.error("Failed to load message stats:", err);
       error = err instanceof Error ? err.message : "Failed to load message stats";
       showNotificationMessage("Failed to load message stats", "error");
     } finally {
@@ -209,7 +209,6 @@
         showNotificationMessage("Export completed successfully!", "success");
       }
     } catch (err) {
-      console.error("Failed to export stats:", err);
       showNotificationMessage("Failed to export stats", "error");
     } finally {
       isExporting = false;
@@ -241,7 +240,6 @@
       const guildConfig = await api.getGuildConfig($currentGuild.id);
       minMessageLength = guildConfig?.minMessageLength || 0;
     } catch (err) {
-      console.error("Failed to load message count settings:", err);
       showNotificationMessage("Failed to load settings", "error");
     } finally {
       settingsLoading = false;
@@ -259,7 +257,6 @@
       // Reload data to reflect changes
       await loadData();
     } catch (err) {
-      console.error("Failed to toggle message count:", err);
       showNotificationMessage("Failed to update setting", "error");
     } finally {
       settingsLoading = false;
@@ -274,7 +271,6 @@
       await api.updateGuildConfig($currentGuild.id, { minMessageLength });
       showNotificationMessage("Minimum message length updated", "success");
     } catch (err) {
-      console.error("Failed to update min message length:", err);
       showNotificationMessage("Failed to update setting", "error");
     } finally {
       settingsLoading = false;
@@ -294,7 +290,6 @@
       // Reload data to reflect changes
       await loadData();
     } catch (err) {
-      console.error("Failed to reset message counts:", err);
       showNotificationMessage("Failed to reset counts", "error");
     } finally {
       resetLoading = false;
@@ -396,13 +391,13 @@
             <StatCard
               label="Daily Messages"
               value={formatNumber(messageStats.dailyMessages)}
-              icon="fa-message"
+              icon="fa-envelope"
               iconColor="primary"
             />
             <StatCard
               label="Total Messages"
               value={formatNumber(messageStats.totalMessages)}
-              icon="fa-chart-column"
+              icon="fa-envelope"
               iconColor="secondary"
             />
             <StatCard
@@ -414,7 +409,7 @@
             <StatCard
               label="Status"
               value={messageStats.enabled ? "Enabled" : "Disabled"}
-              icon="fa-bullseye"
+              icon="fa-circle"
               iconColor={messageStats.enabled ? "primary" : "secondary"}
             />
           </div>
@@ -468,7 +463,7 @@
                     src={user.avatarUrl} 
                     alt={user.username}
                     class="w-10 h-10 rounded-full shrink-0"
-                  />
+                  >
                   
                   <div class="flex-1 min-w-0">
                     <div class="font-medium truncate" style="color: {$colorStore.text}">
@@ -547,27 +542,27 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">Start Date</label>
-              <input
+              <label for="input-3605" class="block mb-2" style="color: {$colorStore.text}">Start Date</label>
+              <input id="input-3605"
                 type="date"
                 bind:value={exportStartDate}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
             </div>
             
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">End Date</label>
+              <span id="end-date-label" class="block mb-2" style="color: {$colorStore.text}">End Date</span>
               <input
                 type="date"
                 bind:value={exportEndDate}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
             </div>
             
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">Format</label>
+              <label for="message-limit" class="block mb-2" style="color: {$colorStore.text}">Format</label>
               <DiscordSelector
                 type="custom"
                 selected={exportFormat}
@@ -577,23 +572,23 @@
                   { id: "json", name: "JSON", description: "JavaScript Object Notation" }
                 ]}
                 placeholder="Select export format"
-              />
+                aria-labelledby="end-date-label" />
             </div>
           </div>
           
           <div class="mt-6 space-y-3">
             <label class="flex items-center gap-3">
-              <input type="checkbox" bind:checked={includeUsers} class="w-4 h-4" />
+              <input type="checkbox" bind:checked={includeUsers} class="w-4 h-4">
               <span style="color: {$colorStore.text}">Include user statistics</span>
             </label>
             
             <label class="flex items-center gap-3">
-              <input type="checkbox" bind:checked={includeChannels} class="w-4 h-4" />
+              <input type="checkbox" bind:checked={includeChannels} class="w-4 h-4">
               <span style="color: {$colorStore.text}">Include channel statistics</span>
             </label>
             
             <label class="flex items-center gap-3">
-              <input type="checkbox" bind:checked={includeHourly} class="w-4 h-4" />
+              <input type="checkbox" bind:checked={includeHourly} class="w-4 h-4">
               <span style="color: {$colorStore.text}">Include hourly breakdown</span>
             </label>
           </div>
@@ -633,7 +628,7 @@
                   <h4 class="font-semibold" style="color: {$colorStore.text}">Enable Message Counting</h4>
                   <p class="text-sm mt-1" style="color: {$colorStore.muted}">Track message statistics for this server</p>
                 </div>
-                <button
+                <button aria-label="Reset stats"
                         class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                   style="background: {messageCountEnabled ? $colorStore.primary : $colorStore.muted}40; focus:ring-color: {$colorStore.primary};"
                   onclick={toggleMessageCount}
@@ -645,12 +640,12 @@
 
               <!-- Minimum Message Length -->
               <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10;">
-                <label class="block mb-3">
+                <label for="include-channels" class="block mb-3">
                   <span class="font-semibold" style="color: {$colorStore.text}">Minimum Message Length</span>
                   <p class="text-sm mt-1" style="color: {$colorStore.muted}">Only count messages with at least this many characters (0-4098)</p>
                 </label>
                 <div class="flex items-center gap-4">
-                  <input
+                  <input id="include-channels"
                     type="range"
                     min="0"
                     max="4098"
@@ -660,7 +655,7 @@
                     class="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
                     style="background: {$colorStore.primary}20;"
                     disabled={settingsLoading}
-                  />
+                  >
                     <div class="text-sm font-mono px-2 py-1 rounded-sm"
                          style="background: {$colorStore.primary}20; color: {$colorStore.text}; min-width: 60px; text-align: center;">
                     {minMessageLength}

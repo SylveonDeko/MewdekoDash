@@ -165,9 +165,9 @@
 
     // Tabs configuration
     const tabs = [
-        { id: "list", label: "RSS Feeds", icon: "fa-rss" },
+        { id: "list", label: "RSS Feeds", icon: "fa-newspaper" },
         { id: "add", label: "Add Feed", icon: "fa-plus" },
-        { id: "stats", label: "Statistics", icon: "fa-chart-column" }
+        { id: "stats", label: "Statistics", icon: "fa-chart-bar" }
     ];
 
     // Action buttons configuration
@@ -189,7 +189,7 @@
 <DashboardPageLayout
         title="RSS Feeds"
         subtitle="Manage RSS feed subscriptions"
-        icon="fa-rss"
+        icon="fa-newspaper"
         {tabs}
         {activeTab}
         {actionButtons}
@@ -225,14 +225,16 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-rss" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-newspaper"
+                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">RSS Feeds ({feeds.length})</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if feeds.length === 0}
                         <div class="text-center py-8">
-                            <i class="fa-utility-duo fa-regular fa-rss" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+                            <i class="fa-utility-duo fa-regular fa-newspaper"
+                               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No RSS Feeds</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Add RSS feeds to automatically post updates to your channels.
@@ -244,7 +246,8 @@
                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
                                 <div class="flex items-start justify-between mb-3">
                                     <div class="flex items-start gap-3 flex-1">
-                                        <i class="fa-utility-duo fa-regular fa-rss mt-1" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                                        <i class="fa-utility-duo fa-regular fa-newspaper mt-1"
+                                           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                         <div class="flex-1 min-w-0">
                                             <div class="font-semibold mb-1" style="color: {$colorStore.text}">
                                                 #{feed.channelName}
@@ -258,7 +261,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button
+                                    <button aria-label="Delete feed"
                                             class="p-2 rounded-lg transition-all hover:scale-110"
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => removeFeed(feed.index)}
@@ -331,10 +334,11 @@
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <span id="channel-label" class="block text-sm font-medium mb-2"
+                              style="color: {$colorStore.text}">
                             <i class="fa-solid fa-hashtag inline mr-1" style="font-size: 14px;"></i>
                             Channel
-                        </label>
+                        </span>
                         <DiscordSelector
                                 type="channel"
                                 options={guildChannels}
@@ -343,28 +347,28 @@
                                 on:change={(e) => {
                                     newFeed.channelId = e.detail.selected;
                                     newFeed = { ...newFeed };
-                                }}
-                        />
+                                }} />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="input-8024" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text}">
                             <i class="fa-solid fa-globe inline mr-1" style="font-size: 14px;"></i>
                             RSS Feed URL
                         </label>
-                        <input
+                        <input id="input-8024"
                                 type="url"
                                 bind:value={newFeed.url}
                                 placeholder="https://example.com/feed.xml"
                                 class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        />
+                        >
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
                             Enter the full URL to an RSS or Atom feed.
                         </p>
                     </div>
 
-                    <button
+                    <button aria-label="Add"
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={addFeed}
@@ -382,7 +386,7 @@
             {#if feedStats}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <StatCard
-                            icon="fa-rss"
+                      icon="fa-newspaper"
                             label="Total Feeds"
                             value={feedStats.totalFeeds}
                             subtitle="active subscriptions"
@@ -415,20 +419,28 @@
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
-                            <i class="fa-utility-duo fa-regular fa-chart-column" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                            <i class="fa-utility-duo fa-regular fa-newspaper"
+                               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Feeds by Channel</h2>
                         </div>
 
                         <div class="space-y-2">
-                            {#each Object.entries(feedStats.feedsByChannel) as [channelId, count]}
-                                {@const channel = guildChannels.find(c => c.id === channelId)}
+                            {#each Array.isArray(feedStats.feedsByChannel) ? feedStats.feedsByChannel : Object.entries(feedStats.feedsByChannel).map(([channelId, count]) => ({
+                                channelId,
+                                count
+                            })) as item}
+                                {@const
+                                  channelIdStr = typeof item.channelId === 'bigint' ? item.channelId.toString() : String(item.channelId)}
+                                {@const
+                                  countNum = typeof item.count === 'bigint' ? Number(item.count) : Number(item.count)}
+                                {@const channel = guildChannels.find(c => c.id === channelIdStr)}
                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                      style="background: {$colorStore.primary}08;">
                                     <span style="color: {$colorStore.text}">
                                         #{channel?.name || `Unknown Channel`}
                                     </span>
                                     <span class="font-semibold" style="color: {$colorStore.primary}">
-                                        {count} feed{count !== 1 ? 's' : ''}
+                                        {countNum} feed{countNum !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                             {/each}

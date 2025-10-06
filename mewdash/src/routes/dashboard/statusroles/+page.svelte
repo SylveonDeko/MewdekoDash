@@ -6,23 +6,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        AlertCircle,
-        BarChart3,
-        Bell,
-        CheckCircle,
-        Crown,
-        Hash,
-        MessageSquare,
-        Plus,
-        RefreshCw,
-        Settings,
-        ToggleLeft,
-        ToggleRight,
-        UserCheck,
-        Users,
-        XCircle
-    } from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -253,16 +236,16 @@
 
     // Tabs configuration
     const tabs = [
-        { id: "list", label: "Status Roles", icon: UserCheck },
-        { id: "add", label: "Add New", icon: Plus },
-        { id: "stats", label: "Statistics", icon: BarChart3 }
+      { id: "list", label: "Status Roles", icon: "fa-user-check" },
+      { id: "add", label: "Add New", icon: "fa-plus" },
+      { id: "stats", label: "Statistics", icon: "fa-chart-column" }
     ];
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
             label: "Refresh",
-            icon: RefreshCw,
+          icon: "fa-arrows-rotate",
             action: loadAllStatusRoleData,
             loading: loading
         }
@@ -277,7 +260,7 @@
 <DashboardPageLayout
         title="Status Roles"
         subtitle="Manage roles based on Discord custom status"
-        icon={UserCheck}
+        icon="fa-user-check"
         {tabs}
         {activeTab}
         {actionButtons}
@@ -293,11 +276,14 @@
                   border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
                  in:fly={{ x: 20, duration: 300 }}>
                 {#if messageType === 'success'}
-                    <CheckCircle class="w-5 h-5" style="color: #10b981" />
+                  <i class="fa-utility-duo fa-regular fa-circle-check"
+                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
                 {:else if messageType === 'error'}
-                    <XCircle class="w-5 h-5" style="color: #ef4444" />
+                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
                 {:else}
-                    <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 {/if}
                 <span
                         style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
@@ -313,14 +299,16 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <UserCheck class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-user-check"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Status Roles ({statusRoles.length})</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if statusRoles.length === 0}
                         <div class="text-center py-8">
-                            <UserCheck class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                          <i class="fa-utility-duo fa-regular fa-user-check"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Status Roles</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Add status-based role assignments to automatically manage roles based on custom status text.
@@ -332,7 +320,8 @@
                                  style="background: {$colorStore.primary}08; border-color: {expandedRole === role.id ? $colorStore.primary + '40' : $colorStore.primary + '20'};">
                                 <div class="flex items-center justify-between p-4">
                                     <div class="flex items-center gap-3 flex-1">
-                                        <UserCheck class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                      <i class="fa-utility-duo fa-regular fa-user-check"
+                                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                         <div class="flex-1">
                                             <div class="font-semibold" style="color: {$colorStore.text}">
                                                 Status: "{role.status}"
@@ -350,12 +339,12 @@
                                         >
                                             {expandedRole === role.id ? "▼" : "▶"}
                                         </button>
-                                        <button
+                                      <button aria-label="Delete"
                                                 class="p-2 rounded-lg transition-all hover:scale-110"
                                                 style="background: #ef444420; color: #ef4444;"
                                                 onclick={() => removeStatusRole(role.id)}
                                         >
-                                            <XCircle class="w-4 h-4" />
+                                        <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -366,35 +355,39 @@
                                             <!-- Edit Form -->
                                             <div class="space-y-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                                                  <label for="input-8035" class="block text-sm font-medium mb-2"
+                                                         style="color: {$colorStore.text}">
                                                         Roles to Add (space-separated IDs)
                                                     </label>
-                                                    <input
+                                                  <input id="input-8035"
                                                             type="text"
                                                             bind:value={editForm.addRoles}
                                                             placeholder="123456789 987654321"
                                                             class="w-full p-3 rounded-xl border"
                                                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                                    />
+                                                  >
                                                 </div>
 
                                                 <div>
-                                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                                                  <label for="input-6007" class="block text-sm font-medium mb-2"
+                                                         style="color: {$colorStore.text}">
                                                         Roles to Remove (space-separated IDs)
                                                     </label>
-                                                    <input
+                                                  <input id="input-6007"
                                                             type="text"
                                                             bind:value={editForm.removeRoles}
                                                             placeholder="123456789 987654321"
                                                             class="w-full p-3 rounded-xl border"
                                                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                                    />
+                                                  >
                                                 </div>
 
                                                 <div>
-                                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                                                    <span id="notification-channel-label"
+                                                          class="block text-sm font-medium mb-2"
+                                                          style="color: {$colorStore.text}">
                                                         Notification Channel
-                                                    </label>
+                                                    </span>
                                                     <DiscordSelector
                                                             type="channel"
                                                             options={guildChannels}
@@ -404,11 +397,12 @@
                                                                 editForm.channelId = e.detail.selected;
                                                                 editForm = { ...editForm };
                                                             }}
-                                                    />
+                                                            aria-labelledby="notification-channel-label" />
                                                 </div>
 
                                                 <div>
-                                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                                                  <label for="input-1942" class="block text-sm font-medium mb-2"
+                                                         style="color: {$colorStore.text}">
                                                         Embed Text
                                                     </label>
                                                     <textarea
@@ -444,7 +438,7 @@
                                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                                      style="background: {$colorStore.primary}05;">
                                                     <span style="color: {$colorStore.muted}">Remove added roles when status removed:</span>
-                                                    <button
+                                                  <button aria-label="Add role"
                                                             onclick={() => toggleRemoveAdded(role.id)}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                             style="background: {role.removeAdded ? $colorStore.primary : '#64748b'};"
@@ -457,7 +451,7 @@
                                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                                      style="background: {$colorStore.primary}05;">
                                                     <span style="color: {$colorStore.muted}">Re-add removed roles when status removed:</span>
-                                                    <button
+                                                  <button aria-label="Remove role"
                                                             onclick={() => toggleReaddRemoved(role.id)}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                                             style="background: {role.readdRemoved ? $colorStore.primary : '#64748b'};"
@@ -492,34 +486,35 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <Plus class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-plus"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Status Role</h2>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="input-1942" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             Status Text to Watch For
                         </label>
-                        <input
+                      <input id="input-1942"
                                 type="text"
                                 bind:value={newStatusRole.status}
                                 placeholder="Enter status text (e.g., 'playing minecraft')"
                                 class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        />
+                      >
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
                             When a user's custom status contains this text, the configured roles will be added/removed.
                         </p>
                     </div>
 
-                    <button
+                  <button aria-label="Add"
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={addStatusRole}
                             disabled={saving || !newStatusRole.status.trim()}
                     >
-                        <Plus class="w-5 h-5" />
+                    <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
                         {saving ? "Adding..." : "Add Status Role"}
                     </button>
 
@@ -536,7 +531,7 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
-                        icon={UserCheck}
+                  icon="fa-user-check"
                         label="Total Status Roles"
                         value={statusRoles.length}
                         subtitle="configured"
@@ -545,7 +540,7 @@
                 />
 
                 <StatCard
-                        icon={Crown}
+                  icon="fa-crown"
                         label="Active Configs"
                         value={statusRoles.filter(r => r.toAdd || r.toRemove).length}
                         subtitle="with role changes"
@@ -554,7 +549,7 @@
                 />
 
                 <StatCard
-                        icon={Bell}
+                  icon="fa-bell"
                         label="With Notifications"
                         value={statusRoles.filter(r => r.statusChannelId && r.statusChannelId !== BigInt(0)).length}
                         subtitle="have notification channels"

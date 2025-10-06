@@ -1,17 +1,17 @@
 <!-- routes/giveaways/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {page} from "$app/stores";
-    import {api} from "$lib/api.ts";
-    import type {PageData} from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
-    import {goto} from "$app/navigation";
-    import {browser} from "$app/environment";
-    import type {Giveaways} from "$lib/types.ts";
-    import {Turnstile} from "svelte-turnstile";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {fade, fly} from "svelte/transition";
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import { api } from "$lib/api.ts";
+  import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
+  import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
+  import type { Giveaways } from "$lib/types.ts";
+  import { Turnstile } from "svelte-turnstile";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { fade, fly } from "svelte/transition";
 
-    let guildId: bigint;
+  let guildId: bigint;
   let giveawayId: number;
   let userId: bigint;
   let turnstileToken: string = $state();
@@ -20,10 +20,10 @@
   let mounted = $state(false);
 
   interface Props {
-      data: PageData;
+    data: PageData;
   }
 
-  let {data}: Props = $props();
+  let { data }: Props = $props();
 
   let giveaway: Giveaways | null = $state(null);
   let loading = $state(true);
@@ -65,7 +65,7 @@
 
   onMount(async () => {
     mounted = true;
-    
+
     if (!data.user) {
       goto("/api/discord/login");
       return;
@@ -115,7 +115,7 @@
         guildId,
         giveawayId,
         userId,
-        turnstileToken,
+        turnstileToken
       });
       message = "🎉 Successfully entered the giveaway! Good luck!";
     } catch (err) {
@@ -330,7 +330,7 @@
               <!-- Entry Button -->
               <div class="text-center">
                 <button
-                        onclick={enterGiveaway}
+                  onclick={enterGiveaway}
                   disabled={!turnstileToken || !isGiveawayActive || isSubmitting}
                   class="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[200px]"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; box-shadow: 0 4px 20px {$colorStore.primary}30;"
@@ -443,7 +443,7 @@
 
     /* High contrast mode */
     @media (prefers-contrast: more) {
-      .backdrop-blur-xs {
+        .backdrop-blur-xs {
             border-width: 2px;
         }
     }

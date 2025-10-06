@@ -11,20 +11,6 @@
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import {browser} from "$app/environment";
-    import {
-        AlertTriangle,
-        Bell,
-        Bot,
-        Coins,
-        Hash,
-        Lock,
-        MessagesSquare,
-        Settings,
-        Shell,
-        Star,
-        User,
-        Users
-    } from "lucide-svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
     import {writable} from "svelte/store";
@@ -203,18 +189,18 @@
 
 <DashboardPageLayout 
   title="Guild Settings" 
-  subtitle="Configure your server's bot settings and preferences" 
-  icon={Settings}
-  guildName={$currentGuild?.name || "Dashboard"}
   actionButtons={[
     {
       label: "Save Changes",
-      icon: Settings,
+      icon: "fa-floppy-disk",
       action: updateSettings,
       disabled: $changedSettings.size === 0,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ]}
+  icon="fa-gear"
+  guildName={$currentGuild?.name || "Dashboard"}
+  subtitle="Configure your server's bot settings and preferences"
 >
     <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
@@ -239,7 +225,8 @@
       style="background: {$colorStore.accent}10;"
       role="alert"
     >
-      <AlertTriangle class="w-5 h-5" style="color: {$colorStore.accent}" />
+      <i class="fa-utility-duo fa-regular fa-bell"
+         style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
       <p style="color: {$colorStore.accent}">{error}</p>
     </div>
   {:else}
@@ -255,7 +242,8 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Settings class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-gear"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
         </div>
@@ -267,7 +255,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Shell class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Command Prefix</h3>
             </div>
             <label for="prefix-input" class="sr-only">Command Prefix</label>
@@ -280,7 +268,7 @@
               style="border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
               aria-label="Command prefix for bot commands"
-            />
+            >
           </div>
 
           <!-- Command Log Channel -->
@@ -289,7 +277,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Hash class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-solid fa-hashtag" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Command Log Channel</h3>
             </div>
             <DiscordSelector
@@ -310,7 +298,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Coins class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-coins" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Currency Settings</h3>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -325,7 +313,7 @@
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
                 aria-label="Name for server currency"
-              />
+              >
               <label for="currency-emoji" class="sr-only">Currency Emoji</label>
               <input
                 id="currency-emoji"
@@ -337,7 +325,7 @@
                 style="border-color: {$colorStore.primary}30;
                        color: {$colorStore.text};"
                 aria-label="Emoji for server currency"
-              />
+              >
             </div>
           </div>
 
@@ -347,7 +335,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <MessagesSquare class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-solid fa-messages" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Message Settings</h3>
             </div>
             <div class="space-y-4">
@@ -363,7 +351,7 @@
                     onchange={() => markAsChanged("messageCount")}
                     class="sr-only peer"
                     aria-label="Enable message count tracking"
-                  />
+                  >
                   <div
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {$colorStore.text};
@@ -384,7 +372,7 @@
                 style="border-color: {$colorStore.secondary}30;
                        color: {$colorStore.text};"
                 aria-label="Minimum message length for XP gain"
-              />
+              >
             </div>
           </div>
         </div>
@@ -402,7 +390,8 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Users class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-users"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Settings</h2>
         </div>
@@ -414,7 +403,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Lock class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-lock" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Staff Role</h3>
             </div>
             <DiscordSelector
@@ -435,7 +424,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <User class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-solid fa-user" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Game Master Role</h3>
             </div>
             <DiscordSelector
@@ -456,7 +445,6 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Users class="w-5 h-5" style="color: {$colorStore.accent}" />
               <h3 class="font-semibold" style="color: {$colorStore.text}">Member Role</h3>
             </div>
             <DiscordSelector
@@ -477,7 +465,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Bot class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-robot" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Auto Assign Role</h3>
             </div>
             <DiscordSelector
@@ -506,7 +494,8 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <Settings class="w-6 h-6" />
+            <i class="fa-utility-duo fa-regular fa-gear"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Additional Settings</h2>
         </div>
@@ -518,7 +507,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Star class="w-5 h-5" style="color: {$colorStore.primary}" />
+              <i class="fa-solid fa-star" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Starboard Settings</h3>
             </div>
             <div class="space-y-4">
@@ -544,7 +533,7 @@
                   style="border-color: {$colorStore.primary}30;
                          color: {$colorStore.text};"
                   aria-label="Number of stars required for starboard"
-                />
+                >
                 <span class="text-sm whitespace-nowrap" style="color: {$colorStore.muted}">
                   stars required
                 </span>
@@ -558,7 +547,7 @@
             style="background: {$colorStore.primary}10;"
           >
             <div class="flex items-center gap-2 mb-3">
-              <Bell class="w-5 h-5" style="color: {$colorStore.secondary}" />
+              <i class="fa-solid fa-bell" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Warning Settings</h3>
             </div>
             <div class="space-y-4">
@@ -574,7 +563,7 @@
                     onchange={() => markAsChanged("warnings")}
                     class="sr-only peer"
                     aria-label="Enable warning system"
-                  />
+                  >
                   <div
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {$colorStore.text};
@@ -597,7 +586,7 @@
                   style="border-color: {$colorStore.secondary}30;
                          color: {$colorStore.text};"
                   aria-label="Hours until warnings expire (0 for never)"
-                />
+                >
               {/if}
             </div>
           </div>
@@ -651,26 +640,8 @@
     }
 
     /* Prevent iOS styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.5rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
-    }
 
     /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
 
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 </style>

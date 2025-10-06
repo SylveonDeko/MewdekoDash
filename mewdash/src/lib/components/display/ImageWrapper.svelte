@@ -8,4 +8,4 @@
   let { src, alt }: Props = $props();
 </script>
 
-<img {src} {alt} class="w-full overflow-hidden rounded-xl" />
+<img {alt} class="w-full overflow-hidden rounded-xl" {src}>

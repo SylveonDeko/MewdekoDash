@@ -278,10 +278,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <!-- Confession Channel -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="confession-channel-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
                                 Confession Channel
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
@@ -298,10 +299,11 @@
 
                         <!-- Log Channel -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="log-channel-shows-user-ids-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-file-lines" style="font-size: 14px;"></i>
                                 Log Channel (shows user IDs)
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
@@ -317,7 +319,7 @@
                         </div>
                     </div>
 
-                    <button
+                    <button aria-label="Button action"
                             class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
@@ -416,7 +418,7 @@
                                                     <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
                                                 {/if}
                                             </button>
-                                            <button
+                                            <button aria-label="Delete confession"
                                                     class="p-2 rounded-lg transition-all hover:scale-110"
                                                     style="background: #ef444420; color: #ef4444;"
                                                     onclick={() => deleteConfession(confession.confessNumber)}

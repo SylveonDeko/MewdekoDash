@@ -11,20 +11,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {
-        AlertCircle,
-        ExternalLink,
-        Filter,
-        Hash,
-        MessageSquarePlus,
-        Settings,
-        Sparkles,
-        Star,
-        ToggleLeft,
-        ToggleRight,
-        Trash,
-        Trash2
-    } from "lucide-svelte";
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
@@ -411,19 +397,19 @@
 
 <DashboardPageLayout 
   title="Starboard" 
-  subtitle="Showcase your server's best messages in dedicated channels" 
-  icon={Star}
-  guildName={$currentGuild?.name || "Dashboard"}
   actionButtons={[
     {
       label: "Create Starboard",
-      icon: MessageSquarePlus,
+      icon: "fa-envelope",
       action: createStarboard,
       loading: creatingStarboard,
       disabled: !newStarboard.channelId || creatingStarboard,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ]}
+  icon="fa-star"
+  guildName={$currentGuild?.name || "Dashboard"}
+  subtitle="Showcase your server's best messages in dedicated channels"
 >
     <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
@@ -446,7 +432,9 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <MessageSquarePlus aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" />
+          <i aria-hidden="true"
+             class="fa-utility-duo fa-regular fa-envelope"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">Create New Starboard</h2>
       </div>
@@ -454,9 +442,9 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <!-- Channel Selection -->
         <div>
-          <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+          <span class="block text-sm mb-2" id="starboard-channel-label" style="color: {$colorStore.muted}">
             Starboard Channel
-          </label>
+          </span>
           <DiscordSelector
             type="channel"
             options={guildTextChannels}
@@ -465,7 +453,7 @@
             on:change={(e) => {
               newStarboard.channelId = e.detail.selected || "";
             }}
-          />
+            aria-labelledby="starboard-channel-label" />
         </div>
 
         <!-- Emote Selection -->
@@ -518,7 +506,7 @@
                 placeholder="Custom emoji"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 type="text"
-              />
+              >
               <button
                 class="px-2 md:px-3 py-1 rounded-r-lg transition-all duration-200 whitespace-nowrap"
                 onclick={setCustomEmoji}
@@ -546,7 +534,7 @@
             min="1"
             style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             type="number"
-          />
+          >
         </div>
 
         <!-- Create Button -->
@@ -566,7 +554,7 @@
                        border-top-color: {$colorStore.text};"
               ></div>
             {:else}
-              <Sparkles size={16} />
+              <i class="fa-solid fa-star" style="font-size: 16px;"></i>
             {/if}
             <span>Create Starboard</span>
           </button>
@@ -586,7 +574,9 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <Star aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" />
+          <i aria-hidden="true"
+             class="fa-utility-duo fa-regular fa-star"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-lg md:text-xl font-bold" style="color: {$colorStore.text}">Manage Starboards</h2>
       </div>
@@ -607,7 +597,9 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-bell"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.accent}">{errorStarboards}</p>
         </div>
       {:else if !starboards || starboards.length === 0}
@@ -616,7 +608,9 @@
           style="background: {$colorStore.primary}10;"
           transition:fade
         >
-          <Star class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-star"
+             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.muted}">No starboards configured</p>
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
             Create your first starboard to showcase your server's best messages
@@ -634,7 +628,9 @@
                 <!-- Starboard Info -->
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
-                    <Star class="w-4 h-4 md:w-5 md:h-5" style="color: {$colorStore.primary}" aria-hidden="true" />
+                    <i class="fa-utility-duo fa-regular fa-star"
+                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
+                       aria-hidden="true"></i>
                     <h3 class="font-medium text-sm md:text-base" style="color: {$colorStore.text}">Starboard
                       #{starboard.id}</h3>
                   </div>
@@ -722,7 +718,7 @@
                            color: {$colorStore.text};"
                     aria-label="Starboard settings"
                   >
-                    <Settings size={20} />
+                    <i class="fa-solid fa-gear" style="font-size: 20px;"></i>
                   </button>
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
@@ -731,7 +727,7 @@
                            color: {$colorStore.text};"
                     aria-label="Manage channels"
                   >
-                    <Hash size={20} />
+                    <i class="fa-solid fa-hashtag" style="font-size: 20px;"></i>
                   </button>
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
@@ -740,7 +736,7 @@
                            color: {$colorStore.accent};"
                     aria-label="Delete starboard"
                   >
-                    <Trash size={20} />
+                    <i class="fa-solid fa-trash" style="font-size: 20px;"></i>
                   </button>
                 </div>
               </div>
@@ -779,7 +775,7 @@
             style="background: {$colorStore.accent}20;
                    color: {$colorStore.accent};"
           >
-            <Trash2 size={16} />
+            <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
             <span>Delete</span>
           </button>
         </div>
@@ -813,7 +809,7 @@
                 bind:value={editStarThreshold}
                 class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200"
                 onclick={updateStarThreshold}
@@ -840,7 +836,7 @@
                 bind:value={editRepostThreshold}
                 class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200"
                 onclick={updateRepostThreshold}
@@ -880,9 +876,9 @@
                   aria-label={currentEditStarboard.allowBots ? "Disable bot messages" : "Enable bot messages"}
                 >
                   {#if currentEditStarboard.allowBots}
-                    <ToggleRight size={24} />
+                    <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
-                    <ToggleLeft size={24} />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                   {/if}
                 </button>
               </div>
@@ -905,9 +901,9 @@
                   aria-label={currentEditStarboard.removeOnDelete ? "Disable remove on delete" : "Enable remove on delete"}
                 >
                   {#if currentEditStarboard.removeOnDelete}
-                    <ToggleRight size={24} />
+                    <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
-                    <ToggleLeft size={24} />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                   {/if}
                 </button>
               </div>
@@ -930,9 +926,9 @@
                   aria-label={currentEditStarboard.removeOnReactionsClear ? "Disable remove on clear" : "Enable remove on clear"}
                 >
                   {#if currentEditStarboard.removeOnReactionsClear}
-                    <ToggleRight size={24} />
+                    <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
-                    <ToggleLeft size={24} />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                   {/if}
                 </button>
               </div>
@@ -955,9 +951,9 @@
                   aria-label={currentEditStarboard.removeBelowThreshold ? "Disable remove below threshold" : "Enable remove below threshold"}
                 >
                   {#if currentEditStarboard.removeBelowThreshold}
-                    <ToggleRight size={24} />
+                    <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
-                    <ToggleLeft size={24} />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                   {/if}
                 </button>
               </div>
@@ -980,9 +976,9 @@
                   aria-label={currentEditStarboard.useBlacklist ? "Use whitelist mode" : "Use blacklist mode"}
                 >
                   {#if currentEditStarboard.useBlacklist}
-                    <ToggleRight size={24} />
+                    <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
-                    <ToggleLeft size={24} />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                   {/if}
                 </button>
               </div>
@@ -1024,9 +1020,9 @@
         <div class="space-y-4">
           <!-- Add Channel -->
           <div>
-            <label class="block text-sm mb-2" style="color: {$colorStore.muted}">
+            <span id="addremove-channel-label" class="block text-sm mb-2" style="color: {$colorStore.muted}">
               Add/Remove Channel
-            </label>
+            </span>
             <div class="flex gap-2">
               <div class="flex-1">
                 <DiscordSelector
@@ -1037,7 +1033,7 @@
                   on:change={(e) => {
                     selectedChannelId = e.detail.selected || "";
                   }}
-                />
+                  aria-labelledby="addremove-channel-label" />
               </div>
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
@@ -1047,7 +1043,7 @@
                        color: {$colorStore.text};
                        opacity: {!selectedChannelId ? '0.5' : '1'};"
               >
-                <ExternalLink size={16} />
+                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
                 <span>Toggle</span>
               </button>
             </div>
@@ -1079,7 +1075,7 @@
                                color: {$colorStore.accent};"
                         aria-label="Remove channel"
                       >
-                        <Filter size={16} />
+                        <i class="fa-solid fa-filter" style="font-size: 16px;"></i>
                       </button>
                     </li>
                   {/each}
@@ -1106,11 +1102,6 @@
 
 <style lang="postcss">
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 
     :global(.input-field) {
         transition: all 0.2s ease;
@@ -1122,15 +1113,8 @@
     }
 
     /* Prevent stretch in Safari */
-    input, select {
-        min-height: 44px;
-    }
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
-        button, input[type="checkbox"] {
-            min-height: 44px;
-            min-width: 44px;
-        }
     }
 </style>

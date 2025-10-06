@@ -9,7 +9,8 @@
     import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
-    import {AlertCircle, Bot, Clock, Edit, Globe, MessageSquare, Plus, Power} from "lucide-svelte";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
@@ -230,14 +231,16 @@
     editingGreetId = null;
   }
 
-  function getRoleName(roleId: string): string {
-    const role = guildRoles.find(r => r.id === roleId);
-    return role ? role.name : `Role ID: ${roleId}`;
+    function getRoleName(roleId: bigint | string): string {
+      const id = typeof roleId === "bigint" ? roleId.toString() : roleId;
+      const role = guildRoles.find(r => r.id === id);
+      return role ? role.name : `Role ID: ${id}`;
   }
 
-  function getChannelName(channelId: string): string {
-    const channel = guildChannels.find(c => c.id === channelId);
-    return channel ? channel.name : `Channel ID: ${channelId}`;
+    function getChannelName(channelId: bigint | string): string {
+      const id = typeof channelId === "bigint" ? channelId.toString() : channelId;
+      const channel = guildChannels.find(c => c.id === id);
+      return channel ? channel.name : `Channel ID: ${id}`;
   }
 
   onMount(() => {
@@ -311,51 +314,22 @@
     });
 </script>
 
-<svelte:head>
-  <title>Role Greets - Dashboard</title>
-</svelte:head>
-
-<div
-  class="min-h-screen p-4 md:p-6"
-  style="{colorVars} background: radial-gradient(circle at top,
-    {$colorStore.gradientStart}15 0%,
-    {$colorStore.gradientMid}10 50%,
-    {$colorStore.gradientEnd}05 100%);"
+<DashboardPageLayout
+  bind:notificationMessage
+  bind:notificationType
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-envelope"
+  subtitle="Configure greeting messages when users receive specific roles"
+  title="Role Greets"
 >
-  <div class="max-w-7xl mx-auto space-y-8">
+
+  <svelte:fragment slot="status-messages">
     {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
+      <div class="mb-6">
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-
-    <!-- Header -->
-    <div
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">Role Greets</h1>
-      <p class="mt-2" style="color: {$colorStore.muted}">Configure greeting messages when users receive specific
-        roles</p>
-    </div>
-
-    <!-- Main Content -->
-    <div
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <div class="flex items-center gap-3 mb-6">
-        <div
-          class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                 color: {$colorStore.primary};"
-        >
-          <MessageSquare aria-hidden="true" class="w-6 h-6" />
-        </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Greet Configuration</h2>
-      </div>
+  </svelte:fragment>
 
       <!-- Add Role Greet Form -->
       <div class="mb-8 p-4 rounded-xl" style="background: {$colorStore.primary}10;">
@@ -364,38 +338,30 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <!-- Role Selection -->
           <div>
-            <label class="block text-sm mb-2" for="role-select" style="color: {$colorStore.muted}">
+            <span class="block text-sm mb-2" id="role-to-greet-for-label" style="color: {$colorStore.muted}">
               Role to Greet For
-            </label>
-            <select
-              bind:value={selectedRoleId}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              id="role-select"
-              style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            >
-              <option value="">Select a Role</option>
-              {#each guildRoles as role}
-                <option value={role.id}>{role.name}</option>
-              {/each}
-            </select>
+            </span>
+            <DiscordSelector
+              aria-labelledby="role-to-greet-for-label"
+              on:change={(e) => selectedRoleId = e.detail.selected}
+              options={guildRoles}
+              placeholder="Select a Role"
+              selected={selectedRoleId}
+              type="role" />
           </div>
 
           <!-- Channel Selection -->
           <div>
-            <label class="block text-sm mb-2" for="channel-select" style="color: {$colorStore.muted}">
+            <span class="block text-sm mb-2" id="send-greet-to-channel-label" style="color: {$colorStore.muted}">
               Send Greet To Channel
-            </label>
-            <select
-              bind:value={selectedChannelId}
-              class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-              id="channel-select"
-              style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            >
-              <option value="">Select a Channel</option>
-              {#each guildChannels as channel}
-                <option value={channel.id}>{channel.name}</option>
-              {/each}
-            </select>
+            </span>
+            <DiscordSelector
+              aria-labelledby="send-greet-to-channel-label"
+              on:change={(e) => selectedChannelId = e.detail.selected}
+              options={guildChannels}
+              placeholder="Select a Channel"
+              selected={selectedChannelId}
+              type="channel" />
           </div>
         </div>
 
@@ -407,7 +373,7 @@
                  color: {$colorStore.text};
                  opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
         >
-          <Plus size={18} />
+          <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
           <span>Add Role Greet</span>
         </button>
       </div>
@@ -429,7 +395,9 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-bell"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.accent}">{error}</p>
         </div>
       {:else if roleGreets.length === 0}
@@ -437,7 +405,9 @@
           class="text-center py-12"
           transition:fade
         >
-          <MessageSquare class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-envelope"
+             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.muted}">No role greets configured</p>
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">Create a role greet to welcome users when they get
             a specific role</p>
@@ -472,7 +442,7 @@
                     aria-label="Edit"
                     title="Edit"
                   >
-                    <Edit size={16} />
+                    <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                   </button>
 
                   <button
@@ -483,7 +453,7 @@
                     aria-label={greet.disabled ? "Enable" : "Disable"}
                     title={greet.disabled ? "Enable" : "Disable"}
                   >
-                    <Power size={16} />
+                    <i class="fa-solid fa-power-off" style="font-size: 16px;"></i>
                   </button>
                 </div>
               </div>
@@ -521,7 +491,7 @@
                       class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                       style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       min="0"
-                    />
+                    >
                   </div>
 
                   <!-- Webhook URL -->
@@ -536,7 +506,7 @@
                       class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
                       style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="https://discord.com/api/webhooks/..."
-                    />
+                    >
                   </div>
 
                   <!-- Greet Bots -->
@@ -619,7 +589,7 @@
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
-                      <Clock class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                      <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
                         <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Delete After</h4>
                         <p style="color: {$colorStore.text}">
@@ -629,7 +599,7 @@
                     </div>
 
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
-                      <Bot class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                      <i class="fa-solid fa-robot" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
                         <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Greet Bots</h4>
                         <p style="color: {$colorStore.text}">{greet.greetBots ? 'Yes' : 'No'}</p>
@@ -639,7 +609,7 @@
 
                   {#if greet.webhookUrl}
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.accent}15;">
-                      <Globe class="w-4 h-4" style="color: {$colorStore.accent}" />
+                      <i class="fa-solid fa-globe" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                       <div>
                         <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Using Webhook</h4>
                         <p class="text-sm truncate" style="color: {$colorStore.text}">{greet.webhookUrl}</p>
@@ -652,32 +622,9 @@
           {/each}
         </div>
       {/if}
-    </div>
-  </div>
-</div>
+</DashboardPageLayout>
 
 <style lang="postcss">
-    /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
-
-    :global(.input-field) {
-        transition: all 0.2s ease;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    :global(.input-field:focus) {
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
-    }
-
-    /* Prevent stretch in Safari */
-    input, select {
-        min-height: 44px;
-    }
-
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
         button, input[type="checkbox"] {

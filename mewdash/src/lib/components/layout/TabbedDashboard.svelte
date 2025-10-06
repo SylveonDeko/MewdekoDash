@@ -415,7 +415,7 @@
                 <!-- Left: Navigation Arrows -->
                 <div class="flex items-center gap-1 px-2 py-1 rounded-xl"
                      style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}10;">
-                    <button
+                  <button aria-label="Previous tab"
                             class="group p-1.5 rounded-lg btn-press hover:scale-110"
                             onclick={previousTab}
                             onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
@@ -429,7 +429,7 @@
                         --fa-bounce-height: -0.2;"></i>
                     </button>
                     <div class="w-px h-4 mx-1" style="background: {$colorStore.primary}20;"></div>
-                    <button
+                  <button aria-label="Next tab"
                             class="group p-1.5 rounded-lg btn-press hover:scale-110"
                             onclick={nextTab}
                             onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
@@ -798,11 +798,4 @@
         animation: bounceRight 0.4s ease-out;
     }
 
-    .animate-bounce-content-left {
-        animation: bounceContentLeft 0.4s ease-out;
-    }
-
-    .animate-bounce-content-right {
-        animation: bounceContentRight 0.4s ease-out;
-    }
 </style>

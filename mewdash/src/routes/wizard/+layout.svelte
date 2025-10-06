@@ -51,7 +51,7 @@ Wizard layout - minimal layout for focused setup experience
           style="border-color: {$colorStore.primary}30; background: {$colorStore.background}95; backdrop-filter: blur(10px);">
     <div class="flex items-center justify-center max-w-6xl mx-auto">
       <div class="flex items-center gap-2 sm:gap-3">
-        <img src="/img/Mewdeko.png" alt="Mewdeko" class="h-8 w-8 sm:h-10 sm:w-10" />
+        <img alt="Mewdeko" class="h-8 w-8 sm:h-10 sm:w-10" src="/img/Mewdeko.png">
         <div>
           <h1 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">Setup Wizard</h1>
           <p class="text-xs sm:text-sm hidden sm:block" style="color: {$colorStore.muted};">Get your server configured in minutes</p>

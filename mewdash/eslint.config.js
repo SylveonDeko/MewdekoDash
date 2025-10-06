@@ -8,5 +8,10 @@ export default [
       // override/add rules settings here, such as:
       // 'svelte/rule-name': 'error'
     },
+    languageOptions: {
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+      },
+    },
   },
 ];

@@ -242,7 +242,7 @@
               value={embed.title}
               maxlength="256"
               oninput={(e) => handleInput(e, 'title')}
-            />
+            >
             <button
                     class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
               style="color: {$colorStore.muted};"
@@ -328,7 +328,7 @@
             placeholder="https://example.com"
             value={embed.url}
             oninput={(e) => handleInput(e, 'url')}
-          />
+          >
           {#if embed.url && !isValidUrl(embed.url)}
             <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
           {/if}
@@ -339,16 +339,16 @@
       <div class="space-y-6" role="tabpanel" aria-labelledby="appearance-tab">
         <!-- Color -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <span id="embed-color-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             Embed Color
-          </label>
+          </span>
           <DiscordSelector
             type="custom"
             options={discordColors}
             selected={embed.color}
             placeholder="Select embed color"
             on:change={(e) => updateEmbed('color', e.detail.selected)}
-          />
+            aria-labelledby="embed-color-label" />
           
           <!-- Custom Color Input -->
           <div class="mt-3">
@@ -362,7 +362,7 @@
               style="border-color: {$colorStore.primary}30;"
               value={embed.color}
               oninput={(e) => updateEmbed('color', e.target?.value)}
-            />
+            >
           </div>
         </div>
 
@@ -388,7 +388,7 @@
                   value={embed.author?.name || ''}
                   maxlength="256"
                   oninput={(e) => handleInput(e, 'author.name')}
-                />
+                >
                 <button
                         class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
@@ -424,7 +424,7 @@
                 placeholder="https://example.com"
                 value={embed.author?.url || ''}
                 oninput={(e) => handleInput(e, 'author.url')}
-              />
+              >
             </div>
 
             <div>
@@ -439,7 +439,7 @@
                 placeholder="https://example.com/icon.png"
                 value={embed.author?.icon_url || ''}
                 oninput={(e) => handleInput(e, 'author.icon_url')}
-              />
+              >
             </div>
           </div>
         </fieldset>
@@ -466,7 +466,7 @@
                   value={embed.footer?.text || ''}
                   maxlength="2048"
                   oninput={(e) => handleInput(e, 'footer.text')}
-                />
+                >
                 <button
                         class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                   style="color: {$colorStore.muted};"
@@ -502,7 +502,7 @@
                 placeholder="https://example.com/icon.png"
                 value={embed.footer?.icon_url || ''}
                 oninput={(e) => handleInput(e, 'footer.icon_url')}
-              />
+              >
             </div>
           </div>
         </fieldset>
@@ -532,7 +532,7 @@
             <div class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
               <div class="flex justify-between items-center mb-3">
                 <span class="text-sm font-medium" style="color: {$colorStore.text};">Field {fieldIndex + 1}</span>
-                <button
+                <button aria-label="Add field"
                         class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                   onclick={() => removeField(fieldIndex)}
                   title="Remove field"
@@ -544,7 +544,7 @@
               <div class="space-y-3">
                 <!-- Field Name -->
                 <div>
-                  <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                  <label for="field-name" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                     Name
                     <span class="ml-2" style="color: {getCharCountColor(getCharCount(field.name), 256)};">
                       {getCharCount(field.name)}/256
@@ -560,7 +560,7 @@
                       value={field.name}
                       maxlength="256"
                       oninput={(e) => handleFieldInput(e, fieldIndex, 'name')}
-                    />
+                    >
                     <button
                             class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-sm hover:bg-black/10"
                       style="color: {$colorStore.muted};"
@@ -586,7 +586,7 @@
 
                 <!-- Field Value -->
                 <div>
-                  <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                  <label for="field-value" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                     Value
                     <span class="ml-2" style="color: {getCharCountColor(getCharCount(field.value), 1024)};">
                       {getCharCount(field.value)}/1024
@@ -634,7 +634,7 @@
                     class="rounded-sm"
                     checked={field.inline}
                     onchange={(e) => updateField(fieldIndex, 'inline', e.target?.checked)}
-                  />
+                  >
                   <label for="inline-{index}-{fieldIndex}" class="text-xs" style="color: {$colorStore.text};">
                     Display inline (up to 3 fields per row)
                   </label>
@@ -666,7 +666,7 @@
             placeholder="https://example.com/thumbnail.png"
             value={embed.thumbnail?.url || ''}
             oninput={(e) => handleInput(e, 'thumbnail.url')}
-          />
+          >
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">Small image displayed in the top-right corner</p>
         </div>
 
@@ -683,7 +683,7 @@
             placeholder="https://example.com/image.png"
             value={embed.image?.url || ''}
             oninput={(e) => handleInput(e, 'image.url')}
-          />
+          >
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">Large image displayed at the bottom of the embed</p>
         </div>
 
@@ -704,10 +704,6 @@
 </div>
 
 <style>
-  input:focus, textarea:focus, select:focus {
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 0 0 2px var(--color-primary)20;
-  }
   
   fieldset {
     position: relative;

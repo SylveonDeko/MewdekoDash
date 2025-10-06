@@ -374,7 +374,7 @@
               value={searchTerm}
               oninput={handleSearch}
               aria-label="Search placeholders"
-            />
+            >
           </div>
         </div>
 
@@ -410,7 +410,7 @@
               {#each categoryPlaceholders as placeholder}
                 {@const flatIndex = filteredPlaceholders.indexOf(placeholder)}
                 <button
-                  class="w-full text-left p-3 transition-all duration-200 hover:bg-opacity-20 border-l-2"
+                  class="w-full text-left p-3 transition-all duration-200 hover:opacity-20 border-l-2"
                   style="background: {flatIndex === selectedIndex ? $colorStore.primary + '20' : 'transparent'};
                          border-color: {flatIndex === selectedIndex ? $colorStore.primary : 'transparent'};
                          color: {$colorStore.text};"
@@ -502,7 +502,7 @@
             value={searchTerm}
             oninput={handleSearch}
             aria-label="Search placeholders"
-          />
+          >
         </div>
       </div>
 
@@ -538,7 +538,7 @@
             {#each categoryPlaceholders as placeholder}
               {@const flatIndex = filteredPlaceholders.indexOf(placeholder)}
               <button
-                class="w-full text-left p-3 transition-all duration-200 hover:bg-opacity-20 border-l-2"
+                class="w-full text-left p-3 transition-all duration-200 hover:opacity-20 border-l-2"
                 style="background: {flatIndex === selectedIndex ? $colorStore.primary + '20' : 'transparent'};
                        border-color: {flatIndex === selectedIndex ? $colorStore.primary : 'transparent'};
                        color: {$colorStore.text};"

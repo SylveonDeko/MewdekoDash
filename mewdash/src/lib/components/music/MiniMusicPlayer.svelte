@@ -92,7 +92,7 @@
             src={currentTrack.Track.ArtworkUri}
             alt="Album artwork"
             class="w-full h-full object-cover"
-          />
+          >
         {:else}
           <div
             class="w-full h-full flex items-center justify-center"
@@ -159,12 +159,12 @@
       {#if hasTrack}
           <div class="flex items-center gap-0.5 shrink-0">
               <!-- Previous Button -->
-              <button
+            <button aria-label="Button action"
                       class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                       style="background: {colors.foreground}20; color: {colors.foreground};"
                       onclick={previousTrack}
-                      aria-label="Previous track"
-              >
+
+            >
                   <i class="fa-utility-duo fa-regular fa-step-backward text-xs"
                      style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
               </button>
@@ -186,12 +186,12 @@
       </button>
 
       <!-- Skip Button -->
-      <button
+            <button aria-label="Button action"
               class="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
               style="background: {colors.foreground}20; color: {colors.foreground};"
         onclick={skipTrack}
-        aria-label="Skip track"
-      >
+
+            >
           <i class="fa-utility-duo fa-regular fa-step-forward text-xs"
              style="--fa-primary-color: {colors.foreground}; --fa-secondary-color: {colors.accent};"></i>
       </button>
@@ -199,12 +199,12 @@
       {:else}
           <!-- When bot is idle in channel, just show an arrow to open dashboard -->
           <div class="shrink-0">
-              <button
+            <button aria-label="Navigate"
                       class="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                       style="background: {colors.accent}20; color: {colors.accent};"
                       onclick={openMusicDashboard}
-                      aria-label="Open music dashboard"
-              >
+
+            >
                   <i class="fa-utility-duo fa-regular fa-arrow-right text-sm"
                      style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               </button>

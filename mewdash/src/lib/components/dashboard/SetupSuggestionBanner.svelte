@@ -6,7 +6,6 @@ Setup suggestion banner for experienced users with unconfigured guilds
   import { colorStore } from "$lib/stores/colorStore";
   import { createEventDispatcher } from "svelte";
   import { slide } from "svelte/transition";
-  import { Lightbulb, X, ArrowRight, Clock } from "lucide-svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild";
 
   interface Props {
@@ -50,7 +49,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
   >
     <!-- Background decoration -->
     <div class="absolute top-0 right-0 w-32 h-32 opacity-5 transform rotate-12 translate-x-8 -translate-y-8">
-      <Lightbulb class="w-full h-full" />
+      <i class="fa-solid fa-lightbulb" style="font-size: 128px;"></i>
     </div>
 
     <div class="relative flex items-start gap-4">
@@ -63,7 +62,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
           color: {$colorStore.secondary};
         "
       >
-        <Lightbulb class="w-5 h-5" />
+        <i class="fa-solid fa-lightbulb" style="font-size: 20px;"></i>
       </div>
 
       <!-- Content -->
@@ -79,15 +78,15 @@ Setup suggestion banner for experienced users with unconfigured guilds
         <!-- Benefits -->
         <div class="flex flex-wrap gap-4 text-xs mb-4" style="color: {$colorStore.text};">
           <div class="flex items-center gap-1">
-            <Clock class="w-3 h-3" style="color: {$colorStore.secondary};" />
+            <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
             <span>~{estimatedTime} setup</span>
           </div>
           <div class="flex items-center gap-1">
-            <Lightbulb class="w-3 h-3" style="color: {$colorStore.secondary};" />
+            <i class="fa-solid fa-lightbulb" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
             <span>Smart defaults</span>
           </div>
           <div class="flex items-center gap-1">
-            <ArrowRight class="w-3 h-3" style="color: {$colorStore.secondary};" />
+            <i class="fa-solid fa-arrow-right" style="color: {$colorStore.secondary}; font-size: 12px;"></i>
             <span>Skip anytime</span>
           </div>
         </div>
@@ -100,7 +99,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
             onclick={handleStartSetup}
           >
             Quick Setup
-            <ArrowRight class="w-3 h-3" />
+            <i class="fa-solid fa-arrow-right" style="font-size: 12px;"></i>
           </button>
           
           <button
@@ -114,7 +113,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
       </div>
 
       <!-- Dismiss button -->
-      <button
+      <button aria-label="Button action"
               class="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110 shrink-0"
         style="
           background: {$colorStore.muted}15;
@@ -122,10 +121,8 @@ Setup suggestion banner for experienced users with unconfigured guilds
           hover:background: {$colorStore.muted}25;
         "
         onclick={handleDismiss}
-        aria-label="Dismiss setup suggestion"
-      >
-        <X class="w-4 h-4" />
-      </button>
+
+      ><i class="fa-solid fa-xmark" style="font-size: 16px;"></i></button>
     </div>
   </div>
 {/if}

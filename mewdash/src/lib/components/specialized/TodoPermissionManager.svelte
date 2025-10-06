@@ -8,17 +8,6 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { api } from "$lib/api";
-  import { 
-    X, 
-    Shield, 
-    Edit, 
-    Eye, 
-    Plus, 
-    Users, 
-    Search,
-    Check,
-    Trash2
-  } from "lucide-svelte";
   import type { TodoListPermission, GrantPermissionRequest } from "$lib/types/todo";
 
   interface Props {
@@ -80,7 +69,6 @@
         targetUserId: BigInt(selectedUserId),
         requestingUserId: BigInt($currentGuild.userId),
         canView: newPermissions.canView,
-        canEdit: newPermissions.canEdit,
         canManage: newPermissions.canManage
       };
 
@@ -128,9 +116,9 @@
   }
 
   function getPermissionIcon(permission: TodoListPermission) {
-    if (permission.canManageList) return Shield;
-    if (permission.canEdit) return Edit;
-    return Eye;
+    if (permission.canManageList) return "fa-shield";
+    if (permission.canEdit) return "fa-pen";
+    return "fa-eye";
   }
 
   onMount(() => {
@@ -154,7 +142,8 @@
             class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
     onclick={closeModal}
     in:fly={{ opacity: 0, duration: 200 }}
-  >
+            role="button" tabindex="0"
+            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeModal; } }}>
     <!-- Modal Content -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -162,26 +151,25 @@
       class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
       onclick={stopPropagation(bubble('click'))}
       in:fly={{ y: 20, duration: 300, delay: 100 }}
-    >
+      role="button" tabindex="0"
+      onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-            <Shield size={20} style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-shield" style="color: {$colorStore.primary}; font-size: 20px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">
             Manage Permissions
           </h2>
         </div>
-        
-        <button
+
+        <button aria-label="Button action"
           class="p-2 rounded-lg transition-all hover:scale-110"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
           onkeydown={handleKeydown}
-        >
-          <X size={20} />
-        </button>
+        ><i class="fa-solid fa-xmark" style="font-size: 20px;"></i></button>
       </div>
 
       <!-- Content -->
@@ -210,7 +198,7 @@
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showAddUser = !showAddUser}
               >
-                <Plus size={16} />
+                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                 <span>Add User</span>
               </button>
             </div>
@@ -220,19 +208,20 @@
                    in:fly={{ y: -20, duration: 200 }}>
                 <!-- User Search -->
                 <div class="mb-4">
-                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <label for="user-search" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                     Select User
                   </label>
                   
                   <div class="relative">
-                    <Search size={16} class="absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}" />
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2"
+                       style="color: {$colorStore.muted}; font-size: 16px;"></i>
                     <input
                       type="text"
                       placeholder="Search members..."
                       class="w-full pl-10 pr-4 py-2 rounded-lg border"
                       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       bind:value={searchQuery}
-                    />
+                    >
                   </div>
 
                   {#if searchQuery && filteredMembers.length > 0}
@@ -244,13 +233,13 @@
                           class:selected={selectedUserId === member.id}
                           onclick={() => { selectedUserId = member.id; searchQuery = member.displayName; }}
                         >
-                          <img src={member.avatarUrl} alt="" class="w-8 h-8 rounded-full" />
+                          <img src={member.avatarUrl} alt="" class="w-8 h-8 rounded-full">
                           <div>
                             <div class="font-medium" style="color: {$colorStore.text}">{member.displayName}</div>
                             <div class="text-sm" style="color: {$colorStore.muted}">@{member.username}</div>
                           </div>
                           {#if selectedUserId === member.id}
-                            <Check size={16} style="color: {$colorStore.primary}" />
+                            <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                           {/if}
                         </button>
                       {/each}
@@ -260,7 +249,8 @@
 
                 <!-- Permission Levels -->
                 <div class="mb-4">
-                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <label for="permission-level" class="block text-sm font-medium mb-2"
+                         style="color: {$colorStore.text}">
                     Permission Level
                   </label>
                   
@@ -271,9 +261,9 @@
                         type="checkbox" 
                         bind:checked={newPermissions.canView}
                         class="rounded-sm"
-                      />
+                      >
                       <div class="flex items-center gap-2">
-                        <Eye size={16} style="color: {$colorStore.primary}" />
+                        <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can View</span>
                       </div>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">See list and items</span>
@@ -285,9 +275,9 @@
                         type="checkbox" 
                         bind:checked={newPermissions.canEdit}
                         class="rounded-sm"
-                      />
+                      >
                       <div class="flex items-center gap-2">
-                        <Edit size={16} style="color: {$colorStore.secondary}" />
+                        <i class="fa-solid fa-pen" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can Edit</span>
                       </div>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Add, edit, complete items</span>
@@ -299,9 +289,9 @@
                         type="checkbox" 
                         bind:checked={newPermissions.canManage}
                         class="rounded-sm"
-                      />
+                      >
                       <div class="flex items-center gap-2">
-                        <Shield size={16} style="color: {$colorStore.accent}" />
+                        <i class="fa-solid fa-shield" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can Manage</span>
                       </div>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Change settings, permissions</span>
@@ -336,7 +326,8 @@
           <div class="space-y-3">
             {#if permissions.length === 0}
               <div class="text-center py-8">
-                <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                <i class="fa-solid fa-users"
+                   style="color: {$colorStore.primary}50; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Permissions Set</h3>
                 <p class="text-sm" style="color: {$colorStore.muted}">
                   Add users to collaborate on this todo list.
@@ -345,7 +336,6 @@
             {:else}
               {#each permissions as permission, index}
                 {@const member = guildMembers.find(m => m.id === permission.userId.toString())}
-                {@const SvelteComponent = getPermissionIcon(permission)}
                 <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}08;"
                      in:fly={{ y: 20, duration: 200, delay: index * 50 }}>
@@ -354,8 +344,8 @@
                     <img 
                       src={member?.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`} 
                       alt="" 
-                      class="w-10 h-10 rounded-full" 
-                    />
+                      class="w-10 h-10 rounded-full"
+                    >
                     
                     <!-- User Info -->
                     <div>
@@ -372,18 +362,18 @@
                     <!-- Permission Level -->
                     <div class="flex items-center gap-2 px-3 py-1 rounded-full"
                          style="background: {$colorStore.primary}15; color: {$colorStore.primary};">
-                      <SvelteComponent size={14} />
+                      <i class="fa-solid {getPermissionIcon(permission)}" style="font-size: 14px;"></i>
                       <span class="text-sm font-medium">{getPermissionSummary(permission)}</span>
                     </div>
 
                     <!-- Revoke Button -->
-                    <button
+                    <button aria-label="Remove permission"
                       class="p-2 rounded-lg transition-all hover:scale-110"
                       style="color: #ef4444; background: #ef444415;"
                       onclick={() => revokePermissions(permission.userId)}
                       title="Revoke permissions"
                     >
-                      <Trash2 size={16} />
+                      <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                     </button>
                   </div>
                 </div>

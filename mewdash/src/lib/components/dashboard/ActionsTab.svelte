@@ -231,7 +231,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <i class="fa-utility-duo fa-regular fa-rotate-left text-xl"
+              <i class="fa-utility-duo fa-regular fa-life-ring text-xl"
                  style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">
@@ -258,7 +258,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-toggle-off text-xl"
+              <i class="fa-utility-duo fa-regular fa-moon text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
@@ -341,7 +341,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-repeat text-xl"
+              <i class="fa-utility-duo fa-regular fa-clock text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
@@ -366,7 +366,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <i class="fa-utility-duo fa-regular fa-rss text-xl"
+              <i class="fa-utility-duo fa-regular fa-newspaper text-xl"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
@@ -416,7 +416,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-check-to-slot text-xl"
+              <i class="fa-utility-duo fa-regular fa-square text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">

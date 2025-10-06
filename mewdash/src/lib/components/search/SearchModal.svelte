@@ -204,6 +204,7 @@
         onclick={stopPropagation(bubble('click'))}
         onkeydown={stopPropagation(bubble('keydown'))}
         role="searchbox"
+        tabindex="0"
         use:clickOutside
         onclickoutside={handleClickOutside}
       >
@@ -222,14 +223,15 @@
             placeholder="Search..."
             class="flex-1 bg-transparent text-base md:text-xl outline-hidden"
             style="color: {$colorStore.text}; font-weight: 300;"
-          />
+          >
         </div>
 
         <!-- Close Button -->
-        <button
+        <button aria-label="Button action"
           class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all"
           style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}10;"
           onclick={closeSearch}
+
         >
           <i class="fa-utility-duo fa-regular fa-times text-sm md:text-base"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>

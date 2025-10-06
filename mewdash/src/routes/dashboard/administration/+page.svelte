@@ -926,7 +926,10 @@
             <div class="backdrop-blur-xs rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-105 cursor-pointer"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
-               onclick={() => activeTab = 'protection'}>
+                 role="button"
+                 tabindex="0"
+                 onclick={() => activeTab = 'protection'}
+                 onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activeTab = 'protection'; } }}>
             <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div class="p-1.5 sm:p-2 rounded-lg" style="background: {$colorStore.primary}20;">
                 <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -965,7 +968,8 @@
                       border-color: {$colorStore.accent}30;">
             <div class="flex items-center gap-3 mb-4">
               <div class="p-2 rounded-lg" style="background: {$colorStore.accent}20;">
-                <i class="fa-utility-duo fa-regular fa-chart-line" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                <i class="fa-utility-duo fa-regular fa-users"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
               </div>
               <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
             </div>
@@ -1176,7 +1180,8 @@
             <!-- Bot Users -->
             <div class="space-y-4">
               <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-user-robot" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                <i class="fa-utility-duo fa-regular fa-circle-user"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 Bot Users
               </h3>
 
@@ -1213,7 +1218,8 @@
             <div class="flex items-center gap-4">
               <div class="p-3 rounded-xl"
                    style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
-                <i class="fa-utility-duo fa-regular fa-shield-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+                <i class="fa-utility-duo fa-regular fa-shield"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Auto-Ban Roles</h2>
             </div>
@@ -1239,7 +1245,8 @@
 
             {#if autoBanRoles.length === 0}
               <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
+                <i class="fa-utility-duo fa-regular fa-shield"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
                 <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No auto-ban roles configured</p>
                 <p class="text-sm" style="color: {$colorStore.muted}">Add roles that should trigger automatic bans</p>
               </div>
@@ -1284,7 +1291,7 @@
             
             <div class="flex items-center gap-2">
               <span class="text-sm" style="color: {$colorStore.text}">Exclusive</span>
-              <button
+              <button aria-label="Button action"
                 class="p-2 rounded-lg transition-all hover:scale-105 min-h-[44px] min-w-[44px]"
                 style="color: {selfAssignableRoles.exclusive ? $colorStore.secondary : $colorStore.muted}"
                 onclick={toggleSelfAssignableRolesExclusive}
@@ -1451,25 +1458,27 @@
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Voice Channel</label>
+                      <span id="voice-channel-label" class="block text-sm font-medium mb-2"
+                            style="color: {$colorStore.text}">Voice Channel</span>
                       <DiscordSelector
                         type="channel"
                         options={voiceChannels}
                         bind:selected={newVoiceChannelRole.channelId}
                         placeholder="Select voice channel..."
                         multiple={false}
-                      />
+                        aria-labelledby="voice-channel-label" />
                     </div>
                     
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Role to Assign</label>
+                      <span id="role-to-assign-label" class="block text-sm font-medium mb-2"
+                            style="color: {$colorStore.text}">Role to Assign</span>
                       <DiscordSelector
                         type="role"
                         options={availableRoles}
                         bind:selected={newVoiceChannelRole.roleId}
                         placeholder="Select role..."
                         multiple={false}
-                      />
+                        aria-labelledby="role-to-assign-label" />
                     </div>
                   </div>
                   
@@ -1654,18 +1663,20 @@
               <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">User Threshold</label>
-                    <input
+                    <label for="input-2198" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">User
+                      Threshold</label>
+                    <input id="input-2198"
                       type="number"
                       bind:value={tempProtectionConfig.userThreshold}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="50"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time Window (seconds)</label>
+                    <span id="time-window-seconds-label" class="block text-sm font-medium mb-2"
+                          style="color: {$colorStore.text}">Time Window (seconds)</span>
                     <input
                       type="number"
                       bind:value={tempProtectionConfig.seconds}
@@ -1673,28 +1684,29 @@
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="300"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
+                    <label for="input-7555" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
                     <DiscordSelector
                       type="custom"
                       options={actionOptions}
                       bind:selected={tempProtectionConfig.action}
                       placeholder="Select action..."
                       multiple={false}
-                    />
+                      aria-labelledby="time-window-seconds-label" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment Duration (minutes)</label>
-                    <input
+                    <label for="input-7555" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment
+                      Duration (minutes)</label>
+                    <input id="input-7555"
                       type="number"
                       bind:value={tempProtectionConfig.punishDuration}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="10080"
-                    />
+                    >
                   </div>
                 </div>
 
@@ -1808,7 +1820,8 @@
               <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Message Threshold</label>
+                    <span id="message-threshold-label" class="block text-sm font-medium mb-2"
+                          style="color: {$colorStore.text}">Message Threshold</span>
                     <input
                       type="number"
                       bind:value={tempProtectionConfig.messageThreshold}
@@ -1816,28 +1829,29 @@
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="20"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
+                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
                     <DiscordSelector
                       type="custom"
                       options={actionOptions}
                       bind:selected={tempProtectionConfig.action}
                       placeholder="Select action..."
                       multiple={false}
-                    />
+                      aria-labelledby="message-threshold-label" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute Time (minutes)</label>
-                    <input
+                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute
+                      Time (minutes)</label>
+                    <input id="input-8328"
                       type="number"
                       bind:value={tempProtectionConfig.muteTime}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="10080"
-                    />
+                    >
                   </div>
                 </div>
 
@@ -1951,7 +1965,8 @@
               <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Minimum Account Age (minutes)</label>
+                    <span id="minimum-account-age-minutes-label" class="block text-sm font-medium mb-2"
+                          style="color: {$colorStore.text}">Minimum Account Age (minutes)</span>
                     <input
                       type="number"
                       bind:value={tempProtectionConfig.minAgeMinutes}
@@ -1959,28 +1974,29 @@
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="525600"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
+                    <label for="input-6339" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
                     <DiscordSelector
                       type="custom"
                       options={actionOptions}
                       bind:selected={tempProtectionConfig.action}
                       placeholder="Select action..."
                       multiple={false}
-                    />
+                      aria-labelledby="minimum-account-age-minutes-label" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action Duration (minutes)</label>
-                    <input
+                    <label for="input-6339" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action
+                      Duration (minutes)</label>
+                    <input id="input-6339"
                       type="number"
                       bind:value={tempProtectionConfig.actionDurationMinutes}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="0"
                       max="525600"
-                    />
+                    >
                   </div>
                 </div>
 
@@ -2110,36 +2126,38 @@
                 <!-- Basic Settings -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
+                    <span id="action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
                     <DiscordSelector
                       type="custom"
                       options={actionOptions}
                       bind:selected={tempProtectionConfig.action}
                       placeholder="Select action..."
                       multiple={false}
-                    />
+                      aria-labelledby="action-label" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment Duration (minutes)</label>
-                    <input
+                    <label for="input-6838" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment
+                      Duration (minutes)</label>
+                    <input id="input-6838"
                       type="number"
                       bind:value={tempProtectionConfig.punishDuration}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="0"
                       max="10080"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Minimum Score</label>
-                    <input
+                    <label for="input-9583" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Minimum
+                      Score</label>
+                    <input id="input-9583"
                       type="number"
                       bind:value={tempProtectionConfig.minimumScore}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="100"
-                    />
+                    >
                   </div>
                 </div>
 
@@ -2148,7 +2166,8 @@
                   <h4 class="font-medium" style="color: {$colorStore.text}">Behavior Analysis</h4>
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-198"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkAccountAge}
@@ -2163,7 +2182,8 @@
                       <span style="color: {$colorStore.text}">Check Account Age</span>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-198"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkJoinTiming}
@@ -2178,7 +2198,8 @@
                       <span style="color: {$colorStore.text}">Check Join Timing</span>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-198"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkBatchCreation}
@@ -2193,7 +2214,8 @@
                       <span style="color: {$colorStore.text}">Check Batch Creation</span>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-198"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkOfflineStatus}
@@ -2208,7 +2230,8 @@
                       <span style="color: {$colorStore.text}">Check Offline Status</span>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-198"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.checkNewAccounts}
@@ -2229,22 +2252,24 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" transition:slide>
                       {#if tempProtectionConfig.checkAccountAge}
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Account Age (months)</label>
-                          <input
+                          <label for="input-198" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">Max Account Age (months)</label>
+                          <input id="input-198"
                             type="number"
                             bind:value={tempProtectionConfig.maxAccountAgeMonths}
                             class="w-full px-3 py-2 rounded-lg border transition-colors"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                             min="1"
                             max="120"
-                          />
+                          >
                         </div>
                       {/if}
 
                       {#if tempProtectionConfig.checkJoinTiming}
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Join Hours</label>
-                          <input
+                          <label for="input-2213" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">Max Join Hours</label>
+                          <input id="input-2213"
                             type="number"
                             bind:value={tempProtectionConfig.maxJoinHours}
                             class="w-full px-3 py-2 rounded-lg border transition-colors"
@@ -2252,21 +2277,22 @@
                             min="1"
                             max="168"
                             step="0.5"
-                          />
+                          >
                         </div>
                       {/if}
 
                       {#if tempProtectionConfig.checkNewAccounts}
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">New Account Days</label>
-                          <input
+                          <label for="input-1997" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">New Account Days</label>
+                          <input id="input-1997"
                             type="number"
                             bind:value={tempProtectionConfig.newAccountDays}
                             class="w-full px-3 py-2 rounded-lg border transition-colors"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                             min="1"
                             max="30"
-                          />
+                          >
                         </div>
                       {/if}
                     </div>
@@ -2317,42 +2343,44 @@
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Pattern Name</label>
-                      <input
+                      <label for="input-3915" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Pattern
+                        Name</label>
+                      <input id="input-3915"
                         type="text"
                         bind:value={newPattern.name}
                         class="w-full px-3 py-2 rounded-lg border transition-colors"
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                         placeholder="e.g., Suspicious Username Pattern"
-                      />
+                      >
                     </div>
                     
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Regex Pattern</label>
-                      <input
+                      <label for="input-8746" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Regex
+                        Pattern</label>
+                      <input id="input-8746"
                         type="text"
                         bind:value={newPattern.pattern}
                         class="w-full px-3 py-2 rounded-lg border transition-colors"
                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                         placeholder="^[a-z]+[0-9]&#123;4,&#125;$"
-                      />
+                      >
                     </div>
                   </div>
 
                   <div class="mt-4">
                     <h6 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Check Against:</h6>
                     <div class="flex flex-wrap gap-3">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" bind:checked={newPattern.checkUsername} class="sr-only peer" />
+                      <label for="input-3429" class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" bind:checked={newPattern.checkUsername} class="sr-only peer">
                           <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
                           {#if newPattern.checkUsername}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
                         </div>
                         <span class="text-sm" style="color: {$colorStore.text}">Username</span>
                       </label>
-                      
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" bind:checked={newPattern.checkDisplayName} class="sr-only peer" />
+
+                      <label for="input-3429" class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" bind:checked={newPattern.checkDisplayName} class="sr-only peer">
                           <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
                              style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
                           {#if newPattern.checkDisplayName}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
@@ -2497,29 +2525,32 @@
               <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mention Threshold</label>
-                    <input
+                    <label for="input-3429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mention
+                      Threshold</label>
+                    <input id="input-3429"
                       type="number"
                       bind:value={tempProtectionConfig.mentionThreshold}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="50"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time Window (seconds)</label>
-                    <input
+                    <label for="input-4604" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
+                      Window (seconds)</label>
+                    <input id="input-4604"
                       type="number"
                       bind:value={tempProtectionConfig.timeWindowSeconds}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="300"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Mentions in Window</label>
+                    <span id="max-mentions-in-window-label" class="block text-sm font-medium mb-2"
+                          style="color: {$colorStore.text}">Max Mentions in Window</span>
                     <input
                       type="number"
                       bind:value={tempProtectionConfig.maxMentionsInTimeWindow}
@@ -2527,35 +2558,37 @@
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="100"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
+                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
                     <DiscordSelector
                       type="custom"
                       options={actionOptions}
                       bind:selected={tempProtectionConfig.action}
                       placeholder="Select action..."
                       multiple={false}
-                    />
+                      aria-labelledby="max-mentions-in-window-label" />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute Time (minutes)</label>
-                    <input
+                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute
+                      Time (minutes)</label>
+                    <input id="input-8328"
                       type="number"
                       bind:value={tempProtectionConfig.muteTime}
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       min="1"
                       max="10080"
-                    />
+                    >
                   </div>
 
                   <div class="flex items-center">
-                    <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105" 
+                    <label for="input-594"
+                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
                            style="background: {$colorStore.primary}08;">
                       <input type="checkbox" 
                              bind:checked={tempProtectionConfig.ignoreBots}
@@ -2629,32 +2662,32 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
-              <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+              <span id="staff-role-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
                 Staff Role
-              </label>
+              </span>
               <DiscordSelector
                 type="role"
                 options={availableRoles}
                 bind:selected={newStaffRole}
                 placeholder="Select staff role..."
                 multiple={false}
-              />
+                aria-labelledby="staff-role-label" />
               <p class="text-xs" style="color: {$colorStore.muted}">
                 Role that grants administrative permissions
               </p>
             </div>
 
             <div class="space-y-4">
-              <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+              <span id="member-role-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
                 Member Role
-              </label>
+              </span>
               <DiscordSelector
                 type="role"
                 options={availableRoles}
                 bind:selected={newMemberRole}
                 placeholder="Select member role..."
                 multiple={false}
-              />
+                aria-labelledby="member-role-label" />
               <p class="text-xs" style="color: {$colorStore.muted}">
                 Role assigned to regular server members
               </p>
@@ -2695,16 +2728,16 @@
           </div>
 
           <div class="space-y-4">
-            <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+            <span id="server-timezone-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
               Server Timezone
-            </label>
+            </span>
             <DiscordSelector
               type="timezone"
               options={availableTimezones}
               bind:selected={newTimezone}
               placeholder="Select server timezone..."
               multiple={false}
-            />
+              aria-labelledby="server-timezone-label" />
             <p class="text-xs" style="color: {$colorStore.muted}">
               Timezone used for time-based features and logging
             </p>
@@ -2803,19 +2836,20 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Command</label>
+                    <span id="command-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Command</span>
                     <DiscordSelector
                       type="custom"
                       options={availableCommands}
                       bind:selected={newCommandCooldown.command}
                       placeholder="Select command..."
                       multiple={false}
-                    />
+                      aria-labelledby="command-label" />
                   </div>
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Cooldown (seconds)</label>
-                    <input
+                    <label for="input-594" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Cooldown
+                      (seconds)</label>
+                    <input id="input-594"
                       type="number"
                       min="1"
                       max="90000"
@@ -2823,7 +2857,7 @@
                       class="w-full px-3 py-2 rounded-lg border transition-colors"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                       placeholder="Enter cooldown in seconds..."
-                    />
+                    >
                     <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                       Minimum: 1 second, Maximum: 90,000 seconds (25 hours)
                     </p>
@@ -2951,9 +2985,10 @@
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <span id="bot-command-availablecommandslength-available-label"
+                            class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                         Bot Command ({availableCommands.length} available)
-                      </label>
+                      </span>
                       <DiscordSelector
                         type="custom"
                         options={availableCommands}
@@ -2961,11 +2996,12 @@
                         placeholder="Select a bot command..."
                         multiple={false}
                         searchable={true}
-                      />
+                        aria-labelledby="bot-command-availablecommandslength-available-label" />
                     </div>
                     
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required Discord Permission</label>
+                      <span id="required-discord-permission-label" class="block text-sm font-medium mb-2"
+                            style="color: {$colorStore.text}">Required Discord Permission</span>
                       <DiscordSelector
                         type="custom"
                         options={availablePermissions}
@@ -2973,7 +3009,7 @@
                         placeholder="Select required permission..."
                         multiple={false}
                         searchable={true}
-                      />
+                        aria-labelledby="required-discord-permission-label" />
                     </div>
                   </div>
                   
@@ -3020,16 +3056,16 @@
           </div>
 
           <div class="space-y-4">
-            <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+            <span id="server-timezone-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
               Server Timezone
-            </label>
+            </span>
             <DiscordSelector
               type="timezone"
               options={availableTimezones}
               bind:selected={newTimezone}
               placeholder="Select server timezone..."
               multiple={false}
-            />
+              aria-labelledby="server-timezone-label" />
             <p class="text-xs" style="color: {$colorStore.muted}">
               Timezone used for time-based features and logging
             </p>
@@ -3063,7 +3099,8 @@
           <div class="flex items-center gap-4 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-duotone fa-solid fa-headset" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-headphones"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Game Voice Channel</h2>
           </div>
@@ -3092,16 +3129,17 @@
             </div>
 
             <div class="space-y-2">
-              <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+              <span id="set-game-voice-channel-label" class="block text-sm font-medium"
+                    style="color: {$colorStore.text}">
                 Set Game Voice Channel
-              </label>
+              </span>
               <DiscordSelector
                 type="channel"
                 options={voiceChannels}
                 bind:selected={newVoiceChannelRole.channelId}
                 placeholder="Select voice channel..."
                 multiple={false}
-              />
+                aria-labelledby="set-game-voice-channel-label" />
               <p class="text-xs" style="color: {$colorStore.muted}">
                 Select voice channel for automatic game-based voice routing
               </p>
@@ -3141,7 +3179,7 @@
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <label for="input-4297" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                 Custom Ban Message
               </label>
               <textarea
@@ -3190,8 +3228,9 @@
               <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Prune Inactive Users</h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Days of Inactivity</label>
-                  <input
+                  <label for="input-4297" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Days
+                    of Inactivity</label>
+                  <input id="input-4297"
                     type="number"
                     min="1"
                     max="30"
@@ -3199,7 +3238,7 @@
                     class="w-full px-3 py-2 rounded-lg border transition-colors"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
                     placeholder="7"
-                  />
+                  >
                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">
                     Users inactive for this many days will be removed
                   </p>

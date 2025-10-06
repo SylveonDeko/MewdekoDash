@@ -4,7 +4,6 @@
   import { api } from "$lib/api.ts";
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore";
-  import { Cpu, HardDrive, Clock, Layers, RefreshCw, Zap } from "lucide-svelte";
 
   let { data } = $props();
 
@@ -83,18 +82,19 @@
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Cpu class="w-5 h-5" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-circle"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">System Resources</h2>
       </div>
-      <button
+      <button aria-label="Navigate"
         class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         disabled={refreshInProgress}
         onclick={fetchSystemInfo}
       >
         <div class:animate-spin={refreshInProgress}>
-          <RefreshCw class="w-4 h-4" />
+          <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
         </div>
         {refreshInProgress ? 'Refreshing...' : 'Refresh'}
       </button>
@@ -118,7 +118,8 @@
         <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
-            <Cpu class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-circle"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="text-base font-semibold" style="color: {$colorStore.text}">CPU Usage</h3>
           </div>
           <div class="w-full rounded-full h-3 mb-2"
@@ -135,7 +136,8 @@
         <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
-            <HardDrive class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <i class="fa-utility-duo fa-regular fa-square"
+               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent}; font-size: 20px;"></i>
             <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Memory Usage</h3>
           </div>
           <div class="w-full rounded-full h-3 mb-2"
@@ -154,7 +156,8 @@
         <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
-            <Clock class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <i class="fa-utility-duo fa-regular fa-clock"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Uptime</h3>
           </div>
           <div class="text-xl font-mono text-center" style="color: {$colorStore.text}">
@@ -166,7 +169,8 @@
         <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
-            <Layers class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-square"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Thread Count</h3>
           </div>
           <div class="text-xl font-mono text-center" style="color: {$colorStore.text}">
@@ -178,7 +182,8 @@
         <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01] md:col-span-2"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-4">
-            <Zap class="w-5 h-5" style="color: {$colorStore.accent}" />
+            <i class="fa-utility-duo fa-regular fa-bell"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="text-base font-semibold" style="color: {$colorStore.text}">Top CPU Intensive Methods</h3>
           </div>
           <div class="overflow-x-auto rounded-lg" style="background: {$colorStore.primary}05;">
@@ -203,7 +208,8 @@
       </div>
     {:else}
       <div class="text-center p-8">
-        <Cpu class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+        <i class="fa-utility-duo fa-regular fa-circle"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <p class="font-medium mb-2" style="color: {$colorStore.text}">No system information available.</p>
         <p class="text-sm" style="color: {$colorStore.muted}">System data will appear here once loaded.</p>
       </div>

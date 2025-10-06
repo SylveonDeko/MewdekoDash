@@ -391,7 +391,7 @@
                       <span class="text-sm" style="color: {$colorStore.muted}">#{greet.id}</span>
                     </h3>
                   </div>
-                  <button
+                  <button aria-label="Delete greet"
                     class="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10"
                     style="color: {$colorStore.muted}"
                     onclick={() => removeGreet(greet.id)}
@@ -456,7 +456,7 @@
                           {/if}
                         </div>
                       </div>
-                      <button
+                      <button aria-label="Edit message"
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
@@ -481,7 +481,7 @@
                           style="background: {$colorStore.primary}10;
                                  border-color: {$colorStore.primary}30;
                                  color: {$colorStore.text}"
-                        />
+                        >
                         <i class="fa-solid fa-clock absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                       </div>
                       <div class="flex gap-2">
@@ -523,7 +523,7 @@
                           {/if}
                         </p>
                       </div>
-                      <button
+                      <button aria-label="Edit delete time"
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
@@ -549,7 +549,7 @@
                             style="background: {$colorStore.primary}10;
                                    border-color: {$colorStore.primary}30;
                                    color: {$colorStore.text}"
-                          />
+                          >
                           <i class="fa-solid fa-robot absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                         </div>
                         <div class="relative">
@@ -561,7 +561,7 @@
                             style="background: {$colorStore.primary}10;
                                    border-color: {$colorStore.primary}30;
                                    color: {$colorStore.text}"
-                          />
+                          >
                           <i class="fa-solid fa-users absolute left-3 top-1/2 transform -translate-y-1/2" style="color: {$colorStore.muted}; font-size: 16px;"></i>
                         </div>
                       </div>
@@ -604,7 +604,7 @@
                           {/if}
                         </p>
                       </div>
-                      <button
+                      <button aria-label="Edit webhook"
                         class="p-2 rounded-lg transition-all duration-200"
                         style="background: {$colorStore.primary}10;
                                color: {$colorStore.muted}"
@@ -629,7 +629,7 @@
                       class="sr-only peer"
                       checked={greet.greetBots}
                       onchange={(e) => updateGreetBots(greet.id, e.currentTarget.checked)}
-                    />
+                    >
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
                               after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
@@ -648,7 +648,7 @@
                       class="sr-only peer"
                       checked={!greet.disabled}
                       onchange={(e) => updateDisabled(greet.id, !e.currentTarget.checked)}
-                    />
+                    >
                     <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
                               after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
@@ -682,23 +682,10 @@
     }
 
     /* Prevent iOS styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
 
     /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
 
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 
     /* Add smooth transitions for color changes */
     [style*="background"],
@@ -708,9 +695,6 @@
 
     /* Add container queries for better responsive behavior */
     @container (max-width: 640px) {
-        .music-controls {
-            @apply flex-col items-stretch;
-        }
     }
 
     /* Add better card spacing for mobile */

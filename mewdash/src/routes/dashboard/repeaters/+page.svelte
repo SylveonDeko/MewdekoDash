@@ -1,6 +1,6 @@
 <!-- routes/dashboard/repeaters/+page.svelte -->
 <script lang="ts">
-    import {preventDefault, run} from 'svelte/legacy';
+  import { run } from "svelte/legacy";
 
     import {onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
@@ -8,38 +8,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        Activity,
-        AlertCircle,
-        ArrowDown,
-        ArrowUp,
-        BarChart3,
-        Calendar,
-        CheckCircle,
-        CheckSquare,
-        Clock,
-        Code,
-        Copy,
-        Edit3,
-        Eye,
-        Hash,
-        MessageCircle,
-        MessageSquare,
-        Play,
-        Plus,
-        RefreshCw,
-        RepeatIcon,
-        Settings,
-        Square,
-        Tags,
-        Target,
-        Timer,
-        ToggleLeft,
-        Trash2,
-        Users,
-        XCircle,
-        Zap
-    } from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -859,16 +827,16 @@
 
   // Tabs configuration
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "manage", label: "Manage Repeaters", icon: RepeatIcon },
-    { id: "create", label: "Create New", icon: Plus }
+    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
+    { id: "manage", label: "Manage Repeaters", icon: "fa-clock" },
+    { id: "create", label: "Create New", icon: "fa-plus" }
   ];
 
   // Action buttons configuration
     let actionButtons = $derived([
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: loadAllData,
       loading: loading
     }
@@ -889,14 +857,13 @@
 <DashboardPageLayout
   title="Message Repeaters"
   subtitle="Manage automated recurring messages and sticky posts"
-  icon={RepeatIcon}
+  icon="fa-clock"
   {tabs}
   {activeTab}
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={handleTabChange}
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     <!-- Status Message -->
     {#if message}
@@ -905,11 +872,14 @@
             border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
            in:fly={{ x: 20, duration: 300 }}>
         {#if messageType === 'success'}
-          <CheckCircle class="w-5 h-5" style="color: #10b981" />
+          <i class="fa-utility-duo fa-regular fa-circle-check"
+             style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
         {:else if messageType === 'error'}
-          <XCircle class="w-5 h-5" style="color: #ef4444" />
+          <i class="fa-utility-duo fa-regular fa-circle-xmark"
+             style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
         {:else}
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-bell"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         {/if}
         <span
           style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
@@ -921,7 +891,8 @@
       <div class="mb-6 p-4 rounded-xl flex items-center gap-3 border"
            style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;"
            in:fly={{ x: -20, duration: 300 }}>
-        <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" />
+        <i class="fa-utility-duo fa-regular fa-bell"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
         <div>
           <span style="color: {$colorStore.text}">
             <strong>Message Counting Disabled:</strong> Some trigger modes require message counting to be enabled.
@@ -938,7 +909,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {#if repeaterStats}
           <StatCard
-            icon={RepeatIcon}
+            icon="fa-clock"
             label="Total Repeaters"
             value={repeaterStats.totalRepeaters}
             subtitle="configured"
@@ -947,7 +918,7 @@
           />
 
           <StatCard
-            icon={Activity}
+            icon="fa-bell"
             label="Active Repeaters"
             value={repeaterStats.activeRepeaters}
             subtitle="currently running"
@@ -956,7 +927,7 @@
           />
 
           <StatCard
-            icon={Target}
+            icon="fa-star"
             label="Total Displays"
             value={repeaterStats.totalDisplays}
             subtitle="messages sent"
@@ -965,7 +936,7 @@
           />
 
           <StatCard
-            icon={Timer}
+            icon="fa-calendar"
             label="Scheduled"
             value={repeaterStats.timeScheduledRepeaters}
             subtitle="with time conditions"
@@ -993,7 +964,8 @@
         <div class="rounded-2xl p-6 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3 mb-6">
-            <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-gear"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Trigger Mode Distribution</h2>
           </div>
 
@@ -1016,7 +988,8 @@
         <div class="rounded-2xl p-6 shadow-2xl"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
           <div class="flex items-center gap-3 mb-6">
-            <Target class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-utility-duo fa-regular fa-star"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Most Active Repeater</h2>
           </div>
 
@@ -1045,7 +1018,8 @@
         <!-- Empty state -->
         <div class="text-center py-12 rounded-2xl"
              style="background: {$colorStore.primary}08;">
-          <RepeatIcon class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+          <i class="fa-utility-duo fa-regular fa-clock"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Repeaters</h3>
           <p class="mb-6" style="color: {$colorStore.muted}">
             Create your first repeater to start sending automated messages.
@@ -1055,7 +1029,7 @@
             style="background: {$colorStore.primary}; color: white;"
             onclick={() => activeTab = 'create'}
           >
-            <Plus class="w-5 h-5 inline mr-2" />
+            <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
             Create Repeater
           </button>
         </div>
@@ -1069,7 +1043,7 @@
               onclick={selectAllRepeaters}
               disabled={repeaters.length === 0}
             >
-              <CheckSquare class="w-4 h-4 inline mr-1" />
+              <i class="fa-solid fa-square-check" style="font-size: 16px;"></i>
               Select All ({repeaters.length})
             </button>
             
@@ -1079,7 +1053,7 @@
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={clearSelection}
               >
-                <Square class="w-4 h-4 inline mr-1" />
+                <i class="fa-solid fa-square" style="font-size: 16px;"></i>
                 Clear ({selectedRepeaterIds.length})
               </button>
             {/if}
@@ -1097,7 +1071,7 @@
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => bulkToggleRepeaters(true)}
               >
-                <CheckCircle class="w-4 h-4 inline mr-1" />
+                <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                 Enable All
               </button>
               
@@ -1106,7 +1080,7 @@
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                 onclick={() => bulkToggleRepeaters(false)}
               >
-                <XCircle class="w-4 h-4 inline mr-1" />
+                <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
                 Disable All
               </button>
             </div>
@@ -1126,7 +1100,8 @@
               <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3">
                   <!-- Selection Checkbox -->
-                    <label class="flex items-center justify-center w-6 h-6 rounded-sm border-2 cursor-pointer transition-all hover:scale-110"
+                  <label for="input-9921"
+                         class="flex items-center justify-center w-6 h-6 rounded-sm border-2 cursor-pointer transition-all hover:scale-110"
                          style="border-color: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : $colorStore.muted}; 
                                 background: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : 'transparent'};">
                     <input
@@ -1134,15 +1109,16 @@
                       class="sr-only"
                       checked={selectedRepeaterIds.includes(repeater.id)}
                       onchange={() => toggleRepeaterSelection(repeater.id)}
-                    />
+                    >
                     {#if selectedRepeaterIds.includes(repeater.id)}
-                      <CheckCircle class="w-4 h-4" style="color: white" />
+                      <i class="fa-solid fa-check" style="color: white; font-size: 16px;"></i>
                     {/if}
                   </label>
 
                   <div class="p-2 rounded-lg"
                        style="background: {repeater.isEnabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};">
-                    <Hash class="w-5 h-5" style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}" />
+                    <i class="fa-solid fa-hashtag"
+                       style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}; font-size: 20px;"></i>
                   </div>
                   <div>
                     <h3 class="text-lg font-bold" style="color: {$colorStore.text}">
@@ -1172,7 +1148,7 @@
                 {#if parsedMessage.hasRichContent}
                    <div class="p-3 rounded-lg border" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
                     <div class="flex items-center gap-2 mb-2">
-                      <MessageSquare class="w-4 h-4" style="color: {$colorStore.primary}" />
+                      <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                       <span class="text-xs font-medium" style="color: {$colorStore.primary}">Rich Message</span>
                       {#if parsedMessage.embeds.length > 0}
                         <span class="text-xs px-2 py-1 rounded-sm"
@@ -1220,7 +1196,7 @@
                   <div>
                     <div class="text-xs font-medium mb-1" style="color: {$colorStore.muted}">Trigger Mode</div>
                     <div class="text-sm flex items-center gap-2" style="color: {$colorStore.text}">
-                      <Zap class="w-4 h-4" style="color: {$colorStore.primary}" />
+                      <i class="fa-solid fa-bolt" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                       Immediate Response
                     </div>
                     <div class="text-xs mt-1" style="color: {$colorStore.muted}">
@@ -1296,14 +1272,14 @@
                   {#if repeater.conversationDetection}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                      <Users class="w-3 h-3 inline mr-1" />
+                      <i class="fa-solid fa-users" style="font-size: 12px;"></i>
                       Conversation Detection
                     </span>
                   {/if}
                   {#if repeater.threadAutoSticky}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
-                      <MessageCircle class="w-3 h-3 inline mr-1" />
+                      <i class="fa-solid fa-comment" style="font-size: 12px;"></i>
                       Thread Auto Sticky
                     </span>
                   {/if}
@@ -1316,14 +1292,14 @@
                   {#if repeater.timeConditions}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-                      <Clock class="w-3 h-3 inline mr-1" />
+                      <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
                       Time Scheduled
                     </span>
                   {/if}
                   {#if repeater.forumTagConditions}
                     <span class="px-2 py-1 rounded-sm text-xs"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                      <Tags class="w-3 h-3 inline mr-1" />
+                      <i class="fa-solid fa-tags" style="font-size: 12px;"></i>
                       Forum Tags
                     </span>
                   {/if}
@@ -1344,7 +1320,7 @@
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => editRepeater(repeater)}
                   >
-                    <Edit3 class="w-4 h-4" />
+                    <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
                     Edit
                   </button>
 
@@ -1354,7 +1330,7 @@
                            color: {repeater.isEnabled ? $colorStore.accent : $colorStore.primary};"
                     onclick={() => toggleRepeater(repeater.id)}
                   >
-                    <ToggleLeft class="w-4 h-4" />
+                    <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
                     {repeater.isEnabled ? 'Disable' : 'Enable'}
                   </button>
 
@@ -1364,26 +1340,26 @@
                     onclick={() => triggerRepeater(repeater.id)}
                     disabled={!repeater.isEnabled}
                   >
-                    <Play class="w-4 h-4" />
+                    <i class="fa-solid fa-play" style="font-size: 16px;"></i>
                     Trigger Now
                   </button>
 
                   <!-- Queue Position Controls -->
                   <div class="flex items-center">
-                    <button
+                    <button aria-label="Delete"
                       class="flex items-center gap-1 px-2 py-2 rounded-l-lg text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterUp(repeater.id)}
                       disabled={repeater.queuePosition <= 1}
                     >
-                      <ArrowUp class="w-4 h-4" />
+                      <i class="fa-solid fa-arrow-up" style="font-size: 16px;"></i>
                     </button>
-                    <button
+                    <button aria-label="Edit"
                       class="flex items-center gap-1 px-2 py-2 rounded-r-lg text-sm font-medium transition-all hover:scale-105"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterDown(repeater.id)}
                     >
-                      <ArrowDown class="w-4 h-4" />
+                      <i class="fa-solid fa-arrow-down" style="font-size: 16px;"></i>
                     </button>
                   </div>
 
@@ -1392,7 +1368,7 @@
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     onclick={() => deleteRepeater(repeater.id)}
                   >
-                    <Trash2 class="w-4 h-4" />
+                    <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                     Delete
                   </button>
                 </div>
@@ -1408,7 +1384,7 @@
                       if (newInterval) updateRepeaterInterval(repeater.id, newInterval);
                     }}
                   >
-                    <Clock class="w-3 h-3" />
+                    <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
                     Interval
                   </button>
 
@@ -1420,7 +1396,7 @@
                       updateRepeaterStartTime(repeater.id, newTime || null);
                     }}
                   >
-                    <Timer class="w-3 h-3" />
+                    <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
                     Start Time
                   </button>
 
@@ -1433,7 +1409,7 @@
                         if (newThreshold) updateRepeaterConversationThreshold(repeater.id, parseInt(newThreshold));
                       }}
                     >
-                      <Users class="w-3 h-3" />
+                      <i class="fa-solid fa-users" style="font-size: 12px;"></i>
                       Conv: {repeater.conversationThreshold}/min
                     </button>
                   {/if}
@@ -1447,7 +1423,7 @@
                       updateRepeaterExpiry(repeater.id, maxAge || undefined, maxTriggers ? parseInt(maxTriggers) : undefined);
                     }}
                   >
-                    <Calendar class="w-3 h-3" />
+                    <i class="fa-solid fa-calendar" style="font-size: 12px;"></i>
                     Expiry
                   </button>
 
@@ -1462,7 +1438,7 @@
                         loadForumTags(repeater.id);
                       }}
                     >
-                      <Tags class="w-3 h-3" />
+                      <i class="fa-solid fa-tags" style="font-size: 12px;"></i>
                       Forum Tags
                     </button>
                   {/if}
@@ -1473,7 +1449,7 @@
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => openAdvancedTimeEditor(repeater.id)}
                     >
-                      <Code class="w-3 h-3" />
+                      <i class="fa-solid fa-code" style="font-size: 12px;"></i>
                       Time JSON
                     </button>
                   {/if}
@@ -1487,7 +1463,7 @@
                         loadThreadStickyMessages(repeater.id);
                       }}
                     >
-                      <MessageCircle class="w-3 h-3" />
+                      <i class="fa-solid fa-comment" style="font-size: 12px;"></i>
                       Thread Messages
                     </button>
                   {/if}
@@ -1506,29 +1482,30 @@
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
         <div class="flex items-center gap-3 mb-6">
           {#if isEditMode}
-            <Edit3 class="w-5 h-5" style="color: {$colorStore.secondary}" />
+            <i class="fa-solid fa-pen" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Edit Repeater #{editingRepeaterId}</h2>
           {:else}
-            <Plus class="w-5 h-5" style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
             <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Create New Repeater</h2>
           {/if}
         </div>
 
-          <form onsubmit={preventDefault(isEditMode ? updateRepeater : createRepeater)} class="space-y-6">
+        <form onsubmit={(e) => { e.preventDefault(); isEditMode ? updateRepeater() : createRepeater(); }}
+              class="space-y-6">
           <!-- ===== SIMPLIFIED ESSENTIAL SETTINGS ===== -->
           
           <!-- Channel Selection -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              <Hash class="w-4 h-4 inline mr-1" />
+            <span id="target-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <i class="fa-solid fa-hashtag" style="font-size: 16px;"></i>
               Target Channel
-            </label>
+            </span>
             <DiscordSelector
               type="channel"
               options={allChannels}
               bind:selected={formData.channelId}
               placeholder="Select channel..."
-            />
+              aria-labelledby="target-channel-label" />
 
           <!-- Forum Tag Filters (when forum channel selected) -->
           {#if selectedChannelType === 'forum' && availableForumTags.length > 0}
@@ -1537,7 +1514,7 @@
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
-                  <Tags class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                  <i class="fa-solid fa-tags" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                   <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Forum Tag Filters</h4>
                     <span class="text-xs px-2 py-1 rounded-sm"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
@@ -1567,12 +1544,13 @@
                 <!-- Required Tags Section -->
                 <div>
                   <h5 class="text-sm font-medium mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
-                    <CheckCircle class="w-4 h-4" style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                     Must Have These Tags
                   </h5>
                   <div class="space-y-2">
                     {#each availableForumTags as tag}
-                      <label class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
+                      <label for="input-9921"
+                             class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
                              style="background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '15' : $colorStore.primary + '05'};
                                     border: 1px solid {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '40' : 'transparent'};">
                         <input
@@ -1587,12 +1565,12 @@
                               selectedForumTags.required = selectedForumTags.required.filter(id => id !== tag.id);
                             }
                           }}
-                        />
+                        >
                           <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                              style="border-color: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : $colorStore.muted}; 
                                     background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : 'transparent'};">
                           {#if selectedForumTags.required.includes(tag.id)}
-                            <CheckCircle class="w-2 h-2" style="color: white" />
+                            <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                           {/if}
                         </div>
                         <div class="flex items-center gap-2">
@@ -1615,12 +1593,13 @@
                 <!-- Excluded Tags Section -->
                 <div>
                   <h5 class="text-sm font-medium mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
-                    <XCircle class="w-4 h-4" style="color: {$colorStore.accent}" />
+                    <i class="fa-solid fa-xmark" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                     Never Use These Tags
                   </h5>
                   <div class="space-y-2">
                     {#each availableForumTags as tag}
-                      <label class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
+                      <label for="input-9921"
+                             class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
                              style="background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '15' : $colorStore.accent + '05'};
                                     border: 1px solid {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '40' : 'transparent'};">
                         <input
@@ -1635,13 +1614,13 @@
                               selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
                             }
                           }}
-                        />
+                        >
                           <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                              style="border-color: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : $colorStore.muted}; 
                                     background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : 'transparent'};
                                     opacity: {selectedForumTags.required.includes(tag.id) ? '0.3' : '1'};">
                           {#if selectedForumTags.excluded.includes(tag.id)}
-                            <XCircle class="w-2 h-2" style="color: white" />
+                            <i class="fa-solid fa-xmark" style="color: white; font-size: 8px;"></i>
                           {/if}
                         </div>
                         <div class="flex items-center gap-2" 
@@ -1675,13 +1654,13 @@
                   <div class="flex items-center gap-4 text-sm">
                     {#if selectedForumTags.required.length > 0}
                       <div class="flex items-center gap-1" style="color: {$colorStore.primary}">
-                        <CheckCircle class="w-3 h-3" />
+                        <i class="fa-solid fa-check" style="font-size: 12px;"></i>
                         <span>{selectedForumTags.required.length} required</span>
                       </div>
                     {/if}
                     {#if selectedForumTags.excluded.length > 0}
                       <div class="flex items-center gap-1" style="color: {$colorStore.accent}">
-                        <XCircle class="w-3 h-3" />
+                        <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                         <span>{selectedForumTags.excluded.length} excluded</span>
                       </div>
                     {/if}
@@ -1696,8 +1675,8 @@
               <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
               <!-- Message Input Side -->
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  <MessageSquare class="w-4 h-4 inline mr-1" />
+                <label for="input-9921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <i class="fa-solid fa-message" style="font-size: 16px;"></i>
                   Message Content
                 </label>
                 
@@ -1724,7 +1703,7 @@
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => showEmbedBuilder = !showEmbedBuilder}
                     >
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       {messageEmbeds.length > 0 ? `${messageEmbeds.length} Embeds` : 'Add Embed'}
                     </button>
                     
@@ -1734,7 +1713,7 @@
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                       onclick={() => showComponentBuilder = !showComponentBuilder}
                     >
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       {messageComponents.length > 0 ? `${messageComponents.length} Components` : 'Add Components'}
                     </button>
                   </div>
@@ -1743,8 +1722,8 @@
 
               <!-- Live Discord Preview -->
               <div class="lg:sticky lg:top-4 lg:self-start">
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  <Eye class="w-4 h-4 inline mr-1" />
+                <label for="input-9921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
                   Live Preview
                 </label>
                 <div class="border rounded-xl overflow-hidden" style="border-color: {$colorStore.primary}30;">
@@ -1766,7 +1745,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                   <div class="flex items-center gap-2">
-                    <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+                    <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                     <h4 class="text-lg font-semibold" style="color: {$colorStore.text}">Message Embeds ({messageEmbeds.length}/10)</h4>
                   </div>
                   
@@ -1792,7 +1771,7 @@
                       }}
                       disabled={messageEmbeds.length >= 10}
                     >
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                       Add Embed
                     </button>
                     
@@ -1833,7 +1812,7 @@
                               messageEmbeds = [...messageEmbeds];
                             }}
                           >
-                            <Copy class="w-3 h-3 inline mr-1" />
+                            <i class="fa-solid fa-copy" style="font-size: 12px;"></i>
                             Copy
                           </button>
                           <button
@@ -1842,7 +1821,7 @@
                             style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                             onclick={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
                           >
-                            <Trash2 class="w-3 h-3 inline mr-1" />
+                            <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
                             Remove
                           </button>
                         </div>
@@ -1871,7 +1850,8 @@
                   {#if messageEmbeds.length === 0}
                     <div class="text-center py-12 rounded-xl border-2 border-dashed" 
                          style="border-color: {$colorStore.primary}30;">
-                      <MessageSquare class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                      <i class="fa-utility-duo fa-regular fa-envelope"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                       <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No embeds yet</h4>
                       <p class="text-sm mb-4" style="color: {$colorStore.muted}">
                         Click "Add Embed" to create rich embedded messages
@@ -1889,7 +1869,7 @@
                    in:fly={{ y: 20, duration: 300 }}>
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-2">
-                    <Zap class="w-5 h-5" style="color: {$colorStore.secondary}" />
+                    <i class="fa-solid fa-bolt" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h4 class="text-lg font-semibold" style="color: {$colorStore.text}">Interactive Components</h4>
                   </div>
                   
@@ -1914,7 +1894,7 @@
                       }}
                       disabled={messageComponents.length >= 25}
                     >
-                      <Plus class="w-3 h-3 inline mr-1" />
+                      <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
                       Add Button
                     </button>
                     
@@ -1950,25 +1930,27 @@
                       <!-- Basic component fields -->
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Button Text</label>
-                          <input
+                          <label for="input-9921" class="block text-xs font-medium mb-1"
+                                 style="color: {$colorStore.text}">Button Text</label>
+                          <input id="input-9921"
                             type="text"
                             bind:value={component.displayName}
                             placeholder="Button label..."
                             class="w-full p-2 rounded-sm border text-sm"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
+                          >
                         </div>
                         
                         <div>
-                          <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">URL (optional)</label>
-                          <input
+                          <label for="input-2408" class="block text-xs font-medium mb-1"
+                                 style="color: {$colorStore.text}">URL (optional)</label>
+                          <input id="input-2408"
                             type="url"
                             bind:value={component.url}
                             placeholder="https://..."
                             class="w-full p-2 rounded-sm border text-sm"
                             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          />
+                          >
                         </div>
                       </div>
                     </div>
@@ -1976,7 +1958,7 @@
                   
                   {#if messageComponents.length === 0}
                     <div class="text-center py-6" style="color: {$colorStore.muted}">
-                      <Zap class="w-8 h-8 mx-auto mb-2" />
+                      <i class="fa-solid fa-bolt" style="font-size: 32px;"></i>
                       <p class="text-sm">Click "Add Button" to create interactive components</p>
                     </div>
                   {/if}
@@ -1989,24 +1971,24 @@
 
           <!-- Trigger Mode Selection -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              <Zap class="w-4 h-4 inline mr-1" />
+            <span id="how-should-this-repeater-trigger-label" class="block text-sm font-medium mb-2"
+                  style="color: {$colorStore.text}">
+              <i class="fa-solid fa-bolt" style="font-size: 16px;"></i>
               How should this repeater trigger?
-            </label>
+            </span>
             <DiscordSelector
               type="custom"
               options={triggerModeOptions}
               selected={formData.triggerMode.toString()}
               placeholder="Select trigger mode..."
-              on:change={(e) => formData.triggerMode = parseInt(e.detail.selected)}
-            />
+              on:change={(e) => formData.triggerMode = parseInt(e.detail.selected)} />
           </div>
 
           <!-- ===== CONTEXTUAL INTERVAL SELECTION (Only for TimeInterval mode) ===== -->
           {#if formData.triggerMode === StickyTriggerMode.TimeInterval}
             <div in:fly={{ y: 20, duration: 300 }}>
-              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                <Clock class="w-4 h-4 inline mr-1" />
+              <label for="input-7328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                <i class="fa-solid fa-clock" style="font-size: 16px;"></i>
                 Repeat Every
               </label>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
@@ -2018,7 +2000,8 @@
                   { value: "06:00:00", label: "6 hours" },
                   { value: "1.00:00:00", label: "Daily" }
                 ] as preset}
-                  <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02]"
+                  <label for="input-7328"
+                         class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02]"
                          style="background: {formData.interval === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                 border-color: {formData.interval === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                     <input
@@ -2026,7 +2009,7 @@
                       bind:group={formData.interval}
                       value={preset.value}
                       class="sr-only"
-                    />
+                    >
                     <span class="text-sm" style="color: {$colorStore.text}">{preset.label}</span>
                   </label>
                 {/each}
@@ -2039,39 +2022,39 @@
                 placeholder="Custom: HH:MM:SS"
                 class="w-full p-2 rounded-lg border text-sm transition-all"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
             </div>
           {/if}
 
           <!-- Simple Feature Toggles -->
           <div class="flex flex-wrap gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label for="input-7328" class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 bind:checked={formData.noRedundant}
                 class="sr-only"
-              />
+              >
                 <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                    style="border-color: {formData.noRedundant ? $colorStore.primary : $colorStore.muted}; 
                           background: {formData.noRedundant ? $colorStore.primary : 'transparent'};">
                 {#if formData.noRedundant}
-                  <CheckCircle class="w-2 h-2" style="color: white" />
+                  <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                 {/if}
               </div>
               <span class="text-sm" style="color: {$colorStore.text}">Don't repeat if message is already last in channel</span>
             </label>
 
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label for="input-7328" class="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 bind:checked={formData.allowMentions}
                 class="sr-only"
-              />
+              >
                 <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                    style="border-color: {formData.allowMentions ? $colorStore.primary : $colorStore.muted}; 
                           background: {formData.allowMentions ? $colorStore.primary : 'transparent'};">
                 {#if formData.allowMentions}
-                  <CheckCircle class="w-2 h-2" style="color: white" />
+                  <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                 {/if}
               </div>
               <span class="text-sm" style="color: {$colorStore.text}">Allow @everyone and @here mentions</span>
@@ -2083,12 +2066,13 @@
           <div class="border rounded-xl" style="border-color: {$colorStore.primary}30;">
             <button
               type="button"
-              class="w-full flex items-center justify-between p-4 transition-all hover:bg-opacity-50"
+              class="w-full flex items-center justify-between p-4 transition-all hover:opacity-50"
               style="background: {$colorStore.primary}05;"
               onclick={() => showAdvancedOptions = !showAdvancedOptions}
             >
               <div class="flex items-center gap-3">
-                <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+                <i class="fa-utility-duo fa-regular fa-gear"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 <span class="font-medium" style="color: {$colorStore.text}">Advanced Options</span>
                   <span class="text-xs px-2 py-1 rounded-sm"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
@@ -2096,7 +2080,7 @@
                 </span>
               </div>
               <div class="transition-transform duration-200" class:rotate-180={showAdvancedOptions}>
-                <ArrowDown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                <i class="fa-solid fa-arrow-down" style="color: {$colorStore.primary}; font-size: 20px;"></i>
               </div>
             </button>
 
@@ -2106,72 +2090,75 @@
                 <!-- Priority & Timing -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Priority (0-100)</label>
-                    <input
+                    <label for="input-7328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Priority
+                      (0-100)</label>
+                    <input id="input-7328"
                       type="number"
                       bind:value={formData.priority}
                       min="0" max="100"
                       class="w-full p-2 rounded-lg border text-sm"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Queue Position</label>
-                    <input
+                    <label for="input-3731" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Queue
+                      Position</label>
+                    <input id="input-3731"
                       type="number"
                       bind:value={formData.queuePosition}
                       min="0"
                       class="w-full p-2 rounded-lg border text-sm"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Start Time (HH:MM)</label>
-                    <input
+                    <label for="input-5720" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Start
+                      Time (HH:MM)</label>
+                    <input id="input-5720"
                       type="time"
                       bind:value={formData.startTimeOfDay}
                       class="w-full p-2 rounded-lg border text-sm"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
                 </div>
 
                 <!-- Advanced Toggles -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" bind:checked={formData.conversationDetection} class="sr-only" />
+                  <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" bind:checked={formData.conversationDetection} class="sr-only">
                       <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                          style="border-color: {formData.conversationDetection ? $colorStore.primary : $colorStore.muted}; 
                                 background: {formData.conversationDetection ? $colorStore.primary : 'transparent'};">
                       {#if formData.conversationDetection}
-                        <CheckCircle class="w-2 h-2" style="color: white" />
+                        <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                       {/if}
                     </div>
                     <span class="text-sm" style="color: {$colorStore.text}">Conversation Detection</span>
                   </label>
 
                   {#if selectedChannelType === 'forum'}
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" bind:checked={formData.threadAutoSticky} class="sr-only" />
+                    <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" bind:checked={formData.threadAutoSticky} class="sr-only">
                         <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                            style="border-color: {formData.threadAutoSticky ? $colorStore.primary : $colorStore.muted}; 
                                   background: {formData.threadAutoSticky ? $colorStore.primary : 'transparent'};">
                         {#if formData.threadAutoSticky}
-                          <CheckCircle class="w-2 h-2" style="color: white" />
+                          <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                         {/if}
                       </div>
                       <span class="text-sm" style="color: {$colorStore.text}">Auto-create in new threads</span>
                     </label>
 
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" bind:checked={formData.threadOnlyMode} class="sr-only" />
+                    <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" bind:checked={formData.threadOnlyMode} class="sr-only">
                         <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
                            style="border-color: {formData.threadOnlyMode ? $colorStore.primary : $colorStore.muted}; 
                                   background: {formData.threadOnlyMode ? $colorStore.primary : 'transparent'};">
                         {#if formData.threadOnlyMode}
-                          <CheckCircle class="w-2 h-2" style="color: white" />
+                          <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                         {/if}
                       </div>
                       <span class="text-sm" style="color: {$colorStore.text}">Thread-only mode</span>
@@ -2182,35 +2169,39 @@
                 <!-- Auto-Expiry (simplified) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto-delete after (days)</label>
-                    <input
+                    <label for="input-9356" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto-delete
+                      after (days)</label>
+                    <input id="input-9356"
                       type="text"
                       bind:value={formData.maxAge}
                       placeholder="7.00:00:00 (7 days)"
                       class="w-full p-2 rounded-lg border text-sm"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max displays</label>
-                    <input
+                    <label for="input-8121" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max
+                      displays</label>
+                    <input id="input-8121"
                       type="number"
                       bind:value={formData.maxTriggers}
                       placeholder="Leave empty for unlimited"
                       min="1"
                       class="w-full p-2 rounded-lg border text-sm"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    />
+                    >
                   </div>
                 </div>
 
                 <!-- Time Scheduling (simplified) -->
                 <div>
-                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time Schedule (Optional)</label>
+                  <label for="input-6736" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
+                    Schedule (Optional)</label>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {#each TIME_SCHEDULE_PRESETS as preset}
-                      <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] text-sm"
+                      <label for="input-6736"
+                             class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] text-sm"
                              style="background: {formData.timeSchedulePreset === preset.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                     border-color: {formData.timeSchedulePreset === preset.id ? $colorStore.primary : $colorStore.primary + '30'};">
                         <input
@@ -2218,7 +2209,7 @@
                           bind:group={formData.timeSchedulePreset}
                           value={preset.id}
                           class="sr-only"
-                        />
+                        >
                         <span style="color: {$colorStore.text}">{preset.name}</span>
                       </label>
                     {/each}
@@ -2237,33 +2228,34 @@
                  style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;"
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2 mb-3">
-                <Activity class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                <i class="fa-solid fa-chart-line" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                 <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Activity Settings</h4>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <label for="input-6736" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                     {formData.triggerMode === StickyTriggerMode.AfterMessages ? 'Messages needed' : 'Activity threshold'}
                   </label>
-                  <input
+                  <input id="input-6736"
                     type="number"
                     bind:value={formData.activityThreshold}
                     min="1"
                     class="w-full p-2 rounded-lg border text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  />
+                  >
                 </div>
                 
                 <div>
-                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time window</label>
-                  <input
+                  <label for="input-9912" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
+                    window</label>
+                  <input id="input-9912"
                     type="text"
                     bind:value={formData.activityTimeWindow}
                     placeholder="00:05:00"
                     class="w-full p-2 rounded-lg border text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  />
+                  >
                 </div>
               </div>
             </div>
@@ -2275,7 +2267,7 @@
                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2">
-                <Zap class="w-4 h-4" style="color: {$colorStore.primary}" />
+                <i class="fa-solid fa-bolt" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                 <span class="text-sm font-medium" style="color: {$colorStore.text}">
                   This repeater will immediately repost the message when any message is sent in the channel.
                 </span>
@@ -2292,13 +2284,13 @@
               disabled={saving || !formData.channelId || (!messageContent.trim() && messageEmbeds.length === 0)}
             >
               {#if saving}
-                <RefreshCw class="w-5 h-5 animate-spin" />
+                <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 20px;"></i>
                 {isEditMode ? 'Updating...' : 'Creating...'}
               {:else if isEditMode}
                 <Edit3 class="w-5 h-5" />
                 Update Repeater
               {:else}
-                <Plus class="w-5 h-5" />
+                <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
                 Create Repeater
               {/if}
             </button>
@@ -2316,7 +2308,7 @@
                   activeTab = 'overview';
                 }}
               >
-                <XCircle class="w-5 h-5" />
+                <i class="fa-solid fa-xmark" style="font-size: 20px;"></i>
                 Cancel Edit
               </button>
             {:else}
@@ -2326,7 +2318,7 @@
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
                 onclick={resetForm}
               >
-                <RefreshCw class="w-5 h-5" />
+                <i class="fa-solid fa-arrows-rotate" style="font-size: 20px;"></i>
                 Reset Form
               </button>
             {/if}

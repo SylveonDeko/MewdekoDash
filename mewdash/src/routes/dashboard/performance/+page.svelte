@@ -8,7 +8,6 @@
     import {api} from "$lib/api.ts";
     import {onMount} from "svelte";
     import {goto} from "$app/navigation";
-    import {Activity, BarChart3, Package, Zap, Cpu} from "lucide-svelte";
     import {loadingStore} from "$lib/stores/loadingStore";
     import {colorStore} from "$lib/stores/colorStore";
 
@@ -21,30 +20,27 @@
       try {
         let isOwner = await api.isOwner(BigInt(data.user.id));
 
-        console.log(isOwner);
-
         if (!isOwner) {
           goto("/dashboard");
         }
       } catch (error) {
-        console.error("Error checking owner status:", error);
         goto("/dashboard");
       }
     }, "critical", "Checking permissions...");
   });
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "methods", label: "Methods", icon: Activity },
-    { id: "events", label: "Events", icon: Zap },
-    { id: "modules", label: "Modules", icon: Package }
+    { id: "overview", label: "Overview", icon: "fa-chart-bar" },
+    { id: "methods", label: "Methods", icon: "fa-clock" },
+    { id: "events", label: "Events", icon: "fa-bell" },
+    { id: "modules", label: "Modules", icon: "fa-square" }
   ];
 </script>
 
-<DashboardPageLayout 
-  title="Performance" 
-  subtitle="Monitor system resources, method performance, event processing, and module metrics" 
-  icon={BarChart3}
+<DashboardPageLayout
+  icon="fa-chart-bar"
+  subtitle="Monitor system resources, method performance, event processing, and module metrics"
+  title="Performance"
   guildName="Bot Performance Dashboard"
   tabs={tabs}
   bind:activeTab

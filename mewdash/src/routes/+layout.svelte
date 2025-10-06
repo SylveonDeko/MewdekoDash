@@ -133,20 +133,20 @@
   <meta
     content="Mewdeko - The most customizable discord bot."
     name="twitter:title"
-  />
+  >
   <meta content="summary_large_image" name="twitter:card" />
   <meta
     content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp"
     name="twitter:image"
-  />
+  >
   <meta
     content="Mewdeko, Mewdeko Bot, Mewdeko Discord Bot, Mewdeko Discord, Mewdeko D, free discord bot, free bot, anime themed discord bot, mewdeko.tech, mewdeko website, mewdeko dashboard, mewdeko commands, mewdeko donate, mewdeko paypal, mewdeko discord, mewdeko help"
     name="keywords"
-  />
+  >
   <meta
     content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp"
     property="og:image"
-  />
+  >
 </svelte:head>
 
 <UnifiedNav data={data} items={navItems} />

@@ -170,7 +170,4 @@
 
 <style>
   /* Ensure tooltip stays visible when hovering over it */
-  :global(.tooltip-container:hover .tooltip-content) {
-    display: block;
-  }
 </style>

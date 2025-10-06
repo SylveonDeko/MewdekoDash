@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { AlertCircle, BarChart2 } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
@@ -21,7 +20,9 @@
     style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
            color: {$colorStore.primary};"
   >
-    <BarChart2 aria-hidden="true" class="w-6 h-6" />
+    <i aria-hidden="true"
+       class="fa-utility-duo fa-regular fa-star"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
   <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Statistics</h2>
 </div>
@@ -42,7 +43,9 @@
     style="background: {$colorStore.accent}10;"
     role="alert"
   >
-    <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+    <i class="fa-utility-duo fa-regular fa-bell"
+       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+       aria-hidden="true"></i>
     <p style="color: {$colorStore.accent}">{error}</p>
   </div>
 {:else}
@@ -110,7 +113,7 @@
               alt=""
               class="w-10 h-10 rounded-full border-2"
               style="border-color: {$colorStore.primary}30;"
-            />
+            >
             <div class="grow">
               <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                 <span class="font-medium" style="color: {$colorStore.text}">{activity.username}</span>

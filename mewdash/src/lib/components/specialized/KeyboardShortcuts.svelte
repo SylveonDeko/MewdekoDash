@@ -4,7 +4,6 @@
     import {colorStore} from "$lib/stores/colorStore";
     import {onDestroy, onMount} from "svelte";
     import {browser} from "$app/environment";
-    import {X} from "lucide-svelte";
 
     // Keyboard shortcuts
   const shortcuts = [
@@ -141,13 +140,11 @@
           Keyboard Shortcuts
         </h2>
 
-        <button
+        <button aria-label="Button action"
           class="p-2 rounded-full hover:bg-gray-800 transition-colors"
           onclick={closeDialog}
-          aria-label="Close keyboard shortcuts"
-        >
-          <X size={20} style="color: {$colorStore.muted}" />
-        </button>
+
+        ><i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 20px;"></i></button>
       </div>
 
       <!-- Context tabs -->

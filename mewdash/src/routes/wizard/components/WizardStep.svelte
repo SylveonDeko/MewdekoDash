@@ -10,7 +10,7 @@ Wrapper component for individual wizard steps with consistent styling and animat
   interface Props {
     title: string;
     subtitle?: string;
-    icon?: ComponentType | undefined;
+    icon?: string | ComponentType | undefined;
     stepNumber: number;
     isActive?: boolean;
     maxWidth?: string;
@@ -51,8 +51,12 @@ Wrapper component for individual wizard steps with consistent styling and animat
               "
             >
               {#if icon}
-                {@const SvelteComponent = icon}
-                <SvelteComponent class="w-6 h-6 sm:w-8 sm:h-8" />
+                {#if typeof icon === 'string'}
+                  <i class="{icon}" style="font-size: 32px;"></i>
+                {:else}
+                  {@const SvelteComponent = icon}
+                  <SvelteComponent class="w-6 h-6 sm:w-8 sm:h-8" />
+                {/if}
               {:else}
                 <span class="text-lg sm:text-2xl font-bold">{stepNumber}</span>
               {/if}

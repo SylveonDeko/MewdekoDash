@@ -660,11 +660,11 @@
             <!-- Message Content -->
             {#if !isSimpleMode}
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                <label for="embed-title" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                   Message Content (optional)
                 </label>
                 <div class="relative">
-                  <textarea
+                  <textarea id="embed-title"
                     rows="3"
                     class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
                     style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -807,7 +807,10 @@
                     <!-- Edit Modal for this component -->
                     {#if editingComponent?.componentKey === component.componentKey}
                       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                           onclick={self(() => editingComponent = null)}>
+                           role="button"
+                           tabindex="0"
+                           onclick={self(() => editingComponent = null)}
+                           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); editingComponent = null; } }}>
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}30;">
                           <ComponentEditor
@@ -912,10 +915,10 @@
     onclick={self(() => showTriggerSelect = false)}
     onkeydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
     role="dialog"
+    tabindex="-1"
     aria-modal="true"
     aria-labelledby="select-trigger-title"
     transition:fade={{ duration: 200 }}
-    tabindex="-1"
   >
     <div
       class="rounded-xl p-4 w-80 sm:w-96 mx-auto max-h-[80vh] overflow-y-auto"
@@ -942,7 +945,7 @@
         {:else}
           {#each chatTriggers as trigger}
             <button
-              class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:bg-opacity-20"
+              class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:opacity-20"
               style="background: {$colorStore.primary}10;
                      border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
@@ -987,17 +990,7 @@
 
   /* Custom scrollbar for mobile */
   @media (max-width: 768px) {
-    .overflow-x-auto::-webkit-scrollbar {
-      height: 4px;
-    }
     
-    .overflow-x-auto::-webkit-scrollbar-track {
-      background: transparent;
-    }
     
-    .overflow-x-auto::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-    }
   }
 </style>

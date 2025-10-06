@@ -231,7 +231,7 @@
       </div>
 
       <div class="space-y-4">
-        <button
+        <button aria-label="Button action"
           class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-105"
           disabled={refreshing}
           onclick={onRefresh}

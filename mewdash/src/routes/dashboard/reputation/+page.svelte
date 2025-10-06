@@ -6,27 +6,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        AlertCircle,
-        Award,
-        BarChart3,
-        Bell,
-        CheckCircle,
-        Clock,
-        Crown,
-        Gift,
-        Hash,
-        MessageSquare,
-        Plus,
-        RefreshCw,
-        Save,
-        Settings,
-        Star,
-        TrendingUp,
-        Trophy,
-        Users,
-        XCircle
-    } from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -309,17 +288,16 @@
 
     // Tabs configuration
     const tabs = [
-        { id: "config", label: "Configuration", icon: Settings },
-        { id: "rewards", label: "Role Rewards", icon: Crown },
-        { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-        { id: "stats", label: "Statistics", icon: BarChart3 }
+      { id: "config", label: "Configuration", icon: "fa-gear" },
+      { id: "rewards", label: "Role Rewards", icon: "fa-star" },
+      { id: "leaderboard", label: "Leaderboard", icon: "fa-star" },
+      { id: "stats", label: "Statistics", icon: "fa-chart-bar" }
     ];
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
             label: "Refresh",
-            icon: RefreshCw,
             action: loadAllReputationData,
             loading: loading
         }
@@ -334,7 +312,7 @@
 <DashboardPageLayout
         title="Reputation System"
         subtitle="Manage server reputation and rewards"
-        icon={Star}
+        icon="fa-star"
         {tabs}
         {activeTab}
         {actionButtons}
@@ -349,11 +327,14 @@
                   border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
                  in:fly={{ x: 20, duration: 300 }}>
                 {#if messageType === 'success'}
-                    <CheckCircle class="w-5 h-5" style="color: #10b981" />
+                  <i class="fa-utility-duo fa-regular fa-circle-check"
+                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
                 {:else if messageType === 'error'}
-                    <XCircle class="w-5 h-5" style="color: #ef4444" />
+                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
                 {:else}
-                    <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-bell"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 {/if}
                 <span style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
             </div>
@@ -368,7 +349,8 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+                      <i class="fa-utility-duo fa-regular fa-gear"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">System Configuration</h2>
                     </div>
 
@@ -384,7 +366,7 @@
                                     Allow users to give and receive reputation points
                                 </div>
                             </div>
-                            <button
+                          <button aria-label="Delete"
                                     onclick={() => {
                                         configForm.enabled = !configForm.enabled;
                                         configForm = { ...configForm };
@@ -399,96 +381,103 @@
 
                         <!-- Cooldown -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Clock class="w-4 h-4 inline mr-1" />
+                          <label for="input-3278" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
+                            <i class="fa-solid fa-clock" style="font-size: 16px;"></i>
                                 Cooldown (minutes)
                             </label>
-                            <input
+                          <input id="input-3278"
                                     type="number"
                                     min="1"
                                     bind:value={configForm.defaultCooldownMinutes}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Daily Limit -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-1523" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 Daily Limit
                             </label>
-                            <input
+                          <input id="input-1523"
                                     type="number"
                                     min="1"
                                     bind:value={configForm.dailyLimit}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Weekly Limit -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-4559" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 Weekly Limit (optional)
                             </label>
-                            <input
+                          <input id="input-4559"
                                     type="number"
                                     min="0"
                                     bind:value={configForm.weeklyLimit}
                                     placeholder="None"
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Min Account Age -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-3155" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 Min Account Age (days)
                             </label>
-                            <input
+                          <input id="input-3155"
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minAccountAgeDays}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Min Server Membership -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-4752" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 Min Server Time (hours)
                             </label>
-                            <input
+                          <input id="input-4752"
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minServerMembershipHours}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Min Messages -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-3616" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 Min Message Count
                             </label>
-                            <input
+                          <input id="input-3616"
                                     type="number"
                                     min="0"
                                     bind:value={configForm.minMessageCount}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
 
                         <!-- Notification Channel -->
                         <div class="md:col-span-2 lg:col-span-3">
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Hash class="w-4 h-4 inline mr-1" />
+                            <span id="notification-channel-optional-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
+                                <i class="fa-solid fa-hashtag" style="font-size: 16px;"></i>
                                 Notification Channel (optional)
-                            </label>
+                            </span>
                             <DiscordSelector
                                     type="channel"
                                     options={guildChannels}
@@ -498,7 +487,7 @@
                                         configForm.notificationChannel = e.detail.selected ? BigInt(e.detail.selected) : null;
                                         configForm = { ...configForm };
                                     }}
-                            />
+                                    aria-labelledby="notification-channel-optional-label" />
                         </div>
                     </div>
 
@@ -507,10 +496,10 @@
                         <div class="flex items-center justify-between p-3 rounded-lg"
                              style="background: {$colorStore.primary}08;">
                             <div class="flex items-center gap-2">
-                                <MessageSquare class="w-4 h-4" style="color: {$colorStore.primary}" />
+                              <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                                 <span style="color: {$colorStore.text}">Allow Negative Reputation</span>
                             </div>
-                            <button
+                          <button aria-label="Delete"
                                     onclick={() => {
                                         configForm.enableNegativeRep = !configForm.enableNegativeRep;
                                         configForm = { ...configForm };
@@ -526,10 +515,10 @@
                         <div class="flex items-center justify-between p-3 rounded-lg"
                              style="background: {$colorStore.primary}08;">
                             <div class="flex items-center gap-2">
-                                <Eye class="w-4 h-4" style="color: {$colorStore.primary}" />
+                              <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                                 <span style="color: {$colorStore.text}">Enable Anonymous Reputation</span>
                             </div>
-                            <button
+                          <button aria-label="Delete"
                                     onclick={() => {
                                         configForm.enableAnonymous = !configForm.enableAnonymous;
                                         configForm = { ...configForm };
@@ -543,13 +532,13 @@
                         </div>
                     </div>
 
-                    <button
+                  <button aria-label="Button action"
                             class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
                     >
-                        <Save class="w-5 h-5" />
+                    <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
                         {saving ? "Saving..." : "Save Configuration"}
                     </button>
                 </div>
@@ -563,16 +552,16 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <Plus class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Role Reward</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            <Crown class="w-4 h-4 inline mr-1" />
+                        <span id="role-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <i class="fa-solid fa-crown" style="font-size: 16px;"></i>
                             Role
-                        </label>
+                        </span>
                         <DiscordSelector
                                 type="role"
                                 options={guildRoles}
@@ -582,27 +571,28 @@
                                     newRoleReward.roleId = e.detail.selected;
                                     newRoleReward = { ...newRoleReward };
                                 }}
-                        />
+                                aria-labelledby="role-label" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="input-4273" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             Reputation Required
                         </label>
-                        <input
+                      <input id="input-4273"
                                 type="number"
                                 min="1"
                                 bind:value={newRoleReward.repRequired}
                                 class="w-full p-3 rounded-xl border"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        />
+                      >
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            <Bell class="w-4 h-4 inline mr-1" />
+                        <span id="announce-channel-optional-label" class="block text-sm font-medium mb-2"
+                              style="color: {$colorStore.text}">
+                            <i class="fa-solid fa-bell" style="font-size: 16px;"></i>
                             Announce Channel (optional)
-                        </label>
+                        </span>
                         <DiscordSelector
                                 type="channel"
                                 options={guildChannels}
@@ -612,22 +602,22 @@
                                     newRoleReward.announceChannelId = e.detail.selected;
                                     newRoleReward = { ...newRoleReward };
                                 }}
-                        />
+                                aria-labelledby="announce-channel-optional-label" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            <Gift class="w-4 h-4 inline mr-1" />
+                      <label for="input-2975" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <i class="fa-solid fa-gift" style="font-size: 16px;"></i>
                             Bonus XP (optional)
                         </label>
-                        <input
+                      <input id="input-2975"
                                 type="number"
                                 min="0"
                                 bind:value={newRoleReward.xpReward}
                                 placeholder="None"
                                 class="w-full p-3 rounded-xl border"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        />
+                      >
                     </div>
                 </div>
 
@@ -638,7 +628,7 @@
                                 bind:checked={newRoleReward.removeOnDrop}
                                 class="rounded"
                                 style="color: {$colorStore.primary}"
-                        />
+                        >
                         <span class="text-sm" style="color: {$colorStore.text}">Remove role if rep drops below threshold</span>
                     </label>
 
@@ -648,7 +638,7 @@
                                 bind:checked={newRoleReward.announceDM}
                                 class="rounded"
                                 style="color: {$colorStore.primary}"
-                        />
+                        >
                         <span class="text-sm" style="color: {$colorStore.text}">Send DM notification</span>
                     </label>
                 </div>
@@ -659,7 +649,7 @@
                         onclick={addRoleReward}
                         disabled={saving || !newRoleReward.roleId}
                 >
-                    <Plus class="w-4 h-4" />
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     Add Role Reward
                 </button>
             </div>
@@ -669,14 +659,15 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <Crown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-solid fa-crown" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Rewards ({roleRewards.length})</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if roleRewards.length === 0}
                         <div class="text-center py-8">
-                            <Crown class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                          <i class="fa-utility-duo fa-regular fa-star"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Role Rewards</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Add role rewards to incentivize reputation growth.
@@ -687,7 +678,8 @@
                             <div class="flex items-center justify-between p-4 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <Crown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                  <i class="fa-solid fa-crown"
+                                     style="color: {$colorStore.primary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-semibold" style="color: {$colorStore.text}">
                                             {getRoleName(reward.roleId)}
@@ -697,12 +689,11 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button
+                              <button aria-label="Delete"
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => removeRoleReward(reward.roleId)}
                                 >
-                                    <XCircle class="w-4 h-4" />
                                 </button>
                             </div>
                         {/each}
@@ -717,14 +708,16 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <Trophy class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-star"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reputation Leaderboard</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if leaderboard.length === 0}
                         <div class="text-center py-8">
-                            <Trophy class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                          <i class="fa-utility-duo fa-regular fa-star"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Reputation Data</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 The leaderboard will appear once users start earning reputation.
@@ -755,11 +748,11 @@
                                     </div>
                                 </div>
                                 {#if entry.rank === 1}
-                                    <Trophy class="w-6 h-6" style="color: #fbbf24" />
+                                  <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 24px;"></i>
                                 {:else if entry.rank === 2}
-                                    <Award class="w-6 h-6" style="color: #94a3b8" />
+                                  <i class="fa-solid fa-star" style="color: #94a3b8; font-size: 24px;"></i>
                                 {:else if entry.rank === 3}
-                                    <Award class="w-6 h-6" style="color: #c2410c" />
+                                  <i class="fa-solid fa-star" style="color: #c2410c; font-size: 24px;"></i>
                                 {/if}
                             </div>
                         {/each}
@@ -773,7 +766,7 @@
             {#if stats}
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                     <StatCard
-                            icon={Users}
+                      icon="fa-users"
                             label="Total Users"
                             value={stats.totalUsers}
                             subtitle="with reputation"
@@ -782,7 +775,7 @@
                     />
 
                     <StatCard
-                            icon={Star}
+                      icon="fa-star"
                             label="Total Rep Given"
                             value={stats.totalRepGiven}
                             subtitle="all time"
@@ -791,7 +784,7 @@
                     />
 
                     <StatCard
-                            icon={TrendingUp}
+                      icon="fa-chart-line"
                             label="Transactions"
                             value={stats.totalTransactions}
                             subtitle="reputation exchanges"
@@ -800,7 +793,7 @@
                     />
 
                     <StatCard
-                            icon={Award}
+                      icon="fa-star"
                             label="Average Rep"
                             value={Math.round(stats.averageRepPerUser)}
                             subtitle="per user"
@@ -810,7 +803,8 @@
                 </div>
             {:else}
                 <div class="text-center py-12">
-                    <BarChart3 class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                  <i class="fa-utility-duo fa-regular fa-chart-bar"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                     <p style="color: {$colorStore.muted}">
                         Reputation statistics will appear here once the system is active.

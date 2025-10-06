@@ -148,13 +148,13 @@
       <div class="space-y-4">
         <!-- Display Name -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <label for="input-6378" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             Display Name
             <span class="text-xs ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/80
             </span>
           </label>
-          <input
+          <input id="input-6378"
             type="text"
             class="w-full px-3 py-2 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -162,14 +162,14 @@
             value={component.displayName || ''}
             maxlength="80"
             oninput={(e) => updateComponent('displayName', e.target?.value)}
-          />
+          >
         </div>
 
         <!-- Style -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <span id="button-style-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             Button Style
-          </label>
+          </span>
           <DiscordSelector
             type="custom"
             options={buttonStyles}
@@ -177,31 +177,31 @@
             placeholder="Select button style"
             searchable={false}
             on:change={(e) => updateComponent('style', parseInt(e.detail.selected))}
-          />
+            aria-labelledby="button-style-label" />
         </div>
 
         <!-- Emoji -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <label for="input-8959" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             Emoji (optional)
           </label>
-          <input
+          <input id="input-8959"
             type="text"
             class="w-full px-3 py-2 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="😀"
             value={component.emoji || ''}
             oninput={(e) => updateComponent('emoji', e.target?.value)}
-          />
+          >
         </div>
 
         {#if component.style === 5}
           <!-- URL for Link Button -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <label for="input-4138" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
               URL
             </label>
-            <input
+            <input id="input-4138"
               type="url"
               class="w-full px-3 py-2 rounded-lg border"
               style="background: {$colorStore.primary}10; 
@@ -210,7 +210,7 @@
               placeholder="https://example.com"
               value={component.url || ''}
               oninput={(e) => updateComponent('url', e.target?.value)}
-            />
+            >
             {#if component.url && !isValidUrl(component.url)}
               <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
             {/if}
@@ -218,7 +218,7 @@
         {:else}
           <!-- Trigger Selection -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <label for="input-9302" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
               Trigger Action
             </label>
             
@@ -235,7 +235,7 @@
                       {selectedTrigger?.response || 'No response'}
                     </div>
                   </div>
-                  <button
+                  <button aria-label="Change trigger"
                           class="ml-2 p-1 rounded-sm hover:bg-black/10"
                     onclick={() => dispatch('selectTrigger', { component })}
                     title="Change trigger"
@@ -263,13 +263,13 @@
       <div class="space-y-4">
         <!-- Placeholder Text -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <label for="input-9302" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
             Placeholder Text
             <span class="text-xs ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/150
             </span>
           </label>
-          <input
+          <input id="input-9302"
             type="text"
             class="w-full px-3 py-2 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -277,16 +277,16 @@
             value={component.displayName || ''}
             maxlength="150"
             oninput={(e) => updateComponent('displayName', e.target?.value)}
-          />
+          >
         </div>
 
         <!-- Min/Max Options -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <label for="input-1535" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
               Min Options
             </label>
-            <input
+            <input id="input-1535"
               type="number"
               min="1"
               max="25"
@@ -294,14 +294,14 @@
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.minOptions || 1}
               oninput={(e) => updateComponent('minOptions', parseInt(e.target?.value || '1'))}
-            />
+            >
           </div>
           
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <label for="input-2620" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
               Max Options
             </label>
-            <input
+            <input id="input-2620"
               type="number"
               min="1"
               max="25"
@@ -309,14 +309,14 @@
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.maxOptions || 1}
               oninput={(e) => updateComponent('maxOptions', parseInt(e.target?.value || '1'))}
-            />
+            >
           </div>
         </div>
 
         <!-- Options -->
         <div>
           <div class="flex justify-between items-center mb-4">
-            <label class="text-sm font-medium" style="color: {$colorStore.text};">
+            <label for="input-9558" class="text-sm font-medium" style="color: {$colorStore.text};">
               Options ({component.options?.length || 0}/25)
             </label>
             <button
@@ -339,7 +339,7 @@
                   <span class="text-sm font-medium" style="color: {$colorStore.text};">
                     Option {index + 1}
                   </span>
-                  <button
+                  <button aria-label="Remove option"
                           class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
                     onclick={() => removeOption(index)}
                     title="Remove option"
@@ -351,13 +351,13 @@
                 <div class="space-y-3">
                   <!-- Option Name -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="input-9558" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                       Name
                       <span class="ml-2" style="color: {$colorStore.muted};">
                         {option.name?.length || 0}/100
                       </span>
                     </label>
-                    <input
+                    <input id="input-9558"
                       type="text"
                       class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -365,18 +365,18 @@
                       value={option.name || ''}
                       maxlength="100"
                       oninput={(e) => updateOption(index, 'name', e.target?.value)}
-                    />
+                    >
                   </div>
 
                   <!-- Option Description -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="input-9067" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                       Description
                       <span class="ml-2" style="color: {$colorStore.muted};">
                         {option.description?.length || 0}/100
                       </span>
                     </label>
-                    <input
+                    <input id="input-9067"
                       type="text"
                       class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
@@ -384,27 +384,27 @@
                       value={option.description || ''}
                       maxlength="100"
                       oninput={(e) => updateOption(index, 'description', e.target?.value)}
-                    />
+                    >
                   </div>
 
                   <!-- Option Emoji -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="input-8959" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                       Emoji (optional)
                     </label>
-                    <input
+                    <input id="input-8959"
                       type="text"
                       class="w-full px-3 py-2 rounded-sm border text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="😀"
                       value={option.emoji || ''}
                       oninput={(e) => updateOption(index, 'emoji', e.target?.value)}
-                    />
+                    >
                   </div>
 
                   <!-- Option Trigger -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="option-id" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
                       Trigger Action
                     </label>
                     
@@ -421,7 +421,7 @@
                               {selectedTrigger?.response || 'No response'}
                             </div>
                           </div>
-                          <button
+                          <button aria-label="Change trigger"
                                   class="ml-1 p-1 rounded-sm hover:bg-black/10"
                             onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
                             title="Change trigger"
@@ -492,7 +492,7 @@
     {#if component.isSelect}
       <!-- Select Menu Preview -->
       <div class="w-full">
-        <button
+        <button aria-label="Toggle"
                 class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
           disabled
         >
@@ -506,7 +506,7 @@
       </div>
     {:else}
       <!-- Button Preview -->
-      <button
+      <button 
               class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
         disabled
         aria-label={component.displayName}

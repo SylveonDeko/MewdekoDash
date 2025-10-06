@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { AlertCircle, Star } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -61,7 +60,9 @@
     style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
            color: {$colorStore.primary};"
   >
-    <Star aria-hidden="true" class="w-6 h-6" />
+    <i aria-hidden="true"
+       class="fa-utility-duo fa-regular fa-star"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
   <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Rewards</h2>
 </div>
@@ -82,7 +83,9 @@
     style="background: {$colorStore.accent}10;"
     role="alert"
   >
-    <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+    <i class="fa-utility-duo fa-regular fa-bell"
+       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+       aria-hidden="true"></i>
     <p style="color: {$colorStore.accent}">{error}</p>
   </div>
 {:else}
@@ -110,7 +113,7 @@
               type="number"
               min="1"
               aria-label="Level required for role reward"
-            />
+            >
           </div>
           <div>
             <label class="block text-xs mb-1" for="role-reward-role"
@@ -197,7 +200,7 @@
               type="number"
               min="1"
               aria-label="Level required for currency reward"
-            />
+            >
           </div>
           <div>
             <label class="block text-xs mb-1" for="currency-reward-amount" style="color: {$colorStore.muted}">Amount</label>
@@ -210,7 +213,7 @@
               type="number"
               min="1"
               aria-label="Currency amount to award"
-            />
+            >
           </div>
         </div>
         <button

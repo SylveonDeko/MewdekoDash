@@ -17,22 +17,6 @@ A comprehensive music player component for Discord bot music functionality.
 
     import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
-    import {
-        Clock,
-        Disc,
-        List,
-        Mic2,
-        Pause,
-        Play,
-        PlusCircle,
-        Repeat,
-        SkipBack,
-        SkipForward,
-        Volume,
-        Volume1,
-        Volume2,
-        VolumeX
-    } from "lucide-svelte";
     import {api} from "$lib/api";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
@@ -116,10 +100,10 @@ A comprehensive music player component for Discord bot music functionality.
   }
 
   function getVolumeIcon(volume: number) {
-    if (volume === 0) return VolumeX;
-    if (volume < 0.33) return Volume;
-    if (volume < 0.67) return Volume1;
-    return Volume2;
+    if (volume === 0) return "fa-volume-xmark";
+    if (volume < 0.33) return "fa-volume-off";
+    if (volume < 0.67) return "fa-volume-low";
+    return "fa-volume-high";
   }
 
   function syncTimeWithServer() {
@@ -836,11 +820,11 @@ A comprehensive music player component for Discord bot music functionality.
       <!-- Rotation Toggle Button -->
       <button
         aria-label={isRotationEnabled ? "Disable rotation" : "Enable rotation"}
-        class="absolute top-2 right-2 z-20 p-1.5 rounded-full backdrop-blur-xs transition-all duration-200 hover:bg-opacity-40 focus:outline-hidden focus:ring-2"
+        class="absolute top-2 right-2 z-20 p-1.5 rounded-full backdrop-blur-xs transition-all duration-200 hover:opacity-40 focus:outline-hidden focus:ring-2"
         onclick={toggleRotation}
         style="background: var(--music-foreground)30; color: var(--music-text); --ring-color: var(--music-accent)"
       >
-        <Disc class="w-4 h-4" />
+        <i class="fa-solid fa-record-vinyl" style="font-size: 16px;"></i>
       </button>
 
       <div class="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -861,13 +845,13 @@ A comprehensive music player component for Discord bot music functionality.
                   alt={`Album artwork for ${musicStatus.CurrentTrack.Track.Title} by ${musicStatus.CurrentTrack.Track.Author}`}
                   class={`w-full h-full lg:w-[160px] lg:h-[160px] object-cover transition-transform duration-300 group-hover:scale-105 ${isRotationEnabled ? "rounded-full" : "rounded-xl"} ${isTransitioning ? "track-image-transition" : ""}`}
                   src={musicStatus.CurrentTrack.Track.ArtworkUri}
-          />
+          >
         {:else}
           <div
                   class={`w-full h-full lg:w-[160px] lg:h-[160px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${isRotationEnabled ? "rounded-full" : "rounded-xl"}`}
                   style="background: linear-gradient(135deg, var(--music-foreground)20, var(--music-accent)20);"
           >
-            <Disc class="w-16 h-16" style="color: var(--music-foreground)50;"/>
+            <i class="fa-solid fa-record-vinyl" style="color: var(--music-foreground)50; font-size: 64px;"></i>
           </div>
         {/if}
 
@@ -904,7 +888,7 @@ A comprehensive music player component for Discord bot music functionality.
               class="flex items-center px-2 py-1 rounded-full text-xs"
               style="background: var(--music-foreground)20; color: var(--music-foreground);"
             >
-              <Repeat class="w-3 h-3 mr-1" />
+              <i class="fa-solid fa-repeat" style="font-size: 12px;"></i>
               {musicStatus.RepeatMode === 1 ? "All" : "One"}
             </span>
           {/if}
@@ -1030,7 +1014,7 @@ A comprehensive music player component for Discord bot music functionality.
               aria-label="Previous Track"
               title="Previous Track (Ctrl+←)"
             >
-              <SkipBack class="w-5 h-5 sm:w-6 sm:h-6" />
+              <i class="fa-solid fa-backward-step" style="font-size: 24px;"></i>
             </button>
 
             <button
@@ -1046,9 +1030,9 @@ A comprehensive music player component for Discord bot music functionality.
                    style="background: radial-gradient(circle at center, var(--music-foreground)80 0%, transparent 70%);"></div>
 
               {#if musicStatus?.State === 2}
-                <Pause class="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
+                <i class="fa-solid fa-pause" style="font-size: 24px;"></i>
               {:else}
-                <Play class="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
+                <i class="fa-solid fa-play" style="font-size: 24px;"></i>
               {/if}
             </button>
 
@@ -1075,18 +1059,19 @@ A comprehensive music player component for Discord bot music functionality.
               aria-label="Next Track"
               title="Next Track (Ctrl+→)"
             >
-              <SkipForward class="w-5 h-5 sm:w-6 sm:h-6" />
+              <i class="fa-solid fa-forward-step" style="font-size: 24px;"></i>
             </button>
 
           </div>
 
           <!-- Volume controls -->
           <div class="flex items-center justify-center gap-2 sm:gap-3 w-full">
-            <SvelteComponent
-                    class="w-4 h-4 sm:w-5 sm:h-5 shrink-0"
-              style="color: var(--music-foreground)"
+            <i
+              class="fa-solid {getVolumeIcon(musicStatus?.Volume || 1)}"
+              style="color: var(--music-foreground); font-size: 20px;"
               aria-hidden="true"
-            />
+            >
+            </i>
             <input
               bind:this={volumeSliderElement}
               type="range"
@@ -1101,7 +1086,7 @@ A comprehensive music player component for Discord bot music functionality.
               aria-valuetext={`Volume ${Math.round((musicStatus?.Volume || 1) * 100)}%`}
               onchange={handleVolumeChange}
               onkeydown={handleVolumeKeyDown}
-            />
+            >
           </div>
         </div>
 
@@ -1139,7 +1124,7 @@ A comprehensive music player component for Discord bot music functionality.
                 src={musicStatus.CurrentTrack.Requester.AvatarUrl}
                 alt={`${musicStatus.CurrentTrack.Requester.Username}'s avatar`}
                 class="w-full h-full rounded-full relative z-10"
-              />
+              >
             </div>
             <span class="text-sm" style="color: var(--music-text)80">
               Requested by {musicStatus.CurrentTrack.Requester.Username}
@@ -1152,7 +1137,7 @@ A comprehensive music player component for Discord bot music functionality.
           style="background: var(--music-foreground)20;"
           role="alert"
         >
-          <Mic2 class="w-5 h-5" style="color: var(--music-text)80" />
+          <i class="fa-solid fa-microphone" style="color: var(--music-text)80; font-size: 20px;"></i>
           <span style="color: var(--music-text)80">Bot not in voice channel</span>
         </div>
       {/if}
@@ -1166,7 +1151,7 @@ A comprehensive music player component for Discord bot music functionality.
     >
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-3">
-          <List class="w-5 h-5" style="color: var(--music-accent)" />
+          <i class="fa-solid fa-list" style="color: var(--music-accent); font-size: 20px;"></i>
           <h3 style="color: var(--music-accent)">Queue</h3>
           <span
             class="px-2 py-0.5 text-xs rounded-full"
@@ -1183,7 +1168,7 @@ A comprehensive music player component for Discord bot music functionality.
           onclick={openSearchModal}
           aria-label="Add music to queue"
         >
-          <PlusCircle class="w-4 h-4" />
+          <i class="fa-solid fa-circle-plus" style="font-size: 16px;"></i>
           <span class="text-sm">Add</span>
         </button>
       </div>
@@ -1220,7 +1205,8 @@ A comprehensive music player component for Discord bot music functionality.
                 {/if}
 
                 <div class="flex items-center {isCurrentlyPlaying(track) ? '' : 'ml-auto'}">
-                  <Clock class="w-4 h-4" style="color: var(--music-foreground)" aria-hidden="true" />
+                  <i class="fa-solid fa-clock" style="color: var(--music-foreground); font-size: 16px;"
+                     aria-hidden="true"></i>
                   <span class="text-xs ml-1" style="color: var(--music-text)80">
                     {formatTime(track.Track.Duration)}
                   </span>
@@ -1284,7 +1270,7 @@ A comprehensive music player component for Discord bot music functionality.
               <div class="hidden group-hover:flex items-center gap-1 mr-2">
                 {#if i > 0}
                   <button
-                    class="p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors"
+                    class="p-1 rounded-full hover:bg-black hover:opacity-20 transition-colors"
                     onclick={(e) => { e.stopPropagation(); moveQueueItem(i, 'up'); }}
                     aria-label="Move up"
                     title="Move up"
@@ -1298,7 +1284,7 @@ A comprehensive music player component for Discord bot music functionality.
                 {/if}
                 {#if i < musicStatus.Queue.length - 1}
                   <button
-                    class="p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors"
+                    class="p-1 rounded-full hover:bg-black hover:opacity-20 transition-colors"
                     onclick={(e) => { e.stopPropagation(); moveQueueItem(i, 'down'); }}
                     aria-label="Move down"
                     title="Move down"
@@ -1311,7 +1297,7 @@ A comprehensive music player component for Discord bot music functionality.
                   </button>
                 {/if}
                 <button
-                  class="p-1 rounded-full hover:bg-red-500 hover:bg-opacity-20 transition-colors"
+                  class="p-1 rounded-full hover:bg-red-500 hover:opacity-20 transition-colors"
                   onclick={(e) => { e.stopPropagation(); removeFromQueue(i); }}
                   aria-label="Remove from queue"
                   title="Remove from queue"
@@ -1326,11 +1312,10 @@ A comprehensive music player component for Discord bot music functionality.
 
               <!-- Duration -->
               <div class="flex items-center gap-1 group-hover:opacity-50 transition-opacity">
-                <Clock
-                  class="w-4 h-4"
-                  style="color: var(--music-foreground)"
+                <i class="fa-solid fa-clock"
+                   style="color: var(--music-foreground); font-size: 16px;"
                   aria-hidden="true"
-                />
+                ></i>
                 <span
                   class="text-xs"
                   style="color: var(--music-text)80"
@@ -1415,11 +1400,11 @@ A comprehensive music player component for Discord bot music functionality.
         </div>
 
         <button
-          class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+          class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:opacity-20 transition-colors flex items-center gap-2"
           style="color: {colors.text};"
           onclick={() => playQueueItem(contextMenuTrackIndex)}
         >
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg style="font-size: 16px;" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clip-rule="evenodd" />
@@ -1429,11 +1414,11 @@ A comprehensive music player component for Discord bot music functionality.
 
         {#if contextMenuTrackIndex > 0}
           <button
-            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:opacity-20 transition-colors flex items-center gap-2"
             style="color: {colors.text};"
             onclick={() => moveQueueItem(contextMenuTrackIndex, 'up')}
           >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <svg style="font-size: 16px;" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd"
                     d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
                     clip-rule="evenodd" />
@@ -1444,11 +1429,11 @@ A comprehensive music player component for Discord bot music functionality.
 
         {#if contextMenuTrackIndex < musicStatus.Queue.length - 1}
           <button
-            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:bg-opacity-20 transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm hover:bg-black hover:opacity-20 transition-colors flex items-center gap-2"
             style="color: {colors.text};"
             onclick={() => moveQueueItem(contextMenuTrackIndex, 'down')}
           >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <svg style="font-size: 16px;" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd"
                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                     clip-rule="evenodd" />
@@ -1460,10 +1445,10 @@ A comprehensive music player component for Discord bot music functionality.
         <div class="border-t my-1" style="border-color: {colors.foreground}20;"></div>
 
         <button
-          class="w-full px-3 py-2 text-left text-sm hover:bg-red-500 hover:bg-opacity-20 transition-colors flex items-center gap-2 text-red-400"
+          class="w-full px-3 py-2 text-left text-sm hover:bg-red-500 hover:opacity-20 transition-colors flex items-center gap-2 text-red-400"
           onclick={() => removeFromQueue(contextMenuTrackIndex)}
         >
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg style="font-size: 16px;" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd" />
             <path fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V7z"
@@ -1661,59 +1646,19 @@ A comprehensive music player component for Discord bot music functionality.
     }
 
     /* Album art styling with vinyl appearance */
-    .album-container {
-        width: 100%;
-        max-width: 220px;
-        aspect-ratio: 1;
-        margin: 0 auto;
-    }
 
-    .album-border {
+  .album-border {
         border-color: rgba(0, 0, 0, 0.5);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
-    .vinyl-edge {
-        border-radius: 50%;
-        background: repeating-radial-gradient(
-                circle at center,
-                rgba(0, 0, 0, 0.6) 0%,
-                rgba(0, 0, 0, 0.1) 2.5%,
-                rgba(0, 0, 0, 0.6) 5%,
-                rgba(0, 0, 0, 0.2) 7.5%,
-                rgba(0, 0, 0, 0.1) 10%,
-                transparent 12%
-        );
-        opacity: 0.3;
-        pointer-events: none;
-    }
-
-    .center-hole {
+  .center-hole {
         box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
     }
 
-    .vinyl-grooves {
-        position: absolute;
-        inset: 12%;
-        border-radius: 50%;
-        background: repeating-radial-gradient(
-                circle at center,
-                transparent 0%,
-                transparent 3%,
-                rgba(0, 0, 0, 0.03) 3.5%,
-                transparent 4%
-        );
-        z-index: 15;
-        opacity: 0.8;
-        pointer-events: none;
-    }
+  /* Album art rotation effect */
 
-    /* Album art rotation effect */
-    .album-rotation {
-        animation: subtle-rotation 20s infinite linear;
-    }
-
-    @keyframes subtle-rotation {
+  @keyframes subtle-rotation {
         0% {
             transform: rotate(0deg);
         }

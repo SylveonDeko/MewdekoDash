@@ -115,7 +115,7 @@
                     style="border: 3px solid {$colorStore.primary};"
                     src={member.image}
                     loading="lazy"
-                  />
+                  >
                   <!-- Status indicator -->
                   <div
                     class="absolute bottom-2 right-2 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center"

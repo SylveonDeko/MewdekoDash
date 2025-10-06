@@ -6,26 +6,6 @@
     import {currentGuild} from "$lib/stores/currentGuild";
     import {api} from "$lib/api";
     import {logger} from "$lib/logger";
-    import {
-        AlertCircle,
-        Award,
-        BarChart3,
-        CheckCircle,
-        Clock,
-        Crown,
-        Hash,
-        Key,
-        MessageSquare,
-        Plus,
-        RefreshCw,
-        Save,
-        Settings,
-        TrendingUp,
-        Trophy,
-        Users,
-        Vote,
-        XCircle
-    } from "lucide-svelte";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -243,16 +223,16 @@
 
     // Tabs configuration
     const tabs = [
-        { id: "config", label: "Configuration", icon: Settings },
-        { id: "roles", label: "Vote Roles", icon: Crown },
-        { id: "stats", label: "Statistics", icon: BarChart3 }
+      { id: "config", label: "Configuration", icon: "fa-gear" },
+      { id: "roles", label: "Vote Roles", icon: "fa-crown" },
+      { id: "stats", label: "Statistics", icon: "fa-chart-column" }
     ];
 
     // Action buttons configuration
     let actionButtons = $derived([
         {
             label: "Refresh",
-            icon: RefreshCw,
+          icon: "fa-arrows-rotate",
             action: loadAllVoteData,
             loading: loading
         }
@@ -267,7 +247,7 @@
 <DashboardPageLayout
         title="Vote Management"
         subtitle="Configure voting rewards and tracking"
-        icon={Vote}
+        icon="fa-check-to-slot"
         {tabs}
         {activeTab}
         {actionButtons}
@@ -283,11 +263,14 @@
                   border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
                  in:fly={{ x: 20, duration: 300 }}>
                 {#if messageType === 'success'}
-                    <CheckCircle class="w-5 h-5" style="color: #10b981" />
+                  <i class="fa-utility-duo fa-regular fa-circle-check"
+                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
                 {:else if messageType === 'error'}
-                    <XCircle class="w-5 h-5" style="color: #ef4444" />
+                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
                 {:else}
-                    <AlertCircle class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                 {/if}
                 <span
                         style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
@@ -304,17 +287,19 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <Settings class="w-5 h-5" style="color: {$colorStore.primary}" />
+                      <i class="fa-utility-duo fa-regular fa-gear"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic Settings</h2>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <!-- Channel Selection -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Hash class="w-4 h-4 inline mr-1" />
+                            <span id="vote-announcement-channel-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
+                                <i class="fa-solid fa-hashtag inline mr-1" style="font-size: 14px;"></i>
                                 Vote Announcement Channel
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
@@ -325,14 +310,15 @@
                                             configForm.channelId = e.detail.selected ? BigInt(e.detail.selected) : null;
                                             configForm = { ...configForm };
                                         }}
-                                />
+                                        aria-labelledby="vote-announcement-channel-label" />
                             </div>
                         </div>
 
                         <!-- Password -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                                <Key class="w-4 h-4 inline mr-1" />
+                          <label for="input-6068" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
+                            <i class="fa-solid fa-key inline mr-1" style="font-size: 14px;"></i>
                                 API Password (for webhooks)
                             </label>
                             <div class="relative">
@@ -342,7 +328,7 @@
                                         placeholder="Enter API password"
                                         class="w-full p-3 pr-12 rounded-xl border transition-all min-h-[44px] text-base"
                                         style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                />
+                                >
                                 <button
                                         type="button"
                                         class="absolute right-3 top-1/2 -translate-y-1/2"
@@ -361,12 +347,13 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                        <MessageSquare class="w-5 h-5" style="color: {$colorStore.primary}" />
+                      <i class="fa-utility-duo fa-regular fa-message"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Message</h2>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="input-6068" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             Custom Vote Announcement
                         </label>
                         <textarea
@@ -384,13 +371,13 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
-                    <button
+                  <button aria-label="Button action"
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
                     >
-                        <Save class="w-5 h-5" />
+                    <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
                         {saving ? "Saving..." : "Save Configuration"}
                     </button>
                 </div>
@@ -404,16 +391,18 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <Plus class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-plus"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Vote Role</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            <Crown class="w-4 h-4 inline mr-1" />
+                        <span id="role-to-grant-label" class="block text-sm font-medium mb-2"
+                              style="color: {$colorStore.text}">
+                            <i class="fa-solid fa-crown inline mr-1" style="font-size: 14px;"></i>
                             Role to Grant
-                        </label>
+                        </span>
                         <DiscordSelector
                                 type="role"
                                 options={guildRoles}
@@ -423,21 +412,21 @@
                                     newVoteRole.roleId = e.detail.selected;
                                     newVoteRole = { ...newVoteRole };
                                 }}
-                        />
+                                aria-labelledby="role-to-grant-label" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                            <Clock class="w-4 h-4 inline mr-1" />
+                      <label for="input-6068" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <i class="fa-solid fa-clock inline mr-1" style="font-size: 14px;"></i>
                             Duration (seconds, 0 for permanent)
                         </label>
-                        <input
+                      <input id="input-6068"
                                 type="number"
                                 min="0"
                                 bind:value={newVoteRole.timer}
                                 class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        />
+                      >
                     </div>
                 </div>
 
@@ -447,7 +436,7 @@
                         onclick={addVoteRole}
                         disabled={saving || !newVoteRole.roleId}
                 >
-                    <Plus class="w-4 h-4" />
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     Add Vote Role
                 </button>
             </div>
@@ -458,7 +447,8 @@
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
-                        <Crown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                      <i class="fa-utility-duo fa-regular fa-crown"
+                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Roles ({voteRoles.length})</h2>
                     </div>
                     {#if voteRoles.length > 0}
@@ -475,7 +465,8 @@
                 <div class="space-y-3">
                     {#if voteRoles.length === 0}
                         <div class="text-center py-8">
-                            <Crown class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                          <i class="fa-utility-duo fa-regular fa-crown"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Vote Roles</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Add roles to grant users when they vote for your server.
@@ -486,7 +477,8 @@
                             <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <Crown class="w-5 h-5" style="color: {$colorStore.primary}" />
+                                  <i class="fa-utility-duo fa-regular fa-crown"
+                                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-semibold" style="color: {$colorStore.text}">
                                             {getRoleName(voteRole.roleId)}
@@ -496,12 +488,12 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button
+                              <button aria-label="Delete"
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => removeVoteRole(voteRole.roleId)}
                                 >
-                                    <XCircle class="w-4 h-4" />
+                                <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
                                 </button>
                             </div>
                         {/each}
@@ -514,7 +506,7 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
-                        icon={Vote}
+                  icon="fa-check-to-slot"
                         label="Total Votes"
                         value={votes.length}
                         subtitle="all time"
@@ -523,7 +515,7 @@
                 />
 
                 <StatCard
-                        icon={Crown}
+                  icon="fa-crown"
                         label="Vote Roles"
                         value={voteRoles.length}
                         subtitle="configured rewards"
@@ -532,7 +524,7 @@
                 />
 
                 <StatCard
-                        icon={Trophy}
+                  icon="fa-trophy"
                         label="Top Voter"
                         value={leaderboard[0]?.voteCount || 0}
                         subtitle={leaderboard.length > 0 ? "votes" : "no data"}
@@ -546,14 +538,16 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <TrendingUp class="w-5 h-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-utility-duo fa-regular fa-chart-line"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Leaderboard</h2>
                 </div>
 
                 <div class="space-y-3">
                     {#if leaderboard.length === 0}
                         <div class="text-center py-8">
-                            <Trophy class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+                          <i class="fa-utility-duo fa-regular fa-trophy"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Votes Yet</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Vote statistics will appear here once users start voting.
@@ -576,11 +570,11 @@
                                     </div>
                                 </div>
                                 {#if index === 0}
-                                    <Trophy class="w-6 h-6" style="color: #fbbf24" />
+                                  <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 24px;"></i>
                                 {:else if index === 1}
-                                    <Award class="w-6 h-6" style="color: #94a3b8" />
+                                  <i class="fa-solid fa-award" style="color: #94a3b8; font-size: 24px;"></i>
                                 {:else if index === 2}
-                                    <Award class="w-6 h-6" style="color: #c2410c" />
+                                  <i class="fa-solid fa-award" style="color: #c2410c; font-size: 24px;"></i>
                                 {/if}
                             </div>
                         {/each}

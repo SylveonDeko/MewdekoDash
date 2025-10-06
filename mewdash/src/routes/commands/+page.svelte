@@ -124,15 +124,15 @@
   <meta
     content="Find out more about Mewdeko's commands and how to use them."
     name="description"
-  />
+  >
   <meta
     content="Find out more about Mewdeko's commands and how to use them."
     property="og:description"
-  />
+  >
   <meta
     content="Find out more about Mewdeko's commands and how to use them."
     name="twitter:description"
-  />
+  >
 </svelte:head>
 
 <main
@@ -184,16 +184,14 @@
                      border: 1px solid {$colorStore.primary}30;
                      --tw-ring-color: {$colorStore.accent};"
               type="search"
-            />
+            >
             {#if searchValue}
-              <button
+              <button aria-label="Button action"
                 class="absolute inset-y-0 right-0 pr-4 flex items-center text-sm transition-colors duration-200 hover:opacity-70"
                 style="color: {$colorStore.muted};"
                 onclick={clearSearch}
-                aria-label="Clear search"
-              >
-                <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-              </button>
+
+              ><i class="fa-solid fa-xmark" style="font-size: 16px;"></i></button>
             {:else if showShortcuts}
               <div class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs"
                    style="color: {$colorStore.muted};">

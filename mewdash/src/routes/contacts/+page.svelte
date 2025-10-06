@@ -47,11 +47,11 @@
   </div>
 </div>
 
-<style lang="scss">
+<style lang="postcss">
   @reference '../../app.css';
 
   .contact-card {
-    @apply bg-mewd-dark-grey bg-opacity-50 rounded-lg p-8 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:scale-105 text-mewd-white no-underline hover:text-mewd-green;
+      @apply bg-mewd-dark-grey opacity-50 rounded-lg p-8 flex flex-col items-center justify-center transition-all duration-300 hover:shadow-lg hover:scale-105 text-mewd-white no-underline hover:text-mewd-green;
   }
 
   .animate-fade-in {

@@ -251,7 +251,7 @@
         <div class="flex flex-col md:flex-row items-start md:items-center gap-3 mb-3">
           <div class="flex items-center gap-3 flex-1">
             {#if profile.avatarUrl}
-              <img src={profile.avatarUrl} alt="Bot Avatar" class="w-12 h-12 md:w-16 md:h-16 rounded-full" />
+              <img src={profile.avatarUrl} alt="Bot Avatar" class="w-12 h-12 md:w-16 md:h-16 rounded-full">
             {:else}
               <div class="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center"
                    style="background: {$colorStore.primary}20;">
@@ -360,7 +360,7 @@
             {/if}
           </div>
           {#if profile.bannerUrl}
-            <img src={profile.bannerUrl} alt="Bot Banner" class="w-full h-24 md:h-32 object-cover rounded-lg" />
+            <img src={profile.bannerUrl} alt="Bot Banner" class="w-full h-24 md:h-32 object-cover rounded-lg">
           {:else}
             <div class="w-full h-24 md:h-32 rounded-lg flex items-center justify-center"
                  style="background: {$colorStore.primary}10;">

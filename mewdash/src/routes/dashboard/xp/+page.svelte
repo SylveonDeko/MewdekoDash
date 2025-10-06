@@ -13,7 +13,6 @@
     import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
     import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
     import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
-    import {AlertCircle, Award, BarChart, Image as ImageIcon, Settings, Star, Users} from "lucide-svelte";
     import {browser} from "$app/environment";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger.ts";
@@ -130,7 +129,7 @@
   let previewContainerRef: HTMLDivElement;
   let draggingElement: any = null;
     let showTemplateEditor = $state(false);
-    let previewCanvas: HTMLCanvasElement;
+    let previewCanvas: HTMLCanvasElement = $state(null as any);
     let previewCtx: CanvasRenderingContext2D | null = null;
     let previewBgImage = $state<HTMLImageElement | null>(null);
     let defaultBgImage = $state<HTMLImageElement | null>(null);
@@ -365,7 +364,6 @@
         throw new Error("No guild selected");
       }
 
-      console.log("Fetching XP template for guild:", $currentGuild.id);
 
         // Fetch template and settings together to ensure we have the custom image URL
         const [templateData, settingsData] = await Promise.all([
@@ -374,10 +372,8 @@
         ]);
 
         template = templateData;
-      console.log("Raw template from API:", template);
 
       localTemplate = JSON.parse(JSON.stringify(template));
-      console.log("Local template after copy:", localTemplate);
 
         // Initialize missing properties with C# defaults
         if (localTemplate.templateBar) {
@@ -393,30 +389,21 @@
       }
 
         // Set customXpImageUrl from settings
-        console.log("Settings data customXpImageUrl:", settingsData?.customXpImageUrl);
-        console.log("Current xpSettings customXpImageUrl:", xpSettings.customXpImageUrl);
 
         localTemplate.customXpImageUrl = settingsData?.customXpImageUrl || xpSettings.customXpImageUrl || "";
-        console.log("Final localTemplate.customXpImageUrl:", localTemplate.customXpImageUrl);
 
       // Update the UI variables
         if (localTemplate.customXpImageUrl) {
             imageUrl = localTemplate.customXpImageUrl;
             previewBackgroundUrl = localTemplate.customXpImageUrl;
-            console.log("Setting imageUrl to:", imageUrl);
-            console.log("Setting previewBackgroundUrl to:", previewBackgroundUrl);
         } else {
-            console.log("No customXpImageUrl found, skipping image load");
       }
 
-      console.log("Template fetch completed successfully");
     } catch (err) {
-      console.error("Failed to fetch XP template:", err);
       logger.error("Failed to fetch XP template:", err);
         error = {...error, template: err instanceof Error ? err.message : "Failed to fetch XP template"};
     } finally {
         loading = {...loading, template: false};
-      console.log("Template loading finished, loading.template:", loading.template);
     }
   }
 
@@ -789,7 +776,6 @@
       handleChange("customXpImageUrl", imageUrl);
 
     } catch (error) {
-      console.error("Error loading image:", error);
       imageError = "Failed to load image. Please check the URL.";
     } finally {
       imageLoading = false;
@@ -1263,14 +1249,12 @@
     onMount(() => {
         const img = new Image();
         img.onload = () => {
-            console.log("Default XP background loaded");
             defaultBgImage = img;
             if (previewCanvas && localTemplate) {
                 renderPreview();
             }
         };
         img.onerror = () => {
-            console.error("Failed to load default XP background");
             defaultBgImage = null;
         };
         img.src = '/img/default_xp_background.png';
@@ -1279,26 +1263,20 @@
   // Update preview on template change
     $effect(() => {
         if (localTemplate && activeTab === "template") {
-            console.log("Template effect triggered, customXpImageUrl:", localTemplate.customXpImageUrl);
 
             // Load background image if available
             if (localTemplate.customXpImageUrl) {
-                console.log("Loading XP background image:", localTemplate.customXpImageUrl);
                 const img = new Image();
                 img.onload = () => {
-                    console.log("XP background image loaded successfully");
                     previewBgImage = img;
                     renderPreview();
                 };
                 img.onerror = (err) => {
-                    console.error("Failed to load XP background image:", err);
-                    console.error("Failed URL was:", localTemplate.customXpImageUrl);
                     previewBgImage = null;
                     renderPreview();
                 };
                 img.src = localTemplate.customXpImageUrl;
             } else {
-                console.log("No customXpImageUrl in template, using default background");
                 previewBgImage = null;
                 renderPreview();
             }
@@ -1325,29 +1303,29 @@
 
 <DashboardPageLayout 
   title="XP Management" 
-  subtitle="Configure XP settings, rewards, and manage users' experience" 
-  icon={Award}
-  bind:notificationMessage
-  bind:notificationType
-  guildName={$currentGuild?.name || "Dashboard"}
-  tabs={[
-    {id: "settings", label: "Settings", icon: Settings},
-    {id: "stats", label: "Stats", icon: BarChart},
-    {id: "leaderboard", label: "Leaderboard", icon: Users},
-    {id: "rewards", label: "Rewards", icon: Star},
-    {id: "template", label: "Template", icon: ImageIcon},
-    {id: "exclusions", label: "Exclusions", icon: AlertCircle}
-  ]}
-  activeTab={activeTab}
-  on:tabChange={(e) => activeTab = e.detail.tabId}
   actionButtons={changedSettings.size > 0 ? [
     {
       label: "Save Changes",
-      icon: Settings,
+      icon: "fa-floppy-disk",
       action: updateXpSettings,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ] : []}
+  icon="fa-star"
+  bind:notificationMessage
+  bind:notificationType
+  guildName={$currentGuild?.name || "Dashboard"}
+  subtitle="Configure XP settings, rewards, and manage users' experience"
+  activeTab={activeTab}
+  on:tabChange={(e) => activeTab = e.detail.tabId}
+  tabs={[
+    {id: "settings", label: "Settings", icon: "fa-gear"},
+    {id: "stats", label: "Stats", icon: "fa-chart-bar"},
+    {id: "leaderboard", label: "Leaderboard", icon: "fa-users"},
+    {id: "rewards", label: "Rewards", icon: "fa-star"},
+    {id: "template", label: "Template", icon: "fa-image"},
+    {id: "exclusions", label: "Exclusions", icon: "fa-bell"}
+  ]}
 >
 
   <!-- Tab Content -->
@@ -1462,7 +1440,9 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-bell"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.accent}">{error.template}</p>
         </div>
       {:else if template}
@@ -1487,7 +1467,7 @@
                             width={localTemplate.outputSizeX}
                             height={localTemplate.outputSizeY}
                             style="width: 100%; height: 100%; object-fit: {isMobile ? 'cover' : 'contain'}; object-position: center; image-rendering: crisp-edges;"
-                    />
+                    ></canvas>
                 </div>
 
                 <!-- Edit Button -->
@@ -1497,7 +1477,7 @@
                      color: white;"
                         onclick={() => { showTemplateEditor = true; }}
                 >
-                    <ImageIcon class="w-4 sm:w-5 h-4 sm:h-5"/>
+                  <i class="fa-solid fa-image" style="font-size: 20px;"></i>
                     Edit Template
                 </button>
 
@@ -1622,30 +1602,11 @@
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
-        button, input[type="checkbox"] {
-            min-height: 44px;
-            min-width: 44px;
-        }
     }
 
     /* Prevent zoom on focus in mobile Safari */
     @media not all and (min-resolution: .001dpcm) {
         @supports (-webkit-appearance:none) {
-            input[type="color"],
-            input[type="date"],
-            input[type="email"],
-            input[type="month"],
-            input[type="number"],
-            input[type="password"],
-            input[type="search"],
-            input[type="tel"],
-            input[type="text"],
-            input[type="time"],
-            input[type="url"],
-            input[type="week"],
-            select {
-                font-size: 16px;
-            }
         }
     }
 </style>

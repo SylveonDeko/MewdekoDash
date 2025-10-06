@@ -4,7 +4,7 @@ module.exports = {
     "eslint:recommended",
     "@typescript-eslint/recommended",
     "plugin:svelte/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
   ],
   parser: "@typescript-eslint/parser",
   plugins: ["@typescript-eslint"],
@@ -12,19 +12,19 @@ module.exports = {
     sourceType: "module",
     ecmaVersion: 2020,
     project: "./tsconfig.json",
-    extraFileExtensions: [".svelte"]
+    extraFileExtensions: [".svelte"],
   },
   env: {
     browser: true,
     es2017: true,
-    node: true
+    node: true,
   },
   overrides: [
     {
       files: ["*.svelte"],
       parser: "svelte-eslint-parser",
       parserOptions: {
-        parser: "@typescript-eslint/parser"
+        parser: "@typescript-eslint/parser",
       },
       rules: {
         // Svelte-specific rules
@@ -52,9 +52,9 @@ module.exports = {
         "@typescript-eslint/no-unsafe-assignment": "warn",
         "@typescript-eslint/no-unsafe-member-access": "warn",
         "@typescript-eslint/no-unsafe-call": "warn",
-        "@typescript-eslint/no-unsafe-return": "warn"
-      }
-    }
+        "@typescript-eslint/no-unsafe-return": "warn",
+      },
+    },
   ],
   rules: {
     // TypeScript rules
@@ -65,7 +65,10 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
     "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
-    "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      { prefer: "type-imports" },
+    ],
 
     // General code quality rules
     "no-console": ["warn", { allow: ["warn", "error"] }],
@@ -78,12 +81,27 @@ module.exports = {
 
     // Import rules
     "import/no-duplicates": "error",
-    "import/order": ["error", {
-      "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
-      "newlines-between": "never"
-    }]
+    "import/order": [
+      "error",
+      {
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+        ],
+        "newlines-between": "never",
+      },
+    ],
   },
   settings: {
-    "svelte4/typescript": true
-  }
+    "svelte4/typescript": true,
+  },
+  languageOptions: {
+    parserOptions: {
+      parser: "@typescript-eslint/parser",
+    },
+  },
 };

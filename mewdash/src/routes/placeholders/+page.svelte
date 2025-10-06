@@ -289,16 +289,16 @@
   <meta
     content="Mewdeko - Placeholders for commands with embeds!"
     property="og:title"
-  />
+  >
   <meta content="Placeholders for commands with embeds!" name="description" />
   <meta
     content="Placeholders for commands with embeds!"
     property="og:description"
-  />
+  >
   <meta
     content="Placeholders for commands with embeds!"
     name="twitter:description"
-  />
+  >
 </svelte:head>
 
 {#if mounted}
@@ -345,7 +345,7 @@
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
                 bind:value={searchQuery}
                 aria-label="Search placeholders"
-              />
+              >
               {#if searchQuery}
                 <button
                   class="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors duration-200 hover:opacity-70"

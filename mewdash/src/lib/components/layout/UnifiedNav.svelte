@@ -15,7 +15,7 @@ A unified navigation component that provides responsive navigation with server a
 <UnifiedNav 
   items={navigationItems}
   data={{ user: currentUser }}
-/>
+>
 ```
 -->
 <script lang="ts">
@@ -708,7 +708,7 @@ A unified navigation component that provides responsive navigation with server a
             height="1024"
             src="/img/Mewdeko.png"
             width="1024"
-          />
+          >
             <span class="hidden xs:block self-center text-lg font-semibold whitespace-nowrap text-mewd-white">
             Mewdeko
           </span>
@@ -848,7 +848,7 @@ A unified navigation component that provides responsive navigation with server a
               alt="Mewdeko"
               class="h-10 w-10 object-contain"
               src="/img/Mewdeko.png"
-            />
+            >
           </a>
         </div>
 
@@ -900,7 +900,7 @@ A unified navigation component that provides responsive navigation with server a
               alt={currentUser.username}
               class="w-8 h-8 rounded-full"
               style:background="{$colorStore.primary}20"
-            />
+            >
 
             <!-- Username and instance display -->
             <div class="flex flex-col items-start">
@@ -971,7 +971,7 @@ A unified navigation component that provides responsive navigation with server a
                       alt={currentUser.username}
                       class="w-10 h-10 rounded-lg border-2"
                       style="border-color: {$colorStore.primary}50;"
-                    />
+                    >
                     <!-- Online indicator -->
                       <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black"
                          style="background: #10b981;"></div>
@@ -1028,7 +1028,7 @@ A unified navigation component that provides responsive navigation with server a
                             src={instance.botAvatar}
                             alt=""
                             class="w-5 h-5 rounded-full"
-                          />
+                          >
                           <div class="flex flex-col flex-1 min-w-0">
                             <span class="text-xs truncate">
                               {instance.botName}
@@ -1107,7 +1107,7 @@ A unified navigation component that provides responsive navigation with server a
             alt={currentUser.username}
             class="w-7 h-7 rounded-full"
             style:background="{$colorStore.primary}20"
-          />
+          >
         </div>
 
         <!-- Mobile menu button - hide in dashboard -->
@@ -1183,7 +1183,7 @@ A unified navigation component that provides responsive navigation with server a
                 alt={currentUser.username}
                 class="w-10 h-10 rounded-full"
                 style="background: {$colorStore.primary}20;"
-              />
+              >
               <div>
                 <div class="font-medium" style="color: {$colorStore.text};">{currentUser.username}</div>
                 {#if currentUser.discriminator !== "0"}
@@ -1239,7 +1239,7 @@ A unified navigation component that provides responsive navigation with server a
                     alt=""
                     class="w-6 h-6 rounded-full"
                     style="background: {$colorStore.primary}15;"
-                  />
+                  >
                   <div class="flex flex-col flex-1 min-w-0">
                     <span class="text-sm truncate">
                       {instance.botName}

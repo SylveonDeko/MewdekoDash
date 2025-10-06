@@ -578,7 +578,7 @@
   // Watch for guild changes
     run(() => {
         if ($currentGuild) {
-            loadTriggers()
+          loadTriggers();
             loadGuildRoles()
         }
     });
@@ -903,7 +903,7 @@
                 bind:value={quickTriggerText}
                 aria-describedby="trigger-help"
                 aria-required="true"
-              />
+              >
               <div id="trigger-help" class="text-xs mt-1" style="color: {colors.muted}">
                 Simple text that will trigger the response
               </div>
@@ -974,7 +974,7 @@
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.primary}30; background: linear-gradient(135deg, {colors.primary}10, {colors.secondary}10);"
               onclick={() => useTemplate('simple')}
-              role="button"
+
               aria-describedby="template-simple-desc"
             >
               <div class="flex items-center gap-3 mb-2">
@@ -990,7 +990,7 @@
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.secondary}15, {colors.primary}10);"
               onclick={() => useTemplate('role')}
-              role="button"
+
               aria-describedby="template-role-desc"
             >
               <div class="flex items-center gap-3 mb-2">
@@ -1006,7 +1006,7 @@
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.accent}30; background: linear-gradient(135deg, {colors.accent}15, {colors.secondary}10);"
               onclick={() => useTemplate('slash')}
-              role="button"
+
               aria-describedby="template-slash-desc"
             >
               <div class="flex items-center gap-3 mb-2">
@@ -1022,7 +1022,7 @@
               class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.gradientStart}15, {colors.gradientMid}10);"
               onclick={() => useTemplate('embed')}
-              role="button"
+
               aria-describedby="template-embed-desc"
             >
               <div class="flex items-center gap-3 mb-2">
@@ -1108,7 +1108,7 @@
                             style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                             bind:value={trigger.trigger}
                             aria-describedby="edit-trigger-help-{trigger.id}"
-                          />
+                          >
                           <div id="edit-trigger-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
                             Text that will trigger this response
                           </div>
@@ -1262,7 +1262,7 @@
                   placeholder="Enter trigger text or regex pattern"
                   aria-required="true"
                   aria-describedby="trigger-validity"
-                />
+                >
                 {#if newTrigger.isRegex && !newTrigger.isValidRegex}
                   <div id="trigger-validity" class="text-xs mt-1" style="color: {colors.accent}" role="alert">
                     Invalid regular expression syntax
@@ -1401,10 +1401,10 @@
                       bind:value={newTriggerRegexTestString}
                       oninput={testNewTriggerRegex}
                       placeholder="Enter text to test against your regex"
-                    />
+                    >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                    <label for="trigger-text" class="block text-sm font-medium mb-2" style="color: {colors.text}">
                       Test Result
                     </label>
                     <div class="p-3 rounded-lg" style="background: {colors.accent}10; color: {colors.text};">
@@ -1414,7 +1414,7 @@
                 </div>
                 {#if newTriggerRegexHighlightedString}
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                    <label for="response-text" class="block text-sm font-medium mb-2" style="color: {colors.text}">
                       Highlighted Matches
                     </label>
                     <div class="p-3 rounded-lg" style="background: {colors.primary}10; color: {colors.text};">
@@ -1435,9 +1435,9 @@
               </h3>
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                  <span id="roles-to-grant-label" class="block text-sm font-medium mb-2" style="color: {colors.text}">
                     Roles to Grant
-                  </label>
+                  </span>
                   <DiscordSelector
                     type="role"
                     options={roleOptions}
@@ -1447,15 +1447,15 @@
                     on:change={(e) => newTrigger.grantedRoles = e.detail.selected}
                     aria-label="Roles to grant selector"
                     aria-describedby="new-roles-grant-help"
-                  />
+                    aria-labelledby="roles-to-grant-label" />
                   <div id="new-roles-grant-help" class="text-xs mt-1" style="color: {colors.muted}">
                     Users will receive these roles when the trigger is activated
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                  <span id="roles-to-remove-label" class="block text-sm font-medium mb-2" style="color: {colors.text}">
                     Roles to Remove
-                  </label>
+                  </span>
                   <DiscordSelector
                     type="role"
                     options={roleOptions}
@@ -1465,7 +1465,7 @@
                     on:change={(e) => newTrigger.removedRoles = e.detail.selected}
                     aria-label="Roles to remove selector"
                     aria-describedby="new-roles-remove-help"
-                  />
+                    aria-labelledby="roles-to-remove-label" />
                   <div id="new-roles-remove-help" class="text-xs mt-1" style="color: {colors.muted}">
                     Users will lose these roles when the trigger is activated
                   </div>
@@ -1611,9 +1611,10 @@
                   <!-- Prefix Configuration -->
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                      <span id="prefix-requirement-label" class="block text-sm font-medium mb-2"
+                            style="color: {colors.text}">
                         Prefix Requirement
-                      </label>
+                      </span>
                       <DiscordSelector
                         type="custom"
                         options={getEnumOptionsForSelector('prefixType')}
@@ -1621,7 +1622,7 @@
                         placeholder="Select prefix type"
                         on:change={(e) => handleEnumChange(newTrigger, 'prefixType', e)}
                         aria-label="Prefix requirement selector"
-                      />
+                        aria-labelledby="prefix-requirement-label" />
                     </div>
 
                     {#if newTrigger.prefixType === RequirePrefixType.Custom}
@@ -1635,16 +1636,17 @@
                           style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}08;"
                           bind:value={newTrigger.customPrefix}
                           placeholder="!"
-                        />
+                        >
                       </div>
                     {/if}
                   </div>
 
                   <!-- Role Grant Type -->
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                    <span id="role-grant-target-label" class="block text-sm font-medium mb-2"
+                          style="color: {colors.text}">
                       Role Grant Target
-                    </label>
+                    </span>
                     <DiscordSelector
                       type="custom"
                       options={getEnumOptionsForSelector('roleGrantType')}
@@ -1652,7 +1654,7 @@
                       placeholder="Who gets the roles"
                       on:change={(e) => handleEnumChange(newTrigger, 'roleGrantType', e)}
                       aria-label="Role grant target selector"
-                    />
+                      aria-labelledby="role-grant-target-label" />
                   </div>
 
                   <!-- Additional Options -->
@@ -1667,7 +1669,7 @@
                         style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
                         bind:value={newTrigger.reactions}
                         placeholder="👍 ✅ 🎉"
-                      />
+                      >
                     </div>
 
                     <div class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
@@ -1751,23 +1753,10 @@
     }
 
     /* Prevent iOS styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
 
     /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
 
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 
     /* Animation for loading spinner */
     @keyframes spin {
@@ -1833,7 +1822,7 @@
     }
 
     /* High contrast mode support */
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
         .trigger-card {
             border: 2px solid;
         }
@@ -1849,10 +1838,6 @@
 
     /* Touch target optimization */
     @media (hover: none) {
-        .touch-target {
-            min-height: 44px;
-            min-width: 44px;
-        }
     }
 
     /* Switch shine effect for active state */

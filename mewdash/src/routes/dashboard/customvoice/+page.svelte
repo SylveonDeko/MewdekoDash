@@ -336,32 +336,32 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">
+              <span id="hub-voice-channel-span-stylecolor-ef4444span-label" class="block mb-2"
+                    style="color: {$colorStore.text}">
                 Hub Voice Channel <span style="color: #ef4444">*</span>
-              </label>
+              </span>
               <DiscordSelector
                 type="channel"
                 options={voiceChannels}
                 bind:selected={hubChannelId}
                 placeholder="Select voice channel..."
-                on:change={markAsChanged}
-              />
+                on:change={markAsChanged} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Channel users join to create their own temporary voice channel
               </p>
             </div>
 
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">
+              <span id="channel-category-span-stylecolor-ef4444span-label" class="block mb-2"
+                    style="color: {$colorStore.text}">
                 Channel Category <span style="color: #ef4444">*</span>
-              </label>
+              </span>
               <DiscordSelector
                 type="channel"
                 options={categories}
                 bind:selected={categoryId}
                 placeholder="Select category..."
-                on:change={markAsChanged}
-              />
+                on:change={markAsChanged} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Category where temporary channels will be created
               </p>
@@ -376,23 +376,23 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">Default Name Format</label>
-              <input
+              <label for="input-6869" class="block mb-2" style="color: {$colorStore.text}">Default Name Format</label>
+              <input id="input-6869"
                 type="text"
                 bind:value={defaultNameFormat}
                 oninput={markAsChanged}
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                 placeholder="&#123;username&#125;'s Channel"
-              />
+              >
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Use &#123;username&#125; for the user's name
               </p>
             </div>
 
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">Default User Limit</label>
-              <input
+              <label for="input-7323" class="block mb-2" style="color: {$colorStore.text}">Default User Limit</label>
+              <input id="input-7323"
                 type="number"
                 bind:value={defaultUserLimit}
                 oninput={markAsChanged}
@@ -400,14 +400,15 @@
                 max="99"
                 class="w-full p-3 rounded-lg border"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-              />
+              >
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 0 = unlimited
               </p>
             </div>
 
             <div>
-              <label class="block mb-2" style="color: {$colorStore.text}">Default Bitrate</label>
+              <span id="default-bitrate-label" class="block mb-2"
+                    style="color: {$colorStore.text}">Default Bitrate</span>
               <DiscordSelector
                 type="custom"
                 customIcon="fa-volume"
@@ -437,20 +438,21 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
-              <label class="flex items-center gap-3">
+              <label for="input-5476" class="flex items-center gap-3">
                 <input
                   type="checkbox"
                   bind:checked={deleteWhenEmpty}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Delete channels when empty</span>
               </label>
 
               {#if deleteWhenEmpty}
                 <div class="ml-7">
-                  <label class="block mb-2" style="color: {$colorStore.text}">Empty timeout (seconds)</label>
-                  <input
+                  <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">Empty timeout
+                    (seconds)</label>
+                  <input id="input-5476"
                     type="number"
                     bind:value={emptyChannelTimeout}
                     oninput={markAsChanged}
@@ -458,7 +460,7 @@
                     max="300"
                     class="w-32 p-2 rounded-lg border"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                  />
+                  >
                 </div>
               {/if}
 
@@ -468,7 +470,7 @@
                   bind:checked={allowMultipleChannels}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow multiple channels per user</span>
               </label>
 
@@ -478,7 +480,7 @@
                   bind:checked={persistUserPreferences}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Remember user preferences</span>
               </label>
 
@@ -488,7 +490,7 @@
                   bind:checked={autoPermission}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Auto-manage channel permissions</span>
               </label>
             </div>
@@ -500,7 +502,7 @@
                   bind:checked={allowNameCustomization}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow name customization</span>
               </label>
 
@@ -510,7 +512,7 @@
                   bind:checked={allowUserLimitCustomization}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow user limit customization</span>
               </label>
 
@@ -520,7 +522,7 @@
                   bind:checked={allowBitrateCustomization}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow bitrate customization</span>
               </label>
 
@@ -530,7 +532,7 @@
                   bind:checked={allowLocking}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow channel locking</span>
               </label>
 
@@ -540,7 +542,7 @@
                   bind:checked={allowUserManagement}
                   onchange={markAsChanged}
                   class="w-4 h-4"
-                />
+                >
                 <span style="color: {$colorStore.text}">Allow user management</span>
               </label>
             </div>
@@ -591,18 +593,18 @@
                     title={channel.isLocked ? "Unlock channel" : "Lock channel"}
                   >
                     {#if channel.isLocked}
-                      <i class="fa-solid fa-unlock" style="font-size: 16px;" />
+                      <i class="fa-solid fa-unlock" style="font-size: 16px;"></i>
                     {:else}
-                      <i class="fa-solid fa-lock" style="font-size: 16px;" />
+                      <i class="fa-solid fa-lock" style="font-size: 16px;"></i>
                     {/if}
                   </button>
-                  
-                  <button
+
+                  <button aria-label="Delete channel"
                     class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20"
                     onclick={() => deleteChannel(channel.id)}
                     title="Delete channel"
                   >
-                    <i class="fa-solid fa-trash" style="font-size: 16px;" />
+                    <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                   </button>
                 </div>
               </div>

@@ -237,7 +237,7 @@
               alt="Album Art"
               class="w-24 h-24 rounded-xl object-cover"
               style="border: 2px solid {colors.primary}30;"
-            />
+            >
               <div class="grow">
               <h3 class="font-medium text-lg" style="color: {colors.text}">
                 {musicStatus.currentTrack.track.title}
@@ -289,7 +289,7 @@
                 bind:value={settings.volume}
                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                 style="background: {colors.primary}20;"
-              />
+              >
               <div class="text-sm mt-1" style="color: {colors.muted}">{settings.volume}%</div>
             </div>
 
@@ -297,9 +297,9 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
-                <label class="font-medium" style="color: {colors.text}">
+                <span id="music-channel-label" class="font-medium" style="color: {colors.text}">
                   Music Channel
-                </label>
+                </span>
               </div>
               <DiscordSelector
                 type="channel"
@@ -309,16 +309,16 @@
                 on:change={(e) => {
                   settings.musicChannelId = e.detail.selected === 'null' ? null : e.detail.selected;
                 }}
-              />
+                aria-labelledby="music-channel-label" />
             </div>
 
             <!-- DJ Role -->
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-users" style="color: {colors.accent}; font-size: 16px;"></i>
-                <label class="font-medium" style="color: {colors.text}">
+                <span id="dj-role-label" class="font-medium" style="color: {colors.text}">
                   DJ Role
-                </label>
+                </span>
               </div>
               <DiscordSelector
                 type="role"
@@ -328,16 +328,16 @@
                 on:change={(e) => {
                   settings.djRoleId = e.detail.selected === 'null' ? null : e.detail.selected;
                 }}
-              />
+                aria-labelledby="dj-role-label" />
             </div>
 
             <!-- Player Repeat -->
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-clock" style="color: {colors.primary}; font-size: 16px;"></i>
-                <label class="font-medium" style="color: {colors.text}">
+                <span id="repeat-mode-label" class="font-medium" style="color: {colors.text}">
                   Repeat Mode
-                </label>
+                </span>
               </div>
               <DiscordSelector
                 type="custom"
@@ -378,9 +378,9 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-users" style="color: {colors.primary}; font-size: 16px;"></i>
-                <label class="font-medium" style="color: {colors.text}">
+                <span id="auto-disconnect-label" class="font-medium" style="color: {colors.text}">
                   Auto Disconnect
-                </label>
+                </span>
               </div>
               <DiscordSelector
                 type="custom"
@@ -402,9 +402,9 @@
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa-solid fa-music" style="color: {colors.secondary}; font-size: 16px;"></i>
-                <label class="font-medium" style="color: {colors.text}">
+                <span id="auto-play-similar-label" class="font-medium" style="color: {colors.text}">
                   Auto Play Similar
-                </label>
+                </span>
               </div>
               <DiscordSelector
                 type="custom"
@@ -431,7 +431,7 @@
                     type="checkbox"
                     bind:checked={settings.voteSkipEnabled}
                     class="sr-only peer"
-                  />
+                  >
                   <div
                     class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
                     style="background: {colors.text};
@@ -457,7 +457,7 @@
                     bind:value={settings.voteSkipThreshold}
                     class="w-full h-2 rounded-lg appearance-none cursor-pointer"
                     style="background: {colors.primary}20;"
-                  />
+                  >
                   <div class="text-sm mt-1" style="color: {colors.muted}">
                     {settings.voteSkipThreshold}% of users must vote to skip
                   </div>
@@ -537,16 +537,6 @@
     }
 
     /* Custom select styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.5rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
-    }
 
     /* Custom scrollbar */
     :global(*::-webkit-scrollbar) {
@@ -568,14 +558,6 @@
     }
 
     /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
 
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 </style>

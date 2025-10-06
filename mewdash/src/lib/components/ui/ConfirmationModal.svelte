@@ -3,7 +3,6 @@
     import {createEventDispatcher} from "svelte";
     import {fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
-    import {AlertTriangle, X} from "lucide-svelte";
 
     const bubble = createBubbler();
 
@@ -59,7 +58,7 @@
 {#if isOpen}
   <!-- Backdrop -->
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black opacity-50 backdrop-blur-md flex items-center justify-center z-50 p-4"
     onclick={handleCancel}
     onkeydown={handleKeydown}
     role="dialog"
@@ -75,25 +74,24 @@
       onclick={stopPropagation(bubble('click'))}
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
-    >
+            role="button" tabindex="0"
+            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg" style="background: {variantColor}20;">
-            <AlertTriangle class="w-5 h-5" style="color: {variantColor}" />
+            <i class="fa-solid fa-triangle-exclamation" style="color: {variantColor}; font-size: 20px;"></i>
           </div>
           <h2 id="modal-title" class="text-lg font-semibold" style="color: {$colorStore.text}">
             {title}
           </h2>
         </div>
-        <button
+        <button aria-label="Button action"
           class="p-2 rounded-lg transition-colors hover:opacity-70"
           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
           onclick={handleCancel}
-          aria-label="Close modal"
-        >
-          <X class="w-4 h-4" />
-        </button>
+
+        ><i class="fa-solid fa-xmark" style="font-size: 16px;"></i></button>
       </div>
 
       <!-- Content -->

@@ -537,7 +537,7 @@
             type="number"
             min="0"
             aria-label="Time in seconds before AFK messages are deleted"
-          />
+          >
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
             Time in seconds before AFK messages are deleted. Set to 0 to disable.
           </p>
@@ -575,7 +575,7 @@
             min="1"
             max="4096"
             aria-label="Maximum length for AFK messages"
-          />
+          >
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
             Maximum allowed length for AFK messages (1-4096 characters).
           </p>
@@ -665,7 +665,7 @@
             type="text"
             placeholder="e.g., 5m, 1h30m, 2h"
             aria-label="AFK timeout duration"
-          />
+          >
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
             Time before someone is considered AFK (format: 1h2m3s). Range: 1s to 2h.
           </p>
@@ -769,7 +769,7 @@
                 onchange={toggleSelectAll}
                 class="w-4 h-4 rounded-sm border shrink-0"
                 style="accent-color: {$colorStore.primary};"
-              />
+              >
               <span style="color: {$colorStore.text}" class="text-sm font-medium">
                 Select All ({afkUsers.length})
               </span>
@@ -836,7 +836,7 @@
                     onchange={() => toggleUserSelection(user.userId.toString())}
                     class="w-4 h-4 rounded-sm border shrink-0"
                     style="accent-color: {$colorStore.primary};"
-                  />
+                  >
                   
                   <button
                           class="flex items-center gap-3 grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
@@ -850,7 +850,7 @@
                       alt=""
                       class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 shrink-0"
                       style="border-color: {$colorStore.primary}30;"
-                    />
+                    >
 
                       <div class="grow min-w-0">
                       <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
@@ -1041,21 +1041,8 @@
     }
 
     /* Prevent iOS styling */
-    select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-    }
 
     /* Prevent blue highlight on iOS */
-    select:focus {
-        -webkit-tap-highlight-color: transparent;
-    }
 
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 </style>

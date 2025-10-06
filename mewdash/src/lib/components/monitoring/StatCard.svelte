@@ -6,7 +6,6 @@
   import { onMount } from "svelte";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { ArrowRight, TrendingDown, TrendingUp } from "lucide-svelte";
 
   
   interface Props {
@@ -121,9 +120,9 @@
 
   // Get the right icon for the trend
   function getTrendIcon() {
-    if (trend === "up") return TrendingUp;
-    if (trend === "down") return TrendingDown;
-    return ArrowRight;
+    if (trend === "up") return "fa-arrow-trend-up";
+    if (trend === "down") return "fa-arrow-trend-down";
+    return "fa-arrow-right";
   }
 
   const SvelteComponent = $derived(!isFontAwesome ? icon : null);
@@ -145,15 +144,8 @@
           class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
     style="background: {$colorStore[iconColor]}20"
   >
-    {#if isFontAwesome}
       <i class="fa-utility-duo fa-regular {icon} text-xl"
          style="--fa-primary-color: {$colorStore[iconColor]}; --fa-secondary-color: {$colorStore.secondary}; --fa-secondary-opacity: 0.5;"></i>
-    {:else}
-      <SvelteComponent
-        class="w-5 h-5"
-        style="color: {$colorStore[iconColor]}"
-      />
-    {/if}
   </div>
 
   <div class="flex-1 min-w-0 flex flex-col items-center justify-center">
@@ -172,13 +164,12 @@
         {/if}
 
         {#if trend && trend !== "neutral"}
-          {@const SvelteComponent_1 = getTrendIcon()}
           <div
             class="flex items-center gap-1 text-sm bg-opacity-20 px-1.5 py-0.5 rounded-full"
             style="background: {getTrendColor()}20; color: {getTrendColor()}"
             in:slide={{ delay: animationDelay + 300, duration: 300 }}
           >
-            <SvelteComponent_1 size={14} />
+            <i class="fa-solid {getTrendIcon()}" style="font-size: 14px;"></i>
             {#if trendValue}
               <span class="text-xs">{trendValue}</span>
             {/if}

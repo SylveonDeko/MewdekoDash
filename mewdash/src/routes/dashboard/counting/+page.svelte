@@ -471,9 +471,9 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">
+            <span id="channel-span-stylecolor-ef4444span-label" class="block mb-2" style="color: {$colorStore.text}">
               Channel <span style="color: #ef4444">*</span>
-            </label>
+            </span>
             <DiscordSelector
               type="channel"
               options={textChannels}
@@ -483,25 +483,25 @@
           </div>
           
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Start Number</label>
-            <input
+            <label for="input-9001" class="block mb-2" style="color: {$colorStore.text}">Start Number</label>
+            <input id="input-9001"
               type="number"
               bind:value={setupStartNumber}
               min="0"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
           
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Increment</label>
-            <input
+            <label for="input-7842" class="block mb-2" style="color: {$colorStore.text}">Increment</label>
+            <input id="input-7842"
               type="number"
               bind:value={setupIncrement}
               min="1"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
         </div>
         
@@ -529,10 +529,20 @@
               <div
                       class="backdrop-blur-xs rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
               style="border-color: {selectedChannel?.id === channel.id ? $colorStore.primary : $colorStore.primary + '30'}; background: {selectedChannel?.id === channel.id ? $colorStore.primary + '15' : $colorStore.primary + '05'};"
+                      role="button"
+                      tabindex="0"
               onclick={() => {
                 selectedChannel = channel;
                 activeTab = "config";
                 loadChannelDetails(channel.channelId);
+              }}
+                      onkeydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectedChannel = channel;
+                  activeTab = "config";
+                  loadChannelDetails(channel.channelId);
+                }
               }}
               transition:slide
             >
@@ -546,8 +556,8 @@
                       {getChannelStatus(channel).text}
                     </span>
                   </div>
-                  
-                  <button
+
+                  <button aria-label="Delete channel"
                           class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 shrink-0"
                     onclick={stopPropagation(() => disableChannel(channel))}
                     title="Disable channel"
@@ -593,7 +603,8 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Counting Pattern</label>
+            <span id="counting-pattern-label" class="block mb-2"
+                  style="color: {$colorStore.text}">Counting Pattern</span>
             <DiscordSelector
               type="custom"
               customIcon="fa-hashtag"
@@ -618,8 +629,8 @@
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Number Base</label>
-            <input
+            <label for="input-5192" class="block mb-2" style="color: {$colorStore.text}">Number Base</label>
+            <input id="input-5192"
               type="number"
               bind:value={numberBase}
               oninput={markAsChanged}
@@ -627,13 +638,13 @@
               max="36"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">2-36 (10 for decimal)</p>
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Cooldown (seconds)</label>
-            <input
+            <label for="input-2101" class="block mb-2" style="color: {$colorStore.text}">Cooldown (seconds)</label>
+            <input id="input-2101"
               type="number"
               bind:value={cooldown}
               oninput={markAsChanged}
@@ -641,44 +652,44 @@
               max="300"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Max Number</label>
-            <input
+            <label for="input-6772" class="block mb-2" style="color: {$colorStore.text}">Max Number</label>
+            <input id="input-6772"
               type="number"
               bind:value={maxNumber}
               oninput={markAsChanged}
               min="0"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">0 = unlimited</p>
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Success Emote</label>
-            <input
+            <label for="input-1917" class="block mb-2" style="color: {$colorStore.text}">Success Emote</label>
+            <input id="input-1917"
               type="text"
               bind:value={successEmote}
               oninput={markAsChanged}
               placeholder="✅"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Error Emote</label>
-            <input
+            <label for="input-9952" class="block mb-2" style="color: {$colorStore.text}">Error Emote</label>
+            <input id="input-9952"
               type="text"
               bind:value={errorEmote}
               oninput={markAsChanged}
               placeholder="❌"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
         </div>
       </div>
@@ -690,55 +701,55 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-4">
-            <label class="flex items-center gap-3">
+            <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 bind:checked={allowRepeatedUsers}
                 onchange={markAsChanged}
                 class="w-4 h-4"
-              />
+              >
               <span style="color: {$colorStore.text}">Allow repeated users</span>
             </label>
 
-            <label class="flex items-center gap-3">
+            <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 bind:checked={resetOnError}
                 onchange={markAsChanged}
                 class="w-4 h-4"
-              />
+              >
               <span style="color: {$colorStore.text}">Reset count on error</span>
             </label>
 
-            <label class="flex items-center gap-3">
+            <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 bind:checked={deleteWrongMessages}
                 onchange={markAsChanged}
                 class="w-4 h-4"
-              />
+              >
               <span style="color: {$colorStore.text}">Delete wrong messages</span>
             </label>
           </div>
 
           <div class="space-y-4">
-            <label class="flex items-center gap-3">
+            <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 bind:checked={enableAchievements}
                 onchange={markAsChanged}
                 class="w-4 h-4"
-              />
+              >
               <span style="color: {$colorStore.text}">Enable achievements</span>
             </label>
 
-            <label class="flex items-center gap-3">
+            <label for="input-2005" class="flex items-center gap-3">
               <input
                 type="checkbox"
                 bind:checked={enableCompetitions}
                 onchange={markAsChanged}
                 class="w-4 h-4"
-              />
+              >
               <span style="color: {$colorStore.text}">Enable competitions</span>
             </label>
           </div>
@@ -752,7 +763,7 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Required Roles</label>
+            <span id="required-roles-label" class="block mb-2" style="color: {$colorStore.text}">Required Roles</span>
             <DiscordSelector
               type="role"
               options={guildRoles}
@@ -765,15 +776,14 @@
           </div>
 
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Banned Roles</label>
+            <span id="banned-roles-label" class="block mb-2" style="color: {$colorStore.text}">Banned Roles</span>
             <DiscordSelector
               type="role"
               options={guildRoles}
               bind:selected={bannedRoles}
               placeholder="Select banned roles..."
               multiple={true}
-              on:change={markAsChanged}
-            />
+              on:change={markAsChanged} />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users with these roles cannot count</p>
           </div>
         </div>
@@ -838,7 +848,7 @@
           
           <div class="flex items-center gap-4">
             {#if channelStats.topContributor.avatarUrl}
-              <img src={channelStats.topContributor.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full" />
+              <img src={channelStats.topContributor.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full">
             {:else}
               <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
                 <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -876,13 +886,15 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="text-center">
-            <i class="fa-utility-duo fa-regular fa-flag-checkered" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
+            <i class="fa-utility-duo fa-regular fa-flag"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p class="text-sm" style="color: {$colorStore.muted}">Milestones Reached</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.milestonesReached)}</p>
           </div>
-          
+
           <div class="text-center">
-            <i class="fa-utility-duo fa-regular fa-chart-line" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
+            <i class="fa-utility-duo fa-regular fa-star"
+               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
             <p class="text-sm" style="color: {$colorStore.muted}">Highest Number</p>
             <p class="text-xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.highestNumber)}</p>
           </div>
@@ -909,7 +921,7 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Sort By</label>
+            <span id="sort-by-label" class="block mb-2" style="color: {$colorStore.text}">Sort By</span>
             <DiscordSelector
               type="custom"
               customIcon="fa-trophy"
@@ -930,8 +942,8 @@
           </div>
           
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Limit</label>
-            <input
+            <label for="input-2005" class="block mb-2" style="color: {$colorStore.text}">Limit</label>
+            <input id="input-2005"
               type="number"
               bind:value={leaderboardLimit}
               onchange={loadLeaderboard}
@@ -939,7 +951,7 @@
               max="100"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
         </div>
       </div>
@@ -977,7 +989,7 @@
               <!-- Avatar -->
                   <div class="min-w-12">
                 {#if entry.avatarUrl}
-                  <img src={entry.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full" />
+                  <img src={entry.avatarUrl} alt="Avatar" class="w-12 h-12 rounded-full">
                 {:else}
                   <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: {$colorStore.primary}20;">
                     <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
@@ -1012,25 +1024,25 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Reset to Number</label>
-            <input
+            <label for="input-5476" class="block mb-2" style="color: {$colorStore.text}">Reset to Number</label>
+            <input id="input-5476"
               type="number"
               bind:value={resetNumber}
               min="0"
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
           
           <div>
-            <label class="block mb-2" style="color: {$colorStore.text}">Reason (optional)</label>
-            <input
+            <label for="input-9512" class="block mb-2" style="color: {$colorStore.text}">Reason (optional)</label>
+            <input id="input-9512"
               type="text"
               bind:value={resetReason}
               placeholder="Reason for reset..."
               class="w-full p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
         </div>
         
@@ -1058,7 +1070,7 @@
               placeholder="Reason for save point..."
               class="flex-1 p-3 rounded-lg border"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
             <button
               class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
@@ -1100,7 +1112,7 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                  <button
+                  <button aria-label="Play"
                     class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     onclick={() => {
@@ -1111,8 +1123,8 @@
                   >
                     <i class="fa-solid fa-play" style="font-size: 14px;"></i>
                   </button>
-                  
-                  <button
+
+                  <button aria-label="Delete"
                     class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 text-red-500 hover:bg-red-500/20"
                     onclick={() => {
                       if (confirm("Are you sure you want to delete this save point?")) {

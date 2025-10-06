@@ -14,26 +14,6 @@
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {loadingStore} from "$lib/stores/loadingStore";
-    import {
-        AlertTriangle,
-        BarChart3,
-        Bot,
-        Calendar,
-        Check,
-        Clock,
-        Copy,
-        FileText,
-        Flag,
-        MessageCircle,
-        Plus,
-        RefreshCw,
-        Settings,
-        Shield,
-        Tag,
-        Ticket,
-        Trash2,
-        Users
-    } from "lucide-svelte";
     import {logger} from "$lib/logger.ts";
     import type {
         BlacklistedUserResponse,
@@ -360,36 +340,36 @@
 
   // Tab configuration
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "panels", label: "Panels", icon: MessageCircle },
-    { id: "tickets", label: "Tickets", icon: Ticket },
-    { id: "cases", label: "Cases", icon: FileText },
-    { id: "settings", label: "Settings", icon: Settings }
+    { id: "overview", label: "Overview", icon: "fa-chart-column" },
+    { id: "panels", label: "Panels", icon: "fa-message" },
+    { id: "tickets", label: "Tickets", icon: "fa-ticket" },
+    { id: "cases", label: "Cases", icon: "fa-file-lines" },
+    { id: "settings", label: "Settings", icon: "fa-gear" }
   ];
 
   // Action buttons configuration
     let actionButtons = $derived([
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: fetchData,
       loading: loading
     },
     {
       label: "New Panel",
-      icon: Plus,
+      icon: "fa-plus",
       action: () => showCreatePanel = true,
       loading: false
     },
     {
       label: "New Case",
-      icon: FileText,
+      icon: "fa-file-lines",
       action: () => showCreateCase = true,
       loading: false
     },
     {
       label: "Settings",
-      icon: Settings,
+      icon: "fa-gear",
       action: () => showSettings = true,
       loading: false
     }
@@ -412,10 +392,10 @@
   });
 </script>
 
-<DashboardPageLayout 
+<DashboardPageLayout
   title="Tickets Management"
   subtitle="Manage support tickets and help desk"
-  icon={Ticket}
+  icon="fa-ticket"
   {tabs}
   {activeTab}
   {actionButtons}
@@ -452,7 +432,8 @@
         role="alert"
       >
         <div class="flex items-center gap-3">
-          <AlertTriangle class="w-6 h-6" style="color: {$colorStore.accent}" />
+          <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent}; font-size: 24px;"></i>
           <div style="color: {$colorStore.accent}">
             <div class="font-semibold text-lg">Error Occurred</div>
             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -467,15 +448,25 @@
           {#if stats}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {#each [
-                { label: 'Total Tickets', value: stats?.totalTickets ?? 0, icon: Ticket, color: $colorStore.primary },
+                {
+                  label: 'Total Tickets',
+                  value: stats?.totalTickets ?? 0,
+                  icon: 'fa-ticket',
+                  color: $colorStore.primary
+                },
                 {
                   label: 'Open Tickets',
                   value: stats?.openTickets ?? 0,
-                  icon: MessageCircle,
+                  icon: 'fa-message',
                   color: $colorStore.secondary
                 },
-                { label: 'Closed Today', value: stats?.closedTickets ?? 0, icon: Check, color: $colorStore.accent },
-                { label: 'Active Staff', value: stats?.activeStaff ?? 0, icon: Users, color: '#10b981' }
+                {
+                  label: 'Closed Today',
+                  value: stats?.closedTickets ?? 0,
+                  icon: 'fa-check',
+                  color: $colorStore.accent
+                },
+                { label: 'Active Staff', value: stats?.activeStaff ?? 0, icon: 'fa-users', color: '#10b981' }
               ] as stat}
                 <div
                   class="p-6 rounded-xl  border"
@@ -495,7 +486,7 @@
                       class="p-3 rounded-lg"
                       style="background: {stat.color}20"
                     >
-                        <stat.icon class="h-6 w-6" style="color: {stat.color}"/>
+                      <i class="fa-solid {stat.icon}" style="color: {stat.color}; font-size: 24px;"></i>
                     </div>
                   </div>
                 </div>
@@ -510,7 +501,7 @@
                        border-color: {$colorStore.primary}30;"
               >
                 <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                  <Clock class="h-5 w-5" style="color: {$colorStore.primary}" />
+                  <i class="fa-solid fa-clock" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                   Average Response Time
                 </h3>
                 <div class="text-3xl font-bold" style="color: {$colorStore.primary}">
@@ -527,7 +518,7 @@
                        border-color: {$colorStore.primary}30;"
               >
                 <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                  <BarChart3 class="h-5 w-5" style="color: {$colorStore.secondary}" />
+                  <i class="fa-solid fa-chart-column" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
                   Top Categories
                 </h3>
                 <div class="space-y-3">
@@ -570,7 +561,8 @@
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
-              <MessageCircle class="h-16 w-16 mx-auto mb-4" style="color: {$colorStore.muted}" />
+              <i class="fa-utility-duo fa-regular fa-message"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">No Panels Configured</p>
               <p class="text-sm mt-2" style="color: {$colorStore.muted}">
                 Create your first ticket panel to get started.
@@ -600,26 +592,26 @@
                         </p>
                       </div>
                       <div class="flex gap-2">
-                        <button
+                        <button aria-label="Delete"
                           class="p-2 rounded-lg transition-all duration-75"
                           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
                           onclick={() => showPanelButtons = panel}
                         >
-                          <Settings class="w-4 h-4" />
+                          <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
                         </button>
-                        <button
+                        <button aria-label="Edit"
                           class="p-2 rounded-lg transition-all duration-75"
                           style="background: {$colorStore.secondary}10; color: {$colorStore.muted}"
                           onclick={() => duplicatePanel(panel.id)}
                         >
-                          <Copy class="w-4 h-4" />
+                          <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
                         </button>
-                        <button
+                        <button aria-label="View"
                           class="p-2 rounded-lg transition-all duration-75 hover:bg-red-500/10"
                           style="color: {$colorStore.muted}"
                           onclick={() => deletePanel(panel.id)}
                         >
-                          <Trash2 class="w-4 h-4" />
+                          <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
                         </button>
                       </div>
                     </div>
@@ -637,13 +629,13 @@
 
                     <div class="flex flex-wrap gap-4 pt-4 border-t" style="border-color: {$colorStore.primary}20">
                       <div class="flex items-center gap-2">
-                        <Bot class="w-4 h-4" style="color: {$colorStore.primary}" />
+                        <i class="fa-solid fa-robot" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                         <span class="text-sm" style="color: {$colorStore.text}">
                           {panel.buttonCount} buttons
                         </span>
                       </div>
                       <div class="flex items-center gap-2">
-                        <MessageCircle class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                        <i class="fa-solid fa-message" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                         <span class="text-sm" style="color: {$colorStore.text}">
                           {panel.selectMenuCount} menus
                         </span>
@@ -672,7 +664,8 @@
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
-              <FileText class="h-16 w-16 mx-auto mb-4" style="color: {$colorStore.muted}" />
+              <i class="fa-utility-duo fa-regular fa-file-lines"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
               <p class="text-lg font-medium" style="color: {$colorStore.text}">No Cases Found</p>
               <p class="text-sm mt-2" style="color: {$colorStore.muted}">
                 Create your first case to track related tickets.
@@ -726,13 +719,13 @@
 
                     <div class="flex flex-wrap gap-4 pt-4 border-t" style="border-color: {$colorStore.primary}20">
                       <div class="flex items-center gap-2">
-                        <Ticket class="w-4 h-4" style="color: {$colorStore.primary}" />
+                        <i class="fa-solid fa-ticket" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                         <span class="text-sm" style="color: {$colorStore.text}">
                           {ticketCase.ticketCount} tickets
                         </span>
                       </div>
                       <div class="flex items-center gap-2">
-                        <Calendar class="w-4 h-4" style="color: {$colorStore.secondary}" />
+                        <i class="fa-solid fa-calendar" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                         <span class="text-sm" style="color: {$colorStore.text}">
                           {new Date(ticketCase.createdAt).toLocaleDateString()}
                         </span>
@@ -754,7 +747,7 @@
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Flag class="h-5 w-5" style="color: {$colorStore.primary}" />
+                <i class="fa-solid fa-flag" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                 Priorities
               </h3>
               <div class="space-y-3">
@@ -783,7 +776,7 @@
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Tag class="h-5 w-5" style="color: {$colorStore.secondary}" />
+                <i class="fa-solid fa-tag" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
                 Tags
               </h3>
               <div class="space-y-3">
@@ -809,7 +802,7 @@
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <Shield class="h-5 w-5" style="color: {$colorStore.accent}" />
+                <i class="fa-solid fa-shield" style="color: {$colorStore.accent}; font-size: 20px;"></i>
                 Blacklisted Users
               </h3>
               {#if blacklistedUsers.length}
@@ -841,7 +834,7 @@
 
 <!-- Create Panel Modal -->
 {#if showCreatePanel}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+  <div class="fixed inset-0 bg-black opacity-50 flex items-center justify-center p-4 z-50"
        transition:fade={{ duration: 150 }}>
     <div
       class="bg-gray-800 rounded-xl p-6 w-full max-w-md"
@@ -875,7 +868,7 @@
             class="w-full p-3 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
             placeholder="Support Tickets"
-          />
+          >
         </div>
 
         <div>
@@ -902,7 +895,7 @@
             bind:value={newPanelData.color}
             class="w-full h-12 rounded-lg border"
             style="border-color: {$colorStore.primary}30"
-          />
+          >
         </div>
       </div>
 
@@ -928,7 +921,7 @@
 
 <!-- Create Case Modal -->
 {#if showCreateCase}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+  <div class="fixed inset-0 bg-black opacity-50 flex items-center justify-center p-4 z-50"
        transition:fade={{ duration: 150 }}>
     <div
       class="bg-gray-800 rounded-xl p-6 w-full max-w-md"
@@ -950,7 +943,7 @@
             class="w-full p-3 rounded-lg border"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
             placeholder="Bug Report: Login Issues"
-          />
+          >
         </div>
 
         <div>
@@ -979,7 +972,7 @@
               { id: "3", name: "High" },
               { id: "4", name: "Critical" }
             ]}
-            customIcon={Flag}
+            customIcon="fa-flag"
             placeholder="Select priority"
             selectedId={newCaseData.priority.toString()}
             on:change={(e) => {
@@ -1011,7 +1004,7 @@
 
 <!-- Settings Modal -->
 {#if showSettings}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+  <div class="fixed inset-0 bg-black opacity-50 flex items-center justify-center p-4 z-50"
        transition:fade={{ duration: 150 }}>
     <div
       class="bg-gray-800 rounded-xl p-6 w-full max-w-md"
@@ -1075,15 +1068,10 @@
         color: #ffffff;
     }
 
-    select, input, select:focus, input:focus, textarea:focus {
+    input, input:focus, textarea:focus {
         -webkit-tap-highlight-color: transparent;
     }
 
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 
     [style*="background"],
     [style*="color"] {

@@ -1,7 +1,6 @@
 <!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
     import {createEventDispatcher, onDestroy, onMount} from "svelte";
-    import {Calendar, Clock, Clock3, Timer} from "lucide-svelte";
     import {fade} from "svelte/transition";
 
     const dispatch = createEventDispatcher();
@@ -14,7 +13,7 @@
   let totalDurationMs =
     $derived(((days * 24 + hours) * 60 * 60 + minutes * 60 + seconds) * 1000);
 
-  let endTime: Date = $state(new Date(Date.now() + totalDurationMs));
+    let endTime: Date = $derived(new Date(Date.now() + totalDurationMs));
   let intervalId: NodeJS.Timeout;
 
   function startInterval() {
@@ -102,12 +101,11 @@
     <fieldset class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <legend class="sr-only" id="{fieldsetId}-legend">Set duration for timer</legend>
       {#each [
-        { label: 'Days', value: days, unit: 'days', icon: Calendar, max: undefined },
-        { label: 'Hours', value: hours, unit: 'hours', icon: Clock, max: 23 },
-        { label: 'Minutes', value: minutes, unit: 'minutes', icon: Clock3, max: 59 },
-        { label: 'Seconds', value: seconds, unit: 'seconds', icon: Timer, max: 59 }
+        { label: 'Days', value: days, unit: 'days', icon: 'fa-calendar', max: undefined },
+        { label: 'Hours', value: hours, unit: 'hours', icon: 'fa-clock', max: 23 },
+        { label: 'Minutes', value: minutes, unit: 'minutes', icon: 'fa-clock', max: 59 },
+        { label: 'Seconds', value: seconds, unit: 'seconds', icon: 'fa-hourglass', max: 59 }
       ] as { label, value, unit, icon, max }}
-        {@const SvelteComponent = icon}
         <div class="group relative">
           <div class="absolute inset-0 rounded-lg transition-transform group-focus-within:scale-95"
                style="background: var(--color-primary)10;"></div>
@@ -117,7 +115,7 @@
               class="flex items-center gap-1.5 text-xs font-medium ml-1"
               style="color: var(--color-muted)"
             >
-              <SvelteComponent class="w-3.5 h-3.5" />
+              <i class="{icon}" style="font-size: 14px;"></i>
               {label}
             </label>
             <input
@@ -136,7 +134,7 @@
                      focus:border-color: var(--color-primary);"
               aria-describedby="{fieldsetId}-description"
               aria-label="{label}: {value} {unit}"
-            />
+            >
           </div>
         </div>
       {/each}
@@ -155,7 +153,7 @@
       style="background: var(--color-primary)10;"
     >
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
-        <Calendar aria-hidden="true" class="w-4 h-4" style="color: var(--color-primary)" />
+        <i aria-hidden="true" class="fa-solid fa-calendar" style="color: var(--color-primary); font-size: 16px;"></i>
         <span class="text-sm">Duration:</span>
       </div>
       <div class="flex-1">
@@ -165,7 +163,7 @@
       </div>
       <div aria-hidden="true" class="h-4 w-px" style="background: var(--color-primary)20;"></div>
       <div class="flex items-center gap-2" style="color: var(--color-muted)">
-        <Clock aria-hidden="true" class="w-4 h-4" style="color: var(--color-secondary)" />
+        <i aria-hidden="true" class="fa-solid fa-clock" style="color: var(--color-secondary); font-size: 16px;"></i>
         <span class="text-sm">Ends:</span>
       </div>
       <div>

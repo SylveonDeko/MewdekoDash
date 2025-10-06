@@ -5,7 +5,6 @@
   import { logger } from "$lib/logger.ts";
   import { formatDistanceToNow } from "date-fns";
   import { colorStore } from "$lib/stores/colorStore";
-  import { RefreshCw, Trash2, Activity } from "lucide-svelte";
 
   let { data } = $props();
 
@@ -102,19 +101,20 @@
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg"
              style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-          <Activity class="w-5 h-5" style="color: {$colorStore.primary}" />
+          <i class="fa-utility-duo fa-regular fa-clock"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Method Performance</h2>
       </div>
       <div class="flex gap-3">
-        <button
+        <button aria-label="Navigate"
           class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={refreshInProgress}
           onclick={fetchPerformanceData}
         >
           <div class:animate-spin={refreshInProgress}>
-            <RefreshCw class="w-4 h-4" />
+            <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
           </div>
           {refreshInProgress ? 'Refreshing...' : 'Refresh'}
         </button>
@@ -124,7 +124,7 @@
           disabled={refreshInProgress}
           onclick={clearPerformanceData}
         >
-          <Trash2 class="w-4 h-4" />
+          <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
           Clear Data
         </button>
       </div>
@@ -144,7 +144,8 @@
       </div>
     {:else if safePerformanceData.length === 0}
       <div class="text-center p-8">
-        <Activity class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+        <i class="fa-utility-duo fa-regular fa-clock"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <p class="font-medium mb-2" style="color: {$colorStore.text}">No performance data available yet.</p>
         <p class="text-sm" style="color: {$colorStore.muted}">Run some commands to generate performance metrics.</p>
       </div>

@@ -9,11 +9,4 @@ export default defineConfig({
       "top-level-await": true,
     },
   },
-  build: {
-    rollupOptions: {
-      output: {
-        format: "es",
-      },
-    },
-  },
 });

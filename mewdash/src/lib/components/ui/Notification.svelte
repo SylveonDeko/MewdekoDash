@@ -118,16 +118,14 @@
       </div>
 
       <!-- Dismiss Button -->
-      <button
+      <button aria-label="Button action"
               class="shrink-0 p-1 rounded-lg transition-all duration-200 hover:scale-110"
         style="color: {$colorStore.muted};
                hover:background-color: {type === 'success' ? successColor : errorColor}20;
                hover:color: {$colorStore.text};"
         onclick={handleDismiss}
-        aria-label="Dismiss notification"
-      >
-        <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-      </button>
+
+      ><i class="fa-solid fa-xmark" style="font-size: 16px;"></i></button>
     </div>
 
     <!-- Progress bar for timed notifications -->

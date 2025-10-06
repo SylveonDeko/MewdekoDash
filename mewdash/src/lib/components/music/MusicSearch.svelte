@@ -15,7 +15,7 @@ A modal music search component for finding and adding tracks to the music queue.
   colors={musicPlayerColors}
   currentUser={user}
   on:close={handleSearchClose}
-/>
+              >
 ```
 -->
 <script lang="ts">
@@ -296,7 +296,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
 {#if isOpen}
   <div
-          class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-xs z-30 flex items-center justify-center p-0 sm:p-4"
+    class="fixed inset-0 bg-black opacity-50 backdrop-blur-xs z-30 flex items-center justify-center p-0 sm:p-4"
     transition:fade={{ duration: 200 }}
     onclick={handleBackdropClick}
     onkeydown={(e) => e.key === 'Escape' && close()}
@@ -319,14 +319,12 @@ A modal music search component for finding and adding tracks to the music queue.
           <h2 id="music-search-title" class="text-xl font-bold" style="color: {colors.text};">
             Add Music
           </h2>
-          <button
-                  class="p-2 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors focus:outline-hidden focus:ring-2"
+          <button aria-label="Button action"
+                  class="p-2 rounded-full hover:bg-black hover:opacity-20 transition-colors focus:outline-hidden focus:ring-2"
             onclick={close}
-            aria-label="Close search"
-            style="color: {colors.text}; --ring-color: {colors.accent};"
-          >
-            <i class="fa-solid fa-xmark" style="font-size: 20px;"></i>
-          </button>
+
+                  style="color: {colors.text}; --ring-color: {colors.accent};"
+          ><i class="fa-solid fa-xmark" style="font-size: 20px;"></i></button>
         </div>
 
         <!-- Search input -->
@@ -343,7 +341,7 @@ A modal music search component for finding and adding tracks to the music queue.
             placeholder="Search for songs, artists, or paste a link..."
             class="w-full py-2 pl-10 pr-4 rounded-lg focus:outline-hidden focus:ring-2"
             style="background: {colors.foreground}20; color: {colors.text}; --ring-color: {colors.accent};"
-          />
+          >
         </div>
 
         <!-- Platform selector -->
@@ -407,7 +405,8 @@ A modal music search component for finding and adding tracks to the music queue.
 
         {#if isSearching}
           <div class="flex justify-center items-center py-8">
-            <i class="fa-solid fa-spinner fa-spin" style="color: {colors.accent}; font-size: 32px;" aria-hidden="true" />
+            <i class="fa-solid fa-spinner fa-spin" style="color: {colors.accent}; font-size: 32px;"
+               aria-hidden="true"></i>
             <span class="ml-2">
               {#if searchRetryCount > 0}
                 Retrying search... ({searchRetryCount}/{MAX_RETRIES})
@@ -435,7 +434,7 @@ A modal music search component for finding and adding tracks to the music queue.
                     alt="{track.title} thumbnail"
                     class="w-16 h-16 sm:w-12 sm:h-12 object-cover rounded-lg sm:rounded-md shadow-md"
                     loading="lazy"
-                  />
+                  >
                   <div
                     class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg sm:rounded-md"
                     style="background: rgba(0,0,0,0.6);"
@@ -497,7 +496,7 @@ A modal music search component for finding and adding tracks to the music queue.
                       href={track.uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="p-1 rounded-full hover:bg-black hover:bg-opacity-20"
+                      class="p-1 rounded-full hover:bg-black hover:opacity-20"
                       onclick={stopPropagation(bubble('click'))}
                       aria-label="Open in {track.provider || 'original source'}"
                     >

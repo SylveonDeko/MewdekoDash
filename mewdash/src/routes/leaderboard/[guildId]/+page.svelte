@@ -1,15 +1,14 @@
 <!-- routes/leaderboard/[guildId]/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {page} from "$app/stores";
-    import {fade, fly} from "svelte/transition";
-    import {api} from "$lib/api";
-    import {logger} from "$lib/logger";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentInstance} from "$lib/stores/instanceStore";
-    import {Award, Crown, Star, TrendingUp, Users, Zap} from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import { fade, fly } from "svelte/transition";
+  import { api } from "$lib/api";
+  import { logger } from "$lib/logger";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentInstance } from "$lib/stores/instanceStore";
 
-    let {data} = $props();
+  let { data } = $props();
 
   // Authentication required
   let currentUser = data.user;
@@ -128,18 +127,13 @@
     try {
       // Instance is already set in store from findInstancesWithGuild
       const mutualGuilds = await api.getMutualGuilds(userId, false);
-      console.log("Mutual guilds:", mutualGuilds);
-      console.log("Looking for guildId:", guildId);
-      console.log("Guild IDs in mutuals:", mutualGuilds?.map((g: any) => g.id));
       
       isMember = mutualGuilds?.some((guild: any) => {
         // Handle BigInt comparison properly
         const guildIdBigInt = typeof guild.id === 'string' ? BigInt(guild.id) : guild.id;
-        console.log("Comparing:", guildIdBigInt, "===", guildId);
         return guildIdBigInt === guildId;
       }) || false;
       
-      console.log("Is member:", isMember);
       
       if (!isMember) {
         error = "You must be a member of this server to view its leaderboard";
@@ -171,7 +165,7 @@
         const board = await api.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []);
         
         // Enhance with message counts for members
-        const enhancedBoard = await Promise.all(
+        leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
               const messageStats = await api.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
@@ -181,8 +175,6 @@
             }
           })
         );
-        
-        leaderboard = enhancedBoard;
       } else {
         // Load both leaderboard and stats for initial load
         const [board, stats] = await Promise.all([
@@ -191,7 +183,7 @@
         ]);
 
         // Enhance leaderboard with message counts for members
-        const enhancedBoard = await Promise.all(
+        leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
               const messageStats = await api.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
@@ -201,8 +193,6 @@
             }
           })
         );
-
-        leaderboard = enhancedBoard;
         serverStats = stats;
 
         // Extract colors from guild icon if available
@@ -231,10 +221,14 @@
 
   function getRankIcon(rank: number) {
     switch (rank) {
-      case 1: return Crown;
-      case 2: return Award;
-      case 3: return Star;
-      default: return TrendingUp;
+      case 1:
+        return "fa-crown";
+      case 2:
+        return "fa-star";
+      case 3:
+        return "fa-star";
+      default:
+        return "fa-arrow-trend-up";
     }
   }
 
@@ -373,7 +367,7 @@
             alt=""
             class="w-20 h-20 rounded-2xl mx-auto mb-4 border-4"
             style="border-color: {$colorStore.primary}50;"
-          />
+          >
         {/if}
         <h1 class="text-4xl font-bold mb-2" style="color: {$colorStore.text}">
           {guildInfo?.name || 'Server'} Leaderboard
@@ -426,7 +420,8 @@
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-          <Users class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-users"
+               style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalUsers?.toLocaleString() || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">Total Users</div>
         </div>
@@ -435,7 +430,8 @@
              style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}15);
                     border-color: {$colorStore.secondary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-          <Zap class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.secondary}" />
+            <i class="fa-solid fa-bolt"
+               style="color: {$colorStore.secondary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.totalXp?.toLocaleString() || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">Total XP</div>
         </div>
@@ -444,7 +440,8 @@
              style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.primary}15);
                     border-color: {$colorStore.accent}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-          <TrendingUp class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.accent}" />
+            <i class="fa-solid fa-arrow-trend-up"
+               style="color: {$colorStore.accent}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.averageLevel || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">Avg Level</div>
         </div>
@@ -453,7 +450,8 @@
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-          <Crown class="w-8 h-8 mx-auto mb-2" style="color: {$colorStore.primary}" />
+            <i class="fa-solid fa-crown"
+               style="color: {$colorStore.primary}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">{serverStats.highestLevel || 0}</div>
           <div class="text-sm" style="color: {$colorStore.muted}">Highest Level</div>
         </div>
@@ -469,7 +467,7 @@
         <div class="p-6 border-b" style="border-color: {$colorStore.primary}20;">
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text}">
-              <Users class="w-6 h-6" />
+              <i class="fa-solid fa-users" style="font-size: 24px;"></i>
               Top Members
             </h2>
             
@@ -515,17 +513,15 @@
 
         <div class="divide-y" style="divide-color: {$colorStore.primary}10;">
           {#each leaderboard as user, index (user.userId)}
-            <div class="p-4 hover:bg-black hover:bg-opacity-20 transition-colors"
+            <div class="p-4 hover:bg-black hover:opacity-20 transition-colors"
                  in:fly={{ x: -20, duration: 300, delay: index * 50 }}>
               <div class="flex items-center gap-4">
                 <!-- Rank -->
                 <div class="flex items-center justify-center w-12 h-12 rounded-xl border-2"
                      style="background: {getRankColor(user.rank)}20; border-color: {getRankColor(user.rank)}40;">
                   {#if user.rank <= 3}
-                      {@const SvelteComponent = getRankIcon(user.rank)}
-                      <SvelteComponent
-                                      class="w-6 h-6" 
-                                      style="color: {getRankColor(user.rank)}" />
+                    <i class="fa-solid {getRankIcon(user.rank)}"
+                       style="color: {getRankColor(user.rank)}; font-size: 24px;"></i>
                   {:else}
                     <span class="font-bold text-lg" style="color: {getRankColor(user.rank)}">
                       {user.rank}
@@ -539,7 +535,7 @@
                     src={user.avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                     alt=""
                     class="w-12 h-12 rounded-xl"
-                  />
+                  >
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-lg truncate" style="color: {$colorStore.text}" title={user.username}>
                       {user.username}
@@ -580,7 +576,8 @@
             </div>
           {:else}
             <div class="p-8 text-center">
-              <Users class="w-16 h-16 mx-auto mb-4" style="color: {$colorStore.primary}50" />
+              <i class="fa-solid fa-users"
+                 style="color: {$colorStore.primary}50; font-size: 64px; display: block; margin: 0 auto 16px;"></i>
               <p class="text-lg" style="color: {$colorStore.text}">No leaderboard data available</p>
               <p class="text-sm" style="color: {$colorStore.muted}">This server may not have XP tracking enabled</p>
             </div>

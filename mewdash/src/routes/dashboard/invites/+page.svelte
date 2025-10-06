@@ -42,11 +42,9 @@
   ];
 
   // Invite Settings
-    let inviteSettings = $state({
-    isEnabled: true,
-    removeInviteOnLeave: false,
-    minAccountAge: "00:00:00" // TimeSpan format
-    });
+    let inviteSettingsEnabled = $state(true);
+    let inviteSettingsRemoveOnLeave = $state(false);
+    let inviteSettingsMinAccountAge = $state("00:00:00");
 
   // Invite Leaderboard
   let leaderboard: Array<{
@@ -152,11 +150,14 @@
           throw new Error("No guild selected");
         }
 
-        inviteSettings = await api.getInviteSettings($currentGuild.id);
+        const settings = await api.getInviteSettings($currentGuild.id);
+        inviteSettingsEnabled = settings.isEnabled;
+        inviteSettingsRemoveOnLeave = settings.removeInviteOnLeave;
+        inviteSettingsMinAccountAge = settings.minAccountAge;
 
       // Parse the TimeSpan format for min account age
       const timeSpanRegex = /^(\d+)\:(\d+)\:(\d+)(?:\.(\d+))?$/;
-      const match = inviteSettings.minAccountAge.match(timeSpanRegex);
+        const match = inviteSettingsMinAccountAge.match(timeSpanRegex);
 
       if (match) {
         minAgeDays = Math.floor(parseInt(match[1]) / 24); // Convert hours to days
@@ -218,7 +219,6 @@
 
       inviterInfo = await api.getInviter($currentGuild.id, BigInt(selectedUserId));
     } catch (err) {
-      logger.error("Failed to find inviter:", err);
       inviterError = "No inviter found for this user";
       inviterInfo = null;
     } finally {
@@ -236,7 +236,6 @@
 
       invitedUsers = await api.getInvitedUsers($currentGuild.id, BigInt(selectedUserId));
     } catch (err) {
-      logger.error("Failed to find invited users:", err);
       invitedError = "No users found invited by this user";
       invitedUsers = [];
     } finally {
@@ -282,10 +281,10 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
       // Update enabled state
-      await api.toggleInviteTracking($currentGuild.id, inviteSettings.isEnabled);
+      await api.toggleInviteTracking($currentGuild.id, inviteSettingsEnabled);
 
       // Update remove on leave setting
-      await api.setRemoveOnLeave($currentGuild.id, inviteSettings.removeInviteOnLeave);
+      await api.setRemoveOnLeave($currentGuild.id, inviteSettingsRemoveOnLeave);
 
       // Calculate TimeSpan for minimum account age
       const totalHours = (minAgeDays * 24) + minAgeHours;
@@ -415,7 +414,9 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-gear"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Tracking Settings</h2>
         </div>
@@ -436,7 +437,9 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+               aria-hidden="true"></i>
             <p style="color: {$colorStore.accent}">{error.settings}</p>
           </div>
         {:else}
@@ -448,13 +451,15 @@
             >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;" aria-hidden="true" />
+                  <i class="fa-utility-duo fa-regular fa-gear"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
+                     aria-hidden="true"></i>
                   <h3 class="font-semibold" style="color: {$colorStore.text}">Enable Invite Tracking</h3>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    bind:checked={inviteSettings.isEnabled}
+                    bind:checked={inviteSettingsEnabled}
                     class="sr-only peer"
                     onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Enable or disable invite tracking"
@@ -479,13 +484,15 @@
             >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+                  <i class="fa-utility-duo fa-regular fa-gear"
+                     style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+                     aria-hidden="true"></i>
                   <h3 class="font-semibold" style="color: {$colorStore.text}">Remove Invite On Leave</h3>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    bind:checked={inviteSettings.removeInviteOnLeave}
+                    bind:checked={inviteSettingsRemoveOnLeave}
                     class="sr-only peer"
                     onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Remove invite count when a user leaves"
@@ -509,7 +516,9 @@
               style="background: {$colorStore.primary}10;"
             >
               <div class="flex items-center gap-2 mb-3">
-                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+                <i class="fa-utility-duo fa-regular fa-clock"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+                   aria-hidden="true"></i>
                 <h3 class="font-semibold" style="color: {$colorStore.text}">Minimum Account Age</h3>
               </div>
               <div class="grid grid-cols-3 gap-4">
@@ -525,7 +534,7 @@
                            color: {$colorStore.text};"
                     min="0"
                     aria-label="Minimum account age in days"
-                  />
+                  >
                 </div>
                 <div>
                   <label class="block text-sm mb-1" style="color: {$colorStore.muted}" for="min-age-hours">Hours</label>
@@ -540,7 +549,7 @@
                     min="0"
                     max="23"
                     aria-label="Minimum account age in hours"
-                  />
+                  >
                 </div>
                 <div>
                   <label class="block text-sm mb-1" style="color: {$colorStore.muted}"
@@ -556,7 +565,7 @@
                     min="0"
                     max="59"
                     aria-label="Minimum account age in minutes"
-                  />
+                  >
                 </div>
               </div>
               <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
@@ -592,7 +601,9 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-file-spreadsheet" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-file-spreadsheet"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Statistics</h2>
         </div>
@@ -613,7 +624,9 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+               aria-hidden="true"></i>
             <p style="color: {$colorStore.accent}">{error.stats}</p>
           </div>
         {:else}
@@ -668,12 +681,12 @@
             <ul class="space-y-2">
               <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
                 <span style="color: {$colorStore.muted}">Invite Tracking</span>
-                <span style="color: {$colorStore.text}">{inviteSettings.isEnabled ? 'Enabled' : 'Disabled'}</span>
+                <span style="color: {$colorStore.text}">{inviteSettingsEnabled ? 'Enabled' : 'Disabled'}</span>
               </li>
               <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
                 <span style="color: {$colorStore.muted}">Remove on Leave</span>
                 <span
-                  style="color: {$colorStore.text}">{inviteSettings.removeInviteOnLeave ? 'Enabled' : 'Disabled'}</span>
+                  style="color: {$colorStore.text}">{inviteSettingsRemoveOnLeave ? 'Enabled' : 'Disabled'}</span>
               </li>
               <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
                 <span style="color: {$colorStore.muted}">Min Account Age</span>
@@ -696,7 +709,9 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-award" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-award"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Leaderboard</h2>
         </div>
@@ -717,7 +732,9 @@
             style="background: {$colorStore.accent}10;"
             role="alert"
           >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+               aria-hidden="true"></i>
             <p style="color: {$colorStore.accent}">{error.leaderboard}</p>
           </div>
         {:else}
@@ -726,7 +743,9 @@
               class="text-center py-12"
               transition:fade
             >
-              <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-users"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"
+                 aria-hidden="true"></i>
               <p style="color: {$colorStore.muted}">No invite data available</p>
             </div>
           {:else}
@@ -803,7 +822,9 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-user"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Who Invited a User</h2>
         </div>
@@ -825,7 +846,8 @@
                 }))}
                 customIcon="fa-user"
                 placeholder="Select a User"
-                bind:selectedId={selectedUserId}
+                selected={selectedUserId}
+                on:change={(e) => selectedUserId = e.detail.selected}
                 aria-label="Select a user to find their inviter"
               />
               <button
@@ -858,7 +880,9 @@
               style="background: {$colorStore.accent}10;"
               role="alert"
             >
-              <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+                 aria-hidden="true"></i>
               <p style="color: {$colorStore.accent}">{inviterError}</p>
             </div>
           {:else if inviterInfo && selectedUserId}
@@ -873,7 +897,7 @@
                   alt=""
                   class="w-16 h-16 rounded-full border-2"
                   style="border-color: {$colorStore.primary}30;"
-                />
+                >
                 <div>
                   <p class="font-medium text-lg" style="color: {$colorStore.text}">{inviterInfo.username}</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
@@ -898,7 +922,9 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-user-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;" aria-hidden="true" />
+            <i class="fa-utility-duo fa-regular fa-user-plus"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Users Invited By</h2>
         </div>
@@ -920,7 +946,8 @@
                 }))}
                 customIcon="fa-user-plus"
                 placeholder="Select a User"
-                bind:selectedId={selectedUserId}
+                selected={selectedUserId}
+                on:change={(e) => selectedUserId = e.detail.selected}
                 aria-label="Select a user to find who they invited"
               />
               <button
@@ -953,7 +980,9 @@
               style="background: {$colorStore.accent}10;"
               role="alert"
             >
-              <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+                 aria-hidden="true"></i>
               <p style="color: {$colorStore.accent}">{invitedError}</p>
             </div>
           {:else if invitedUsers.length > 0 && selectedUserId}
@@ -976,7 +1005,7 @@
                       alt=""
                       class="w-10 h-10 rounded-full border-2"
                       style="border-color: {$colorStore.primary}30;"
-                    />
+                    >
                     <div>
                       <p class="font-medium" style="color: {$colorStore.text}">{user.username}</p>
                     </div>
@@ -986,7 +1015,9 @@
             </div>
           {:else if selectedUserId && !invitedLoading}
             <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-user-plus" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 12px;" aria-hidden="true" />
+              <i class="fa-utility-duo fa-regular fa-user-plus"
+                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 12px;"
+                 aria-hidden="true"></i>
               <p style="color: {$colorStore.muted}">
                 {guildMembers.find(m => m.id === selectedUserId)?.username || 'This user'} hasn't invited anyone yet
               </p>
@@ -999,11 +1030,6 @@
 
 <style lang="postcss">
     /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
 
     :global(.input-field) {
         transition: all 0.2s ease;
@@ -1015,9 +1041,6 @@
     }
 
     /* Prevent stretch in Safari */
-    input, select {
-        min-height: 44px;
-    }
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {

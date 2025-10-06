@@ -263,7 +263,7 @@
                                             <span class="text-sm font-medium" style="color: {$colorStore.text}">
                                                 "{highlight.word}"
                                             </span>
-                                            <button
+                                          <button aria-label="Delete highlight"
                                                     class="p-1 rounded hover:bg-red-500/20 transition-colors"
                                                     onclick={() => deleteHighlight(highlight.id)}
                                             >
@@ -298,8 +298,8 @@
                                 class="flex-1 p-3 rounded-xl border transition-all text-base"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
-                        />
-                        <button
+                        >
+                      <button aria-label="Button action"
                                 class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
                                 style="background: {$colorStore.primary}; color: white;"
                                 onclick={searchHighlights}
@@ -333,7 +333,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button
+                              <button aria-label="Delete word"
                                         class="p-2 rounded-lg transition-all hover:scale-110"
                                         style="background: #ef444420; color: #ef4444;"
                                         onclick={() => deleteHighlight(highlight.id)}
@@ -418,7 +418,7 @@
                     />
 
                     <StatCard
-                            icon="fa-chart-line"
+                      icon="fa-star"
                             label="Top Word"
                             value={stats.topHighlightedWords[0]?.count || 0}
                             subtitle={stats.topHighlightedWords[0]?.word || "none"}

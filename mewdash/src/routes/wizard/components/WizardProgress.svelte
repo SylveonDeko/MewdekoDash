@@ -4,7 +4,6 @@ Wizard progress indicator showing current step and completion status
 -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
-  import { Check } from "lucide-svelte";
 
   interface Props {
     currentStep: number;
@@ -93,7 +92,4 @@ Wizard progress indicator showing current step and completion status
     }
   }
   
-  .animate-pulse {
-    animation: pulse 2s ease-in-out infinite;
-  }
 </style>

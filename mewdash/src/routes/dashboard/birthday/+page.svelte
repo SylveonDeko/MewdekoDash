@@ -336,10 +336,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         <!-- Channel Selection -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="birthday-channel-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
                                 Birthday Channel
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="channel"
@@ -350,16 +351,17 @@
                     configForm.birthdayChannelId = e.detail.selected ? BigInt(e.detail.selected) : null;
                     configForm = { ...configForm };
                   }}
-                                />
+                                        aria-labelledby="birthday-channel-label" />
                             </div>
                         </div>
 
                         <!-- Birthday Role -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="birthday-role-24-hour-temporary-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-crown" style="font-size: 14px;"></i>
                                 Birthday Role (24-hour temporary)
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="role"
@@ -370,16 +372,17 @@
                     configForm.birthdayRoleId = e.detail.selected ? BigInt(e.detail.selected) : null;
                     configForm = { ...configForm };
                   }}
-                                />
+                                        aria-labelledby="birthday-role-24-hour-temporary-label" />
                             </div>
                         </div>
 
                         <!-- Ping Role -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="ping-role-notifies-when-announcing-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-bell" style="font-size: 14px;"></i>
                                 Ping Role (notifies when announcing)
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="role"
@@ -390,16 +393,17 @@
                     configForm.birthdayPingRoleId = e.detail.selected ? BigInt(e.detail.selected) : null;
                     configForm = { ...configForm };
                   }}
-                                />
+                                        aria-labelledby="ping-role-notifies-when-announcing-label" />
                             </div>
                         </div>
 
                         <!-- Timezone -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                            <span id="server-timezone-label" class="block text-sm font-medium mb-2"
+                                  style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-location-dot" style="font-size: 14px;"></i>
                                 Server Timezone
-                            </label>
+                            </span>
                             <div class="min-h-[44px]">
                                 <DiscordSelector
                                         type="timezone"
@@ -422,18 +426,19 @@
 
                         <!-- Reminder Days -->
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          <label for="input-1955" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text}">
                                 <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
                                 Reminder Days Before Birthday
                             </label>
-                            <input
+                          <input id="input-1955"
                                     type="number"
                                     min="0"
                                     max="30"
                                     bind:value={configForm.birthdayReminderDays}
                                     class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                            />
+                          >
                         </div>
                     </div>
                 </div>
@@ -448,10 +453,11 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="birthday-message" class="block text-sm font-medium mb-2"
+                             style="color: {$colorStore.text}">
                             Custom Birthday Announcement
                         </label>
-                        <textarea
+                      <textarea id="birthday-message"
                                 bind:value={configForm.birthdayMessage}
                                 placeholder="🎉 Happy Birthday %user.mention%! 🎂 Hope you have a wonderful day!"
                                 rows="3"
@@ -467,7 +473,7 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
-                    <button
+                  <button aria-label="Button action"
                             class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
@@ -518,7 +524,7 @@
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Announcements) : false}
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.Announcements)}
-                                    />
+                                    >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
@@ -541,7 +547,7 @@
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.BirthdayRole) : false}
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.BirthdayRole)}
                                             disabled={!configForm.birthdayRoleId}
-                                    />
+                                    >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
@@ -563,7 +569,7 @@
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Reminders) : false}
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.Reminders)}
-                                    />
+                                    >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
@@ -586,7 +592,7 @@
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.PingRole) : false}
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.PingRole)}
                                             disabled={!configForm.birthdayPingRoleId}
-                                    />
+                                    >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>
@@ -608,7 +614,7 @@
                                             class="sr-only peer"
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.TimezoneSupport) : false}
                                             onchange={() => toggleFeature(BirthdayFeaturesEnum.TimezoneSupport)}
-                                    />
+                                    >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                             style="peer-checked:bg-color: {$colorStore.primary}"></div>

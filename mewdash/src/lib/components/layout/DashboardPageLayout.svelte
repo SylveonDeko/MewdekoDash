@@ -242,12 +242,8 @@
     <div class="flex items-center gap-4">
       <div class="p-4 rounded-xl"
            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        {#if typeof icon === 'string'}
-          <i class="fa-utility-duo fa-regular {icon} text-3xl"
-             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-        {:else}
-          <svelte:component this={icon} class="w-8 h-8" style="color: {$colorStore.primary}" />
-        {/if}
+        <i class="fa-utility-duo fa-regular {icon} text-3xl"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <div>
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{title}</h1>
@@ -266,14 +262,11 @@
             on:click={button.action}
             style="{button.style || `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`} focus:ring-color: {$colorStore.primary};"
             aria-busy={button.loading}
+                  aria-label={button.label}
           >
-            {#if typeof button.icon === 'string'}
-              <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''}"
-                 style="font-size: 18px;"
-                 aria-hidden="true"></i>
-            {:else}
-              <svelte:component this={button.icon} class="w-4 h-4 sm:w-5 sm:h-5 {button.loading ? 'animate-spin' : ''}" aria-hidden="true" />
-            {/if}
+            <i class="fa-solid {button.icon} {button.loading ? 'fa-spin' : ''}"
+               style="font-size: 18px;"
+               aria-hidden="true"></i>
             <span class="text-sm sm:text-base">{button.label}</span>
           </button>
         {/each}
@@ -333,11 +326,7 @@
               id="tab-{tab.id}"
               tabindex={activeTab === tab.id ? 0 : -1}
             >
-              {#if typeof tab.icon === 'string'}
-                <i class="fa-solid {tab.icon}" style="font-size: 16px;" aria-hidden="true"></i>
-              {:else}
-                <svelte:component this={tab.icon} size={16} class="sm:w-[18px] sm:h-[18px]" aria-hidden="true" />
-              {/if}
+              <i class="fa-solid {tab.icon}" style="font-size: 16px;" aria-hidden="true"></i>
               <span class="text-sm sm:text-base">{tab.label}</span>
             </button>
           {/each}
@@ -364,11 +353,11 @@
       <!-- Context indicator -->
       <div class="flex items-center justify-center mb-3 px-2">
         <div class="flex items-center gap-2">
-          <div class="h-px w-16" style="background: {$colorStore.primary}10;" />
+          <div class="h-px w-16" style="background: {$colorStore.primary}10;"></div>
           <span class="text-xs font-medium px-3 whitespace-nowrap" style="color: {$colorStore.muted};">
             {tabs.find(t => t.id === activeTab)?.label || ''} Options
           </span>
-          <div class="h-px w-16" style="background: {$colorStore.primary}10;" />
+          <div class="h-px w-16" style="background: {$colorStore.primary}10;"></div>
         </div>
       </div>
       
@@ -421,11 +410,7 @@
                 tabindex={activeSubTab === subTab.id ? 0 : -1}
               >
                 {#if subTab.icon}
-                  {#if typeof subTab.icon === 'string'}
-                    <i class="fa-solid {subTab.icon}" style="font-size: 14px;" aria-hidden="true"></i>
-                  {:else}
-                    <svelte:component this={subTab.icon} size={14} aria-hidden="true" />
-                  {/if}
+                  <i class="fa-solid {subTab.icon}" style="font-size: 14px;" aria-hidden="true"></i>
                 {/if}
                 <span>{subTab.label}</span>
               </button>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { AlertCircle, Award, Users } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade } from "svelte/transition";
 
@@ -35,7 +34,9 @@
     style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
            color: {$colorStore.primary};"
   >
-    <Award aria-hidden="true" class="w-6 h-6" />
+    <i aria-hidden="true"
+       class="fa-utility-duo fa-regular fa-star"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
   <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Leaderboard</h2>
 </div>
@@ -56,7 +57,9 @@
     style="background: {$colorStore.accent}10;"
     role="alert"
   >
-    <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+    <i class="fa-utility-duo fa-regular fa-bell"
+       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+       aria-hidden="true"></i>
     <p style="color: {$colorStore.accent}">{error}</p>
   </div>
 {:else}
@@ -65,7 +68,9 @@
       class="text-center py-12"
       transition:fade
     >
-      <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" aria-hidden="true" />
+      <i class="fa-utility-duo fa-regular fa-users"
+         style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"
+         aria-hidden="true"></i>
       <p style="color: {$colorStore.muted}">No XP data available</p>
     </div>
   {:else}
@@ -91,7 +96,7 @@
               alt=""
               class="w-12 h-12 rounded-full border-2 shrink-0"
               style="border-color: {$colorStore.primary}30;"
-            />
+            >
             <div class="grow min-w-0">
               <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
               <div class="flex flex-col sm:flex-row sm:items-center text-sm gap-1" style="color: {$colorStore.muted}">

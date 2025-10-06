@@ -129,7 +129,8 @@
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{totalWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.primary}20;">
-              <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-bell"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
             </div>
           </div>
         </div>
@@ -143,7 +144,8 @@
               <p class="text-3xl font-bold mt-1" style="color: {$colorStore.text}">{activeWarnings}</p>
             </div>
             <div class="p-3 rounded-xl" style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-bell"
+                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
         </div>
@@ -173,7 +175,8 @@
         <div class="flex items-center gap-4 mb-6">
           <div class="p-3 rounded-xl"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+            <i class="fa-utility-duo fa-regular fa-bell"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">All Warnings</h2>
         </div>
@@ -196,7 +199,8 @@
                   {#if warning.forgiven}
                     <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {:else}
-                    <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-bell"
+                       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {/if}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -261,7 +265,8 @@
                   {#if warning.forgiven}
                     <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {:else}
-                    <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-bell"
+                       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
                   {/if}
                 </div>
 

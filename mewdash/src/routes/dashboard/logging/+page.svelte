@@ -125,9 +125,6 @@
       config = configData;
       textChannels = channelsData;
 
-      console.log(configData)
-      console.log(channelsData)
-
       // Convert logChannels to string IDs and initialize missing ones
       logChannels = {} as any;
       for (const mapping of LOG_TYPE_MAPPINGS) {
@@ -252,10 +249,10 @@
     });
 </script>
 
-<DashboardPageLayout 
+<DashboardPageLayout
   title="Logging Configuration"
   subtitle="Configure event logging channels and settings"
-  icon="fa-file-lines"
+  icon="fa-file"
   {tabs}
   {activeTab}
   {actionButtons}
@@ -287,7 +284,8 @@
            style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10); border: 1px solid {$colorStore.primary}30;"
            in:fade={{ duration: 300 }}>
         <div class="flex items-start gap-4">
-          <i class="fa-utility-duo fa-regular fa-file-lines" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <i class="fa-utility-duo fa-regular fa-file"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
           <div>
             <h3 class="font-semibold mb-2" style="color: {$colorStore.text}">Set up Event Logging</h3>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
@@ -441,7 +439,7 @@
               bind:value={channelSearchQuery}
               class="w-full pl-10 pr-4 py-2 rounded-lg border text-sm"
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            />
+            >
           </div>
 
           {#if activeChannelList.length === 0}

@@ -4,7 +4,6 @@
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {loadingMessage, loadingStore, showSpinner} from "$lib/stores/loadingStore";
-    import {Loader2} from "lucide-svelte";
     import {fly} from "svelte/transition";
 
     // Loading state
@@ -77,11 +76,9 @@
       >
         <!-- Spinner -->
           <div class="shrink-0">
-          <Loader2 
-            size={16}
-            class="animate-spin"
-            style="color: {$colorStore.primary}"
-          />
+            <i class="fa-solid fa-spinner fa-spin"
+               style="color: {$colorStore.primary}; font-size: 16px;"
+            ></i>
         </div>
 
         <!-- Message -->

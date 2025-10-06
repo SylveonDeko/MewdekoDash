@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { AlertCircle, Database } from "lucide-svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -64,7 +63,9 @@
     style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
            color: {$colorStore.primary};"
   >
-    <Database aria-hidden="true" class="w-6 h-6" />
+    <i aria-hidden="true"
+       class="fa-utility-duo fa-regular fa-database"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
   </div>
   <h2 class="text-xl font-bold" style="color: {$colorStore.text}">XP Exclusions</h2>
 </div>
@@ -85,7 +86,9 @@
     style="background: {$colorStore.accent}10;"
     role="alert"
   >
-    <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+    <i class="fa-utility-duo fa-regular fa-bell"
+       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+       aria-hidden="true"></i>
     <p style="color: {$colorStore.accent}">{error}</p>
   </div>
 {:else}

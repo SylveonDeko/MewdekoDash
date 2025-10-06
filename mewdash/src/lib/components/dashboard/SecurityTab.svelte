@@ -352,7 +352,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-message-exclamation text-xl"
+              <i class="fa-utility-duo fa-regular fa-bell text-xl"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
             </div>
             <div class="flex-1">
@@ -377,7 +377,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.primary}20;">
-              <i class="fa-utility-duo fa-regular fa-chart-line text-xl"
+              <i class="fa-utility-duo fa-regular fa-calendar text-xl"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
             </div>
             <div class="flex-1">
@@ -397,7 +397,7 @@
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg"
                  style="background: {$colorStore.secondary}20;">
-              <i class="fa-utility-duo fa-regular fa-file-lines text-xl"
+              <i class="fa-utility-duo fa-regular fa-file text-xl"
                  style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
             </div>
             <div class="flex-1">

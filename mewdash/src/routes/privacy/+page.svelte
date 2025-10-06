@@ -8,7 +8,7 @@
   <meta
     content="Mewdeko - The most customizable discord bot."
     property="og:title"
-  />
+  >
   <meta content="Privacy Policy for Mewdeko" name="description" />
   <meta content="Privacy Policy for Mewdeko" property="og:description" />
   <meta content="Privacy Policy for Mewdeko" name="twitter:description" />

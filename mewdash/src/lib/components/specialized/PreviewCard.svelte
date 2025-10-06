@@ -85,7 +85,7 @@ https://svelte.dev/e/css_expected_identifier -->
             {#if embed.author?.name}
               <div class="flex items-center gap-2 text-xs opacity-80">
                 {#if embed.author.icon_url}
-                  <img src={embed.author.icon_url} alt="Author icon" class="w-5 h-5 rounded-full" />
+                  <img src={embed.author.icon_url} alt="Author icon" class="w-5 h-5 rounded-full">
                 {/if}
                 {#if embed.author.url}
                   <a href={embed.author.url} class="font-medium hover:underline text-blue-400">
@@ -140,14 +140,14 @@ https://svelte.dev/e/css_expected_identifier -->
             <!-- Thumbnail -->
             {#if embed.thumbnail?.url}
               <div class="absolute top-4 right-4 w-20 h-20">
-                <img src={embed.thumbnail.url} alt="Thumbnail" class="w-full h-full object-cover rounded-lg" />
+                <img src={embed.thumbnail.url} alt="Thumbnail" class="w-full h-full object-cover rounded-lg">
               </div>
             {/if}
 
             <!-- Image -->
             {#if embed.image?.url}
               <div class="mt-4">
-                <img src={embed.image.url} alt="Embed image" class="max-w-full rounded-lg" />
+                <img src={embed.image.url} alt="" class="max-w-full rounded-lg">
               </div>
             {/if}
 
@@ -155,7 +155,7 @@ https://svelte.dev/e/css_expected_identifier -->
             {#if embed.footer?.text || embed.footer?.icon_url}
               <div class="flex items-center mt-4 text-gray-400 text-xs">
                 {#if embed.footer.icon_url}
-                  <img src={embed.footer.icon_url} alt="Footer icon" class="w-5 h-5 rounded-full mr-2" />
+                  <img src={embed.footer.icon_url} alt="Footer icon" class="w-5 h-5 rounded-full mr-2">
                 {/if}
                 <span>{embed.footer.text}</span>
               </div>

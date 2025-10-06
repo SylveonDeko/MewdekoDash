@@ -6,13 +6,12 @@ Feature card for selecting features during wizard setup
     import {colorStore} from "$lib/stores/colorStore";
     import type {ComponentType} from "svelte";
     import {createEventDispatcher} from "svelte";
-    import {Check, Clock, Star} from "lucide-svelte";
 
     interface Props {
     id: string;
     title: string;
     description: string;
-    icon: ComponentType;
+      icon: string | ComponentType;
     selected?: boolean;
     recommended?: boolean;
     setupTime?: string;
@@ -73,7 +72,7 @@ Feature card for selecting features during wizard setup
   {#if selected}
     <div class="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
          style="background: {$colorStore.primary};">
-      <Check class="w-4 h-4 text-white" />
+      <i class="fa-solid fa-check text-white" style="font-size: 16px;"></i>
     </div>
   {/if}
 
@@ -81,7 +80,7 @@ Feature card for selecting features during wizard setup
   {#if recommended}
     <div class="absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
-      <Star class="w-3 h-3" />
+      <i class="fa-solid fa-star" style="font-size: 12px;"></i>
       Recommended
     </div>
   {/if}
@@ -96,7 +95,12 @@ Feature card for selecting features during wizard setup
         color: {selected ? $colorStore.primary : $colorStore.muted};
       "
     >
-      <SvelteComponent class="w-5 h-5 sm:w-6 sm:h-6" />
+        {#if typeof icon === 'string'}
+          <i class="{icon}" style="font-size: 24px;"></i>
+        {:else}
+          {@const SvelteComponent = icon}
+          <SvelteComponent class="w-5 h-5 sm:w-6 sm:h-6" />
+        {/if}
     </div>
     
     <div class="flex-1 min-w-0">
@@ -119,7 +123,7 @@ Feature card for selecting features during wizard setup
       {#if setupTime}
         <div class="flex items-center gap-1 text-xs"
              style="color: {$colorStore.muted};">
-          <Clock class="w-3 h-3" />
+          <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
           {setupTime}
         </div>
       {/if}

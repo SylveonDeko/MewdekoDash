@@ -718,11 +718,11 @@
             {:else}
                 <!-- Refresh button -->
                 <div class="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-30" class:hidden={refreshing}>
-                    <button
+                    <button aria-label="Button action"
                             class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-105"
                             style="background: {$colorStore.primary}; color: white"
                             onclick={fetchAllData}
-                            aria-label="Refresh dashboard data"
+
                     >
           <span class:animate-spin={refreshing}>
             <i class="fa-utility-duo fa-regular fa-sync"
@@ -758,7 +758,7 @@
                                                 src="{guildInfo.bannerUrl}?size=1024"
                                                 alt="{guildInfo.name} banner"
                                                 class="w-full h-full object-cover"
-                                        />
+                                        >
                                         <!-- Darker overlay for text readability -->
                                         <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/60"></div>
                                     </div>
@@ -869,14 +869,14 @@
                                                             alt="{guildInfo.name} icon"
                                                             class="w-full h-full object-cover transition-all duration-500 hover:scale-110"
                                                             loading="lazy"
-                                                    />
+                                                    >
                                                 {:else if $currentGuild.icon}
                                                     <img
                                                             src="https://cdn.discordapp.com/icons/{$currentGuild.id}/{$currentGuild.icon}.{$currentGuild.icon.startsWith('a_') ? 'gif' : 'png'}?size=256"
                                                             alt="{$currentGuild.name} icon"
                                                             class="w-full h-full object-cover transition-all duration-500 hover:scale-110"
                                                             loading="lazy"
-                                                    />
+                                                    >
                                                 {:else}
                                                     <div
                                                             class="w-full h-full flex items-center justify-center text-2xl font-bold transition-all duration-500 hover:scale-110"
@@ -934,7 +934,8 @@
                                                     <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] md:hidden"
                                                          in:fade={{ duration: 200 }}
                                                          out:fade={{ duration: 150 }}
-                                                         onclick={closeServerDropdown}>
+                                                         onclick={closeServerDropdown} role="button" tabindex="0"
+                                                         onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeServerDropdown; } }}>
                                                     </div>
                                                 {/if}
 
@@ -961,7 +962,7 @@
                                                                         style="border-color: {$colorStore.primary}30;
                                      color: {$colorStore.text};
                                      background: {$colorStore.primary}08;"
-                                                                />
+                                                                >
                                                             </div>
                                                         </div>
 
@@ -982,7 +983,7 @@
                                 }
                                                                             alt=""
                                                                             class="w-10 h-10 rounded-lg object-cover"
-                                                                    />
+                                                                    >
                                                                     <div class="flex-1 min-w-0">
                                                                         <div class="font-medium truncate"
                                                                              style="color: {$colorStore.text};">
@@ -1155,7 +1156,8 @@
                                                     <div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] md:hidden"
                                                          in:fade={{ duration: 200 }}
                                                          out:fade={{ duration: 150 }}
-                                                         onclick={closeServerDropdown}>
+                                                         onclick={closeServerDropdown} role="button" tabindex="0"
+                                                         onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeServerDropdown; } }}>
                                                     </div>
                                                 {/if}
 
@@ -1183,7 +1185,7 @@
                                                                         style="border-color: {$colorStore.primary}30;
                                        color: {$colorStore.text};
                                        background: {$colorStore.primary}08;"
-                                                                />
+                                                                >
                                                             </div>
                                                         </div>
 
@@ -1204,7 +1206,7 @@
                                   }
                                                                             alt=""
                                                                             class="w-10 h-10 rounded-lg object-cover"
-                                                                    />
+                                                                    >
                                                                     <div class="flex-1 min-w-0">
                                                                         <div class="font-medium truncate"
                                                                              style="color: {$colorStore.text};">
@@ -1325,7 +1327,7 @@
 
                 <!-- Compact Mode Toggle - positioned between banner and tabs -->
                 <div class="flex justify-center mb-1">
-                    <button
+                    <button aria-label="Button action"
                             class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all duration-300 hover:opacity-100 opacity-40"
                             style="color: {$colorStore.muted};"
                             onclick={toggleCompactMode}
@@ -1418,9 +1420,6 @@
     }
 
     /* Add smooth transition for hover effects */
-    .hover\:shadow-xl {
-        transition: all 0.3s ease;
-    }
 
     /* Animation for the refresh button */
     @keyframes spin {
@@ -1439,7 +1438,7 @@
     /* Gradient animation for accent line */
     @keyframes gradient-shift {
         0% {
-            background-position: 0% 50%;
+            background-position: 0 50%;
         }
         100% {
             background-position: 200% 50%;

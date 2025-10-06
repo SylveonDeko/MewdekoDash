@@ -1,32 +1,14 @@
 <!-- routes/dashboard/patreon/+page.svelte -->
 <script lang="ts">
-    import {preventDefault} from 'svelte/legacy';
-
     import {onMount} from "svelte";
     import {api} from "$lib/api";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, fly} from "svelte/transition";
     import {goto, invalidateAll} from "$app/navigation";
-    import {page} from "$app/stores";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import {browser} from "$app/environment";
-    import {
-        Award,
-        CheckCircle,
-        DollarSign,
-        Heart,
-        LucideFolderSync,
-        MessageCircle,
-        Plus,
-        RefreshCw,
-        Save,
-        Settings,
-        Unlink,
-        Users,
-        XCircle
-    } from "lucide-svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
     import type {
@@ -87,10 +69,10 @@
     let activeTab = $state("overview");
   
   const tabs = [
-    { id: "overview", label: "Overview", icon: Heart },
-    { id: "supporters", label: "Supporters", icon: Users },
-    { id: "tiers", label: "Tier Mapping", icon: Award },
-    { id: "config", label: "Configuration", icon: Settings }
+    { id: "overview", label: "Overview", icon: "fa-heart" },
+    { id: "supporters", label: "Supporters", icon: "fa-users" },
+    { id: "tiers", label: "Tier Mapping", icon: "fa-star" },
+    { id: "config", label: "Configuration", icon: "fa-gear" }
   ];
 
   // Handle URL parameters for success/error messages
@@ -99,7 +81,7 @@
       await invalidateAll();
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const urlParams = $page.url.searchParams;
+      const urlParams = new URL(window.location.href).searchParams;
       const success = urlParams.get("success");
       const errorParam = urlParams.get("error");
       const code = urlParams.get("code");
@@ -107,7 +89,7 @@
 
       if (code && state) {
         await handleOAuthCallback(code, state);
-        const cleanUrl = new URL($page.url);
+        const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.delete("code");
         cleanUrl.searchParams.delete("state");
         await goto(cleanUrl.toString(), { replaceState: true });
@@ -117,12 +99,12 @@
 
       if (success === "true") {
         showNotificationMessage("Patreon integration configured successfully!", "success");
-        const cleanUrl = new URL($page.url);
+        const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.delete("success");
         await goto(cleanUrl.toString(), { replaceState: true });
       } else if (errorParam) {
         showNotificationMessage(decodeURIComponent(errorParam), "error");
-        const cleanUrl = new URL($page.url);
+        const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.delete("error");
         await goto(cleanUrl.toString(), { replaceState: true });
       }
@@ -395,30 +377,30 @@
   <title>Patreon Integration - {$currentGuild?.name || 'Mewdeko Dashboard'}</title>
 </svelte:head>
 
-<DashboardPageLayout 
-  title="Patreon Integration" 
-  subtitle="Connect your Patreon campaign to automatically sync supporters and manage perks" 
-  icon={Heart}
+<DashboardPageLayout
+  actionButtons={patreonStatus?.isConfigured ? [
+    {
+      label: "Refresh Data",
+      icon: "fa-arrows-rotate",
+      action: refreshData,
+      loading: isRefreshing
+    },
+    {
+      label: "Sync Supporters",
+      icon: "fa-users",
+      action: () => triggerOperation("sync_all"),
+      loading: isSyncing
+    }
+  ] : []}
+  icon="fa-heart"
+  subtitle="Connect your Patreon campaign to automatically sync supporters and manage perks"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
   on:tabChange={(e) => activeTab = e.detail.tabId}
   bind:notificationMessage
   bind:notificationType
-  actionButtons={patreonStatus?.isConfigured ? [
-    {
-      label: "Refresh Data",
-      icon: RefreshCw,
-      action: refreshData,
-      loading: isRefreshing
-    },
-    {
-      label: "Sync Supporters",
-      icon: LucideFolderSync,
-      action: () => triggerOperation("sync_all"),
-      loading: isSyncing
-    }
-  ] : []}
+  title="Patreon Integration"
 >
 
     {#if loading}
@@ -440,7 +422,8 @@
         in:fade
       >
         <div class="flex items-center gap-3 mb-2">
-          <XCircle class="w-6 h-6 text-red-400" />
+          <i class="fa-utility-duo fa-regular fa-circle-xmark"
+             style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 24px;"></i>
           <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Error</h3>
         </div>
         <p class="text-red-300">{error}</p>
@@ -448,7 +431,7 @@
           class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
           onclick={loadAllData}
         >
-          <RefreshCw class="w-4 h-4 inline mr-2" />
+          <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
           Retry
         </button>
       </div>
@@ -460,7 +443,8 @@
                border-color: {$colorStore.primary}30;"
         in:fade
       >
-        <Heart class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
+        <i class="fa-utility-duo fa-regular fa-heart"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
         <h3 class="text-2xl font-bold mb-2" style="color: {$colorStore.text};">Connect Your Patreon</h3>
         <p class="mb-8 max-w-md mx-auto text-lg" style="color: {$colorStore.muted};">
           Link your Patreon campaign to automatically sync supporters and provide exclusive perks to your community.
@@ -475,7 +459,7 @@
             <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             Connecting...
           {:else}
-            <Heart class="w-5 h-5" />
+            <i class="fa-solid fa-heart" style="font-size: 20px;"></i>
             Connect to Patreon
           {/if}
         </button>
@@ -540,7 +524,8 @@
                      border-color: {$colorStore.primary}30;"
             >
               <div class="flex items-center gap-3 mb-4">
-                <CheckCircle class="w-6 h-6 text-green-400" />
+                <i class="fa-utility-duo fa-regular fa-circle-check"
+                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 24px;"></i>
                 <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Connected</h3>
               </div>
               <div class="space-y-2">
@@ -568,7 +553,8 @@
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
-                  <Users class="w-6 h-6" style="color: {$colorStore.primary};" />
+                  <i class="fa-utility-duo fa-regular fa-users"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
                   <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Supporters</h3>
                 </div>
                 <!-- FIX: Use activeSupporters for the count -->
@@ -583,7 +569,8 @@
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
-                  <DollarSign class="w-6 h-6" style="color: {$colorStore.primary};" />
+                  <i class="fa-utility-duo fa-regular fa-circle"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
                   <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Revenue</h3>
                 </div>
                 <p class="text-3xl font-bold mb-2"
@@ -600,7 +587,8 @@
                        border-color: {$colorStore.primary}30;"
               >
                 <div class="flex items-center gap-3 mb-4">
-                  <Heart class="w-5 h-5 md:w-6 md:h-6" style="color: {$colorStore.primary};" />
+                  <i class="fa-utility-duo fa-regular fa-heart"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
                   <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">Campaign Creator</h3>
                 </div>
                 
@@ -612,13 +600,14 @@
                               src={patreonCreator.attributes.image_url}
                               alt="Creator avatar"
                               class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shrink-0"
-                      />
+                      >
                     {:else}
                         <div
                                 class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shrink-0"
                         style="background: {$colorStore.primary}20;"
                       >
-                        <Heart class="w-6 h-6 md:w-7 md:h-7" style="color: {$colorStore.primary};" />
+                          <i class="fa-utility-duo fa-regular fa-heart"
+                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 28px;"></i>
                       </div>
                     {/if}
                     
@@ -666,7 +655,7 @@
                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors w-full justify-center"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                     >
-                      <Heart class="w-3 h-3 md:w-4 md:h-4" />
+                      <i class="fa-solid fa-heart" style="font-size: 16px;"></i>
                       View Patreon Profile
                     </a>
                   {/if}
@@ -689,7 +678,7 @@
                 onclick={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
-                <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
+                <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
                 Sync All Data
               </button>
 
@@ -699,7 +688,7 @@
                 onclick={() => triggerOperation("sync_roles")}
                 disabled={isSyncing}
               >
-                <Award class="w-4 h-4" />
+                <i class="fa-solid fa-star" style="font-size: 16px;"></i>
                 Sync Roles
               </button>
 
@@ -709,7 +698,7 @@
                 onclick={() => triggerOperation("manual_announcement")}
                 disabled={isSyncing}
               >
-                <MessageCircle class="w-4 h-4" />
+                <i class="fa-solid fa-comment" style="font-size: 16px;"></i>
                 Send Announcement
               </button>
 
@@ -719,7 +708,7 @@
                 onclick={() => triggerOperation("refresh_token")}
                 disabled={isSyncing}
               >
-                <RefreshCw class="w-4 h-4" />
+                <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
                 Refresh Token
               </button>
 
@@ -729,7 +718,7 @@
                 onclick={disconnectPatreon}
                 disabled={isConnecting}
               >
-                <Unlink class="w-4 h-4" />
+                <i class="fa-solid fa-link-slash" style="font-size: 16px;"></i>
                 Re-login
               </button>
             </div>
@@ -752,14 +741,15 @@
                 onclick={() => triggerOperation("sync_all")}
                 disabled={isSyncing}
               >
-                <LucideFolderSync class="w-4 h-4 {isSyncing ? 'animate-spin' : ''}" />
+                <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
                 Sync Now
               </button>
             </div>
 
             {#if patreonSupporters.length === 0}
               <div class="text-center py-8">
-                <Users class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
+                <i class="fa-utility-duo fa-regular fa-users"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                 <p style="color: {$colorStore.muted};">No supporters found. Try syncing to load the latest data.</p>
               </div>
             {:else}
@@ -826,7 +816,7 @@
                     }))}
                     selected={selectedTierId}
                     placeholder="Select a tier..."
-                    customIcon={Award}
+                    customIcon="fa-star"
                     on:change={(e) => selectedTierId = e.detail.selected}
                   />
                 </div>
@@ -851,7 +841,7 @@
                     {#if isMappingTier}
                       <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     {:else}
-                      <Plus class="w-4 h-4" />
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     {/if}
                     Map Tier
                   </button>
@@ -868,7 +858,8 @@
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Available Tiers</h3>
               {#if patreonTiers.length === 0}
                 <div class="text-center py-8">
-                  <Award class="w-16 h-16 mx-auto mb-4 opacity-50" style="color: {$colorStore.primary};" />
+                  <i class="fa-utility-duo fa-regular fa-star"
+                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                   <p style="color: {$colorStore.muted};">No tiers found. Make sure your Patreon campaign has published
                     tiers. Try clicking "Sync All Data".</p>
                 </div>
@@ -889,7 +880,7 @@
                       <p class="text-lg font-bold mb-2"
                          style="color: {$colorStore.primary};">{formatCurrency(tier.amountCents)}</p>
                       {#if tier.description}
-                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{@html tier.description}</p>
+                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{tier.description}</p>
                       {/if}
                     </div>
                   {/each}
@@ -906,7 +897,7 @@
                      border-color: {$colorStore.primary}30;"
             >
               <h3 class="text-lg font-semibold mb-4" style="color: {$colorStore.text};">Configuration</h3>
-                <form onsubmit={preventDefault(updateConfig)} class="space-y-4">
+              <form onsubmit={(e) => { e.preventDefault(); updateConfig(); }} class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="announcement-channel" class="block text-sm font-medium mb-2"
@@ -931,7 +922,7 @@
                       class="w-full px-3 py-2 rounded-lg border"
                       style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
                       placeholder="Day of month"
-                    />
+                    >
                   </div>
                 </div>
 
@@ -955,7 +946,7 @@
                       bind:checked={configForm.toggleAnnouncements}
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
-                    />
+                    >
                     <span style="color: {$colorStore.text};">Enable Announcements</span>
                   </label>
 
@@ -965,7 +956,7 @@
                       bind:checked={configForm.toggleRoleSync}
                       class="rounded-sm"
                       style="accent-color: {$colorStore.primary};"
-                    />
+                    >
                     <span style="color: {$colorStore.text};">Enable Role Sync</span>
                   </label>
                 </div>
@@ -980,7 +971,7 @@
                     {#if isUpdatingConfig}
                       <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     {:else}
-                      <Save class="w-4 h-4" />
+                      <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                     {/if}
                     Save Configuration
                   </button>

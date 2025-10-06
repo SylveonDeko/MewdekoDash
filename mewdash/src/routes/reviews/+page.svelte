@@ -309,7 +309,7 @@
               alt=""
               class="w-12 h-12 rounded-full mr-4 border-2"
               style="border-color: {$colorStore.primary};"
-            />
+            >
             <div>
               <h3 class="font-semibold text-xl" style="color: {$colorStore.text};">
                 {review.username}

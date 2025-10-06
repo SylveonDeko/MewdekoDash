@@ -10,24 +10,6 @@
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {
-        AlertCircle,
-        ExternalLink,
-        Eye,
-        ListMinus,
-        Plus,
-        RefreshCw,
-        Save,
-        Settings,
-        ShieldOff,
-        ToggleLeft,
-        ToggleRight,
-        Trash,
-        UserMinus,
-        UserPlus,
-        Users,
-        UserX
-    } from "lucide-svelte";
     import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
@@ -110,9 +92,9 @@
     let activeTab = $state("settings");
   
   const tabs = [
-    { id: "settings", label: "Settings", icon: Settings },
-    { id: "management", label: "Management", icon: Users },
-    { id: "states", label: "Role States", icon: UserPlus }
+    { id: "settings", label: "Settings", icon: "fa-gear" },
+    { id: "management", label: "Management", icon: "fa-users" },
+    { id: "states", label: "Role States", icon: "fa-user-plus" }
   ];
 
   // Fetch bot status
@@ -535,20 +517,16 @@
 
 <DashboardPageLayout 
   title="Role States" 
-  subtitle="Save user roles when they leave and restore them when they return" 
-  icon={Users}
-  {tabs}
-  bind:activeTab
   actionButtons={[
     {
       label: "Save All States",
-      icon: Save,
+      icon: "fa-floppy-disk",
       action: saveAllUserRoleStates,
       loading: savingAllStates
     },
     {
       label: "Refresh",
-      icon: RefreshCw,
+      icon: "fa-arrows-rotate",
       action: () => {
         fetchRoleStateSettings();
         fetchRoleStates();
@@ -558,6 +536,10 @@
       loading: loadingSettings || loadingStates
     }
   ]}
+  icon="fa-users"
+  {tabs}
+  bind:activeTab
+  subtitle="Save user roles when they leave and restore them when they return"
   guildName={$currentGuild?.name || "Dashboard"}
   on:tabChange={(e) => activeTab = e.detail.tabId}
 >
@@ -583,7 +565,9 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <Settings aria-hidden="true" class="w-6 h-6" />
+          <i class="fa-utility-duo fa-regular fa-gear"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+             aria-hidden="true"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role States Settings</h2>
       </div>
@@ -628,7 +612,9 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
+          <i class="fa-utility-duo fa-regular fa-bell"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
+             aria-hidden="true"></i>
           <p style="color: {$colorStore.accent}">{errorSettings}</p>
         </div>
       {:else if settingsTab === 'general'}
@@ -648,7 +634,7 @@
                     : 'Not currently saving user roles'}
                 </p>
               </div>
-              <button
+              <button 
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleRoleStates}
                 style="background: {$colorStore.primary}20;
@@ -656,9 +642,9 @@
                 aria-label={roleStateSettings.enabled ? "Disable Role States" : "Enable Role States"}
               >
                 {#if roleStateSettings.enabled}
-                  <ToggleRight size={24} />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
-                  <ToggleLeft size={24} />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                 {/if}
               </button>
             </div>
@@ -678,7 +664,7 @@
                     : 'Role states will be kept when a user is banned'}
                 </p>
               </div>
-              <button
+              <button 
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleClearOnBan}
                 disabled={!roleStateSettings.enabled}
@@ -688,9 +674,9 @@
                 aria-label={roleStateSettings.clearOnBan ? "Don't clear on ban" : "Clear on ban"}
               >
                 {#if roleStateSettings.clearOnBan}
-                  <ToggleRight size={24} />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
-                  <ToggleLeft size={24} />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                 {/if}
               </button>
             </div>
@@ -710,7 +696,7 @@
                     : 'Bot roles will be saved just like user roles'}
                 </p>
               </div>
-              <button
+              <button 
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleIgnoreBots}
                 disabled={!roleStateSettings.enabled}
@@ -720,9 +706,9 @@
                 aria-label={roleStateSettings.ignoreBots ? "Don't ignore bots" : "Ignore bots"}
               >
                 {#if roleStateSettings.ignoreBots}
-                  <ToggleRight size={24} />
+                  <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
-                  <ToggleLeft size={24} />
+                  <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
                 {/if}
               </button>
             </div>
@@ -755,7 +741,7 @@
                            border-top-color: {$colorStore.text};"
                   ></div>
                 {:else}
-                  <Save size={16} />
+                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                 {/if}
                 <span>Save All</span>
               </button>
@@ -797,7 +783,7 @@
                        color: {$colorStore.text};
                        opacity: {!roleStateSettings.enabled || !selectedDeniedRoleId ? '0.5' : '1'};"
               >
-                <ShieldOff size={16} />
+                <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
                 <span>Add</span>
               </button>
             </div>
@@ -824,7 +810,7 @@
                                opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
                         aria-label="Remove denied role"
                       >
-                        <ListMinus size={16} />
+                        <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
                       </button>
                     </li>
                   {/each}
@@ -865,7 +851,7 @@
                        color: {$colorStore.text};
                        opacity: {!roleStateSettings.enabled || !selectedDeniedUserId ? '0.5' : '1'};"
               >
-                <UserMinus size={16} />
+                <i class="fa-solid fa-user-minus" style="font-size: 16px;"></i>
                 <span>Add</span>
               </button>
             </div>
@@ -892,7 +878,7 @@
                                opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
                         aria-label="Remove denied user"
                       >
-                        <ListMinus size={16} />
+                        <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
                       </button>
                     </li>
                   {/each}
@@ -908,7 +894,8 @@
   {#if activeTab === 'management'}
     <!-- Management Section would go here -->
     <section class="text-center py-12">
-      <UserPlus class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+      <i class="fa-utility-duo fa-regular fa-user"
+         style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
       <p style="color: {$colorStore.muted}">Role management functionality</p>
     </section>
   {/if}
@@ -916,276 +903,13 @@
   {#if activeTab === 'states'}
     <!-- Role States List would go here -->
     <section class="text-center py-12">
-      <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" />
+      <i class="fa-utility-duo fa-regular fa-users"
+         style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
       <p style="color: {$colorStore.muted}">Role states list functionality</p>
     </section>
   {/if}
 </DashboardPageLayout>
 
-    <!-- Role States Management -->
-    <div
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-             border-color: {$colorStore.primary}30;"
-    >
-      <div class="flex items-center gap-3 mb-6">
-        <div
-          class="p-3 rounded-xl"
-          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                 color: {$colorStore.primary};"
-        >
-          <UserPlus aria-hidden="true" class="w-6 h-6" />
-        </div>
-        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Role Management</h2>
-      </div>
-
-      <!-- Role Management Tools -->
-      <div class="space-y-6">
-        <!-- Add/Remove Roles Form -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            class="rounded-xl p-4"
-            style="background: {$colorStore.primary}10;"
-          >
-            <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Add/Remove Roles</h3>
-
-            <div class="space-y-4">
-              <!-- User Selection -->
-              <div>
-                <label class="block text-sm mb-2" for="user-select" style="color: {$colorStore.muted}">
-                  Select User
-                </label>
-                <select
-                  bind:value={selectedUserId}
-                  class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                  id="user-select"
-                  style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                >
-                  <option value="">Select a User</option>
-                  {#each guildMembers as member}
-                    <option value={member.id}>{member.username}</option>
-                  {/each}
-                </select>
-              </div>
-
-              <!-- Role Selection -->
-              <fieldset>
-                <legend class="block text-sm mb-2" style="color: {$colorStore.muted}">
-                  Select Roles
-                </legend>
-                <div class="max-h-40 overflow-y-auto p-2 rounded-lg" style="background: {$colorStore.primary}15;">
-                  {#if guildRoles.length === 0}
-                    <p class="text-sm" style="color: {$colorStore.muted}">No roles available</p>
-                  {:else}
-                    {#each guildRoles.filter(r => r.name !== '@everyone') as role}
-                      <div class="flex items-center mb-2">
-                        <input
-                          type="checkbox"
-                          id={`role-${role.id}`}
-                          checked={selectedRoleIds.includes(role.id)}
-                          onchange={() => toggleRoleSelection(role.id)}
-                          class="mr-2"
-                        />
-                        <label for={`role-${role.id}`} class="text-sm" style="color: {$colorStore.text}">
-                          {role.name}
-                        </label>
-                      </div>
-                    {/each}
-                  {/if}
-                </div>
-              </fieldset>
-
-              <!-- Action Buttons -->
-              <div class="flex gap-2">
-                <button
-                  class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                  disabled={!selectedUserId || selectedRoleIds.length === 0}
-                  onclick={addRolesToUser}
-                  style="background: {$colorStore.primary}20;
-                         color: {$colorStore.text};
-                         opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
-                >
-                  <Plus size={16} />
-                  <span>Add Roles</span>
-                </button>
-
-                <button
-                  class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                  disabled={!selectedUserId || selectedRoleIds.length === 0}
-                  onclick={removeRolesFromUser}
-                  style="background: {$colorStore.accent}20;
-                         color: {$colorStore.text};
-                         opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
-                >
-                  <Trash size={16} />
-                  <span>Remove Roles</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Apply Role State Form -->
-          <div
-            class="rounded-xl p-4"
-            style="background: {$colorStore.secondary}10;"
-          >
-            <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Apply Role State</h3>
-
-            <div class="space-y-4">
-              <!-- Source User Selection -->
-              <div>
-                <label class="block text-sm mb-2" for="source-user-select" style="color: {$colorStore.muted}">
-                  Source User (Copy From)
-                </label>
-                <select
-                  bind:value={sourceUserId}
-                  class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                  id="source-user-select"
-                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                >
-                  <option value="">Select Source User</option>
-                  {#each roleStates as state}
-                    <option value={state.userId}>{state.userName}</option>
-                  {/each}
-                </select>
-              </div>
-
-              <!-- Target User Selection -->
-              <div>
-                <label class="block text-sm mb-2" for="target-user-select" style="color: {$colorStore.muted}">
-                  Target User (Apply To)
-                </label>
-                <select
-                  bind:value={targetUserId}
-                  class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                  id="target-user-select"
-                  style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                >
-                  <option value="">Select Target User</option>
-                  {#each guildMembers as member}
-                    <option value={member.id}>{member.username}</option>
-                  {/each}
-                </select>
-              </div>
-
-              <!-- Apply Button -->
-              <button
-                class="w-full px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                disabled={!sourceUserId || !targetUserId}
-                onclick={applyRoleState}
-                style="background: {$colorStore.secondary}20;
-                       color: {$colorStore.text};
-                       opacity: {!sourceUserId || !targetUserId ? '0.5' : '1'};"
-              >
-                <ExternalLink size={16} />
-                <span>Apply Role State</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Saved Role States List -->
-        <div>
-          <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Saved Role States</h3>
-
-          {#if loadingStates}
-            <div class="flex justify-center items-center min-h-[100px]">
-              <div
-                class="w-8 h-8 border-3 rounded-full animate-spin"
-                style="border-color: {$colorStore.primary}20;
-                       border-top-color: {$colorStore.primary};"
-                aria-label="Loading"
-              >
-              </div>
-            </div>
-          {:else if errorStates}
-            <div
-              class="rounded-xl p-4 flex items-center gap-3"
-              style="background: {$colorStore.accent}10;"
-              role="alert"
-            >
-              <AlertCircle class="w-5 h-5" style="color: {$colorStore.accent}" aria-hidden="true" />
-              <p style="color: {$colorStore.accent}">{errorStates}</p>
-            </div>
-          {:else if roleStates.length === 0}
-            <div
-              class="text-center py-8 rounded-xl"
-              style="background: {$colorStore.primary}10;"
-              transition:fade
-            >
-              <Users class="w-12 h-12 mx-auto mb-4" style="color: {$colorStore.muted}" aria-hidden="true" />
-              <p style="color: {$colorStore.muted}">No saved role states</p>
-              <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-                When users leave the server, their roles will be saved here
-              </p>
-            </div>
-          {:else}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each roleStates as state}
-                <div
-                  class="rounded-xl p-4 border hover:shadow-lg transition-all duration-200"
-                  style="background: {$colorStore.primary}10;
-                         border-color: {$colorStore.primary}20;
-                         hover:border-color: {$colorStore.primary}40;"
-                >
-                  <div class="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 class="font-medium truncate" style="color: {$colorStore.text}">
-                        {state.userName || getUserName(state.userId)}
-                      </h4>
-                      <p class="text-xs" style="color: {$colorStore.muted}">
-                        {state.savedRoles ? state.savedRoles.split(',').length : 0} saved roles
-                      </p>
-                    </div>
-                    <div class="flex items-center">
-                      <button
-                        class="p-2 rounded-lg transition-all duration-200 mr-2"
-                        onclick={() => getUserRoleState(state.userId)}
-                        style="background: {$colorStore.primary}20;
-                               color: {$colorStore.text};"
-                        aria-label="View roles"
-                        title="View roles"
-                      >
-                        <Eye size={16} />
-                      </button>
-
-                      <button
-                        class="p-2 rounded-lg transition-all duration-200"
-                        onclick={() => deleteUserRoleState(state.userId)}
-                        style="background: {$colorStore.accent}20;
-                               color: {$colorStore.accent};"
-                        aria-label="Delete role state"
-                        title="Delete role state"
-                      >
-                        <UserX size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {#if viewingUserId === state.userId}
-                    <div class="p-3 rounded-lg mt-2" style="background: {$colorStore.primary}15;">
-                      <h5 class="text-sm font-medium mb-2" style="color: {$colorStore.muted}">Saved Roles</h5>
-                      {#if selectedUserRoles.length === 0}
-                        <p class="text-sm" style="color: {$colorStore.text}">No roles saved</p>
-                      {:else}
-                        <div class="flex flex-wrap gap-2">
-                          {#each selectedUserRoles as roleId}
-                            <div class="px-2 py-1 rounded-md text-xs"
-                                 style="background: {$colorStore.secondary}20; color: {$colorStore.text};">
-                              {getRoleName(roleId)}
-                            </div>
-                          {/each}
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      </div>
-    </div>
 
 <style lang="postcss">
     /* Custom styling for options */
@@ -1205,15 +929,11 @@
     }
 
     /* Prevent stretch in Safari */
-    input, select {
+    select {
         min-height: 44px;
     }
 
     /* Improve touchable area on mobile */
     @media (max-width: 768px) {
-        button, input[type="checkbox"] {
-            min-height: 44px;
-            min-width: 44px;
-        }
     }
 </style>
