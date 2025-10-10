@@ -1,7 +1,7 @@
 <!-- lib/components/search/SearchModal.svelte -->
 <script lang="ts">
-    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
-    import {onDestroy, onMount} from "svelte";
+
+  import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {browser} from "$app/environment";
     import {goto} from "$app/navigation";
@@ -10,9 +10,8 @@
     import {closeSearch, getSearchableFeatures, type SearchableItem, searchStore} from "$lib/stores/searchStore";
     import Portal from "$lib/components/ui/Portal.svelte";
 
-    const bubble = createBubbler();
 
-    // No props needed - using store state
+  // No props needed - using store state
 
   // State
   let searchInput: HTMLInputElement = $state();
@@ -164,13 +163,13 @@
     }
   });
   // Reactive updates
-  run(() => {
+  $effect(() => {
     $searchStore.isOpen && focusInput();
   });
-  run(() => {
+  $effect(() => {
     results = searchFeatures(query, activeCategory);
   });
-  run(() => {
+  $effect(() => {
     if (selectedIndex >= results.length && results.length > 0) {
       selectedIndex = results.length - 1;
     }
@@ -201,8 +200,8 @@
                           inset 0 1px 0 {$colorStore.primary}15;"
         in:fly={{ y: -30, duration: 300, delay: 50 }}
         out:fly={{ y: -30, duration: 200 }}
-        onclick={stopPropagation(bubble('click'))}
-        onkeydown={stopPropagation(bubble('keydown'))}
+        onclick={(e) => e.stopPropagation()}
+        onkeydown={(e) => e.stopPropagation()}
         role="searchbox"
         tabindex="0"
         use:clickOutside
@@ -242,7 +241,7 @@
       <div class="flex items-center gap-1 md:gap-2 px-3 md:px-6 py-2 md:py-3 border-b overflow-x-auto shrink-0" style="border-color: {$colorStore.primary}15;">
         {#each categories as category}
           <button
-                  class="shrink-0 px-2 md:px-4 py-2 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all hover:scale-105"
+            class="shrink-0 px-2 md:px-4 py-2 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
             class:active={activeCategory === category}
             style="background: {activeCategory === category ? $colorStore.primary + '25' : $colorStore.primary + '08'};
                    color: {activeCategory === category ? $colorStore.primary : $colorStore.muted};

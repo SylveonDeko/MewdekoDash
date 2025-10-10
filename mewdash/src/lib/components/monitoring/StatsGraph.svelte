@@ -1,6 +1,6 @@
 <!-- lib/components/StatsGraph.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
+
 
   import { onDestroy, onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
@@ -190,7 +190,7 @@
     resizeObserver?.disconnect();
   });
 
-  run(() => {
+  $effect(() => {
     if (canvas && data && width && height) {
       draw();
     }

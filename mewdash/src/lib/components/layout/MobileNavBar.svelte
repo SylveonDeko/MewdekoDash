@@ -1,10 +1,8 @@
 <!-- lib/components/MobileNavBar.svelte -->
 <script lang="ts">
-    import {preventDefault, run, stopPropagation} from 'svelte/legacy';
-
     import {fade, scale, slide} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
-    import {page} from "$app/stores";
+    import { page } from "$app/state";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {currentInstance} from "$lib/stores/instanceStore";
@@ -13,8 +11,7 @@
     import {onMount} from "svelte";
     import {browser} from "$app/environment";
     import {goto} from "$app/navigation";
-    import {api} from "$lib/api";
-    import type {BotInstance} from "$lib/types/models";
+    import { instanceManagementApi, clientApi, ownershipApi, type BotInstance } from "$lib/api/index.ts";
 
 
     interface Props {
@@ -46,6 +43,12 @@
       {label: "Custom Voice", icon: "fa-utility-duo fa-regular fa-microphone", href: "/dashboard/customvoice", category: "Entertainment"},
       {label: "Embeds", icon: "fa-utility-duo fa-regular fa-link", href: "/dashboard/embedbuilder", category: "Actions"},
       {label: "Feeds", icon: "fa-utility-duo fa-regular fa-newspaper", href: "/dashboard/feeds", category: "Actions"},
+    {
+      label: "Forms",
+      icon: "fa-utility-duo fa-regular fa-clipboard-list",
+      href: "/dashboard/forms",
+      category: "Community"
+    },
       {label: "Giveaways", icon: "fa-utility-duo fa-regular fa-gift", href: "/dashboard/giveaways", category: "Entertainment"},
       {label: "Greets", icon: "fa-utility-duo fa-regular fa-bell", href: "/dashboard/multigreets", category: "Actions"},
       {label: "Highlights", icon: "fa-utility-duo fa-regular fa-bolt", href: "/dashboard/highlights", category: "Community"},
@@ -99,7 +102,7 @@
   let isOwner = $state(false);
 
   // Derived state
-  let currentPath = $derived($page.url.pathname);
+    let currentPath = $derived(page.url.pathname);
   let activeIndex = $derived(navItems.findIndex(item =>
       !item.isMore && (
         currentPath === item.href ||
@@ -113,7 +116,7 @@
     currentPath.startsWith(item.href + "/")
   ));
   let moreMenuActive = $derived(activeMoreIndex >= 0);
-  run(() => {
+    $effect(() => {
     musicPlaying = $musicStore.status?.IsPlaying || false;
   });
 
@@ -284,7 +287,7 @@
     };
 
     try {
-        const mutualGuilds = await api.getMutualGuilds(userData.id, true, fetch, customHeaders);
+      const mutualGuilds = await clientApi.getMutualGuilds(userData.id, true, fetch, customHeaders);
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
 
       instanceStates[instanceId] = {
@@ -351,7 +354,7 @@
       instancesLoading = true;
       instancesError = null;
 
-      const response = await api.getBotInstances();
+      const response = await instanceManagementApi.getBotInstances();
       instances = response || [];
 
       if (instances.length > 0) {
@@ -370,7 +373,7 @@
     if (!userData?.id) return;
 
     try {
-      isOwner = await api.isOwner(BigInt(userData.id));
+      isOwner = await ownershipApi.isOwner(BigInt(userData.id));
     } catch (err) {
       console.error("Error checking owner status:", err);
       isOwner = false;
@@ -386,29 +389,29 @@
     }
   }
 
+    // Close menus when route changes
+    $effect(() => {
+      page.url.pathname;
+      showMoreMenu = false;
+      showInstanceMenu = false;
+    });
+
   onMount(() => {
-    if (browser) {
-      window.addEventListener("scroll", handleScroll);
-      document.addEventListener("click", handleClick);
+    if (!browser) return;
 
-      // Check if user is owner
-      checkOwnership();
+    window.addEventListener("scroll", handleScroll);
+    document.addEventListener("click", handleClick);
 
-      // Always load instances since we now show instance selector in regular nav
-      loadInstances();
+    // Check if user is owner
+    checkOwnership();
 
-      // Close menus if route changes
-      const unsubscribe = page.subscribe(() => {
-        showMoreMenu = false;
-        showInstanceMenu = false;
-      });
+    // Always load instances since we now show instance selector in regular nav
+    loadInstances();
 
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
-        document.removeEventListener("click", handleClick);
-        unsubscribe();
-      };
-    }
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("click", handleClick);
+    };
   });
 </script>
 
@@ -477,8 +480,8 @@
           {#if item.isMore || item.isInstanceSelector}
             <!-- More menu / Instance selector button -->
             <button
-              class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-105 active:scale-95"
-              onclick={stopPropagation(item.isInstanceSelector ? toggleInstanceMenu : toggleMoreMenu)}
+              class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-[1.02] active:scale-95"
+              onclick={(e) => { e.stopPropagation(); item.isInstanceSelector ? toggleInstanceMenu() : toggleMoreMenu(); }}
               onkeydown={item.isInstanceSelector ? handleInstanceMenuKeydown : handleMoreMenuKeydown}
               style:color={moreMenuActive || showMoreMenu || showInstanceMenu || (item.isInstanceSelector && $currentInstance) ? $colorStore.primary : $colorStore.muted}
               aria-expanded={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}
@@ -518,12 +521,12 @@
               <!-- Regular nav item -->
               <a
                       href={item.href}
-                      class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                      class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-[1.02] active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       aria-current={activeIndex === i ? 'page' : undefined}
                       style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
                       style:focus:ring-color={$colorStore.primary}
                       aria-label="Navigate to {item.label}"
-                      onclick={preventDefault((e) => {
+                      onclick={(e) => {
                 e.preventDefault();
                 if ($currentGuild && !item.isInstanceSelector) {
                   if (browser) {
@@ -545,7 +548,7 @@
                   }
                 }
                 handleNavItemTap(item);
-              })}
+              }}
               >
                   <div class="relative">
                       <i class="{item.icon} text-xl {isNavigating && navigationLoadingTarget === item.label ? 'animate-pulse' : ''}"
@@ -698,7 +701,8 @@
                                   role="menuitem"
                                   aria-label="Navigate to {moreItem.label}"
                                   onkeydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
-                                  onclick={preventDefault(() => {
+                                  onclick={(e) => {
+                  e.preventDefault();
                   if ($currentGuild) {
                     if (browser) {
                       try {
@@ -721,7 +725,7 @@
                   navigateWithLoading(moreItem.href, moreItem.label);
                   showMoreMenu = false;
                   activeMenuType = null;
-                })}
+                }}
                           >
                               <i class="{moreItem.icon} text-base"
                                  aria-hidden="true"
@@ -738,15 +742,7 @@
 </div>
 
 <style>
-    /* Jelly Duo icon color theming */
-    :global(.fa-utility-duo) {
-        --fa-primary-color: var(--color-primary);
-        --fa-secondary-color: var(--color-secondary);
-        --fa-primary-opacity: 1.0;
-        --fa-secondary-opacity: 0.5;
-    }
-
-    /* Animated equalizer bars */
+    /* Jelly Duo icon color theming *//* Animated equalizer bars */
     .bar-1 {
         height: 30%;
         animation: eq1 1s infinite;

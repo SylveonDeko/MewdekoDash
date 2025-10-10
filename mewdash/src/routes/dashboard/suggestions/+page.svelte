@@ -1,13 +1,12 @@
 <!-- routes/dashboard/suggestions/+page.svelte -->
 <script lang="ts">
-  import { run } from "svelte/legacy";
+
 
   import { onMount } from "svelte";
-  import { api } from "$lib/api";
+  import { suggestionsApi, clientApi, type SuggestionsModel, SuggestionState } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
-  import { type SuggestionsModel, SuggestionState } from "$lib/types/models.ts";
   import Notification from "$lib/components/ui/Notification.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -218,7 +217,7 @@
 
         let fetched;
         try {
-          fetched = await api.getSuggestions($currentGuild.id);
+          fetched = await suggestionsApi.getSuggestions($currentGuild.id);
         } catch (err: any) {
           // Handle 404 as empty state, not an error
           if (err?.message?.includes("404") || err?.message?.includes("No suggestions")) {
@@ -234,29 +233,8 @@
           return;
         }
 
-        const suggestionsWithUsers = await Promise.all(
-          fetched.map(async (suggestion) => {
-            try {
-              const userResponse = await api.getUser(suggestion.guildId, suggestion.userId);
-              return {
-                ...suggestion,
-                user: userResponse
-              };
-            } catch (err) {
-              // Handle 404 or other errors for user fetch
-              return {
-                ...suggestion,
-                user: {
-                  username: `Unknown User (${suggestion.userId})`,
-                  avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
-                  id: suggestion.userId
-                }
-              };
-            }
-          })
-        );
-
-        suggestions = suggestionsWithUsers;
+        // User data is now already included in the response from the backend
+        suggestions = fetched;
       } catch (err) {
         error = err instanceof Error ? err.message : "Failed to fetch suggestions";
       } finally {
@@ -292,27 +270,27 @@
           fetchedButtonEmote,
           fetchedButtonChannel
         ] = await Promise.all([
-          api.getMinLength($currentGuild.id),
-          api.getMaxLength($currentGuild.id),
-          api.getAcceptMessage($currentGuild.id),
-          api.getDenyMessage($currentGuild.id),
-          api.getConsiderMessage($currentGuild.id),
-          api.getImplementMessage($currentGuild.id),
-          api.getAcceptChannel($currentGuild.id),
-          api.getDenyChannel($currentGuild.id),
-          api.getConsiderChannel($currentGuild.id),
-          api.getImplementChannel($currentGuild.id),
-          api.getSuggestChannel($currentGuild.id),
-          api.getSuggestThreadsType($currentGuild.id),
-          api.getArchiveOnDeny($currentGuild.id),
-          api.getArchiveOnAccept($currentGuild.id),
-          api.getArchiveOnConsider($currentGuild.id),
-          api.getArchiveOnImplement($currentGuild.id),
-          api.getSuggestEmotes($currentGuild.id),
-          api.getSuggestButtonMessage($currentGuild.id),
-          api.getSuggestButtonLabel($currentGuild.id),
-          api.getSuggestButtonEmote($currentGuild.id),
-          api.getSuggestButtonChannel($currentGuild.id)
+          suggestionsApi.getMinLength($currentGuild.id),
+          suggestionsApi.getMaxLength($currentGuild.id),
+          suggestionsApi.getAcceptMessage($currentGuild.id),
+          suggestionsApi.getDenyMessage($currentGuild.id),
+          suggestionsApi.getConsiderMessage($currentGuild.id),
+          suggestionsApi.getImplementMessage($currentGuild.id),
+          suggestionsApi.getAcceptChannel($currentGuild.id),
+          suggestionsApi.getDenyChannel($currentGuild.id),
+          suggestionsApi.getConsiderChannel($currentGuild.id),
+          suggestionsApi.getImplementChannel($currentGuild.id),
+          suggestionsApi.getSuggestChannel($currentGuild.id),
+          suggestionsApi.getSuggestThreadsType($currentGuild.id),
+          suggestionsApi.getArchiveOnDeny($currentGuild.id),
+          suggestionsApi.getArchiveOnAccept($currentGuild.id),
+          suggestionsApi.getArchiveOnConsider($currentGuild.id),
+          suggestionsApi.getArchiveOnImplement($currentGuild.id),
+          suggestionsApi.getSuggestEmotes($currentGuild.id),
+          suggestionsApi.getSuggestButtonMessage($currentGuild.id),
+          suggestionsApi.getSuggestButtonLabel($currentGuild.id),
+          suggestionsApi.getSuggestButtonEmote($currentGuild.id),
+          suggestionsApi.getSuggestButtonChannel($currentGuild.id)
         ]);
 
         minLength = fetchedMinLength;
@@ -378,7 +356,7 @@
   async function fetchChannels() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      channels = await api.getGuildTextChannels($currentGuild.id);
+      channels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
       showNotificationMessage("Failed to fetch channels", "error");
     }
@@ -392,69 +370,69 @@
         const updatePromises = [];
 
         if (changedSettings.has("minLength")) {
-          updatePromises.push(api.setMinLength($currentGuild.id, minLength));
+          updatePromises.push(suggestionsApi.setMinLength($currentGuild.id, minLength));
         }
         if (changedSettings.has("maxLength")) {
-          updatePromises.push(api.setMaxLength($currentGuild.id, maxLength));
+          updatePromises.push(suggestionsApi.setMaxLength($currentGuild.id, maxLength));
         }
         if (changedSettings.has("acceptMessage")) {
-          updatePromises.push(api.setAcceptMessage($currentGuild.id, acceptMessage || null));
+          updatePromises.push(suggestionsApi.setAcceptMessage($currentGuild.id, acceptMessage || null));
         }
         if (changedSettings.has("denyMessage")) {
-          updatePromises.push(api.setDenyMessage($currentGuild.id, denyMessage || null));
+          updatePromises.push(suggestionsApi.setDenyMessage($currentGuild.id, denyMessage || null));
         }
         if (changedSettings.has("considerMessage")) {
-          updatePromises.push(api.setConsiderMessage($currentGuild.id, considerMessage || null));
+          updatePromises.push(suggestionsApi.setConsiderMessage($currentGuild.id, considerMessage || null));
         }
         if (changedSettings.has("implementMessage")) {
-          updatePromises.push(api.setImplementMessage($currentGuild.id, implementMessage || null));
+          updatePromises.push(suggestionsApi.setImplementMessage($currentGuild.id, implementMessage || null));
         }
         if (changedSettings.has("acceptChannel")) {
-          updatePromises.push(api.setAcceptChannel($currentGuild.id, acceptChannel ? BigInt(acceptChannel) : 0n));
+          updatePromises.push(suggestionsApi.setAcceptChannel($currentGuild.id, acceptChannel ? BigInt(acceptChannel) : 0n));
         }
         if (changedSettings.has("denyChannel")) {
-          updatePromises.push(api.setDenyChannel($currentGuild.id, denyChannel ? BigInt(denyChannel) : 0n));
+          updatePromises.push(suggestionsApi.setDenyChannel($currentGuild.id, denyChannel ? BigInt(denyChannel) : 0n));
         }
         if (changedSettings.has("considerChannel")) {
-          updatePromises.push(api.setConsiderChannel($currentGuild.id, considerChannel ? BigInt(considerChannel) : 0n));
+          updatePromises.push(suggestionsApi.setConsiderChannel($currentGuild.id, considerChannel ? BigInt(considerChannel) : 0n));
         }
         if (changedSettings.has("implementChannel")) {
-          updatePromises.push(api.setImplementChannel($currentGuild.id, implementChannel ? BigInt(implementChannel) : 0n));
+          updatePromises.push(suggestionsApi.setImplementChannel($currentGuild.id, implementChannel ? BigInt(implementChannel) : 0n));
         }
         if (changedSettings.has("suggestChannel")) {
-          updatePromises.push(api.setSuggestChannel($currentGuild.id, suggestChannel ? BigInt(suggestChannel) : 0n));
+          updatePromises.push(suggestionsApi.setSuggestChannel($currentGuild.id, suggestChannel ? BigInt(suggestChannel) : 0n));
         }
         if (changedSettings.has("threadType")) {
-          updatePromises.push(api.setSuggestThreadsType($currentGuild.id, threadType));
+          updatePromises.push(suggestionsApi.setSuggestThreadsType($currentGuild.id, threadType));
         }
         if (changedSettings.has("archiveOnDeny")) {
-          updatePromises.push(api.setArchiveOnDeny($currentGuild.id, archiveOnDeny));
+          updatePromises.push(suggestionsApi.setArchiveOnDeny($currentGuild.id, archiveOnDeny));
         }
         if (changedSettings.has("archiveOnAccept")) {
-          updatePromises.push(api.setArchiveOnAccept($currentGuild.id, archiveOnAccept));
+          updatePromises.push(suggestionsApi.setArchiveOnAccept($currentGuild.id, archiveOnAccept));
         }
         if (changedSettings.has("archiveOnConsider")) {
-          updatePromises.push(api.setArchiveOnConsider($currentGuild.id, archiveOnConsider));
+          updatePromises.push(suggestionsApi.setArchiveOnConsider($currentGuild.id, archiveOnConsider));
         }
         if (changedSettings.has("archiveOnImplement")) {
-          updatePromises.push(api.setArchiveOnImplement($currentGuild.id, archiveOnImplement));
+          updatePromises.push(suggestionsApi.setArchiveOnImplement($currentGuild.id, archiveOnImplement));
         }
         if (changedSettings.has("suggestEmotes")) {
           const parsedEmotes = parseEmotesList(suggestEmotes);
-          updatePromises.push(api.setSuggestEmotes($currentGuild.id, parsedEmotes || null));
+          updatePromises.push(suggestionsApi.setSuggestEmotes($currentGuild.id, parsedEmotes || null));
         }
         if (changedSettings.has("suggestButtonMessage")) {
-          updatePromises.push(api.setSuggestButtonMessage($currentGuild.id, suggestButtonMessage || null));
+          updatePromises.push(suggestionsApi.setSuggestButtonMessage($currentGuild.id, suggestButtonMessage || null));
         }
         if (changedSettings.has("suggestButtonLabel")) {
-          updatePromises.push(api.setSuggestButtonLabel($currentGuild.id, suggestButtonLabel || null));
+          updatePromises.push(suggestionsApi.setSuggestButtonLabel($currentGuild.id, suggestButtonLabel || null));
         }
         if (changedSettings.has("suggestButtonEmote")) {
           const formattedEmote = formatEmote(suggestButtonEmote);
-          updatePromises.push(api.setSuggestButtonEmote($currentGuild.id, formattedEmote || null));
+          updatePromises.push(suggestionsApi.setSuggestButtonEmote($currentGuild.id, formattedEmote || null));
         }
         if (changedSettings.has("suggestButtonChannel")) {
-          updatePromises.push(api.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel));
+          updatePromises.push(suggestionsApi.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel));
         }
 
         await Promise.all(updatePromises);
@@ -471,7 +449,7 @@
 
     return await loadingStore.wrap("update-status", async () => {
       try {
-        await api.updateSuggestionStatus($currentGuild.id, selectedSuggestion.suggestionId, {
+        await suggestionsApi.updateSuggestionStatus($currentGuild.id, selectedSuggestion.suggestionId, {
           state: selectedStatus,
           reason: statusChangeReason || null,
           userId: currentUser.id
@@ -490,7 +468,7 @@
     return await loadingStore.wrap("delete-suggestion", async () => {
       try {
         if (!$currentGuild?.id) throw new Error("No guild selected");
-        await api.deleteSuggestion($currentGuild.id, id);
+        await suggestionsApi.deleteSuggestion($currentGuild.id, id);
         await fetchSuggestions();
         showNotificationMessage("Suggestion deleted successfully");
       } catch (err) {
@@ -516,7 +494,7 @@
     };
   });
 
-  run(() => {
+  $effect(() => {
     if ($currentInstance) {
       Promise.all([
         fetchSuggestions(),
@@ -526,7 +504,7 @@
     }
   });
 
-  run(() => {
+  $effect(() => {
     if ($currentGuild) {
       Promise.all([
         fetchSuggestions(),
@@ -614,14 +592,14 @@
         </div>
         <div class="flex gap-3 justify-end">
           <button
-            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-105"
+            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             onclick={closeStatusModal}
           >
             Cancel
           </button>
           <button
-            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-105"
+            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
             style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
                      color: white;
                      box-shadow: 0 4px 12px {$colorStore.primary}30;"
@@ -681,7 +659,7 @@
               on:change={(e) => sortBy = e.detail.selected}
             />
             <button aria-label="Navigate"
-                    class="px-4 py-2 rounded-lg border transition-all hover:scale-105 flex items-center gap-2"
+                    class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] flex items-center gap-2"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     onclick={toggleSortDirection}
             >
@@ -762,7 +740,7 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-wrap gap-2 pt-3" style="border-top: 1px solid {$colorStore.primary}15;">
                   <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
                     style="background: #22c55e20; color: #22c55e; border: 1px solid #22c55e30;"
                     onclick={() => initiateStatusChange(suggestion, SuggestionState.Accepted)}
                     disabled={suggestion.currentState === SuggestionState.Accepted}
@@ -771,7 +749,7 @@
                     Accept
                   </button>
                   <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
                     style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
                     onclick={() => initiateStatusChange(suggestion, SuggestionState.Denied)}
                     disabled={suggestion.currentState === SuggestionState.Denied}
@@ -780,7 +758,7 @@
                     Deny
                   </button>
                   <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     onclick={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
                     disabled={suggestion.currentState === SuggestionState.Considered}
@@ -789,7 +767,7 @@
                     Consider
                   </button>
                   <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                     onclick={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
                     disabled={suggestion.currentState === SuggestionState.Implemented}
@@ -799,7 +777,7 @@
                   </button>
                   <div class="ml-auto">
                     <button
-                      class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105 hover:bg-red-500/20"
+                      class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20"
                       style="background: {$colorStore.primary}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;"
                       onclick={() => {
                           if (confirm('Are you sure you want to delete this suggestion?')) {

@@ -1,8 +1,9 @@
 <!-- routes/reviews/+page.svelte -->
+<svelte:options css="injected" />
+
 <script lang="ts">
     import {onMount} from "svelte";
-    import {api} from "$lib/api";
-    import type {BotReviews} from "$lib/types/models";
+    import { reviewsApi, type BotReviews } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import StarRating from "$lib/components/display/StarRating.svelte";
     import {marked} from "marked";
@@ -64,7 +65,7 @@
   async function fetchReviews() {
     try {
       loading = true;
-      reviews = await api.getBotReviews();
+      reviews = await reviewsApi.getBotReviews();
       // Parse markdown for all reviews
       reviewsWithParsedContent = await Promise.all(
         reviews.map(async (review) => ({
@@ -96,7 +97,7 @@
     }
 
     try {
-      const submittedReview = await api.submitBotReview({
+      const submittedReview = await reviewsApi.submitBotReview({
         ...newReview,
         userId: BigInt(user.id),
         stars: newReview.stars || 0,
@@ -232,7 +233,7 @@
       </div>
       <button
               onclick={submitReview}
-              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-hidden focus:ring-2 active:scale-95 backdrop-blur-xs"
+              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-hidden focus:ring-2 active:scale-95 backdrop-blur-xs"
         style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
         Submit Review
@@ -299,7 +300,7 @@
     <div class="grid grid-cols-1 gap-8">
       {#each reviewsWithParsedContent as review, index}
         <div
-                class="rounded-2xl p-6 shadow-xl backdrop-blur-xs transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-105"
+          class="rounded-2xl p-6 shadow-xl backdrop-blur-xs transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02]"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
           in:fly={{ y: 20, duration: 300, delay: index * 100 }}
         >
@@ -346,116 +347,32 @@
         color: var(--color-text) !important;
     }
 
-    :global(.prose h1),
-    :global(.prose h2),
-    :global(.prose h3),
-    :global(.prose h4),
-    :global(.prose h5),
-    :global(.prose h6) {
+    :global(.prose) h1,
+    :global(.prose) h2,
+    :global(.prose) h3 {
         color: var(--color-text) !important;
   }
 
-    :global(.prose p) {
+    :global(.prose) p {
         color: var(--color-text) !important;
     }
 
-    :global(.prose a) {
-        color: var(--color-primary) !important;
-    }
   
   :global(.prose) {
     color: #d1d5db;
   }
-  :global(.prose a) {
-    color: #60a5fa;
-  }
-  :global(.prose a:hover) {
-    color: #93c5fd;
-  }
-  :global(.prose strong) {
-    color: #f3f4f6;
-  }
-  :global(.prose ul, .prose ol) {
-    padding-left: 1.5rem;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-  }
-  :global(.prose li) {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  :global(.prose ul) {
-    list-style-type: none;
-  }
-  :global(.prose ul li::before) {
-    content: "•";
-    color: #60a5fa;
-    font-weight: bold;
-    display: inline-block;
-    width: 1em;
-    margin-left: -1em;
-    font-size: 1.25em;
-  }
-  :global(.prose ul ul, .prose ol ul) {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  :global(.prose ul ul li::before) {
-    content: "◦";
-    color: #9ca3af;
-  }
-  :global(.prose ul ul ul li::before) {
-    content: "▪";
-    color: #6b7280;
-    font-size: 1em;
-  }
-  :global(.prose ol) {
-    list-style-type: decimal;
-  }
-  :global(.prose ol ol) {
-    list-style-type: lower-alpha;
-  }
-  :global(.prose ol ol ol) {
-    list-style-type: lower-roman;
-  }
-  :global(.prose blockquote) {
-    border-left: 4px solid #3b82f6;
-    padding-left: 1rem;
-    font-style: italic;
-    color: #9ca3af;
-  }
-  :global(.prose code) {
-    background-color: #374151;
-    color: #93c5fd;
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-  }
-  :global(.prose pre) {
-    background-color: #374151;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-  }
-  :global(.prose img) {
+
+    :global(.prose) img {
     border-radius: 0.5rem;
     box-shadow:
       0 4px 6px -1px rgba(0, 0, 0, 0.1),
       0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
-  :global(.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6) {
+
+    :global(.prose) h1,
+    :global(.prose) h2,
+    :global(.prose) h3 {
     color: #93c5fd;
-    font-weight: 600;
-  }
-  :global(.prose table) {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  :global(.prose th, .prose td) {
-    border: 1px solid #4b5563;
-    padding: 0.5rem 1rem;
-  }
-  :global(.prose th) {
-    background-color: #374151;
     font-weight: 600;
   }
   :global(.inline-emoji) {

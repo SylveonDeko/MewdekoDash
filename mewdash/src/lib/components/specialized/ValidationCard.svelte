@@ -1,11 +1,10 @@
 <!-- ValidationCard.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
 
-  import { createEventDispatcher } from 'svelte';
+
   import { colorStore } from "$lib/stores/colorStore";
 
-  
+
   interface Props {
     // Props
     errors?: ValidationError[];
@@ -15,6 +14,8 @@
     collapsible?: boolean;
     title?: string;
     compact?: boolean;
+    ondismiss?: (detail: { type: "error" | "warning" | "suggestion"; id: string }) => void;
+    onaction?: (detail: { type: "error" | "warning" | "suggestion"; id: string }) => void;
   }
 
   let {
@@ -24,7 +25,9 @@
     dismissible = true,
     collapsible = false,
     title = "",
-    compact = false
+    compact = false,
+    ondismiss,
+    onaction
   }: Props = $props();
 
   // Types
@@ -48,12 +51,6 @@
     action?: { label: string; handler: () => void };
   }
 
-  // Events
-  const dispatch = createEventDispatcher<{
-    dismiss: { type: 'error' | 'warning' | 'suggestion'; id: string };
-    action: { type: 'error' | 'warning' | 'suggestion'; id: string };
-  }>();
-
   // Internal state
   let collapsed = $state(false);
   let localErrors = $state([...errors]);
@@ -61,13 +58,13 @@
   let localSuggestions = $state([...suggestions]);
 
   // Update local arrays when props change
-  run(() => {
+  $effect(() => {
     localErrors = [...errors];
   });
-  run(() => {
+  $effect(() => {
     localWarnings = [...warnings];
   });
-  run(() => {
+  $effect(() => {
     localSuggestions = [...suggestions];
   });
 
@@ -90,14 +87,14 @@
     } else {
       localSuggestions = localSuggestions.filter(s => s.id !== id);
     }
-    
-    dispatch('dismiss', { type, id });
+
+    ondismiss?.({ type, id });
   }
 
   // Execute an action
   function executeAction(type: 'error' | 'warning' | 'suggestion', id: string, action: () => void) {
     action();
-    dispatch('action', { type, id });
+    onaction?.({ type, id });
   }
 
   // Get icon for issue type

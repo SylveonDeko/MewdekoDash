@@ -19,15 +19,15 @@ A modal music search component for finding and adding tracks to the music queue.
 ```
 -->
 <script lang="ts">
-    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
-    import {createEventDispatcher, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import { musicApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, fly} from "svelte/transition";
     import {logger} from "$lib/logger";
     import {type Requester} from "$lib/types/music";
 
-    const bubble = createBubbler();
+
 
     interface MusicSearchColors {
     background: string;
@@ -43,11 +43,11 @@ A modal music search component for finding and adding tracks to the music queue.
     colors: MusicSearchColors;
     isOpen?: boolean;
     currentUser: Requester;
+    onclose?: () => void;
+    ontrackAdded?: (detail: { track: any }) => void;
   }
 
-  let { colors, isOpen = $bindable(false), currentUser }: Props = $props();
-
-  const dispatch = createEventDispatcher();
+  let { colors, isOpen = $bindable(false), currentUser, onclose, ontrackAdded }: Props = $props();
 
   let searchQuery = $state("");
   let searchResults: Array<{
@@ -89,7 +89,7 @@ A modal music search component for finding and adding tracks to the music queue.
     searchQuery = "";
     searchResults = [];
     errorMessage = "";
-    dispatch("close");
+    onclose?.();
   }
 
   function handleBackdropClick(event: MouseEvent): void {
@@ -133,11 +133,11 @@ A modal music search component for finding and adding tracks to the music queue.
 
       let response;
       if (isUrl) {
-        response = await api.extractTrack($currentGuild!.id, lastSearchQuery);
+        response = await musicApi.extractTrack($currentGuild!.id, lastSearchQuery);
         searchResults = response ? [response] : [];
       } else {
         const query = `${lastSearchQuery}${selectedPlatform === "spotify" ? " spotify" : ""}`;
-        const apiResponse = await api.searchTracks($currentGuild!.id, query, selectedPlatform, 10);
+        const apiResponse = await musicApi.searchTracks($currentGuild!.id, query, selectedPlatform, 10);
         searchResults = apiResponse.tracks || [];
       }
 
@@ -210,7 +210,7 @@ A modal music search component for finding and adding tracks to the music queue.
         }
       };
 
-      await api.playTrack($currentGuild!.id, playRequest);
+      await musicApi.playTrack($currentGuild!.id, playRequest);
 
       // Update UI to show the track was added
       addedTrackMessage = `Added "${track.title}" to queue`;
@@ -225,7 +225,7 @@ A modal music search component for finding and adding tracks to the music queue.
       ];
 
       // Dispatch an event to notify parent component
-      dispatch("trackAdded", { track });
+      ontrackAdded?.({ track });
 
       // Reset retry count on success
       addRetryCount = 0;
@@ -287,7 +287,7 @@ A modal music search component for finding and adding tracks to the music queue.
     }
   }
 
-  run(() => {
+  $effect(() => {
     if (isOpen && searchInputElement) {
       setTimeout(() => searchInputElement?.focus(), 100);
     }
@@ -348,7 +348,7 @@ A modal music search component for finding and adding tracks to the music queue.
         <div class="flex gap-3 sm:gap-2 mt-3 sm:mt-2 overflow-x-auto py-1 no-scrollbar">
           {#each platforms as platform}
             <button
-                    class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 shrink-0 hover:scale-105 active:scale-95"
+              class="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-xl sm:rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 sm:gap-1 shrink-0 hover:scale-[1.02] active:scale-95"
               class:active-platform={selectedPlatform === platform.id}
               onclick={() => {
               selectedPlatform = platform.id;
@@ -479,7 +479,7 @@ A modal music search component for finding and adding tracks to the music queue.
                         rel="noopener noreferrer"
                         class="p-1.5 rounded-full transition-colors"
                         style="background: {colors.accent}20; color: {colors.accent};"
-                        onclick={stopPropagation(bubble('click'))}
+                        onclick={(e) => e.stopPropagation()}
                         aria-label="Open in {track.provider || 'original source'}"
                       >
                         <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 16px;"></i>
@@ -497,7 +497,7 @@ A modal music search component for finding and adding tracks to the music queue.
                       target="_blank"
                       rel="noopener noreferrer"
                       class="p-1 rounded-full hover:bg-black hover:opacity-20"
-                      onclick={stopPropagation(bubble('click'))}
+                      onclick={(e) => e.stopPropagation()}
                       aria-label="Open in {track.provider || 'original source'}"
                     >
                       <i class="fa-solid fa-arrow-up-right-from-square opacity-70" style="font-size: 12px;"></i>

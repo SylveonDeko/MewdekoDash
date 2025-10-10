@@ -8,8 +8,6 @@
 </script>
 
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import reducedMotion from "$lib/reducedMotion.ts";
 
 
@@ -43,11 +41,11 @@
   const liveRegionId = `${carouselId}-live`;
 
   //The amount of items in the carousel
-  run(() => {
+  $effect(() => {
     itemCount = items?.length ?? 0;
   });
   //The scrolled width divided by the width of a single image (maximum width/image count) is the index of the currently centered image
-  run(() => {
+  $effect(() => {
     currentIndex =
       !carousel || !carouselScroll
         ? 0

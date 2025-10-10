@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { highlightsApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -54,9 +54,9 @@
                 statsData,
                 disabledData
             ] = await Promise.all([
-                api.getGuildHighlights($currentGuild.id).catch(() => []),
-                api.getHighlightStats($currentGuild.id).catch(() => null),
-                api.getDisabledHighlightUsers($currentGuild.id).catch(() => [])
+                highlightsApi.getGuildHighlights($currentGuild.id).catch(() => []),
+                highlightsApi.getHighlightStats($currentGuild.id).catch(() => null),
+                highlightsApi.getDisabledHighlightUsers($currentGuild.id).catch(() => [])
             ]);
 
             highlights = highlightsData;
@@ -92,7 +92,7 @@
 
         saving = true;
         try {
-            await api.deleteHighlight($currentGuild.id, highlightId);
+            await highlightsApi.deleteHighlight($currentGuild.id, highlightId);
             showMessage("Highlight deleted successfully!", "success");
             await loadAllHighlightData();
             if (searchQuery.trim()) {
@@ -113,7 +113,7 @@
 
         saving = true;
         try {
-            const result = await api.deleteUserHighlights($currentGuild.id, userId);
+            const result = await highlightsApi.deleteUserHighlights($currentGuild.id, userId);
             showMessage(`Deleted ${result.removedCount} highlight(s)!`, "success");
             await loadAllHighlightData();
         } catch (err) {
@@ -248,7 +248,7 @@
                                         </div>
                                     </div>
                                     <button
-                                            class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                                      class="px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                             style="background: #ef444420; color: #ef4444;"
                                             onclick={() => deleteUserHighlights(userGroup.userId, userGroup.username)}
                                     >
@@ -300,7 +300,7 @@
                                 onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
                         >
                       <button aria-label="Button action"
-                                class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+                              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.primary}; color: white;"
                                 onclick={searchHighlights}
                         >

@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { feedsApi, clientApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -58,10 +58,10 @@
                 urlsData,
                 channelsData
             ] = await Promise.all([
-                api.getFeeds($currentGuild.id).catch(() => []),
-                api.getFeedStats($currentGuild.id).catch(() => null),
-                api.getFeedUrls($currentGuild.id).catch(() => []),
-                api.getGuildTextChannels($currentGuild.id).catch(() => [])
+                feedsApi.getFeeds($currentGuild.id).catch(() => []),
+                feedsApi.getFeedStats($currentGuild.id).catch(() => null),
+                feedsApi.getFeedUrls($currentGuild.id).catch(() => []),
+                clientApi.getTextChannels($currentGuild.id).catch(() => [])
             ]);
 
             feeds = feedsData;
@@ -86,7 +86,7 @@
 
         saving = true;
         try {
-            await api.addFeed($currentGuild.id, BigInt(newFeed.channelId), newFeed.url);
+            await feedsApi.addFeed($currentGuild.id, BigInt(newFeed.channelId), newFeed.url);
             showMessage("RSS feed added successfully!", "success");
             newFeed = { channelId: null, url: "" };
             await loadAllFeedData();
@@ -104,7 +104,7 @@
 
         saving = true;
         try {
-            await api.updateFeedMessage($currentGuild.id, index, editMessage);
+            await feedsApi.updateFeedMessage($currentGuild.id, index, editMessage);
             showMessage("Feed message updated!", "success");
             editingFeed = null;
             editMessage = "";
@@ -124,7 +124,7 @@
 
         saving = true;
         try {
-            await api.removeFeed($currentGuild.id, index);
+            await feedsApi.removeFeed($currentGuild.id, index);
             showMessage("Feed removed successfully!", "success");
             await loadAllFeedData();
         } catch (err) {
@@ -281,7 +281,7 @@
                                         ></textarea>
                                         <div class="flex gap-2">
                                             <button
-                                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                                     style="background: {$colorStore.primary}; color: white;"
                                                     onclick={() => updateFeedMessage(feed.index)}
                                                     disabled={saving}
@@ -289,7 +289,7 @@
                                                 Save
                                             </button>
                                             <button
-                                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                                     onclick={() => editingFeed = null}
                                             >
@@ -307,7 +307,7 @@
 
                                 {#if editingFeed !== feed.index}
                                     <button
-                                            class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-105"
+                                      class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                             onclick={() => startEditing(feed)}
                                     >
@@ -369,7 +369,7 @@
                     </div>
 
                     <button aria-label="Add"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={addFeed}
                             disabled={saving || !newFeed.channelId || !newFeed.url.trim()}

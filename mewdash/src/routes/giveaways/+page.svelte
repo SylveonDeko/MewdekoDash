@@ -2,11 +2,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { api } from "$lib/api.ts";
+  import { giveawaysApi, type Giveaways } from "$lib/api/index.ts";
   import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
-  import type { Giveaways } from "$lib/types.ts";
   import { Turnstile } from "svelte-turnstile";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, fly } from "svelte/transition";
@@ -90,7 +89,7 @@
 
     if (browser) {
       try {
-        giveaway = await api.getGiveaway(giveawayId.toString());
+        giveaway = await giveawaysApi.getGiveaway(giveawayId.toString());
         loading = false;
       } catch (err) {
         error = getErrorMessage(err, "load giveaway details");
@@ -111,7 +110,7 @@
     message = "";
 
     try {
-      await api.enterGiveaway({
+      await giveawaysApi.enterGiveaway({
         guildId,
         giveawayId,
         userId,
@@ -231,7 +230,7 @@
           <h2 class="text-2xl font-bold mb-4 text-red-400">Oops! Something went wrong</h2>
           <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
           <button
-            class="mt-6 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+            class="mt-6 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
             style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
             onclick={() => window.location.reload()}
           >
@@ -332,7 +331,7 @@
                 <button
                   onclick={enterGiveaway}
                   disabled={!turnstileToken || !isGiveawayActive || isSubmitting}
-                  class="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[200px]"
+                  class="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[200px]"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50; box-shadow: 0 4px 20px {$colorStore.primary}30;"
                 >
                   {#if isSubmitting}

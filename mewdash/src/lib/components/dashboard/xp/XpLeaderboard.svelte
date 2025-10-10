@@ -75,7 +75,7 @@
     </div>
   {:else}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {#each leaderboard as user, i}
+      {#each leaderboard as user, i (user.rank || i)}
         <div
           class="rounded-xl p-4 border transition-all duration-200"
           style="background: {$colorStore.primary}10;

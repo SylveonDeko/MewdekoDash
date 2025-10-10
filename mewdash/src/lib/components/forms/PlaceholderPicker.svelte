@@ -1,9 +1,6 @@
 <!-- PlaceholderPicker.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
-    import type {ComponentType} from "svelte";
-    import {createEventDispatcher, onMount, tick} from 'svelte';
+  import { onMount, tick } from "svelte";
     import {fade, fly} from 'svelte/transition';
     import {cubicOut} from 'svelte/easing';
     import {colorStore} from "$lib/stores/colorStore";
@@ -29,7 +26,7 @@
     width: number;
   }
 
-  
+
   interface Props {
     // Props
     visible?: boolean;
@@ -38,6 +35,9 @@
     searchTerm?: string;
     inline?: boolean;
     inputElement?: HTMLInputElement | HTMLTextAreaElement | null;
+    onselect?: (detail: { placeholder: Placeholder }) => void;
+    onclose?: () => void;
+    onsearch?: (detail: { term: string }) => void;
   }
 
   let {
@@ -46,15 +46,11 @@
     placeholders = [],
     searchTerm = $bindable(""),
     inline = false,
-    inputElement = $bindable(null)
+    inputElement = $bindable(null),
+    onselect,
+    onclose,
+    onsearch
   }: Props = $props();
-  
-  // Events
-  const dispatch = createEventDispatcher<{
-    select: { placeholder: Placeholder };
-    close: Record<string, never>;
-    search: { term: string };
-  }>();
 
   // Internal state
   let selectedIndex = $state(0);
@@ -78,7 +74,7 @@
   };
 
   // Filter placeholders based on search term
-  run(() => {
+  $effect(() => {
     if (searchTerm.trim() === '') {
       filteredPlaceholders = placeholders;
     } else {
@@ -153,9 +149,9 @@
       insertPlaceholderIntoInput(placeholder);
     } else {
       // For non-inline mode, dispatch event for parent to handle
-      dispatch('select', { placeholder });
+      onselect?.({ placeholder });
     }
-    
+
     close();
   }
 
@@ -181,7 +177,7 @@
 
   // Close the picker
   function close(): void {
-    dispatch('close', {});
+    onclose?.();
   }
 
   // Handle search input
@@ -189,7 +185,7 @@
     const target = event.target as HTMLInputElement;
     if (target && target.value !== undefined) {
       searchTerm = target.value;
-      dispatch('search', { term: searchTerm });
+      onsearch?.({ term: searchTerm });
     }
   }
 
@@ -233,14 +229,14 @@
   });
 
   // Update focus when visibility changes
-  run(() => {
+  $effect(() => {
     if (visible && searchInputRef) {
       focusSearchInput();
     }
   });
 
   // Update selection announcement
-  run(() => {
+  $effect(() => {
     if (visible && filteredPlaceholders[selectedIndex]) {
       announceSelection(filteredPlaceholders[selectedIndex]);
     }

@@ -19,17 +19,16 @@ A unified navigation component that provides responsive navigation with server a
 ```
 -->
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
-  import type { ComponentType } from "svelte";
+
   import { onDestroy, onMount } from "svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
-  import type { BotInstance } from "$lib/types/models.ts";
   import type { DiscordUser } from "$lib/types/discord.ts";
-  import { api } from "$lib/api.ts";
+  import { instanceManagementApi, clientApi, ownershipApi, wizardApi, type BotInstance } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { derived, get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
@@ -55,85 +54,87 @@ A unified navigation component that provides responsive navigation with server a
     title: string;
     wrapped: boolean;
     href?: string;
-    icon?: string | ComponentType;
-    children?: { title?: string; href: string; icon?: string | ComponentType }[];
+    icon?: string;
+    children?: { title?: string; href: string; icon?: string }[];
   };
 
   // Props
-  export let items: NavItem[] = [];
-  export let data: { user?: DiscordUser } | undefined = undefined;
+  interface Props {
+    items?: NavItem[];
+    data?: { user?: DiscordUser };
+  }
+
+  let { items = [], data = undefined }: Props = $props();
 
   // Stores
   const isOwnerStore = writable(false);
 
   // Derived store for current user (server data takes priority, fallback to user store)
-  $: currentUser = data?.user || $userStore;
+  let currentUser = $derived(data?.user || $userStore);
 
   // State
-  let guildFetchError: string | null = null;
-  let lastSelectedGuild: BigInt | null = null;
-  let instances: BotInstance[] = [];
-  let instancesLoading = true;
-  let instancesError: string | null = null;
-  let menuOpen = false;
-  let sidebarOpen = false;
-  let dropdownOpen = false;
-  let isMobile = false;
-  let adminGuilds: DiscordGuild[] = [];
-  let isFetchingGuilds = false;
-  let initialized = false;
-  let checkingInstances = false;
+  let guildFetchError = $state<string | null>(null);
+  let lastSelectedGuild = $state<BigInt | null>(null);
+  let instances = $state<BotInstance[]>([]);
+  let instancesLoading = $state(true);
+  let instancesError = $state<string | null>(null);
+  let menuOpen = $state(false);
+  let sidebarOpen = $state(false);
+  let dropdownOpen = $state(false);
+  let isMobile = $state(false);
+  let adminGuilds = $state<DiscordGuild[]>([]);
+  let isFetchingGuilds = $state(false);
+  let initialized = $state(false);
+  let checkingInstances = $state(false);
 
-  let instanceStates: Record<string, {
+  let instanceStates = $state<Record<string, {
     loading: boolean;
     hasMutualGuild: boolean;
     error: string | null;
     checked: boolean;
-  }> = {};
+  }>>({});
 
-  // Computed - only access page store in browser
-  $: isDashboard = browser ? $page.url.pathname.startsWith("/dashboard") : false;
-  $: current = browser ? $page.url.pathname : "";
-  $: isMinimalMode = isDashboard; // Use minimal mode for dashboard pages
-  $: musicStatus = $musicStore.status;
-  $: showMiniPlayer = isMinimalMode && musicStatus?.CurrentTrack && current !== "/dashboard/music";
+  // Computed - only access page in browser
+  let isDashboard = $derived(browser ? page.url.pathname.startsWith("/dashboard") : false);
+  let current = $derived(browser ? page.url.pathname : "");
+  let isMinimalMode = $derived(isDashboard); // Use minimal mode for dashboard pages
+  let musicStatus = $derived($musicStore.status);
+  let showMiniPlayer = $derived(isMinimalMode && musicStatus?.CurrentTrack && current !== "/dashboard/music");
 
   // Check if we're on a dashboard subpage (not the main dashboard)
-  $: isDashboardSubpage = browser && isDashboard && (
+  let isDashboardSubpage = $derived(browser && isDashboard && (
     (current !== "/dashboard" && !current.startsWith("/dashboard?")) ||
-    ($page.url.searchParams.get("tab") && $page.url.searchParams.get("tab") !== "overview")
-  );
+    (page.url.searchParams.get("tab") && page.url.searchParams.get("tab") !== "overview")
+  ));
 
   // Check if we're on the main dashboard (no tabs or overview tab)
-  $: isMainDashboard = browser && isDashboard && current === "/dashboard" && (!$page.url.searchParams.get("tab") || $page.url.searchParams.get("tab") === "overview");
+  let isMainDashboard = $derived(browser && isDashboard && current === "/dashboard" && (!page.url.searchParams.get("tab") || page.url.searchParams.get("tab") === "overview"));
   
 
   // Filter instances to only show those with mutual guilds
-  $: visibleInstances = instances.filter(instance => {
+  let visibleInstances = $derived(instances.filter(instance => {
     const instanceId = instance.botId.toString();
     const state = instanceStates[instanceId];
     // Only show instances that have been checked and have mutual guilds
     return state?.checked && state?.hasMutualGuild;
-  });
+  }));
 
   // Track if we're still checking any instances
-  $: stillCheckingInstances = Object.values(instanceStates).some(state => state.loading);
+  let stillCheckingInstances = $derived(Object.values(instanceStates).some(state => state.loading));
 
-  // Derived store for computed items - only use page store in browser
-  const computedItemsStore = derived(
-    [page, currentGuild, isOwnerStore],
-    ([$page, $isOwner]) => {
-      if (!browser) {
-        // During SSR, return empty items to avoid page store access
-        return [];
-      }
-      if (!$page || !$page.url)
-          return [];
-      const isDashboard = $page.url.pathname.startsWith("/dashboard");
-      return isDashboard ? buildDashboardItems($isOwner) : buildMainItems(items);
+  // Derived computed items based on current state
+  let computedItems = $derived.by(() => {
+    if (!browser) {
+      // During SSR, return empty items
+      return [];
     }
-  );
-  $: computedItems = $computedItemsStore;
+    if (!page || !page.url) {
+      return [];
+    }
+    const isDashboard = page.url.pathname.startsWith("/dashboard");
+    const isOwner = $isOwnerStore;
+    return isDashboard ? buildDashboardItems(isOwner) : buildMainItems(items);
+  });
 
   function debounce(fn: (...args: any[]) => void, ms: number) {
     let timer: ReturnType<typeof setTimeout>;
@@ -149,7 +150,7 @@ A unified navigation component that provides responsive navigation with server a
   // Back button handler
   function handleBackButton() {
     if (browser) {
-      const tabParam = $page.url.searchParams.get("tab");
+      const tabParam = page.url.searchParams.get("tab");
 
       // If we're on a tabbed dashboard page (with tab parameter), go to main dashboard
       if (tabParam && tabParam !== "overview") {
@@ -206,7 +207,7 @@ A unified navigation component that provides responsive navigation with server a
     };
 
     try {
-      const mutualGuilds = await api.getMutualGuilds(currentUser.id, true, fetch, customHeaders);
+      const mutualGuilds = await clientApi.getMutualGuilds(currentUser.id, true, fetch, customHeaders);
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
 
       instanceStates[instanceId] = {
@@ -261,6 +262,7 @@ A unified navigation component that provides responsive navigation with server a
           { title: "AFK", href: "/dashboard/afk", icon: "fa-moon" },
           { title: "XP", href: "/dashboard/xp", icon: "fa-star" },
           { title: "Suggestions", href: "/dashboard/suggestions", icon: "fa-lightbulb" },
+          { title: "Forms", href: "/dashboard/forms", icon: "fa-clipboard-list" },
           { title: "MultiGreets", href: "/dashboard/multigreets", icon: "fa-hand-horns" },
           { title: "Invites", href: "/dashboard/invites", icon: "fa-users" },
           { title: "Role Greets", href: "/dashboard/rolegreets", icon: "fa-tag" },
@@ -373,7 +375,7 @@ A unified navigation component that provides responsive navigation with server a
     if (!currentUser?.id) return;
 
     try {
-      const isOwner = await api.isOwner(BigInt(currentUser.id));
+      const isOwner = await ownershipApi.isOwner(BigInt(currentUser.id));
       isOwnerStore.set(isOwner);
     } catch (err) {
       logger.error("Error checking owner status:", err);
@@ -416,8 +418,8 @@ A unified navigation component that provides responsive navigation with server a
       if (current.startsWith('/wizard')) return;
 
         logger.info("Checking wizard state for guild:", guild.name);
-      
-      const wizardDecision = await api.shouldShowWizard(BigInt(currentUser.id), guild.id);
+
+      const wizardDecision = await wizardApi.shouldShowWizard(BigInt(currentUser.id), guild.id);
       
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
@@ -473,7 +475,7 @@ A unified navigation component that provides responsive navigation with server a
     isFetchingGuilds = true;
     guildFetchError = null;
     try {
-      const newGuilds = await api.getMutualGuilds(currentUser.id);
+      const newGuilds = await clientApi.getMutualGuilds(currentUser.id);
       adminGuilds = newGuilds || [];
 
       if (adminGuilds.length === 0) {
@@ -544,7 +546,7 @@ A unified navigation component that provides responsive navigation with server a
     instancesError = null;
 
     try {
-      const response = await api.getBotInstances();
+      const response = await instanceManagementApi.getBotInstances();
       instances = response || [];
 
       if (instances.length === 0) {
@@ -684,11 +686,11 @@ A unified navigation component that provides responsive navigation with server a
                 class="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-200"
           class:opacity-30={isMainDashboard}
           class:cursor-not-allowed={isMainDashboard}
-          class:hover:scale-105={!isMainDashboard}
+                class:hover:scale-[1.02]={!isMainDashboard}
                 style="background: {isMainDashboard ? $colorStore.primary + '10' : $colorStore.primary + '20'};
                  color: {isMainDashboard ? $colorStore.muted : $colorStore.primary};
                  border: 1px solid {isMainDashboard ? $colorStore.primary + '15' : $colorStore.primary + '30'};"
-          on:click={isMainDashboard ? undefined : handleBackButton}
+                onclick={isMainDashboard ? undefined : handleBackButton}
           disabled={isMainDashboard}
           aria-label="Go back"
         >
@@ -746,7 +748,7 @@ A unified navigation component that provides responsive navigation with server a
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientEnd}95);"
                   role="menu"
                 >
-                  {#each item.children || [] as child}
+                  {#each item.children || [] as child (child.href)}
                     <a
                       href={child.href || '#'}
                       data-sveltekit-preload-data="hover"
@@ -754,7 +756,7 @@ A unified navigation component that provides responsive navigation with server a
                       class="ripple-effect flex items-center p-2 transition-colors hover:bg-(--hover-bg-color)"
                       style="--hover-bg-color: {$colorStore.primary}20; color: {$colorStore.text};"
                       role="menuitem"
-                      on:click|preventDefault={(e) => {
+                      onclick={(e) => {
         e.preventDefault();
         if ($currentGuild) {
           if (browser) {
@@ -797,7 +799,7 @@ A unified navigation component that provides responsive navigation with server a
                 in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}
                 style:--hover-bg-color="{$colorStore.primary}20"
                 style:background-color={current === item.href ? `${$colorStore.primary}30` : 'transparent'}
-                on:click|preventDefault={(e) => {
+                onclick={(e) => {
         e.preventDefault();
         if ($currentGuild) {
           if (browser) {
@@ -839,14 +841,14 @@ A unified navigation component that provides responsive navigation with server a
         <div class="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
           <a
             href="/"
-            class="block transition-all duration-200 hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-offset-2 rounded-lg"
+            class="block transition-all duration-200 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 rounded-lg"
             style:focus:ring-color={$colorStore.primary}
             title="Go to home page"
             aria-label="Return to home page"
           >
             <img
               alt="Mewdeko"
-              class="h-10 w-10 object-contain"
+              class="h-7 w-7 md:h-10 md:w-10 object-contain"
               src="/img/Mewdeko.png"
             >
           </a>
@@ -869,7 +871,7 @@ A unified navigation component that provides responsive navigation with server a
       {#if !currentUser}
         <form action="/api/discord/login" method="GET" data-sveltekit-reload>
           <button type="submit"
-                  class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg backdrop-blur-xs border"
+                  class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg backdrop-blur-xs border"
                   style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
                          color: {$colorStore.text};
                          border-color: {$colorStore.primary}50;
@@ -879,13 +881,13 @@ A unified navigation component that provides responsive navigation with server a
         </form>
       {:else}
         <!-- Desktop User & Instance Display -->
-        <div class="hidden md:flex relative" use:clickOutside on:clickoutside={() => closeDropdown()}>
+        <div class="hidden md:flex relative" use:clickOutside onclickoutside={() => closeDropdown()}>
           <button
                   class="ripple-effect flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-xs border hover:scale-[1.02] shadow-lg hover:shadow-xl"
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    border-color: {$colorStore.primary}40;
                    box-shadow: 0 2px 8px {$colorStore.primary}15;"
-            on:click={toggleDropdown}
+                  onclick={toggleDropdown}
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
             aria-label="User menu"
@@ -1013,7 +1015,7 @@ A unified navigation component that provides responsive navigation with server a
                     {:else if visibleInstances.length === 0}
                       <div class="text-sm px-2 py-1" style="color: {$colorStore.muted};">No accessible instances</div>
                     {:else}
-                      {#each visibleInstances as instance}
+                      {#each visibleInstances as instance (instance.botId)}
                         <button
                                 class="ripple-effect w-full text-left p-2 rounded-lg flex items-center space-x-2 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
                           style="color: {$colorStore.text};
@@ -1021,7 +1023,7 @@ A unified navigation component that provides responsive navigation with server a
                                  border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
                                  hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                                  hover:border-color: {$colorStore.primary}40;"
-                          on:click={() => handleInstanceSelect(instance)}
+                                onclick={() => handleInstanceSelect(instance)}
                           aria-pressed={$currentInstance?.botId === instance.botId}
                         >
                           <img
@@ -1082,7 +1084,7 @@ A unified navigation component that provides responsive navigation with server a
                 >
                   <button
                     type="submit"
-                    class="ripple-effect block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border text-sm font-medium"
+                    class="ripple-effect block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium"
                     style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
                            color: {$colorStore.background};
                            border-color: {$colorStore.accent}50;
@@ -1119,7 +1121,7 @@ A unified navigation component that provides responsive navigation with server a
             class="inline-flex items-center p-2 rounded-lg border-transparent transition-all duration-200 ease-in-out md:hidden min-h-[36px] min-w-[36px] hover:bg-(--hover-bg-color)"
             style:--hover-bg-color="{$colorStore.primary}20"
             style:border-color="{$colorStore.primary}30"
-            on:click={toggleMenu}
+            onclick={toggleMenu}
           >
             <span class="sr-only">Toggle navigation menu</span>
               <div class="relative w-5 h-5 flex flex-col justify-center">
@@ -1152,7 +1154,7 @@ A unified navigation component that provides responsive navigation with server a
     <div
             class="fixed inset-0 backdrop-blur-sm z-40"
             style="background: {$colorStore.background}80;"
-      on:click={closeMobileMenu}
+            onclick={closeMobileMenu}
       transition:fade={{ duration: 300, easing: cubicOut }}
       aria-hidden="true"
     ></div>
@@ -1195,7 +1197,7 @@ A unified navigation component that provides responsive navigation with server a
           <button
                   class="p-2 rounded-lg transition-all hover:bg-white/10"
                   style="color: {$colorStore.text};"
-            on:click={closeMobileMenu}
+                  onclick={closeMobileMenu}
             aria-label="Close menu"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1228,7 +1230,7 @@ A unified navigation component that provides responsive navigation with server a
                         style="color: {$colorStore.text};
                          background: {$currentInstance?.botId === instance.botId ? `${$colorStore.primary}20` : 'transparent'};
                          border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '30' : 'transparent'};"
-                  on:click={() => {
+                        onclick={() => {
                     handleInstanceSelect(instance);
                     closeMobileMenu();
                   }}
@@ -1260,18 +1262,18 @@ A unified navigation component that provides responsive navigation with server a
         <!-- Only show navigation items on non-dashboard pages for mobile -->
         {#if !isDashboard}
           <nav class="p-4 space-y-1">
-            {#each computedItems as item}
+            {#each computedItems as item (item.href || item.title)}
               {#if item.wrapped}
                 <div class="space-y-1">
                   <div class="text-sm font-medium px-2" style="color: {$colorStore.muted};">{item.title}</div>
-                  {#each item.children || [] as child}
+                  {#each item.children || [] as child (child.href)}
                     <a
                       href={child.href || '#'}
                       class="ripple-effect flex items-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                       style="color: {$colorStore.text};
                              background: {current === child.href ? `${$colorStore.primary}20` : 'transparent'};
                              border-color: {current === child.href ? $colorStore.primary + '30' : 'transparent'};"
-                      on:click={closeMobileMenu}
+                      onclick={closeMobileMenu}
                     >
                       {#if child.icon}
                         <i class="fa-utility-duo fa-regular {child.icon} mr-3 text-xl"
@@ -1289,7 +1291,7 @@ A unified navigation component that provides responsive navigation with server a
                   style="color: {$colorStore.text};
                          background: {current === item.href ? `${$colorStore.primary}20` : 'transparent'};
                          border-color: {current === item.href ? $colorStore.primary + '30' : 'transparent'};"
-                  on:click={closeMobileMenu}
+                  onclick={closeMobileMenu}
                 >
                   {#if item.icon}
                     <i class="fa-utility-duo fa-regular {item.icon} text-xl"
@@ -1313,7 +1315,7 @@ A unified navigation component that provides responsive navigation with server a
         >
           <button
             type="submit"
-            class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 border font-medium"
+            class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium"
             style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
                    color: {$colorStore.background};
                    border-color: {$colorStore.accent}50;
@@ -1328,13 +1330,7 @@ A unified navigation component that provides responsive navigation with server a
 </nav>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    /* Ripple effect styles */
+    @reference '../../../app.css'; /* Ripple effect styles */
     .ripple-effect {
         position: relative;
         overflow: hidden;
@@ -1383,20 +1379,6 @@ A unified navigation component that provides responsive navigation with server a
     .ripple-effect > * {
         position: relative;
         z-index: 2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: rgba(var(--color-primary), 0.1);
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: rgba(var(--color-primary), 0.3);
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: rgba(var(--color-primary), 0.5);
     }
 
     /* Ensure dropdowns appear above other content */

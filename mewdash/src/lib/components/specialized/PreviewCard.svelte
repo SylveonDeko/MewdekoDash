@@ -6,11 +6,21 @@ https://svelte.dev/e/css_expected_identifier -->
     import DOMPurify from "dompurify";
 
     // Props
-  export let content: string = "";
-  export let embeds: any[] = [];
-  export let components: any[] = [];
-  export let showEmpty: boolean = true;
-  export let emptyMessage: string = "Your embed preview will appear here";
+    interface Props {
+      content?: string;
+      embeds?: any[];
+      components?: any[];
+      showEmpty?: boolean;
+      emptyMessage?: string;
+    }
+
+    let {
+      content = "",
+      embeds = [],
+      components = [],
+      showEmpty = true,
+      emptyMessage = "Your embed preview will appear here"
+    }: Props = $props();
 
   // Helper functions
   function parseMarkdown(text: string): string {
@@ -60,9 +70,9 @@ https://svelte.dev/e/css_expected_identifier -->
   }
 
   // Check if we have any content to display
-  $: hasContent = content.trim() || 
-    embeds.some(e => e.title || e.description || e.fields?.length > 0) || 
-    components.length > 0;
+    let hasContent = $derived(content.trim() ||
+      embeds.some(e => e.title || e.description || e.fields?.length > 0) ||
+      components.length > 0);
 </script>
 
 <div class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px] preview-content">
@@ -278,29 +288,29 @@ https://svelte.dev/e/css_expected_identifier -->
   }
 
   /* Discord-like markdown styles */
-  :global(.preview-content strong) {
+  :global(.preview-content) strong {
     font-weight: 600;
   }
-  
-  :global(.preview-content em) {
+
+  :global(.preview-content) em {
     font-style: italic;
   }
-  
-  :global(.preview-content code) {
+
+  :global(.preview-content) code {
     background: #2f3136;
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
   }
 
-  :global(.preview-content pre) {
+  :global(.preview-content) pre {
     background: #2f3136;
     padding: 8px;
     border-radius: 4px;
     overflow-x: auto;
   }
 
-  :global(.preview-content blockquote) {
+  :global(.preview-content) blockquote {
     border-left: 4px solid #4f545c;
     padding-left: 8px;
     margin: 4px 0;

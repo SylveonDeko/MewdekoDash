@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { confessionsApi, guildApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -65,13 +65,13 @@
                 channelsData,
                 rolesListData
             ] = await Promise.all([
-                api.getConfessions($currentGuild.id).catch(() => []),
-                api.getConfessionChannel($currentGuild.id).catch(() => null),
-                api.getConfessionLogChannel($currentGuild.id).catch(() => null),
-                api.getConfessionBlacklist($currentGuild.id).catch(() => []),
-                api.getConfessionStats($currentGuild.id).catch(() => null),
-                api.getGuildTextChannels($currentGuild.id).catch(() => []),
-                api.getGuildRoles($currentGuild.id).catch(() => [])
+                confessionsApi.getConfessions($currentGuild.id).catch(() => []),
+                confessionsApi.getConfessionChannel($currentGuild.id).catch(() => null),
+                confessionsApi.getConfessionLogChannel($currentGuild.id).catch(() => null),
+                confessionsApi.getConfessionBlacklist($currentGuild.id).catch(() => []),
+                confessionsApi.getConfessionStats($currentGuild.id).catch(() => null),
+                guildApi.getGuildTextChannels($currentGuild.id).catch(() => []),
+                guildApi.getGuildRoles($currentGuild.id).catch(() => [])
             ]);
 
             confessions = confessionsData;
@@ -119,11 +119,11 @@
             const promises = [];
 
             if (configForm.channelId !== confessionChannel) {
-                promises.push(api.setConfessionChannel($currentGuild.id, configForm.channelId || BigInt(0)));
+                promises.push(confessionsApi.setConfessionChannel($currentGuild.id, configForm.channelId || BigInt(0)));
             }
 
             if (configForm.logChannelId !== confessionLogChannel) {
-                promises.push(api.setConfessionLogChannel($currentGuild.id, configForm.logChannelId || BigInt(0)));
+                promises.push(confessionsApi.setConfessionLogChannel($currentGuild.id, configForm.logChannelId || BigInt(0)));
             }
 
             await Promise.all(promises);
@@ -143,7 +143,7 @@
 
         saving = true;
         try {
-            await api.toggleConfessionBlacklistRole($currentGuild.id, BigInt(roleId));
+            await confessionsApi.toggleConfessionBlacklistRole($currentGuild.id, BigInt(roleId));
             await loadAllConfessionData();
         } catch (err) {
             logger.error("Failed to toggle role blacklist:", err);
@@ -160,7 +160,7 @@
 
         saving = true;
         try {
-            await api.deleteConfession($currentGuild.id, confessionNumber);
+            await confessionsApi.deleteConfession($currentGuild.id, confessionNumber);
             showMessage("Confession deleted successfully!", "success");
             await loadAllConfessionData();
         } catch (err) {
@@ -320,7 +320,7 @@
                     </div>
 
                     <button aria-label="Button action"
-                            class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                            class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
@@ -346,7 +346,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {#each guildRoles as role}
                             <button
-                                    class="p-3 rounded-lg transition-all hover:scale-105 text-left"
+                              class="p-3 rounded-lg transition-all hover:scale-[1.02] text-left"
                                     style="background: {isRoleBlacklisted(role.id) ? '#ef444420' : $colorStore.primary + '10'};
                                    border: 1px solid {isRoleBlacklisted(role.id) ? '#ef4444' : $colorStore.primary}30;"
                                     onclick={() => toggleRoleBlacklist(role.id)}

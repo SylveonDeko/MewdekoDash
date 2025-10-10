@@ -1,15 +1,11 @@
 <!-- lib/components/dashboard/SecurityTab.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { moderationApi, protectionApi, loggingApi, type LoggingConfigurationResponse } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
-
-    import type {LoggingConfigurationResponse} from "$lib/types/logging.ts";
 
     // Security data
     let moderationStats = $state({
@@ -44,10 +40,10 @@
     try {
       // Fetch all security data in parallel
       const [warningsData, protectionData, moderationData, loggingConfigData] = await Promise.all([
-        api.getWarnings($currentGuild.id).catch(() => []),
-        api.getProtectionStatus($currentGuild.id).catch(() => ({})),
-        api.getRecentModerationActivity($currentGuild.id).catch(() => []),
-        api.getLoggingConfig($currentGuild.id).catch(() => null)
+        moderationApi.getWarnings($currentGuild.id).catch(() => []),
+        protectionApi.getProtectionStatus($currentGuild.id).catch(() => ({})),
+        moderationApi.getRecentModerationActivity($currentGuild.id).catch(() => []),
+        loggingApi.getLoggingConfig($currentGuild.id).catch(() => null)
       ]);
 
       // Process warnings data
@@ -111,7 +107,7 @@
     fetchSecurityData();
   });
 
-    run(() => {
+    $effect(() => {
         if ($currentGuild) {
             fetchSecurityData();
         }
@@ -188,7 +184,7 @@
         <div class="space-y-2">
         {#if loading}
           <!-- Loading state -->
-          {#each Array(5).fill(0) as _}
+          {#each Array(5).fill(0) as _, i (i)}
             <div class="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                  style="background: {$colorStore.primary}08;">
               <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
@@ -210,7 +206,7 @@
             </p>
           </div>
         {:else}
-          {#each recentModerationActions as action}
+          {#each recentModerationActions as action, i (action.id || action.caseId || i)}
               {@const iconClass = getActionIcon(action.punishment || action.action)}
               {@const iconColor = getActionColor(action.punishment || action.action)}
             <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
@@ -244,7 +240,8 @@
         </div>
 
         <!-- View More Button -->
-        <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
+        <a
+          class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-[1.02] text-sm"
            href="/dashboard/moderation"
            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-shield text-sm"
@@ -268,7 +265,7 @@
                 {protectionStatus.antiRaid?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
@@ -289,7 +286,7 @@
                 {protectionStatus.antiSpam?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
@@ -310,7 +307,7 @@
                 {protectionStatus.antiAlt?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Configure
@@ -331,7 +328,7 @@
                 {protectionStatus.antiMassMention?.enabled ? 'Active' : 'Disabled'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
@@ -362,7 +359,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">All time moderation actions</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/moderation"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
@@ -407,7 +404,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{loggingStats.totalLogTypes} event types</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/logging"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
@@ -432,7 +429,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{activeProtections}/4 protections enabled</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure

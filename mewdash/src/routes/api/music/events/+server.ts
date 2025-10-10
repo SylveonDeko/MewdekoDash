@@ -31,12 +31,15 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
   });
 
   // Create readable stream
+  let cleanupFn: (() => void) | null = null;
+
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
       const redis = new Redis(REDIS_URL);
       const subscriber = new Redis(REDIS_URL);
       let isStreamClosed = false;
+      let heartbeatInterval: NodeJS.Timeout;
 
       // Send initial connection message
       controller.enqueue(encoder.encode(`: connected\n\n`));
@@ -48,7 +51,9 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 
       // Cleanup function
       const cleanup = () => {
+        if (isStreamClosed) return;
         isStreamClosed = true;
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
         subscriber.removeAllListeners();
         subscriber
           .unsubscribe(createdChannel, destroyedChannel)
@@ -56,6 +61,9 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
         subscriber.disconnect();
         redis.disconnect();
       };
+
+      // Store cleanup function for cancel
+      cleanupFn = cleanup;
 
       try {
         await subscriber.subscribe(createdChannel, destroyedChannel);
@@ -88,7 +96,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
         });
 
         // Send heartbeat every 30 seconds
-        const heartbeatInterval = setInterval(() => {
+        heartbeatInterval = setInterval(() => {
           if (isStreamClosed) {
             clearInterval(heartbeatInterval);
             return;
@@ -101,12 +109,6 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
             cleanup();
           }
         }, 30000);
-
-        // Store cleanup function for cancel
-        (controller as any).cleanup = () => {
-          clearInterval(heartbeatInterval);
-          cleanup();
-        };
       } catch (err) {
         logger.error("Redis subscription error:", err);
         cleanup();
@@ -114,10 +116,10 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
       }
     },
 
-    cancel(controller: any) {
+    cancel() {
       // Called when the reader cancels the stream
-      if (controller.cleanup) {
-        controller.cleanup();
+      if (cleanupFn) {
+        cleanupFn();
       }
     },
   });

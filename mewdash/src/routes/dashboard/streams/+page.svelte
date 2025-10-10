@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { streamNotificationsApi, clientApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -76,12 +76,12 @@
                 streamersData,
                 channelsData
             ] = await Promise.all([
-                api.getStreamNotifications($currentGuild.id).catch(() => []),
-                api.getStreamCustomMessage($currentGuild.id).catch(() => ""),
-                api.getStreamOfflineNotifications($currentGuild.id).catch(() => false),
-                api.getStreamStats($currentGuild.id).catch(() => null),
-                api.getStreamers($currentGuild.id).catch(() => []),
-                api.getGuildTextChannels($currentGuild.id).catch(() => [])
+              streamNotificationsApi.getStreamNotifications($currentGuild.id).catch(() => []),
+              streamNotificationsApi.getStreamCustomMessage($currentGuild.id).catch(() => ""),
+              streamNotificationsApi.getStreamOfflineNotifications($currentGuild.id).catch(() => false),
+              streamNotificationsApi.getStreamStats($currentGuild.id).catch(() => null),
+              streamNotificationsApi.getStreamers($currentGuild.id).catch(() => []),
+              clientApi.getTextChannels($currentGuild.id).catch(() => [])
             ]);
 
             streams = streamsData;
@@ -108,7 +108,7 @@
 
         saving = true;
         try {
-            const result = await api.followStream($currentGuild.id, BigInt(newStream.channelId), newStream.url);
+          const result = await streamNotificationsApi.followStream($currentGuild.id, BigInt(newStream.channelId), newStream.url);
             showMessage(`Now following ${result.username} on ${result.platform}!`, "success");
             newStream = { channelId: null, url: "" };
             await loadAllStreamData();
@@ -127,7 +127,7 @@
 
         saving = true;
         try {
-            await api.unfollowStream($currentGuild.id, index);
+          await streamNotificationsApi.unfollowStream($currentGuild.id, index);
             showMessage("Stream unfollowed successfully!", "success");
             await loadAllStreamData();
         } catch (err) {
@@ -145,7 +145,7 @@
 
         saving = true;
         try {
-            const result = await api.clearAllStreams($currentGuild.id);
+          const result = await streamNotificationsApi.clearAllStreams($currentGuild.id);
             showMessage(`Removed ${result.removedCount} stream(s)!`, "success");
             await loadAllStreamData();
         } catch (err) {
@@ -165,11 +165,11 @@
             const promises = [];
 
             if (editForm.onlineMessage) {
-                promises.push(api.setStreamOnlineMessage($currentGuild.id, index, editForm.onlineMessage));
+              promises.push(streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, index, editForm.onlineMessage));
             }
 
             if (editForm.offlineMessage) {
-                promises.push(api.setStreamOfflineMessage($currentGuild.id, index, editForm.offlineMessage));
+              promises.push(streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, index, editForm.offlineMessage));
             }
 
             await Promise.all(promises);
@@ -191,7 +191,7 @@
 
         saving = true;
         try {
-            await api.setStreamCustomMessage($currentGuild.id, customMessage);
+          await streamNotificationsApi.setStreamCustomMessage($currentGuild.id, customMessage);
             showMessage("Custom message saved!", "success");
         } catch (err) {
             logger.error("Failed to save custom message:", err);
@@ -207,7 +207,7 @@
 
         saving = true;
         try {
-            await api.toggleStreamOfflineNotifications($currentGuild.id);
+          await streamNotificationsApi.toggleStreamOfflineNotifications($currentGuild.id);
             await loadAllStreamData();
         } catch (err) {
             logger.error("Failed to toggle offline notifications:", err);
@@ -316,7 +316,7 @@
                     </div>
                     {#if streams.length > 0}
                         <button
-                                class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                          class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                 style="background: #ef444420; color: #ef4444;"
                                 onclick={clearAllStreams}
                         >
@@ -398,7 +398,7 @@
                                         </div>
                                         <div class="flex gap-2">
                                             <button
-                                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                                     style="background: {$colorStore.primary}; color: white;"
                                                     onclick={() => updateStreamMessages(stream.index)}
                                                     disabled={saving}
@@ -406,7 +406,7 @@
                                                 Save
                                             </button>
                                             <button
-                                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                                     onclick={() => editingStream = null}
                                             >
@@ -435,7 +435,7 @@
                                     {/if}
 
                                     <button
-                                            class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-105"
+                                      class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                             onclick={() => startEditing(stream)}
                                     >
@@ -497,7 +497,7 @@
                     </div>
 
                   <button aria-label="Add"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={followStream}
                             disabled={saving || !newStream.channelId || !newStream.url.trim()}
@@ -538,7 +538,7 @@
                             Available placeholders: {`{streamer}`, `{platform}`, `{url}`, `{title}`, `{game}`}
                         </p>
                         <button
-                                class="mt-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+                          class="mt-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.primary}; color: white;"
                                 onclick={saveCustomMessage}
                                 disabled={saving}

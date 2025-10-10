@@ -1,6 +1,5 @@
 <!-- ComponentEditor.svelte -->
 <script lang="ts">
-    import {createEventDispatcher} from 'svelte';
     import {colorStore} from "$lib/stores/colorStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
@@ -10,17 +9,21 @@
     component: any;
     triggers?: any[];
     isEditing?: boolean;
+      onupdate?: (detail: { component: any }) => void;
+      onremove?: (detail: { componentKey: string }) => void;
+      onedit?: (detail: { component: any }) => void;
+      onselectTrigger?: (detail: { component: any; optionIndex?: number }) => void;
   }
 
-  let { component = $bindable(), triggers = [], isEditing = false }: Props = $props();
-
-  // Events
-  const dispatch = createEventDispatcher<{
-    update: { component: any };
-    remove: { componentKey: string };
-    edit: { component: any };
-    selectTrigger: { component: any; optionIndex?: number };
-  }>();
+    let {
+      component = $bindable(),
+      triggers = [],
+      isEditing = false,
+      onupdate,
+      onremove,
+      onedit,
+      onselectTrigger
+    }: Props = $props();
 
   // Button style options
   const buttonStyles = [
@@ -49,41 +52,41 @@
     }
     
     component = updatedComponent;
-    dispatch('update', { component: updatedComponent });
+    onupdate?.({ component: updatedComponent });
   }
 
   function addOption() {
     if (!component.options) component.options = [];
-    
+
     const newOption = {
       id: null,
       name: `Option ${component.options.length + 1}`,
       emoji: "",
       description: ""
     };
-    
+
     const updatedComponent = { ...component };
     updatedComponent.options = [...updatedComponent.options, newOption];
-    
+
     component = updatedComponent;
-    dispatch('update', { component: updatedComponent });
+    onupdate?.({ component: updatedComponent });
   }
 
   function removeOption(index: number) {
     const updatedComponent = { ...component };
     updatedComponent.options = updatedComponent.options.filter((_: any, i: number) => i !== index);
-    
+
     component = updatedComponent;
-    dispatch('update', { component: updatedComponent });
+    onupdate?.({ component: updatedComponent });
   }
 
   function updateOption(index: number, field: string, value: any) {
     const updatedComponent = { ...component };
     if (!updatedComponent.options[index]) return;
-    
+
     updatedComponent.options[index][field] = value;
     component = updatedComponent;
-    dispatch('update', { component: updatedComponent });
+    onupdate?.({ component: updatedComponent });
   }
 
   function getButtonColorClass(style: number): string {
@@ -237,7 +240,7 @@
                   </div>
                   <button aria-label="Change trigger"
                           class="ml-2 p-1 rounded-sm hover:bg-black/10"
-                    onclick={() => dispatch('selectTrigger', { component })}
+                          onclick={() => onselectTrigger?.({ component })}
                     title="Change trigger"
                   >
                     <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
@@ -248,7 +251,7 @@
               <button
                 class="w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 border border-dashed"
                 style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                onclick={() => dispatch('selectTrigger', { component })}
+                onclick={() => onselectTrigger?.({ component })}
               >
                 <i class="fa-solid fa-bolt inline mr-2" style="font-size: 16px;"></i>
                 Select Trigger
@@ -423,7 +426,7 @@
                           </div>
                           <button aria-label="Change trigger"
                                   class="ml-1 p-1 rounded-sm hover:bg-black/10"
-                            onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
+                                  onclick={() => onselectTrigger?.({ component, optionIndex: index })}
                             title="Change trigger"
                           >
                             <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
@@ -434,7 +437,7 @@
                       <button
                               class="w-full px-3 py-2 rounded-sm border border-dashed text-sm transition-all duration-200"
                         style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                        onclick={() => dispatch('selectTrigger', { component, optionIndex: index })}
+                              onclick={() => onselectTrigger?.({ component, optionIndex: index })}
                       >
                         <i class="fa-solid fa-bolt inline mr-1" style="font-size: 14px;"></i>
                         Select Trigger
@@ -530,19 +533,19 @@
     <!-- Actions Overlay -->
     <div class="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
       <button
-        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: {$colorStore.primary}; color: {$colorStore.text};"
-        onclick={() => dispatch('edit', { component })}
+        onclick={() => onedit?.({ component })}
         title="Edit component"
         aria-label="Edit component"
       >
         <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
       </button>
-      
+
       <button
-        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: #ED4245; color: white;"
-        onclick={() => dispatch('remove', { componentKey: component.componentKey })}
+        onclick={() => onremove?.({ componentKey: component.componentKey })}
         title="Remove component"
         aria-label="Remove component"
       >

@@ -5,7 +5,7 @@
     import EventMetricsMonitor from "$lib/components/monitoring/EventMetricsMonitor.svelte";
     import ModuleMetricsMonitor from "$lib/components/monitoring/ModuleMetricsMonitor.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {api} from "$lib/api.ts";
+    import { ownershipApi } from "$lib/api/index.ts";
     import {onMount} from "svelte";
     import {goto} from "$app/navigation";
     import {loadingStore} from "$lib/stores/loadingStore";
@@ -18,7 +18,7 @@
   onMount(async () => {
     await loadingStore.wrap("owner-check", async () => {
       try {
-        let isOwner = await api.isOwner(BigInt(data.user.id));
+        let isOwner = await ownershipApi.isOwner(BigInt(data.user.id));
 
         if (!isOwner) {
           goto("/dashboard");

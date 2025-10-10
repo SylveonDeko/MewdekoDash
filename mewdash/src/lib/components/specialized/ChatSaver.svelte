@@ -1,9 +1,9 @@
 <!-- lib/components/ChatSaver.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import { chatApi, clientApi, type ChatLogMessage, type ChatLogSummary, type ChatLog } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
@@ -32,50 +32,6 @@
     avatarUrl: string;
   }
 
-  interface MessageAttachment {
-    url: string;
-    proxyUrl: string;
-    filename: string;
-    fileSize: number;
-  }
-
-  interface MessageEmbed {
-    type: string;
-    title: string;
-    description: string;
-    url: string;
-    thumbnail: string | null;
-    author: {
-      name: string;
-      iconUrl: string;
-    } | null;
-  }
-
-  interface MessageAuthor {
-    id: string;
-    username: string;
-    avatarUrl: string;
-  }
-
-  interface Message {
-    id: string;
-    content: string;
-    author: MessageAuthor;
-    timestamp: string;
-    attachments: MessageAttachment[];
-    embeds: MessageEmbed[];
-  }
-
-  interface SavedLog {
-    id: string;
-    channelId: string;
-    channelName: string;
-    name: string;
-    timestamp: string;
-    createdBy: string;
-    messageCount: number;
-  }
-
     let channels: Channel[] = $state([]);
     let selectedChannelId: string = $state("");
   
@@ -89,12 +45,12 @@
   ];
     let timeAmount: number = $state(1);
     let timeUnit: "minutes" | "hours" | "days" = $state("hours");
-    let messages: Message[] = $state([]);
+  let messages: ChatLogMessage[] = $state([]);
     let loading: boolean = $state(false);
     let showNotification: boolean = $state(false);
     let notificationMessage: string = $state("");
     let notificationType: "success" | "error" = $state("success");
-    let savedLogs: SavedLog[] = $state([]);
+  let savedLogs: ChatLogSummary[] = $state([]);
     let currentLogId: string | null = $state(null);
     let editingLogName: string | false = $state(false);
     let newLogName: string = $state("");
@@ -131,7 +87,7 @@
     return await loadingStore.wrap("load-channels", async () => {
       try {
         if (!$currentGuild?.id) return;
-        channels = await api.getGuildTextChannels($currentGuild.id);
+        channels = await clientApi.getTextChannels($currentGuild.id);
         guildChannels = channels;
       } catch (err) {
         logger.error("Failed to load channels:", err);
@@ -143,7 +99,7 @@
   async function loadGuildMembers(): Promise<void> {
     try {
       if (!$currentGuild?.id) return;
-      guildMembers = await api.getGuildMembers($currentGuild.id);
+      guildMembers = await clientApi.getMembers($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load guild members:", err);
       // Not showing error notification as this is not critical
@@ -169,7 +125,7 @@
   async function loadSavedLogs(): Promise<void> {
     try {
       if (!$currentGuild?.id) return;
-      savedLogs = await api.getChatLogs($currentGuild.id);
+      savedLogs = await chatApi.getChatLogs($currentGuild.id);
     } catch (err) {
       logger.error("Failed to load saved logs:", err);
       showNotificationMessage("Failed to load saved logs", "error");
@@ -222,7 +178,7 @@
         }
 
         const afterDate = calculateAfterDate();
-        messages = await api.getChatMessages(
+        messages = await chatApi.getChatMessages(
           $currentGuild.id,
           BigInt(selectedChannelId),
           afterDate
@@ -344,7 +300,7 @@
     return channel ? channel.name : "";
   }
 
-  function groupMessagesByAuthor(messages: Message[]): Message[][] {
+  function groupMessagesByAuthor(messages: ChatLogMessage[]): ChatLogMessage[][] {
     if (!messages || messages.length === 0) return [];
 
     // Safety check - make sure we have valid messages
@@ -408,7 +364,7 @@
       }
 
       // Use the API to save to PostgreSQL database
-      const result = await api.saveChatLog($currentGuild.id, {
+      const result = await chatApi.saveChatLog($currentGuild.id, {
         channelId: BigInt(selectedChannelId),
         name: logName,
         createdBy: BigInt(data.user.id),
@@ -456,7 +412,7 @@
     try {
       if (!$currentGuild?.id) return;
 
-      const log = await api.getChatLog($currentGuild.id, logId);
+      const log = await chatApi.getChatLog($currentGuild.id, logId);
 
       if (log) {
         messages = log.messages;
@@ -473,7 +429,7 @@
     try {
       if (!$currentGuild?.id) return;
 
-      await api.deleteChatLog($currentGuild.id, logId);
+      await chatApi.deleteChatLog($currentGuild.id, logId);
       showNotificationMessage("Log deleted successfully");
 
       // Reload logs
@@ -506,7 +462,7 @@
     try {
       if (!$currentGuild?.id) return;
 
-      await api.updateChatLogName($currentGuild.id, editingLogName, newLogName.trim());
+      await chatApi.updateChatLogName($currentGuild.id, editingLogName, newLogName.trim());
       showNotificationMessage("Log renamed successfully");
 
       // Reload logs
@@ -882,7 +838,7 @@
     }, 0);
   }
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadChannels();
             loadGuildMembers();
@@ -1368,47 +1324,16 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    :global(*::-webkit-scrollbar) {
-        width: 0.5rem;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        border-radius: 9999px;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        border-radius: 9999px;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Remove number input spinners */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
 
-    input[type="number"] {
-        -moz-appearance: textfield;
-    }
-
     :global(.mention) {
         background-color: rgba(88, 101, 242, 0.3);
         border-radius: 3px;
         padding: 0 2px;
-    }
-
-    :global(.mention.user), :global(.mention.role) {
-        color: #c9cdfb;
-    }
-
-    :global(.mention.channel) {
-        color: #8e9297;
     }
 
     :global(.code-block) {
@@ -1420,7 +1345,7 @@
         margin: 4px 0;
     }
 
-    :global(code) {
+    :global code {
         background-color: #2f3136;
         border-radius: 3px;
         padding: 0 4px;

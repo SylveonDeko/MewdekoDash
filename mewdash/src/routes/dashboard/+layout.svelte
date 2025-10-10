@@ -11,7 +11,7 @@
     import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
     import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
     import {browser} from "$app/environment";
-    import {api} from "$lib/api.ts";
+    import { wizardApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger.ts";
 
     let {data, children} = $props();
@@ -29,7 +29,7 @@
       if (window.location.pathname.startsWith('/wizard')) {
         return;
       }
-      const wizardDecision = await api.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
+      const wizardDecision = await wizardApi.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
 
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
@@ -84,17 +84,13 @@
       userStore.set(data.user);
     }
 
-    // If no user from server or persisted store and not on Patreon callback, redirect to login
+    // If no user, redirect to login with current URL
     if (browser && !data.user && !$userStore) {
-      const isPatreonCallback = window.location.pathname === "/dashboard/patreon" &&
-        (window.location.search.includes("code=") || window.location.search.includes("error="));
-      if (!isPatreonCallback) {
-        // Capture current URL for redirect after login
-        const currentUrl = window.location.pathname + window.location.search;
-        const loginUrl = `/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`;
-        window.location.href = loginUrl;
-        return;
-      }
+      // Capture current URL for redirect after login
+      const currentUrl = window.location.pathname + window.location.search;
+      const loginUrl = `/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`;
+      window.location.href = loginUrl;
+      return;
     }
   });
 

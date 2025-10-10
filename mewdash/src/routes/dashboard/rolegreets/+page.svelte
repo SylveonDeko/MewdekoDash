@@ -1,12 +1,11 @@
 <!-- routes/dashboard/rolegreets/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { roleGreetApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
-    import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -72,7 +71,7 @@
   // Fetch bot status
   async function fetchBotStatus() {
     try {
-      botStatus = await api.getBotStatus();
+      botStatus = await botStatusApi.getBotStatus();
     } catch (err) {
       logger.error("Failed to fetch bot status:", err);
     }
@@ -100,7 +99,7 @@
         throw new Error("No guild selected");
       }
 
-      roleGreets = await api.getAllRoleGreets($currentGuild.id);
+      roleGreets = await roleGreetApi.getAllRoleGreets($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch role greets:", err);
       error = err instanceof Error ? err.message : "Failed to fetch role greets";
@@ -115,7 +114,7 @@
         throw new Error("No guild selected");
       }
 
-      guildRoles = await api.getGuildRoles($currentGuild.id);
+      guildRoles = await clientApi.getRoles($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
     }
@@ -127,7 +126,7 @@
         throw new Error("No guild selected");
       }
 
-      guildChannels = await api.getGuildTextChannels($currentGuild.id);
+      guildChannels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild channels:", err);
     }
@@ -139,7 +138,7 @@
       if (!selectedRoleId) throw new Error("Please select a role");
       if (!selectedChannelId) throw new Error("Please select a channel");
 
-      await api.addRoleGreet($currentGuild.id, BigInt(selectedRoleId), BigInt(selectedChannelId));
+      await roleGreetApi.addRoleGreet($currentGuild.id, BigInt(selectedRoleId), BigInt(selectedChannelId));
 
       showNotificationMessage("Role greet added successfully", "success");
       selectedRoleId = "";
@@ -155,7 +154,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.updateRoleGreetMessage($currentGuild.id, greetId, message);
+      await roleGreetApi.updateRoleGreetMessage($currentGuild.id, greetId, message);
       showNotificationMessage("Message updated successfully", "success");
       editingGreetId = null;
       await fetchRoleGreets();
@@ -169,7 +168,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.updateRoleGreetDeleteTime($currentGuild.id, greetId, seconds);
+      await roleGreetApi.updateRoleGreetDeleteTime($currentGuild.id, greetId, seconds);
       showNotificationMessage("Delete time updated successfully", "success");
       editingGreetId = null;
       await fetchRoleGreets();
@@ -183,7 +182,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.updateRoleGreetWebhook($currentGuild.id, greetId, webhookUrl);
+      await roleGreetApi.updateRoleGreetWebhook($currentGuild.id, greetId, webhookUrl);
       showNotificationMessage("Webhook updated successfully", "success");
       editingGreetId = null;
       await fetchRoleGreets();
@@ -197,7 +196,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.updateRoleGreetBots($currentGuild.id, greetId, enabled);
+      await roleGreetApi.updateRoleGreetBots($currentGuild.id, greetId, enabled);
       showNotificationMessage("Bot greeting setting updated", "success");
       await fetchRoleGreets();
     } catch (err) {
@@ -275,7 +274,7 @@
     }
 
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             Promise.all([
                 fetchRoleGreets(),
@@ -297,7 +296,7 @@
     --color-accent-rgb: ${hexToRgb($colorStore.accent)};
   `);
   // Reactive declarations for guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchRoleGreets();
             fetchGuildRoles();
@@ -305,7 +304,7 @@
         }
     });
   // Reactive declarations for instance changes
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             fetchRoleGreets();
             fetchGuildRoles();

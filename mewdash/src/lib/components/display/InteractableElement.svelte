@@ -1,9 +1,6 @@
 <!-- lib/util/InteractableElement.svelte -->
 <script lang="ts">
-    import {createBubbler} from 'svelte/legacy';
     import {colorStore} from "$lib/stores/colorStore.ts";
-
-    const bubble = createBubbler();
 
     interface Props {
     title: string;
@@ -25,9 +22,7 @@
 </script>
 
 <section
-        class="group w-full h-max m-6 pt-6 pb-8 max-w-136 grid grid-cols-1 justify-center rounded-2xl backdrop-blur-xs hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 cursor-pointer transform transition-all duration-500 ease-out hover:scale-105"
-  onmouseenter={bubble('mouseenter')}
-  onmouseleave={bubble('mouseleave')}
+  class="group w-full h-max m-6 pt-6 pb-8 max-w-136 grid grid-cols-1 justify-center rounded-2xl backdrop-blur-xs hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 cursor-pointer transform transition-all duration-500 ease-out hover:scale-[1.02]"
   role="article"
   style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
          border: 1px solid {$colorStore.primary}30;
@@ -35,7 +30,7 @@
 >
   {#if title}
     <h2
-      class="pt-2 px-6 text-center font-bold text-[22px] group-hover:text-shadow-lg transition-all duration-300 group-hover:scale-105"
+      class="pt-2 px-6 text-center font-bold text-[22px] group-hover:text-shadow-lg transition-all duration-300 group-hover:scale-[1.02]"
       style="color: {$colorStore.text}"
     >
       {title}
@@ -50,7 +45,7 @@
     </p>
   {/if}
   {#if children}
-    <div class="pt-10 px-10 flex justify-center group-hover:scale-105 transition-transform duration-500">
+    <div class="pt-10 px-10 flex justify-center group-hover:scale-[1.02] transition-transform duration-500">
       <div class="w-full h-max overflow-hidden rounded-xl">
         {@render children?.()}
       </div>

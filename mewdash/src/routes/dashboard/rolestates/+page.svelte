@@ -1,12 +1,11 @@
 <!-- routes/dashboard/rolestates/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { roleStatesApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
-    import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -100,7 +99,7 @@
   // Fetch bot status
   async function fetchBotStatus() {
     try {
-      botStatus = await api.getBotStatus();
+      botStatus = await botStatusApi.getBotStatus();
     } catch (err) {
       logger.error("Failed to fetch bot status:", err);
     }
@@ -129,7 +128,7 @@
           throw new Error("No guild selected");
         }
 
-        roleStateSettings = await api.getRoleStateSettings($currentGuild.id);
+        roleStateSettings = await roleStatesApi.getRoleStateSettings($currentGuild.id);
       if (!roleStateSettings) {
         roleStateSettings = {
           guildId: $currentGuild.id.toString(),
@@ -174,7 +173,7 @@
         throw new Error("No guild selected");
       }
 
-      roleStates = await api.getAllRoleStates($currentGuild.id);
+      roleStates = await roleStatesApi.getAllRoleStates($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch role states:", err);
       errorStates = err instanceof Error ? err.message : "Failed to fetch role states";
@@ -189,7 +188,7 @@
         throw new Error("No guild selected");
       }
 
-      guildRoles = await api.getGuildRoles($currentGuild.id);
+      guildRoles = await clientApi.getRoles($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
     }
@@ -201,7 +200,7 @@
         throw new Error("No guild selected");
       }
 
-      guildMembers = await api.getGuildMembers($currentGuild.id);
+      guildMembers = await clientApi.getMembers($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild members:", err);
     }
@@ -211,7 +210,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.toggleRoleStates($currentGuild.id);
+      const result = await roleStatesApi.toggleRoleStates($currentGuild.id);
       showNotificationMessage(`Role states ${result ? "enabled" : "disabled"}`, "success");
       await fetchRoleStateSettings();
     } catch (err) {
@@ -225,7 +224,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!roleStateSettings) throw new Error("Settings not loaded");
 
-      const result = await api.toggleClearOnBan($currentGuild.id, roleStateSettings);
+      const result = await roleStatesApi.toggleClearOnBan($currentGuild.id, roleStateSettings);
       showNotificationMessage(`Clear on ban ${result ? "enabled" : "disabled"}`, "success");
       await fetchRoleStateSettings();
     } catch (err) {
@@ -239,7 +238,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!roleStateSettings) throw new Error("Settings not loaded");
 
-      const result = await api.toggleIgnoreBots($currentGuild.id, roleStateSettings);
+      const result = await roleStatesApi.toggleIgnoreBots($currentGuild.id, roleStateSettings);
       showNotificationMessage(`Ignore bots ${result ? "enabled" : "disabled"}`, "success");
       await fetchRoleStateSettings();
     } catch (err) {
@@ -253,7 +252,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!userId) throw new Error("No user selected");
 
-      const roleState = await api.getUserRoleState($currentGuild.id, BigInt(userId));
+      const roleState = await roleStatesApi.getUserRoleState($currentGuild.id, BigInt(userId));
       viewingUserId = userId;
 
       // Parse saved roles
@@ -274,7 +273,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!userId) throw new Error("No user selected");
 
-      await api.deleteUserRoleState($currentGuild.id, BigInt(userId));
+      await roleStatesApi.deleteUserRoleState($currentGuild.id, BigInt(userId));
       showNotificationMessage("User role state deleted successfully", "success");
       await fetchRoleStates();
       viewingUserId = null;
@@ -290,7 +289,7 @@
       if (!selectedUserId) throw new Error("No user selected");
       if (selectedRoleIds.length === 0) throw new Error("No roles selected");
 
-      await api.addRolesToUser($currentGuild.id, BigInt(selectedUserId), selectedRoleIds.map(id => BigInt(id)));
+      await roleStatesApi.addRolesToUser($currentGuild.id, BigInt(selectedUserId), selectedRoleIds.map(id => BigInt(id)));
       showNotificationMessage("Roles added to user successfully", "success");
       selectedRoleIds = [];
       await fetchRoleStates();
@@ -309,7 +308,7 @@
       if (!selectedUserId) throw new Error("No user selected");
       if (selectedRoleIds.length === 0) throw new Error("No roles selected");
 
-      await api.removeRolesFromUser($currentGuild.id, BigInt(selectedUserId), selectedRoleIds.map(id => BigInt(id)));
+      await roleStatesApi.removeRolesFromUser($currentGuild.id, BigInt(selectedUserId), selectedRoleIds.map(id => BigInt(id)));
       showNotificationMessage("Roles removed from user successfully", "success");
       selectedRoleIds = [];
       await fetchRoleStates();
@@ -328,7 +327,7 @@
       if (!sourceUserId) throw new Error("No source user selected");
       if (!targetUserId) throw new Error("No target user selected");
 
-      await api.applyRoleState($currentGuild.id, BigInt(sourceUserId), BigInt(targetUserId));
+      await roleStatesApi.applyRoleState($currentGuild.id, BigInt(sourceUserId), BigInt(targetUserId));
       showNotificationMessage("Role state applied successfully", "success");
       sourceUserId = "";
       targetUserId = "";
@@ -355,7 +354,7 @@
       roleStateSettings.deniedRoles = deniedRolesList.join(",");
 
       // Update settings
-      await api.updateRoleStateSettings($currentGuild.id, roleStateSettings);
+      await roleStatesApi.updateRoleStateSettings($currentGuild.id, roleStateSettings);
       showNotificationMessage("Role added to deny list", "success");
       selectedDeniedRoleId = "";
     } catch (err) {
@@ -374,7 +373,7 @@
       roleStateSettings.deniedRoles = deniedRolesList.join(",");
 
       // Update settings
-      await api.updateRoleStateSettings($currentGuild.id, roleStateSettings);
+      await roleStatesApi.updateRoleStateSettings($currentGuild.id, roleStateSettings);
       showNotificationMessage("Role removed from deny list", "success");
     } catch (err) {
       logger.error("Failed to remove denied role:", err);
@@ -399,7 +398,7 @@
       roleStateSettings.deniedUsers = deniedUsersList.join(",");
 
       // Update settings
-      await api.updateRoleStateSettings($currentGuild.id, roleStateSettings);
+      await roleStatesApi.updateRoleStateSettings($currentGuild.id, roleStateSettings);
       showNotificationMessage("User added to deny list", "success");
       selectedDeniedUserId = "";
     } catch (err) {
@@ -418,7 +417,7 @@
       roleStateSettings.deniedUsers = deniedUsersList.join(",");
 
       // Update settings
-      await api.updateRoleStateSettings($currentGuild.id, roleStateSettings);
+      await roleStatesApi.updateRoleStateSettings($currentGuild.id, roleStateSettings);
       showNotificationMessage("User removed from deny list", "success");
     } catch (err) {
       logger.error("Failed to remove denied user:", err);
@@ -431,7 +430,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
       savingAllStates = true;
-      const result = await api.saveAllUserRoleStates($currentGuild.id);
+      const result = await roleStatesApi.saveAllUserRoleStates($currentGuild.id);
       showNotificationMessage(`Saved role states for ${result.savedCount} users`, "success");
       await fetchRoleStates();
     } catch (err) {
@@ -484,7 +483,7 @@
   });
 
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             Promise.all([
                 fetchRoleStateSettings(),
@@ -496,7 +495,7 @@
         }
     });
   // Reactive declarations for guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchRoleStateSettings();
             fetchRoleStates();
@@ -505,7 +504,7 @@
         }
     });
   // Reactive declarations for instance changes
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             fetchRoleStateSettings();
             fetchRoleStates();
@@ -924,7 +923,7 @@
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
-    :global(.input-field:focus) {
+    :global(.input-field):focus {
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
     }
 

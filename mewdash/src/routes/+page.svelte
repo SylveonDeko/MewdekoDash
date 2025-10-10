@@ -674,7 +674,7 @@
             <!-- CTA -->
             <div class="flex-shrink-0">
               <a href="/dashboard"
-                 class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105"
+                 class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02]"
                  style="background: {$colorStore.primary}; color: {$colorStore.text}; box-shadow: 0 4px 20px {$colorStore.primary}30;">
                 Try Now
                 <span>→</span>
@@ -820,7 +820,7 @@
         <div class="max-w-6xl mx-auto text-center">
           <button
                   onclick={() => showAllFeatures = !showAllFeatures}
-            class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 mb-8"
+                  class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] mb-8"
             style="background: {$colorStore.accent}15; color: {$colorStore.accent}; border: 2px solid {$colorStore.accent}30;">
             {showAllFeatures ? 'Hide' : 'Show All'} 25+ Additional Features
             <span class="transform transition-transform {showAllFeatures ? 'rotate-180' : ''}">↓</span>
@@ -896,8 +896,8 @@
               </div>
               
               <div class="text-center mt-8">
-                <a href="/commands" 
-                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
+                <a href="/commands"
+                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
                    style="background: {$colorStore.secondary}; color: {$colorStore.text}; box-shadow: 0 8px 32px {$colorStore.secondary}40;">
                   View Complete Feature List
                 </a>
@@ -922,7 +922,7 @@
             </p>
             <a href="https://discord.gg/Z9DYApMXFN"
                target="_blank"
-               class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
+               class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
                style="background: {$colorStore.primary}; color: {$colorStore.text}; box-shadow: 0 8px 32px {$colorStore.primary}40;">
               Join Our Discord Community
             </a>

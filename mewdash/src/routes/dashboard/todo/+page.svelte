@@ -1,31 +1,29 @@
 <!-- routes/dashboard/todo/+page.svelte -->
 <script lang="ts">
-    import {createBubbler, run, stopPropagation} from 'svelte/legacy';
-    import {onMount} from "svelte";
+
+  import { onMount } from "svelte";
     import {fly, scale} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {userStore} from "$lib/stores/userStore";
-    import {api} from "$lib/api";
+  import {
+    todoApi,
+    type AddTodoItemRequest,
+    type CreateTodoListRequest,
+    type TodoFilterOptions,
+    type TodoItem,
+    type TodoList,
+    type TodoStats,
+    type UserPermissions
+  } from "$lib/api/index.ts";
 
     import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
     import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
-    import type {
-        AddTodoItemRequest,
-        CreateTodoListRequest,
-        TodoFilterOptions,
-        TodoItem,
-        TodoList,
-        TodoStats,
-        UserPermissions
-    } from "$lib/types/todo";
 
-    const bubble = createBubbler();
-
-    let {data} = $props();
+  let { data } = $props();
 
   // State
     let todoLists: TodoList[] = $state([]);
@@ -121,8 +119,8 @@
     try {
       loading = true;
       error = null;
-      
-      const lists = await api.getTodoLists($currentGuild.id, BigInt($userStore.id));
+
+      const lists = await todoApi.getTodoLists($currentGuild.id, BigInt($userStore.id));
       
       // Filter to only server lists as per requirements
       todoLists = lists.filter(list => list.isServerList);
@@ -149,7 +147,7 @@
 
     try {
       const [items, permissions] = await Promise.all([
-        api.getTodoItems($currentGuild.id, selectedListId, BigInt($userStore.id), includeCompleted),
+        todoApi.getTodoItems($currentGuild.id, selectedListId, BigInt($userStore.id), includeCompleted),
         checkPermissions(selectedListId)
       ]);
       
@@ -202,7 +200,7 @@
       }
 
       // Check explicit permissions
-      const permissions = await api.getTodoListPermissions($currentGuild.id, listId, BigInt($userStore.id));
+      const permissions = await todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($userStore.id));
       const userPermission = permissions.find(p => p.userId.toString() === $userStore.id);
       
       if (userPermission) {
@@ -287,7 +285,7 @@
         isServerList: true // Only create server lists
       };
 
-      await api.createTodoList($currentGuild.id, request);
+      await todoApi.createTodoList($currentGuild.id, request);
 
       // Reset form and reload lists
       newListName = "";
@@ -310,7 +308,7 @@
         userId: BigInt($userStore.id)
       };
 
-      await api.addTodoItem($currentGuild.id, detail.listId, request);
+      await todoApi.addTodoItem($currentGuild.id, detail.listId, request);
       
       // Reload items if this is the selected list
       if (detail.listId === selectedListId) {
@@ -327,7 +325,7 @@
     if (!$currentGuild?.id || !$userStore?.id) return;
 
     try {
-      await api.completeTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
+      await todoApi.completeTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
       await loadTodoItems();
     } catch (err) {
       console.error("Failed to complete todo item:", err);
@@ -339,7 +337,7 @@
     if (!$currentGuild?.id || !$userStore?.id) return;
 
     try {
-      await api.deleteTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
+      await todoApi.deleteTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
       await loadTodoItems();
     } catch (err) {
       console.error("Failed to delete todo item:", err);
@@ -364,13 +362,13 @@
     loadTodoLists();
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadTodoLists();
         }
     });
 
-    run(() => {
+  $effect(() => {
         if (selectedListId) {
             loadTodoItems();
         }
@@ -436,7 +434,7 @@
            in:fly={{ y: -20, duration: 300 }}>
         <div class="flex flex-wrap items-center gap-4">
           <span id="input-typecheckbox-bindcheckedincludecompleted-cla-label"
-                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-105"
+                class="flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all hover:scale-[1.02]"
                  style="background: {includeCompleted ? $colorStore.primary + '20' : 'transparent'};">
               <input type="checkbox" bind:checked={includeCompleted} class="rounded-sm w-5 h-5">
             <span style="color: {$colorStore.text}" class="font-medium">Show completed items</span>
@@ -477,7 +475,7 @@
     {#if loading}
       <!-- Beautiful Loading State -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {#each Array(6).fill(0) as _, index}
+        {#each Array(6).fill(0) as _, index (index)}
           <div class="p-6 rounded-2xl animate-pulse" 
                style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.secondary}08);"
                in:scale={{ duration: 300, delay: index * 100 }}>
@@ -506,12 +504,12 @@
         </p>
         {#if !searchQuery}
           <button
-            class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg"
+            class="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg"
             style="color: {$colorStore.text};"
             onclick={() => showNewListModal = true}
           >
             <div class="p-2 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
-              <Plus size={20} />
+              <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
             </div>
             <span>Create Your First List</span>
           </button>
@@ -520,7 +518,7 @@
     {:else}
       <!-- Beautiful Grid Layout -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {#each filteredLists as list, index}
+        {#each filteredLists as list, index (list.id)}
           {@const listStats = list.id === selectedListId ? currentStats : { totalItems: 0, completedItems: 0, pendingItems: 0, overdueItems: 0, completionRate: 0 }}
           {@const listPermissions = list.id === selectedListId ? currentPermissions : { canView: true, canAdd: false, canEdit: false, canComplete: false, canDelete: false, canManage: false }}
           
@@ -561,7 +559,7 @@
                     <button aria-label="Permissions"
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
-                      onclick={stopPropagation(() => handleShowPermissions({ detail: { listId: list.id } }))}
+                            onclick={(e) => { e.stopPropagation(); handleShowPermissions({ detail: { listId: list.id } }); }}
                       title="Manage permissions"
                     >
                       <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
@@ -572,7 +570,7 @@
                     <button aria-label="Button action"
                       class="p-3 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style="background: linear-gradient(135deg, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}20); color: {$colorStore.secondary};"
-                      onclick={stopPropagation(bubble('click'))}
+                            onclick={(e) => e.stopPropagation()}
                       title="List settings"
                     >
                       <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
@@ -669,7 +667,7 @@
             
             {#if currentPermissions.canAdd}
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 min-h-[44px]"
+                class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                 onclick={() => showQuickAdd = !showQuickAdd}
               >
@@ -717,7 +715,7 @@
                   
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button
-                      class="w-full sm:flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                      class="w-full sm:flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
                       style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
                       onclick={async () => {
                         if (newItemTitle.trim() && selectedListId) {
@@ -744,7 +742,7 @@
                       <span>Add Item</span>
                     </button>
                     <button
-                      class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 font-medium flex items-center justify-center"
+                      class="w-full sm:w-auto px-6 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] font-medium flex items-center justify-center"
                       style="color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => showQuickAdd = false}
                     >
@@ -774,7 +772,7 @@
                 </p>
               </div>
             {:else}
-              {#each filteredItems as item, index}
+              {#each filteredItems as item, index (item.id)}
                 <div class="p-4 rounded-xl transition-all hover:scale-[1.01]" 
                      class:opacity-60={item.isCompleted}
                      style="background: linear-gradient(135deg, {$colorStore.primary}05, {$colorStore.secondary}05);"
@@ -894,9 +892,9 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md"
-           onclick={stopPropagation(bubble('click'))}
+           onclick={(e) => e.stopPropagation()}
            in:fly={{ y: 20, duration: 300, delay: 100 }} role="button" tabindex="0"
-           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
+           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
         <div class="p-6">
           <div class="flex items-center gap-3 mb-6">
             <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
@@ -937,7 +935,7 @@
 
             <div class="flex flex-col sm:flex-row gap-3 pt-4">
               <button
-                class="w-full sm:flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 flex items-center justify-center min-h-[44px]"
+                class="w-full sm:flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center min-h-[44px]"
                 style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
                 onclick={handleCreateList}
                 disabled={!newListName.trim()}
@@ -945,7 +943,7 @@
                 Create List
               </button>
               <button
-                class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all hover:scale-105 flex items-center justify-center min-h-[44px]"
+                class="w-full sm:w-auto px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center min-h-[44px]"
                 style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                 onclick={() => showNewListModal = false}
               >

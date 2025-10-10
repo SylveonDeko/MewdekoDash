@@ -1,16 +1,15 @@
 <!-- lib/components/StatCard.svelte -->
 <script lang="ts">
-  import { run } from 'svelte/legacy';
 
-  import type { ComponentType } from "svelte";
+
   import { onMount } from "svelte";
   import { fade, slide } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
-  
+
   interface Props {
     // Props
-    icon: ComponentType | string;
+    icon: string;
     label: string;
     value: string | number;
     subtitle?: string;
@@ -38,9 +37,6 @@
     tooltipData = [],
     clickable = false
   }: Props = $props();
-
-  // Check if icon is a string (Font Awesome) or component (Lucide)
-  let isFontAwesome = $derived(typeof icon === 'string');
 
   // State
   let animatedValue: number = $state(0);
@@ -100,7 +96,7 @@
   });
 
   // React to value changes after mount
-  run(() => {
+  $effect(() => {
     if (mounted && typeof value === "number" && !isNaN(value)) {
       animateValue(value as number);
     }
@@ -124,8 +120,6 @@
     if (trend === "down") return "fa-arrow-trend-down";
     return "fa-arrow-right";
   }
-
-  const SvelteComponent = $derived(!isFontAwesome ? icon : null);
 </script>
 
 <div

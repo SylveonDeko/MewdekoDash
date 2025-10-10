@@ -1,6 +1,5 @@
 <!-- EmbedEditor.svelte -->
 <script lang="ts">
-    import {createEventDispatcher} from 'svelte';
     import {colorStore} from "$lib/stores/colorStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
@@ -12,17 +11,12 @@
     embed: any;
     index?: number;
     placeholders?: any[];
+      onupdate?: (detail: { embed: any; index: number }) => void;
+      onremove?: (detail: { index: number }) => void;
+      onduplicate?: (detail: { index: number }) => void;
   }
 
-  let { embed = $bindable(), index = 0, placeholders = [] }: Props = $props();
-
-  // Events
-  const dispatch = createEventDispatcher<{
-    update: { embed: any; index: number };
-    remove: { index: number };
-    duplicate: { index: number };
-    showPlaceholders: { element: HTMLInputElement | HTMLTextAreaElement; field: string };
-  }>();
+    let { embed = $bindable(), index = 0, placeholders = [], onupdate, onremove, onduplicate }: Props = $props();
 
   // Internal state
   let activeTab = $state('content');
@@ -69,7 +63,7 @@
     }
     
     embed = updatedEmbed;
-    dispatch('update', { embed: updatedEmbed, index });
+    onupdate?.({ embed: updatedEmbed, index });
   }
 
   // Field management
@@ -80,30 +74,30 @@
       inline: false,
       id: fieldIdCounter++
     };
-    
+
     const updatedEmbed = { ...embed };
     if (!updatedEmbed.fields) updatedEmbed.fields = [];
     updatedEmbed.fields = [...updatedEmbed.fields, newField];
-    
+
     embed = updatedEmbed;
-    dispatch('update', { embed: updatedEmbed, index });
+    onupdate?.({ embed: updatedEmbed, index });
   }
 
   function removeField(fieldIndex: number) {
     const updatedEmbed = { ...embed };
     updatedEmbed.fields = updatedEmbed.fields.filter((_: any, i: number) => i !== fieldIndex);
-    
+
     embed = updatedEmbed;
-    dispatch('update', { embed: updatedEmbed, index });
+    onupdate?.({ embed: updatedEmbed, index });
   }
 
   function updateField(fieldIndex: number, field: string, value: any) {
     const updatedEmbed = { ...embed };
     if (!updatedEmbed.fields[fieldIndex]) return;
-    
+
     updatedEmbed.fields[fieldIndex][field] = value;
     embed = updatedEmbed;
-    dispatch('update', { embed: updatedEmbed, index });
+    onupdate?.({ embed: updatedEmbed, index });
   }
 
   // Input handlers with placeholder support
@@ -189,19 +183,19 @@
     
     <div class="flex items-center gap-2">
       <button
-        class="p-2 rounded-lg transition-all duration-200 hover:scale-105"
+        class="p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-        onclick={() => dispatch('duplicate', { index })}
+        onclick={() => onduplicate?.({ index })}
         title="Duplicate embed"
         aria-label="Duplicate embed"
       >
         <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
       </button>
-      
+
       <button
-        class="p-2 rounded-lg transition-all duration-200 hover:scale-105"
+        class="p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: #ED424515; color: #ED4245;"
-        onclick={() => dispatch('remove', { index })}
+        onclick={() => onremove?.({ index })}
         title="Remove embed"
         aria-label="Remove embed"
       >

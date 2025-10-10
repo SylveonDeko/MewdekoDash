@@ -908,7 +908,7 @@
 
           {#if panels.layers.open}
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
-              {#each elements as element}
+              {#each elements as element (element.id)}
                 <div
                   class="p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
                   class:opacity-50={!element.visible}
@@ -950,7 +950,7 @@
           {#if panels.layers.open}
             <div class="grid grid-cols-2 gap-2">
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-1"
                 style="background: {showGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
                    color: {showGrid ? $colorStore.primary : $colorStore.muted};"
                 onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
@@ -959,7 +959,7 @@
                 <span class="text-xs">Grid</span>
               </button>
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-1"
                 style="background: {snapToGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};
                    color: {snapToGrid ? $colorStore.primary : $colorStore.muted};"
                 onclick={() => { snapToGrid = !snapToGrid; }}
@@ -968,7 +968,7 @@
                 <span class="text-xs">Snap</span>
               </button>
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-1"
                 style="background: {showRulers ? $colorStore.primary + '20' : $colorStore.primary + '10'};
                    color: {showRulers ? $colorStore.primary : $colorStore.muted};"
                 onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
@@ -977,7 +977,7 @@
                 <span class="text-xs">Rulers</span>
               </button>
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center gap-1"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-1"
                 style="background: {lockProportions ? $colorStore.primary + '20' : $colorStore.primary + '10'};
                    color: {lockProportions ? $colorStore.primary : $colorStore.muted};"
                 onclick={() => { lockProportions = !lockProportions; }}
@@ -993,7 +993,7 @@
 
             <div class="flex gap-2">
               <button aria-label="Undo"
-                      class="flex-1 p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center"
+                      class="flex-1 p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center"
                       style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                       onclick={undo}
                       disabled={undoStack.length === 0}
@@ -1001,7 +1001,7 @@
                 <i class="fa-solid fa-rotate-left" style="font-size: 16px;"></i>
               </button>
               <button aria-label="Redo"
-                      class="flex-1 p-2 rounded-lg transition-all hover:scale-105 flex items-center justify-center"
+                      class="flex-1 p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center"
                       style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
                       onclick={redo}
                       disabled={redoStack.length === 0}
@@ -1012,7 +1012,7 @@
           {:else}
             <div class="flex flex-col gap-2">
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                 style="background: {showGrid ? $colorStore.primary + '20' : $colorStore.primary + '10'};"
                 onclick={() => { showGrid = !showGrid; redrawCanvas(); }}
                 aria-label={showGrid ? "Hide grid" : "Show grid"}
@@ -1021,7 +1021,7 @@
                    style="color: {showGrid ? $colorStore.primary : $colorStore.muted}; font-size: 16px;"></i>
               </button>
               <button
-                class="p-2 rounded-lg transition-all hover:scale-105"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                 style="background: {showRulers ? $colorStore.primary + '20' : $colorStore.primary + '10'};"
                 onclick={() => { showRulers = !showRulers; redrawCanvas(); }}
                 aria-label={showRulers ? "Hide rulers" : "Show rulers"}
@@ -1072,7 +1072,7 @@
             <div class="flex items-center gap-1">
               <button
                 aria-label="Zoom out"
-                class="p-2 rounded-lg transition-all hover:scale-105"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                 onclick={() => { zoom = Math.max(0.1, zoom - 0.1); redrawCanvas(); }}
                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
               >
@@ -1088,7 +1088,7 @@
               </button>
               <button
                 aria-label="Zoom in"
-                class="p-2 rounded-lg transition-all hover:scale-105"
+                class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                 onclick={() => { zoom = Math.min(5, zoom + 0.1); redrawCanvas(); }}
                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
               >
@@ -1100,7 +1100,7 @@
 
             <!-- Data Toggle -->
             <button
-              class="px-3 py-1 rounded-lg text-sm font-medium transition-all hover:scale-105"
+              class="px-3 py-1 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
               onclick={() => { useRealData = !useRealData; redrawCanvas(); }}
               style="background: {useRealData ? $colorStore.secondary + '20' : $colorStore.primary + '10'};
                  color: {useRealData ? $colorStore.secondary : $colorStore.muted};"
@@ -1119,13 +1119,13 @@
 
             <!-- Action Buttons -->
             <button aria-label="Download"
-                    class="p-2 rounded-lg transition-all hover:scale-105"
+                    class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
             >
               <i class="fa-solid fa-download" style="font-size: 16px;"></i>
             </button>
             <button aria-label="Upload"
-                    class="p-2 rounded-lg transition-all hover:scale-105"
+                    class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
             >
               <i class="fa-solid fa-upload" style="font-size: 16px;"></i>
@@ -1135,7 +1135,7 @@
 
             <!-- Close Button -->
             <button aria-label="Close editor"
-                    class="p-2 rounded-lg transition-all hover:scale-105"
+                    class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                     onclick={() => { showEditor = false; }}
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     title="Close Editor (Esc)"

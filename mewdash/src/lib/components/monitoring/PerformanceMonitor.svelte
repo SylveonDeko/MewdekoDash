@@ -1,7 +1,7 @@
 <!-- lib/components/PerformanceMonitor.svelte -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api.ts";
+  import { performanceApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger.ts";
   import { formatDistanceToNow } from "date-fns";
   import { colorStore } from "$lib/stores/colorStore";
@@ -32,7 +32,7 @@
     try {
       refreshInProgress = true;
       error = null;
-      const response = await api.getPerformanceData(userId);
+      const response = await performanceApi.getPerformanceData(userId);
       performanceData = Array.isArray(response) ? response : [];
     } catch (err) {
       logger.error("Error fetching performance data:", err);
@@ -48,7 +48,7 @@
     if (!userId) return;
 
     try {
-      await api.clearPerformanceData(userId);
+      await performanceApi.clearPerformanceData(userId);
       await fetchPerformanceData();
     } catch (err) {
       logger.error("Error clearing performance data:", err);
@@ -108,7 +108,7 @@
       </div>
       <div class="flex gap-3">
         <button aria-label="Navigate"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
           disabled={refreshInProgress}
           onclick={fetchPerformanceData}
@@ -119,7 +119,7 @@
           {refreshInProgress ? 'Refreshing...' : 'Refresh'}
         </button>
         <button
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
           disabled={refreshInProgress}
           onclick={clearPerformanceData}

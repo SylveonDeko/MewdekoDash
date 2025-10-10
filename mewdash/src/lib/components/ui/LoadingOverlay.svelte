@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
+
+  import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {loadingMessage, loadingStore, showSpinner} from "$lib/stores/loadingStore";
     import {fly} from "svelte/transition";
@@ -18,7 +18,7 @@
     : 0);
 
   // Smooth progress animation
-  run(() => {
+  $effect(() => {
     if (hasProgress && mounted) {
       const targetProgress = maxProgress;
       const step = () => {
@@ -66,8 +66,8 @@
 
     <!-- More prominent loading indicator -->
     <div class="absolute top-6 right-6 pointer-events-auto">
-      <div 
-        class="flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-md border shadow-2xl transform hover:scale-105 transition-transform"
+      <div
+        class="flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-md border shadow-2xl transform hover:scale-[1.02] transition-transform"
         style="
           background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95));
           border-color: {$colorStore.primary}50;

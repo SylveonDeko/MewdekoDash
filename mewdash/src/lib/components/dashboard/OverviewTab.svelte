@@ -232,7 +232,7 @@
 
       <div class="space-y-4">
         <button aria-label="Button action"
-          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-105"
+                class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
           disabled={refreshing}
           onclick={onRefresh}
           style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -243,7 +243,7 @@
         </button>
 
         <a
-          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-105"
+          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
           href="/dashboard/music"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
         >
@@ -253,7 +253,7 @@
         </a>
 
         <a
-          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-105"
+          class="w-full flex items-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.02]"
           href="/dashboard/moderation"
           style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
         >

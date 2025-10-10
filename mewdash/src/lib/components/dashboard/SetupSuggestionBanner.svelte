@@ -4,7 +4,6 @@ Setup suggestion banner for experienced users with unconfigured guilds
 -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
-  import { createEventDispatcher } from "svelte";
   import { slide } from "svelte/transition";
   import type { DiscordGuild } from "$lib/types/discordGuild";
 
@@ -17,21 +16,18 @@ Setup suggestion banner for experienced users with unconfigured guilds
     guildHasBasicSetup: boolean;
   };
     visible?: boolean;
+    ondismiss?: () => void;
+    onstartSetup?: () => void;
   }
 
-  let { guild, context, visible = true }: Props = $props();
-
-  const dispatch = createEventDispatcher<{
-    dismiss: void;
-    startSetup: void;
-  }>();
+  let { guild, context, visible = true, ondismiss, onstartSetup }: Props = $props();
 
   function handleDismiss() {
-    dispatch('dismiss');
+    ondismiss?.();
   }
 
   function handleStartSetup() {
-    dispatch('startSetup');
+    onstartSetup?.();
   }
 
   // Estimated setup time based on experience level
@@ -94,7 +90,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
         <!-- Actions -->
         <div class="flex items-center gap-3 flex-wrap">
           <button
-            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2 text-sm min-h-[36px]"
+            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-sm min-h-[36px]"
             style="background: {$colorStore.secondary}; color: white;"
             onclick={handleStartSetup}
           >
@@ -103,7 +99,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
           </button>
           
           <button
-            class="px-3 py-2 rounded-lg font-medium transition-all hover:scale-105 text-sm min-h-[36px]"
+            class="px-3 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] text-sm min-h-[36px]"
             style="background: {$colorStore.muted}15; color: {$colorStore.muted};"
             onclick={handleDismiss}
           >

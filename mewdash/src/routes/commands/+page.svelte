@@ -1,8 +1,8 @@
 <!-- routes/commands/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {createSearchStore, searchHandler} from "$lib/stores/commandSearch";
+
+  import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
     import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
@@ -24,7 +24,7 @@
   // Reactive variables for tab functionality
     let filteredModules = $derived(searchValue.trim() ? $searchStore.filtered : data.modules);
     let activeModule = $derived(filteredModules[activeTabIndex] || filteredModules[0]);
-    run(() => {
+  $effect(() => {
     // Update search result count
     if (searchValue.trim()) {
       searchResultCount = filteredModules.reduce((count, module) => {
@@ -38,14 +38,14 @@
     });
 
   // Update search store when search value changes
-    run(() => {
+  $effect(() => {
         if (searchValue !== $searchStore.search) {
             searchStore.update(store => ({...store, search: searchValue}));
         }
     });
 
   // Reset active tab when search changes
-    run(() => {
+  $effect(() => {
         if (searchValue.trim()) {
             activeTabIndex = 0;
         }
@@ -237,21 +237,21 @@
               <p>Try searching for:</p>
               <div class="flex flex-wrap gap-2 justify-center">
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-105"
+                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'music'}
                 >
                   music
                 </button>
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-105"
+                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'moderation'}
                 >
                   moderation
                 </button>
                 <button
-                  class="px-3 py-1 rounded-full transition-all hover:scale-105"
+                  class="px-3 py-1 rounded-full transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;"
                   onclick={() => searchValue = 'fun'}
                 >
@@ -483,47 +483,7 @@
 </main>
 
 <style lang="postcss">
-  @reference '../../app.css';
-
-    :global(body) {
-        color: var(--color-text);
-        background: var(--color-primary);
-    }
-
-    /* Scrollbar styling */
-    :global(.scrollbar-thin) {
-        scrollbar-width: thin;
-    }
-
-    :global(.scrollbar-track-transparent) {
-        scrollbar-color: transparent transparent;
-    }
-
-    :global(.scrollbar-thumb-white\/20) {
-        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    }
-
-    :global(*::-webkit-scrollbar) {
-      height: 0.5rem;
-      width: 0.5rem;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: transparent;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary);
-        opacity: 0.2;
-      border-radius: 9999px;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary);
-        opacity: 0.3;
-    }
-
-    /* Tab focus indicators */
+    @reference '../../app.css'; /* Tab focus indicators */
     .tab-button:focus {
         outline: 2px solid var(--color-primary);
         outline-offset: 2px;
@@ -548,7 +508,7 @@
     }
 
     /* Improved prose styling for dynamic theme */
-    :global(.prose code) {
+    :global(.prose) code {
         background: var(--color-primary, rgba(255, 255, 255, 0.1));
         color: var(--color-text);
         opacity: 0.9;
@@ -556,7 +516,7 @@
       border-radius: 0.25rem;
     }
 
-    :global(.prose strong) {
+    :global(.prose) strong {
         color: var(--color-text);
         font-weight: 600;
     }

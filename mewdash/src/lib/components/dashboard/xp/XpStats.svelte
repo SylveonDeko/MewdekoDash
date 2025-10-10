@@ -106,7 +106,7 @@
 
     {#if serverStats.recentActivity && serverStats.recentActivity.length > 0}
       <ul class="space-y-3">
-        {#each serverStats.recentActivity as activity}
+        {#each serverStats.recentActivity as activity (activity.userId || activity.timestamp)}
           <li class="flex items-center gap-3 p-3 rounded-lg" style="background: {$colorStore.primary}10;">
             <img
               src={activity.avatarUrl}

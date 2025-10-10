@@ -1,9 +1,13 @@
 <!-- lib/IntervalPicker.svelte -->
 <script lang="ts">
-    import {createEventDispatcher, onDestroy, onMount} from "svelte";
+  import { onDestroy, onMount } from "svelte";
     import {fade} from "svelte/transition";
 
-    const dispatch = createEventDispatcher();
+  interface Props {
+    onchange?: (endTime: Date) => void;
+  }
+
+  let { onchange }: Props = $props();
 
   let days: number = $state(0);
   let hours: number = $state(0);
@@ -19,7 +23,7 @@
   function startInterval() {
     intervalId = setInterval(() => {
       endTime = new Date(Date.now() + totalDurationMs);
-      dispatch("change", endTime);
+      onchange?.(endTime);
     }, 1000);
   }
 
@@ -33,7 +37,7 @@
     minutes = 0;
     seconds = 0;
     endTime = new Date(Date.now() + totalDurationMs);
-    dispatch("change", endTime);
+    onchange?.(endTime);
     startInterval();
   });
 
@@ -62,7 +66,7 @@
     }
 
     endTime = new Date(Date.now() + totalDurationMs);
-    dispatch("change", endTime);
+    onchange?.(endTime);
   }
 
   let durationText = $derived([

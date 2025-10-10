@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { statusRolesApi, clientApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -59,9 +59,9 @@
                 channelsData,
                 rolesListData
             ] = await Promise.all([
-                api.getStatusRoles($currentGuild.id).catch(() => []),
-                api.getGuildTextChannels($currentGuild.id).catch(() => []),
-                api.getGuildRoles($currentGuild.id).catch(() => [])
+              statusRolesApi.getStatusRoles($currentGuild.id).catch(() => []),
+              clientApi.getTextChannels($currentGuild.id).catch(() => []),
+              clientApi.getRoles($currentGuild.id).catch(() => [])
             ]);
 
             statusRoles = rolesData;
@@ -97,7 +97,7 @@
 
         saving = true;
         try {
-            await api.addStatusRole($currentGuild.id, newStatusRole.status);
+          await statusRolesApi.addStatusRole($currentGuild.id, newStatusRole.status);
             showMessage("Status role added successfully!", "success");
             newStatusRole = { status: "" };
             await loadAllStatusRoleData();
@@ -116,7 +116,7 @@
 
         saving = true;
         try {
-            await api.removeStatusRole($currentGuild.id, id);
+          await statusRolesApi.removeStatusRole($currentGuild.id, id);
             showMessage("Status role removed successfully!", "success");
             await loadAllStatusRoleData();
         } catch (err) {
@@ -136,19 +136,19 @@
             const promises = [];
 
             if (editForm.addRoles) {
-                promises.push(api.setStatusRoleAddRoles($currentGuild.id, id, editForm.addRoles));
+              promises.push(statusRolesApi.setStatusRoleAddRoles($currentGuild.id, id, editForm.addRoles));
             }
 
             if (editForm.removeRoles) {
-                promises.push(api.setStatusRoleRemoveRoles($currentGuild.id, id, editForm.removeRoles));
+              promises.push(statusRolesApi.setStatusRoleRemoveRoles($currentGuild.id, id, editForm.removeRoles));
             }
 
             if (editForm.channelId) {
-                promises.push(api.setStatusRoleChannel($currentGuild.id, id, BigInt(editForm.channelId)));
+              promises.push(statusRolesApi.setStatusRoleChannel($currentGuild.id, id, BigInt(editForm.channelId)));
             }
 
             if (editForm.embedText) {
-                promises.push(api.setStatusRoleEmbed($currentGuild.id, id, editForm.embedText));
+              promises.push(statusRolesApi.setStatusRoleEmbed($currentGuild.id, id, editForm.embedText));
             }
 
             await Promise.all(promises);
@@ -170,7 +170,7 @@
 
         saving = true;
         try {
-            await api.toggleStatusRoleRemoveAdded($currentGuild.id, id);
+          await statusRolesApi.toggleStatusRoleRemoveAdded($currentGuild.id, id);
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to toggle remove added:", err);
@@ -186,7 +186,7 @@
 
         saving = true;
         try {
-            await api.toggleStatusRoleReaddRemoved($currentGuild.id, id);
+          await statusRolesApi.toggleStatusRoleReaddRemoved($currentGuild.id, id);
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to toggle readd removed:", err);
@@ -416,7 +416,7 @@
 
                                                 <div class="flex gap-2">
                                                     <button
-                                                            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
+                                                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
                                                             style="background: {$colorStore.primary}; color: white;"
                                                             onclick={() => updateStatusRoleSettings(role.id)}
                                                             disabled={saving}
@@ -424,7 +424,7 @@
                                                         Save
                                                     </button>
                                                     <button
-                                                            class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
+                                                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
                                                             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                                             onclick={() => editingRole = null}
                                                     >
@@ -462,7 +462,7 @@
                                                 </div>
 
                                                 <button
-                                                        class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
+                                                  class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
                                                         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                                         onclick={() => startEditing(role)}
                                                 >
@@ -509,7 +509,7 @@
                     </div>
 
                   <button aria-label="Add"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={addStatusRole}
                             disabled={saving || !newStatusRole.status.trim()}

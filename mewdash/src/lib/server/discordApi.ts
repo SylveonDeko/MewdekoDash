@@ -75,10 +75,10 @@ export async function authenticateUser(
           if (newSessionId) {
             cookies.set("discord_session_id", newSessionId, {
               path: "/",
-              expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+              maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
               httpOnly: true,
               sameSite: "lax",
-              secure: process.env.NODE_ENV === "production"
+              secure: process.env.NODE_ENV === "production" || false,
             });
           }
         }

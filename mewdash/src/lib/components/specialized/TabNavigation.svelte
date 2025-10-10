@@ -1,16 +1,16 @@
 <!-- TabNavigation.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { colorStore } from "$lib/stores/colorStore";
-  import type { ComponentType } from 'svelte';
+
 
   interface Props {
-    tabs: { id: string; label: string; icon?: ComponentType | string }[];
+    tabs: { id: string; label: string; icon?: string }[];
     activeTab: string;
     variant?: 'desktop' | 'mobile';
     orientation?: 'horizontal' | 'vertical';
     size?: 'sm' | 'md' | 'lg';
     ariaLabel?: string;
+    onchange?: (detail: { tab: string; previousTab: string }) => void;
   }
 
   let {
@@ -19,21 +19,18 @@
     variant = 'desktop',
     orientation = 'horizontal',
     size = 'md',
-    ariaLabel = 'Tab navigation'
+    ariaLabel = "Tab navigation",
+    onchange
   }: Props = $props();
-
-  const dispatch = createEventDispatcher<{
-    change: { tab: string; previousTab: string };
-  }>();
 
   let previousTab = activeTab;
 
   function handleTabChange(tabId: string) {
     if (tabId === activeTab) return;
-    
+
     previousTab = activeTab;
     activeTab = tabId;
-    dispatch('change', { tab: tabId, previousTab });
+    onchange?.({ tab: tabId, previousTab });
   }
 
   function handleKeydown(event: KeyboardEvent, tabId: string) {

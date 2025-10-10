@@ -3,7 +3,11 @@
 <script lang="ts">
   import Elem from "$lib/components/display/FluidElement.svelte";
 
-  export let breakpoints = ["md", "lg", "xl"];
+  interface Props {
+    breakpoints?: string[];
+  }
+
+  let { breakpoints = ["md", "lg", "xl"] }: Props = $props();
   const maxBreaks = Object.keys($$slots).length;
 
   // Create an array of slot names

@@ -1,30 +1,57 @@
 <!-- routes/dashboard/birthday/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
+
+    import { onMount } from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import {
+        birthdayApi,
+        clientApi,
+        BirthdayFeatures,
+        type BirthdayConfig,
+        type BirthdayConfigRequest,
+        type BirthdayUser,
+        type BirthdayStats
+    } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import type {
-        BirthdayConfigRequest,
-        BirthdayConfigResponse,
-        BirthdayFeatures,
-        BirthdayStatsResponse,
-        BirthdayUserResponse
-    } from "$lib/types/birthday";
-    import {
-        BirthdayFeatures as BirthdayFeaturesEnum,
-        getBirthdayFeatureNames,
-        hasBirthdayFeature,
-        SUPPORTED_TIMEZONES as TIMEZONES
-    } from "$lib/types/birthday";
+
+    // Helper functions for birthday features
+    function hasBirthdayFeature(enabledFeatures: number, feature: BirthdayFeatures): boolean {
+        return (enabledFeatures & feature) === feature;
+    }
+
+    function getBirthdayFeatureNames(enabledFeatures: number): string[] {
+        const names: string[] = [];
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Announcements)) names.push("Announcements");
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.BirthdayRole)) names.push("Birthday Role");
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.Reminders)) names.push("Reminders");
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.PingRole)) names.push("Ping Role");
+        if (hasBirthdayFeature(enabledFeatures, BirthdayFeatures.TimezoneSupport)) names.push("Timezone Support");
+        return names;
+    }
+
+    // Common timezones
+    const TIMEZONES = [
+        { value: "UTC", label: "UTC (GMT+0)", offset: "+00:00" },
+        { value: "America/New_York", label: "Eastern Time (GMT-5)", offset: "-05:00" },
+        { value: "America/Chicago", label: "Central Time (GMT-6)", offset: "-06:00" },
+        { value: "America/Denver", label: "Mountain Time (GMT-7)", offset: "-07:00" },
+        { value: "America/Los_Angeles", label: "Pacific Time (GMT-8)", offset: "-08:00" },
+        { value: "Europe/London", label: "London (GMT+0)", offset: "+00:00" },
+        { value: "Europe/Paris", label: "Paris (GMT+1)", offset: "+01:00" },
+        { value: "Europe/Berlin", label: "Berlin (GMT+1)", offset: "+01:00" },
+        { value: "Europe/Moscow", label: "Moscow (GMT+3)", offset: "+03:00" },
+        { value: "Asia/Tokyo", label: "Tokyo (GMT+9)", offset: "+09:00" },
+        { value: "Asia/Shanghai", label: "Shanghai (GMT+8)", offset: "+08:00" },
+        { value: "Asia/Dubai", label: "Dubai (GMT+4)", offset: "+04:00" },
+        { value: "Australia/Sydney", label: "Sydney (GMT+10)", offset: "+10:00" }
+    ];
 
     // Component state
     let loading = $state(false);
@@ -33,9 +60,9 @@
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let birthdayConfig: BirthdayConfigResponse | null = $state(null);
-    let birthdayUsers: BirthdayUserResponse[] = $state([]);
-    let birthdayStats: BirthdayStatsResponse | null = $state(null);
+    let birthdayConfig: BirthdayConfig | null = $state(null);
+    let birthdayUsers: BirthdayUser[] = $state([]);
+    let birthdayStats: BirthdayStats | null = $state(null);
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
     let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
@@ -52,11 +79,11 @@
     // UI state
     let activeTab = $state("config");
     let upcomingDays = $state(7);
-    let upcomingBirthdays: BirthdayUserResponse[] = $state([]);
-    let todaysBirthdays: BirthdayUserResponse[] = $state([]);
+    let upcomingBirthdays: BirthdayUser[] = $state([]);
+    let todaysBirthdays: BirthdayUser[] = $state([]);
 
     // Initialize data
-    run(() => {
+    $effect(() => {
         if (birthdayConfig) {
             configForm = {
                 birthdayChannelId: birthdayConfig.birthdayChannelId,
@@ -84,13 +111,13 @@
                 upcoming,
                 today
             ] = await Promise.all([
-                api.getBirthdayConfig($currentGuild.id).catch(() => null),
-                api.getBirthdayUsers($currentGuild.id).catch(() => []),
-                api.getBirthdayStats($currentGuild.id).catch(() => null),
-                api.getGuildTextChannels($currentGuild.id).catch(() => []),
-                api.getGuildRoles($currentGuild.id).catch(() => []),
-                api.getBirthdayUpcoming($currentGuild.id, upcomingDays).catch(() => []),
-                api.getBirthdayToday($currentGuild.id).catch(() => [])
+                birthdayApi.getBirthdayConfig($currentGuild.id).catch(() => null),
+                birthdayApi.getBirthdayUsers($currentGuild.id).catch(() => []),
+                birthdayApi.getBirthdayStats($currentGuild.id).catch(() => null),
+                clientApi.getTextChannels($currentGuild.id).catch(() => []),
+                clientApi.getRoles($currentGuild.id).catch(() => []),
+                birthdayApi.getBirthdayUpcoming($currentGuild.id, upcomingDays).catch(() => []),
+                birthdayApi.getBirthdayToday($currentGuild.id).catch(() => [])
             ]);
 
             birthdayConfig = config;
@@ -133,8 +160,8 @@
 
         try {
             const [upcoming, today] = await Promise.all([
-                api.getBirthdayUpcoming($currentGuild.id, upcomingDays),
-                api.getBirthdayToday($currentGuild.id)
+                birthdayApi.getBirthdayUpcoming($currentGuild.id, upcomingDays),
+                birthdayApi.getBirthdayToday($currentGuild.id)
             ]);
 
             upcomingBirthdays = upcoming;
@@ -151,7 +178,7 @@
 
         saving = true;
         try {
-            await api.updateBirthdayConfig($currentGuild.id, configForm);
+            await birthdayApi.updateBirthdayConfig($currentGuild.id, configForm);
             showMessage("Birthday configuration saved successfully!", "success");
             // Reload to get updated config
             await loadAllBirthdayData();
@@ -170,15 +197,9 @@
 
         saving = true;
         try {
-            const resetConfig = await api.resetBirthdayConfig($currentGuild.id);
-            configForm = {
-                birthdayChannelId: resetConfig.birthdayChannelId,
-                birthdayRoleId: resetConfig.birthdayRoleId,
-                birthdayMessage: resetConfig.birthdayMessage,
-                birthdayPingRoleId: resetConfig.birthdayPingRoleId,
-                birthdayReminderDays: resetConfig.birthdayReminderDays,
-                defaultTimezone: resetConfig.defaultTimezone
-            };
+            await birthdayApi.resetBirthdayConfig($currentGuild.id);
+            // Reload to get the reset config
+            await loadAllBirthdayData();
             showMessage("Birthday configuration reset to defaults", "success");
         } catch (err) {
             logger.error("Failed to reset birthday config:", err);
@@ -189,15 +210,15 @@
     }
 
     // Toggle feature
-    async function toggleFeature(feature: BirthdayFeatures) {
+    async function toggleFeature(feature: number) {
         if (!$currentGuild?.id || !birthdayConfig) return;
 
         try {
             const hasFeature = hasBirthdayFeature(birthdayConfig.enabledFeatures, feature);
             if (hasFeature) {
-                await api.disableBirthdayFeature($currentGuild.id, feature);
+                await birthdayApi.disableBirthdayFeature($currentGuild.id, feature);
             } else {
-                await api.enableBirthdayFeature($currentGuild.id, feature);
+                await birthdayApi.enableBirthdayFeature($currentGuild.id, feature);
             }
 
             // Reload config to get updated features
@@ -474,7 +495,7 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
                   <button aria-label="Button action"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
@@ -484,7 +505,7 @@
                     </button>
 
                     <button
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                      class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                             onclick={resetConfig}
                             disabled={saving}
@@ -522,8 +543,8 @@
                                     <input
                                             type="checkbox"
                                             class="sr-only peer"
-                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Announcements) : false}
-                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.Announcements)}
+                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.Announcements) : false}
+                                            onchange={() => toggleFeature(BirthdayFeatures.Announcements)}
                                     >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
@@ -544,8 +565,8 @@
                                     <input
                                             type="checkbox"
                                             class="sr-only peer"
-                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.BirthdayRole) : false}
-                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.BirthdayRole)}
+                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.BirthdayRole) : false}
+                                            onchange={() => toggleFeature(BirthdayFeatures.BirthdayRole)}
                                             disabled={!configForm.birthdayRoleId}
                                     >
                                     <div
@@ -567,8 +588,8 @@
                                     <input
                                             type="checkbox"
                                             class="sr-only peer"
-                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.Reminders) : false}
-                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.Reminders)}
+                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.Reminders) : false}
+                                            onchange={() => toggleFeature(BirthdayFeatures.Reminders)}
                                     >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
@@ -589,8 +610,8 @@
                                     <input
                                             type="checkbox"
                                             class="sr-only peer"
-                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.PingRole) : false}
-                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.PingRole)}
+                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.PingRole) : false}
+                                            onchange={() => toggleFeature(BirthdayFeatures.PingRole)}
                                             disabled={!configForm.birthdayPingRoleId}
                                     >
                                     <div
@@ -612,8 +633,8 @@
                                     <input
                                             type="checkbox"
                                             class="sr-only peer"
-                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeaturesEnum.TimezoneSupport) : false}
-                                            onchange={() => toggleFeature(BirthdayFeaturesEnum.TimezoneSupport)}
+                                            checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.TimezoneSupport) : false}
+                                            onchange={() => toggleFeature(BirthdayFeatures.TimezoneSupport)}
                                     >
                                     <div
                                             class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"

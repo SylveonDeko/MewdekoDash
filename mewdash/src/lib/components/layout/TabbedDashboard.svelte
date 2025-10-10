@@ -63,12 +63,6 @@
   }: Props = $props();
 
   // Log when showMusicPlayer changes
-  $effect(() => {
-      logger.info('TabbedDashboard: showMusicPlayer changed', {
-          showMusicPlayer,
-          activeTab
-      });
-  });
 
   // Tab definitions with Font Awesome icons
   const tabs = [
@@ -698,15 +692,7 @@
 <SearchModal />
 
 <style>
-    /* Jelly Duo icon color theming */
-    :global(.fa-utility-duo) {
-        --fa-primary-color: var(--color-primary);
-        --fa-secondary-color: var(--color-secondary);
-        --fa-primary-opacity: 1.0;
-        --fa-secondary-opacity: 0.5;
-    }
-
-    /* Hide scrollbar for mobile tab navigation */
+    /* Jelly Duo icon color theming *//* Hide scrollbar for mobile tab navigation */
     .scrollbar-hide {
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE/Edge */

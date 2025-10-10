@@ -3,7 +3,19 @@
     import {onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
-    import {api} from "$lib/api";
+    import {
+      meApi,
+      clientApi,
+      highlightsApi,
+      afkApi,
+      xpApi,
+      reputationApi,
+      suggestionsApi,
+      inviteTrackingApi,
+      messageCountApi,
+      starboardApi,
+      guildApi
+    } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
     import {clickOutside} from "$lib/clickOutside";
     import Notification from "$lib/components/ui/Notification.svelte";
@@ -63,8 +75,8 @@
     try {
       const dummyGuildId = BigInt("0");
       const [profile, preferences] = await Promise.all([
-        api.getUserProfile(dummyGuildId, userId).catch(() => ({})),
-        api.getUserPreferences(dummyGuildId, userId).catch(() => ({}))
+        meApi.getUserProfile(dummyGuildId, userId).catch(() => ({})),
+        meApi.getUserPreferences(dummyGuildId, userId).catch(() => ({}))
       ]);
 
       userProfile = profile;
@@ -95,7 +107,7 @@
     if (!userId) return;
 
     try {
-      const guilds = await api.getMutualGuilds(userId, false);
+      const guilds = await clientApi.getMutualGuilds(userId, false);
       availableGuilds = guilds || [];
     } catch (err) {
       logger.error("Failed to load guilds:", err);
@@ -112,27 +124,30 @@
         highlights, hlSettings, afk, xpStats, reputation, suggestions, 
         currency, giveaways, reminders, invites, messages, starboard, analytics, config
       ] = await Promise.all([
-        api.getUserHighlights(selectedGuild.id, userId).catch(() => []),
-        api.getUserHighlightSettings(selectedGuild.id, userId).catch(() => ({ 
-          highlightsEnabled: true, ignoredChannels: [], ignoredUsers: [] 
+        highlightsApi.getUserHighlights(selectedGuild.id, userId).catch(() => []),
+        highlightsApi.getUserHighlightSettings(selectedGuild.id, userId).catch(() => ({
+          highlightsEnabled: true, ignoredChannels: [], ignoredUsers: []
         })),
-        api.getUserAfkStatus(selectedGuild.id, userId).catch(() => ({
+        afkApi.getUserAfkStatus(selectedGuild.id, userId).catch(() => ({
           isAfk: false, message: "", when: null, wasTimed: false
         })),
-        api.getUserXpStats(selectedGuild.id, userId).catch(() => null),
-        api.getUserReputation(selectedGuild.id, userId).catch(() => ({
+        xpApi.getUserXpStats(selectedGuild.id, userId).catch(() => null),
+        reputationApi.getUserReputation(selectedGuild.id, userId).catch(() => ({
           totalRep: 0, rank: 0, totalGiven: 0, totalReceived: 0
         })),
-        api.getUserSuggestions(selectedGuild.id, userId).catch(() => []),
-        api.getUserCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, recentTransactions: [] })),
-        api.getUserGiveaways(selectedGuild.id, userId).catch(() => []),
-        api.getUserReminders(selectedGuild.id, userId).catch(() => []),
-        api.getUserInvites(selectedGuild.id, userId).catch(() => ({ inviteCount: 0, invitedUsers: [] })),
-        api.getUserMessages(selectedGuild.id, userId).catch(() => ({ totalMessages: 0, channelBreakdown: [] })),
-        api.getUserStarboard(selectedGuild.id, userId).catch(() => null),
-        api.getUserAnalytics(selectedGuild.id, userId).catch(() => ({})),
+        suggestionsApi.getUserSuggestions(selectedGuild.id, userId).catch(() => []),
+        meApi.getUserCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, recentTransactions: [] })),
+        meApi.getUserGiveaways(selectedGuild.id, userId).catch(() => []),
+        meApi.getUserReminders(selectedGuild.id, userId).catch(() => []),
+        inviteTrackingApi.getInviteCount(selectedGuild.id, userId).catch(() => 0),
+        messageCountApi.getUserMessages(selectedGuild.id, userId).catch(() => ({
+          totalMessages: 0,
+          channelBreakdown: []
+        })),
+        starboardApi.getUserStarboard(selectedGuild.id, userId).catch(() => null),
+        meApi.getUserAnalytics(selectedGuild.id, userId).catch(() => ({})),
         // Only load guild config if user has admin access
-        selectedGuild.hasAdminAccess ? api.getGuildConfig(selectedGuild.id).catch(() => null) : Promise.resolve(null)
+        selectedGuild.hasAdminAccess ? guildApi.getGuildConfig(selectedGuild.id).catch(() => null) : Promise.resolve(null)
       ]);
 
       serverData = {
@@ -280,7 +295,7 @@
   async function saveProfile() {
     saving = true;
     try {
-      await api.updateUserProfile(BigInt("0"), userId, {
+      await meApi.updateUserProfile(BigInt("0"), userId, {
         bio: profileForm.bio,
         pronouns: profileForm.pronouns,
         zodiacSign: profileForm.zodiacSign,
@@ -308,7 +323,7 @@
     if (!selectedGuild?.id || !newHighlightWord.trim()) return;
 
     try {
-      await api.addUserHighlight(selectedGuild.id, userId, newHighlightWord.trim());
+      await highlightsApi.addUserHighlight(selectedGuild.id, userId, newHighlightWord.trim());
       newHighlightWord = "";
       showMessage("Highlight added!", "success");
       await loadServerData();
@@ -322,7 +337,7 @@
     if (!selectedGuild?.id) return;
 
     try {
-      await api.removeUserHighlight(selectedGuild.id, userId, highlightId);
+      await highlightsApi.removeUserHighlight(selectedGuild.id, userId, highlightId);
       showMessage("Highlight removed!", "success");
       await loadServerData();
     } catch (err) {
@@ -336,7 +351,7 @@
 
     saving = true;
     try {
-      await api.setUserAfkStatus(selectedGuild.id, userId, {
+      await afkApi.setUserAfkStatus(selectedGuild.id, userId, {
         message: newAfkMessage.trim() || undefined,
         isTimed: false,
         until: undefined
@@ -357,7 +372,7 @@
 
     saving = true;
     try {
-      await api.removeUserAfkStatus(selectedGuild.id, userId);
+      await afkApi.removeUserAfkStatus(selectedGuild.id, userId);
       showMessage("AFK status removed!", "success");
       await loadServerData();
     } catch (err) {
@@ -469,7 +484,7 @@
           </h2>
           {#if !editingProfile}
             <button
-              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105 border"
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] border"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => editingProfile = true}
             >
@@ -820,7 +835,7 @@
                     <div class="text-xs" style="color: {$colorStore.muted}">See setup guides again for all servers</div>
                   </div>
                   <button
-                    class="px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-105"
+                    class="px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                     onclick={resetWizard}
                     disabled={saving}
@@ -864,7 +879,7 @@
           {#if availableGuilds.length > 0}
               <div class="relative max-w-md mx-auto" use:clickOutside onclickoutside={() => showGuildDropdown = false}>
               <button
-                class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+                class="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showGuildDropdown = !showGuildDropdown}
               >
@@ -951,7 +966,7 @@
             
             <div class="flex gap-3">
               <button
-                class="px-6 py-3 rounded-xl font-medium border transition-all hover:scale-105 flex items-center gap-2"
+                class="px-6 py-3 rounded-xl font-medium border transition-all hover:scale-[1.02] flex items-center gap-2"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}40;"
                 onclick={changeServer}
               >
@@ -962,7 +977,7 @@
               <!-- Guild Wizard Reset (only for admins with completed/skipped wizard) -->
               {#if selectedGuild.hasAdminAccess && (guildConfig?.wizardCompleted || guildConfig?.wizardSkipped)}
                 <button
-                  class="px-4 py-3 rounded-xl font-medium border transition-all hover:scale-105 flex items-center gap-2"
+                  class="px-4 py-3 rounded-xl font-medium border transition-all hover:scale-[1.02] flex items-center gap-2"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={resetGuildWizard}
                   disabled={saving}
@@ -1038,7 +1053,7 @@
                   onkeydown={(e) => e.key === 'Enter' && addHighlight()}
                 >
                 <button aria-label="Add"
-                  class="px-4 py-2 rounded-lg transition-all hover:scale-105"
+                        class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}; color: white;"
                   onclick={addHighlight}
                   disabled={!newHighlightWord.trim()}

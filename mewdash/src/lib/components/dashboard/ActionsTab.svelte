@@ -1,12 +1,10 @@
 <!-- lib/components/dashboard/ActionsTab.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { roleGreetApi, roleStatesApi, guildApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     // Actions data
@@ -31,9 +29,9 @@
     try {
       // Fetch all actions data in parallel for better performance
       const [roleGreetsData, roleStatesData, guildConfigData] = await Promise.all([
-        api.getAllRoleGreets($currentGuild.id).catch(() => []),
-        api.getAllRoleStates($currentGuild.id).catch(() => []),
-        api.getGuildConfig($currentGuild.id).catch(() => ({}))
+        roleGreetApi.getAllRoleGreets($currentGuild.id).catch(() => []),
+        roleStatesApi.getAllRoleStates($currentGuild.id).catch(() => []),
+        guildApi.getGuildConfig($currentGuild.id).catch(() => ({}))
       ]);
 
       // Process role greets data
@@ -83,7 +81,7 @@
     fetchActionsData();
   });
 
-  run(() => {
+    $effect(() => {
     if ($currentGuild) {
       fetchActionsData();
     }
@@ -132,7 +130,7 @@
         <div class="space-y-2">
         {#if loading}
           <!-- Loading state -->
-          {#each Array(3).fill(0) as _}
+          {#each Array(3).fill(0) as _, i (i)}
             <div class="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                  style="background: {$colorStore.primary}08;">
               <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
@@ -154,7 +152,7 @@
             </p>
           </div>
         {:else}
-          {#each recentGreetings as greeting}
+          {#each recentGreetings as greeting (greeting.id)}
             <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {$colorStore.primary}08;">
 
@@ -184,7 +182,8 @@
           {/each}
 
           <!-- View More Button -->
-          <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
+          <a
+            class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-[1.02] text-sm"
              href="/dashboard/rolegreets"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             <i class="fa-utility-duo fa-regular fa-user-check text-sm"
@@ -216,7 +215,7 @@
                 {actionsStats.activeGreets > 0 ? `${actionsStats.activeGreets} active greetings` : 'No greetings configured'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/multigreets"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
@@ -243,7 +242,7 @@
                 {actionsStats.totalRoleStates > 0 ? `${actionsStats.totalRoleStates} configured states` : 'No states configured'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/rolestates"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
@@ -270,7 +269,7 @@
                 {actionsStats.afkEnabled ? 'Channel configured' : 'Not configured'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/afk"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Configure
@@ -301,7 +300,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Automated responses and reactions</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/chat-triggers"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
@@ -326,7 +325,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Create custom embeds</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/embedbuilder"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Open
@@ -351,7 +350,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Automated recurring messages</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/repeaters"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
@@ -376,7 +375,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Subscribe to RSS feeds</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/feeds"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
@@ -401,7 +400,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Custom status-based roles</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/statusroles"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Manage
@@ -426,7 +425,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Reward users for voting</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/votes"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage

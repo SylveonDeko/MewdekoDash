@@ -1,9 +1,8 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
     import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+    import { xpApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
@@ -199,7 +198,7 @@
   // Fetch bot status
   async function fetchBotStatus() {
     try {
-      botStatus = await api.getBotStatus();
+      botStatus = await botStatusApi.getBotStatus();
     } catch (err) {
       logger.error("Failed to fetch bot status:", err);
     }
@@ -245,7 +244,7 @@
       if (!currentUserId) return;
 
       // Fetch the user's XP stats
-      const userData = await api.getUserXpStats($currentGuild.id, currentUserId);
+      const userData = await xpApi.getUserXpStats($currentGuild.id, currentUserId);
 
       // Format the timeOnLevel for display
       const timeStr = userData.timeOnLevel ?
@@ -288,7 +287,7 @@
         throw new Error("No guild selected");
       }
 
-      const settings = await api.getXpSettings($currentGuild.id);
+      const settings = await xpApi.getXpSettings($currentGuild.id);
       xpSettings = {
         guildId: $currentGuild?.id || BigInt(0),
         xpPerMessage: settings.xpPerMessage || 3,
@@ -317,7 +316,7 @@
         throw new Error("No guild selected");
       }
 
-      const stats = await api.getXpServerStats($currentGuild.id);
+      const stats = await xpApi.getXpServerStats($currentGuild.id);
       serverStats = {
         ...stats,
         recentActivity: stats.recentActivity.map(activity => ({
@@ -341,7 +340,7 @@
         throw new Error("No guild selected");
       }
 
-      const board = await api.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
+      const board = await xpApi.getXpLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
       leaderboard = board.map(entry => ({
         ...entry,
         userId: entry.userId.toString(),
@@ -367,8 +366,8 @@
 
         // Fetch template and settings together to ensure we have the custom image URL
         const [templateData, settingsData] = await Promise.all([
-            api.getXpTemplate($currentGuild.id),
-            api.getXpSettings($currentGuild.id).catch(() => xpSettings) // Fallback to existing settings
+          xpApi.getXpTemplate($currentGuild.id),
+          xpApi.getXpSettings($currentGuild.id).catch(() => xpSettings) // Fallback to existing settings
         ]);
 
         template = templateData;
@@ -416,8 +415,8 @@
       }
 
       const [roles, currency] = await Promise.all([
-        api.getXpRoleRewards($currentGuild.id),
-        api.getXpCurrencyRewards($currentGuild.id)
+        xpApi.getXpRoleRewards($currentGuild.id),
+        xpApi.getXpCurrencyRewards($currentGuild.id)
       ]);
 
       roleRewards = roles.map(reward => ({
@@ -446,8 +445,8 @@
       }
 
       const [channels, roles] = await Promise.all([
-        api.getXpExcludedChannels($currentGuild.id),
-        api.getXpExcludedRoles($currentGuild.id)
+        xpApi.getXpExcludedChannels($currentGuild.id),
+        xpApi.getXpExcludedRoles($currentGuild.id)
       ]);
 
       excludedChannels = channels.map(id => id.toString());
@@ -467,8 +466,8 @@
       }
 
       const [channels, roles] = await Promise.all([
-        api.getGuildTextChannels($currentGuild.id),
-        api.getGuildRoles($currentGuild.id)
+        clientApi.getTextChannels($currentGuild.id),
+        clientApi.getRoles($currentGuild.id)
       ]);
 
       guildChannels = channels;
@@ -483,7 +482,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
       xpSettings.guildId = $currentGuild.id;
-      await api.updateXpSettings($currentGuild.id, xpSettings);
+      await xpApi.updateXpSettings($currentGuild.id, xpSettings);
       showNotificationMessage("XP settings updated successfully", "success");
       changedSettings.clear();
       await fetchXpSettings();
@@ -503,10 +502,10 @@
 
       delete template.customXpImageUrl;
 
-      await api.updateXpTemplate($currentGuild.id, template);
+      await xpApi.updateXpTemplate($currentGuild.id, template);
 
       if (imageUrl) {
-        await api.updateXpSettings($currentGuild.id, {
+        await xpApi.updateXpSettings($currentGuild.id, {
           guildId: $currentGuild.id,
           customXpImageUrl: imageUrl
         });
@@ -526,7 +525,7 @@
       if (!roleId) throw new Error("Please select a role");
       if (level < 1) throw new Error("Level must be at least 1");
 
-      await api.addXpRoleReward($currentGuild.id, level, BigInt(roleId));
+      await xpApi.addXpRoleReward($currentGuild.id, level, BigInt(roleId));
 
       showNotificationMessage("Role reward added successfully", "success");
       await fetchRewards();
@@ -540,7 +539,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.removeXpRoleReward($currentGuild.id, rewardId);
+      await xpApi.removeXpRoleReward($currentGuild.id, rewardId);
       showNotificationMessage("Role reward removed successfully", "success");
       await fetchRewards();
     } catch (err) {
@@ -555,7 +554,7 @@
       if (amount <= 0) throw new Error("Amount must be greater than 0");
       if (level < 1) throw new Error("Level must be at least 1");
 
-      await api.addXpCurrencyReward($currentGuild.id, level, amount);
+      await xpApi.addXpCurrencyReward($currentGuild.id, level, amount);
       showNotificationMessage("Currency reward added successfully", "success");
       await fetchRewards();
     } catch (err) {
@@ -568,7 +567,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.removeXpCurrencyReward($currentGuild.id, rewardId);
+      await xpApi.removeXpCurrencyReward($currentGuild.id, rewardId);
       showNotificationMessage("Currency reward removed successfully", "success");
       await fetchRewards();
     } catch (err) {
@@ -582,7 +581,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!channelId) throw new Error("Please select a channel");
 
-      await api.excludeXpChannel($currentGuild.id, BigInt(channelId));
+      await xpApi.excludeXpChannel($currentGuild.id, BigInt(channelId));
       showNotificationMessage("Channel excluded successfully", "success");
       await fetchExclusions();
     } catch (err) {
@@ -595,7 +594,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.includeXpChannel($currentGuild.id, BigInt(channelId));
+      await xpApi.includeXpChannel($currentGuild.id, BigInt(channelId));
       showNotificationMessage("Channel included successfully", "success");
       await fetchExclusions();
     } catch (err) {
@@ -609,7 +608,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!roleId) throw new Error("Please select a role");
 
-      await api.excludeXpRole($currentGuild.id, BigInt(roleId));
+      await xpApi.excludeXpRole($currentGuild.id, BigInt(roleId));
       showNotificationMessage("Role excluded successfully", "success");
       await fetchExclusions();
     } catch (err) {
@@ -622,7 +621,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.includeXpRole($currentGuild.id, BigInt(roleId));
+      await xpApi.includeXpRole($currentGuild.id, BigInt(roleId));
       showNotificationMessage("Role included successfully", "success");
       await fetchExclusions();
     } catch (err) {
@@ -1472,7 +1471,7 @@
 
                 <!-- Edit Button -->
                 <button
-                        class="px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 text-sm sm:text-base"
+                  class="px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-sm sm:text-base"
                         style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
                      color: white;"
                         onclick={() => { showTemplateEditor = true; }}
@@ -1569,38 +1568,7 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(select),
-    :global(input),
-    :global(textarea) {
-        color-scheme: dark;
-    }
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Improve touchable area on mobile */
+    @reference '../../../app.css'; /* Improve touchable area on mobile */
     @media (max-width: 768px) {
     }
 

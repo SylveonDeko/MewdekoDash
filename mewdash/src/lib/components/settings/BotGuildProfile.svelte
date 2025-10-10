@@ -4,7 +4,7 @@
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { api } from "$lib/api";
+  import { guildApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
 
   // State
@@ -95,7 +95,7 @@
 
     try {
       loading = true;
-      const data = await api.getBotGuildProfile($currentGuild.id);
+      const data = await guildApi.getBotGuildProfile($currentGuild.id);
       profile = data;
       bioInput = data.bio || "";
       error = null;
@@ -113,7 +113,9 @@
     try {
       saving = true;
       error = null;
-      await api.setBotGuildAvatar($currentGuild.id, avatarInput.trim());
+      await guildApi.setBotGuildProfile($currentGuild.id, {
+        avatar: avatarInput.trim()
+      });
       success = "Avatar updated successfully!";
       setTimeout(() => success = null, 3000);
       editingAvatar = false;
@@ -133,7 +135,9 @@
     try {
       saving = true;
       error = null;
-      await api.setBotGuildBanner($currentGuild.id, bannerInput.trim());
+      await guildApi.setBotGuildProfile($currentGuild.id, {
+        banner: bannerInput.trim()
+      });
       success = "Banner updated successfully!";
       setTimeout(() => success = null, 3000);
       editingBanner = false;
@@ -153,7 +157,9 @@
     try {
       saving = true;
       error = null;
-      await api.setBotGuildBio($currentGuild.id, bioInput.trim());
+      await guildApi.setBotGuildProfile($currentGuild.id, {
+        bio: bioInput.trim()
+      });
       success = "Bio updated successfully!";
       setTimeout(() => success = null, 3000);
       editingBio = false;

@@ -30,4 +30,75 @@
     label:has(input:not(:disabled)) {
         cursor: pointer;
     }
+
+    /* Global scrollbar styling */
+    *::-webkit-scrollbar {
+        width: 0.5rem;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.1);
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.3);
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.5);
+    }
+
+    /* Dark mode form controls */
+    body {
+        background-color: #1a202c;
+        color: #ffffff;
+    }
+
+    select,
+    input,
+    textarea {
+        color-scheme: dark;
+    }
+
+    /* FontAwesome utility duo theming */
+    .fa-utility-duo {
+        --fa-primary-color: var(--color-primary);
+        --fa-secondary-color: var(--color-secondary);
+        --fa-primary-opacity: 1.0;
+        --fa-secondary-opacity: 0.5;
+    }
+
+    /* Card utility classes */
+    .card-grid {
+        gap: 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .card-grid {
+            gap: 1rem;
+        }
+
+        .card {
+            padding: 1rem;
+        }
+    }
+
+    /* Prose/content styles */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+    }
+
+    .scrollbar-track-transparent {
+        scrollbar-color: transparent transparent;
+    }
+
+    .scrollbar-thumb-white\/20 {
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
 }

@@ -5,7 +5,7 @@
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {musicStore} from "$lib/stores/musicStore";
-    import {api} from "$lib/api";
+    import { giveawaysApi, customVoiceApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import MusicPlayer from "$lib/components/music/MusicPlayer.svelte";
@@ -28,8 +28,8 @@
     try {
       // Fetch giveaways and custom voice data
       const [giveawaysData, customVoiceData] = await Promise.all([
-        api.getGiveaways($currentGuild.id).catch(() => []),
-        api.getCustomVoiceConfig($currentGuild.id).catch(() => null)
+        giveawaysApi.getGiveaways($currentGuild.id).catch(() => []),
+        customVoiceApi.getCustomVoiceConfig($currentGuild.id).catch(() => null)
       ]);
 
       giveaways = (giveawaysData || []).slice(0, 3); // Show active 3
@@ -99,7 +99,7 @@
               Join a voice channel and use music commands to start playing
             </p>
             <a href="/dashboard/music"
-               class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all hover:scale-105"
+               class="inline-flex items-center gap-2 py-3 px-6 rounded-xl transition-all hover:scale-[1.02]"
                style="background: {$colorStore.primary}; color: white; box-shadow: 0 4px 12px {$colorStore.primary}30;">
               <i class="fa-utility-duo fa-regular fa-play"
                  style="--fa-primary-color: white; --fa-secondary-color: white; --fa-secondary-opacity: 0.7;"></i>
@@ -116,7 +116,7 @@
                     border-color: {$colorStore.primary}15;">
           <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Coming Up</h3>
           <div class="space-y-2">
-            {#each musicStatus.Queue.slice(0, 3) as track, index}
+            {#each musicStatus.Queue.slice(0, 3) as track, index (index)}
               <div class="flex items-center gap-3 p-2 rounded-lg"
                    style="background: {$colorStore.primary}08;">
                 <div class="w-6 h-6 rounded-sm flex items-center justify-center text-xs font-semibold"
@@ -170,7 +170,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Temporary voice channels</div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/customvoice"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
@@ -197,7 +197,7 @@
                 {giveaways.length > 0 ? `${giveaways[0]?.participants || 0} participants` : 'Host contests & prizes'}
               </div>
             </div>
-            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                href="/dashboard/giveaways"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage

@@ -1,16 +1,26 @@
 <!-- lib/components/dashboard/CommunityTab.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
     import {fly} from "svelte/transition";
     import {onMount} from "svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {inviteStore} from "$lib/stores/inviteStore";
-    import {api} from "$lib/api";
+    import {
+      xpApi,
+      suggestionsApi,
+      messageCountApi,
+      clientApi,
+      patreonApi,
+      birthdayApi,
+      ticketApi,
+      countingApi,
+      starboardApi,
+      formsApi,
+      type SuggestionsModel,
+      type MessageStatsResponse,
+      type Form
+    } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
-    import type {SuggestionsModel} from "$lib/types/models.ts";
-    import type {MessageStatsResponse} from "$lib/types/messagestats.ts";
 
 
     interface Props {
@@ -60,28 +70,38 @@
   let countingStats: any = null;
   let topCountingChannel: any = $state(null);
 
+    // Forms data
+    let forms: Form[] = $state([]);
+    let totalFormResponses = $state(0);
+
   async function fetchCommunityData() {
     if (!$currentGuild?.id) return;
 
     try {
       // Fetch all data in parallel for better performance
-      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData, countingChannelsData, countingStatsData] = await Promise.all([
-        api.getXpLeaderboard($currentGuild.id, 1, 3),
-        api.getXpServerStats($currentGuild.id),
-        api.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
-        api.getDailyMessageStats($currentGuild.id).catch(() => ({ enabled: false, dailyMessages: 0 })), // Handle case where message count isn't enabled
-        api.getMessageStats($currentGuild.id).catch(() => null), // Enhanced message stats
-        api.getGuildMembers($currentGuild.id).catch(() => []), // Guild members for user enrichment
-        api.getPatreonOAuthStatus($currentGuild.id).catch(() => ({ isConfigured: false })),
-        api.getPatreonSupporters($currentGuild.id).catch(() => []),
-        api.getPatreonAnalytics($currentGuild.id).catch(() => null),
-        api.getBirthdayStats($currentGuild.id).catch(() => null),
-        api.getBirthdayToday($currentGuild.id).catch(() => []),
-        api.getBirthdayUpcoming($currentGuild.id, 7).catch(() => []),
-        api.getTicketStats($currentGuild.id).catch(() => ({ totalTickets: 0, openTickets: 0, closedTickets: 0, activeStaff: 0 })),
-        api.getTicketPanels($currentGuild.id).catch(() => []),
-        api.getCountingChannels($currentGuild.id).catch(() => []), // Counting channels
-        api.getCountingChannelStats($currentGuild.id, null).catch(() => null) // Aggregate counting stats
+      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData, countingChannelsData, countingStatsData, formsData] = await Promise.all([
+        xpApi.getXpLeaderboard($currentGuild.id, 1, 3),
+        xpApi.getXpServerStats($currentGuild.id),
+        suggestionsApi.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
+        messageCountApi.getDailyMessageStats($currentGuild.id).catch(() => ({ enabled: false, dailyMessages: 0 })), // Handle case where message count isn't enabled
+        messageCountApi.getMessageStats($currentGuild.id).catch(() => null), // Enhanced message stats
+        clientApi.getMembers($currentGuild.id).catch(() => []), // Guild members for user enrichment
+        patreonApi.getPatreonOAuthStatus($currentGuild.id).catch(() => ({ isConfigured: false })),
+        patreonApi.getPatreonSupporters($currentGuild.id).catch(() => []),
+        patreonApi.getPatreonAnalytics($currentGuild.id).catch(() => null),
+        birthdayApi.getBirthdayStats($currentGuild.id).catch(() => null),
+        birthdayApi.getBirthdayToday($currentGuild.id).catch(() => []),
+        birthdayApi.getBirthdayUpcoming($currentGuild.id, 7).catch(() => []),
+        ticketApi.getTicketStats($currentGuild.id).catch(() => ({
+          totalTickets: 0,
+          openTickets: 0,
+          closedTickets: 0,
+          activeStaff: 0
+        })),
+        ticketApi.getTicketPanels($currentGuild.id).catch(() => []),
+        countingApi.getCountingChannels($currentGuild.id).catch(() => []), // Counting channels
+        countingApi.getCountingStats($currentGuild.id, null).catch(() => null), // Aggregate counting stats
+        formsApi.getGuildForms($currentGuild.id, true).catch(() => []) // Active forms only
       ]);
 
       // Process XP leaderboard data
@@ -150,7 +170,7 @@
       // Process Counting data
       countingChannels = countingChannelsData || [];
       countingStats = countingStatsData;
-      
+
       // Find the most active counting channel
       if (countingChannels.length > 0) {
         topCountingChannel = countingChannels
@@ -158,9 +178,13 @@
           .sort((a, b) => b.currentNumber - a.currentNumber)[0] || countingChannels[0];
       }
 
+      // Process Forms data
+      forms = formsData || [];
+      totalFormResponses = forms.reduce((sum, form) => sum + (form.responseCount || 0), 0);
+
       // Fetch starboard highlights
       try {
-        const starboardData = await api.getStarboardHighlights($currentGuild.id, 3);
+        const starboardData = await starboardApi.getStarboardHighlights($currentGuild.id, 3);
         starboardHighlights = starboardData || [];
       } catch (err) {
         // Starboard may not be enabled or no highlights available
@@ -183,7 +207,7 @@
     fetchCommunityData();
   });
 
-  run(() => {
+    $effect(() => {
     if ($currentGuild) {
       fetchCommunityData();
     }
@@ -197,7 +221,8 @@
     xp: "Experience points and leveling system for engagement",
     birthday: "Celebrate member birthdays with announcements and roles",
     tickets: "Support ticket system for community help and assistance",
-    messageStats: "Track message activity and user engagement"
+    messageStats: "Track message activity and user engagement",
+    forms: "Create custom forms with conditional logic and collect responses"
   };
 </script>
 
@@ -224,7 +249,7 @@
       <div class="space-y-2">
         {#if loading}
           <!-- Loading state -->
-          {#each Array(3).fill(0) as _, index}
+          {#each Array(3).fill(0) as _, index (index)}
             <div class="flex items-center gap-3 p-2 rounded-lg animate-pulse"
                  style="background: {$colorStore.primary}08;">
               <div class="w-6 h-6 rounded-full" style="background: {$colorStore.primary}20;"></div>
@@ -247,7 +272,7 @@
             </p>
           </div>
         {:else}
-          {#each xpLeaderboard as user, index}
+          {#each xpLeaderboard as user, index (user.userId)}
             <div class="flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.01]"
                  style="background: {index < 3 ? $colorStore.primary + '15' : $colorStore.primary + '08'};">
               <!-- Rank Badge -->
@@ -282,7 +307,8 @@
       </div>
 
       <!-- View More Button -->
-      <a class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-105 text-sm"
+        <a
+          class="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all hover:scale-[1.02] text-sm"
          href="/dashboard/xp"
          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
         <i class="fa-utility-duo fa-regular fa-arrow-right"
@@ -313,7 +339,7 @@
                 <span class="text-xs font-medium" style="color: {$colorStore.text}">Today</span>
               </div>
               <div class="flex flex-wrap gap-1 mb-2">
-                {#each todaysBirthdays.slice(0, 3) as user}
+                {#each todaysBirthdays.slice(0, 3) as user (user.userId)}
                     <div class="flex items-center gap-1 px-2 py-1 rounded-sm"
                        style="background: {$colorStore.accent}15;">
                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
@@ -335,7 +361,7 @@
               <!-- Upcoming (Ultra Compact) -->
               <div class="text-xs" style="color: {$colorStore.muted}">
                 <span class="font-medium">Coming up:</span>
-                {#each upcomingBirthdays.slice(0, 2) as user, index}
+                {#each upcomingBirthdays.slice(0, 2) as user, index (user.userId)}
                   <span>{user.displayName || user.username} ({user.daysUntilBirthday}d){index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
                 {/each}
                 {#if upcomingBirthdays.length > 2}
@@ -389,7 +415,7 @@
               <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
                 <div class="text-xs font-medium mb-1" style="color: {$colorStore.text}">Top Active</div>
                 <div class="flex flex-wrap gap-1">
-                  {#each topActiveUsers.slice(0, 3) as user}
+                  {#each topActiveUsers.slice(0, 3) as user (user.userId)}
                       <div class="flex items-center gap-1 px-2 py-1 rounded-sm"
                          style="background: {$colorStore.primary}10;">
                       <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
@@ -470,7 +496,7 @@
           </div>
         {:else}
           <div class="space-y-2">
-            {#each starboardHighlights.slice(0, 2) as highlight}
+            {#each starboardHighlights.slice(0, 2) as highlight (highlight.messageId)}
               <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
                 <div class="flex items-center gap-2 mb-1">
                   <img src={highlight.authorAvatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
@@ -490,6 +516,52 @@
             {/each}
           </div>
         {/if}
+        </div>
+
+        <!-- Forms Card -->
+        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+             style="background: {$colorStore.primary}05;
+                  border-color: {$colorStore.primary}15;">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold" style="color: {$colorStore.text}">Forms</h3>
+            <a class="text-xs" href="/dashboard/forms" style="color: {$colorStore.primary}">Manage</a>
+          </div>
+
+          {#if forms.length === 0}
+            <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
+              <p class="text-xs" style="color: {$colorStore.muted}">No forms created yet</p>
+            </div>
+          {:else}
+            <div class="space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="p-2 rounded-lg text-center" style="background: {$colorStore.primary}08;">
+                  <div class="text-lg font-bold" style="color: {$colorStore.primary}">
+                    {forms.length}
+                  </div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">Active Forms</div>
+                </div>
+                <div class="p-2 rounded-lg text-center" style="background: {$colorStore.secondary}08;">
+                  <div class="text-lg font-bold" style="color: {$colorStore.secondary}">
+                    {totalFormResponses}
+                  </div>
+                  <div class="text-xs" style="color: {$colorStore.muted}">Responses</div>
+                </div>
+              </div>
+
+              {#if forms.length > 0}
+                <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
+                  <div class="text-xs" style="color: {$colorStore.muted}">
+                    Most recent: <span style="color: {$colorStore.text}">{forms[0].name}</span>
+                  </div>
+                  {#if forms[0].responseCount && forms[0].responseCount > 0}
+                    <div class="text-xs mt-1" style="color: {$colorStore.muted}">
+                      {forms[0].responseCount} response{forms[0].responseCount !== 1 ? 's' : ''}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/if}
         </div>
 
         <!-- Counting Activity Card -->
@@ -582,7 +654,7 @@
                 {memberStats?.totalMembers > 0 ? `${Math.round((activeMembers / memberStats.totalMembers) * 100)}% rate` : "No data"}
               </div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/xp"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
@@ -660,7 +732,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">User reputation system</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/reputation"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
@@ -686,7 +758,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Anonymous confessions</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/confessions"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
@@ -712,7 +784,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Keyword notifications</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/highlights"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Manage
@@ -738,7 +810,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Twitch/YouTube alerts</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/streams"
                style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
               Manage
@@ -768,7 +840,7 @@
                 <div class="text-xs" style="color: {$colorStore.muted}">Active patrons</div>
               </div>
                 <a href="/dashboard/patreon"
-                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                 Manage
               </a>
@@ -793,7 +865,7 @@
                 <div class="text-xs" style="color: {$colorStore.muted}">Not connected</div>
               </div>
                 <a href="/dashboard/patreon"
-                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                   class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
                 Setup
               </a>

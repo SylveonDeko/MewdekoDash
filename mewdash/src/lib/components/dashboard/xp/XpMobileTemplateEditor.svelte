@@ -877,7 +877,7 @@
         <!-- Left section -->
         <div class="flex items-center gap-2">
           <button aria-label="Close editor"
-                  class="p-2 rounded-lg transition-all hover:scale-105"
+                  class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { showEditor = false; }}
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
           >
@@ -911,7 +911,7 @@
         <div class="flex items-center gap-2">
           <!-- Toolbar toggle -->
           <button
-            class="p-1.5 rounded-lg transition-all hover:scale-105"
+            class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
             onclick={() => { toolbarExpanded = !toolbarExpanded; }}
             style="background: {toolbarExpanded ? $colorStore.primary + '20' : $colorStore.primary + '10'}; color: {$colorStore.primary};"
           >
@@ -924,7 +924,7 @@
 
           <!-- Zoom controls -->
           <button aria-label="Undo"
-                  class="p-1.5 rounded-lg transition-all hover:scale-105"
+                  class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { zoom = Math.max(0.5, zoom - 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
           >
@@ -934,7 +934,7 @@
           {Math.round(zoom * 100)}%
         </span>
           <button aria-label="Redo"
-                  class="p-1.5 rounded-lg transition-all hover:scale-105"
+                  class="p-1.5 rounded-lg transition-all hover:scale-[1.02]"
                   onclick={() => { zoom = Math.min(3, zoom + 0.1); redrawCanvas(); }}
                   style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
           >
@@ -1014,7 +1014,7 @@
       {#if showQuickActions && previewMode === "edit"}
         <div class="absolute right-3 top-3 flex flex-col gap-2">
           <button aria-label="Zoom out"
-                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "layers"; }}
           >
@@ -1022,7 +1022,7 @@
           </button>
 
           <button aria-label="Zoom in"
-                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                  class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => { bottomSheetOpen = true; bottomSheetTab = "tools"; }}
           >
@@ -1031,7 +1031,7 @@
 
           {#if undoStack.length > 0}
             <button aria-label="Button action"
-                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={undo}
             >
@@ -1041,7 +1041,7 @@
 
           {#if redoStack.length > 0}
             <button aria-label="Navigate"
-                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-105 backdrop-blur-md"
+                    class="p-3 rounded-xl border shadow-lg transition-all hover:scale-[1.02] backdrop-blur-md"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border-color: {$colorStore.secondary}30;"
                     onclick={redo}
             >
@@ -1100,7 +1100,7 @@
           </div>
 
           <button aria-label="Close sheet"
-                  class="p-2 rounded-lg transition-all hover:scale-105"
+                  class="p-2 rounded-lg transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                   onclick={() => { bottomSheetOpen = false; }}
           >
@@ -1112,7 +1112,7 @@
         <div class="px-4 pb-4 overflow-y-auto" style="max-height: calc(70vh - 80px);">
           {#if bottomSheetTab === "layers"}
             <div class="space-y-2">
-              {#each elements as element}
+              {#each elements as element (element.id)}
                 <div
                   class="p-3 rounded-xl transition-all"
                   class:opacity-50={!element.visible}
@@ -1299,7 +1299,7 @@
                       {#each [{ id: 3, label: "Right" }, { id: 2, label: "Left" }, {
                         id: 1,
                         label: "Down"
-                      }, { id: 0, label: "Up" }] as dir}
+                      }, { id: 0, label: "Up" }] as dir (dir.id)}
                         <button
                           class="py-2 px-3 rounded-lg text-xs font-medium transition-all"
                           style="background: {element.direction === dir.id ? $colorStore.primary + '20' : $colorStore.primary + '10'};
@@ -1445,7 +1445,7 @@
 
               <!-- Reset -->
               <button
-                class="w-full py-3 px-4 rounded-lg font-medium transition-all hover:scale-105 flex items-center justify-center gap-2"
+                class="w-full py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                 onclick={() => {
                 zoom = 1;

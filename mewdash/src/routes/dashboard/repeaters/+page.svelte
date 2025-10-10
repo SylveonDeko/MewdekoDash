@@ -1,35 +1,35 @@
 <!-- routes/dashboard/repeaters/+page.svelte -->
 <script lang="ts">
-  import { run } from "svelte/legacy";
 
-    import {onMount} from "svelte";
+
+  import { onMount } from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
-    import {logger} from "$lib/logger";
-
-    import StatCard from "$lib/components/monitoring/StatCard.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-    import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
-    import type {
-        CreateRepeaterRequest,
-        MessageCountingStatus,
-        RepeaterFormData,
-        RepeaterResponse,
-        RepeaterStatsResponse,
-        UpdateRepeaterRequest
-    } from "$lib/types/repeater";
     import {
+      repeatersApi,
+      clientApi,
+      messageCountApi,
+      type CreateRepeaterRequest,
+      type MessageCountingStatus,
+      type RepeaterFormData,
+      type RepeaterResponse,
+      type RepeaterStatsResponse,
+      type UpdateRepeaterRequest,
         formatInterval,
         formatTimeUntilNext,
         getTriggerModeDescription,
         getTriggerModeLabel,
         StickyTriggerMode,
         TIME_SCHEDULE_PRESETS
-    } from "$lib/types/repeater";
+    } from "$lib/api/index.ts";
+  import { logger } from "$lib/logger";
+
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
 
     // Component state
     let loading = $state(false);
@@ -152,7 +152,7 @@
     ]);
 
   // Dynamic channel type detection and tag loading
-    run(() => {
+  $effect(() => {
     if (formData.channelId) {
       const selectedChannel = allChannels.find(ch => ch.id === formData.channelId);
       if (selectedChannel) {
@@ -202,23 +202,23 @@
         channelsData,
         forumData
       ] = await Promise.all([
-        api.getRepeaters($currentGuild.id).catch((err) => {
+        repeatersApi.getRepeaters($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch repeaters:", err);
           return [];
         }),
-        api.getRepeaterStatistics($currentGuild.id).catch((err) => {
+        repeatersApi.getRepeaterStatistics($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch repeater statistics:", err);
           return null;
         }),
-        api.getMessageCountingStatus($currentGuild.id).catch((err) => {
+        messageCountApi.getMessageCountingStatus($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch message counting status:", err);
           return null;
         }),
-        api.getGuildTextChannels($currentGuild.id).catch((err) => {
+        clientApi.getTextChannels($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch text channels:", err);
           return [];
         }),
-        api.getForumChannels($currentGuild.id).catch((err) => {
+        clientApi.getForumChannels($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch forum channels:", err);
           return [];
         })
@@ -392,7 +392,7 @@
       };
 
       logger.info(`Updating repeater ${editingRepeaterId} for guild ${$currentGuild.id}`, request);
-      await api.updateRepeater($currentGuild.id, editingRepeaterId!, request);
+      await repeatersApi.updateRepeater($currentGuild.id, editingRepeaterId!, request);
       logger.info(`Successfully updated repeater ${editingRepeaterId}`);
       showMessage("Repeater updated successfully!", "success");
       
@@ -414,7 +414,7 @@
     if (!confirm("Are you sure you want to delete this repeater? This action cannot be undone.")) return;
 
     try {
-      await api.deleteRepeater($currentGuild.id, repeaterId);
+      await repeatersApi.deleteRepeater($currentGuild.id, repeaterId);
       showMessage("Repeater deleted successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -431,7 +431,7 @@
       const repeater = repeaters.find(r => r.id === repeaterId);
       if (!repeater) return;
 
-      await api.updateRepeater($currentGuild.id, repeaterId, {
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
         isEnabled: !repeater.isEnabled
       });
       
@@ -568,7 +568,7 @@
   }
 
   // Auto-enable thread-only mode when immediate trigger is selected on forum channels
-    run(() => {
+  $effect(() => {
     if (!isEditMode && selectedChannelType === 'forum' && formData.triggerMode === StickyTriggerMode.Immediate) {
       formData.threadOnlyMode = true;
     }
@@ -651,7 +651,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterQueuePosition($currentGuild.id, repeaterId, newPosition);
+      await repeatersApi.updateRepeaterQueuePosition($currentGuild.id, repeaterId, newPosition);
       showMessage("Queue position updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -677,7 +677,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterInterval($currentGuild.id, repeaterId, interval);
+      await repeatersApi.updateRepeaterInterval($currentGuild.id, repeaterId, interval);
       showMessage("Interval updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -690,7 +690,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterStartTime($currentGuild.id, repeaterId, startTime);
+      await repeatersApi.updateRepeaterStartTime($currentGuild.id, repeaterId, startTime);
       showMessage("Start time updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -703,7 +703,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterConversationThreshold($currentGuild.id, repeaterId, threshold);
+      await repeatersApi.updateRepeaterConversationThreshold($currentGuild.id, repeaterId, threshold);
       showMessage("Conversation threshold updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -716,7 +716,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterExpiry($currentGuild.id, repeaterId, maxAge || null, maxTriggers || null);
+      await repeatersApi.updateRepeaterExpiry($currentGuild.id, repeaterId, maxAge || null, maxTriggers || null);
       showMessage("Expiry settings updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -730,7 +730,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      const response = await api.updateRepeaterForumTags($currentGuild.id, repeaterId, 'list');
+      const response = await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "list");
       // Parse the conditions from the response
       if (response.conditions) {
         const conditions = JSON.parse(response.conditions);
@@ -748,7 +748,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterForumTags($currentGuild.id, repeaterId, 'add', tagType, [tagId]);
+      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "add", tagType, [tagId]);
       showMessage(`Forum tag ${tagType === 'required' ? 'required' : 'excluded'} successfully`, "success");
       await loadForumTags(repeaterId);
     } catch (err) {
@@ -761,7 +761,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterForumTags($currentGuild.id, repeaterId, 'remove', tagType, [tagId]);
+      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "remove", tagType, [tagId]);
       showMessage("Forum tag removed successfully", "success");
       await loadForumTags(repeaterId);
     } catch (err) {
@@ -774,7 +774,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeaterForumTags($currentGuild.id, repeaterId, 'clear');
+      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "clear");
       showMessage("All forum tags cleared successfully", "success");
       await loadForumTags(repeaterId);
     } catch (err) {
@@ -788,7 +788,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      threadStickyMessages = await api.getRepeaterThreadMessages($currentGuild.id, repeaterId);
+      threadStickyMessages = await repeatersApi.getRepeaterThreadMessages($currentGuild.id, repeaterId);
     } catch (err) {
       logger.error("Failed to load thread sticky messages:", err);
       threadStickyMessages = [];
@@ -809,7 +809,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.updateRepeater($currentGuild.id, repeaterId, {
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
         timeConditions: formData.timeConditions || null
       });
       showMessage("Time conditions updated successfully", "success");
@@ -945,7 +945,7 @@
           />
         {:else}
           <!-- Loading state -->
-          {#each Array(4).fill(0) as _, i}
+          {#each Array(4).fill(0) as _, i (i)}
             <div class="rounded-xl p-6 animate-pulse"
                  style="background: {$colorStore.primary}08;">
               <div class="h-12 w-12 rounded-xl mb-4"
@@ -970,7 +970,7 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each Object.entries(repeaterStats.triggerModeDistribution) as [mode, count]}
+            {#each Object.entries(repeaterStats.triggerModeDistribution) as [mode, count] (mode)}
               <div class="p-4 rounded-xl"
                    style="background: {$colorStore.primary}08;">
                 <div class="flex items-center justify-between">
@@ -1025,7 +1025,7 @@
             Create your first repeater to start sending automated messages.
           </p>
           <button
-            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}; color: white;"
             onclick={() => activeTab = 'create'}
           >
@@ -1038,7 +1038,7 @@
           <!-- Selection Controls -->
           <div class="flex items-center gap-3">
             <button
-              class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={selectAllRepeaters}
               disabled={repeaters.length === 0}
@@ -1049,7 +1049,7 @@
             
             {#if selectedRepeaterIds.length > 0}
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={clearSelection}
               >
@@ -1067,7 +1067,7 @@
               </span>
               
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => bulkToggleRepeaters(true)}
               >
@@ -1076,7 +1076,7 @@
               </button>
               
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                 onclick={() => bulkToggleRepeaters(false)}
               >
@@ -1316,7 +1316,7 @@
                 <!-- Primary Actions -->
                 <div class="flex flex-wrap items-center gap-2">
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => editRepeater(repeater)}
                   >
@@ -1325,7 +1325,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {repeater.isEnabled ? $colorStore.accent + '20' : $colorStore.primary + '20'};
                            color: {repeater.isEnabled ? $colorStore.accent : $colorStore.primary};"
                     onclick={() => toggleRepeater(repeater.id)}
@@ -1335,7 +1335,7 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                     onclick={() => triggerRepeater(repeater.id)}
                     disabled={!repeater.isEnabled}
@@ -1347,7 +1347,7 @@
                   <!-- Queue Position Controls -->
                   <div class="flex items-center">
                     <button aria-label="Delete"
-                      class="flex items-center gap-1 px-2 py-2 rounded-l-lg text-sm font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-1 px-2 py-2 rounded-l-lg text-sm font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterUp(repeater.id)}
                       disabled={repeater.queuePosition <= 1}
@@ -1355,7 +1355,7 @@
                       <i class="fa-solid fa-arrow-up" style="font-size: 16px;"></i>
                     </button>
                     <button aria-label="Edit"
-                      class="flex items-center gap-1 px-2 py-2 rounded-r-lg text-sm font-medium transition-all hover:scale-105"
+                            class="flex items-center gap-1 px-2 py-2 rounded-r-lg text-sm font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterDown(repeater.id)}
                     >
@@ -1364,7 +1364,7 @@
                   </div>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     onclick={() => deleteRepeater(repeater.id)}
                   >
@@ -1377,7 +1377,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                   <!-- Quick Property Updates -->
                   <button
-                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newInterval = prompt('New interval (HH:MM:SS):', repeater.interval);
@@ -1389,7 +1389,7 @@
                   </button>
 
                   <button
-                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newTime = prompt('Start time (HH:MM, leave empty to disable):', repeater.startTimeOfDay || '');
@@ -1402,7 +1402,7 @@
 
                   {#if repeater.conversationDetection}
                     <button
-                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         const newThreshold = prompt('Conversation threshold (messages/minute):', repeater.conversationThreshold.toString());
@@ -1415,7 +1415,7 @@
                   {/if}
 
                   <button
-                          class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                     onclick={() => {
                       const maxAge = prompt('Max age (e.g., 7.00:00:00 for 7 days, empty for no limit):', repeater.maxAge || '');
@@ -1430,7 +1430,7 @@
                   <!-- Advanced Features -->
                   {#if repeater.forumTagConditions}
                     <button
-                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1445,7 +1445,7 @@
 
                   {#if repeater.timeConditions}
                     <button
-                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => openAdvancedTimeEditor(repeater.id)}
                     >
@@ -1456,7 +1456,7 @@
 
                   {#if repeater.threadAutoSticky || repeater.threadOnlyMode}
                     <button
-                            class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1525,7 +1525,7 @@
                 {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
                   <button
                     type="button"
-                    class="text-xs px-2 py-1 rounded-sm transition-all hover:scale-105"
+                    class="text-xs px-2 py-1 rounded-sm transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                     onclick={() => selectedForumTags = {required: [], excluded: []}}
                   >
@@ -1699,7 +1699,7 @@
                   <div class="flex flex-wrap gap-3">
                     <button
                       type="button"
-                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
+                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                       onclick={() => showEmbedBuilder = !showEmbedBuilder}
                     >
@@ -1709,7 +1709,7 @@
                     
                     <button
                       type="button"
-                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
+                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                       onclick={() => showComponentBuilder = !showComponentBuilder}
                     >
@@ -1752,7 +1752,7 @@
                   <div class="flex gap-2">
                     <button
                       type="button"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
                       style="background: {$colorStore.primary}; color: white;"
                       onclick={() => {
                         if (messageEmbeds.length < 10) {
@@ -1777,7 +1777,7 @@
                     
                     <button
                       type="button"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={() => showEmbedBuilder = false}
                     >
@@ -1804,7 +1804,7 @@
                         <div class="flex gap-2">
                           <button
                             type="button"
-                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                             style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                             onclick={() => {
                               const duplicated = JSON.parse(JSON.stringify(embed));
@@ -1817,7 +1817,7 @@
                           </button>
                           <button
                             type="button"
-                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                             style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                             onclick={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
                           >
@@ -1876,7 +1876,7 @@
                   <div class="flex gap-2">
                     <button
                       type="button"
-                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => {
                         messageComponents = [...messageComponents, {
@@ -1900,7 +1900,7 @@
                     
                     <button
                       type="button"
-                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                       onclick={() => showComponentBuilder = false}
                     >
@@ -1919,7 +1919,7 @@
                         </span>
                         <button
                           type="button"
-                          class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                          class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                           onclick={() => messageComponents = messageComponents.filter((_, i) => i !== index)}
                         >
@@ -2279,7 +2279,7 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
             <button
               type="submit"
-              class="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 min-h-[52px] shadow-lg"
+              class="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-[1.02] min-h-[52px] shadow-lg"
               style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
               disabled={saving || !formData.channelId || (!messageContent.trim() && messageEmbeds.length === 0)}
             >
@@ -2298,7 +2298,7 @@
             {#if isEditMode}
               <button
                 type="button"
-                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                 onclick={() => {
                   isEditMode = false;
@@ -2314,7 +2314,7 @@
             {:else}
               <button
                 type="button"
-                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
                 onclick={resetForm}
               >

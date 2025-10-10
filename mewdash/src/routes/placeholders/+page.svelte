@@ -1,8 +1,8 @@
 <!-- routes/placeholders/+page.svelte -->
 <script lang="ts">
-    import {stopPropagation} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
+
+  import { onDestroy, onMount } from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -447,7 +447,7 @@
               No results for "{searchQuery}"
             </p>
             <button
-              class="px-4 py-2 rounded-xl transition-all hover:scale-105"
+              class="px-4 py-2 rounded-xl transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
               onclick={() => { searchQuery = ''; selectedCategory = 'all'; }}
             >
@@ -487,7 +487,7 @@
                       >
                         <div class="flex items-start justify-between mb-3">
                           <code
-                            class="text-sm font-mono px-3 py-2 rounded-lg flex-1 mr-3 transition-all duration-300 group-hover:scale-105"
+                            class="text-sm font-mono px-3 py-2 rounded-lg flex-1 mr-3 transition-all duration-300 group-hover:scale-[1.02]"
                             style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
                           >
                             {placeholder.code}
@@ -495,7 +495,7 @@
                           <button
                                   class="shrink-0 p-2 rounded-lg transition-all duration-300 hover:scale-110 active:scale-95"
                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
-                            onclick={stopPropagation(() => copyToClipboard(placeholder.code))}
+                                  onclick={(e) => { e.stopPropagation(); copyToClipboard(placeholder.code); }}
                             aria-label="Copy to clipboard"
                           >
                             {#if copiedPlaceholder === placeholder.code && showCopyFeedback}

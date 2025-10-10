@@ -145,7 +145,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each roleRewards as reward}
+          {#each roleRewards as reward (reward.id)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.primary}15;"
@@ -234,7 +234,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each currencyRewards as reward}
+          {#each currencyRewards as reward (reward.id)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.secondary}15;"

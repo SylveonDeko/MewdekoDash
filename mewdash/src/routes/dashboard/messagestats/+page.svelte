@@ -1,14 +1,20 @@
 <!-- routes/dashboard/messagestats/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import {
+    messageCountApi,
+    clientApi,
+    guildApi,
+    type ChannelMessageStats,
+    type MessageStatsResponse,
+    type UserMessageStats
+  } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {fade, slide} from "svelte/transition";
     import type {PageData} from "./$types";
-    import type {ChannelMessageStats, MessageStatsResponse, UserMessageStats} from "$lib/types/messagestats";
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import StatsGraph from "$lib/components/monitoring/StatsGraph.svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
@@ -142,8 +148,8 @@
     try {
       // Fetch both message stats and guild members
       const [statsData, guildMembers] = await Promise.all([
-        api.getMessageStats($currentGuild.id),
-        api.getGuildMembers($currentGuild.id)
+        messageCountApi.getMessageStats($currentGuild.id),
+        clientApi.getMembers($currentGuild.id)
       ]);
       
       messageStats = statsData;
@@ -233,11 +239,11 @@
     settingsLoading = true;
     try {
       // Use the existing getMessageStats which includes enabled status
-      const statsData = await api.getMessageStats($currentGuild.id);
+      const statsData = await messageCountApi.getMessageStats($currentGuild.id);
       messageCountEnabled = statsData?.enabled || false;
       
       // Load guild config for min message length
-      const guildConfig = await api.getGuildConfig($currentGuild.id);
+      const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
       minMessageLength = guildConfig?.minMessageLength || 0;
     } catch (err) {
       showNotificationMessage("Failed to load settings", "error");
@@ -268,7 +274,7 @@
     
     settingsLoading = true;
     try {
-      await api.updateGuildConfig($currentGuild.id, { minMessageLength });
+      await guildApi.updateGuildConfig($currentGuild.id, { minMessageLength });
       showNotificationMessage("Minimum message length updated", "success");
     } catch (err) {
       showNotificationMessage("Failed to update setting", "error");
@@ -302,13 +308,13 @@
     loadSettings();
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             loadData();
         }
     });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadData();
         }

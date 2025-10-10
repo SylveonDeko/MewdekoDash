@@ -1,14 +1,12 @@
 <!-- routes/dashboard/multigreets/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { multiGreetApi, clientApi, type MultiGreet, MultiGreetType } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
-    import type {MultiGreet} from "$lib/types/models.ts";
-    import {MultiGreetType} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -64,8 +62,8 @@
         throw new Error("No guild selected");
       }
       const guildId = BigInt($currentGuild.id);
-      greets = await api.getMultiGreets(guildId);
-      greetType = await api.getMultiGreetType(guildId);
+      greets = await multiGreetApi.getMultiGreets(guildId);
+      greetType = await multiGreetApi.getMultiGreetType(guildId);
     } catch (err) {
       logger.error("Failed to fetch greets:", err);
       error = err instanceof Error ? err.message : "Failed to fetch greets";
@@ -79,7 +77,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      channels = await api.getGuildTextChannels(BigInt($currentGuild.id));
+      channels = await clientApi.getTextChannels(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to fetch channels:", err);
       error = err instanceof Error ? err.message : "Failed to fetch channels";
@@ -91,7 +89,7 @@
       if (!$currentGuild?.id || !selectedChannel) {
         throw new Error("No guild or channel selected");
       }
-      await api.addMultiGreet(BigInt($currentGuild.id), BigInt(selectedChannel));
+      await multiGreetApi.addMultiGreet(BigInt($currentGuild.id), BigInt(selectedChannel));
       showNotificationMessage("Greet added successfully");
       await fetchGreets();
     } catch (error) {
@@ -107,7 +105,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.removeMultiGreet(BigInt($currentGuild.id), id);
+      await multiGreetApi.removeMultiGreet(BigInt($currentGuild.id), id);
       showNotificationMessage("Greet removed successfully");
       await fetchGreets();
     } catch (error) {
@@ -123,7 +121,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetMessage(BigInt($currentGuild.id), id, message);
+      await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, message);
       showNotificationMessage("Message updated successfully");
       editMessage = null;
       await fetchGreets();
@@ -140,7 +138,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetDeleteTime(BigInt($currentGuild.id), id, time);
+      await multiGreetApi.updateMultiGreetDeleteTime(BigInt($currentGuild.id), id, time);
       showNotificationMessage("Delete time updated successfully");
       editDeleteTime = null;
       await fetchGreets();
@@ -157,7 +155,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetGreetBots(BigInt($currentGuild.id), id, enabled);
+      await multiGreetApi.updateMultiGreetGreetBots(BigInt($currentGuild.id), id, enabled);
       showNotificationMessage("Greet bots setting updated successfully");
       await fetchGreets();
     } catch (error) {
@@ -173,7 +171,7 @@
       if (!$currentGuild?.id || !editWebhook) {
         throw new Error("No guild selected or webhook data missing");
       }
-      await api.updateMultiGreetWebhook(BigInt($currentGuild.id), id, {
+      await multiGreetApi.updateMultiGreetWebhook(BigInt($currentGuild.id), id, {
         name: editWebhook.name,
         avatarUrl: editWebhook.avatarUrl,
       });
@@ -193,7 +191,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.updateMultiGreetDisabled(BigInt($currentGuild.id), id, disabled);
+      await multiGreetApi.updateMultiGreetDisabled(BigInt($currentGuild.id), id, disabled);
       showNotificationMessage("Greet status updated successfully");
       await fetchGreets();
     } catch (error) {
@@ -209,7 +207,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await api.setMultiGreetType(BigInt($currentGuild.id), type);
+      await multiGreetApi.setMultiGreetType(BigInt($currentGuild.id), type);
       greetType = type;
       showNotificationMessage("Greet type updated successfully");
     } catch (error) {
@@ -220,7 +218,7 @@
     }
   }
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchGreets();
             fetchChannels();
@@ -670,14 +668,7 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(input[type="checkbox"]) {
+    @reference '../../../app.css'; :global input[type="checkbox"] {
         color-scheme: dark;
     }
 
@@ -691,38 +682,5 @@
     [style*="background"],
     [style*="color"] {
         @apply transition-colors duration-300;
-    }
-
-    /* Add container queries for better responsive behavior */
-    @container (max-width: 640px) {
-    }
-
-    /* Add better card spacing for mobile */
-    @media (max-width: 640px) {
-        :global(.card-grid) {
-            @apply gap-4;
-        }
-
-        :global(.card) {
-            @apply p-4;
-        }
-    }
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
     }
 </style>

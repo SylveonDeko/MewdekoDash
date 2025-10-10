@@ -16,7 +16,17 @@ Main wizard page component that orchestrates the entire setup flow
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-  import { api } from "$lib/api.ts";
+  import {
+    wizardApi,
+    clientApi,
+    multiGreetApi,
+    roleGreetApi,
+    administrationApi,
+    xpApi,
+    loggingApi,
+    suggestionsApi,
+    starboardApi
+  } from "$lib/api/index.ts";
 
 
   // Wizard state
@@ -233,10 +243,10 @@ Main wizard page component that orchestrates the entire setup flow
 
       // Load existing configurations in parallel
       const [multiGreets, starboards, xpSettings, loggingConfig] = await Promise.all([
-        api.getMultiGreets(guildId).catch(() => []),
-        api.getStarboards(guildId).catch(() => []),
-        api.getXpSettings(guildId).catch(() => null),
-        api.getLoggingConfig(guildId).catch(() => null)
+        multiGreetApi.getMultiGreets(guildId).catch(() => []),
+        starboardApi.getStarboards(guildId).catch(() => []),
+        xpApi.getXpSettings(guildId).catch(() => null),
+        loggingApi.getLoggingConfig(guildId).catch(() => null)
       ]);
 
       // Pre-populate feature configs with existing data using correct property names
@@ -292,9 +302,9 @@ Main wizard page component that orchestrates the entire setup flow
 
       // Load channels, roles, and categories in parallel
       const [channels, roles, categories] = await Promise.all([
-        api.getGuildTextChannels(guildId).catch(() => []),
-        api.getGuildRoles(guildId).catch(() => []),
-        api.getGuildCategories(guildId).catch(() => [])
+        clientApi.getTextChannels(guildId).catch(() => []),
+        clientApi.getRoles(guildId).catch(() => []),
+        clientApi.getCategories(guildId).catch(() => [])
       ]);
 
       availableChannels = channels;
@@ -320,8 +330,8 @@ Main wizard page component that orchestrates the entire setup flow
 
       // Load guild info, wizard state, and decision in parallel
       const [userGuilds, wizardStateData, wizardDecisionData] = await Promise.all([
-        api.getMutualGuilds(BigInt(data.user.id)),
-        api.getGuildWizardState(guildId),
+        clientApi.getMutualGuilds(BigInt(data.user.id)),
+        wizardApi.getGuildWizardState(guildId),
         api.shouldShowWizard(BigInt(data.user.id), guildId)
       ]);
 
@@ -452,15 +462,15 @@ Main wizard page component that orchestrates the entire setup flow
           for (const channelId of channelsToSetup) {
             try {
               // Try to add a new MultiGreet for this channel
-              await api.addMultiGreet(guildId, BigInt(channelId));
+              await multiGreetApi.addMultiGreet(guildId, BigInt(channelId));
               console.log(`Created MultiGreet for channel ${channelId}`);
 
               // Update the message for the newly created greet
-              const greets = await api.getMultiGreets(guildId);
+              const greets = await multiGreetApi.getMultiGreets(guildId);
               const newGreet = greets.find(g => g.channelId.toString() === channelId);
               if (newGreet) {
                 const fullMessage = buildFullMessage(featureConfigs.multigreets);
-                await api.updateMultiGreetMessage(guildId, newGreet.id, fullMessage);
+                await multiGreetApi.updateMultiGreetMessage(guildId, newGreet.id, fullMessage);
                 console.log(`Updated message for greet ${newGreet.id} in channel ${channelId}`);
               }
 
@@ -468,7 +478,7 @@ Main wizard page component that orchestrates the entire setup flow
               // If channel already has greets or limit reached, try to update existing ones
               if (err.message.includes("maximum greets")) {
                 console.log(`Channel ${channelId} already has greets or limit reached, updating existing...`);
-                const greets = await api.getMultiGreets(guildId);
+                const greets = await multiGreetApi.getMultiGreets(guildId);
                 const existingGreet = greets.find(g => g.channelId.toString() === channelId);
                 if (existingGreet) {
                   const fullMessage = buildFullMessage(featureConfigs.multigreets);
@@ -487,24 +497,24 @@ Main wizard page component that orchestrates the entire setup flow
       case "rolegreets":
         if (featureConfigs.rolegreets.roleId && featureConfigs.rolegreets.channelId) {
           try {
-            await api.addRoleGreet(guildId, BigInt(featureConfigs.rolegreets.roleId), BigInt(featureConfigs.rolegreets.channelId));
+            await roleGreetApi.addRoleGreet(guildId, BigInt(featureConfigs.rolegreets.roleId), BigInt(featureConfigs.rolegreets.channelId));
             console.log(`Created RoleGreet for role ${featureConfigs.rolegreets.roleId} in channel ${featureConfigs.rolegreets.channelId}`);
 
             // Update the message
-            const roleGreets = await api.getAllRoleGreets(guildId);
+            const roleGreets = await roleGreetApi.getAllRoleGreets(guildId);
             const newRoleGreet = roleGreets.find(rg =>
               rg.roleId.toString() === featureConfigs.rolegreets.roleId &&
               rg.channelId.toString() === featureConfigs.rolegreets.channelId
             );
             if (newRoleGreet) {
               const fullMessage = buildFullMessage(featureConfigs.rolegreets);
-              await api.updateRoleGreetMessage(guildId, newRoleGreet.id, fullMessage);
+              await roleGreetApi.updateRoleGreetMessage(guildId, newRoleGreet.id, fullMessage);
               console.log(`Updated message for role greet ${newRoleGreet.id}`);
             }
           } catch (err) {
             if (err.message.includes("Maximum number")) {
               console.log("Role already has maximum greets, updating existing...");
-              const roleGreets = await api.getAllRoleGreets(guildId);
+              const roleGreets = await roleGreetApi.getAllRoleGreets(guildId);
               const existingRoleGreet = roleGreets.find(rg => rg.roleId.toString() === featureConfigs.rolegreets.roleId);
               if (existingRoleGreet) {
                 const fullMessage = buildFullMessage(featureConfigs.rolegreets);
@@ -534,13 +544,13 @@ Main wizard page component that orchestrates the entire setup flow
 
       case "administration":
         if (featureConfigs.administration.autoRoleId) {
-          await api.setAutoAssignRoles(guildId, [BigInt(featureConfigs.administration.autoRoleId)]);
+          await administrationApi.setAutoAssignRoles(guildId, [BigInt(featureConfigs.administration.autoRoleId)]);
         }
         break;
 
       case "xp":
         // Configure XP settings with all required fields to avoid database constraints
-        await api.updateXpSettings(guildId, {
+        await xpApi.updateXpSettings(guildId, {
           guildId: guildId,
           xpPerMessage: featureConfigs.xp.textRate,
           cooldownSeconds: 60,
@@ -601,7 +611,7 @@ Main wizard page component that orchestrates the entire setup flow
 
       case "suggestions":
         if (featureConfigs.suggestions.channelId) {
-          await api.setSuggestChannel(guildId, BigInt(featureConfigs.suggestions.channelId));
+          await suggestionsApi.setSuggestChannel(guildId, BigInt(featureConfigs.suggestions.channelId));
         }
         break;
     }
@@ -656,7 +666,7 @@ Main wizard page component that orchestrates the entire setup flow
               if (featureConfigs.multigreets.channelId) {
                 await api.addMultiGreet(guildId, BigInt(featureConfigs.multigreets.channelId));
                 // Update the message if it was customized
-                const greets = await api.getMultiGreets(guildId);
+                const greets = await multiGreetApi.getMultiGreets(guildId);
                 if (greets.length > 0) {
                   await api.updateMultiGreetMessage(guildId, greets[0].id, featureConfigs.multigreets.message);
                 }
@@ -667,15 +677,15 @@ Main wizard page component that orchestrates the entire setup flow
             case "logging":
               if (featureConfigs.logging.channelId) {
                 const channelId = BigInt(featureConfigs.logging.channelId);
-                await api.setLogChannel(guildId, "UserJoined", channelId);
-                await api.setLogChannel(guildId, "UserLeft", channelId);
+                await loggingApi.setLogChannel(guildId, "UserJoined", channelId);
+                await loggingApi.setLogChannel(guildId, "UserLeft", channelId);
                 success = true;
               }
               break;
 
             case "administration":
               if (featureConfigs.administration.autoRoleId) {
-                await api.setAutoAssignRoles(guildId, [BigInt(featureConfigs.administration.autoRoleId)]);
+                await administrationApi.setAutoAssignRoles(guildId, [BigInt(featureConfigs.administration.autoRoleId)]);
                 success = true;
               } else {
                 success = true; // Enable without auto-role
@@ -684,7 +694,7 @@ Main wizard page component that orchestrates the entire setup flow
 
             case "xp":
               // Configure XP with correct property names from actual XpSettings interface
-              await api.updateXpSettings(guildId, {
+              await xpApi.updateXpSettings(guildId, {
                 guildId: guildId,
                 xpPerMessage: featureConfigs.xp.textRate,
                 cooldownSeconds: 60,
@@ -735,7 +745,7 @@ Main wizard page component that orchestrates the entire setup flow
             case "suggestions":
               if (featureConfigs.suggestions.channelId) {
                 // Use the actual suggestions API method
-                await api.setSuggestChannel(guildId, BigInt(featureConfigs.suggestions.channelId));
+                await suggestionsApi.setSuggestChannel(guildId, BigInt(featureConfigs.suggestions.channelId));
                 success = true;
               }
               break;
@@ -899,7 +909,7 @@ Main wizard page component that orchestrates the entire setup flow
         <h2 class="text-xl font-bold mb-2">Error Loading Wizard</h2>
         <p class="mb-4">{dataError}</p>
         <button
-          class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
+          class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
           style="background: {$colorStore.primary}; color: white;"
           onclick={() => goto('/dashboard')}
         >
@@ -973,7 +983,7 @@ Main wizard page component that orchestrates the entire setup flow
         <!-- Action buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4 sm:pt-6">
           <button
-            class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
+            class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px]"
             style="background: {$colorStore.primary}; color: white;"
             onclick={nextStep}
           >
@@ -982,7 +992,7 @@ Main wizard page component that orchestrates the entire setup flow
           </button>
 
           <button aria-label="Button action"
-                  class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
+                  class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px]"
                   style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                   onclick={skipWizard}
                   disabled={wizardLoading}
@@ -1059,7 +1069,7 @@ Main wizard page component that orchestrates the entire setup flow
             <div class="relative">
               <div class="space-y-3 max-h-80 overflow-y-auto border rounded-lg p-2"
                    style="border-color: {$colorStore.primary}20;">
-                {#each permissionData.permissionResults as permission}
+                {#each permissionData.permissionResults as permission (permission.permissionName)}
                   <PermissionCheck
                     permission={permission.permissionName}
                     hasPermission={permission.hasPermission}
@@ -1094,7 +1104,7 @@ Main wizard page component that orchestrates the entire setup flow
                 <a
                   href={permissionData.suggestedInviteUrl}
                   target="_blank"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
                   style="background: #f59e0b; color: white;"
                 >
                   Fix Permissions
@@ -1107,7 +1117,7 @@ Main wizard page component that orchestrates the entire setup flow
           <!-- Navigation -->
           <div class="flex items-center justify-between pt-6">
             <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
+              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
               onclick={previousStep}
             >
@@ -1116,7 +1126,7 @@ Main wizard page component that orchestrates the entire setup flow
             </button>
 
             <button
-              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50"
+              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
               style="background: {$colorStore.primary}; color: white;"
               onclick={nextStep}
               disabled={!canProceed}
@@ -1141,14 +1151,14 @@ Main wizard page component that orchestrates the entire setup flow
       <div class="space-y-6">
         <!-- Features organized by category -->
         <div class="space-y-6">
-          {#each featureCategories as category}
+          {#each featureCategories as category (category.name)}
             <div>
               <h3 class="text-lg font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text};">
                 <span class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></span>
                 {category.name}
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {#each category.features as feature}
+                {#each category.features as feature (feature.id)}
                   <FeatureCard
                     id={feature.id}
                     title={feature.title}
@@ -1180,7 +1190,7 @@ Main wizard page component that orchestrates the entire setup flow
         <!-- Navigation -->
         <div class="flex items-center justify-between pt-6">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
+            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
             onclick={previousStep}
           >
@@ -1189,7 +1199,7 @@ Main wizard page component that orchestrates the entire setup flow
           </button>
 
           <button aria-label="Navigate"
-                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50"
+                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
                   style="background: {$colorStore.primary}; color: white;"
                   onclick={nextStep}
                   disabled={!canProceed}
@@ -1305,7 +1315,7 @@ Main wizard page component that orchestrates the entire setup flow
                             <div class="flex gap-2">
                               <button
                                 type="button"
-                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                 onclick={() => {
                                 featureConfigs.multigreets.embeds = [...(featureConfigs.multigreets.embeds || []), {
@@ -1321,7 +1331,7 @@ Main wizard page component that orchestrates the entire setup flow
                               </button>
                               <button
                                 type="button"
-                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                                 onclick={() => {
                                 featureConfigs.multigreets.components = [...(featureConfigs.multigreets.components || []), {
@@ -1346,7 +1356,7 @@ Main wizard page component that orchestrates the entire setup flow
                                             style="color: {$colorStore.text};">Embed {index + 1}</span>
                                       <button
                                         type="button"
-                                        class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                                        class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                                         style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                         onclick={() => {
                                         featureConfigs.multigreets.embeds = featureConfigs.multigreets.embeds.filter((_, i) => i !== index);
@@ -1423,7 +1433,7 @@ Main wizard page component that orchestrates the entire setup flow
                         Will be configured in {featureConfigs.multigreets.channelIds?.length || 0} channels:
                       </p>
                       <div class="flex flex-wrap gap-2">
-                        {#each (featureConfigs.multigreets.channelIds || []) as channelId}
+                        {#each (featureConfigs.multigreets.channelIds || []) as channelId (channelId)}
                           {@const channel = availableChannels?.find(c => c.id === channelId)}
                           {#if channel}
                           <span class="px-2 py-1 rounded-sm text-xs font-medium"
@@ -1526,7 +1536,7 @@ Main wizard page component that orchestrates the entire setup flow
                             <div class="flex gap-2">
                               <button
                                 type="button"
-                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                 onclick={() => {
                                 featureConfigs.rolegreets.embeds = [...(featureConfigs.rolegreets.embeds || []), {
@@ -1542,7 +1552,7 @@ Main wizard page component that orchestrates the entire setup flow
                               </button>
                               <button
                                 type="button"
-                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-105"
+                                class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                                 onclick={() => {
                                 featureConfigs.rolegreets.components = [...(featureConfigs.rolegreets.components || []), {
@@ -1568,7 +1578,7 @@ Main wizard page component that orchestrates the entire setup flow
                                             style="color: {$colorStore.text};">Embed {index + 1}</span>
                                       <button
                                         type="button"
-                                        class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                                        class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                                         style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                         onclick={() => {
                                         featureConfigs.rolegreets.embeds = featureConfigs.rolegreets.embeds.filter((_, i) => i !== index);
@@ -1872,7 +1882,7 @@ Main wizard page component that orchestrates the entire setup flow
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t"
                  style="border-color: {$colorStore.primary}20;">
               <button
-                class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
+                class="w-full sm:w-auto px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={previousStep}
               >
@@ -1887,7 +1897,7 @@ Main wizard page component that orchestrates the entire setup flow
               </span>
 
                 <button aria-label="Navigate"
-                        class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px]"
+                        class="w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px]"
                         style="background: {$colorStore.primary}; color: white;"
                         onclick={finishCurrentFeatureConfig}
                         disabled={wizardLoading}
@@ -1930,7 +1940,7 @@ Main wizard page component that orchestrates the entire setup flow
                style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;">
             <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Features Configured:</h3>
             <div class="flex flex-wrap justify-center gap-2">
-              {#each selectedFeatures as featureId}
+              {#each selectedFeatures as featureId (featureId)}
                 {@const feature = allFeatures.find(f => f.id === featureId)}
                 {#if feature}
                 <span class="px-3 py-1 rounded-full text-sm font-medium"

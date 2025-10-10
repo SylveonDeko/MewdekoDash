@@ -1,6 +1,6 @@
 // stores/inviteStore.ts
 import { writable } from "svelte/store";
-import { api } from "$lib/api";
+import { inviteTrackingApi, joinLeaveApi } from "$lib/api/index.ts";
 import { logger } from "$lib/logger";
 
 interface InviteStats {
@@ -40,9 +40,9 @@ function createInviteStore() {
 
     try {
       const [leaderboard, averageJoins, settings] = await Promise.all([
-        api.getInviteLeaderboard(guildId, 1, 5),
-        api.getAverageJoins(guildId),
-        api.getInviteSettings(guildId)
+        inviteTrackingApi.getInviteLeaderboard(guildId, 1, 5),
+        joinLeaveApi.getAverageJoins(guildId),
+        inviteTrackingApi.getInviteSettings(guildId),
       ]);
 
       update(state => ({
@@ -74,17 +74,26 @@ function createInviteStore() {
       let updated = false;
 
       if ("isEnabled" in settings && settings.isEnabled !== undefined) {
-        await api.toggleInviteTracking(guildId, settings.isEnabled);
+        await inviteTrackingApi.toggleInviteTracking(
+          guildId,
+          settings.isEnabled,
+        );
         updated = true;
       }
 
       if ("removeOnLeave" in settings && settings.removeOnLeave !== undefined) {
-        await api.setRemoveOnLeave(guildId, settings.removeOnLeave);
+        await inviteTrackingApi.setRemoveOnLeave(
+          guildId,
+          settings.removeOnLeave,
+        );
         updated = true;
       }
 
       if ("minAccountAge" in settings && settings.minAccountAge !== undefined) {
-        await api.setMinAccountAge(guildId, settings.minAccountAge);
+        await inviteTrackingApi.setMinAccountAge(
+          guildId,
+          settings.minAccountAge,
+        );
         updated = true;
       }
 

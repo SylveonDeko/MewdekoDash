@@ -4,19 +4,18 @@ Feature card for selecting features during wizard setup
 -->
 <script lang="ts">
     import {colorStore} from "$lib/stores/colorStore";
-    import type {ComponentType} from "svelte";
-    import {createEventDispatcher} from "svelte";
 
     interface Props {
     id: string;
     title: string;
     description: string;
-      icon: string | ComponentType;
+      icon: string;
     selected?: boolean;
     recommended?: boolean;
     setupTime?: string;
     difficulty?: 'easy' | 'medium' | 'advanced';
     disabled?: boolean;
+      ontoggle?: (detail: { id: string; selected: boolean }) => void;
   }
 
   let {
@@ -28,16 +27,13 @@ Feature card for selecting features during wizard setup
     recommended = false,
     setupTime = "",
     difficulty = 'easy',
-    disabled = false
+    disabled = false,
+    ontoggle
   }: Props = $props();
-
-  const dispatch = createEventDispatcher<{
-    toggle: { id: string; selected: boolean };
-  }>();
 
   function handleClick() {
     if (disabled) return;
-    dispatch('toggle', { id, selected: !selected });
+    ontoggle?.({ id, selected: !selected });
   }
 
   let difficultyColor = $derived({

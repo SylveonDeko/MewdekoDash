@@ -1,12 +1,10 @@
 <!-- lib/components/dashboard/SettingsTab.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { api } from "$lib/api";
+  import { guildApi, administrationApi, roleStatesApi, roleGreetApi, loggingApi, ticketApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
 
   import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
@@ -53,14 +51,14 @@
         ticketPanelsData,
         ticketStatsData
       ] = await Promise.all([
-        api.getGuildConfig($currentGuild.id).catch(() => ({})),
-        api.getAutoAssignRoles($currentGuild.id).catch(() => ({ normalRoles: [], botRoles: [] })),
-        api.getSelfAssignableRoles($currentGuild.id).catch(() => []),
-        api.getAllRoleStates($currentGuild.id).catch(() => []),
-        api.getAllRoleGreets($currentGuild.id).catch(() => []),
-        api.getLoggingConfig($currentGuild.id).catch(() => null),
-        api.getTicketPanels(BigInt($currentGuild.id)).catch(() => []),
-        api.getTicketStats(BigInt($currentGuild.id)).catch(() => null)
+        guildApi.getGuildConfig($currentGuild.id).catch(() => ({})),
+        administrationApi.getAutoAssignRoles($currentGuild.id).catch(() => ({ normalRoles: [], botRoles: [] })),
+        administrationApi.getSelfAssignableRoles($currentGuild.id).catch(() => []),
+        roleStatesApi.getAllRoleStates($currentGuild.id).catch(() => []),
+        roleGreetApi.getAllRoleGreets($currentGuild.id).catch(() => []),
+        loggingApi.getLoggingConfig($currentGuild.id).catch(() => null),
+        ticketApi.getTicketPanels(BigInt($currentGuild.id)).catch(() => []),
+        ticketApi.getTicketStats(BigInt($currentGuild.id)).catch(() => null)
       ]);
 
       // Process guild config
@@ -105,7 +103,7 @@
     fetchSettingsData();
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchSettingsData();
         }
@@ -350,7 +348,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Roles given to new members</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/administration"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Configure
@@ -375,7 +373,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">Roles users can assign themselves</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/administration"
                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
               Configure
@@ -420,7 +418,7 @@
               </div>
               <div class="text-xs" style="color: {$colorStore.muted}">{integrationSettings.patreonEnabled ? "Patreon active" : "None active"}</div>
             </div>
-              <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+            <a class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                  href="/dashboard/patreon"
                style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
               Manage
@@ -440,19 +438,19 @@
         </div>
 
         <div class="space-y-3">
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-105"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/settings"
              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
             General Settings
           </a>
 
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-105"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/administration"
              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;">
             Role Management
           </a>
 
-          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-105"
+          <a class="block w-full text-center py-2 px-4 rounded-xl transition-all hover:scale-[1.02]"
              href="/dashboard/administration"
              style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;">
             Permissions

@@ -1,13 +1,12 @@
 <!-- routes/dashboard/settings/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { guildApi, clientApi, type BotStatusModel, type GuildConfig } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
-    import type {BotStatusModel, GuildConfig} from "$lib/types/models";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import {browser} from "$app/environment";
@@ -78,7 +77,7 @@
   async function fetchGuildSettings() {
     try {
       if (!$currentGuild?.id) return;
-      const config = await api.getGuildConfig($currentGuild.id);
+      const config = await guildApi.getGuildConfig($currentGuild.id);
       console.log(config);
       guildConfig = config;
 
@@ -111,8 +110,8 @@
     try {
       if (!$currentGuild?.id) return;
       const [channelList, roleList] = await Promise.all([
-        api.getGuildTextChannels($currentGuild.id),
-        api.getGuildRoles($currentGuild.id)
+        clientApi.getTextChannels($currentGuild.id),
+        clientApi.getRoles($currentGuild.id)
       ]);
       channels = channelList;
       roles = roleList;
@@ -145,7 +144,7 @@
         stars: settings.starboardThreshold
       };
 
-      await api.updateGuildConfig($currentGuild.id, updatedConfig);
+      await guildApi.updateGuildConfig($currentGuild.id, updatedConfig);
       showNotificationMessage("Settings updated successfully");
       // Clear changed settings store
       changedSettings.set(new Set());
@@ -156,7 +155,7 @@
   }
 
   // Track current guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchGuildSettings();
             fetchChannelsAndRoles();
@@ -597,38 +596,7 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(select),
-    :global(input),
-    :global(textarea) {
-        color-scheme: dark;
-    }
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Remove number input spinners */
+    @reference '../../../app.css'; /* Remove number input spinners */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;

@@ -1,15 +1,19 @@
 <!-- routes/dashboard/logging/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import {
+    loggingApi,
+    clientApi,
+    type LoggingConfigurationResponse,
+    type LogType,
+    LOG_TYPE_MAPPINGS
+  } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {fade, slide} from "svelte/transition";
     import type {PageData} from "./$types";
-    import type {LoggingConfigurationResponse, LogType} from "$lib/types/logging";
-    import {LOG_TYPE_MAPPINGS} from "$lib/types/logging";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
@@ -118,8 +122,8 @@
 
     try {
       const [configData, channelsData] = await Promise.all([
-        api.getLoggingConfig($currentGuild.id),
-        api.getGuildTextChannels($currentGuild.id)
+        loggingApi.getLoggingConfig($currentGuild.id),
+        clientApi.getTextChannels($currentGuild.id)
       ]);
 
       config = configData;
@@ -158,10 +162,10 @@
       }
 
       // Save log channels using bulk update endpoint
-      await api.bulkUpdateLogChannels($currentGuild.id, { logTypeMappings });
+      await loggingApi.bulkUpdateLogChannels($currentGuild.id, { logTypeMappings });
       
       // Save ignored channels
-      await api.setIgnoredChannels($currentGuild.id, {
+      await loggingApi.setIgnoredChannels($currentGuild.id, {
         channelIds: ignoredChannels.map(id => BigInt(id))
       });
 
@@ -237,12 +241,12 @@
         : selectedCategory === "popular"
             ? LOG_TYPE_MAPPINGS.filter(mapping => popularLogTypes.includes(mapping.logType))
             : LOG_TYPE_MAPPINGS.filter(mapping => mapping.category === selectedCategory));
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             loadData();
         }
     });
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadData();
         }
@@ -409,7 +413,7 @@
                   </div>
 
                     <button
-                            class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => removeFromIgnored(channel.id)}
                   >
@@ -460,7 +464,7 @@
                   </div>
 
                     <button
-                            class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-105"
+                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
                     style="background: #ef444420; color: #ef4444;"
                     onclick={() => addToIgnored(channel.id)}
                   >

@@ -1,12 +1,11 @@
 <!-- routes/dashboard/starboard/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { starboardApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
-    import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -87,7 +86,7 @@
   // Fetch bot status
   async function fetchBotStatus() {
     try {
-      botStatus = await api.getBotStatus();
+      botStatus = await botStatusApi.getBotStatus();
     } catch (err) {
       logger.error("Failed to fetch bot status:", err);
     }
@@ -115,7 +114,7 @@
         throw new Error("No guild selected");
       }
 
-      starboards = await api.getStarboards($currentGuild.id);
+      starboards = await starboardApi.getStarboards($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch starboards:", err);
       errorStarboards = err instanceof Error ? err.message : "Failed to fetch starboards";
@@ -130,7 +129,7 @@
         throw new Error("No guild selected");
       }
 
-      guildTextChannels = await api.getGuildTextChannels($currentGuild.id);
+      guildTextChannels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild channels:", err);
     }
@@ -142,7 +141,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       if (!newStarboard.channelId) throw new Error("No channel selected");
 
-      await api.createStarboard(
+      await starboardApi.createStarboard(
         $currentGuild.id,
         BigInt(newStarboard.channelId),
         newStarboard.emote,
@@ -171,7 +170,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.deleteStarboard($currentGuild.id, starboardId);
+      await starboardApi.deleteStarboard($currentGuild.id, starboardId);
       showNotificationMessage("Starboard deleted successfully", "success");
       await fetchStarboards();
       showDeleteModal = false;
@@ -207,7 +206,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.setAllowBots($currentGuild.id, starboardId, !currentValue);
+      const result = await starboardApi.setAllowBots($currentGuild.id, starboardId, !currentValue);
       showNotificationMessage(`Bot messages will ${result ? "be" : "not be"} starred`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -220,7 +219,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.setRemoveOnDelete($currentGuild.id, starboardId, !currentValue);
+      const result = await starboardApi.setRemoveOnDelete($currentGuild.id, starboardId, !currentValue);
       showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when original is deleted`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -233,7 +232,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.setRemoveOnClear($currentGuild.id, starboardId, !currentValue);
+      const result = await starboardApi.setRemoveOnClear($currentGuild.id, starboardId, !currentValue);
       showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when reactions are cleared`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -246,7 +245,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.setRemoveBelowThreshold($currentGuild.id, starboardId, !currentValue);
+      const result = await starboardApi.setRemoveBelowThreshold($currentGuild.id, starboardId, !currentValue);
       showNotificationMessage(`Starred messages will ${result ? "be" : "not be"} removed when below threshold`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -259,7 +258,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      const result = await api.setUseBlacklist($currentGuild.id, starboardId, !currentValue);
+      const result = await starboardApi.setUseBlacklist($currentGuild.id, starboardId, !currentValue);
       showNotificationMessage(`Now using ${result ? "blacklist" : "whitelist"} mode for channels`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -272,7 +271,7 @@
     try {
       if (!$currentGuild?.id || !currentEditStarboard) throw new Error("No guild or starboard selected");
 
-      await api.setStarThreshold($currentGuild.id, currentEditStarboard.id, editStarThreshold);
+      await starboardApi.setStarThreshold($currentGuild.id, currentEditStarboard.id, editStarThreshold);
       showNotificationMessage(`Star threshold updated to ${editStarThreshold}`, "success");
       await fetchStarboards();
     } catch (err) {
@@ -285,7 +284,7 @@
     try {
       if (!$currentGuild?.id || !currentEditStarboard) throw new Error("No guild or starboard selected");
 
-      await api.setRepostThreshold($currentGuild.id, currentEditStarboard.id, editRepostThreshold);
+      await starboardApi.setRepostThreshold($currentGuild.id, currentEditStarboard.id, editRepostThreshold);
 
       if (editRepostThreshold === 0) {
         showNotificationMessage("Reposting disabled", "success");
@@ -305,7 +304,7 @@
       if (!$currentGuild?.id || !selectedStarboardId || !selectedChannelId)
         throw new Error("Missing required information");
 
-      const result = await api.toggleChannel($currentGuild.id, selectedStarboardId, BigInt(selectedChannelId));
+      const result = await starboardApi.toggleChannel($currentGuild.id, selectedStarboardId, BigInt(selectedChannelId));
 
       if (result.wasAdded) {
         showNotificationMessage(`Channel added to ${result.config.useBlacklist ? "blacklist" : "whitelist"}`, "success");
@@ -366,7 +365,7 @@
 
 
     // Initialize data loading
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             Promise.all([
                 fetchStarboards(),
@@ -376,14 +375,14 @@
         }
     });
   // Reactive declarations for guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchStarboards();
             fetchGuildChannels();
         }
     });
   // Reactive declarations for instance changes
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             fetchStarboards();
             fetchGuildChannels();
@@ -1108,7 +1107,7 @@
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
-    :global(.input-field:focus) {
+    :global(.input-field):focus {
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
     }
 

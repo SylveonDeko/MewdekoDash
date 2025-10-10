@@ -4,59 +4,81 @@
   import {fade, fly} from "svelte/transition";
   import {colorStore} from "$lib/stores/colorStore";
   // Lifecycle
-  import {createEventDispatcher, onDestroy, onMount} from 'svelte';
+  import { onDestroy, onMount } from "svelte";
   import {browser} from "$app/environment";
   import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import {goto} from "$app/navigation";
   import {registerTabFeatures, unregisterSearchFeatures} from "$lib/stores/searchStore";
 
-  const dispatch = createEventDispatcher();
-
   // Props
-  export let title: string;
-  export let subtitle: string;
-  export let icon: any; // Lucide icon component or Font Awesome class string
-  export let tabs: Array<{id: string, label: string, icon: any}> = [];
-  export let activeTab: string = "";
-  export let subTabs: Array<{id: string, label: string, icon?: any, parentTab: string}> = [];
-  export let activeSubTab: string = "";
-  export let actionButtons: Array<{
-    label: string,
-    icon: any, // Lucide component or Font Awesome class string
-    action: () => void,
-    loading?: boolean,
-    style?: string,
-    disabled?: boolean
-  }> = [];
-  export let guildName: string = "Dashboard";
-  export let notificationMessage: string = "";
-  export let notificationType: "success" | "error" = "success";
-  
-  // Search registration props
-  export let basePath: string = "/dashboard"; // Base path for this page
-  export let category: string = "Settings"; // Category for search grouping
-  
+  interface Props {
+    title: string;
+    subtitle: string;
+    icon: string;
+    tabs?: Array<{ id: string, label: string, icon: string }>;
+    activeTab?: string;
+    subTabs?: Array<{ id: string, label: string, icon?: string, parentTab: string }>;
+    activeSubTab?: string;
+    actionButtons?: Array<{
+      label: string,
+      icon: string,
+      action: () => void,
+      loading?: boolean,
+      style?: string,
+      disabled?: boolean
+    }>;
+    guildName?: string;
+    notificationMessage?: string;
+    notificationType?: "success" | "error";
+    basePath?: string;
+    category?: string;
+    statusMessages?: import("svelte").Snippet;
+    children: import("svelte").Snippet;
+    ontabChange?: (detail: { tabId: string }) => void;
+    onsubTabChange?: (detail: { tabId: string }) => void;
+  }
+
+  let {
+    title,
+    subtitle,
+    icon,
+    tabs = [],
+    activeTab = $bindable(""),
+    subTabs = [],
+    activeSubTab = $bindable(""),
+    actionButtons = [],
+    guildName = "Dashboard",
+    notificationMessage = $bindable(""),
+    notificationType = "success",
+    basePath = "/dashboard",
+    category = "Settings",
+    statusMessages,
+    children,
+    ontabChange,
+    onsubTabChange
+  }: Props = $props();
+
   // Reactive: show notification when message is set
-  $: showNotification = notificationMessage.length > 0;
+  let showNotification = $derived(notificationMessage.length > 0);
 
   function handleNotificationDismiss() {
     notificationMessage = "";
   }
-  
+
   // Track previous tab for animation direction
-  let previousTab: string = "";
-  let previousSubTab: string = "";
-  let slideDirection = 1; // 1 for right, -1 for left
-  let subSlideDirection = 1; // 1 for right, -1 for left
-  
+  let previousTab = $state("");
+  let previousSubTab = $state("");
+  let slideDirection = $state(1); // 1 for right, -1 for left
+  let subSlideDirection = $state(1); // 1 for right, -1 for left
+
   // Navigation refs
-  let tabContainer: HTMLDivElement;
-  let subTabContainer: HTMLDivElement;
-  
+  let tabContainer = $state<HTMLDivElement>();
+  let subTabContainer = $state<HTMLDivElement>();
+
   // Track overflow state
-  let tabsOverflow = false;
-  let subTabsOverflow = false;
+  let tabsOverflow = $state(false);
+  let subTabsOverflow = $state(false);
   
   // Check overflow on mount and resize with debouncing
   let checkOverflowTimeout: NodeJS.Timeout;
@@ -86,21 +108,22 @@
 
   onMount(() => {
     checkOverflow();
-    
+
     const observer = new ResizeObserver(() => checkOverflow());
     if (tabContainer) observer.observe(tabContainer);
     if (subTabContainer) observer.observe(subTabContainer);
-    
+
     // Add popstate listener for browser back/forward navigation
     if (browser) {
       window.addEventListener('popstate', handlePopState);
+      window.addEventListener("keydown", handleGlobalKeyDown);
     }
-    
+
     // Register search features from tabs
     if (tabs.length > 0 || subTabs.length > 0) {
       registerTabFeatures(tabs, subTabs, basePath, title, category);
     }
-    
+
     return () => {
       observer.disconnect();
     };
@@ -109,8 +132,9 @@
   onDestroy(() => {
     if (browser) {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("keydown", handleGlobalKeyDown);
     }
-    
+
     // Unregister search features when component is destroyed
     if (tabs.length > 0 || subTabs.length > 0) {
       const featureIds = [
@@ -122,65 +146,71 @@
   });
   
   // Simple reduced motion check
-  let prefersReducedMotion = false;
+  let prefersReducedMotion = $state(false);
   if (browser && window.matchMedia) {
     prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
-  
-  // Calculate slide direction based on tab order
-  $: if (activeTab !== previousTab && tabs.length > 0) {
-    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-    const previousIndex = tabs.findIndex(tab => tab.id === previousTab);
-    
-    if (previousIndex !== -1 && currentIndex !== -1) {
-      slideDirection = currentIndex > previousIndex ? 1 : -1;
-    }
-    previousTab = activeTab;
-  }
-  
-  // Calculate slide direction for sub-tabs
-  $: if (activeSubTab !== previousSubTab && currentSubTabs.length > 0) {
-    const currentIndex = currentSubTabs.findIndex(tab => tab.id === activeSubTab);
-    const previousIndex = currentSubTabs.findIndex(tab => tab.id === previousSubTab);
-    
-    if (previousIndex !== -1 && currentIndex !== -1) {
-      subSlideDirection = currentIndex > previousIndex ? 1 : -1;
-    }
-    previousSubTab = activeSubTab;
-  }
-  
+
   // Filter sub-tabs based on active main tab
-  $: currentSubTabs = subTabs.filter(st => st.parentTab === activeTab);
-  
-  // Re-check overflow when tabs change
-  $: if (tabs || currentSubTabs) {
-    if (browser) {
-      setTimeout(checkOverflow, 0);
+  let currentSubTabs = $derived(subTabs.filter(st => st.parentTab === activeTab));
+
+  // Calculate slide direction based on tab order
+  $effect(() => {
+    if (activeTab !== previousTab && tabs.length > 0) {
+      const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+      const previousIndex = tabs.findIndex(tab => tab.id === previousTab);
+
+      if (previousIndex !== -1 && currentIndex !== -1) {
+        slideDirection = currentIndex > previousIndex ? 1 : -1;
+      }
+      previousTab = activeTab;
     }
-  }
+  });
+
+  // Calculate slide direction for sub-tabs
+  $effect(() => {
+    if (activeSubTab !== previousSubTab && currentSubTabs.length > 0) {
+      const currentIndex = currentSubTabs.findIndex(tab => tab.id === activeSubTab);
+      const previousIndex = currentSubTabs.findIndex(tab => tab.id === previousSubTab);
+
+      if (previousIndex !== -1 && currentIndex !== -1) {
+        subSlideDirection = currentIndex > previousIndex ? 1 : -1;
+      }
+      previousSubTab = activeSubTab;
+    }
+  });
+
+  // Re-check overflow when tabs change
+  $effect(() => {
+    if (tabs || currentSubTabs) {
+      if (browser) {
+        setTimeout(checkOverflow, 0);
+      }
+    }
+  });
   
   function handleTabChange(tabId: string) {
     activeTab = tabId;
-    dispatch('tabChange', { tabId });
-    
+    ontabChange?.({ tabId });
+
     // Auto-select first sub-tab if available
     const newSubTabs = subTabs.filter(st => st.parentTab === tabId);
     if (newSubTabs.length > 0 && !newSubTabs.find(st => st.id === activeSubTab)) {
       activeSubTab = newSubTabs[0].id;
-      dispatch('subTabChange', { tabId: newSubTabs[0].id });
+      onsubTabChange?.({ tabId: newSubTabs[0].id });
     }
   }
-  
+
   function handleSubTabChange(tabId: string) {
     activeSubTab = tabId;
-    dispatch('subTabChange', { tabId });
+    onsubTabChange?.({ tabId });
   }
   
   // Keyboard navigation
   function handleKeyDown(event: KeyboardEvent, tabList: any[], currentTab: string, isSubTab = false) {
     const currentIndex = tabList.findIndex(tab => tab.id === currentTab);
     let newIndex = currentIndex;
-    
+
     switch (event.key) {
       case 'ArrowLeft':
       case 'ArrowUp':
@@ -203,16 +233,41 @@
       default:
         return;
     }
-    
+
     if (isSubTab) {
       handleSubTabChange(tabList[newIndex].id);
     } else {
       handleTabChange(tabList[newIndex].id);
     }
-    
+
     // Focus the new tab button
     const tabId = isSubTab ? `sub-tab-${tabList[newIndex].id}` : `tab-${tabList[newIndex].id}`;
     document.getElementById(tabId)?.focus();
+  }
+
+  // Global keyboard navigation for numbered tabs
+  function handleGlobalKeyDown(event: KeyboardEvent) {
+    // Only handle number keys (1-9)
+    const key = event.key;
+    if (!/^[1-9]$/.test(key)) return;
+
+    // Don't trigger if user is typing in an input/textarea/select
+    const target = event.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
+      return;
+    }
+
+    const tabIndex = parseInt(key) - 1;
+
+    // Try sub-tabs first if they exist
+    if (currentSubTabs.length > 0 && tabIndex < currentSubTabs.length) {
+      event.preventDefault();
+      handleSubTabChange(currentSubTabs[tabIndex].id);
+    } else if (tabs.length > 0 && tabIndex < tabs.length) {
+      // Otherwise use main tabs
+      event.preventDefault();
+      handleTabChange(tabs[tabIndex].id);
+    }
   }
   
   // Scroll navigation for mobile
@@ -257,10 +312,10 @@
       <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
         {#each actionButtons as button}
           <button
-                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-105 min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             disabled={button.loading || button.disabled}
-            on:click={button.action}
-            style="{button.style || `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30;`} focus:ring-color: {$colorStore.primary};"
+            onclick={button.action}
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             aria-busy={button.loading}
                   aria-label={button.label}
           >
@@ -274,8 +329,10 @@
     {/if}
   </div>
 
-  <!-- Status Messages Slot -->
-  <slot name="status-messages" />
+  <!-- Status Messages -->
+  {#if statusMessages}
+    {@render statusMessages()}
+  {/if}
   
   <!-- Built-in Notification -->
   {#if showNotification}
@@ -293,9 +350,9 @@
         <!-- Left scroll button -->
         {#if tabsOverflow}
           <button
-                  class="shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-xs"
+            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] backdrop-blur-xs"
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
-            on:click={() => scrollTabs('left', tabContainer)}
+            onclick={() => scrollTabs('left', tabContainer)}
             aria-label="Scroll tabs left"
           >
             <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 16px;"></i>
@@ -318,8 +375,8 @@
                      background: {activeTab === tab.id ? $colorStore.primary + '20' : 'transparent'};
                      border: 1px solid {activeTab === tab.id ? $colorStore.primary + '40' : 'transparent'};
                      focus:ring-color: {$colorStore.primary};"
-              on:click={() => handleTabChange(tab.id)}
-              on:keydown={(e) => handleKeyDown(e, tabs, activeTab)}
+                    onclick={() => handleTabChange(tab.id)}
+                    onkeydown={(e) => handleKeyDown(e, tabs, activeTab)}
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls="tab-panel-{tab.id}"
@@ -335,9 +392,9 @@
         <!-- Right scroll button -->
         {#if tabsOverflow}
           <button
-                  class="shrink-0 p-2 rounded-lg transition-all hover:scale-105 backdrop-blur-xs"
+            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] backdrop-blur-xs"
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
-            on:click={() => scrollTabs('right', tabContainer)}
+            onclick={() => scrollTabs('right', tabContainer)}
             aria-label="Scroll tabs right"
           >
             <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 16px;"></i>
@@ -368,7 +425,7 @@
             <button
               class="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg md:hidden transition-opacity"
               style="background: #0f172a; border: 1px solid {$colorStore.primary}20;"
-              on:click={() => scrollTabs('left', subTabContainer)}
+              onclick={() => scrollTabs('left', subTabContainer)}
               aria-label="Scroll sub-tabs left"
             >
               <i class="fa-solid fa-chevron-left" style="color: {$colorStore.primary}; font-size: 14px;"></i>
@@ -377,7 +434,7 @@
             <button
               class="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg md:hidden transition-opacity"
               style="background: #0f172a; border: 1px solid {$colorStore.primary}20;"
-              on:click={() => scrollTabs('right', subTabContainer)}
+              onclick={() => scrollTabs('right', subTabContainer)}
               aria-label="Scroll sub-tabs right"
             >
               <i class="fa-solid fa-chevron-right" style="color: {$colorStore.primary}; font-size: 14px;"></i>
@@ -395,14 +452,14 @@
             >
             {#each currentSubTabs as subTab, index}
               <button
-                      class="relative flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-lg hover:scale-105"
+                class="relative flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium whitespace-nowrap focus:outline-hidden focus:ring-2 focus:ring-offset-1 transition-all duration-200 rounded-lg hover:scale-[1.02]"
                 class:active={activeSubTab === subTab.id}
                 style="color: {activeSubTab === subTab.id ? $colorStore.text : $colorStore.muted};
                        background: {activeSubTab === subTab.id ? $colorStore.primary + '25' : 'transparent'};
                        {activeSubTab === subTab.id ? `border: 1px solid ${$colorStore.primary}30;` : 'border: 1px solid transparent;'};
                        focus:ring-color: {$colorStore.primary};"
-                on:click={() => handleSubTabChange(subTab.id)}
-                on:keydown={(e) => handleKeyDown(e, currentSubTabs, activeSubTab, true)}
+                onclick={() => handleSubTabChange(subTab.id)}
+                onkeydown={(e) => handleKeyDown(e, currentSubTabs, activeSubTab, true)}
                 role="tab"
                 aria-selected={activeSubTab === subTab.id}
                 aria-controls="sub-tab-panel-{subTab.id}"
@@ -443,7 +500,7 @@
       aria-labelledby={currentSubTabs.length > 0 ? `sub-tab-${activeSubTab}` : tabs.length > 0 ? `tab-${activeTab}` : undefined}
       id={currentSubTabs.length > 0 ? `sub-tab-panel-${activeSubTab}` : tabs.length > 0 ? `tab-panel-${activeTab}` : undefined}
     >
-      <slot />
+      {@render children()}
     </div>
   {/key}
   

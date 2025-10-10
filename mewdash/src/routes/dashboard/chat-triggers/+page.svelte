@@ -1,9 +1,9 @@
 <!-- routes/dashboard/chat-triggers/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { chatTriggersApi, clientApi, type ChatTrigger } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, slide} from "svelte/transition";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -11,7 +11,6 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {goto} from "$app/navigation";
     import {get} from "svelte/store";
-    import type {ChatTriggers} from "$lib/types/models";
     import type {PageData} from "./$types";
     import {browser} from "$app/environment";
     import {logger} from "$lib/logger.ts";
@@ -57,11 +56,11 @@
     User: 3,
   };
 
-  // Data variables  
-    let triggers: ChatTriggers[] = $state([]);
-  let newTrigger: Partial<ChatTriggers> & { 
-    isValidRegex: boolean; 
-    grantedRoles: string[] | string | null; 
+  // Data variables
+  let triggers: ChatTrigger[] = $state([]);
+  let newTrigger: Partial<ChatTrigger> & {
+    isValidRegex: boolean;
+    grantedRoles: string[] | string | null;
     removedRoles: string[] | string | null;
     validTriggerTypesMessage: boolean;
     validTriggerTypesInteraction: boolean;
@@ -131,7 +130,7 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
-      triggers = await api.getChatTriggers(guild.id);
+      triggers = await chatTriggersApi.getChatTriggers(guild.id);
       triggers = triggers.map((trigger) => ({
         ...trigger,
         grantedRoles: roleStringToArray(trigger.grantedRoles),
@@ -159,7 +158,7 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
-      guildRoles = await api.getGuildRoles(guild.id);
+      guildRoles = await clientApi.getRoles(guild.id);
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
     }
@@ -197,10 +196,10 @@
         grantedRoles: roleArrayToString(newTrigger.grantedRoles),
         removedRoles: roleArrayToString(newTrigger.removedRoles),
       };
-      
-      const addedTrigger = await api.addChatTrigger(
+
+      const addedTrigger = await chatTriggersApi.addChatTrigger(
         guild.id,
-        triggerData as ChatTriggers,
+        triggerData as ChatTrigger
       );
       triggers = [...triggers, addedTrigger];
       showNotificationMessage("Trigger added successfully", "success");
@@ -258,7 +257,7 @@
         removedRoles: roleArrayToString(trigger.removedRoles),
         guildId: guild.id,
       };
-      await api.updateChatTrigger(guild.id, updatedTrigger);
+      await chatTriggersApi.updateChatTrigger(guild.id, updatedTrigger);
       showNotificationMessage("Trigger updated successfully", "success");
       await loadTriggers();
     } catch (error: any) {
@@ -284,7 +283,7 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
-      await api.deleteChatTrigger(guild.id, triggerId);
+      await chatTriggersApi.deleteChatTrigger(guild.id, triggerId);
       showNotificationMessage("Trigger deleted successfully", "success");
       announceAction(`Trigger ${triggerName} deleted`);
       await loadTriggers();
@@ -449,7 +448,7 @@
     );
   }
 
-  function toggleOption(option: string, key: string, trigger: ChatTriggers) {
+  function toggleOption(option: string, key: string, trigger: ChatTrigger) {
     if (isEnum(key)) {
       (trigger as any)[key] = getEnumOptions(key)[option];
     } else if (isRoleSelection(key)) {
@@ -496,7 +495,7 @@
   }
 
   // Handle boolean selection change
-  function handleBooleanChange(trigger: ChatTriggers, key: string, event: CustomEvent) {
+  function handleBooleanChange(trigger: ChatTrigger, key: string, event: CustomEvent) {
     (trigger as any)[key] = event.detail.selected === "true";
   }
 
@@ -576,7 +575,7 @@
   });
 
   // Watch for guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
           loadTriggers();
             loadGuildRoles()
@@ -644,8 +643,8 @@
         guildId: guild.id,
         validTriggerTypes: ChatTriggerType.Message, // Use integer, not array
       };
-      
-      const addedTrigger = await api.addChatTrigger(guild.id, triggerData as ChatTriggers);
+
+      const addedTrigger = await chatTriggersApi.addChatTrigger(guild.id, triggerData as ChatTrigger);
       triggers = [...triggers, addedTrigger];
       
       // Reset form
@@ -876,7 +875,7 @@
            role="tabpanel" id="simple-panel" aria-labelledby="simple-tab" tabindex="0">
         
         <!-- Quick Setup Card -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-10"
+        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-10"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -961,7 +960,7 @@
         </div>
 
         <!-- Template Selection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-5"
+        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-5"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -970,8 +969,8 @@
           </h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button 
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+            <button
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
               style="border-color: {colors.primary}30; background: linear-gradient(135deg, {colors.primary}10, {colors.secondary}10);"
               onclick={() => useTemplate('simple')}
 
@@ -986,8 +985,8 @@
               </p>
             </button>
 
-            <button 
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+            <button
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.secondary}15, {colors.primary}10);"
               onclick={() => useTemplate('role')}
 
@@ -1002,8 +1001,8 @@
               </p>
             </button>
 
-            <button 
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+            <button
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
               style="border-color: {colors.accent}30; background: linear-gradient(135deg, {colors.accent}15, {colors.secondary}10);"
               onclick={() => useTemplate('slash')}
 
@@ -1018,8 +1017,8 @@
               </p>
             </button>
 
-            <button 
-              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
+            <button
+              class="template-card p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-[1.02] focus:scale-105"
               style="border-color: {colors.secondary}30; background: linear-gradient(135deg, {colors.gradientStart}15, {colors.gradientMid}10);"
               onclick={() => useTemplate('embed')}
 
@@ -1038,7 +1037,7 @@
 
         <!-- Existing Triggers (Simple View) -->
         {#if triggers.length === 0}
-            <div class="text-center py-12 backdrop-blur-xs rounded-2xl border shadow-2xl transition-all"
+          <div class="text-center py-12 rounded-2xl border shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                       border-color: {colors.primary}30;"
                transition:fade>
@@ -1049,7 +1048,7 @@
         {:else}
           <div class="space-y-4">
             {#each triggers as trigger (trigger.id)}
-                <div class="trigger-card backdrop-blur-xs rounded-2xl border shadow-2xl transition-all duration-200 relative"
+              <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
                    style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                           border-color: {colors.primary}30;
                           z-index: {expandedTriggerId === trigger.id ? 15 : 5};"
@@ -1238,7 +1237,7 @@
            role="tabpanel" id="advanced-panel" aria-labelledby="advanced-tab" tabindex="0">
         
         <!-- Advanced Creation Form -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all relative z-30"
+        <div class="rounded-2xl border p-6 shadow-2xl transition-all relative z-30"
              style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                     border-color: {colors.primary}30;">
           
@@ -1696,7 +1695,7 @@
             <!-- Create Button -->
             <div class="flex justify-end pt-6">
               <button
-                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105"
+                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={addTrigger}
                 disabled={!newTrigger.trigger?.trim() || !newTrigger.response?.trim() || (newTrigger.isRegex && !newTrigger.isValidRegex)}
@@ -1720,39 +1719,7 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(select),
-    :global(input),
-    :global(textarea) {
-        color-scheme: dark;
-    }
-
-    /* Custom scrollbar */
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary)10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary)30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary)50;
-    }
-
-    /* Prevent iOS styling */
+    @reference '../../../app.css'; /* Custom scrollbar *//* Prevent iOS styling */
 
     /* Prevent blue highlight on iOS */
 

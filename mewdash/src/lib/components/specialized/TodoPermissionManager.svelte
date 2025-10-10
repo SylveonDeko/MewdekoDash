@@ -1,26 +1,22 @@
 <!-- lib/components/TodoPermissionManager.svelte -->
 <script lang="ts">
-  import { run, createBubbler, stopPropagation } from 'svelte/legacy';
 
-  const bubble = createBubbler();
-  import { createEventDispatcher, onMount } from "svelte";
+
+  import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { api } from "$lib/api";
+  import { todoApi, guildApi } from "$lib/api/index.ts";
   import type { TodoListPermission, GrantPermissionRequest } from "$lib/types/todo";
 
   interface Props {
     listId: number;
     isOpen?: boolean;
+    onclose?: () => void;
+    onpermissionsUpdated?: () => void;
   }
 
-  let { listId, isOpen = false }: Props = $props();
-
-  const dispatch = createEventDispatcher<{
-    close: void;
-    permissionsUpdated: void;
-  }>();
+  let { listId, isOpen = false, onclose, onpermissionsUpdated }: Props = $props();
 
   let permissions: TodoListPermission[] = $state([]);
   let guildMembers: Array<{ id: string; username: string; displayName: string; avatarUrl: string; isBot: boolean }> = $state([]);
@@ -48,8 +44,8 @@
     try {
       loading = true;
       const [permsData, membersData] = await Promise.all([
-        api.getTodoListPermissions($currentGuild.id, listId, BigInt($currentGuild.userId)),
-        api.getGuildMembers($currentGuild.id)
+        todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($currentGuild.userId)),
+        guildApi.getGuildMembers($currentGuild.id)
       ]);
       
       permissions = permsData;
@@ -72,15 +68,15 @@
         canManage: newPermissions.canManage
       };
 
-      await api.grantTodoListPermissions($currentGuild.id, listId, request);
+      await todoApi.grantTodoListPermissions($currentGuild.id, listId, request);
       await loadPermissions();
       
       // Reset form
       selectedUserId = "";
       newPermissions = { canView: true, canEdit: false, canManage: false };
       showAddUser = false;
-      
-      dispatch("permissionsUpdated");
+
+      onpermissionsUpdated?.();
     } catch (error) {
       console.error("Failed to grant permissions:", error);
     }
@@ -90,16 +86,16 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.revokeTodoListPermissions($currentGuild.id, listId, userId, BigInt($currentGuild.userId));
+      await todoApi.revokeTodoListPermissions($currentGuild.id, listId, userId, BigInt($currentGuild.userId));
       await loadPermissions();
-      dispatch("permissionsUpdated");
+      onpermissionsUpdated?.();
     } catch (error) {
       console.error("Failed to revoke permissions:", error);
     }
   }
 
   function closeModal() {
-    dispatch("close");
+    onclose?.();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -127,7 +123,7 @@
     }
   });
 
-  run(() => {
+  $effect(() => {
     if (isOpen && listId) {
       loadPermissions();
     }
@@ -147,12 +143,12 @@
     <!-- Modal Content -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div 
+      <div
       class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-      onclick={stopPropagation(bubble('click'))}
+      onclick={(e) => e.stopPropagation()}
       in:fly={{ y: 20, duration: 300, delay: 100 }}
       role="button" tabindex="0"
-      onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
+      onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">
@@ -194,7 +190,7 @@
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Current Permissions</h3>
               <button
-                class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
                 style="background: {$colorStore.primary}; color: white;"
                 onclick={() => showAddUser = !showAddUser}
               >
@@ -302,7 +298,7 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
                   <button
-                    class="flex-1 px-4 py-2 rounded-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: white;"
                     onclick={grantPermissions}
                     disabled={!selectedUserId || !newPermissions.canView}
@@ -311,7 +307,7 @@
                   </button>
                   
                   <button
-                    class="px-4 py-2 rounded-lg transition-all hover:scale-105"
+                    class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
                     style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
                     onclick={() => showAddUser = false}
                   >
@@ -386,7 +382,7 @@
       <!-- Footer -->
       <div class="flex items-center justify-end gap-3 p-6 border-t" style="border-color: {$colorStore.primary}20;">
         <button
-          class="px-6 py-2 rounded-lg transition-all hover:scale-105"
+          class="px-6 py-2 rounded-lg transition-all hover:scale-[1.02]"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}10;"
           onclick={closeModal}
         >

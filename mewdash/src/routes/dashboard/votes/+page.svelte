@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { votesApi, clientApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -59,14 +59,14 @@
                 rolesListData,
                 leaderboardData
             ] = await Promise.all([
-                api.getVoteRoles($currentGuild.id).catch(() => []),
-                api.getVoteMessage($currentGuild.id).catch(() => ""),
-                api.getVotePassword($currentGuild.id).catch(() => ""),
-                api.getVoteChannel($currentGuild.id).catch(() => null),
-                api.getVotes($currentGuild.id).catch(() => []),
-                api.getGuildTextChannels($currentGuild.id).catch(() => []),
-                api.getGuildRoles($currentGuild.id).catch(() => []),
-                api.getVoteLeaderboard($currentGuild.id, leaderboardLimit).catch(() => [])
+              votesApi.getVoteRoles($currentGuild.id).catch(() => []),
+              votesApi.getVoteMessage($currentGuild.id).catch(() => ""),
+              votesApi.getVotePassword($currentGuild.id).catch(() => ""),
+              votesApi.getVoteChannel($currentGuild.id).catch(() => null),
+              votesApi.getVotes($currentGuild.id).catch(() => []),
+              clientApi.getTextChannels($currentGuild.id).catch(() => []),
+              clientApi.getRoles($currentGuild.id).catch(() => []),
+              votesApi.getVoteLeaderboard($currentGuild.id, leaderboardLimit).catch(() => [])
             ]);
 
             voteRoles = rolesData;
@@ -116,15 +116,15 @@
             const promises = [];
 
             if (configForm.message !== voteMessage) {
-                promises.push(api.setVoteMessage($currentGuild.id, configForm.message));
+              promises.push(votesApi.setVoteMessage($currentGuild.id, configForm.message));
             }
 
             if (configForm.password !== votePassword) {
-                promises.push(api.setVotePassword($currentGuild.id, configForm.password));
+              promises.push(votesApi.setVotePassword($currentGuild.id, configForm.password));
             }
 
             if (configForm.channelId !== voteChannel) {
-                promises.push(api.setVoteChannel($currentGuild.id, configForm.channelId || BigInt(0)));
+              promises.push(votesApi.setVoteChannel($currentGuild.id, configForm.channelId || BigInt(0)));
             }
 
             await Promise.all(promises);
@@ -144,7 +144,7 @@
 
         saving = true;
         try {
-            await api.addVoteRole($currentGuild.id, BigInt(newVoteRole.roleId), newVoteRole.timer);
+          await votesApi.addVoteRole($currentGuild.id, BigInt(newVoteRole.roleId), newVoteRole.timer);
             showMessage("Vote role added successfully!", "success");
             newVoteRole = { roleId: null, timer: 0 };
             await loadAllVoteData();
@@ -162,7 +162,7 @@
 
         saving = true;
         try {
-            await api.removeVoteRole($currentGuild.id, roleId);
+          await votesApi.removeVoteRole($currentGuild.id, roleId);
             showMessage("Vote role removed successfully!", "success");
             await loadAllVoteData();
         } catch (err) {
@@ -180,7 +180,7 @@
 
         saving = true;
         try {
-            await api.clearVoteRoles($currentGuild.id);
+          await votesApi.clearVoteRoles($currentGuild.id);
             showMessage("All vote roles cleared!", "success");
             await loadAllVoteData();
         } catch (err) {
@@ -372,7 +372,7 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
                   <button aria-label="Button action"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
@@ -431,7 +431,7 @@
                 </div>
 
                 <button
-                        class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+                  class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                         style="background: {$colorStore.primary}; color: white;"
                         onclick={addVoteRole}
                         disabled={saving || !newVoteRole.roleId}
@@ -453,7 +453,7 @@
                     </div>
                     {#if voteRoles.length > 0}
                         <button
-                                class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-105"
+                          class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                 onclick={clearAllVoteRoles}
                         >
@@ -473,7 +473,7 @@
                             </p>
                         </div>
                     {:else}
-                        {#each voteRoles as voteRole}
+                      {#each voteRoles as voteRole (voteRole.roleId)}
                             <div class="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
@@ -554,7 +554,7 @@
                             </p>
                         </div>
                     {:else}
-                        {#each leaderboard as entry, index}
+                      {#each leaderboard as entry, index (entry.userId)}
                             <div class="flex items-center gap-4 p-4 rounded-xl transition-all hover:scale-[1.02]"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center justify-center w-8 h-8 rounded-full"

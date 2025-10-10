@@ -5,12 +5,12 @@ Wrapper component for individual wizard steps with consistent styling and animat
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
   import { fly } from "svelte/transition";
-  import type { ComponentType } from "svelte";
+
 
   interface Props {
     title: string;
     subtitle?: string;
-    icon?: string | ComponentType | undefined;
+    icon?: string | undefined;
     stepNumber: number;
     isActive?: boolean;
     maxWidth?: string;

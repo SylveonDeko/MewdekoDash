@@ -92,7 +92,7 @@ Permission check component for verifying bot permissions during wizard
     {#if requiredForFeatures.length > 0}
       <div class="flex flex-wrap gap-1 mb-3">
         <span class="text-xs font-medium" style="color: {$colorStore.muted};">Required for:</span>
-        {#each requiredForFeatures as feature}
+        {#each requiredForFeatures as feature (feature)}
           <span class="px-2 py-1 rounded-sm text-xs font-medium"
                 style="background: {$colorStore.primary}10; color: {$colorStore.primary};">
             {feature}

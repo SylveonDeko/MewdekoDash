@@ -1,9 +1,9 @@
 <!-- routes/dashboard/moderation/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import { moderationApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
@@ -40,8 +40,8 @@
         loading = true;
 
         const [warningsData, recentData] = await Promise.all([
-          api.getWarnings($currentGuild.id),
-          api.getRecentModerationActivity($currentGuild.id, 10)
+          moderationApi.getWarnings($currentGuild.id),
+          moderationApi.getRecentModerationActivity($currentGuild.id, 10)
         ]);
 
         warnings = warningsData;
@@ -70,7 +70,7 @@
     fetchModerationData();
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchModerationData();
         }
@@ -304,22 +304,4 @@
 
 <style lang="postcss">
     @reference '../../../app.css';
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
 </style>

@@ -1,11 +1,11 @@
 <!-- routes/dashboard/embedbuilder/+page.svelte -->
 <script lang="ts">
-    import {run, self} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
+
+  import { onMount } from "svelte";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
-    import {api} from "$lib/api.ts";
+  import { chatTriggersApi } from "$lib/api/index.ts";
     import {fade} from "svelte/transition";
     import {logger} from "$lib/logger.ts";
     import {colorStore} from "$lib/stores/colorStore.ts";
@@ -164,7 +164,7 @@
   // Load chat triggers
   async function loadChatTriggers(guildId: string) {
     try {
-      const response = await api.getChatTriggers(guildId);
+      const response = await chatTriggersApi.getChatTriggers(guildId);
       if (response.success) {
         chatTriggers = response.data;
       }
@@ -552,7 +552,7 @@
 
     let isLoggedIn = $derived($userAdminGuilds !== null);
     let hasAdminGuilds = $derived(isLoggedIn && $userAdminGuilds.length > 0);
-    run(() => {
+  $effect(() => {
         currentGuild.subscribe((guild) => {
             selectedGuild = guild;
             if (guild) {

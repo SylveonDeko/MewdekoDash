@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import {api} from "$lib/api";
+    import { reputationApi, clientApi } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -111,12 +111,12 @@
                 channelsData,
                 rolesListData
             ] = await Promise.all([
-                api.getReputationConfig($currentGuild.id).catch(() => null),
-                api.getReputationRoleRewards($currentGuild.id).catch(() => []),
-                api.getReputationLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize).catch(() => []),
-                api.getReputationStats($currentGuild.id).catch(() => null),
-                api.getGuildTextChannels($currentGuild.id).catch(() => []),
-                api.getGuildRoles($currentGuild.id).catch(() => [])
+              reputationApi.getReputationConfig($currentGuild.id).catch(() => null),
+              reputationApi.getReputationRoleRewards($currentGuild.id).catch(() => []),
+              reputationApi.getReputationLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize).catch(() => []),
+              reputationApi.getReputationStats($currentGuild.id).catch(() => null),
+              clientApi.getTextChannels($currentGuild.id).catch(() => []),
+              clientApi.getRoles($currentGuild.id).catch(() => [])
             ]);
 
             repConfig = configData;
@@ -173,34 +173,34 @@
             const promises = [];
 
             if (configForm.enabled !== repConfig?.enabled) {
-                promises.push(api.setReputationEnabled($currentGuild.id, configForm.enabled));
+              promises.push(reputationApi.setReputationEnabled($currentGuild.id, configForm.enabled));
             }
             if (configForm.defaultCooldownMinutes !== repConfig?.defaultCooldownMinutes) {
-                promises.push(api.setReputationCooldown($currentGuild.id, configForm.defaultCooldownMinutes));
+              promises.push(reputationApi.setReputationCooldown($currentGuild.id, configForm.defaultCooldownMinutes));
             }
             if (configForm.dailyLimit !== repConfig?.dailyLimit) {
-                promises.push(api.setReputationDailyLimit($currentGuild.id, configForm.dailyLimit));
+              promises.push(reputationApi.setReputationDailyLimit($currentGuild.id, configForm.dailyLimit));
             }
             if (configForm.weeklyLimit !== repConfig?.weeklyLimit) {
-                promises.push(api.setReputationWeeklyLimit($currentGuild.id, configForm.weeklyLimit));
+              promises.push(reputationApi.setReputationWeeklyLimit($currentGuild.id, configForm.weeklyLimit));
             }
             if (configForm.minAccountAgeDays !== repConfig?.minAccountAgeDays) {
-                promises.push(api.setReputationMinAccountAge($currentGuild.id, configForm.minAccountAgeDays));
+              promises.push(reputationApi.setReputationMinAccountAge($currentGuild.id, configForm.minAccountAgeDays));
             }
             if (configForm.minServerMembershipHours !== repConfig?.minServerMembershipHours) {
-                promises.push(api.setReputationMinServerMembership($currentGuild.id, configForm.minServerMembershipHours));
+              promises.push(reputationApi.setReputationMinServerMembership($currentGuild.id, configForm.minServerMembershipHours));
             }
             if (configForm.minMessageCount !== repConfig?.minMessageCount) {
-                promises.push(api.setReputationMinMessageCount($currentGuild.id, configForm.minMessageCount));
+              promises.push(reputationApi.setReputationMinMessageCount($currentGuild.id, configForm.minMessageCount));
             }
             if (configForm.enableNegativeRep !== repConfig?.enableNegativeRep) {
-                promises.push(api.setReputationNegativeRep($currentGuild.id, configForm.enableNegativeRep));
+              promises.push(reputationApi.setReputationNegativeRep($currentGuild.id, configForm.enableNegativeRep));
             }
             if (configForm.enableAnonymous !== repConfig?.enableAnonymous) {
-                promises.push(api.setReputationAnonymousRep($currentGuild.id, configForm.enableAnonymous));
+              promises.push(reputationApi.setReputationAnonymousRep($currentGuild.id, configForm.enableAnonymous));
             }
             if (configForm.notificationChannel !== repConfig?.notificationChannel) {
-                promises.push(api.setReputationNotificationChannel($currentGuild.id, configForm.notificationChannel));
+              promises.push(reputationApi.setReputationNotificationChannel($currentGuild.id, configForm.notificationChannel));
             }
 
             await Promise.all(promises);
@@ -220,7 +220,7 @@
 
         saving = true;
         try {
-            await api.addReputationRoleReward($currentGuild.id, {
+          await reputationApi.addReputationRoleReward($currentGuild.id, {
                 roleId: BigInt(newRoleReward.roleId),
                 repRequired: newRoleReward.repRequired,
                 removeOnDrop: newRoleReward.removeOnDrop,
@@ -253,7 +253,7 @@
 
         saving = true;
         try {
-            await api.removeReputationRoleReward($currentGuild.id, roleId);
+          await reputationApi.removeReputationRoleReward($currentGuild.id, roleId);
             showMessage("Role reward removed!", "success");
             await loadAllReputationData();
         } catch (err) {
@@ -533,7 +533,7 @@
                     </div>
 
                   <button aria-label="Button action"
-                            class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 min-h-[52px]"
+                          class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
                             style="background: {$colorStore.primary}; color: white;"
                             onclick={saveConfig}
                             disabled={saving}
@@ -644,7 +644,7 @@
                 </div>
 
                 <button
-                        class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+                  class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                         style="background: {$colorStore.primary}; color: white;"
                         onclick={addRoleReward}
                         disabled={saving || !newRoleReward.roleId}

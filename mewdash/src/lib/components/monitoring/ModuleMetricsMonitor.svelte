@@ -1,7 +1,7 @@
 <!-- lib/components/ModuleMetricsMonitor.svelte -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api.ts";
+  import { performanceApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore";
 
@@ -34,7 +34,7 @@
     try {
       refreshInProgress = true;
       error = null;
-      const response = await api.getModuleMetrics(userId);
+      const response = await performanceApi.getModuleMetrics(userId);
       moduleMetrics = Array.isArray(response) ? response : [];
       sortData();
     } catch (err) {
@@ -157,7 +157,7 @@
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Module Metrics</h2>
       </div>
       <button aria-label="Navigate"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 disabled:opacity-50"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
         disabled={refreshInProgress}
         onclick={fetchModuleMetrics}

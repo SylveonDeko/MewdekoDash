@@ -1,12 +1,11 @@
 <!-- routes/dashboard/giveaways/+page.svelte -->
 <script lang="ts">
-  import { run } from "svelte/legacy";
+
 
   import { onDestroy, onMount } from "svelte";
-  import { api } from "$lib/api.ts";
+  import { giveawaysApi, clientApi, type Giveaways } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
-  import type { Giveaways } from "$lib/types";
   import { goto } from "$app/navigation";
   import Notification from "$lib/components/ui/Notification.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -99,7 +98,7 @@
         loading = true;
         error = null;
         if (!$currentGuild?.id) throw new Error("No guild selected");
-        giveaways = await api.getGiveaways($currentGuild.id);
+        giveaways = await giveawaysApi.getGiveaways($currentGuild.id);
       } catch (err) {
         logger.error("Failed to fetch giveaways:", err);
         error = (err as Error).message || "Failed to fetch giveaways";
@@ -112,7 +111,7 @@
   async function loadGuildRoles() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      guildRoles = await api.getGuildRoles($currentGuild.id);
+      guildRoles = await clientApi.getRoles($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
     }
@@ -223,7 +222,7 @@
   }
 
   // Reactive statements
-  run(() => {
+  $effect(() => {
     if ($currentGuild) {
       fetchGiveaways();
       loadGuildRoles();
@@ -601,21 +600,4 @@
     }
 
     /* Custom scrollbar styling */
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
 </style>

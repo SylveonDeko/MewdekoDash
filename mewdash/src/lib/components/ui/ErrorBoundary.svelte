@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {browser} from "$app/environment";
+
+  import { browser } from "$app/environment";
     import {onMount} from "svelte";
 
     interface Props {
@@ -17,7 +17,7 @@
   let showErrorDetails = $state(false);
 
   // Reset error state when component props change
-  run(() => {
+  $effect(() => {
     if (!hasError) {
       errorDetails = null;
     }

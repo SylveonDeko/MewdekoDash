@@ -2,13 +2,17 @@
 https://svelte.dev/e/attribute_invalid_event_handler -->
 <!-- lib/Profile.svelte -->
 <script lang="ts">
-  export let profileData: {
-    alt: string;
-    image: string;
-    name: string;
-    description: string;
-    eggy: string;
-  };
+  interface Props {
+    profileData: {
+      alt: string;
+      image: string;
+      name: string;
+      description: string;
+      eggy: string;
+    };
+  }
+
+  let { profileData }: Props = $props();
 </script>
 
 <div class="flex flex-col items-center text-mewd-white p-7">

@@ -1,6 +1,5 @@
 <!-- lib/components/InviteStats.svelte -->
 <script lang="ts">
-    import {Link, Users} from "lucide-svelte";
     import {colorStore} from "$lib/stores/colorStore";
     import {inviteStore} from "$lib/stores/inviteStore";
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -20,16 +19,16 @@
                 border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-4 mb-6">
       <div class="p-3 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                    color: {$colorStore.primary};">
-        <Link class="w-6 h-6" />
+           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+        <i class="fa-utility-duo fa-regular fa-link text-2xl"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       </div>
       <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Stats</h2>
     </div>
 
     <div class="space-y-4">
       <StatCard
-        icon={Users}
+        icon="fa-users"
         label="Total Invites"
         value={new Intl.NumberFormat().format(stats.totalInvites)}
         iconColor="primary"
@@ -37,7 +36,7 @@
       />
 
       <StatCard
-        icon={Users}
+        icon="fa-users"
         label="Average Joins"
         value={stats.averageJoins}
         subtitle="per day"
@@ -57,7 +56,7 @@
 
           {#each stats.topInviters as inviter, index}
             <StatCard
-              icon={Users}
+              icon="fa-user"
               label={inviter.username}
               value={new Intl.NumberFormat().format(inviter.inviteCount)}
               iconColor="primary"

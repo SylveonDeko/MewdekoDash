@@ -3,7 +3,7 @@
 Wizard layout - minimal layout for focused setup experience
 -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
+
 
   import { colorStore } from "$lib/stores/colorStore";
   import { userStore } from "$lib/stores/userStore";
@@ -28,7 +28,7 @@ Wizard layout - minimal layout for focused setup experience
   });
 
   // Sync user data
-    run(() => {
+  $effect(() => {
         if (browser && data?.user && (!$userStore || $userStore.id !== data.user.id)) {
             userStore.set(data.user);
         }

@@ -1,17 +1,14 @@
 <!-- routes/dashboard/counting/+page.svelte -->
 <script lang="ts">
-    import {run, stopPropagation} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {fade, slide} from "svelte/transition";
-    import type {PageData} from "./$types";
+
+  import { onMount } from "svelte";
     import {
+      countingApi,
+      clientApi,
+      CountingPattern,
         type CountingChannelResponse,
         type CountingConfigResponse,
-        CountingPattern,
         type CountingStatsResponse,
         type CountingUserStatsResponse,
         type CreateSavePointRequest,
@@ -19,7 +16,11 @@
         type SavePointResponse,
         type SetupCountingChannelRequest,
         type UpdateCountingConfigRequest
-    } from "$lib/types/counting";
+    } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { fade, slide } from "svelte/transition";
+  import type { PageData } from "./$types";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
@@ -159,9 +160,9 @@
 
     try {
       const [channelsData, textChannelsData, rolesData] = await Promise.all([
-        api.getCountingChannels($currentGuild.id),
-        api.getGuildTextChannels($currentGuild.id),
-        api.getGuildRoles($currentGuild.id)
+        countingApi.getCountingChannels($currentGuild.id),
+        clientApi.getTextChannels($currentGuild.id),
+        clientApi.getRoles($currentGuild.id)
       ]);
 
       countingChannels = channelsData || [];
@@ -187,9 +188,9 @@
     
     try {
       const [configData, statsData, savePointsData] = await Promise.all([
-        api.getCountingChannelConfig($currentGuild.id, channelId).catch(() => null),
-        api.getCountingChannelStats($currentGuild.id, channelId).catch(() => null),
-        api.getCountingSavePoints($currentGuild.id, channelId).catch(() => [])
+        countingApi.getCountingConfig($currentGuild.id, channelId).catch(() => null),
+        countingApi.getCountingStats($currentGuild.id, channelId).catch(() => null),
+        countingApi.getSavePoints($currentGuild.id, channelId).catch(() => [])
       ]);
 
       channelConfig = configData;
@@ -224,10 +225,11 @@
     if (!selectedChannel || !$currentGuild) return;
     
     try {
-      const leaderboardData = await api.getCountingChannelLeaderboard(
+      const leaderboardData = await countingApi.getLeaderboard(
         $currentGuild.id,
         selectedChannel.channelId,
-        leaderboardType,
+        leaderboardType as any,
+        1,
         leaderboardLimit
       );
       leaderboard = leaderboardData.entries || [];
@@ -246,7 +248,7 @@
         increment: setupIncrement
       };
 
-      const newChannel = await api.setupCountingChannel($currentGuild.id, BigInt(setupChannelId), request);
+      const newChannel = await countingApi.setupCountingChannel($currentGuild.id, BigInt(setupChannelId), request);
       showNotificationMessage("Counting channel setup successfully!", "success");
       
       // Refresh data
@@ -286,7 +288,7 @@
         enableCompetitions
       };
 
-      await api.updateCountingChannelConfig($currentGuild.id, selectedChannel.channelId, request);
+      await countingApi.updateCountingConfig($currentGuild.id, selectedChannel.channelId, request);
       hasChanges = false;
       showNotificationMessage("Configuration saved successfully!", "success");
       
@@ -308,7 +310,7 @@
         reason: resetReason || undefined
       };
 
-      await api.resetCountingChannel($currentGuild.id, selectedChannel.channelId, request);
+      await countingApi.resetCountingChannel($currentGuild.id, selectedChannel.channelId, request);
       showNotificationMessage(`Channel reset to ${resetNumber} successfully!`, "success");
       
       // Reload data
@@ -333,11 +335,11 @@
         reason: saveReason || undefined
       };
 
-      await api.createCountingSavePoint($currentGuild.id, selectedChannel.channelId, request);
+      await countingApi.createSavePoint($currentGuild.id, selectedChannel.channelId, request);
       showNotificationMessage("Save point created successfully!", "success");
-      
+
       // Reload save points
-      const savePointsData = await api.getCountingSavePoints($currentGuild.id, selectedChannel.channelId);
+      const savePointsData = await countingApi.getSavePoints($currentGuild.id, selectedChannel.channelId);
       savePoints = savePointsData || [];
       
       // Reset form
@@ -350,9 +352,9 @@
 
   async function disableChannel(channel: CountingChannelResponse) {
     if (!$currentGuild || !currentUser) return;
-    
+
     try {
-      await api.disableCountingChannel($currentGuild.id, channel.channelId, BigInt(currentUser.id));
+      await countingApi.removeCountingChannel($currentGuild.id, channel.channelId);
       showNotificationMessage("Channel disabled successfully!", "success");
       
       // Reload data
@@ -384,19 +386,19 @@
     };
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             loadData();
         }
     });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadData();
         }
     });
 
-    run(() => {
+  $effect(() => {
         if (activeTab === "leaderboard" && selectedChannel) {
             loadLeaderboard();
         }
@@ -506,7 +508,7 @@
         </div>
         
         <button
-          class="mt-4 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
+          class="mt-4 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
           style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
           onclick={setupChannel}
           disabled={!setupChannelId}
@@ -559,7 +561,7 @@
 
                   <button aria-label="Delete channel"
                           class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20 shrink-0"
-                    onclick={stopPropagation(() => disableChannel(channel))}
+                          onclick={(e) => { e.stopPropagation(); disableChannel(channel); }}
                     title="Disable channel"
                   >
                     <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
@@ -1047,7 +1049,7 @@
         </div>
         
         <button
-          class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
+          class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
           style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"
           onclick={resetChannel}
         >
@@ -1072,7 +1074,7 @@
               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             >
             <button
-              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2"
+              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
               style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
               onclick={createSavePoint}
             >
@@ -1113,7 +1115,7 @@
                 
                 <div class="flex items-center gap-2">
                   <button aria-label="Play"
-                    class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
                     onclick={() => {
                       if (confirm("Are you sure you want to restore from this save point?")) {
@@ -1125,7 +1127,7 @@
                   </button>
 
                   <button aria-label="Delete"
-                    class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 text-red-500 hover:bg-red-500/20"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] text-red-500 hover:bg-red-500/20"
                     onclick={() => {
                       if (confirm("Are you sure you want to delete this save point?")) {
                         // Implementation would go here

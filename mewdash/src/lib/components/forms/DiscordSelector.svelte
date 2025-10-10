@@ -14,11 +14,10 @@
 </script>
 
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import Portal from "$lib/components/ui/Portal.svelte";
 
-  
+
   interface Props {
     // Props
     type: SelectorType;
@@ -29,6 +28,7 @@
     searchable?: boolean;
     disabled?: boolean;
     customIcon?: any; // Custom icon component for custom type
+    onchange?: (detail: { selected: string | string[] | null }) => void;
   }
 
   let {
@@ -39,7 +39,8 @@
     placeholder = "Select...",
     searchable = true,
     disabled = false,
-    customIcon = null
+    customIcon = null,
+    onchange
   }: Props = $props();
 
   // Internal state
@@ -50,8 +51,20 @@
   let containerRef: HTMLDivElement = $state();
   let focusedIndex = $state(-1);
   let dropdownId = `dropdown-${Math.random().toString(36).substring(2, 9)}`;
+  let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
 
-  const dispatch = createEventDispatcher();
+  function handleButtonMouseMove(e: MouseEvent, buttonId: string) {
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    buttonMousePositions[buttonId] = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function handleButtonMouseLeave(buttonId: string) {
+    delete buttonMousePositions[buttonId];
+  }
 
 
 
@@ -113,7 +126,7 @@
       closeDropdown();
     }
 
-    dispatch("change", { selected });
+    onchange?.({ selected });
   }
 
   // Remove selected option (for multiple mode)
@@ -121,7 +134,7 @@
     event.stopPropagation();
     if (multiple && Array.isArray(selected)) {
       selected = selected.filter(id => id !== optionId);
-      dispatch("change", { selected });
+      onchange?.({ selected });
     }
   }
 
@@ -208,7 +221,7 @@
   function clearAll(event: Event) {
     event.stopPropagation();
     selected = multiple ? [] : null;
-    dispatch("change", { selected });
+    onchange?.({ selected });
   }
   // Computed values
   let filteredOptions = $derived(searchable && searchTerm
@@ -261,7 +274,9 @@
 >
   <!-- Main selector button -->
   <button aria-label="Button action"
-    class="w-full p-3 rounded-xl border transition-all duration-200 text-left flex items-center min-h-[50px] backdrop-blur-md"
+          class="group w-full p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] text-left flex items-center min-h-[50px] backdrop-blur-md relative overflow-hidden"
+          onmouseleave={() => handleButtonMouseLeave('selector-main')}
+          onmousemove={(e) => handleButtonMouseMove(e, 'selector-main')}
     class:cursor-not-allowed={disabled}
     class:opacity-50={disabled}
     {disabled}
@@ -271,7 +286,23 @@
            color: {$colorStore.text};"
     type="button"
   >
-    <div class="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+    <!-- Mouse spotlight -->
+    {#if buttonMousePositions['selector-main']}
+      <div
+        class="pointer-events-none absolute w-32 h-32 rounded-full opacity-30 transition-all duration-100 ease-out"
+        style="background: radial-gradient(circle at center, {$colorStore.primary}60, transparent 70%);
+               left: {buttonMousePositions['selector-main'].x}px;
+               top: {buttonMousePositions['selector-main'].y}px;
+               transform: translate(-50%, -50%);
+               filter: blur(20px);"
+      ></div>
+    {/if}
+
+    <!-- Hover gradient overlay -->
+    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+         style="background: {$colorStore.primary}12;"></div>
+
+    <div class="flex items-center gap-3 flex-1 min-w-0 overflow-hidden relative z-10">
       <!-- Type icon or selected emoji -->
       {#if type === 'custom' && selectedOption?.emoji}
         <span class="text-lg shrink-0">{selectedOption.emoji}</span>
@@ -323,7 +354,7 @@
     </div>
 
     <!-- Right side controls -->
-    <div class="flex items-center gap-1 shrink-0 ml-2">
+    <div class="flex items-center gap-1 shrink-0 ml-2 relative z-10">
       {#if hasSelection && !disabled}
         <span
           class="p-1 hover:bg-black/20 rounded-sm shrink-0 cursor-pointer"
@@ -394,13 +425,15 @@
 
             <button
               type="button"
-              class="option-item w-full px-4 py-3 text-left transition-all duration-200 ease-in-out flex items-center gap-3 border border-transparent rounded-md relative group"
+              onmousemove={(e) => handleButtonMouseMove(e, `option-${option.id}`)}
+              onmouseleave={() => handleButtonMouseLeave(`option-${option.id}`)}
+              class="option-item w-full px-4 py-3 text-left transition-all duration-200 ease-in-out flex items-center gap-3 border border-transparent rounded-md relative group overflow-hidden"
               class:font-medium={isSelected}
               style="color: {$colorStore.text};
-                     background: {isFocused 
-                       ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)` 
-                       : isSelected 
-                         ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` 
+                     background: {isFocused
+                       ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`
+                       : isSelected
+                         ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)`
                          : 'transparent'};
                      border-color: {isSelected ? $colorStore.primary + '50' : 'transparent'};
                      hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
@@ -409,8 +442,24 @@
               role="option"
               aria-selected={isSelected}
             >
+              <!-- Mouse spotlight -->
+              {#if buttonMousePositions[`option-${option.id}`]}
+                <div
+                  class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
+                  style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
+                         left: {buttonMousePositions[`option-${option.id}`].x}px;
+                         top: {buttonMousePositions[`option-${option.id}`].y}px;
+                         transform: translate(-50%, -50%);
+                         filter: blur(15px);"
+                ></div>
+              {/if}
+
+              <!-- Hover gradient overlay -->
+              <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                   style="background: {$colorStore.primary}12;"></div>
+
               <!-- Option content -->
-              <div class="flex items-center gap-3 flex-1">
+              <div class="flex items-center gap-3 flex-1 relative z-10">
                 <!-- Role color indicator -->
                 {#if type === 'role' && option.color}
                   <div
@@ -418,7 +467,7 @@
                     style="background-color: {getRoleColorHex(option.color)}"
                   ></div>
                 {/if}
-                
+
                 <!-- Custom emoji indicator -->
                 {#if type === 'custom' && option.emoji}
                   <span class="text-lg shrink-0">{option.emoji}</span>
@@ -433,7 +482,7 @@
               <!-- Selection indicator -->
               {#if isSelected}
                 <div
-                        class="w-2 h-2 rounded-full shrink-0"
+                  class="w-2 h-2 rounded-full shrink-0 relative z-10"
                   style="background: {$colorStore.primary}"
                 ></div>
               {/if}

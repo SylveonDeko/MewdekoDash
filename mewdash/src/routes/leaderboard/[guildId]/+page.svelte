@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { fade, fly } from "svelte/transition";
-  import { api } from "$lib/api";
+  import { instanceManagementApi, clientApi, xpApi, messageCountApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentInstance } from "$lib/stores/instanceStore";
@@ -50,7 +50,7 @@
     checkingInstances = true;
     try {
       // Get all available instances
-      const instances = await api.getBotInstances().catch(() => []);
+      const instances = await instanceManagementApi.getBotInstances().catch(() => []);
       
       if (instances.length === 0) {
         error = "No bot instances available";
@@ -126,7 +126,7 @@
     checkingMembership = true;
     try {
       // Instance is already set in store from findInstancesWithGuild
-      const mutualGuilds = await api.getMutualGuilds(userId, false);
+      const mutualGuilds = await clientApi.getMutualGuilds(userId, false);
       
       isMember = mutualGuilds?.some((guild: any) => {
         // Handle BigInt comparison properly
@@ -162,13 +162,13 @@
       // Instance is already set in store, no need for custom headers
       if (isPagination) {
         // Only load leaderboard for pagination
-        const board = await api.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []);
+        const board = await xpApi.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []);
         
         // Enhance with message counts for members
         leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
-              const messageStats = await api.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
+              const messageStats = await messageCountApi.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
               return { ...user, messageCount: messageStats.totalMessages || 0 };
             } catch {
               return { ...user, messageCount: 0 };
@@ -179,14 +179,14 @@
         // Load both leaderboard and stats for initial load
         const [board, stats] = await Promise.all([
           api.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []),
-          api.getXpServerStats(guildId).catch(() => ({}))
+          xpApi.getXpServerStats(guildId).catch(() => ({}))
         ]);
 
         // Enhance leaderboard with message counts for members
         leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
-              const messageStats = await api.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
+              const messageStats = await messageCountApi.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
               return { ...user, messageCount: messageStats.totalMessages || 0 };
             } catch {
               return { ...user, messageCount: 0 };
@@ -310,7 +310,7 @@
           </p>
           <a
             href="/api/discord/login"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}; color: white;"
           >
             Login with Discord
@@ -475,7 +475,7 @@
             {#if leaderboard.length >= pageSize}
               <div class="flex gap-2">
                 <button
-                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-105 text-sm min-h-[36px] flex items-center justify-center"
+                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-[1.02] text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => goToPage(currentPage - 1)}
                   disabled={currentPage <= 1 || paginationLoading}
@@ -494,7 +494,7 @@
                 </div>
                 
                 <button
-                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-105 text-sm min-h-[36px] flex items-center justify-center"
+                  class="px-3 py-1.5 rounded-lg border transition-all hover:scale-[1.02] text-sm min-h-[36px] flex items-center justify-center"
                   style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
                   onclick={() => goToPage(currentPage + 1)}
                   disabled={leaderboard.length < pageSize || paginationLoading}
@@ -588,7 +588,7 @@
         {#if leaderboard.length >= pageSize}
           <div class="p-4 border-t flex justify-center gap-2" style="border-color: {$colorStore.primary}20;">
             <button
-              class="px-4 py-2 rounded-lg border transition-all hover:scale-105 min-h-[40px] flex items-center justify-center"
+              class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => goToPage(currentPage - 1)}
               disabled={currentPage <= 1 || paginationLoading}
@@ -607,7 +607,7 @@
             </div>
             
             <button
-              class="px-4 py-2 rounded-lg border transition-all hover:scale-105 min-h-[40px] flex items-center justify-center"
+              class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] min-h-[40px] flex items-center justify-center"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border-color: {$colorStore.primary}30;"
               onclick={() => goToPage(currentPage + 1)}
               disabled={leaderboard.length < pageSize || paginationLoading}
@@ -639,7 +639,7 @@
 </div>
 
 <style>
-  :global(body) {
+    :global body {
     background-color: #0f172a;
   }
 </style>

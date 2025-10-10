@@ -1,6 +1,6 @@
 // stores/musicStore.ts
 import { get, writable } from "svelte/store";
-import { api } from "$lib/api";
+import { musicApi } from "$lib/api/index.ts";
 import { currentGuild } from "$lib/stores/currentGuild";
 import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
@@ -440,7 +440,7 @@ function createMusicStore() {
       }
 
       //logger.info(`Fetching status for guild ${guildId}`);
-      const status = await api.getPlayerStatus(guildId, userId);
+      const status = await musicApi.getPlayerStatus(guildId, userId);
       //logger.info("Successfully fetched status.", { status });
 
 

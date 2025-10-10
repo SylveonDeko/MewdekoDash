@@ -1,7 +1,6 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import {api} from "$lib/api.ts";
-  import type {BotInstance} from "$lib/types/models.ts";
+  import { instanceManagementApi, clientApi, type BotInstance } from "$lib/api/index.ts";
   import {currentInstance} from "$lib/stores/instanceStore.ts";
   import {fade, fly} from "svelte/transition";
   import {goto} from "$app/navigation";
@@ -46,7 +45,7 @@
     };
 
     try {
-        const mutualGuilds = await api.getMutualGuilds(data.user.id, true, fetch, customHeaders);
+      const mutualGuilds = await clientApi.getMutualGuilds(data.user.id, true, fetch, customHeaders);
 
       // Check if mutualGuilds is null, undefined, or empty
       const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
@@ -90,7 +89,7 @@
 
   onMount(async () => {
     try {
-      const response = await api.getBotInstances();
+      const response = await instanceManagementApi.getBotInstances();
       instances = response || [];
       console.log("Loaded instances:", instances);
 
@@ -252,7 +251,7 @@
         <button
           onclick={() => handleInstanceSelect(instance)}
           onkeydown={(e) => handleKeydown(e, instance)}
-          class="flex items-center p-6 rounded-2xl backdrop-blur-xs border transition-all duration-300 hover:scale-105 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+          class="flex items-center p-6 rounded-2xl backdrop-blur-xs border transition-all duration-300 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;
                  focus:ring-color: {$colorStore.primary};

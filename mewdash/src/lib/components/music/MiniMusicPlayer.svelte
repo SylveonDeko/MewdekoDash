@@ -1,7 +1,7 @@
 <!-- lib/components/MiniMusicPlayer.svelte -->
 <script lang="ts">
     import {fly} from "svelte/transition";
-    import {api} from "$lib/api";
+    import { musicApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
     import type {MusicStatus} from "$lib/types/music";
@@ -42,7 +42,7 @@
     try {
       if (!$currentGuild?.id) return;
 
-      await api.pauseResume($currentGuild.id);
+      await musicApi.pauseResume($currentGuild.id);
     } catch (err) {
       logger.error("Failed to toggle play/pause:", err);
     }
@@ -51,7 +51,7 @@
   async function skipTrack() {
     try {
       if (!$currentGuild?.id) return;
-      await api.skipTrack($currentGuild.id);
+      await musicApi.skipTrack($currentGuild.id);
     } catch (err) {
       logger.error("Failed to skip track:", err);
     }
@@ -60,7 +60,7 @@
     async function previousTrack() {
         try {
             if (!$currentGuild?.id) return;
-            await api.previousTrack($currentGuild.id);
+          await musicApi.previousTrack($currentGuild.id);
         } catch (err) {
             logger.error("Failed to go to previous track:", err);
         }

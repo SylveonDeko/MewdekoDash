@@ -1,8 +1,8 @@
 <!-- routes/+layout.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import "../app.css";
+
+  import "../app.css";
     import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
     import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
     import type {LayoutData} from "../../.svelte-kit/types/src/routes/$types";
@@ -84,7 +84,7 @@
     let lastExtractedUserId: string | null = null;
     let colorExtractionPromise: Promise<void> | null = null;
 
-    run(() => {
+  $effect(() => {
         if (!browser) return;
 
         // Update user store if needed

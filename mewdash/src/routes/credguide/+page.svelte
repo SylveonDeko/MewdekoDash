@@ -426,7 +426,7 @@
                 <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
                 <div class="space-y-2">
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105 flex items-center gap-2"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => showAllSteps = !showAllSteps}
                   >
@@ -434,7 +434,7 @@
                     {showAllSteps ? 'Show Wizard' : 'Show All Steps'}
                   </button>
                   <button
-                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-105 flex items-center gap-2"
+                    class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
                     style="background: {$colorStore.primary}15; color: {$colorStore.text};"
                     onclick={() => completedSteps = new Set()}
                   >
@@ -554,7 +554,7 @@
                     </div>
                   </div>
                   <button
-                    class="px-4 py-2 rounded-lg transition-all hover:scale-105 flex items-center gap-2"
+                    class="px-4 py-2 rounded-lg transition-all hover:scale-[1.02] flex items-center gap-2"
                     style="background: {completedSteps.has(currentStep) ? $colorStore.secondary : $colorStore.primary + '20'}; color: {$colorStore.text};"
                     onclick={() => completedSteps.has(currentStep) ? markStepIncomplete(currentStep) : markStepComplete(currentStep)}
                   >
@@ -624,7 +624,7 @@
                           System:</h3>
                         <div class="flex flex-col sm:flex-row gap-4 mb-6">
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'linux' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'linux'}
                           >
@@ -632,7 +632,7 @@
                             Linux (Ubuntu/Debian)
                           </button>
                           <button
-                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                            class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
                             style="background: {selectedOS === 'windows' ? $colorStore.primary : $colorStore.primary + '20'}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                             onclick={() => selectedOS = 'windows'}
                           >
@@ -839,7 +839,7 @@
                 <div class="flex items-center justify-between mt-8 pt-6 border-t"
                      style="border-color: {$colorStore.primary}20;">
                   <button
-                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === 0}
                     onclick={prevStep}
@@ -859,7 +859,7 @@
                   </div>
 
                   <button
-                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
                     disabled={currentStep === steps.length - 1}
                     onclick={nextStep}
@@ -883,7 +883,7 @@
     }
 
     /* Code styling */
-    :global(code) {
+    :global code {
         font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
         font-variant-ligatures: none;
     }
@@ -893,22 +893,22 @@
         color: var(--color-text);
     }
 
-    :global(.prose h1),
-    :global(.prose h2),
-    :global(.prose h3),
-    :global(.prose h4) {
+    :global(.prose) h1,
+    :global(.prose) h2,
+    :global(.prose) h3,
+    :global(.prose) h4 {
         color: var(--color-text);
     }
 
-    :global(.prose p) {
+    :global(.prose) p {
         color: var(--color-text);
     }
 
-    :global(.prose li) {
+    :global(.prose) li {
         color: var(--color-text);
     }
 
-    :global(.prose strong) {
+    :global(.prose) strong {
         color: var(--color-text);
     }
 
@@ -924,7 +924,7 @@
         }
 
         /* Better mobile code blocks */
-        :global(code) {
+        :global code {
             font-size: 0.875rem;
             word-break: break-all;
         }

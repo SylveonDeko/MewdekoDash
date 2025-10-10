@@ -1,12 +1,7 @@
 <script lang="ts">
-    import {createBubbler, stopPropagation} from 'svelte/legacy';
-    import {createEventDispatcher} from "svelte";
+
     import {fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
-
-    const bubble = createBubbler();
-
-    const dispatch = createEventDispatcher();
 
   interface Props {
     isOpen?: boolean;
@@ -16,6 +11,8 @@
     cancelText?: string;
     variant?: "danger" | "warning" | "info";
     confirmDisabled?: boolean;
+    onconfirm?: () => void;
+    oncancel?: () => void;
   }
 
   let {
@@ -25,16 +22,18 @@
     confirmText = "Confirm",
     cancelText = "Cancel",
     variant = "danger",
-    confirmDisabled = false
+    confirmDisabled = false,
+    onconfirm,
+    oncancel
   }: Props = $props();
 
   function handleConfirm() {
-    dispatch("confirm");
+    onconfirm?.();
     close();
   }
 
   function handleCancel() {
-    dispatch("cancel");
+    oncancel?.();
     close();
   }
 
@@ -71,11 +70,11 @@
     <div
             class="rounded-2xl border shadow-2xl max-w-md w-full backdrop-blur-xs"
       style="background: {$colorStore.background}90; border-color: {$colorStore.primary}30;"
-      onclick={stopPropagation(bubble('click'))}
+            onclick={(e) => e.stopPropagation()}
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
             role="button" tabindex="0"
-            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stopPropagation(bubble('click')); } }}>
+            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">

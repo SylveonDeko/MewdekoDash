@@ -1,79 +1,78 @@
 <!-- routes/dashboard/afk/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
-
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
-    import type {PageData} from "./$types";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {fade, slide} from "svelte/transition";
-    import type {Afk, BotStatusModel} from "$lib/types/models.ts";
-    import {goto} from "$app/navigation";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-    import {browser} from "$app/environment";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger.ts";
-    import {loadingStore} from "$lib/stores/loadingStore";
 
 
-    let botStatus: BotStatusModel | null = null;
+  import { onDestroy, onMount } from "svelte";
+  import { afkApi, botStatusApi, clientApi, type Afk, type UserWithAfk, type BotStatusModel } from "$lib/api/index.ts";
+  import type { PageData } from "./$types";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { fade, slide } from "svelte/transition";
+  import { goto } from "$app/navigation";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { browser } from "$app/environment";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger.ts";
+  import { loadingStore } from "$lib/stores/loadingStore";
 
-    interface Props {
-        data: PageData;
-    }
 
-    let {data}: Props = $props();
-    let showNotification = $state(false);
-    let notificationMessage = $state("");
-    let notificationType: "success" | "error" = $state("success");
+  let botStatus: BotStatusModel | null = null;
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+  let showNotification = $state(false);
+  let notificationMessage = $state("");
+  let notificationType: "success" | "error" = $state("success");
   let isMobile = false;
 
-    let afkUsers: Afk[] = $state([]);
-    let expandedUser = $state(null);
-    let loading = $state(true);
-    let error = $state(null);
+  let afkUsers: UserWithAfk[] = $state([]);
+  let expandedUser = $state(null);
+  let loading = $state(true);
+  let error = $state(null);
 
   // AFK Settings
-    let afkDeletionTime = $state(0);
-    let afkMaxLength = $state(0);
-    let afkType = $state(1);
-    let afkTimeout = $state("0s");
+  let afkDeletionTime = $state(0);
+  let afkMaxLength = $state(0);
+  let afkType = $state(1);
+  let afkTimeout = $state("0s");
   let afkTimeoutSeconds = 0;
   let afkDisabledChannels: string[] = [];
-    let customAfkMessage = $state("");
-    let changedSettings = $state(new Set());
-  
+  let customAfkMessage = $state("");
+  let changedSettings = $state(new Set());
+
   // Channel management
-    let availableChannels: Array<{ id: string; name: string }> = $state([]);
-    let selectedDisabledChannels: string[] = $state([]);
-  
+  let availableChannels: Array<{ id: string; name: string }> = $state([]);
+  let selectedDisabledChannels: string[] = $state([]);
+
   // User management
-    let selectedUsers = $state(new Set<string>());
-    let selectAllUsers = $state(false);
-  
+  let selectedUsers = $state(new Set<string>());
+  let selectAllUsers = $state(false);
+
   // Modal state
-    let showConfirmModal = $state(false);
-    let modalConfig = $state({
+  let showConfirmModal = $state(false);
+  let modalConfig = $state({
     title: "",
     message: "",
     confirmText: "Confirm",
     variant: "danger" as "danger" | "warning" | "info",
     action: null as (() => void) | null
-    });
-  
+  });
+
   // Layout state
-    let activeTab = $state("settings");
-  
+  let activeTab = $state("settings");
+
   const tabs = [
     { id: "settings", label: "Basic Settings", icon: "fa-gear" },
     { id: "advanced", label: "Advanced Settings", icon: "fa-clock" },
     { id: "users", label: "User Management", icon: "fa-users" }
   ];
-  
+
   // AFK type options for DiscordSelector
   const afkTypeOptions = [
     { id: "1", name: "Self Disable" },
@@ -81,58 +80,63 @@
     { id: "3", name: "On Type" },
     { id: "4", name: "Either" }
   ];
-  
+
   // Helper functions for timeout conversion
   function secondsToTimeString(seconds: number): string {
     if (seconds === 0) return "0s";
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     let result = "";
     if (hours > 0) result += `${hours}h`;
     if (minutes > 0) result += `${minutes}m`;
     if (secs > 0) result += `${secs}s`;
-    
+
     return result || "0s";
   }
-  
+
   function timeStringToSeconds(timeStr: string): number {
     if (!timeStr || timeStr === "0s") return 0;
-    
+
     const regex = /(\d+)([hms])/g;
     let totalSeconds = 0;
     let match;
-    
+
     while ((match = regex.exec(timeStr)) !== null) {
       const value = parseInt(match[1]);
       const unit = match[2];
-      
+
       switch (unit) {
-        case 'h': totalSeconds += value * 3600; break;
-        case 'm': totalSeconds += value * 60; break;
-        case 's': totalSeconds += value; break;
+        case "h":
+          totalSeconds += value * 3600;
+          break;
+        case "m":
+          totalSeconds += value * 60;
+          break;
+        case "s":
+          totalSeconds += value;
+          break;
       }
     }
-    
+
     return totalSeconds;
   }
 
   async function fetchBotStatus() {
-  try {
-    botStatus = await api.getBotStatus();
-  } catch (err) {
-    logger.error("Failed to fetch bot status:", err);
+    try {
+      botStatus = await botStatusApi.getBotStatus();
+    } catch (err) {
+      logger.error("Failed to fetch bot status:", err);
+    }
   }
-}
-
 
 
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
   }
-  
+
   function validateAfkMaxLength(length: number): boolean {
     if (length < 1 || length > 4096) {
       showNotificationMessage("AFK message length must be between 1 and 4096 characters", "error");
@@ -140,7 +144,7 @@
     }
     return true;
   }
-  
+
   function validateAfkDeletionTime(time: number): boolean {
     if (time < 0) {
       showNotificationMessage("Auto-deletion time cannot be negative", "error");
@@ -173,28 +177,28 @@
       const settingsUpdated = [];
 
       if (changedSettings.has("deletion")) {
-        updatePromises.push(api.afkDelSet($currentGuild.id, afkDeletionTime));
+        updatePromises.push(afkApi.afkDelSet($currentGuild.id, afkDeletionTime));
         settingsUpdated.push("auto-deletion time");
       }
       if (changedSettings.has("maxLength")) {
-        updatePromises.push(api.afkLengthSet($currentGuild.id, afkMaxLength));
+        updatePromises.push(afkApi.afkLengthSet($currentGuild.id, afkMaxLength));
         settingsUpdated.push("max message length");
       }
       if (changedSettings.has("type")) {
-        updatePromises.push(api.afkTypeSet($currentGuild.id, afkType));
+        updatePromises.push(afkApi.afkTypeSet($currentGuild.id, afkType));
         settingsUpdated.push("AFK type");
       }
       if (changedSettings.has("timeout")) {
-        updatePromises.push(api.afkTimeoutSet($currentGuild.id, afkTimeout));
+        updatePromises.push(afkApi.afkTimeoutSet($currentGuild.id, afkTimeout));
         settingsUpdated.push("AFK timeout");
       }
       if (changedSettings.has("customMessage")) {
-        updatePromises.push(api.setCustomAfkMessage($currentGuild.id, customAfkMessage));
+        updatePromises.push(afkApi.setCustomAfkMessage($currentGuild.id, customAfkMessage));
         settingsUpdated.push("custom message");
       }
       if (changedSettings.has("disabledChannels")) {
         const channelsString = selectedDisabledChannels.join(",");
-        updatePromises.push(api.setDisabledAfkChannels($currentGuild.id, channelsString || "0"));
+        updatePromises.push(afkApi.setDisabledAfkChannels($currentGuild.id, channelsString || "0"));
         settingsUpdated.push("disabled channels");
       }
 
@@ -215,7 +219,7 @@
 
   function showBulkRemoveConfirm() {
     if (!$currentGuild?.id || selectedUsers.size === 0) return;
-    
+
     modalConfig = {
       title: "Bulk Remove AFK Status",
       message: `Are you sure you want to remove AFK status from ${selectedUsers.size} user(s)? This action cannot be undone.`,
@@ -228,12 +232,12 @@
 
   async function executeBulkRemove() {
     if (!$currentGuild?.id || selectedUsers.size === 0) return;
-    
+
     try {
-      const removePromises = Array.from(selectedUsers).map(userId => 
-        api.deleteAfkStatus($currentGuild.id, BigInt(userId))
+      const removePromises = Array.from(selectedUsers).map(userId =>
+        afkApi.deleteAfkStatus($currentGuild.id, BigInt(userId))
       );
-      
+
       await Promise.all(removePromises);
       showNotificationMessage(`Successfully removed AFK status from ${selectedUsers.size} user(s)`, "success");
       selectedUsers.clear();
@@ -241,10 +245,10 @@
       await fetchAfkUsers();
     } catch (error) {
       logger.error("Failed to bulk remove AFK:", error);
-      showNotificationMessage(`Failed to remove AFK status from user(s): ${error instanceof Error ? error.message : 'Unknown error'}`, "error");
+      showNotificationMessage(`Failed to remove AFK status from user(s): ${error instanceof Error ? error.message : "Unknown error"}`, "error");
     }
   }
-  
+
   function toggleUserSelection(userId: string) {
     if (selectedUsers.has(userId)) {
       selectedUsers.delete(userId);
@@ -254,7 +258,7 @@
     selectedUsers = selectedUsers;
     selectAllUsers = selectedUsers.size === afkUsers.length;
   }
-  
+
   function toggleSelectAll() {
     if (selectAllUsers) {
       selectedUsers.clear();
@@ -264,21 +268,21 @@
     selectedUsers = selectedUsers;
     selectAllUsers = !selectAllUsers;
   }
-  
+
   function handleTimeoutInput(event: Event) {
     const target = event.target as HTMLInputElement;
     afkTimeout = target.value;
     afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
-    
+
     // Validate timeout range (1s to 2h = 7200s)
     if (afkTimeoutSeconds < 1 || afkTimeoutSeconds > 7200) {
       showNotificationMessage("AFK timeout must be between 1 second and 2 hours", "error");
       return;
     }
-    
+
     markAsChanged("timeout");
   }
-  
+
   function handleDisabledChannelsChange(event: CustomEvent) {
     selectedDisabledChannels = Array.isArray(event.detail.selected) ? event.detail.selected : [];
     markAsChanged("disabledChannels");
@@ -313,13 +317,13 @@
         if (!$currentGuild?.id) throw new Error("No guild selected");
 
         const [deletion, maxLength, type, timeout, disabledChannels, customMessage, channels] = await Promise.all([
-          api.getAfkDel($currentGuild.id),
-          api.getAfkLength($currentGuild.id),
-          api.getAfkType($currentGuild.id),
-          api.getAfkTimeout($currentGuild.id),
-          api.getDisabledAfkChannels($currentGuild.id),
-          api.getCustomAfkMessage($currentGuild.id),
-          api.getGuildTextChannels($currentGuild.id)
+          afkApi.getAfkDel($currentGuild.id),
+          afkApi.getAfkLength($currentGuild.id),
+          afkApi.getAfkType($currentGuild.id),
+          afkApi.getAfkTimeout($currentGuild.id),
+          afkApi.getDisabledAfkChannels($currentGuild.id),
+          afkApi.getCustomAfkMessage($currentGuild.id),
+          clientApi.getTextChannels($currentGuild.id)
         ]);
 
         afkDeletionTime = deletion;
@@ -327,26 +331,26 @@
         afkType = type;
         afkTimeoutSeconds = timeout;
         afkTimeout = secondsToTimeString(timeout);
-        
+
         // Parse disabled channels - handle both direct string and nested object response
         let disabledChannelsString = "";
-        if (disabledChannels && typeof disabledChannels === 'object' && disabledChannels.data) {
+        if (disabledChannels && typeof disabledChannels === "object" && disabledChannels.data) {
           // API returns nested object with data property
           disabledChannelsString = disabledChannels.data;
-        } else if (disabledChannels && typeof disabledChannels === 'string') {
+        } else if (disabledChannels && typeof disabledChannels === "string") {
           // API returns direct string
           disabledChannelsString = disabledChannels;
         }
-        
-        const disabledChannelIds = disabledChannelsString && disabledChannelsString !== "0" 
-          ? disabledChannelsString.split(",").filter(Boolean) 
+
+        const disabledChannelIds = disabledChannelsString && disabledChannelsString !== "0"
+          ? disabledChannelsString.split(",").filter(Boolean)
           : [];
         afkDisabledChannels = disabledChannelIds;
         selectedDisabledChannels = disabledChannelIds;
-        
+
         customAfkMessage = customAfkMessage || "";
         availableChannels = channels;
-        
+
         // Ensure the disabled channels are set after available channels are loaded
         // This helps with pre-population timing
         setTimeout(() => {
@@ -367,7 +371,7 @@
         if (!$currentGuild?.id) {
           throw new Error("No guild selected");
         }
-        const response = await api.getAllAfkStatus($currentGuild.id);
+        const response = await afkApi.getAllAfkStatus($currentGuild.id);
         afkUsers = response.filter(user =>
           user.afkStatus !== null &&
           user.afkStatus !== undefined &&
@@ -386,10 +390,10 @@
 
   function showClearAfkConfirm(userId: string) {
     if (!$currentGuild?.id) return;
-    
+
     const user = afkUsers.find(u => u.userId.toString() === userId);
-    const userName = user ? user.username : 'user';
-    
+    const userName = user ? user.username : "user";
+
     modalConfig = {
       title: "Remove AFK Status",
       message: `Are you sure you want to remove AFK status from ${userName}?`,
@@ -405,11 +409,11 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      
+
       const user = afkUsers.find(u => u.userId.toString() === userId);
-      const userName = user ? user.username : 'user';
-      
-      await api.deleteAfkStatus($currentGuild.id, BigInt(userId));
+      const userName = user ? user.username : "user";
+
+      await afkApi.deleteAfkStatus($currentGuild.id, BigInt(userId));
       showNotificationMessage(`Successfully cleared AFK status for ${userName}`, "success");
       await fetchAfkUsers();
     } catch (error) {
@@ -424,29 +428,29 @@
   }
 
 
-    run(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchAfkUsers(),
-                fetchAfkSettings(),
-                fetchBotStatus()
-            ]);
-        }
-    });
-    run(() => {
-        if ($currentGuild) {
-            fetchAfkUsers();
-            fetchAfkSettings();
-        }
-    });
-    run(() => {
-        if ($currentInstance) {
-            fetchAfkUsers();
-            fetchAfkSettings();
-        }
-    });
+  $effect(() => {
+    if ($currentInstance) {
+      Promise.all([
+        fetchAfkUsers(),
+        fetchAfkSettings(),
+        fetchBotStatus()
+      ]);
+    }
+  });
+  $effect(() => {
+    if ($currentGuild) {
+      fetchAfkUsers();
+      fetchAfkSettings();
+    }
+  });
+  $effect(() => {
+    if ($currentInstance) {
+      fetchAfkUsers();
+      fetchAfkSettings();
+    }
+  });
   // Action buttons configuration
-    let actionButtons = $derived([
+  let actionButtons = $derived([
     {
       label: "Refresh",
       icon: "fa-arrows-rotate",
@@ -464,21 +468,21 @@
       loading: false,
       variant: "danger" as const
     }] : [])
-    ]);
+  ]);
 </script>
 
 <DashboardPageLayout
-  title="AFK Management"
-  subtitle="Configure AFK settings and manage AFK users"
-  icon="fa-clock"
-  {tabs}
-  bind:activeTab
   {actionButtons}
+  bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-clock"
   on:tabChange={(e) => activeTab = e.detail.tabId}
+  subtitle="Configure AFK settings and manage AFK users"
+  {tabs}
+  title="AFK Management"
 >
 
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
+  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
   <svelte:fragment slot="status-messages">
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -490,7 +494,7 @@
   {#if activeTab === 'settings'}
     <!-- Basic Settings Section -->
     <section
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -500,7 +504,8 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+          <i class="fa-utility-duo fa-regular fa-gear"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Basic AFK Settings</h2>
       </div>
@@ -512,7 +517,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-clock"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-deletion Time</h3>
           </div>
           <label for="afk-deletion-time" class="sr-only">Auto-deletion Time</label>
@@ -549,7 +555,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-comment"
+               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Max Message Length</h3>
           </div>
           <label for="afk-max-length" class="sr-only">Max Message Length</label>
@@ -587,7 +594,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-gear"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Removal Type</h3>
           </div>
           <label for="afk-type" class="sr-only">AFK Type</label>
@@ -603,7 +611,8 @@
             }}
           />
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-            Determines how AFK status is automatically removed: Self Disable (manual only), On Message, On Type, or Either.
+            Determines how AFK status is automatically removed: Self Disable (manual only), On Message, On Type, or
+            Either.
           </p>
         </div>
       </div>
@@ -622,11 +631,11 @@
       </div>
     </section>
   {/if}
-  
+
   {#if activeTab === 'advanced'}
     <!-- Advanced Settings Section -->
     <section
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -636,7 +645,8 @@
           style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                  color: {$colorStore.primary};"
         >
-          <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+          <i class="fa-utility-duo fa-regular fa-clock"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
         </div>
         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Advanced AFK Settings</h2>
       </div>
@@ -648,7 +658,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-clock"
+               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">AFK Timeout</h3>
           </div>
           <label for="afk-timeout" class="sr-only">AFK Timeout</label>
@@ -677,7 +688,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-hashtag"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Disabled Channels</h3>
           </div>
           <label for="disabled-channels" class="sr-only">Disabled Channels</label>
@@ -690,7 +702,8 @@
             on:change={handleDisabledChannelsChange}
           />
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-            Channels where AFK messages will not be displayed. Select multiple channels to disable AFK notifications in those areas.
+            Channels where AFK messages will not be displayed. Select multiple channels to disable AFK notifications in
+            those areas.
           </p>
         </div>
 
@@ -700,7 +713,8 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            <i class="fa-utility-duo fa-regular fa-comment"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Custom AFK Embed Message</h3>
           </div>
           <label for="custom-afk-message" class="sr-only">Custom AFK Message</label>
@@ -718,9 +732,11 @@
             aria-label="Custom embed message to display when a user is AFK"
           ></textarea>
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-            Custom embed message template for AFK notifications. Use "-" to reset to default. Check 
-            <a href="/dashboard/embedbuilder" style="color: {$colorStore.primary}; text-decoration: underline;">embed builder</a> 
-            and <a href="http://mewdeko.tech/placeholders" target="_blank" rel="noopener" style="color: {$colorStore.primary}; text-decoration: underline;">placeholders</a> for help.
+            Custom embed message template for AFK notifications. Use "-" to reset to default. Check
+            <a href="/dashboard/embedbuilder" style="color: {$colorStore.primary}; text-decoration: underline;">embed
+              builder</a>
+            and <a href="http://mewdeko.tech/placeholders" target="_blank" rel="noopener"
+                   style="color: {$colorStore.primary}; text-decoration: underline;">placeholders</a> for help.
           </p>
         </div>
       </div>
@@ -743,7 +759,7 @@
   {#if activeTab === 'users'}
     <!-- User Management Section -->
     <section
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -754,11 +770,12 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+            <i class="fa-utility-duo fa-regular fa-users"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
           <h2 class="text-xl font-bold" style="color: {$colorStore.text}">AFK User Management</h2>
         </div>
-        
+
         <!-- Bulk Actions -->
         {#if afkUsers.length > 0}
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -774,7 +791,7 @@
                 Select All ({afkUsers.length})
               </span>
             </label>
-            
+
             {#if selectedUsers.size > 0}
               <button
                 class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
@@ -783,7 +800,8 @@
                        hover:background: {$colorStore.accent}20;"
                 onclick={showBulkRemoveConfirm}
               >
-                <i class="fa-utility-duo fa-regular fa-user-minus" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
+                <i class="fa-utility-duo fa-regular fa-user-minus"
+                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
                 <span class="sm:hidden">Remove Selected ({selectedUsers.size})</span>
                 <span class="hidden sm:inline">Remove AFK ({selectedUsers.size})</span>
               </button>
@@ -807,7 +825,8 @@
           style="background: {$colorStore.accent}10;"
           role="alert"
         >
-          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
           <p style="color: {$colorStore.accent}">{error}</p>
         </div>
       {:else if afkUsers.length === 0}
@@ -815,7 +834,8 @@
           class="text-center py-12"
           transition:fade
         >
-          <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5;"></i>
+          <i class="fa-utility-duo fa-regular fa-users"
+             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5;"></i>
           <p style="color: {$colorStore.muted}">No users are currently AFK</p>
         </div>
       {:else}
@@ -829,7 +849,7 @@
             >
               <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <!-- Mobile-first layout -->
-                  <div class="flex items-center gap-3 grow min-w-0">
+                <div class="flex items-center gap-3 grow min-w-0">
                   <input
                     type="checkbox"
                     checked={selectedUsers.has(user.userId.toString())}
@@ -837,9 +857,9 @@
                     class="w-4 h-4 rounded-sm border shrink-0"
                     style="accent-color: {$colorStore.primary};"
                   >
-                  
+
                   <button
-                          class="flex items-center gap-3 grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
+                    class="flex items-center gap-3 grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
                     style="hover:background: {$colorStore.primary}15;"
                     onclick={() => toggleUserExpand(user.userId)}
                     aria-expanded={expandedUser === user.userId}
@@ -852,7 +872,7 @@
                       style="border-color: {$colorStore.primary}30;"
                     >
 
-                      <div class="grow min-w-0">
+                    <div class="grow min-w-0">
                       <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                         <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
                         <div class="flex flex-wrap gap-1">
@@ -870,13 +890,14 @@
                           {/if}
                         </div>
                       </div>
-                      
+
                       <div class="space-y-1 text-sm">
                         <div class="truncate">
                           <span style="color: {$colorStore.muted}">Message:</span>
-                          <span style="color: {$colorStore.text}" class="ml-1">{user.afkStatus?.message || 'No message'}</span>
+                          <span style="color: {$colorStore.text}"
+                                class="ml-1">{user.afkStatus?.message || 'No message'}</span>
                         </div>
-                        
+
                         <div class="hidden sm:grid sm:grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
                             <span style="color: {$colorStore.muted}">Since:</span>
@@ -884,7 +905,7 @@
                               {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleDateString() : 'Unknown'}
                             </span>
                           </div>
-                          
+
                           {#if user.afkStatus?.wasTimed}
                             <div>
                               <span style="color: {$colorStore.muted}">Expires:</span>
@@ -899,12 +920,13 @@
                             </div>
                           {/if}
                         </div>
-                        
+
                         <!-- Mobile summary -->
                         <div class="sm:hidden text-xs" style="color: {$colorStore.muted}">
                           Since: {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleDateString() : 'Unknown'}
                           {#if user.afkStatus?.wasTimed}
-                            • Expires: {user.afkStatus?.when ? new Date(user.afkStatus.when).toLocaleDateString() : 'Unknown'}
+                            •
+                            Expires: {user.afkStatus?.when ? new Date(user.afkStatus.when).toLocaleDateString() : 'Unknown'}
                           {:else}
                             • Permanent
                           {/if}
@@ -913,21 +935,22 @@
                     </div>
                   </button>
                 </div>
-                
+
                 <!-- Remove button -->
                 <button
-                        class="px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
+                  class="px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
                   style="background: {$colorStore.accent}15;
                          color: {$colorStore.accent};
                          hover:background: {$colorStore.accent}20;"
                   onclick={() => showClearAfkConfirm(user.userId)}
                 >
-                  <i class="fa-utility-duo fa-regular fa-user-minus" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
+                  <i class="fa-utility-duo fa-regular fa-user-minus"
+                     style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 16px;"></i>
                   <span class="sm:hidden">Remove AFK</span>
                   <span class="hidden sm:inline">Remove</span>
                 </button>
               </div>
-              
+
               <!-- Expanded Details -->
               {#if expandedUser === user.userId}
                 <div
@@ -943,16 +966,18 @@
                         {user.afkStatus?.message || 'No message'}
                       </p>
                     </div>
-                    
+
                     <div>
                       <span style="color: {$colorStore.muted}" class="text-sm font-medium">AFK Details:</span>
                       <div class="mt-1 space-y-1">
                         <p style="color: {$colorStore.text}" class="text-sm">
-                          <span class="font-medium">Since:</span> {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleString() : 'Unknown'}
+                          <span
+                            class="font-medium">Since:</span> {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleString() : 'Unknown'}
                         </p>
                         {#if user.afkStatus?.wasTimed}
                           <p style="color: {$colorStore.text}" class="text-sm">
-                            <span class="font-medium">Expires:</span> {user.afkStatus?.when ? new Date(user.afkStatus.when).toLocaleString() : 'Unknown'}
+                            <span
+                              class="font-medium">Expires:</span> {user.afkStatus?.when ? new Date(user.afkStatus.when).toLocaleString() : 'Unknown'}
                           </p>
                         {/if}
                       </div>
@@ -963,7 +988,7 @@
             </div>
           {/each}
         </div>
-        
+
         <!-- Summary Stats -->
         <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <div
@@ -973,7 +998,7 @@
             <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{afkUsers.length}</div>
             <div class="text-sm" style="color: {$colorStore.muted}">Total AFK Users</div>
           </div>
-          
+
           <div
             class="rounded-xl p-4 text-center"
             style="background: {$colorStore.secondary}10;"
@@ -983,7 +1008,7 @@
             </div>
             <div class="text-sm" style="color: {$colorStore.muted}">Timed AFK</div>
           </div>
-          
+
           <div
             class="rounded-xl p-4 text-center"
             style="background: {$colorStore.accent}10;"
@@ -1000,47 +1025,16 @@
 <!-- Confirmation Modal -->
 <ConfirmationModal
   bind:isOpen={showConfirmModal}
-  title={modalConfig.title}
-  message={modalConfig.message}
   confirmText={modalConfig.confirmText}
-  variant={modalConfig.variant}
-  on:confirm={() => modalConfig.action?.()}
+  message={modalConfig.message}
   on:cancel={() => showConfirmModal = false}
+  on:confirm={() => modalConfig.action?.()}
+  title={modalConfig.title}
+  variant={modalConfig.variant}
 />
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(select),
-    :global(input),
-    :global(textarea) {
-        color-scheme: dark;
-    }
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Prevent iOS styling */
+    @reference '../../../app.css'; /* Prevent iOS styling */
 
     /* Prevent blue highlight on iOS */
 

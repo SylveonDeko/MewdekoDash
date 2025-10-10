@@ -111,7 +111,7 @@
                 <div class="relative inline-block">
                   <img
                     alt={member.alt}
-                    class="w-32 h-32 rounded-full mx-auto transition-transform duration-300 group-hover:scale-105 shadow-lg"
+                    class="w-32 h-32 rounded-full mx-auto transition-transform duration-300 group-hover:scale-[1.02] shadow-lg"
                     style="border: 3px solid {$colorStore.primary};"
                     src={member.image}
                     loading="lazy"
@@ -162,7 +162,7 @@
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-4">
           <a href="https://github.com/SylveonDeko/Mewdeko"
-             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
              style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
              target="_blank"
              rel="noopener noreferrer">
@@ -173,7 +173,7 @@
             Contribute on GitHub
           </a>
           <a href="https://discord.gg/Z9DYApMXFN"
-             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50;"
              target="_blank"
              rel="noopener noreferrer">

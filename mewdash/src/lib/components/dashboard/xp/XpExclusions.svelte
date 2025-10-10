@@ -136,7 +136,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each excludedChannels as channelId}
+          {#each excludedChannels as channelId (channelId)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.primary}15;"
@@ -205,7 +205,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each excludedRoles as roleId}
+          {#each excludedRoles as roleId (roleId)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.secondary}15;"

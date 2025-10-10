@@ -1,27 +1,32 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
+  import { onMount } from "svelte";
+  import { administrationApi, clientApi, protectionApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { fly } from "svelte/transition";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import { loadingStore } from "$lib/stores/loadingStore";
+  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger";
-    import {fly, slide} from "svelte/transition";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {loadingStore} from "$lib/stores/loadingStore";
-    import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  // Import tab components
+  import OverviewTab from "./components/OverviewTab.svelte";
+  import ProtectionTab from "./components/tabs/ProtectionTab.svelte";
+  import RolesTab from "./components/tabs/RolesTab.svelte";
+  import AutomationTab from "./components/tabs/AutomationTab.svelte";
+  import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
 
-    let {data} = $props();
+  let { data } = $props();
 
-    let loading = $state(true);
-    let error: string | null = $state(null);
-    let saving = $state(false);
-  
+  let loading = $state(true);
+  let error: string | null = $state(null);
+  let saving = $state(false);
+
   // Layout state
-    let activeTab = $state("overview");
-  
+  let activeTab = $state("overview");
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-chart-bar" },
     { id: "protection", label: "Protection Systems", icon: "fa-shield" },
@@ -31,29 +36,32 @@
   ];
 
   // Server Management
-    let staffRole: bigint | null = $state(null);
-    let memberRole: bigint | null = $state(null);
-    let guildTimezone: string = $state("UTC");
-    let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = $state([]);
-  let deleteMessageOnCommand: { enabled: boolean; channels: Array<{ channelId: bigint; state: boolean; }> } = { enabled: false, channels: [] };
-    let gameVoiceChannel: bigint | null = $state(null);
+  let staffRole: bigint | null = $state(null);
+  let memberRole: bigint | null = $state(null);
+  let guildTimezone: string = $state("UTC");
+  let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = $state([]);
+  let deleteMessageOnCommand: {
+    enabled: boolean;
+    channels: Array<{ channelId: bigint; state: boolean; }>
+  } = $state({ enabled: false, channels: [] });
+  let gameVoiceChannel: bigint | null = $state(null);
 
   // Auto-assign roles
-    let autoAssignRoles: { normalRoles: bigint[]; botRoles: bigint[] } = $state({normalRoles: [], botRoles: []});
-    let autoBanRoles: Array<{ roleId: bigint; roleName: string }> = $state([]);
-    let selectedNormalRoles: string[] = $state([]);
-    let selectedBotRoles: string[] = $state([]);
+  let autoAssignRoles: { normalRoles: bigint[]; botRoles: bigint[] } = $state({ normalRoles: [], botRoles: [] });
+  let autoBanRoles: Array<{ roleId: bigint; roleName: string }> = $state([]);
+  let selectedNormalRoles: string[] = $state([]);
+  let selectedBotRoles: string[] = $state([]);
 
   // Protection settings
-    let protectionStatus: any = $state({
+  let protectionStatus: any = $state({
     antiRaid: { enabled: false, userThreshold: 5, seconds: 10, action: "Mute", punishDuration: 60 },
     antiSpam: { enabled: false, messageThreshold: 5, action: "Mute", muteTime: 5, roleId: null },
     antiAlt: { enabled: false, minAgeMinutes: 1440, action: "Kick", actionDurationMinutes: 0, roleId: null },
     antiMassMention: { enabled: false, mentionThreshold: 5, timeWindowSeconds: 30, maxMentionsInTimeWindow: 10, ignoreBots: true, action: "Mute", muteTime: 5, roleId: null },
-    antiPattern: { 
-      enabled: false, 
-      action: 1, 
-      punishDuration: 60, 
+    antiPattern: {
+      enabled: false,
+      action: 1,
+      punishDuration: 60,
       roleId: null,
       checkAccountAge: false,
       maxAccountAgeMonths: 6,
@@ -66,22 +74,74 @@
       minimumScore: 15,
       patternCount: 0,
       counter: 0
+    },
+    antiMassPost: {
+      enabled: false,
+      channelThreshold: 3,
+      timeWindowSeconds: 60,
+      contentSimilarityThreshold: 0.8,
+      minContentLength: 20,
+      checkLinksOnly: true,
+      checkDuplicateContent: true,
+      requireIdenticalContent: false,
+      caseSensitive: false,
+      deleteMessages: true,
+      notifyUser: true,
+      action: 2,
+      punishDuration: 0,
+      roleId: null,
+      ignoreBots: true,
+      maxMessagesTracked: 50,
+      userCount: 0,
+      counter: 0
+    },
+    antiPostChannel: {
+      enabled: false,
+      action: 2,
+      deleteMessages: true,
+      notifyUser: true,
+      punishDuration: 0,
+      roleId: null,
+      ignoreBots: true,
+      channelCount: 0,
+      channels: [],
+      ignoredRoles: [],
+      ignoredUsers: [],
+      counter: 0
     }
-    });
+  });
 
   // Protection form data
   let editingProtection: string | null = null;
-    let tempProtectionConfig: any = $state({});
-  
+  let tempProtectionConfig: any = $state({});
+
   // Anti-pattern specific state
-    let antiPatternPatterns: Array<{
-        id: number;
-        name: string;
-        pattern: string;
-        checkUsername: boolean;
-        checkDisplayName: boolean;
-    }> = $state([]);
-    let newPattern = $state({name: "", pattern: "", checkUsername: true, checkDisplayName: false});
+  let antiPatternPatterns: Array<{
+    id: number;
+    name: string;
+    pattern: string;
+    checkUsername: boolean;
+    checkDisplayName: boolean;
+  }> = $state([]);
+  let newPattern = $state({ name: "", pattern: "", checkUsername: true, checkDisplayName: false });
+
+  // Anti-post-channel specific state
+  let selectedHoneypotChannel: string | null = $state(null);
+  let addingChannel = $state(false);
+  let selectedHoneypotChannels: string[] = $state([]);
+  let selectedIgnoredRoles: string[] = $state([]);
+  let selectedIgnoredUsers: string = $state("");
+
+  // Anti-mass-post config (for reactive bindings)
+  let ampChannelThreshold = $state(3);
+  let ampTimeWindow = $state(60);
+  let ampAction = $state(2);
+  let ampPunishDuration = $state(0);
+  let ampCheckLinksOnly = $state(true);
+
+  // Anti-post-channel config (for reactive bindings)
+  let apcAction = $state(2);
+  let apcPunishDuration = $state(0);
 
   // Role Management
   let selfAssignableRoles: {
@@ -102,12 +162,12 @@
     }>;
     groups: Record<number, string>;
   } = $state({exclusive: false, roles: [], groups: {}});
-    let voiceChannelRoles: Array<{
-        channelId: bigint;
-        channelName: string;
-        roleId: bigint;
-        roleName: string
-    }> = $state([]);
+  let voiceChannelRoles: Array<{
+    channelId: bigint;
+    channelName: string;
+    roleId: bigint;
+    roleName: string
+  }> = $state([]);
   let reactionRoles: {
     success: boolean;
     reactionRoles: Array<{
@@ -123,24 +183,21 @@
   } = $state({success: false, reactionRoles: []});
 
   // Permission Overrides
-    let permissionOverrides: Array<{ command: string; permission: string }> = $state([]);
-  
+  let permissionOverrides: Array<{ command: string; permission: string }> = $state([]);
+
   // Command Cooldowns
-    let commandCooldowns: Array<{ command: string; cooldown: number }> = $state([]);
+  let commandCooldowns: Array<{ command: string; cooldown: number }> = $state([]);
 
   // Advanced Operations
-    let banMessage: string = $state("");
-    let massOperations = $state({
-    prune: { days: 7 }
-    });
+  let banMessage: string = $state("");
 
   // Available data
-    let availableRoles: any[] = $state([]);
-    let guildChannels: any[] = $state([]);
-  let textChannels: Array<{ id: string; name: string }> = [];
-    let voiceChannels: Array<{ id: string; name: string }> = $state([]);
-    let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
-    let availablePermissions: Array<{ id: string; name: string }> = $state([]);
+  let availableRoles: any[] = $state([]);
+  let guildChannels: any[] = $state([]);
+  let textChannels: Array<{ id: string; name: string }> = $state([]);
+  let voiceChannels: Array<{ id: string; name: string }> = $state([]);
+  let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
+  let availablePermissions: Array<{ id: string; name: string }> = $state([]);
   let actionOptions = [
     { id: "0", name: "Warn", label: "Warn" },
     { id: "1", name: "Mute", label: "Mute" },
@@ -149,33 +206,41 @@
   ];
 
   // UI State
-    let showConfirmModal = $state(false);
-    let confirmModalData = $state({title: "", message: "", action: null, variant: "danger"});
-  
+  let showConfirmModal = $state(false);
+  let confirmModalData = $state<{
+    title: string;
+    message: string;
+    action: (() => void) | null;
+    variant: "danger" | "warning" | "info"
+  }>({ title: "", message: "", action: null, variant: "danger" });
+
   // Expanded cards state
-    let expandedProtectionCard: string | null = $state(null);
-    let expandedRoleCard: string | null = $state(null);
-    let showPatternManagement = $state(false);
+  let expandedProtectionCard: string | null = $state(null);
+  let expandedRoleCard: string | null = $state(null);
+  let showPatternManagement = $state(false);
   let showAdvancedSettings = false;
 
   // Form data
-    let newStaffRole: string | null = $state(null);
-    let newMemberRole: string | null = $state(null);
-    let newTimezone = $state("");
-  let newAutoBanRole: string | null = null;
-    let newVoiceChannelRole: { channelId: string | null; roleId: string | null } = $state({
-        channelId: null,
-        roleId: null
-    });
-    let newPermissionOverride: { command: string; permission: string } = $state({
-        command: "",
-        permission: "Administrator"
-    });
-    let selectedPermissionOverrides: string[] = $state([]);
-  let selectAllPermissionOverrides = false;
-    let newCommandCooldown: { command: string; seconds: number } = $state({command: "", seconds: 5});
-  let newDeleteMessageChannel: { channelId: string | null; state: string } = { channelId: null, state: "enable" };
-  let searchQuery = "";
+  let newStaffRole: string | null = $state(null);
+  let newMemberRole: string | null = $state(null);
+  let newTimezone = $state("");
+  let newAutoBanRole: string | null = $state(null);
+  let newVoiceChannelRole: { channelId: string | null; roleId: string | null } = $state({
+    channelId: null,
+    roleId: null
+  });
+  let newPermissionOverride: { command: string; permission: string } = $state({
+    command: "",
+    permission: "Administrator"
+  });
+  let selectedPermissionOverrides: string[] = $state([]);
+  let selectAllPermissionOverrides = $state(false);
+  let newCommandCooldown: { command: string; seconds: number } = $state({ command: "", seconds: 5 });
+  let newDeleteMessageChannel: { channelId: string | null; state: string } = $state({
+    channelId: null,
+    state: "enable"
+  });
+  let searchQuery = $state("");
 
   async function fetchAllData() {
     if (!$currentGuild?.id) return;
@@ -192,32 +257,32 @@
           permissionOverridesData, commandsAndModulesData, commandCooldownsData,
           banMessageData, antiPatternPatternsData
         ] = await Promise.all([
-          api.getAutoAssignRoles($currentGuild.id),
-          api.getProtectionStatus($currentGuild.id),
-          api.getSelfAssignableRoles($currentGuild.id),
-          api.getGuildRoles($currentGuild.id),
-          api.getGuildChannels($currentGuild.id, 0), // Text channels
-          api.getGuildChannels($currentGuild.id, 1), // Voice channels
-          api.getStaffRole($currentGuild.id),
-          api.getMemberRole($currentGuild.id),
-          api.getGuildTimezone($currentGuild.id),
-          api.getAvailableTimezones($currentGuild.id),
-          api.getDeleteMessageOnCommand($currentGuild.id),
-          api.getGameVoiceChannel($currentGuild.id),
-          api.getAutoBanRoles($currentGuild.id),
-          api.getVoiceChannelRoles($currentGuild.id),
-          api.getReactionRoles($currentGuild.id),
-          api.getPermissionOverrides($currentGuild.id),
-          api.getCommandsAndModules(),
-          api.getCommandCooldowns($currentGuild.id),
-          api.getBanMessage($currentGuild.id),
-          api.getAntiPatternPatterns($currentGuild.id).catch(() => [])
+          administrationApi.getAutoAssignRoles($currentGuild.id),
+          protectionApi.getProtectionStatus($currentGuild.id),
+          administrationApi.getSelfAssignableRoles($currentGuild.id),
+          clientApi.getRoles($currentGuild.id),
+          clientApi.getChannelsByType($currentGuild.id, 0), // Text channels
+          clientApi.getChannelsByType($currentGuild.id, 2), // Voice channels
+          administrationApi.getStaffRole($currentGuild.id),
+          administrationApi.getMemberRole($currentGuild.id),
+          administrationApi.getGuildTimezone($currentGuild.id),
+          administrationApi.getTimezones($currentGuild.id),
+          administrationApi.getDeleteMessageOnCommand($currentGuild.id),
+          administrationApi.getGameVoiceChannel($currentGuild.id),
+          administrationApi.getAutoBanRoles($currentGuild.id),
+          administrationApi.getVoiceChannelRoles($currentGuild.id),
+          administrationApi.getReactionRoles($currentGuild.id),
+          administrationApi.getPermissionOverrides($currentGuild.id),
+          administrationApi.getCommandsAndModules(),
+          administrationApi.getCommandCooldowns($currentGuild.id),
+          administrationApi.getBanMessage($currentGuild.id),
+          protectionApi.getAntiPatternPatterns($currentGuild.id).catch(() => [])
         ]);
 
         // Server Management
         staffRole = staffRoleData && staffRoleData !== BigInt(0) ? staffRoleData : null;
         memberRole = memberRoleData && memberRoleData !== BigInt(0) ? memberRoleData : null;
-        
+
         // Pre-populate selector values
         const staffRoleString = staffRole ? staffRole.toString() : null;
         const memberRoleString = memberRole ? memberRole.toString() : null;
@@ -230,17 +295,15 @@
           guildTimezone = timezoneData || "UTC";
         }
         // Transform timezone data to match DiscordSelector's expected format
-        availableTimezones = (timezonesData || []).map(tz => ({
+        availableTimezones = (timezonesData || []).map((tz: any) => ({
           id: tz.id,
-          name: tz.id,
-          label: tz.displayName,
+          displayName: tz.displayName,
           offset: tz.offset
         }));
         // Find the timezone ID from the available timezones that matches the current timezone
-        // The API might return abbreviated timezone like "EST" so we need to find the matching full timezone
-        const currentTimezoneOption = availableTimezones.find(tz => 
-          tz.id === guildTimezone || 
-          tz.label.includes(guildTimezone) ||
+        const currentTimezoneOption = availableTimezones.find((tz: any) =>
+          tz.id === guildTimezone ||
+          (tz.displayName && tz.displayName.includes(guildTimezone)) ||
           tz.id.includes(guildTimezone)
         );
         newTimezone = currentTimezoneOption ? currentTimezoneOption.id : (guildTimezone || "UTC");
@@ -250,13 +313,13 @@
         // Auto-assign roles
         autoAssignRoles = autoAssignData || { normalRoles: [], botRoles: [] };
         autoBanRoles = autoBanRolesData || [];
-        
+
         // Convert role IDs to strings for DiscordSelector
         const normalRoleIds = (autoAssignRoles.normalRoles || []).map(id => id.toString());
         const botRoleIds = (autoAssignRoles.botRoles || []).map(id => id.toString());
         selectedNormalRoles = normalRoleIds;
         selectedBotRoles = botRoleIds;
-        
+
         // Ensure proper timing for pre-population
         setTimeout(() => {
           selectedNormalRoles = [...normalRoleIds];
@@ -269,8 +332,36 @@
           antiSpam: { enabled: false },
           antiAlt: { enabled: false },
           antiMassMention: { enabled: false },
-          antiPattern: { enabled: false }
+          antiPattern: { enabled: false },
+          antiMassPost: { enabled: false },
+          antiPostChannel: { enabled: false }
         };
+
+        // Sync reactive variables from protectionStatus
+        if (protectionStatus.antiMassPost) {
+          ampChannelThreshold = protectionStatus.antiMassPost.channelThreshold ?? 3;
+          ampTimeWindow = protectionStatus.antiMassPost.timeWindowSeconds ?? 60;
+          ampAction = protectionStatus.antiMassPost.action ?? 2;
+          ampPunishDuration = protectionStatus.antiMassPost.punishDuration ?? 0;
+          ampCheckLinksOnly = protectionStatus.antiMassPost.checkLinksOnly ?? true;
+        }
+
+        if (protectionStatus.antiPostChannel) {
+          apcAction = protectionStatus.antiPostChannel.action ?? 2;
+          apcPunishDuration = protectionStatus.antiPostChannel.punishDuration ?? 0;
+
+          // Convert channel and role IDs to strings for DiscordSelector
+          const channelIds = (protectionStatus.antiPostChannel.channels || []).map((id: any) => id.toString());
+          const roleIds = (protectionStatus.antiPostChannel.ignoredRoles || []).map((id: any) => id.toString());
+          selectedHoneypotChannels = channelIds;
+          selectedIgnoredRoles = roleIds;
+
+          // Ensure proper timing for pre-population
+          setTimeout(() => {
+            selectedHoneypotChannels = [...channelIds];
+            selectedIgnoredRoles = [...roleIds];
+          }, 0);
+        }
 
         // Anti-pattern patterns
         antiPatternPatterns = antiPatternPatternsData || [];
@@ -282,17 +373,17 @@
 
         // Permissions
         permissionOverrides = permissionOverridesData || [];
-        
+
         // Command Cooldowns
         commandCooldowns = commandCooldownsData || [];
 
         // Advanced Operations
         banMessage = typeof banMessageData === 'string' ? banMessageData : (banMessageData?.message || "");
-        
+
         // Process commands and modules data
         if (commandsAndModulesData) {
           const commandMap = new Map<string, { id: string; name: string; label: string }>();
-          
+
           // The API returns an array of objects with "commands" arrays
           commandsAndModulesData.forEach(moduleData => {
             if (moduleData.commands) {
@@ -309,10 +400,10 @@
               });
             }
           });
-          
+
           availableCommands = Array.from(commandMap.values()).sort((a, b) => a.name.localeCompare(b.name));
         }
-        
+
         // Set up available Discord permissions
         availablePermissions = [
           { id: "Administrator", name: "Administrator" },
@@ -342,16 +433,16 @@
         textChannels = textChannelsData || [];
         voiceChannels = voiceChannelsData || [];
         guildChannels = [...textChannels, ...voiceChannels];
-        
+
 
         // Ensure proper timing for pre-population after roles/channels are loaded
         setTimeout(() => {
           newStaffRole = [...(staffRoleString ? [staffRoleString] : [])][0] || null;
           newMemberRole = [...(memberRoleString ? [memberRoleString] : [])][0] || null;
           // Re-find timezone option in case options loaded after initial assignment
-          const currentTimezoneOption = availableTimezones.find(tz => 
-            tz.id === guildTimezone || 
-            tz.label.includes(guildTimezone) ||
+          const currentTimezoneOption = availableTimezones.find((tz: any) =>
+            tz.id === guildTimezone ||
+            (tz.displayName && tz.displayName.includes(guildTimezone)) ||
             tz.id.includes(guildTimezone)
           );
           newTimezone = currentTimezoneOption ? currentTimezoneOption.id : (guildTimezone || "UTC");
@@ -380,7 +471,6 @@
     return channel ? channel.name : `Channel ${channelId.toString()}`;
   }
 
-
   function formatDuration(minutes: number): string {
     if (minutes === 0) return "Permanent";
     if (minutes < 60) return `${minutes}m`;
@@ -388,26 +478,18 @@
     return `${Math.floor(minutes / 1440)}d`;
   }
 
-  function showConfirm(title: string, message: string, action: () => void, variant = "danger") {
+  function showConfirm(title: string, message: string, action: () => void, variant: "danger" | "warning" | "info" = "danger") {
     confirmModalData = { title, message, action, variant };
     showConfirmModal = true;
   }
 
-  function handleNormalRolesChange(event: CustomEvent) {
-    selectedNormalRoles = Array.isArray(event.detail.selected) ? event.detail.selected : [];
-  }
-
-  function handleBotRolesChange(event: CustomEvent) {
-    selectedBotRoles = Array.isArray(event.detail.selected) ? event.detail.selected : [];
-  }
-
   async function saveNormalRoles() {
     if (!$currentGuild?.id) return;
-    
+
     try {
       saving = true;
       const roleIds = selectedNormalRoles.map(id => BigInt(id));
-      await api.setAutoAssignRoles($currentGuild.id, roleIds);
+      await administrationApi.setAutoAssignRoles($currentGuild.id, roleIds);
       await fetchAllData();
     } catch (error) {
       logger.error("Failed to save normal auto-assign roles:", error);
@@ -418,11 +500,11 @@
 
   async function saveBotRoles() {
     if (!$currentGuild?.id) return;
-    
+
     try {
       saving = true;
       const roleIds = selectedBotRoles.map(id => BigInt(id));
-      await api.setBotAutoAssignRoles($currentGuild.id, roleIds);
+      await administrationApi.setBotAutoAssignRoles($currentGuild.id, roleIds);
       await fetchAllData();
     } catch (error) {
       logger.error("Failed to save bot auto-assign roles:", error);
@@ -433,32 +515,32 @@
 
   async function saveServerSettings() {
     if (!$currentGuild?.id) return;
-    
+
     try {
       saving = true;
-      
+
       const promises = [];
-      
+
       if (newStaffRole && newStaffRole !== (staffRole?.toString() || null)) {
-        promises.push(api.setStaffRole($currentGuild.id, BigInt(newStaffRole)));
+        promises.push(administrationApi.setStaffRole($currentGuild.id, BigInt(newStaffRole)));
       }
-      
+
       if (newMemberRole && newMemberRole !== (memberRole?.toString() || null)) {
-        promises.push(api.setMemberRole($currentGuild.id, BigInt(newMemberRole)));
+        promises.push(administrationApi.setMemberRole($currentGuild.id, BigInt(newMemberRole)));
       }
-      
+
       if (newTimezone && newTimezone !== guildTimezone) {
-        promises.push(api.setGuildTimezone($currentGuild.id, newTimezone));
+        promises.push(administrationApi.setGuildTimezone($currentGuild.id, { timezoneId: newTimezone }));
       }
 
       await Promise.all(promises);
       await fetchAllData();
-      
+
       // Reset form
       newStaffRole = null;
       newMemberRole = null;
       newTimezone = "";
-      
+
     } catch (err) {
       logger.error("Failed to save server settings:", err);
     } finally {
@@ -468,9 +550,9 @@
 
   async function toggleDeleteMessageOnCommand() {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.toggleDeleteMessageOnCommand($currentGuild.id);
+      await administrationApi.toggleDeleteMessageOnCommand($currentGuild.id);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to toggle delete message on command:", err);
@@ -479,9 +561,9 @@
 
   async function toggleGameVoiceChannel(channelId: bigint) {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.toggleGameVoiceChannel($currentGuild.id, channelId);
+      await administrationApi.toggleGameVoiceChannel($currentGuild.id, { channelId });
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to toggle game voice channel:", err);
@@ -490,9 +572,9 @@
 
   async function toggleStatsOptOut() {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.toggleStatsOptOut($currentGuild.id);
+      await administrationApi.toggleStatsOptOut($currentGuild.id);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to toggle stats opt-out:", err);
@@ -501,9 +583,9 @@
 
   async function deleteStatsData() {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.deleteStatsData($currentGuild.id);
+      await administrationApi.deleteStatsData($currentGuild.id);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to delete stats data:", err);
@@ -512,9 +594,9 @@
 
   async function addAutoBanRole() {
     if (!$currentGuild?.id || !newAutoBanRole) return;
-    
+
     try {
-      await api.addAutoBanRole($currentGuild.id, BigInt(newAutoBanRole));
+      await administrationApi.addAutoBanRole($currentGuild.id, BigInt(newAutoBanRole));
       await fetchAllData();
       expandedRoleCard = null;
       newAutoBanRole = null;
@@ -525,9 +607,9 @@
 
   async function removeAutoBanRole(roleId: bigint) {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.removeAutoBanRole($currentGuild.id, roleId);
+      await administrationApi.removeAutoBanRole($currentGuild.id, roleId);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to remove auto-ban role:", err);
@@ -536,9 +618,12 @@
 
   async function addVoiceChannelRole() {
     if (!$currentGuild?.id || !newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId) return;
-    
+
     try {
-      await api.addVoiceChannelRole($currentGuild.id, BigInt(newVoiceChannelRole.channelId), BigInt(newVoiceChannelRole.roleId));
+      await administrationApi.addVoiceChannelRole($currentGuild.id, {
+        channelId: BigInt(newVoiceChannelRole.channelId),
+        roleId: BigInt(newVoiceChannelRole.roleId)
+      });
       await fetchAllData();
       expandedRoleCard = null;
       newVoiceChannelRole = { channelId: null, roleId: null };
@@ -549,9 +634,9 @@
 
   async function removeVoiceChannelRole(channelId: bigint) {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.removeVoiceChannelRole($currentGuild.id, channelId);
+      await administrationApi.removeVoiceChannelRole($currentGuild.id, channelId);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to remove voice channel role:", err);
@@ -560,15 +645,14 @@
 
   async function toggleSelfAssignableRolesExclusive() {
     if (!$currentGuild?.id) return;
-    
+
     try {
-      await api.toggleSelfAssignableRolesExclusive($currentGuild.id);
+      await administrationApi.toggleSelfAssignableRoleExclusive($currentGuild.id);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to toggle self-assignable roles exclusivity:", err);
     }
   }
-
 
   function togglePermissionOverrideSelection(command: string) {
     if (selectedPermissionOverrides.includes(command)) {
@@ -591,12 +675,12 @@
 
   async function deleteSelectedPermissionOverrides() {
     if (!$currentGuild?.id || selectedPermissionOverrides.length === 0) return;
-    
+
     try {
       await Promise.all(
         selectedPermissionOverrides.map(command => {
           const override = permissionOverrides.find(o => o.command === command);
-          return api.removePermissionOverride($currentGuild.id, command, override?.permission || "");
+          return administrationApi.removePermissionOverride($currentGuild.id, command);
         })
       );
       selectedPermissionOverrides = [];
@@ -615,19 +699,25 @@
       saving = true;
       switch (type) {
         case "antiRaid":
-          await api.configureAntiRaid($currentGuild.id, config);
+          await administrationApi.configureAntiRaid($currentGuild.id, config);
           break;
         case "antiSpam":
-          await api.configureAntiSpam($currentGuild.id, config);
+          await administrationApi.configureAntiSpam($currentGuild.id, config);
           break;
         case "antiAlt":
-          await api.configureAntiAlt($currentGuild.id, config);
+          await administrationApi.configureAntiAlt($currentGuild.id, config);
           break;
         case "antiMassMention":
-          await api.configureAntiMassMention($currentGuild.id, config);
+          await administrationApi.configureAntiMassMention($currentGuild.id, config);
           break;
         case "antiPattern":
-          await api.configureAntiPattern($currentGuild.id, config);
+          await protectionApi.configureAntiPattern($currentGuild.id, config);
+          break;
+        case "antiMassPost":
+          await administrationApi.configureAntiMassPost($currentGuild.id, config);
+          break;
+        case "antiPostChannel":
+          await administrationApi.configureAntiPostChannel($currentGuild.id, config);
           break;
       }
       await fetchAllData();
@@ -641,42 +731,42 @@
 
   async function toggleProtection(type: string) {
     if (!$currentGuild?.id || !protectionStatus) return;
-    
+
     const isEnabled = protectionStatus[type]?.enabled;
-    
+
     // When enabling, send default values that meet validation requirements
     if (!isEnabled) {
       const defaultConfigs = {
-        antiRaid: { 
-          enabled: true, 
-          userThreshold: 5, 
-          seconds: 10, 
+        antiRaid: {
+          enabled: true,
+          userThreshold: 5,
+          seconds: 10,
           action: 1, // Mute = 1
-          punishDuration: 60 
+          punishDuration: 60
         },
-        antiSpam: { 
-          enabled: true, 
-          messageThreshold: 5, 
+        antiSpam: {
+          enabled: true,
+          messageThreshold: 5,
           action: 1, // Mute = 1
-          muteTime: 5, 
-          roleId: null 
+          muteTime: 5,
+          roleId: null
         },
-        antiAlt: { 
-          enabled: true, 
-          minAgeMinutes: 1440, 
+        antiAlt: {
+          enabled: true,
+          minAgeMinutes: 1440,
           action: 2, // Kick = 2
-          actionDurationMinutes: 0, 
-          roleId: null 
+          actionDurationMinutes: 0,
+          roleId: null
         },
-        antiMassMention: { 
-          enabled: true, 
-          mentionThreshold: 5, 
-          timeWindowSeconds: 30, 
-          maxMentionsInTimeWindow: 10, 
-          ignoreBots: true, 
+        antiMassMention: {
+          enabled: true,
+          mentionThreshold: 5,
+          timeWindowSeconds: 30,
+          maxMentionsInTimeWindow: 10,
+          ignoreBots: true,
           action: 1, // Mute = 1
-          muteTime: 5, 
-          roleId: null 
+          muteTime: 5,
+          roleId: null
         },
         antiPattern: {
           enabled: true,
@@ -692,9 +782,36 @@
           checkNewAccounts: true,
           newAccountDays: 7,
           minimumScore: 15
+        },
+        antiMassPost: {
+          enabled: true,
+          channelThreshold: 3,
+          timeWindowSeconds: 60,
+          contentSimilarityThreshold: 0.8,
+          minContentLength: 20,
+          checkLinksOnly: true,
+          checkDuplicateContent: true,
+          requireIdenticalContent: false,
+          caseSensitive: false,
+          deleteMessages: true,
+          notifyUser: true,
+          action: 2, // Ban
+          punishDuration: 0,
+          roleId: null,
+          ignoreBots: true,
+          maxMessagesTracked: 50
+        },
+        antiPostChannel: {
+          enabled: true,
+          action: 2, // Ban
+          punishDuration: 0,
+          roleId: null,
+          deleteMessages: true,
+          notifyUser: true,
+          ignoreBots: true
         }
       };
-      
+
       await configureProtection(type, defaultConfigs[type]);
     } else {
       await configureProtection(type, { enabled: false });
@@ -727,13 +844,93 @@
     expandedProtectionCard = null;
   }
 
+  async function saveHoneypotChannels() {
+    if (!$currentGuild?.id) return;
+
+    try {
+      saving = true;
+      // Get current channels from backend
+      const currentChannels = protectionStatus.antiPostChannel.channels || [];
+      const selectedIds = selectedHoneypotChannels.map(c => BigInt(c));
+
+      // Add new channels
+      for (const channelId of selectedIds) {
+        if (!currentChannels.some((c: any) => c === channelId)) {
+          await administrationApi.addAntiPostChannel($currentGuild.id, channelId);
+        }
+      }
+
+      // Remove deselected channels
+      for (const channelId of currentChannels) {
+        if (!selectedIds.some(id => id === channelId)) {
+          await administrationApi.removeAntiPostChannel($currentGuild.id, channelId);
+        }
+      }
+
+      await fetchAllData();
+    } catch (err) {
+      logger.error("Failed to save honeypot channels:", err);
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function saveIgnoredRoles() {
+    if (!$currentGuild?.id) return;
+
+    try {
+      saving = true;
+      // Get current roles from backend
+      const currentRoles = protectionStatus.antiPostChannel.ignoredRoles || [];
+      const selectedIds = selectedIgnoredRoles.map(r => BigInt(r));
+
+      // Add new roles
+      for (const roleId of selectedIds) {
+        if (!currentRoles.some((r: any) => r === roleId)) {
+          await administrationApi.toggleAntiPostChannelIgnoredRole($currentGuild.id, roleId);
+        }
+      }
+
+      // Remove deselected roles
+      for (const roleId of currentRoles) {
+        if (!selectedIds.some(id => id === roleId)) {
+          await administrationApi.toggleAntiPostChannelIgnoredRole($currentGuild.id, roleId);
+        }
+      }
+
+      await fetchAllData();
+    } catch (err) {
+      logger.error("Failed to save ignored roles:", err);
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function addIgnoredUser() {
+    if (!$currentGuild?.id || !selectedIgnoredUsers) return;
+
+    try {
+      saving = true;
+      await administrationApi.toggleAntiPostChannelIgnoredUser($currentGuild.id, BigInt(selectedIgnoredUsers));
+      selectedIgnoredUsers = "";
+      await fetchAllData();
+    } catch (err) {
+      logger.error("Failed to add ignored user:", err);
+    } finally {
+      saving = false;
+    }
+  }
+
   // Permission Functions
   async function addPermissionOverride() {
     if (!$currentGuild?.id || !newPermissionOverride.command || !newPermissionOverride.permission) return;
 
     try {
       saving = true;
-      await api.addPermissionOverride($currentGuild.id, newPermissionOverride.command, newPermissionOverride.permission);
+      await administrationApi.addPermissionOverride($currentGuild.id, {
+        command: newPermissionOverride.command,
+        permission: newPermissionOverride.permission
+      });
       newPermissionOverride = { command: "", permission: "Administrator" };
       expandedRoleCard = null;
       await fetchAllData();
@@ -748,7 +945,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.removePermissionOverride($currentGuild.id, command, permission);
+      await administrationApi.removePermissionOverride($currentGuild.id, command);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to remove permission override:", err);
@@ -759,7 +956,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.resetPermissionOverrides($currentGuild.id);
+      await administrationApi.clearAllPermissionOverrides($currentGuild.id);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to reset permission overrides:", err);
@@ -772,7 +969,7 @@
 
     try {
       saving = true;
-      await api.setCommandCooldown($currentGuild.id, newCommandCooldown.command, newCommandCooldown.seconds);
+      await administrationApi.setCommandCooldown($currentGuild.id, newCommandCooldown.command, newCommandCooldown.seconds);
       newCommandCooldown = { command: "", seconds: 5 };
       expandedRoleCard = null;
       await fetchAllData();
@@ -787,7 +984,7 @@
     if (!$currentGuild?.id || !command) return;
 
     try {
-      await api.removeCommandCooldown($currentGuild.id, command);
+      await administrationApi.removeCommandCooldown($currentGuild.id, command);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to remove command cooldown:", err);
@@ -800,7 +997,7 @@
 
     try {
       saving = true;
-      await api.setBanMessage($currentGuild.id, banMessage);
+      await administrationApi.setBanMessage($currentGuild.id, { message: banMessage });
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to save ban message:", err);
@@ -809,21 +1006,6 @@
     }
   }
 
-  async function performPrune() {
-    if (!$currentGuild?.id || massOperations.prune.days <= 0) return;
-
-    try {
-      saving = true;
-      const result = await api.pruneUsers($currentGuild.id, massOperations.prune.days);
-      await fetchAllData();
-      return result;
-    } catch (err) {
-      logger.error("Failed to prune users:", err);
-      throw err;
-    } finally {
-      saving = false;
-    }
-  }
 
   // Anti-Pattern Pattern Management
   async function addAntiPatternPattern() {
@@ -831,14 +1013,14 @@
 
     try {
       saving = true;
-      await api.addAntiPatternPattern(
-        $currentGuild.id, 
-        newPattern.pattern, 
-        newPattern.name, 
-        newPattern.checkUsername, 
+      await protectionApi.addAntiPatternPattern(
+        $currentGuild.id,
+        newPattern.pattern,
+        newPattern.name,
+        newPattern.checkUsername,
         newPattern.checkDisplayName
       );
-      
+
       newPattern = { name: "", pattern: "", checkUsername: true, checkDisplayName: false };
       showPatternManagement = false;
       await fetchAllData();
@@ -853,7 +1035,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.removeAntiPatternPattern($currentGuild.id, patternId);
+      await protectionApi.removeAntiPatternPattern($currentGuild.id, patternId);
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to remove anti-pattern pattern:", err);
@@ -873,19 +1055,19 @@
     fetchAllData();
   });
 
-    run(() => {
-        if ($currentGuild) {
-            fetchAllData();
-        }
-    });
+  $effect(() => {
+    if ($currentGuild) {
+      fetchAllData();
+    }
+  });
 
-    let filteredRoles = $derived(availableRoles.filter(role =>
+  let filteredRoles = $derived(availableRoles.filter(role =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ));
+  ));
 
-    let filteredChannels = $derived(guildChannels.filter(channel =>
+  let filteredChannels = $derived(guildChannels.filter(channel =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ));
+  ));
 </script>
 
 <DashboardPageLayout
@@ -904,7 +1086,7 @@
       <span class="ml-3" style="color: {$colorStore.text}">Loading administration data...</span>
     </div>
   {:else if error}
-      <div class="backdrop-blur-xs p-6 rounded-xl mb-6 transition-all" role="alert"
+    <div class="backdrop-blur-xs p-6 rounded-xl mb-6 transition-all" role="alert"
          style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
       <div class="flex items-center gap-3">
         <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
@@ -917,2349 +1099,126 @@
   {:else}
 
     {#if activeTab === 'overview'}
-      <!-- Overview Dashboard -->
-      <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
-        
-        <!-- Quick Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-          <!-- Protection Status -->
-            <div class="backdrop-blur-xs rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-105 cursor-pointer"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.primary}30;"
-                 role="button"
-                 tabindex="0"
-                 onclick={() => activeTab = 'protection'}
-                 onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activeTab = 'protection'; } }}>
-            <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div class="p-1.5 sm:p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              </div>
-              <h3 class="font-semibold text-sm sm:text-base" style="color: {$colorStore.text}">Protection</h3>
-            </div>
-            <div class="space-y-2">
-              <div class="text-2xl font-bold" style="color: {$colorStore.primary}">
-                {Object.values(protectionStatus).filter(p => p?.enabled).length}/5
-              </div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Systems Active</div>
-            </div>
-          </div>
-
-          <!-- Role Management -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.secondary}30;">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="p-2 rounded-lg" style="background: {$colorStore.secondary}20;">
-                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              </div>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Roles</h3>
-            </div>
-            <div class="space-y-2">
-              <div class="text-2xl font-bold" style="color: {$colorStore.secondary}">
-                {selfAssignableRoles?.roles?.length || 0}
-              </div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Self-Assignable</div>
-            </div>
-          </div>
-
-          <!-- Auto-Assign Roles -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.accent}30;">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="p-2 rounded-lg" style="background: {$colorStore.accent}20;">
-                <i class="fa-utility-duo fa-regular fa-users"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              </div>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Auto-Assign</h3>
-            </div>
-            <div class="space-y-2">
-              <div class="text-2xl font-bold" style="color: {$colorStore.accent}">
-                {(autoAssignRoles.normalRoles?.length || 0) + (autoAssignRoles.botRoles?.length || 0)}
-              </div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Active Rules</div>
-            </div>
-          </div>
-
-          <!-- Command Cooldowns -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-105"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.primary}30;">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
-                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-              </div>
-              <h3 class="font-semibold" style="color: {$colorStore.text}">Cooldowns</h3>
-            </div>
-            <div class="space-y-2">
-              <div class="text-2xl font-bold" style="color: {$colorStore.primary}">
-                {commandCooldowns.length}
-              </div>
-              <div class="text-sm" style="color: {$colorStore.muted}">Commands</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="rounded-2xl border p-6 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Quick Actions</h2>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <button
-              class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
-              style="border-color: {$colorStore.primary}30; background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);"
-              onclick={() => activeTab = 'protection'}
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {$colorStore.text}">Configure Protection</span>
-              </div>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Set up anti-raid, anti-spam, and pattern detection
-              </p>
-            </button>
-
-            <button
-              class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
-              style="border-color: {$colorStore.secondary}30; background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);"
-              onclick={() => activeTab = 'roles'}
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {$colorStore.text}">Manage Roles</span>
-              </div>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Configure role assignment and permissions
-              </p>
-            </button>
-
-            <button
-              class="p-4 rounded-xl border-2 transition-all duration-200 text-left hover:scale-105 focus:scale-105"
-              style="border-color: {$colorStore.accent}30; background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.secondary}10);"
-              onclick={() => activeTab = 'automation'}
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <i class="fa-utility-duo fa-regular fa-gear" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                <span class="font-medium" style="color: {$colorStore.text}">Server Settings</span>
-              </div>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Configure timezone, channels, and automation
-              </p>
-            </button>
-          </div>
-        </div>
-
-        <!-- Server Health Overview -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Current Configuration -->
-          <div class="rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.primary}30;">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Server Configuration</h3>
-            </div>
-
-            <div class="space-y-3">
-              <div class="flex justify-between items-center">
-                <span style="color: {$colorStore.muted}">Staff Role:</span>
-                <span style="color: {$colorStore.text}">{getRoleName(staffRole)}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span style="color: {$colorStore.muted}">Member Role:</span>
-                <span style="color: {$colorStore.text}">{getRoleName(memberRole)}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span style="color: {$colorStore.muted}">Timezone:</span>
-                <span style="color: {$colorStore.text}">{guildTimezone}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span style="color: {$colorStore.muted}">Game Voice Channel:</span>
-                <span style="color: {$colorStore.text}">{getChannelName(gameVoiceChannel)}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Protection Summary -->
-          <div class="rounded-2xl border p-6 shadow-2xl"
-               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                      border-color: {$colorStore.primary}30;">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Protection Status</h3>
-            </div>
-
-            <div class="space-y-3">
-              {#each Object.entries(protectionStatus) as [key, status]}
-                <div class="flex justify-between items-center">
-                  <span style="color: {$colorStore.muted}">
-                    {key === 'antiRaid' ? 'Anti-Raid' : 
-                     key === 'antiSpam' ? 'Anti-Spam' : 
-                     key === 'antiAlt' ? 'Anti-Alt' : 
-                     key === 'antiMassMention' ? 'Anti-Mass Mention' :
-                     key === 'antiPattern' ? 'Anti-Pattern' : key}:
-                  </span>
-                  <span class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full" 
-                         style="background: {status?.enabled ? $colorStore.primary : $colorStore.muted}40;"></div>
-                    <span style="color: {status?.enabled ? $colorStore.primary : $colorStore.muted}">
-                      {status?.enabled ? 'Active' : 'Disabled'}
-                    </span>
-                  </span>
-                </div>
-              {/each}
-            </div>
-          </div>
-        </div>
-      </div>
-    {/if}
-
-    {#if activeTab === 'roles'}
-      <!-- Roles & Permissions Section -->
-      <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
-        
-        <!-- Auto-Assign Roles -->
-        
-        <!-- Normal & Bot Auto-Assign Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 100 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Auto-Assign Roles</h2>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Normal Users -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-users" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                Normal Users
-              </h3>
-
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                placeholder="Select roles to auto-assign to normal users"
-                multiple={true}
-                selected={selectedNormalRoles}
-                on:change={handleNormalRolesChange}
-              />
-              <button
-                class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                disabled={saving}
-                onclick={saveNormalRoles}
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              >
-                {saving ? "Saving..." : "Save Normal User Roles"}
-              </button>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Roles automatically assigned to new users when they join the server.
-              </p>
-            </div>
-
-            <!-- Bot Users -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-circle-user"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                Bot Users
-              </h3>
-
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                placeholder="Select roles to auto-assign to bot users"
-                multiple={true}
-                selected={selectedBotRoles}
-                on:change={handleBotRolesChange}
-              />
-              <button
-                class="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                disabled={saving}
-                onclick={saveBotRoles}
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              >
-                {saving ? "Saving..." : "Save Bot User Roles"}
-              </button>
-              <p class="text-sm" style="color: {$colorStore.muted}">
-                Roles automatically assigned to bot users when they join the server.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Auto-Ban Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 200 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
-                <i class="fa-utility-duo fa-regular fa-shield"
-                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
-              </div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Auto-Ban Roles</h2>
-            </div>
-            
-            <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              onclick={() => expandedRoleCard = expandedRoleCard === 'autoBan' ? null : 'autoBan'}
-            >
-              {#if expandedRoleCard === 'autoBan'}
-                <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-              {:else}
-                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-              {/if}
-              {expandedRoleCard === 'autoBan' ? 'Collapse' : 'Add Role'}
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              Users who receive these roles will be automatically banned from the server
-            </p>
-
-            {#if autoBanRoles.length === 0}
-              <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-shield"
-                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No auto-ban roles configured</p>
-                <p class="text-sm" style="color: {$colorStore.muted}">Add roles that should trigger automatic bans</p>
-              </div>
-            {:else}
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {#each autoBanRoles as role}
-                  <div
-                          class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                    style="background: {$colorStore.accent}05; border-color: {$colorStore.accent}20;">
-                    <span class="font-medium" style="color: {$colorStore.text}">
-                      {role.roleName}
-                    </span>
-                    <button
-                      class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-                      style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      onclick={() => showConfirm("Remove Auto-Ban Role", `Are you sure you want to remove ${role.roleName} from auto-ban roles?`, () => removeAutoBanRole(role.roleId))}
-                      aria-label="Remove {role.roleName} from auto-ban roles"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        </div>
-
-        <!-- Self-Assignable Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 300 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Self-Assignable Roles</h2>
-            </div>
-            
-            <div class="flex items-center gap-2">
-              <span class="text-sm" style="color: {$colorStore.text}">Exclusive</span>
-              <button aria-label="Button action"
-                class="p-2 rounded-lg transition-all hover:scale-105 min-h-[44px] min-w-[44px]"
-                style="color: {selfAssignableRoles.exclusive ? $colorStore.secondary : $colorStore.muted}"
-                onclick={toggleSelfAssignableRolesExclusive}
-              >
-                {#if selfAssignableRoles.exclusive}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
-                {/if}
-              </button>
-            </div>
-          </div>
-
-          {#if !Array.isArray(selfAssignableRoles.roles) || selfAssignableRoles.roles.length === 0}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No self-assignable roles configured</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Users can't assign roles to themselves yet</p>
-            </div>
-          {:else}
-            <div class="space-y-4">
-              {#each Object.entries(selfAssignableRoles.groups || {}) as [groupId, groupName]}
-                <div class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20;">
-                  <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">
-                    Group {groupId}: {groupName || 'Unnamed'}
-                  </h3>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {#each selfAssignableRoles.roles.filter(r => r.model.group === parseInt(groupId)) as role}
-                      <div
-                              class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                        style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                        <span class="font-medium" style="color: {$colorStore.text}">
-                          {role.role?.name || `Role ${role.model.roleId}`}
-                          {#if role.model.levelRequirement > 0}
-                            <span class="text-xs" style="color: {$colorStore.muted}">
-                              (Level {role.model.levelRequirement}+)
-                            </span>
-                          {/if}
-                        </span>
-                        <button
-                          class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-                          style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          onclick={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
-                          aria-label="Remove {role.role?.name} from self-assignable roles"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/each}
-              
-              <!-- Ungrouped roles -->
-              {#if selfAssignableRoles.roles.filter(r => r.model.group === 0).length > 0}
-                <div class="border rounded-lg p-4" style="border-color: {$colorStore.primary}20;">
-                  <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">
-                    Ungrouped Roles
-                  </h3>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {#each selfAssignableRoles.roles.filter(r => r.model.group === 0) as role}
-                      <div
-                              class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                        style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                        <span class="font-medium" style="color: {$colorStore.text}">
-                          {role.role?.name || `Role ${role.model.roleId}`}
-                          {#if role.model.levelRequirement > 0}
-                            <span class="text-xs" style="color: {$colorStore.muted}">
-                              (Level {role.model.levelRequirement}+)
-                            </span>
-                          {/if}
-                        </span>
-                        <button
-                          class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-                          style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          onclick={() => api.removeSelfAssignableRole($currentGuild.id, role.model.roleId).then(() => fetchAllData())}
-                          aria-label="Remove {role.role?.name} from self-assignable roles"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </div>
-
-        <!-- Voice Channel Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 400 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-volume" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Voice Channel Roles</h2>
-            </div>
-            
-            <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-              onclick={() => expandedRoleCard = expandedRoleCard === 'voiceChannel' ? null : 'voiceChannel'}
-            >
-              {#if expandedRoleCard === 'voiceChannel'}
-                <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-              {:else}
-                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-              {/if}
-              {expandedRoleCard === 'voiceChannel' ? 'Collapse' : 'Add Mapping'}
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              Automatically assign roles when users join specific voice channels
-            </p>
-
-            {#if voiceChannelRoles.length === 0}
-              <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-volume" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No voice channel roles configured</p>
-                <p class="text-sm" style="color: {$colorStore.muted}">Add voice channel to role mappings</p>
-              </div>
-            {:else}
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each voiceChannelRoles as vcRole}
-                  <div
-                          class="flex items-center justify-between p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                    <div class="space-y-1">
-                      <p class="font-medium" style="color: {$colorStore.text}">
-                        🔊 {vcRole.channelName}
-                      </p>
-                      <p class="text-sm" style="color: {$colorStore.muted}">
-                        → {vcRole.roleName}
-                      </p>
-                    </div>
-                    <button
-                      class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-                      style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      onclick={() => showConfirm("Remove Voice Channel Role", `Remove role mapping for ${vcRole.channelName}?`, () => removeVoiceChannelRole(vcRole.channelId))}
-                      aria-label="Remove voice channel role mapping for {vcRole.channelName}"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-
-            <!-- Inline Add Voice Channel Role Form -->
-            {#if expandedRoleCard === 'voiceChannel'}
-              <div transition:slide={{ duration: 300 }} class="mt-4 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
-                <div class="p-4 rounded-xl border-2 border-dashed" style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-                  <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add Voice Channel Role Mapping</h5>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span id="voice-channel-label" class="block text-sm font-medium mb-2"
-                            style="color: {$colorStore.text}">Voice Channel</span>
-                      <DiscordSelector
-                        type="channel"
-                        options={voiceChannels}
-                        bind:selected={newVoiceChannelRole.channelId}
-                        placeholder="Select voice channel..."
-                        multiple={false}
-                        aria-labelledby="voice-channel-label" />
-                    </div>
-                    
-                    <div>
-                      <span id="role-to-assign-label" class="block text-sm font-medium mb-2"
-                            style="color: {$colorStore.text}">Role to Assign</span>
-                      <DiscordSelector
-                        type="role"
-                        options={availableRoles}
-                        bind:selected={newVoiceChannelRole.roleId}
-                        placeholder="Select role..."
-                        multiple={false}
-                        aria-labelledby="role-to-assign-label" />
-                    </div>
-                  </div>
-                  
-                  <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      onclick={() => { expandedRoleCard = null; newVoiceChannelRole = { channelId: null, roleId: null }; }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      onclick={addVoiceChannelRole}
-                      disabled={!newVoiceChannelRole.channelId || !newVoiceChannelRole.roleId || saving}
-                    >
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      {/if}
-                      Add Mapping
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/if}
-          </div>
-        </div>
-
-        <!-- Reaction Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 500 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reaction Roles</h2>
-          </div>
-
-          <div class="space-y-4">
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              Allow users to get roles by reacting to messages with specific emojis
-            </p>
-
-            {#if !reactionRoles.success || reactionRoles.reactionRoles.length === 0}
-              <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No reaction roles configured</p>
-                <p class="text-sm" style="color: {$colorStore.muted}">Set up reaction-based role assignment</p>
-              </div>
-            {:else}
-              <div class="space-y-4">
-                {#each reactionRoles.reactionRoles as rr}
-                  <div
-                          class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                    <div class="flex items-center justify-between mb-3">
-                      <p class="font-medium" style="color: {$colorStore.text}">
-                        Message ID: {rr.messageId}
-                      </p>
-                      <span class="text-xs px-2 py-1 rounded-full" 
-                            style="background: {rr.exclusive ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                                   color: {rr.exclusive ? $colorStore.accent : $colorStore.secondary}">
-                        {rr.exclusive ? 'Exclusive' : 'Multiple'}
-                      </span>
-                    </div>
-                    
-                    <div class="space-y-2">
-                      {#each rr.reactionRoles as reaction}
-                        <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.muted}">
-                          <span>{reaction.emoteName}</span>
-                          <span>→</span>
-                          <span>{getRoleName(reaction.roleId)}</span>
-                        </div>
-                      {/each}
-                    </div>
-                    
-                    <div class="mt-3 flex justify-end">
-                      <button
-                        class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
-                        style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                        onclick={() => showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => api.removeReactionRole($currentGuild.id, rr.index))}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        </div>
-      </div>
+      <OverviewTab
+        {protectionStatus}
+        {selfAssignableRoles}
+        {autoAssignRoles}
+        {commandCooldowns}
+        {staffRole}
+        {memberRole}
+        {guildTimezone}
+        {gameVoiceChannel}
+        {availableRoles}
+        {guildChannels}
+        bind:activeTab
+      />
     {/if}
 
     {#if activeTab === 'protection'}
-      <!-- Protection Systems Section -->
-      <div class="space-y-6">
-        
-        <!-- Anti-Raid Protection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 100 }}>
+      <ProtectionTab
+        {protectionStatus}
+        bind:expandedProtectionCard
+        bind:tempProtectionConfig
+        bind:showPatternManagement
+        {antiPatternPatterns}
+        bind:newPattern
+        bind:selectedHoneypotChannels
+        bind:selectedIgnoredRoles
+        bind:selectedIgnoredUsers
+        {actionOptions}
+        {textChannels}
+        {availableRoles}
+        {saving}
+        {toggleProtection}
+        {toggleProtectionCard}
+        {cancelProtectionEdit}
+        {saveProtectionConfig}
+        {saveHoneypotChannels}
+        {saveIgnoredRoles}
+        {addIgnoredUser}
+        {fetchAllData}
+        {formatAction}
+        {addAntiPatternPattern}
+        {removeAntiPatternPattern}
+      />
+    {/if}
 
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <div>
-                <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Raid Protection</h2>
-                <p class="text-sm" style="color: {$colorStore.muted}">Protect against mass user joins</p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiRaid.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
-                       color: {protectionStatus.antiRaid.enabled ? $colorStore.accent : $colorStore.secondary};
-                       border: 1px solid {protectionStatus.antiRaid.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                onclick={() => toggleProtection('antiRaid')}
-              >
-                {#if protectionStatus.antiRaid.enabled}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-                  Enabled
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-                  Disabled
-                {/if}
-              </button>
-              
-              {#if protectionStatus.antiRaid.enabled}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleProtectionCard('antiRaid')}
-                >
-                  {#if expandedProtectionCard === 'antiRaid'}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
-                  {/if}
-                  {expandedProtectionCard === 'antiRaid' ? 'Collapse' : 'Configure'}
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          {#if protectionStatus.antiRaid.enabled}
-            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiRaid.userThreshold}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">User Threshold</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiRaid.seconds}s</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Time Window</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiRaid.action)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
-              </div>
-              {#if protectionStatus.antiRaid.action === 1}
-                <div class="text-center">
-                  <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiRaid.punishDuration}m</div>
-                  <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Expanded Configuration -->
-            {#if expandedProtectionCard === 'antiRaid'}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label for="input-2198" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">User
-                      Threshold</label>
-                    <input id="input-2198"
-                      type="number"
-                      bind:value={tempProtectionConfig.userThreshold}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="50"
-                    >
-                  </div>
-                  <div>
-                    <span id="time-window-seconds-label" class="block text-sm font-medium mb-2"
-                          style="color: {$colorStore.text}">Time Window (seconds)</span>
-                    <input
-                      type="number"
-                      bind:value={tempProtectionConfig.seconds}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="300"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-7555" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
-                    <DiscordSelector
-                      type="custom"
-                      options={actionOptions}
-                      bind:selected={tempProtectionConfig.action}
-                      placeholder="Select action..."
-                      multiple={false}
-                      aria-labelledby="time-window-seconds-label" />
-                  </div>
-                  <div>
-                    <label for="input-7555" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment
-                      Duration (minutes)</label>
-                    <input id="input-7555"
-                      type="number"
-                      bind:value={tempProtectionConfig.punishDuration}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="10080"
-                    >
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={cancelProtectionEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveProtectionConfig}
-                    disabled={saving}
-                  >
-                    <div class="flex items-center justify-center gap-2">
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      {/if}
-                      <span>Save Configuration</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            {/if}
-          {:else}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-shield" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">Anti-Raid Protection Disabled</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Enable to protect against mass user joins</p>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Anti-Spam Protection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 200 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <div>
-                <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Spam Protection</h2>
-                <p class="text-sm" style="color: {$colorStore.muted}">Prevent message spam attacks</p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiSpam.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                       color: {protectionStatus.antiSpam.enabled ? $colorStore.accent : $colorStore.secondary}; 
-                       border: 1px solid {protectionStatus.antiSpam.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                onclick={() => toggleProtection('antiSpam')}
-              >
-                {#if protectionStatus.antiSpam.enabled}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-                  Enabled
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-                  Disabled
-                {/if}
-              </button>
-              
-              {#if protectionStatus.antiSpam.enabled}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleProtectionCard('antiSpam')}
-                >
-                  {#if expandedProtectionCard === 'antiSpam'}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
-                  {/if}
-                  {expandedProtectionCard === 'antiSpam' ? 'Collapse' : 'Configure'}
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          {#if protectionStatus.antiSpam.enabled}
-            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiSpam.messageThreshold}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Message Threshold</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiSpam.action)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
-              </div>
-              {#if protectionStatus.antiSpam.action === 1}
-                <div class="text-center">
-                  <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiSpam.muteTime}m</div>
-                  <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Expanded Configuration -->
-            {#if expandedProtectionCard === 'antiSpam'}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <span id="message-threshold-label" class="block text-sm font-medium mb-2"
-                          style="color: {$colorStore.text}">Message Threshold</span>
-                    <input
-                      type="number"
-                      bind:value={tempProtectionConfig.messageThreshold}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="20"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
-                    <DiscordSelector
-                      type="custom"
-                      options={actionOptions}
-                      bind:selected={tempProtectionConfig.action}
-                      placeholder="Select action..."
-                      multiple={false}
-                      aria-labelledby="message-threshold-label" />
-                  </div>
-                  <div>
-                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute
-                      Time (minutes)</label>
-                    <input id="input-8328"
-                      type="number"
-                      bind:value={tempProtectionConfig.muteTime}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="10080"
-                    >
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={cancelProtectionEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveProtectionConfig}
-                    disabled={saving}
-                  >
-                    <div class="flex items-center justify-center gap-2">
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      {/if}
-                      <span>Save Configuration</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            {/if}
-          {:else}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Spam Protection Disabled</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Enable to prevent message spam</p>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Anti-Alt Protection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 300 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <div>
-                <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Alt Protection</h2>
-                <p class="text-sm" style="color: {$colorStore.muted}">Block young accounts</p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiAlt.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                       color: {protectionStatus.antiAlt.enabled ? $colorStore.accent : $colorStore.secondary}; 
-                       border: 1px solid {protectionStatus.antiAlt.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                onclick={() => toggleProtection('antiAlt')}
-              >
-                {#if protectionStatus.antiAlt.enabled}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-                  Enabled
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-                  Disabled
-                {/if}
-              </button>
-              
-              {#if protectionStatus.antiAlt.enabled}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleProtectionCard('antiAlt')}
-                >
-                  {#if expandedProtectionCard === 'antiAlt'}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
-                  {/if}
-                  {expandedProtectionCard === 'antiAlt' ? 'Collapse' : 'Configure'}
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          {#if protectionStatus.antiAlt.enabled}
-            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{Math.floor(protectionStatus.antiAlt.minAgeMinutes / 1440)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Min Account Age (days)</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiAlt.action)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
-              </div>
-              {#if protectionStatus.antiAlt.action === 1 && protectionStatus.antiAlt.actionDurationMinutes > 0}
-                <div class="text-center">
-                  <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiAlt.actionDurationMinutes}m</div>
-                  <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Expanded Configuration -->
-            {#if expandedProtectionCard === 'antiAlt'}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <span id="minimum-account-age-minutes-label" class="block text-sm font-medium mb-2"
-                          style="color: {$colorStore.text}">Minimum Account Age (minutes)</span>
-                    <input
-                      type="number"
-                      bind:value={tempProtectionConfig.minAgeMinutes}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="525600"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-6339" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
-                    <DiscordSelector
-                      type="custom"
-                      options={actionOptions}
-                      bind:selected={tempProtectionConfig.action}
-                      placeholder="Select action..."
-                      multiple={false}
-                      aria-labelledby="minimum-account-age-minutes-label" />
-                  </div>
-                  <div>
-                    <label for="input-6339" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action
-                      Duration (minutes)</label>
-                    <input id="input-6339"
-                      type="number"
-                      bind:value={tempProtectionConfig.actionDurationMinutes}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="0"
-                      max="525600"
-                    >
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={cancelProtectionEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveProtectionConfig}
-                    disabled={saving}
-                  >
-                    <div class="flex items-center justify-center gap-2">
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      {/if}
-                      <span>Save Configuration</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            {/if}
-          {:else}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Alt Protection Disabled</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Enable to block young accounts</p>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Anti-Pattern Protection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 500 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-layer-group" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <div>
-                <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Pattern Protection</h2>
-                <p class="text-sm" style="color: {$colorStore.muted}">Advanced user behavior analysis</p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiPattern.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                       color: {protectionStatus.antiPattern.enabled ? $colorStore.accent : $colorStore.secondary}; 
-                       border: 1px solid {protectionStatus.antiPattern.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                onclick={() => toggleProtection('antiPattern')}
-              >
-                {#if protectionStatus.antiPattern.enabled}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-                  Enabled
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-                  Disabled
-                {/if}
-              </button>
-              
-              {#if protectionStatus.antiPattern.enabled}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleProtectionCard('antiPattern')}
-                >
-                  {#if expandedProtectionCard === 'antiPattern'}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
-                  {/if}
-                  {expandedProtectionCard === 'antiPattern' ? 'Collapse' : 'Configure'}
-                </button>
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  onclick={() => showPatternManagement = !showPatternManagement}
-                >
-                  {#if showPatternManagement}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-right" style="font-size: 16px;"></i>
-                  {/if}
-                  Patterns
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          {#if protectionStatus.antiPattern.enabled}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiPattern.minimumScore}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Min Score</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiPattern.action)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiPattern.patternCount}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Patterns</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiPattern.counter}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Triggers</div>
-              </div>
-            </div>
-
-            <!-- Expanded Configuration -->
-            {#if expandedProtectionCard === 'antiPattern'}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
-                
-                <!-- Basic Settings -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <span id="action-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</span>
-                    <DiscordSelector
-                      type="custom"
-                      options={actionOptions}
-                      bind:selected={tempProtectionConfig.action}
-                      placeholder="Select action..."
-                      multiple={false}
-                      aria-labelledby="action-label" />
-                  </div>
-                  <div>
-                    <label for="input-6838" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Punishment
-                      Duration (minutes)</label>
-                    <input id="input-6838"
-                      type="number"
-                      bind:value={tempProtectionConfig.punishDuration}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="0"
-                      max="10080"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-9583" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Minimum
-                      Score</label>
-                    <input id="input-9583"
-                      type="number"
-                      bind:value={tempProtectionConfig.minimumScore}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="100"
-                    >
-                  </div>
-                </div>
-
-                <!-- Behavior Analysis Toggles -->
-                <div class="space-y-4">
-                  <h4 class="font-medium" style="color: {$colorStore.text}">Behavior Analysis</h4>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <label for="input-198"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.checkAccountAge}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.checkAccountAge ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.checkAccountAge}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Check Account Age</span>
-                    </label>
-
-                    <label for="input-198"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.checkJoinTiming}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.checkJoinTiming ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.checkJoinTiming}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Check Join Timing</span>
-                    </label>
-
-                    <label for="input-198"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.checkBatchCreation}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.checkBatchCreation ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.checkBatchCreation}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Check Batch Creation</span>
-                    </label>
-
-                    <label for="input-198"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.checkOfflineStatus}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.checkOfflineStatus ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.checkOfflineStatus}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Check Offline Status</span>
-                    </label>
-
-                    <label for="input-198"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.checkNewAccounts}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.checkNewAccounts ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.checkNewAccounts}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Check New Accounts</span>
-                    </label>
-                  </div>
-
-                  <!-- Conditional Advanced Settings -->
-                  {#if tempProtectionConfig.checkAccountAge || tempProtectionConfig.checkJoinTiming || tempProtectionConfig.checkNewAccounts}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" transition:slide>
-                      {#if tempProtectionConfig.checkAccountAge}
-                        <div>
-                          <label for="input-198" class="block text-sm font-medium mb-2"
-                                 style="color: {$colorStore.text}">Max Account Age (months)</label>
-                          <input id="input-198"
-                            type="number"
-                            bind:value={tempProtectionConfig.maxAccountAgeMonths}
-                            class="w-full px-3 py-2 rounded-lg border transition-colors"
-                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                            min="1"
-                            max="120"
-                          >
-                        </div>
-                      {/if}
-
-                      {#if tempProtectionConfig.checkJoinTiming}
-                        <div>
-                          <label for="input-2213" class="block text-sm font-medium mb-2"
-                                 style="color: {$colorStore.text}">Max Join Hours</label>
-                          <input id="input-2213"
-                            type="number"
-                            bind:value={tempProtectionConfig.maxJoinHours}
-                            class="w-full px-3 py-2 rounded-lg border transition-colors"
-                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                            min="1"
-                            max="168"
-                            step="0.5"
-                          >
-                        </div>
-                      {/if}
-
-                      {#if tempProtectionConfig.checkNewAccounts}
-                        <div>
-                          <label for="input-1997" class="block text-sm font-medium mb-2"
-                                 style="color: {$colorStore.text}">New Account Days</label>
-                          <input id="input-1997"
-                            type="number"
-                            bind:value={tempProtectionConfig.newAccountDays}
-                            class="w-full px-3 py-2 rounded-lg border transition-colors"
-                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                            min="1"
-                            max="30"
-                          >
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-
-                <!-- Save/Cancel Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={cancelProtectionEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveProtectionConfig}
-                    disabled={saving}
-                  >
-                    <div class="flex items-center justify-center gap-2">
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      {/if}
-                      <span>Save Configuration</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            {/if}
-
-            <!-- Pattern Management Section -->
-            {#if showPatternManagement}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-4" style="border-color: {$colorStore.primary}20;">
-                <div class="flex items-center justify-between">
-                  <h4 class="font-semibold" style="color: {$colorStore.text}">Pattern Management</h4>
-                  <span class="text-sm px-3 py-1 rounded-full" style="background: {$colorStore.primary}20; color: {$colorStore.primary};">
-                    {protectionStatus.antiPattern.patternCount} patterns
-                  </span>
-                </div>
-
-                <!-- Add New Pattern Form -->
-                <div class="p-4 rounded-xl border-2 border-dashed transition-all" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-                  <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add New Pattern</h5>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label for="input-3915" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Pattern
-                        Name</label>
-                      <input id="input-3915"
-                        type="text"
-                        bind:value={newPattern.name}
-                        class="w-full px-3 py-2 rounded-lg border transition-colors"
-                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                        placeholder="e.g., Suspicious Username Pattern"
-                      >
-                    </div>
-                    
-                    <div>
-                      <label for="input-8746" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Regex
-                        Pattern</label>
-                      <input id="input-8746"
-                        type="text"
-                        bind:value={newPattern.pattern}
-                        class="w-full px-3 py-2 rounded-lg border transition-colors"
-                        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                        placeholder="^[a-z]+[0-9]&#123;4,&#125;$"
-                      >
-                    </div>
-                  </div>
-
-                  <div class="mt-4">
-                    <h6 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Check Against:</h6>
-                    <div class="flex flex-wrap gap-3">
-                      <label for="input-3429" class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" bind:checked={newPattern.checkUsername} class="sr-only peer">
-                          <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
-                             style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
-                          {#if newPattern.checkUsername}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
-                        </div>
-                        <span class="text-sm" style="color: {$colorStore.text}">Username</span>
-                      </label>
-
-                      <label for="input-3429" class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" bind:checked={newPattern.checkDisplayName} class="sr-only peer">
-                          <div class="w-4 h-4 rounded-sm border transition-all peer-checked:bg-current"
-                             style="border-color: {$colorStore.primary}; color: {$colorStore.primary};">
-                          {#if newPattern.checkDisplayName}<i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>{/if}
-                        </div>
-                        <span class="text-sm" style="color: {$colorStore.text}">Display Name</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div class="flex justify-end mt-4">
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                      onclick={addAntiPatternPattern}
-                      disabled={!newPattern.name.trim() || !newPattern.pattern.trim() || saving}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      Add Pattern
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Existing Patterns List -->
-                {#if antiPatternPatterns.length > 0}
-                  <div class="space-y-3">
-                    <h5 class="font-medium" style="color: {$colorStore.text}">Current Patterns</h5>
-                    {#each antiPatternPatterns as pattern}
-                      <div class="flex items-center justify-between p-3 rounded-lg border"
-                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                        <div>
-                          <p class="font-medium" style="color: {$colorStore.text}">{pattern.name}</p>
-                          <p class="text-sm font-mono" style="color: {$colorStore.muted}">{pattern.pattern}</p>
-                          <div class="flex gap-2 mt-1">
-                            {#if pattern.checkUsername}
-                                <span class="text-xs px-2 py-1 rounded-sm"
-                                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">Username</span>
-                            {/if}
-                            {#if pattern.checkDisplayName}
-                                <span class="text-xs px-2 py-1 rounded-sm"
-                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent}">Display Name</span>
-                            {/if}
-                          </div>
-                        </div>
-                        <button
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
-                          style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                          onclick={() => removeAntiPatternPattern(pattern.id)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/if}
-          {:else}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-layer-group" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Pattern Protection Disabled</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Enable to analyze user behavior patterns</p>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Anti-Mass Mention Protection -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 400 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <div>
-                <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Anti-Mass Mention</h2>
-                <p class="text-sm" style="color: {$colorStore.muted}">Prevent mention spam</p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {protectionStatus.antiMassMention.enabled ? $colorStore.accent + '20' : $colorStore.secondary + '20'}; 
-                       color: {protectionStatus.antiMassMention.enabled ? $colorStore.accent : $colorStore.secondary}; 
-                       border: 1px solid {protectionStatus.antiMassMention.enabled ? $colorStore.accent + '30' : $colorStore.secondary + '30'};"
-                onclick={() => toggleProtection('antiMassMention')}
-              >
-                {#if protectionStatus.antiMassMention.enabled}
-                  <i class="fa-solid fa-toggle-on" style="font-size: 16px;"></i>
-                  Enabled
-                {:else}
-                  <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
-                  Disabled
-                {/if}
-              </button>
-              
-              {#if protectionStatus.antiMassMention.enabled}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleProtectionCard('antiMassMention')}
-                >
-                  {#if expandedProtectionCard === 'antiMassMention'}
-                    <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                  {:else}
-                    <i class="fa-solid fa-chevron-down" style="font-size: 16px;"></i>
-                  {/if}
-                  {expandedProtectionCard === 'antiMassMention' ? 'Collapse' : 'Configure'}
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          {#if protectionStatus.antiMassMention.enabled}
-            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl" style="background: {$colorStore.primary}05;">
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiMassMention.mentionThreshold}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Mention Threshold</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiMassMention.timeWindowSeconds}s</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Time Window</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-semibold" style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiMassMention.action)}</div>
-                <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
-              </div>
-              {#if protectionStatus.antiMassMention.action === 1}
-                <div class="text-center">
-                  <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiMassMention.muteTime}m</div>
-                  <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Expanded Configuration -->
-            {#if expandedProtectionCard === 'antiMassMention'}
-              <div transition:slide={{ duration: 300 }} class="mt-6 pt-6 border-t space-y-6" style="border-color: {$colorStore.primary}20;">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label for="input-3429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mention
-                      Threshold</label>
-                    <input id="input-3429"
-                      type="number"
-                      bind:value={tempProtectionConfig.mentionThreshold}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="50"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-4604" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
-                      Window (seconds)</label>
-                    <input id="input-4604"
-                      type="number"
-                      bind:value={tempProtectionConfig.timeWindowSeconds}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="300"
-                    >
-                  </div>
-                  <div>
-                    <span id="max-mentions-in-window-label" class="block text-sm font-medium mb-2"
-                          style="color: {$colorStore.text}">Max Mentions in Window</span>
-                    <input
-                      type="number"
-                      bind:value={tempProtectionConfig.maxMentionsInTimeWindow}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="100"
-                    >
-                  </div>
-                  <div>
-                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Action</label>
-                    <DiscordSelector
-                      type="custom"
-                      options={actionOptions}
-                      bind:selected={tempProtectionConfig.action}
-                      placeholder="Select action..."
-                      multiple={false}
-                      aria-labelledby="max-mentions-in-window-label" />
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label for="input-8328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Mute
-                      Time (minutes)</label>
-                    <input id="input-8328"
-                      type="number"
-                      bind:value={tempProtectionConfig.muteTime}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      min="1"
-                      max="10080"
-                    >
-                  </div>
-
-                  <div class="flex items-center">
-                    <label for="input-594"
-                           class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
-                           style="background: {$colorStore.primary}08;">
-                      <input type="checkbox" 
-                             bind:checked={tempProtectionConfig.ignoreBots}
-                             class="sr-only peer" />
-                        <div class="w-5 h-5 rounded-sm border-2 transition-all duration-200 flex items-center justify-center"
-                           style="border-color: {tempProtectionConfig.ignoreBots ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {tempProtectionConfig.ignoreBots ? $colorStore.primary : 'transparent'};">
-                        {#if tempProtectionConfig.ignoreBots}
-                          <i class="fa-solid fa-check text-white" style="font-size: 12px;"></i>
-                        {/if}
-                      </div>
-                      <span style="color: {$colorStore.text}">Ignore Bot Mentions</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3 justify-end">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={cancelProtectionEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={saveProtectionConfig}
-                    disabled={saving}
-                  >
-                    <div class="flex items-center justify-center gap-2">
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right animate-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                      {/if}
-                      <span>Save Configuration</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            {/if}
-          {:else}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">Anti-Mass Mention Disabled</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Enable to prevent mention spam</p>
-            </div>
-          {/if}
-        </div>
-      </div>
+    {#if activeTab === 'roles'}
+      <RolesTab
+        {autoAssignRoles}
+        bind:selectedNormalRoles
+        bind:selectedBotRoles
+        {autoBanRoles}
+        {selfAssignableRoles}
+        {voiceChannelRoles}
+        {reactionRoles}
+        bind:expandedRoleCard
+        bind:newAutoBanRole
+        bind:newVoiceChannelRole
+        {availableRoles}
+        {voiceChannels}
+        {saving}
+        {saveNormalRoles}
+        {saveBotRoles}
+        {showConfirm}
+        {removeAutoBanRole}
+        {addAutoBanRole}
+        {toggleSelfAssignableRolesExclusive}
+        {removeVoiceChannelRole}
+        {addVoiceChannelRole}
+        {fetchAllData}
+      />
     {/if}
 
     {#if activeTab === 'automation'}
-      <!-- Automation & Settings Section -->
-      <div class="w-full space-y-6" in:fly={{ y: 20, duration: 300 }}>
-        
-        <!-- Staff & Member Roles -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 100 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-crown" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Staff & Member Roles</h2>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-              <span id="staff-role-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                Staff Role
-              </span>
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                bind:selected={newStaffRole}
-                placeholder="Select staff role..."
-                multiple={false}
-                aria-labelledby="staff-role-label" />
-              <p class="text-xs" style="color: {$colorStore.muted}">
-                Role that grants administrative permissions
-              </p>
-            </div>
-
-            <div class="space-y-4">
-              <span id="member-role-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
-                Member Role
-              </span>
-              <DiscordSelector
-                type="role"
-                options={availableRoles}
-                bind:selected={newMemberRole}
-                placeholder="Select member role..."
-                multiple={false}
-                aria-labelledby="member-role-label" />
-              <p class="text-xs" style="color: {$colorStore.muted}">
-                Role assigned to regular server members
-              </p>
-            </div>
-          </div>
-
-          {#if (newStaffRole && newStaffRole !== (staffRole?.toString() || null)) || (newMemberRole && newMemberRole !== (memberRole?.toString() || null))}
-            <div class="mt-6 flex justify-end">
-              <button
-                class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={saveServerSettings}
-                disabled={saving}
-              >
-                {#if saving}
-                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                {/if}
-                Save Changes
-              </button>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Timezone Settings -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 200 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Timezone Settings</h2>
-          </div>
-
-          <div class="space-y-4">
-            <span id="server-timezone-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
-              Server Timezone
-            </span>
-            <DiscordSelector
-              type="timezone"
-              options={availableTimezones}
-              bind:selected={newTimezone}
-              placeholder="Select server timezone..."
-              multiple={false}
-              aria-labelledby="server-timezone-label" />
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Timezone used for time-based features and logging
-            </p>
-          </div>
-
-          {#if newTimezone && newTimezone !== guildTimezone}
-            <div class="mt-6 flex justify-end">
-              <button
-                class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={saveServerSettings}
-                disabled={saving}
-              >
-                {#if saving}
-                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                {/if}
-                Save Timezone
-              </button>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Command Cooldowns -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 300 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Command Cooldowns</h2>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={() => expandedRoleCard = expandedRoleCard === 'commandCooldown' ? null : 'commandCooldown'}
-              >
-                {#if expandedRoleCard === 'commandCooldown'}
-                  <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                {/if}
-                {expandedRoleCard === 'commandCooldown' ? 'Collapse' : 'Add Cooldown'}
-              </button>
-            </div>
-          </div>
-
-          {#if commandCooldowns.length === 0}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-clock" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-              <p class="text-lg font-medium" style="color: {$colorStore.text}">No command cooldowns configured</p>
-              <p class="text-sm" style="color: {$colorStore.muted}">Add cooldowns to prevent command spam</p>
-            </div>
-          {:else}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each commandCooldowns as cooldown}
-                <div
-                        class="group relative p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
-                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                  
-                  <div class="pr-16">
-                    <p class="font-medium text-lg" style="color: {$colorStore.text}">
-                      {cooldown.commandName || cooldown.command}
-                    </p>
-                    <p class="text-sm" style="color: {$colorStore.muted}">
-                      Cooldown: {cooldown.seconds || cooldown.cooldown}s
-                    </p>
-                  </div>
-                  
-                  <button
-                    class="absolute top-3 right-3 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105 opacity-60 group-hover:opacity-100 min-h-[36px] min-w-[80px]"
-                    style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                    onclick={() => removeCommandCooldown(cooldown.commandName || cooldown.command)}
-                    aria-label="Remove cooldown for {cooldown.commandName || cooldown.command}"
-                  >
-                    Remove
-                  </button>
-                </div>
-              {/each}
-            </div>
-          {/if}
-
-          <!-- Inline Add Command Cooldown Form -->
-          {#if expandedRoleCard === 'commandCooldown'}
-            <div transition:slide={{ duration: 300 }} class="mt-4 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
-              <div class="p-4 rounded-xl border-2 border-dashed" style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-                <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add Command Cooldown</h5>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span id="command-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Command</span>
-                    <DiscordSelector
-                      type="custom"
-                      options={availableCommands}
-                      bind:selected={newCommandCooldown.command}
-                      placeholder="Select command..."
-                      multiple={false}
-                      aria-labelledby="command-label" />
-                  </div>
-                  
-                  <div>
-                    <label for="input-594" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Cooldown
-                      (seconds)</label>
-                    <input id="input-594"
-                      type="number"
-                      min="1"
-                      max="90000"
-                      bind:value={newCommandCooldown.seconds}
-                      class="w-full px-3 py-2 rounded-lg border transition-colors"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                      placeholder="Enter cooldown in seconds..."
-                    >
-                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      Minimum: 1 second, Maximum: 90,000 seconds (25 hours)
-                    </p>
-                  </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={() => { expandedRoleCard = null; newCommandCooldown = { command: "", seconds: 5 }; }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={addCommandCooldown}
-                    disabled={!newCommandCooldown.command || newCommandCooldown.seconds <= 0 || saving}
-                  >
-                    {#if saving}
-                      <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                    {:else}
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                    {/if}
-                    Add Cooldown
-                  </button>
-                </div>
-              </div>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Permission Overrides -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 400 }}>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 rounded-xl"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-                <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-              </div>
-              <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Permission Overrides</h2>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={() => expandedRoleCard = expandedRoleCard === 'permissionOverride' ? null : 'permissionOverride'}
-              >
-                {#if expandedRoleCard === 'permissionOverride'}
-                  <i class="fa-solid fa-chevron-up" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                {/if}
-                {expandedRoleCard === 'permissionOverride' ? 'Collapse' : 'Add Override'}
-              </button>
-              
-              {#if selectedPermissionOverrides.length > 0}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  onclick={() => showConfirm("Delete Selected Overrides", `Delete ${selectedPermissionOverrides.length} selected permission override${selectedPermissionOverrides.length > 1 ? 's' : ''}?`, deleteSelectedPermissionOverrides)}
-                >
-                  <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-                  Delete Selected ({selectedPermissionOverrides.length})
-                </button>
-              {/if}
-              
-              {#if permissionOverrides.length > 0}
-                <button
-                  class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  onclick={() => showConfirm("Clear All Overrides", "Are you sure you want to clear all permission overrides?", resetPermissionOverrides)}
-                >
-                  <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-                  Clear All
-                </button>
-              {/if}
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              Override Discord permissions required for specific bot commands. Select from {availableCommands.length} available commands.
-            </p>
-
-            {#if permissionOverrides.length === 0}
-              <div class="text-center py-8">
-                <i class="fa-utility-duo fa-regular fa-key" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
-                <p class="text-lg font-medium" style="color: {$colorStore.text}">No permission overrides configured</p>
-                <p class="text-sm" style="color: {$colorStore.muted}">Add command permission overrides using actual bot commands</p>
-              </div>
-            {:else}
-              <!-- Permission override list would go here -->
-              <div class="space-y-3">
-                {#each permissionOverrides as override}
-                  <div class="flex items-center justify-between p-4 rounded-lg border"
-                       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                    <div>
-                      <p class="font-medium" style="color: {$colorStore.text}">{override.command}</p>
-                      <p class="text-sm" style="color: {$colorStore.muted}">Requires: {override.permission}</p>
-                    </div>
-                    <button
-                      class="px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-105"
-                      style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                      onclick={() => removePermissionOverride(override.command, override.permission)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-
-            <!-- Inline Add Permission Override Form -->
-            {#if expandedRoleCard === 'permissionOverride'}
-              <div transition:slide={{ duration: 300 }} class="mt-4 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
-                <div class="p-4 rounded-xl border-2 border-dashed" style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
-                  <h5 class="font-medium mb-3" style="color: {$colorStore.text}">Add Permission Override</h5>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span id="bot-command-availablecommandslength-available-label"
-                            class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                        Bot Command ({availableCommands.length} available)
-                      </span>
-                      <DiscordSelector
-                        type="custom"
-                        options={availableCommands}
-                        bind:selected={newPermissionOverride.command}
-                        placeholder="Select a bot command..."
-                        multiple={false}
-                        searchable={true}
-                        aria-labelledby="bot-command-availablecommandslength-available-label" />
-                    </div>
-                    
-                    <div>
-                      <span id="required-discord-permission-label" class="block text-sm font-medium mb-2"
-                            style="color: {$colorStore.text}">Required Discord Permission</span>
-                      <DiscordSelector
-                        type="custom"
-                        options={availablePermissions}
-                        bind:selected={newPermissionOverride.permission}
-                        placeholder="Select required permission..."
-                        multiple={false}
-                        searchable={true}
-                        aria-labelledby="required-discord-permission-label" />
-                    </div>
-                  </div>
-                  
-                  <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105"
-                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      onclick={() => { expandedRoleCard = null; newPermissionOverride = { command: "", permission: "Administrator" }; }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 flex items-center gap-2"
-                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      onclick={addPermissionOverride}
-                      disabled={!newPermissionOverride.command || saving}
-                    >
-                      {#if saving}
-                        <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                      {:else}
-                        <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      {/if}
-                      Add Override
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/if}
-          </div>
-        </div>
-
-        <!-- Timezone Settings -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 200 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-globe" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Timezone Settings</h2>
-          </div>
-
-          <div class="space-y-4">
-            <span id="server-timezone-label" class="block text-sm font-medium" style="color: {$colorStore.text}">
-              Server Timezone
-            </span>
-            <DiscordSelector
-              type="timezone"
-              options={availableTimezones}
-              bind:selected={newTimezone}
-              placeholder="Select server timezone..."
-              multiple={false}
-              aria-labelledby="server-timezone-label" />
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Timezone used for time-based features and logging
-            </p>
-          </div>
-
-          {#if newTimezone && newTimezone !== guildTimezone}
-            <div class="mt-6 flex justify-end">
-              <button
-                class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={saveServerSettings}
-                disabled={saving}
-              >
-                {#if saving}
-                  <i class="fa-solid fa-rotate-right fa-spin" style="font-size: 16px;"></i>
-                {:else}
-                  <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                {/if}
-                Save Timezone
-              </button>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Game Voice Channel -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 300 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-headphones"
-                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Game Voice Channel</h2>
-          </div>
-
-          <div class="space-y-4">
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              Automatically move users to matching voice channels based on their game activity
-            </p>
-            
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium" style="color: {$colorStore.text}">
-                  Current Channel: {gameVoiceChannel ? getChannelName(gameVoiceChannel) : "None"}
-                </p>
-              </div>
-              
-              {#if gameVoiceChannel}
-                <button
-                  class="px-4 py-2 rounded-lg font-medium transition-colors"
-                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                  onclick={() => toggleGameVoiceChannel(gameVoiceChannel)}
-                >
-                  Disable
-                </button>
-              {/if}
-            </div>
-
-            <div class="space-y-2">
-              <span id="set-game-voice-channel-label" class="block text-sm font-medium"
-                    style="color: {$colorStore.text}">
-                Set Game Voice Channel
-              </span>
-              <DiscordSelector
-                type="channel"
-                options={voiceChannels}
-                bind:selected={newVoiceChannelRole.channelId}
-                placeholder="Select voice channel..."
-                multiple={false}
-                aria-labelledby="set-game-voice-channel-label" />
-              <p class="text-xs" style="color: {$colorStore.muted}">
-                Select voice channel for automatic game-based voice routing
-              </p>
-              
-              {#if newVoiceChannelRole.channelId}
-                <button
-                  class="px-4 py-2 rounded-lg font-medium transition-colors"
-                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                  onclick={() => toggleGameVoiceChannel(BigInt(newVoiceChannelRole.channelId))}
-                >
-                  Set as Game Voice Channel
-                </button>
-              {/if}
-            </div>
-          </div>
-        </div>
-      </div>
+      <AutomationTab
+        {staffRole}
+        {memberRole}
+        bind:newStaffRole
+        bind:newMemberRole
+        {guildTimezone}
+        bind:newTimezone
+        {availableTimezones}
+        {gameVoiceChannel}
+        {commandCooldowns}
+        {permissionOverrides}
+        bind:expandedRoleCard
+        bind:newCommandCooldown
+        bind:newPermissionOverride
+        bind:newVoiceChannelRole
+        {selectedPermissionOverrides}
+        {availableRoles}
+        {voiceChannels}
+        {guildChannels}
+        {textChannels}
+        {availableCommands}
+        {availablePermissions}
+        {saving}
+        {saveServerSettings}
+        {removeCommandCooldown}
+        {addCommandCooldown}
+        {showConfirm}
+        {removePermissionOverride}
+        {addPermissionOverride}
+        {resetPermissionOverrides}
+        {deleteSelectedPermissionOverrides}
+        {toggleGameVoiceChannel}
+        {fetchAllData}
+      />
     {/if}
 
     {#if activeTab === 'advanced'}
-      <!-- Advanced Operations Section -->
-      <div class="space-y-6">
-        
-        <!-- Ban Message Management -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 100 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-comment" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Ban Message</h2>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <label for="input-4297" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                Custom Ban Message
-              </label>
-              <textarea
-                bind:value={banMessage}
-                class="w-full px-3 py-2 rounded-lg border transition-colors resize-none"
-                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                placeholder="Enter custom ban message..."
-                rows="3"
-              ></textarea>
-              <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                This message will be sent to users when they are banned
-              </p>
-            </div>
-
-            <div class="flex justify-end">
-              <button
-                class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                onclick={saveBanMessage}
-                disabled={saving}
-              >
-                <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
-                Save Message
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mass Operations -->
-          <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                    border-color: {$colorStore.primary}30;"
-             in:fly={{ y: 20, duration: 300, delay: 200 }}>
-
-          <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 rounded-xl"
-                 style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30);">
-              <i class="fa-utility-duo fa-regular fa-bolt" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
-            </div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Mass Operations</h2>
-          </div>
-
-          <div class="max-w-md">
-            <!-- Prune Users -->
-            <div class="p-4 rounded-xl border" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-              <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Prune Inactive Users</h3>
-              <div class="space-y-3">
-                <div>
-                  <label for="input-4297" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Days
-                    of Inactivity</label>
-                  <input id="input-4297"
-                    type="number"
-                    min="1"
-                    max="30"
-                    bind:value={massOperations.prune.days}
-                    class="w-full px-3 py-2 rounded-lg border transition-colors"
-                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-                    placeholder="7"
-                  >
-                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                    Users inactive for this many days will be removed
-                  </p>
-                </div>
-                <button
-                  class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 min-h-[44px]"
-                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                  onclick={() => showConfirm("Prune Users", `Remove users inactive for ${massOperations.prune.days} days?`, performPrune)}
-                  disabled={massOperations.prune.days <= 0 || saving}
-                >
-                  Execute Prune
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdvancedTab
+        bind:banMessage
+        {textChannels}
+        {saving}
+        {saveBanMessage}
+        {showConfirm}
+        {fetchAllData}
+      />
     {/if}
   {/if}
 </DashboardPageLayout>
-
 
 <ConfirmationModal
   bind:isOpen={showConfirmModal}
@@ -3272,22 +1231,4 @@
 
 <style lang="postcss">
     @reference '../../../app.css';
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
 </style>

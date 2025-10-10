@@ -107,23 +107,26 @@ export async function setCookies(tokens: Tokens, cookies: Cookies, user?: Discor
       COOKIE_ENCRYPTION_PASSWORD,
     ).toString();
 
+    const accessMaxAge = Math.floor(
+      (tokens.access_valid_until.getTime() - Date.now()) / 1000,
+    );
     cookies.set(ACCESS_TOKEN_COOKIE, encryptedAccessToken, {
       path: "/",
-      expires: tokens.access_valid_until,
+      maxAge: accessMaxAge,
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production" || false,
     });
-    
+
     // Store the expiry time as well for proactive refresh
     cookies.set(ACCESS_EXPIRY_COOKIE, tokens.access_valid_until.toISOString(), {
       path: "/",
-      expires: tokens.access_valid_until,
+      maxAge: accessMaxAge,
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production" || false,
     });
-    
+
     // Create or update Redis session if user is provided
     if (user) {
       const sessionId = cookies.get(SESSION_ID_COOKIE) || null;
@@ -132,33 +135,39 @@ export async function setCookies(tokens: Tokens, cookies: Cookies, user?: Discor
         await sessionManager.updateSession(sessionId, {
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
-          accessExpiry: tokens.access_valid_until
+          accessExpiry: tokens.access_valid_until,
         });
       } else {
         // Create new session
         const newSessionId = await sessionManager.createSession(user, {
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
-          accessExpiry: tokens.access_valid_until
+          accessExpiry: tokens.access_valid_until,
         });
-        
+
         if (newSessionId) {
+          const refreshMaxAge = Math.floor(
+            (tokens.refresh_valid_until.getTime() - Date.now()) / 1000,
+          );
           cookies.set(SESSION_ID_COOKIE, newSessionId, {
             path: "/",
-            expires: tokens.refresh_valid_until, // Same as refresh token
+            maxAge: refreshMaxAge, // Same as refresh token
             httpOnly: true,
             sameSite: "lax",
-            secure: process.env.NODE_ENV === "production"
+            secure: process.env.NODE_ENV === "production" || false,
           });
         }
       }
     }
+    const refreshMaxAge = Math.floor(
+      (tokens.refresh_valid_until.getTime() - Date.now()) / 1000,
+    );
     cookies.set(REFRESH_TOKEN_COOKIE, encryptedRefreshToken, {
       path: "/",
-      expires: tokens.refresh_valid_until,
+      maxAge: refreshMaxAge,
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production" || false,
     });
   } catch (e) {
     logger.error("could not set cookies:" + e);

@@ -1,17 +1,13 @@
 <!-- TemplateGallery.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { colorStore } from "$lib/stores/colorStore";
 
   interface Props {
     selectedCategory?: string;
+    onselect?: (detail: { template: EmbedTemplate }) => void;
   }
 
-  let { selectedCategory = $bindable('all') }: Props = $props();
-
-  const dispatch = createEventDispatcher<{
-    select: { template: EmbedTemplate };
-  }>();
+  let { selectedCategory = $bindable("all"), onselect }: Props = $props();
 
   interface EmbedTemplate {
     id: string;
@@ -281,7 +277,7 @@
     : templates.filter(t => t.category === selectedCategory));
 
   function selectTemplate(template: EmbedTemplate) {
-    dispatch('select', { template });
+    onselect?.({ template });
   }
 
   function handleKeydown(event: KeyboardEvent, template: EmbedTemplate) {

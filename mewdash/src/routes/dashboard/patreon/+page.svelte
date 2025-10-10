@@ -1,7 +1,17 @@
 <!-- routes/dashboard/patreon/+page.svelte -->
 <script lang="ts">
     import {onMount} from "svelte";
-    import {api} from "$lib/api";
+    import {
+      patreonApi,
+      clientApi,
+      type PatreonAnalytics,
+      type PatreonConfig,
+      type PatreonConfigUpdateRequest,
+      type PatreonCreator,
+      type PatreonOAuthStatusResponse,
+      type PatreonSupporter,
+      type PatreonTier
+    } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade, fly} from "svelte/transition";
@@ -11,15 +21,6 @@
     import {browser} from "$app/environment";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
-    import type {
-        PatreonAnalytics,
-        PatreonConfig,
-        PatreonConfigUpdateRequest,
-        PatreonCreator,
-        PatreonOAuthStatusResponse,
-        PatreonSupporter,
-        PatreonTier
-    } from "$lib/types";
     import {userStore} from "$lib/stores/userStore";
 
     interface Props {
@@ -150,13 +151,13 @@
 
   async function loadPatreonStatus() {
     if (!$currentGuild) return;
-    patreonStatus = await api.getPatreonOAuthStatus(BigInt($currentGuild.id));
+    patreonStatus = await patreonApi.getPatreonOAuthStatus(BigInt($currentGuild.id));
   }
 
   async function loadPatreonAnalytics() {
     if (!$currentGuild) return;
     try {
-      patreonAnalytics = await api.getPatreonAnalytics(BigInt($currentGuild.id));
+      patreonAnalytics = await patreonApi.getPatreonAnalytics(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load analytics:", err);
     }
@@ -165,7 +166,7 @@
   async function loadPatreonSupporters() {
     if (!$currentGuild) return;
     try {
-      patreonSupporters = await api.getPatreonSupporters(BigInt($currentGuild.id));
+      patreonSupporters = await patreonApi.getPatreonSupporters(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load supporters:", err);
     }
@@ -174,7 +175,7 @@
   async function loadPatreonConfig() {
     if (!$currentGuild) return;
     try {
-      patreonConfig = await api.getPatreonConfig(BigInt($currentGuild.id));
+      patreonConfig = await patreonApi.getPatreonConfig(BigInt($currentGuild.id));
       // Populate form with current config
       configForm = {
         channelId: patreonConfig.channelId || undefined,
@@ -191,7 +192,7 @@
   async function loadPatreonTiers() {
     if (!$currentGuild) return;
     try {
-      patreonTiers = await api.getPatreonTiers(BigInt($currentGuild.id));
+      patreonTiers = await patreonApi.getPatreonTiers(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load tiers:", err);
     }
@@ -200,7 +201,7 @@
   async function loadPatreonCreator() {
     if (!$currentGuild) return;
     try {
-      patreonCreator = await api.getPatreonCreator(BigInt($currentGuild.id));
+      patreonCreator = await patreonApi.getPatreonCreator(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load creator:", err);
     }
@@ -210,7 +211,7 @@
   async function loadGuildRoles() {
     if (!$currentGuild) return;
     try {
-      guildRoles = await api.getGuildRoles(BigInt($currentGuild.id));
+      guildRoles = await clientApi.getRoles(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load roles:", err);
     }
@@ -219,7 +220,7 @@
   async function loadGuildChannels() {
     if (!$currentGuild) return;
     try {
-      guildChannels = await api.getGuildTextChannels(BigInt($currentGuild.id));
+      guildChannels = await clientApi.getTextChannels(BigInt($currentGuild.id));
     } catch (err) {
       logger.error("Failed to load channels:", err);
     }
@@ -259,7 +260,7 @@
 
     try {
       isConnecting = true;
-      const oauthData = await api.getPatreonOAuthUrl(BigInt($currentGuild.id));
+      const oauthData = await patreonApi.getPatreonOAuthUrl(BigInt($currentGuild.id));
       window.location.href = oauthData.authorizationUrl;
     } catch (err) {
       logger.error("Failed to get OAuth URL:", err);
@@ -308,7 +309,7 @@
 
     try {
       isUpdatingConfig = true;
-      patreonConfig = await api.updatePatreonConfig(BigInt($currentGuild.id), configForm);
+      patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configForm);
       showNotificationMessage("Configuration updated successfully!", "success");
     } catch (err) {
       logger.error("Failed to update config:", err);
@@ -451,7 +452,7 @@
         </p>
 
         <button
-          class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 flex items-center gap-3 mx-auto text-lg"
+          class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center gap-3 mx-auto text-lg"
           onclick={connectPatreon}
           disabled={isConnecting}
         >

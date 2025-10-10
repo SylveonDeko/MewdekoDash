@@ -1,8 +1,17 @@
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import {
+    ticketApi,
+    clientApi,
+    type BlacklistedUserResponse,
+    type GuildStatistics,
+    type TicketCase,
+    type TicketPanel,
+    type TicketPriority,
+    type TicketTag
+  } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
@@ -15,14 +24,6 @@
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {loadingStore} from "$lib/stores/loadingStore";
     import {logger} from "$lib/logger.ts";
-    import type {
-        BlacklistedUserResponse,
-        GuildStatistics,
-        TicketCase,
-        TicketPanel,
-        TicketPriority,
-        TicketTag
-    } from "$lib/types/tickets.ts";
 
     interface Props {
         data: PageData;
@@ -115,15 +116,15 @@
         tagsResult,
         blacklistResult
       ] = await Promise.allSettled([
-        api.getTicketPanels(guildId),
-        api.getTicketCases(guildId),
-        api.getTicketStats(guildId),
-        api.getGuildTextChannels(guildId),
-        api.getGuildCategories(guildId),
-        api.getGuildRoles(guildId),
-        api.getTicketPriorities(guildId),
-        api.getTicketTags(guildId),
-        api.getTicketBlacklist(guildId)
+        ticketApi.getTicketPanels(guildId),
+        ticketApi.getTicketCases(guildId),
+        ticketApi.getTicketStats(guildId),
+        clientApi.getTextChannels(guildId),
+        clientApi.getCategories(guildId),
+        clientApi.getRoles(guildId),
+        ticketApi.getTicketPriorities(guildId),
+        ticketApi.getTicketTags(guildId),
+        ticketApi.getTicketBlacklist(guildId)
       ]);
 
       if (panelsResult.status === "fulfilled") panels = panelsResult.value;
@@ -166,7 +167,7 @@
 
       console.log("Sending panel data:", requestData);
 
-      await api.createTicketPanel(BigInt($currentGuild.id), requestData);
+      await ticketApi.createTicketPanel(BigInt($currentGuild.id), requestData);
 
       showNotificationMessage("Panel created successfully");
       showCreatePanel = false;
@@ -191,7 +192,7 @@
   async function deletePanel(panelId: bigint) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      await api.deleteTicketPanel(BigInt($currentGuild.id), panelId);
+      await ticketApi.deleteTicketPanel(BigInt($currentGuild.id), panelId);
       showNotificationMessage("Panel deleted successfully");
       await fetchData();
     } catch (error) {
@@ -207,7 +208,7 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
       console.log(`Would duplicate panel ${panelId} in guild ${$currentGuild.id}`);
       showNotificationMessage("Panel duplication feature coming soon");
-      // await api.duplicateTicketPanel(BigInt($currentGuild.id), panelId);
+      // await ticketApi.duplicateTicketPanel(BigInt($currentGuild.id), panelId);
       // await fetchData();
     } catch (error) {
       showNotificationMessage(
@@ -223,7 +224,7 @@
         throw new Error("Missing required fields");
       }
 
-      await api.createTicketCase(BigInt($currentGuild.id), {
+      await ticketApi.createTicketCase(BigInt($currentGuild.id), {
         title: newCaseData.title,
         description: newCaseData.description,
         creatorId: BigInt(data.user?.id || "0") // Using the current user as creator
@@ -248,7 +249,7 @@
   async function closeCase(caseId: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      await api.closeTicketCase(BigInt($currentGuild.id), caseId);
+      await ticketApi.closeTicketCase(BigInt($currentGuild.id), caseId);
       showNotificationMessage("Case closed successfully");
       await fetchData();
     } catch (error) {
@@ -267,11 +268,11 @@
       const promises = [];
 
       if (settingsData.transcriptChannelId) {
-        promises.push(api.setTicketTranscriptChannel(guildId, BigInt(settingsData.transcriptChannelId)));
+        promises.push(ticketApi.setTicketTranscriptChannel(guildId, BigInt(settingsData.transcriptChannelId)));
       }
 
       if (settingsData.logChannelId) {
-        promises.push(api.setTicketLogChannel(guildId, BigInt(settingsData.logChannelId)));
+        promises.push(ticketApi.setTicketLogChannel(guildId, BigInt(settingsData.logChannelId)));
       }
 
       await Promise.all(promises);
@@ -325,7 +326,7 @@
     }
   }
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchData();
             // Extract colors from server icon if available, otherwise use bot avatar as fallback
@@ -467,7 +468,7 @@
                   color: $colorStore.accent
                 },
                 { label: 'Active Staff', value: stats?.activeStaff ?? 0, icon: 'fa-users', color: '#10b981' }
-              ] as stat}
+              ] as stat (stat.label)}
                 <div
                   class="p-6 rounded-xl  border"
                   style="background: linear-gradient(135deg, {stat.color}10, {stat.color}05);
@@ -522,7 +523,7 @@
                   Top Categories
                 </h3>
                 <div class="space-y-3">
-                  {#each (stats?.topCategories ?? []).slice(0, 3) as category}
+                  {#each (stats?.topCategories ?? []).slice(0, 3) as category (category.name)}
                     <div class="flex items-center justify-between">
                       <span class="text-sm" style="color: {$colorStore.text}">
                         {category.name}
@@ -751,7 +752,7 @@
                 Priorities
               </h3>
               <div class="space-y-3">
-                {#each priorities as priority}
+                {#each priorities as priority (priority.level)}
                   <div class="flex items-center justify-between p-3 rounded-lg"
                        style="background: {$colorStore.primary}10">
                     <div class="flex items-center gap-3">
@@ -780,7 +781,7 @@
                 Tags
               </h3>
               <div class="space-y-3">
-                {#each tags as tag}
+                {#each tags as tag (tag.name)}
                   <div class="flex items-center justify-between p-3 rounded-lg"
                        style="background: {$colorStore.primary}10">
                     <div class="flex items-center gap-3">
@@ -807,7 +808,7 @@
               </h3>
               {#if blacklistedUsers.length}
                 <div class="grid gap-3 grid-cols-1 md:grid-cols-2">
-                  {#each blacklistedUsers as user}
+                  {#each blacklistedUsers as user (user.userId || user.username)}
                     <div class="flex items-center justify-between p-3 rounded-lg"
                          style="background: {$colorStore.accent}10">
                       <div>
@@ -1063,46 +1064,12 @@
 <style lang="postcss">
     @reference '../../../app.css';
 
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
     input, input:focus, textarea:focus {
         -webkit-tap-highlight-color: transparent;
     }
 
-
     [style*="background"],
     [style*="color"] {
         @apply transition-colors duration-75;
-    }
-
-    @media (max-width: 640px) {
-        :global(.card-grid) {
-            @apply gap-4;
-        }
-
-        :global(.card) {
-            @apply p-4;
-        }
-    }
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
     }
 </style>

@@ -1,18 +1,19 @@
 <!-- routes/dashboard/customvoice/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onMount } from "svelte";
+  import {
+    customVoiceApi,
+    clientApi,
+    type CustomVoiceChannelResponse,
+    type CustomVoiceConfigurationRequest,
+    type CustomVoiceConfigurationResponse
+  } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
     import {fade, slide} from "svelte/transition";
     import type {PageData} from "./$types";
-    import type {
-        CustomVoiceChannelResponse,
-        CustomVoiceConfigurationRequest,
-        CustomVoiceConfigurationResponse
-    } from "$lib/types/customvoice";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
@@ -129,10 +130,10 @@
 
     try {
       const [configData, activeChannelsData, voiceChannelsData, categoriesData] = await Promise.all([
-        api.getCustomVoiceConfig($currentGuild.id),
-        api.getActiveCustomVoiceChannels($currentGuild.id),
-        api.getGuildVoiceChannels($currentGuild.id),
-        api.getGuildCategories($currentGuild.id)
+        customVoiceApi.getConfig($currentGuild.id),
+        customVoiceApi.getActiveChannels($currentGuild.id),
+        clientApi.getVoiceChannels($currentGuild.id),
+        clientApi.getCategories($currentGuild.id)
       ]);
 
       config = configData;
@@ -198,7 +199,7 @@
         customVoiceAdminRoleId: customVoiceAdminRoleId ? BigInt(customVoiceAdminRoleId) : null
       };
 
-      await api.updateCustomVoiceConfig($currentGuild.id, configData);
+      await customVoiceApi.updateConfig($currentGuild.id, configData);
       hasChanges = false;
       showNotificationMessage("Configuration saved successfully!", "success");
       
@@ -214,7 +215,7 @@
     if (!$currentGuild) return;
     
     try {
-      await api.deleteCustomVoiceChannel($currentGuild.id, channelId);
+      await customVoiceApi.deleteChannel($currentGuild.id, channelId);
       showNotificationMessage("Channel deleted successfully!", "success");
       
       // Remove from local array
@@ -229,7 +230,7 @@
     if (!$currentGuild) return;
     
     try {
-      await api.updateCustomVoiceChannel($currentGuild.id, channelId, { isLocked: lock });
+      await customVoiceApi.updateChannel($currentGuild.id, channelId, { isLocked: lock });
       showNotificationMessage(`Channel ${lock ? 'locked' : 'unlocked'} successfully!`, "success");
       
       // Update local array
@@ -258,13 +259,13 @@
     };
   });
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             loadData();
         }
     });
 
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             loadData();
         }

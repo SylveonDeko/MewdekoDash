@@ -1,9 +1,9 @@
 <!-- routes/dashboard/music/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { musicApi, clientApi } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
@@ -79,7 +79,7 @@
   async function fetchSettings() {
     try {
       if (!$currentGuild?.id) return;
-      const response = await api.getMusicSettings(BigInt($currentGuild.id));
+      const response = await musicApi.getMusicSettings(BigInt($currentGuild.id));
       settings = { ...settings, ...response };
     } catch (err) {
       logger.error("Failed to fetch music settings:", err);
@@ -90,7 +90,7 @@
   async function fetchChannels() {
     try {
       if (!$currentGuild?.id) return;
-      const channelData = await api.getGuildTextChannels(BigInt($currentGuild.id));
+      const channelData = await clientApi.getTextChannels(BigInt($currentGuild.id));
       channels = channelData.map(ch => ({ id: ch.id, name: ch.name }));
     } catch (err) {
       logger.error("Failed to fetch channels:", err);
@@ -100,7 +100,7 @@
   async function fetchRoles() {
     try {
       if (!$currentGuild?.id) return;
-      const roleData = await api.getGuildRoles(BigInt($currentGuild.id));
+      const roleData = await clientApi.getRoles(BigInt($currentGuild.id));
       roles = roleData.map(role => ({ 
         id: role.id, 
         name: role.name,
@@ -114,7 +114,7 @@
   async function updateSettings() {
     try {
       if (!$currentGuild?.id) return;
-      await api.updateMusicSettings(BigInt($currentGuild.id), settings);
+      await musicApi.updateMusicSettings(BigInt($currentGuild.id), settings);
       showNotificationMessage("Settings updated successfully");
     } catch (error) {
       showNotificationMessage(
@@ -127,7 +127,7 @@
   async function fetchPlaybackStatus() {
     try {
       if (!$currentGuild?.id || !data.user?.id) return;
-      const status = await api.getPlayerStatus(BigInt($currentGuild.id), BigInt(data.user.id));
+      const status = await musicApi.getPlayerStatus(BigInt($currentGuild.id), BigInt(data.user.id));
       musicStatus = status;
     } catch (err) {
       logger.error("Failed to fetch playback status:", err);
@@ -168,7 +168,7 @@
     }
   ]);
   // Watch for guild changes
-  run(() => {
+  $effect(() => {
     if ($currentGuild) {
       fetchSettings();
       fetchChannels();
@@ -472,20 +472,7 @@
 </DashboardPageLayout>
 
 <style lang="postcss">
-    @reference '../../../app.css';
-
-    :global(body) {
-        background-color: #1a202c;
-        color: #ffffff;
-    }
-
-    :global(select),
-    :global(input),
-    :global(textarea) {
-        color-scheme: dark;
-    }
-
-    /* Custom range input styling */
+    @reference '../../../app.css'; /* Custom range input styling */
     input[type="range"] {
         -webkit-appearance: none;
         background: transparent;
@@ -538,26 +525,7 @@
 
     /* Custom select styling */
 
-    /* Custom scrollbar */
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-    /* Prevent blue highlight on iOS */
+    /* Custom scrollbar *//* Prevent blue highlight on iOS */
 
     /* Custom styling for options */
 </style>

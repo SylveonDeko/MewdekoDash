@@ -1,12 +1,11 @@
 <!-- routes/dashboard/invites/+page.svelte -->
 <script lang="ts">
-    import {run} from 'svelte/legacy';
 
-    import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+
+  import { onDestroy, onMount } from "svelte";
+  import { inviteTrackingApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
-    import type {BotStatusModel} from "$lib/types/models.ts";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -117,7 +116,7 @@
   // Fetch bot status
   async function fetchBotStatus() {
     try {
-      botStatus = await api.getBotStatus();
+      botStatus = await botStatusApi.getBotStatus();
     } catch (err) {
       logger.error("Failed to fetch bot status:", err);
     }
@@ -150,7 +149,7 @@
           throw new Error("No guild selected");
         }
 
-        const settings = await api.getInviteSettings($currentGuild.id);
+        const settings = await inviteTrackingApi.getInviteSettings($currentGuild.id);
         inviteSettingsEnabled = settings.isEnabled;
         inviteSettingsRemoveOnLeave = settings.removeInviteOnLeave;
         inviteSettingsMinAccountAge = settings.minAccountAge;
@@ -182,7 +181,7 @@
           throw new Error("No guild selected");
         }
 
-        leaderboard = await api.getInviteLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
+        leaderboard = await inviteTrackingApi.getInviteLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
       } catch (err) {
         logger.error("Failed to fetch invite leaderboard:", err);
         error.leaderboard = err instanceof Error ? err.message : "Failed to fetch invite leaderboard";
@@ -200,7 +199,7 @@
         throw new Error("No guild selected");
       }
 
-      guildMembers = await api.getGuildMembers($currentGuild.id);
+      guildMembers = await clientApi.getMembers($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch guild members:", err);
       error.members = err instanceof Error ? err.message : "Failed to fetch guild members";
@@ -217,7 +216,7 @@
       inviterError = null;
       inviterInfo = null;
 
-      inviterInfo = await api.getInviter($currentGuild.id, BigInt(selectedUserId));
+      inviterInfo = await inviteTrackingApi.getInviter($currentGuild.id, BigInt(selectedUserId));
     } catch (err) {
       inviterError = "No inviter found for this user";
       inviterInfo = null;
@@ -234,7 +233,7 @@
       invitedError = null;
       invitedUsers = [];
 
-      invitedUsers = await api.getInvitedUsers($currentGuild.id, BigInt(selectedUserId));
+      invitedUsers = await inviteTrackingApi.getInvitedUsers($currentGuild.id, BigInt(selectedUserId));
     } catch (err) {
       invitedError = "No users found invited by this user";
       invitedUsers = [];
@@ -252,7 +251,7 @@
       }
 
       // Get leaderboard for stats calculation
-      const fullLeaderboard = await api.getInviteLeaderboard($currentGuild.id, 1, 100);
+      const fullLeaderboard = await inviteTrackingApi.getInviteLeaderboard($currentGuild.id, 1, 100);
 
       // Calculate statistics
       const totalInvites = fullLeaderboard.reduce((sum, user) => sum + user.inviteCount, 0);
@@ -281,17 +280,17 @@
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
       // Update enabled state
-      await api.toggleInviteTracking($currentGuild.id, inviteSettingsEnabled);
+      await inviteTrackingApi.toggleInviteTracking($currentGuild.id, inviteSettingsEnabled);
 
       // Update remove on leave setting
-      await api.setRemoveOnLeave($currentGuild.id, inviteSettingsRemoveOnLeave);
+      await inviteTrackingApi.setRemoveOnLeave($currentGuild.id, inviteSettingsRemoveOnLeave);
 
       // Calculate TimeSpan for minimum account age
       const totalHours = (minAgeDays * 24) + minAgeHours;
       const minAgeTimeSpan = `${totalHours.toString().padStart(2, "0")}:${minAgeMinutes.toString().padStart(2, "0")}:00`;
 
       // Update minimum account age
-      await api.setMinAccountAge($currentGuild.id, minAgeTimeSpan);
+      await inviteTrackingApi.setMinAccountAge($currentGuild.id, minAgeTimeSpan);
 
       showNotificationMessage("Invite settings updated successfully", "success");
       changedSettings.clear();
@@ -346,7 +345,7 @@
   });
 
 
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             Promise.all([
                 fetchInviteSettings(),
@@ -358,7 +357,7 @@
         }
     });
   // Reactive declarations for guild changes
-    run(() => {
+  $effect(() => {
         if ($currentGuild) {
             fetchInviteSettings();
             fetchLeaderboard();
@@ -367,7 +366,7 @@
         }
     });
   // Reactive declarations for instance changes
-    run(() => {
+  $effect(() => {
         if ($currentInstance) {
             fetchInviteSettings();
             fetchLeaderboard();
@@ -376,12 +375,12 @@
         }
     });
   // Reactive declarations for user selection changes
-    run(() => {
+  $effect(() => {
         if (selectedUserId && activeTab === "inviter") {
             lookupInviter();
         }
     });
-    run(() => {
+  $effect(() => {
         if (selectedUserId && activeTab === "invited") {
             lookupInvitedUsers();
         }
@@ -1036,7 +1035,7 @@
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
-    :global(.input-field:focus) {
+    :global(.input-field):focus {
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
     }
 

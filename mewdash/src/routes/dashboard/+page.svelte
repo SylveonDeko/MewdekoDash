@@ -2,9 +2,18 @@
 <script lang="ts">
 
     import {onDestroy, onMount} from "svelte";
-    import {api} from "$lib/api";
+    import {
+        botStatusApi,
+        clientApi,
+        guildApi,
+        inviteTrackingApi,
+        joinLeaveApi,
+        roleGreetApi,
+        roleStatesApi,
+        type BotStatusModel,
+        type GraphStatsResponse
+    } from "$lib/api/index.ts";
     import {fade, fly, slide} from "svelte/transition";
-    import type {BotStatusModel, GraphStatsResponse} from "$lib/types/models";
     import {goto} from "$app/navigation";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {currentInstance} from "$lib/stores/instanceStore";
@@ -117,9 +126,9 @@
             if (!$currentGuild?.id) return;
 
             const [roleStates, roleGreets, roleList] = await Promise.all([
-                api.getAllRoleStates($currentGuild.id),
-                api.getAllRoleGreets($currentGuild.id),
-                api.getGuildRoles($currentGuild.id)
+                roleStatesApi.getAllRoleStates($currentGuild.id),
+                roleGreetApi.getAllRoleGreets($currentGuild.id),
+                clientApi.getRoles($currentGuild.id)
             ]);
 
             // Store previous value for trend
@@ -144,7 +153,7 @@
         try {
             if (!$currentGuild?.id) return;
 
-            const members = await api.getGuildMembers($currentGuild.id);
+            const members = await clientApi.getMembers($currentGuild.id);
 
             // Store previous value for trends
             guildMemberStats.previousMemberCount = guildMemberStats.totalMembers;
@@ -168,8 +177,8 @@
 
         try {
             const [joinData, leaveData] = await Promise.all([
-                api.getJoinStats($currentGuild.id),
-                api.getLeaveStats($currentGuild.id)
+                joinLeaveApi.getJoinStats($currentGuild.id),
+                joinLeaveApi.getLeaveStats($currentGuild.id)
             ]);
 
             joinStats = joinData;
@@ -189,10 +198,10 @@
                 roleGreets,
                 inviteTrackingSettings
             ] = await Promise.all([
-                api.getRoleStateSettings($currentGuild.id),
-                api.getGuildConfig($currentGuild.id),
-                api.getAllRoleGreets($currentGuild.id),
-                api.getInviteSettings($currentGuild.id)
+                roleStatesApi.getRoleStateSettings($currentGuild.id),
+                guildApi.getGuildConfig($currentGuild.id),
+                roleGreetApi.getAllRoleGreets($currentGuild.id),
+                inviteTrackingApi.getInviteSettings($currentGuild.id)
             ]);
 
             guildFeatures = {
@@ -239,7 +248,7 @@
             }
 
             if (!$currentGuild?.id) {
-                botStatus = await api.getBotStatus();
+                botStatus = await botStatusApi.getBotStatus();
                 return;
             }
 
@@ -265,7 +274,7 @@
 
     async function fetchBotStatus() {
         try {
-            botStatus = await api.getBotStatus();
+            botStatus = await botStatusApi.getBotStatus();
         } catch (err) {
             logger.error("Failed to fetch bot status:", err);
             error = "Failed to fetch bot status";
@@ -275,7 +284,7 @@
     async function fetchGuildInfo() {
         try {
             if (!$currentGuild?.id) return;
-            guildInfo = await api.getGuildInfo($currentGuild.id);
+            guildInfo = await guildApi.getGuildInfo($currentGuild.id);
         } catch (err) {
             logger.error("Failed to fetch guild info:", err);
         }
@@ -328,7 +337,7 @@
         // Reset switching state after transition completes
         setTimeout(() => {
             switchingServer = false;
-        }, 800);
+        }, 600);
     }
 
     // Filtered guilds for server selector
@@ -410,8 +419,9 @@
             await new Promise(resolve => setTimeout(resolve, 250)); // Wait for fade out
             compactMode = true;
         } else {
-            // Expanding: expand first, then fade in (works naturally)
+            // Expanding: expand first, then fade in
             compactMode = false;
+            await new Promise(resolve => setTimeout(resolve, 300)); // Wait for expansion
             showDetails = true;
         }
 
@@ -719,7 +729,7 @@
                 <!-- Refresh button -->
                 <div class="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-30" class:hidden={refreshing}>
                     <button aria-label="Button action"
-                            class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-105"
+                            class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-[1.02]"
                             style="background: {$colorStore.primary}; color: white"
                             onclick={fetchAllData}
 
@@ -846,23 +856,21 @@
                         {:else if $currentGuild}
                             <!-- Selected Server Display -->
                             <div
-                                    class="flex flex-col md:flex-row items-start md:items-center gap-6 ease-out"
-                                    class:!flex-row={compactMode}
-                                    class:!items-center={compactMode}
-                                    class:!gap-3={compactMode}
+                              class="flex flex-row items-start gap-4 ease-out md:gap-6"
+                              class:items-center={compactMode}
                                     style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                     in:fade={{ duration: 400, delay: 200 }}>
 
                                 <!-- Server Icon -->
                                 <div class="relative shrink-0">
                                     <div
-                                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 hover:scale-105"
+                                      class="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg ring-2 ring-opacity-20 hover:scale-[1.02]"
                                             class:!w-12={compactMode}
                                             class:!h-12={compactMode}
                                             class:!rounded-xl={compactMode}
                                             style="ring-color: {$colorStore.primary}; transition: width 500ms {compactMode ? '250ms' : '0ms'}, height 500ms {compactMode ? '250ms' : '0ms'}, border-radius 500ms {compactMode ? '250ms' : '0ms'};">
                                         {#key $currentGuild?.id}
-                                            <div in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 150 }}>
+                                            <div in:fade={{ duration: 300, delay: 300 }} out:fade={{ duration: 200 }}>
                                                 {#if guildInfo?.iconUrl}
                                                     <img
                                                             src="{guildInfo.iconUrl}?size=256"
@@ -891,8 +899,10 @@
                                 </div>
 
                                 <!-- Server Info -->
-                                <div class="flex-1 min-w-0 ease-out" style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
-                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 ease-out"
+                                <div class="flex-1 min-w-0"
+                                     style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
+                                    <div
+                                      class="flex flex-col items-start justify-between gap-2 md:flex-row md:items-start md:gap-4"
                                          class:!flex-row={compactMode}
                                          class:!items-center={compactMode}
                                          class:!gap-3={compactMode}
@@ -901,7 +911,8 @@
                                         <!-- Clickable Server Name Section -->
                                         <div class="flex-1 min-w-0"
                                              class:!min-w-fit={compactMode}
-                                             class:!flex-none={compactMode}>
+                                             class:!flex-none={compactMode}
+                                             style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
                                             <!-- Clickable server name with dropdown -->
                                             <div class="relative inline-block">
                                                 <button
@@ -916,16 +927,18 @@
                                                 >
                                                     {#key $currentGuild?.id}
                                                         <h1
-                                                                class="text-2xl md:text-3xl font-bold truncate text-left transform"
+                                                          class="text-2xl md:text-3xl font-bold text-left transform truncate max-w-[calc(100vw-220px)] md:max-w-[400px]"
                                                                 class:!text-base={compactMode}
                                                                 class:!font-semibold={compactMode}
-                                                                style="color: {$colorStore.text}; transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};"
-                                                                in:fade={{ duration: 300, delay: 250 }}
-                                                                out:fade={{ duration: 150 }}>
+                                                          style="color: {$colorStore.text};
+                                                                       transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};"
+                                                          in:fade={{ duration: 300, delay: 300 }}
+                                                          out:fade={{ duration: 200 }}>
                                                             {guildInfo?.name || $currentGuild.name}
                                                         </h1>
                                                     {/key}
-                                                    <i class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
+                                                    <i
+                                                      class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''} shrink-0"
                                                        style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                                                 </button>
 
@@ -1024,7 +1037,8 @@
                                             {#if showDetails}
                                                 <div class="flex flex-wrap items-center gap-4 text-sm transition-all duration-500"
                                                      in:fade={{ duration: 300, delay: 350 }} out:fade={{ duration: 200 }}>
-                                                    <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                    <div
+                                                      class="flex items-center gap-2 transition-all duration-300 hover:scale-[1.02]">
                                                         <i class="fa-utility-duo fa-regular fa-users"
                                                            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                                                         <span style="color: {$colorStore.text}">
@@ -1032,7 +1046,8 @@
                             </span>
                                                     </div>
 
-                                                    <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                    <div
+                                                      class="flex items-center gap-2 transition-all duration-300 hover:scale-[1.02]">
                                                         <i class="fa-utility-duo fa-regular fa-user"
                                                            style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
                                                         <span style="color: {$colorStore.text}">
@@ -1041,7 +1056,8 @@
                                                     </div>
 
                                                     {#if botStatus?.isReady}
-                                                        <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                        <div
+                                                          class="flex items-center gap-2 transition-all duration-300 hover:scale-[1.02]">
                                                             <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                                                             <span style="color: {$colorStore.text}">Bot Online</span>
                                                         </div>
@@ -1056,13 +1072,17 @@
                                              style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                              in:fade={{ duration: 300, delay: 400 }} out:fade={{ duration: 150 }}>
                                             <!-- Action buttons section -->
-                                            <div class="flex items-center gap-3 flex-wrap ease-in-out"
+                                            <div
+                                              class="flex items-center gap-3 flex-wrap overflow-hidden md:!opacity-100"
                                                  class:!gap-2={compactMode}
-                                                 style="transition: all 500ms {compactMode ? '250ms' : '0ms'};">
+                                              class:max-w-0={!showDetails}
+                                              class:max-w-[500px]={showDetails}
+                                              style="opacity: {showDetails ? '1' : '0'};
+                                                        transition: opacity 200ms ease-out, max-width 300ms ease-out {showDetails ? '250ms' : '0ms'}, gap 500ms {compactMode ? '250ms' : '0ms'};">
                                                 {#if $currentGuild.owner}
                                                     <div in:fade={{ duration: 200, delay: 200 }}
                                                          out:fade={{ duration: 200 }}
-                                                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105"
+                                                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-[1.02]"
                                                          class:!px-2={compactMode}
                                                          class:!py-1={compactMode}
                                                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
@@ -1073,7 +1093,7 @@
                                                 <button
                                                         in:fade={{ duration: 200, delay: 200 }}
                                                         out:fade={{ duration: 200 }}
-                                                        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg transform"
+                                                        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-[1.02] hover:shadow-lg transform"
                                                         class:!px-3={compactMode}
                                                         class:!py-1.5={compactMode}
                                                         class:!text-sm={compactMode}
@@ -1141,13 +1161,15 @@
                                                         onclickoutside={closeServerDropdown}
                                                 >
                                                     <h1
-                                                            class="text-2xl md:text-3xl font-bold truncate text-left transform"
+                                                      class="text-2xl md:text-3xl font-bold text-left transform truncate max-w-[calc(100vw-220px)] md:max-w-[400px]"
                                                             class:!text-base={compactMode}
                                                             class:!font-semibold={compactMode}
-                                                            style="color: {$colorStore.text}; transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};">
+                                                      style="color: {$colorStore.text};
+                                                                   transition: font-size 500ms {compactMode ? '250ms' : '0ms'}, font-weight 500ms {compactMode ? '250ms' : '0ms'};">
                                                         Select a Server
                                                     </h1>
-                                                    <i class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''}"
+                                                    <i
+                                                      class="fa-utility-duo fa-regular fa-angle-down {compactMode ? 'text-sm' : 'text-xl'} transition-all duration-300 group-hover:scale-110 {showServerDropdown ? 'rotate-180' : ''} shrink-0"
                                                        style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                                                 </button>
 
@@ -1252,7 +1274,8 @@
                                                     </div>
 
                                                     {#if botStatus?.isReady}
-                                                        <div class="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+                                                        <div
+                                                          class="flex items-center gap-2 transition-all duration-300 hover:scale-[1.02]">
                                                             <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                                                             <span style="color: {$colorStore.text}">Bot Online</span>
                                                         </div>
@@ -1305,7 +1328,7 @@
 
                         <div class="mt-3 flex gap-2">
                             <button
-                                    class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                              class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                     style="background: {$colorStore.primary}; color: white;"
                                     onclick={() => {
                 showMusicNotification = false;
@@ -1315,7 +1338,7 @@
                                 Open Music Player
                             </button>
                             <button
-                                    class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-105"
+                              class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
                                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                     onclick={() => showMusicNotification = false}
                             >
@@ -1381,35 +1404,6 @@
 
 <style lang="postcss">
     @reference '../../app.css';
-
-    :global(*::-webkit-scrollbar) {
-        @apply w-2;
-    }
-
-    :global(*::-webkit-scrollbar-track) {
-        background: var(--color-primary) 10;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb) {
-        background: var(--color-primary) 30;
-        @apply rounded-full;
-    }
-
-    :global(*::-webkit-scrollbar-thumb:hover) {
-        background: var(--color-primary) 50;
-    }
-
-
-    @media (max-width: 640px) {
-        :global(.card-grid) {
-            @apply gap-4;
-        }
-
-        :global(.card) {
-            @apply p-4;
-        }
-    }
 
     [style*="background"],
     [style*="color"] {
