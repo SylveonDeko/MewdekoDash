@@ -36,6 +36,14 @@
   <meta content="Review and manage form submissions" name="description" />
 </svelte:head>
 
+{#snippet statusMessagesSnippet()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
 <DashboardPageLayout
   actionButtons={[
     {
@@ -51,15 +59,8 @@
     { id: "back", label: "Back to Forms", icon: "fa-arrow-left" }
   ]}
   title="Review Form Responses"
+  statusMessages={statusMessagesSnippet}
 >
-  {#if showNotification}
-    <svelte:fragment slot="status-messages">
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    </svelte:fragment>
-  {/if}
-
   <FormWorkflowReview
     {formId}
     onShowNotification={showNotificationMessage}
