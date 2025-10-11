@@ -924,7 +924,7 @@
                       <div class="space-y-2">
                         {#if question.options}
                           {#each question.options as option}
-                            {@const checkboxAnswers = (answers[question.id]; as string[]) || []}
+                            {@const checkboxAnswers = answers[question.id] || []}
                             <label
                               class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
                               style="background: {$colorStore.primary}08; border: 1px solid {checkboxAnswers.includes(option.optionValue) ? $colorStore.primary : 'transparent'};"
@@ -935,7 +935,7 @@
                                 checked={checkboxAnswers.includes(option.optionValue)}
                                 onchange={(e) => {
                                 const checked = e.currentTarget.checked;
-                                let current = (answers[question.id]; as; string[];) || [];
+                                let current = answers[question.id] || [];
                                 if (checked) {
                                   answers[question.id] = [...current, option.optionValue];
                                 } else {
