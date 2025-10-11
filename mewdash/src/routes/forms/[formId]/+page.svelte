@@ -477,7 +477,7 @@
                 What happens next?
               </div>
               <ul class="space-y-2 text-sm" style="color: {$colorStore.muted};">
-                {#if form.formType === 1}
+                {#if form?.formType === 1}
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
                     <span>Your appeal will be reviewed by the moderation team</span>
@@ -490,7 +490,7 @@
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
                     <span>Check your status on the page linked below</span>
                   </li>
-                {:else if form.formType === 2}
+                {:else if form?.formType === 2}
                   <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check flex-shrink-0 mt-1" style="color: {$colorStore.primary};"></i>
                     <span>Your application will be reviewed by the moderation team</span>
@@ -924,7 +924,7 @@
                       <div class="space-y-2">
                         {#if question.options}
                           {#each question.options as option}
-                            {@const checkboxAnswers = answers[question.id] || []}
+                            {@const checkboxAnswers = Array.isArray(answers[question.id]) ? answers[question.id] : []}
                             <label
                               class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
                               style="background: {$colorStore.primary}08; border: 1px solid {checkboxAnswers.includes(option.optionValue) ? $colorStore.primary : 'transparent'};"
@@ -935,11 +935,11 @@
                                 checked={checkboxAnswers.includes(option.optionValue)}
                                 onchange={(e) => {
                                 const checked = e.currentTarget.checked;
-                                let current = answers[question.id] || [];
+                                const current = Array.isArray(answers[question.id]) ? answers[question.id] : [];
                                 if (checked) {
                                   answers[question.id] = [...current, option.optionValue];
                                 } else {
-                                  answers[question.id] = current.filter((v) => v !== option.optionValue);
+                                  answers[question.id] = (Array.isArray(current) ? current : []).filter((v) => v !== option.optionValue);
                                 }
                               }}
                                 class="w-4 h-4 rounded"
