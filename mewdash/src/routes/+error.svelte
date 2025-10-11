@@ -89,7 +89,7 @@
     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8 px-4">
       {#if page.status === 401}
         <a
-          href="/api/discord/login"
+          href="/api/discord/login?redirect_to={encodeURIComponent(page.url.pathname)}"
           class="group relative px-8 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-3 overflow-hidden"
           style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10);
                  border: 1px solid {$colorStore.primary}30;

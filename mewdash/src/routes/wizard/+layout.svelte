@@ -8,11 +8,12 @@ Wizard layout - minimal layout for focused setup experience
   import { colorStore } from "$lib/stores/colorStore";
   import { userStore } from "$lib/stores/userStore";
   import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import type { LayoutData } from "./$types";
 
-    interface Props {
+  interface Props {
         data: LayoutData;
         children?: import('svelte').Snippet;
     }
@@ -22,8 +23,9 @@ Wizard layout - minimal layout for focused setup experience
   // Ensure user is authenticated for wizard
   onMount(() => {
     if (browser && !$userStore && !data?.user) {
-      // Redirect to login if not authenticated
-      goto('/api/discord/login');
+      // Redirect to login if not authenticated, preserving the wizard URL
+      const currentUrl = $page.url.pathname + $page.url.search;
+      goto(`/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`);
     }
   });
 

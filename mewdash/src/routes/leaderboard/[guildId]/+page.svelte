@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { fade, fly } from "svelte/transition";
-  import { instanceManagementApi, clientApi, xpApi, messageCountApi } from "$lib/api/index.ts";
+  import { clientApi, instanceManagementApi, messageCountApi, xpApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentInstance } from "$lib/stores/instanceStore";
@@ -74,8 +74,8 @@
         try {
           // Set the instance in the store temporarily to check
           currentInstance.set(instance);
-          
-          const hasGuildResponse = await api.checkInstanceHasGuild(guildId);
+
+          const hasGuildResponse = await clientApi.hasGuild(guildId);
           
           instanceStates[instanceId] = {
             loading: false,
@@ -168,7 +168,7 @@
         leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
-              const messageStats = await messageCountApi.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
+              const messageStats = await messageCountApi.getUserMessageStats(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
               return { ...user, messageCount: messageStats.totalMessages || 0 };
             } catch {
               return { ...user, messageCount: 0 };
@@ -178,7 +178,7 @@
       } else {
         // Load both leaderboard and stats for initial load
         const [board, stats] = await Promise.all([
-          api.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []),
+          xpApi.getXpLeaderboard(guildId, currentPage, pageSize).catch(() => []),
           xpApi.getXpServerStats(guildId).catch(() => ({}))
         ]);
 
@@ -186,7 +186,7 @@
         leaderboard = await Promise.all(
           board.map(async (user: any) => {
             try {
-              const messageStats = await messageCountApi.getUserMessages(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
+              const messageStats = await messageCountApi.getUserMessageStats(guildId, BigInt(user.userId)).catch(() => ({ totalMessages: 0 }));
               return { ...user, messageCount: messageStats.totalMessages || 0 };
             } catch {
               return { ...user, messageCount: 0 };
@@ -309,7 +309,7 @@
             Please log in with Discord to view server leaderboards
           </p>
           <a
-            href="/api/discord/login"
+            href="/api/discord/login?redirect_to={encodeURIComponent($page.url.pathname)}"
             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
             style="background: {$colorStore.primary}; color: white;"
           >

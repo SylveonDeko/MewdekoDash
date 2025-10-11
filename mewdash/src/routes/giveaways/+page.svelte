@@ -2,7 +2,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { giveawaysApi, type Giveaways } from "$lib/api/index.ts";
+  import { type Giveaways, giveawaysApi } from "$lib/api/index.ts";
   import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
@@ -66,7 +66,8 @@
     mounted = true;
 
     if (!data.user) {
-      goto("/api/discord/login");
+      const currentUrl = $page.url.pathname + $page.url.search;
+      goto(`/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`);
       return;
     }
 

@@ -3,12 +3,12 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import {
-    formsApi,
     clientApi,
-    instanceManagementApi,
     type Form,
     type FormQuestion,
-    type FormSubmissionRequest
+    formsApi,
+    type FormSubmissionRequest,
+    instanceManagementApi
   } from "$lib/api/index.ts";
   import { currentInstance } from "$lib/stores/instanceStore";
   import type { PageData } from "./$types";
@@ -16,11 +16,11 @@
   import { fade, fly, slide } from "svelte/transition";
   import { Turnstile } from "svelte-turnstile";
   import {
-    sanitizeAnswerText,
-    isValidEmail,
-    isValidUrl,
-    isValidNumber,
     escapeHtml,
+    isValidEmail,
+    isValidNumber,
+    isValidUrl,
+    sanitizeAnswerText,
     sanitizeUrlPath
   } from "$lib/utils/sanitize";
 
@@ -412,7 +412,7 @@
         </div>
 
         <button
-          onclick={() => goto("/api/discord/login")}
+          onclick={() => goto(`/api/discord/login?redirect_to=${encodeURIComponent($page.url.pathname)}`)}
           class="px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] shadow-lg"
           style="background: linear-gradient(135deg, #5865F2, #7289DA); color: white; box-shadow: 0 4px 20px #5865F230;"
         >
@@ -924,7 +924,7 @@
                       <div class="space-y-2">
                         {#if question.options}
                           {#each question.options as option}
-                            {@const checkboxAnswers = (answers[question.id] as string[]) || []}
+                            {@const checkboxAnswers = (answers[question.id]; as string[]) || []}
                             <label
                               class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
                               style="background: {$colorStore.primary}08; border: 1px solid {checkboxAnswers.includes(option.optionValue) ? $colorStore.primary : 'transparent'};"
@@ -935,7 +935,7 @@
                                 checked={checkboxAnswers.includes(option.optionValue)}
                                 onchange={(e) => {
                                 const checked = e.currentTarget.checked;
-                                let current = (answers[question.id] as string[]) || [];
+                                let current = (answers[question.id]; as; string[];) || [];
                                 if (checked) {
                                   answers[question.id] = [...current, option.optionValue];
                                 } else {
