@@ -191,7 +191,7 @@
 
     <!-- Footer message -->
     <p class="mt-12 text-sm" style="color: {$colorStore.muted}">
-      Need help? Join our <a class="hover:underline font-semibold" href="https://discord.gg/Z9DYApMXFN"
+      Need help? Join our <a class="hover:underline font-semibold" href="https://discord.gg/twQw45rBjN"
                              style="color: {$colorStore.primary}">Discord community</a>
     </p>
   </div>

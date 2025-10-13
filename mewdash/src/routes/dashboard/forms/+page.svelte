@@ -1,7 +1,7 @@
 <!-- routes/dashboard/forms/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { formsApi, type Form } from "$lib/api/index.ts";
+  import { type Form, formsApi } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { currentInstance } from "$lib/stores/instanceStore";
@@ -75,8 +75,20 @@
       try {
         loading = true;
         error = null;
-        forms = await formsApi.getGuildForms($currentGuild.id);
+        const fetchedForms = await formsApi.getGuildForms($currentGuild.id);
+
+        // Sanitize forms - fix PostgreSQL infinity dates
+        const sanitizedForms = fetchedForms.map(form => ({
+          ...form,
+          expiresAt: form.expiresAt && form.expiresAt !== "-infinity" && form.expiresAt !== "infinity"
+            ? form.expiresAt
+            : null
+        }));
+
+        console.log(`Loaded ${sanitizedForms.length} forms for guild ${$currentGuild.id}:`, sanitizedForms);
+        forms = sanitizedForms;
       } catch (err) {
+        console.error("Failed to load forms:", err);
         error = err instanceof Error ? err.message : "Failed to load forms";
       } finally {
         loading = false;
@@ -215,8 +227,8 @@
     activeTab = "responses";
   }
 
-  function handleFormUpdated() {
-    loadForms();
+  async function handleFormUpdated() {
+    await loadForms(); // Wait for reload to complete
     activeTab = "list";
     selectedFormId = null;
   }
@@ -389,8 +401,8 @@
         <div class="flex gap-3">
           <button
             onclick={copyToClipboard}
-            class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
+            class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border"
+            style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
           >
             <i class="fa-solid fa-copy mr-2"></i>
             Copy to Clipboard

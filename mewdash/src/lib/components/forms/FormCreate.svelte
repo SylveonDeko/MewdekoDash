@@ -2,24 +2,24 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    formsApi,
     clientApi,
+    CONDITIONAL_OPERATORS,
+    type ConditionalOperator,
+    FORM_TYPES,
     type FormQuestion,
     type FormQuestionOption,
-    QUESTION_TYPES,
-    CONDITIONAL_OPERATORS,
-    FORM_TYPES,
+    formsApi,
+    type FormType,
     formTypeToInt,
-    type QuestionType,
-    type ConditionalOperator,
-    type FormType
+    QUESTION_TYPES,
+    type QuestionType
   } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
-  import { slide, fly } from "svelte/transition";
+  import { fly, slide } from "svelte/transition";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import { sanitizeFormName, sanitizeQuestionText, sanitizeInput } from "$lib/utils/sanitize";
+  import { sanitizeFormName, sanitizeInput, sanitizeQuestionText } from "$lib/utils/sanitize";
   import { validateForm } from "$lib/utils/formValidation";
 
   interface Props {
@@ -331,15 +331,12 @@
 
   // Auto-update allowExternalUsers and clear incompatible options based on form type
   $effect(() => {
-    const formTypeMeta = FORM_TYPES.find(ft => ft.type === formType);
-    if (formTypeMeta) {
-      allowExternalUsers = formTypeMeta.allowsExternalUsers;
-
-      // Clear options that don't make sense for external forms
-      if (formType !== "Regular") {
-        allowAnonymous = false;
-        requiredRoleId = "";
-      }
+    // For BanAppeal and JoinApplication, external users MUST be allowed (force it)
+    // For Regular forms, let the user decide (don't override their choice)
+    if (formType === "BanAppeal" || formType === "JoinApplication") {
+      allowExternalUsers = true; // Force enable for these types
+      allowAnonymous = false;
+      requiredRoleId = "";
     }
   });
 </script>
@@ -538,7 +535,44 @@
             ></span>
           </label>
         </div>
+
+        <!-- Allow External Users -->
+        <div class="flex items-center justify-between p-2.5 rounded-lg"
+             style="background: {$colorStore.primary}08; opacity: {formType !== 'Regular' ? '0.6' : '1'};">
+          <div class="text-sm" style="color: {$colorStore.text};">
+            <i class="fa-solid fa-globe mr-1.5"></i>
+            Allow External Users
+            {#if formType !== "Regular"}
+              <span class="text-xs ml-1" style="color: {$colorStore.muted};">(required)</span>
+            {/if}
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input bind:checked={allowExternalUsers}
+                   class="sr-only peer"
+                   disabled={formType !== "Regular"}
+                   type="checkbox" />
+            <span
+              class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block peer-disabled:cursor-not-allowed"
+              style:background-color={allowExternalUsers ? $colorStore.primary : "#4b5563"}
+            ></span>
+          </label>
+        </div>
       </div>
+
+      {#if allowExternalUsers}
+        <div
+          class="p-3 rounded-lg border text-xs"
+          style="background: #3b82f608; border-color: #3b82f620;"
+          transition:slide
+        >
+          <div class="flex items-start gap-2">
+            <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
+            <span style="color: {$colorStore.muted};">
+              Users can submit this form even if they're not in your server. Perfect for applications and feedback.
+            </span>
+          </div>
+        </div>
+      {/if}
 
       {#if allowAnonymous}
         <div

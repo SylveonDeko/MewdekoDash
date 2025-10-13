@@ -3,17 +3,18 @@
 
 
   import "../app.css";
-    import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
-    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-    import type {LayoutData} from "../../.svelte-kit/types/src/routes/$types";
-    import {onMount} from "svelte";
-    import {browser} from "$app/environment";
-    import {colorStore} from "$lib/stores/colorStore.ts";
-    import {userStore} from "$lib/stores/userStore.ts";
-    import {initAuthRefresh} from "$lib/authRefresh";
+  import UnifiedNav from "$lib/components/layout/UnifiedNav.svelte";
+  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+  import type { LayoutData } from "../../.svelte-kit/types/src/routes/$types";
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { page } from "$app/state";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { userStore } from "$lib/stores/userStore.ts";
+  import { initAuthRefresh } from "$lib/authRefresh";
 
 
-    interface Props {
+  interface Props {
         data: LayoutData;
         children?: import('svelte').Snippet;
     }
@@ -26,7 +27,7 @@
       }
 
       // Skip color extraction on dashboard pages as they use server icons
-      if (window.location.pathname.startsWith("/dashboard")) {
+    if (page.url.pathname.startsWith("/dashboard")) {
       return;
     }
 
@@ -83,9 +84,23 @@
     // Keep user store in sync with server data and handle color extraction
     let lastExtractedUserId: string | null = null;
     let colorExtractionPromise: Promise<void> | null = null;
+  let lastPathname: string = "";
+  let wasOnDashboard: boolean = false;
 
   $effect(() => {
         if (!browser) return;
+
+    const currentPathname = page.url.pathname;
+    const isOnDashboard = currentPathname.startsWith("/dashboard");
+
+    // Detect transition from dashboard to non-dashboard
+    const transitionedFromDashboard = wasOnDashboard && !isOnDashboard;
+
+    // Update tracking variables
+    if (currentPathname !== lastPathname) {
+      lastPathname = currentPathname;
+      wasOnDashboard = isOnDashboard;
+    }
 
         // Update user store if needed
         if (data?.user) {
@@ -93,8 +108,11 @@
                 userStore.set(data.user);
             }
 
-            // Only extract colors if user changed and we're not on dashboard
-            if (data.user.id !== lastExtractedUserId && !window.location.pathname.startsWith("/dashboard")) {
+          const shouldExtractColors =
+            (!isOnDashboard && data.user.id !== lastExtractedUserId) ||
+            (transitionedFromDashboard && data.user);
+
+          if (shouldExtractColors && !colorExtractionPromise) {
                 lastExtractedUserId = data.user.id;
 
                 // Extract colors and track the promise to avoid duplicates
@@ -104,14 +122,24 @@
                 });
             }
         } else if ($userStore) {
-            // Clear user store if server says no user
+          // Clear user store if server says no user (logged out)
             userStore.set(null);
             lastExtractedUserId = null;
 
-            // Reset to default colors when logged out
-            if (!window.location.pathname.startsWith("/dashboard")) {
-                colorStore.reset();
+          // Extract from Mewdeko.png when logged out (not on dashboard)
+          if (!isOnDashboard && !colorExtractionPromise) {
+            colorExtractionPromise = extractColors(null);
+            colorExtractionPromise.finally(() => {
+              colorExtractionPromise = null;
+            });
             }
+        } else if (!data?.user && !$userStore && !isOnDashboard && !lastExtractedUserId && !colorExtractionPromise) {
+          // Handle initial page load when not logged in
+          lastExtractedUserId = "default";
+          colorExtractionPromise = extractColors(null);
+          colorExtractionPromise.finally(() => {
+            colorExtractionPromise = null;
+          });
         }
     });
 
@@ -128,25 +156,16 @@
 </script>
 
 <svelte:head>
-  <meta content="#938018" name="theme-color" />
+  <meta content="#3b82f6" name="theme-color" />
   <meta content="website" property="og:type" />
-  <meta
-    content="Mewdeko - The most customizable discord bot."
-    name="twitter:title"
-  >
+  <meta content="https://mewdeko.tech/img/hero-dashboard.png" property="og:image" />
+  <meta content="Mewdeko" property="og:site_name" />
   <meta content="summary_large_image" name="twitter:card" />
-  <meta
-    content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp"
-    name="twitter:image"
-  >
-  <meta
-    content="Mewdeko, Mewdeko Bot, Mewdeko Discord Bot, Mewdeko Discord, Mewdeko D, free discord bot, free bot, anime themed discord bot, mewdeko.tech, mewdeko website, mewdeko dashboard, mewdeko commands, mewdeko donate, mewdeko paypal, mewdeko discord, mewdeko help"
-    name="keywords"
-  >
-  <meta
-    content="https://mewdeko.tech/img/monogatari-series-background-hd-1600x900-108924-1.webp"
-    property="og:image"
-  >
+  <meta content="https://mewdeko.tech/img/hero-dashboard.png" name="twitter:image" />
+  <meta content="@MewdekoBot" name="twitter:site" />
+  <meta content="@SylveonDeko" name="twitter:creator" />
+  <meta content="SylveonDeko" name="author" />
+  <meta content="index, follow" name="robots" />
 </svelte:head>
 
 <UnifiedNav data={data} items={navItems} />

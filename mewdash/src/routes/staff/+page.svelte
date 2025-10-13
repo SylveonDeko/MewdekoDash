@@ -1,10 +1,10 @@
 <!-- routes/staff/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
 
-    let mounted = $state(false);
+  let mounted = $state(false);
 
   onMount(() => {
     mounted = true;
@@ -172,7 +172,7 @@
             </svg>
             Contribute on GitHub
           </a>
-          <a href="https://discord.gg/Z9DYApMXFN"
+          <a href="https://discord.gg/twQw45rBjN"
              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}80, {$colorStore.gradientMid}90); color: white; border: 1px solid {$colorStore.primary}50;"
              target="_blank"

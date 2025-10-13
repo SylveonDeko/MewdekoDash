@@ -1,8 +1,8 @@
 // lib/server/discordApi.ts
 import type { Cookies, RequestEvent } from "@sveltejs/kit";
 import {
-  DISCORD_API_URL,
   COOKIE_ENCRYPTION_PASSWORD,
+  DISCORD_API_URL,
 } from "$env/static/private";
 import type { DiscordUser } from "../types/discord";
 import {
@@ -12,7 +12,7 @@ import {
   shouldRefreshToken,
 } from "../../routes/api/discord/discordAuth";
 import { sessionManager } from "$lib/server/redisSession";
-import * as CryptoJS from "crypto-js";
+import CryptoJS from "crypto-js";
 
 // Track failed refresh attempts to prevent infinite loops
 const failedRefreshTokens = new Set<string>();

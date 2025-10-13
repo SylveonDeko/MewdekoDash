@@ -28,7 +28,7 @@ A unified navigation component that provides responsive navigation with server a
   import { onDestroy, onMount } from "svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
   import type { DiscordUser } from "$lib/types/discord.ts";
-  import { instanceManagementApi, clientApi, ownershipApi, wizardApi, type BotInstance } from "$lib/api/index.ts";
+  import { type BotInstance, clientApi, instanceManagementApi, ownershipApi, wizardApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { derived, get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
@@ -39,7 +39,6 @@ A unified navigation component that provides responsive navigation with server a
   import { userStore } from "$lib/stores/userStore.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
-  import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
 
   // Types
   type NavItem = {
@@ -869,16 +868,15 @@ A unified navigation component that provides responsive navigation with server a
         <div class="flex items-center gap-2 w-[140px] lg:w-[180px] xl:w-[200px] justify-end"
              class:md:w-[180px]={isDashboard}>
       {#if !currentUser}
-        <form action="/api/discord/login" method="GET" data-sveltekit-reload>
-          <button type="submit"
-                  class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg backdrop-blur-xs border"
-                  style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
-                         color: {$colorStore.text};
-                         border-color: {$colorStore.primary}50;
-                         box-shadow: 0 2px 8px {$colorStore.primary}30;">
-            Login
-          </button>
-        </form>
+        <a href="/api/discord/login"
+           data-sveltekit-reload
+           class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg backdrop-blur-xs border inline-block"
+           style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
+                  color: {$colorStore.text};
+                  border-color: {$colorStore.primary}50;
+                  box-shadow: 0 2px 8px {$colorStore.primary}30;">
+          Login
+        </a>
       {:else}
         <!-- Desktop User & Instance Display -->
         <div class="hidden md:flex relative" use:clickOutside onclickoutside={() => closeDropdown()}>
@@ -1085,10 +1083,10 @@ A unified navigation component that provides responsive navigation with server a
                   <button
                     type="submit"
                     class="ripple-effect block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium"
-                    style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
-                           color: {$colorStore.background};
-                           border-color: {$colorStore.accent}50;
-                           box-shadow: 0 2px 8px {$colorStore.accent}25;"
+                    style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}20);
+                           color: {$colorStore.text};
+                           border-color: {$colorStore.accent}30;
+                           box-shadow: 0 2px 8px {$colorStore.accent}10;"
                   >
                     Logout
                   </button>
@@ -1153,7 +1151,7 @@ A unified navigation component that provides responsive navigation with server a
   {#if (menuOpen || sidebarOpen) && isMobile}
     <div
             class="fixed inset-0 backdrop-blur-sm z-40"
-            style="background: {$colorStore.background}80;"
+            style="background: rgba(0, 0, 0, 0.6);"
             onclick={closeMobileMenu}
       transition:fade={{ duration: 300, easing: cubicOut }}
       aria-hidden="true"
@@ -1161,7 +1159,7 @@ A unified navigation component that provides responsive navigation with server a
 
     <div
       class="fixed inset-y-0 right-0 w-72 z-50 flex flex-col overflow-hidden backdrop-blur-lg border-l shadow-2xl"
-      style="background: linear-gradient(135deg, {$colorStore.background}F5, {$colorStore.background}EE), linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
+      style="background: linear-gradient(135deg, rgba(18, 24, 40, 0.98), rgba(18, 24, 40, 0.95)), linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
              border-color: {$colorStore.primary}30;
              box-shadow: -8px 0 32px {$colorStore.primary}20, inset 0 0 0 1px {$colorStore.primary}10;"
       transition:slide={{ duration: 300, easing: cubicOut, axis: 'x' }}
@@ -1316,10 +1314,10 @@ A unified navigation component that provides responsive navigation with server a
           <button
             type="submit"
             class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium"
-            style="background: linear-gradient(135deg, {$colorStore.accent}70, {$colorStore.accent}60);
-                   color: {$colorStore.background};
-                   border-color: {$colorStore.accent}50;
-                   box-shadow: 0 2px 8px {$colorStore.accent}25;"
+            style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}20);
+                   color: {$colorStore.text};
+                   border-color: {$colorStore.accent}30;
+                   box-shadow: 0 2px 8px {$colorStore.accent}10;"
           >
             Logout
           </button>

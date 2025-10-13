@@ -1,7 +1,5 @@
 <!-- routes/contacts/+page.svelte -->
-<script lang="ts">
-    import {colorStore} from "$lib/stores/colorStore";
-</script>
+<script lang="ts"></script>
 
 <svelte:head>
   <title>Mewdeko - Ways to contact us!</title>
@@ -34,14 +32,14 @@
     </a>
 
     <a
-      href="https://discord.gg/Z9DYApMXFN"
+      href="https://discord.gg/twQw45rBjN"
       target="_new"
       class="contact-card"
     >
       <i class="fa-brands fa-discord text-5xl mb-4 text-mewd-offwhite"></i>
       <span class="text-lg font-semibold">Join Our Discord</span>
       <span class="text-sm text-mewd-offwhite mt-2"
-      >https://discord.gg/Z9DYApMXFN</span
+      >https://discord.gg/twQw45rBjN</span
       >
     </a>
   </div>
