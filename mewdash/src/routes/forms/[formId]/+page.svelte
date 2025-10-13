@@ -314,32 +314,32 @@
   }
 
   onMount(async () => {
-    const formIdParam = $page.params.formId;
+    const shareCode = $page.params.formId;
+    console.log("Share code:", shareCode);
 
-    // Check if param is a share code (alphanumeric) or numeric form ID
-    const numericFormId = parseInt(formIdParam);
-    if (isNaN(numericFormId)) {
-      // It's a share code
-      isShareCode = true;
-      try {
-        const resolved = await formsApi.resolveShareLink(formIdParam);
-        formId = resolved.formId;
+    // Resolve share code to get form ID and instance
+    try {
+      const resolved = await formsApi.resolveShareLink(shareCode);
+      console.log("Resolved to:", resolved);
+      formId = resolved.formId;
 
-        // Set the correct instance
-        const instances = await instanceManagementApi.getBotInstances();
-        const targetInstance = instances.find((i) => i.port.toString() === resolved.instanceIdentifier);
-        if (targetInstance) {
-          currentInstance.set(targetInstance);
-        }
-      } catch (err) {
-        error = "Invalid or expired form link";
-        loading = false;
-        return;
+      // Set the correct instance
+      const instances = await instanceManagementApi.getBotInstances();
+      const targetInstance = instances.find((i) => i.port.toString() === resolved.instanceIdentifier);
+      if (targetInstance) {
+        console.log("Setting instance:", targetInstance);
+        currentInstance.set(targetInstance);
+      } else {
+        console.warn("Could not find matching instance for identifier:", resolved.instanceIdentifier);
       }
-    } else {
-      // It's a numeric form ID (legacy support)
-      formId = numericFormId;
+    } catch (err) {
+      console.error("Failed to resolve share code:", err);
+      error = "Invalid or expired form link";
+      loading = false;
+      return;
     }
+
+    console.log("Final formId before loading:", formId);
 
     if (!data.user) {
       showLoginPrompt = true;

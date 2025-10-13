@@ -164,14 +164,21 @@
           return;
         }
 
-        const { shareCode } = await formsApi.generateShareLink(formId, instance.port.toString());
+        const instanceId = instance.port.toString();
+        console.log(`Generating/retrieving share link for form ${formId} with instance ${instanceId}`);
+
+        const { shareCode } = await formsApi.generateShareLink(formId, instanceId);
         const link = `${window.location.origin}/forms/${shareCode}`;
+
+        console.log(`Share link: ${link} (code: ${shareCode})`);
+
         currentShareLink = link;
         showShareLinkModal = true;
       } catch (err) {
+        console.error("Failed to generate share link:", err);
         showNotificationMessage("Failed to generate share link", "error");
       }
-    }, "operation", "Generating link...");
+    }, "operation", "Getting share link...");
   }
 
   function copyToClipboard() {
@@ -383,11 +390,19 @@
           </button>
         </div>
 
-        <p class="mb-4 text-sm" style="color: {$colorStore.muted};">
-          Share this link with your community to allow them to submit the form:
-        </p>
+        <div class="mb-4 p-3 rounded-lg border" style="background: #3b82f608; border-color: #3b82f620;">
+          <div class="flex items-start gap-2 text-xs">
+            <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
+            <span style="color: {$colorStore.muted};">
+              This link is permanent and reusable. Share it anywhere - clicking "Copy" again won't invalidate it.
+            </span>
+          </div>
+        </div>
 
         <div class="mb-4">
+          <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+            Share Link
+          </label>
           <input
             type="text"
             readonly
