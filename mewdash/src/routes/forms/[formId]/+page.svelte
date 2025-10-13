@@ -35,7 +35,6 @@
   let questions = $state<FormQuestion[]>([]);
   let answers = $state<Record<number, string | string[]>>({});
   let loading = $state(true);
-  let isShareCode = $state(false);
   let submitting = $state(false);
   let error = $state<string | null>(null);
   let success = $state(false);
@@ -413,8 +412,8 @@
 
         <button
           onclick={() => goto(`/api/discord/login?redirect_to=${encodeURIComponent($page.url.pathname)}`)}
-          class="px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] shadow-lg"
-          style="background: linear-gradient(135deg, #5865F2, #7289DA); color: white; box-shadow: 0 4px 20px #5865F230;"
+          class="px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] shadow-lg border"
+          style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); color: {$colorStore.text}; border-color: {$colorStore.primary}30; box-shadow: 0 4px 20px {$colorStore.primary}10;"
         >
           <i class="fa-brands fa-discord mr-2"></i>
           Login with Discord
@@ -811,8 +810,8 @@
               <button
                 onclick={submitForm}
                 disabled={submitting}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
-                style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
+                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50 border"
+                style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
               >
                 {#if submitting}
                   <i class="fa-solid fa-spinner fa-spin mr-2"></i>
@@ -1013,8 +1012,8 @@
                 <button
                   type="submit"
                   disabled={submitting || (form.requireCaptcha && !turnstileToken)}
-                  class="w-full py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white; box-shadow: 0 4px 20px {$colorStore.primary}30;"
+                  class="w-full py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border"
+                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
                 >
                   {#if submitting}
                     <i class="fa-solid fa-spinner fa-spin mr-2"></i>

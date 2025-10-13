@@ -1,11 +1,7 @@
 <!-- lib/components/forms/ResponseStatusChecker.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    formsApi,
-    type ResponseStatusResponse,
-    RESPONSE_STATUS_LABELS
-  } from "$lib/api/index.ts";
+  import { formsApi, RESPONSE_STATUS_LABELS, type ResponseStatusResponse } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fade, fly, slide } from "svelte/transition";
@@ -254,8 +250,8 @@
               </button>
               <button
                 onclick={openInvite}
-                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02]"
-                style="background: linear-gradient(135deg, #10B981, #059669); color: white;"
+                class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] border"
+                style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.accent}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
               >
                 <i class="fa-brands fa-discord mr-2"></i>
                 Join Server
