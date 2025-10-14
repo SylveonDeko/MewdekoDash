@@ -881,13 +881,6 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   // Load wizard data
   onMount(async () => {
-    // Wait for instance to be selected
-    if (!$currentInstance) {
-      dataError = "Please select a bot instance first";
-      dataLoading = false;
-      return;
-    }
-
     await loadWizardData();
 
     if (data.wizardType === "first-time") {
@@ -922,12 +915,6 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
       const guildId = BigInt(data.guildId);
 
-      // Check if we need to wait for instance selection
-      if (!$currentInstance) {
-        dataError = "Please select a bot instance first";
-        return;
-      }
-
       const [userGuilds, wizardStateData, wizardDecisionData] = await Promise.all([
         clientApi.getMutualGuilds(BigInt(data.user.id)),
         wizardApi.getWizardState(guildId),
@@ -936,7 +923,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
       guild = userGuilds?.find((g: any) => g.id.toString() === data.guildId);
       if (!guild) {
-        dataError = "You do not have access to this guild on the selected bot instance";
+        dataError = "You do not have access to this guild. Make sure you've selected the correct bot instance.";
         return;
       }
 
