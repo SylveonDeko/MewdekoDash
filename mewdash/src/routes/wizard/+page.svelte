@@ -10,6 +10,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   import { cubicOut } from "svelte/easing";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentInstance } from "$lib/stores/instanceStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
   import type { PageData } from "./$types";
 
   // Components
@@ -942,6 +943,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         dataError = "You do not have access to this guild. Make sure you've selected the correct bot instance.";
         return;
       }
+
+      // Set currentGuild store for color extraction in layout
+      currentGuild.set(guild);
 
       wizardState = wizardStateData;
       wizardDecision = wizardDecisionData;
