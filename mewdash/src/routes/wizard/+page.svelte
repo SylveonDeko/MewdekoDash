@@ -880,48 +880,43 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     return titles;
   });
 
-  // Load wizard data
-  onMount(async () => {
-    await loadWizardData();
-
-    if (data.wizardType === "first-time") {
-      await loadPermissions();
-    }
-
-    await loadAvailableChannels();
-    await loadExistingConfigurations();
+  // Load wizard data - wait for instance to be ready first
+  onMount(() => {
+    // Don't load immediately - wait for currentInstance to be set by UnifiedNav
   });
 
   // Track the last instance to detect changes
   let lastInstancePort = $state<number | null>(null);
 
-  // Reload wizard data when instance changes (but not when guild changes from loading)
+  // Load wizard data when instance is ready, and reload when instance changes
   $effect(() => {
     const currentPort = $currentInstance?.port;
 
-    if (currentPort && currentPort !== lastInstancePort && lastInstancePort !== null) {
-      // Instance changed - reload all data
-      untrack(() => {
-        lastInstancePort = currentPort;
-      });
+    if (currentPort) {
+      // Check if this is a new instance (different from last)
+      const isInstanceChange = lastInstancePort !== null && currentPort !== lastInstancePort;
+      const isInitialLoad = lastInstancePort === null;
 
-      untrack(() => {
-        (async () => {
-          await loadWizardData();
+      if (isInitialLoad || isInstanceChange) {
+        // Update tracked port
+        untrack(() => {
+          lastInstancePort = currentPort;
+        });
 
-          if (data.wizardType === "first-time") {
-            await loadPermissions();
-          }
+        // Load/reload all wizard data
+        untrack(() => {
+          (async () => {
+            await loadWizardData();
 
-          await loadAvailableChannels();
-          await loadExistingConfigurations();
-        })();
-      });
-    } else if (currentPort && lastInstancePort === null) {
-      // First load - just track the instance
-      untrack(() => {
-        lastInstancePort = currentPort;
-      });
+            if (data.wizardType === "first-time") {
+              await loadPermissions();
+            }
+
+            await loadAvailableChannels();
+            await loadExistingConfigurations();
+          })();
+        });
+      }
     }
   });
 
