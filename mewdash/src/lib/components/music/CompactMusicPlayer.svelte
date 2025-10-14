@@ -433,7 +433,7 @@
 
 {#if hasTrack || botInChannel}
   <div
-          class="backdrop-blur-xs rounded-2xl border shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px] w-full"
+    class=" rounded-2xl border shadow-2xl transition-all hover:shadow-xl hover:translate-y-[-2px] w-full"
     style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;"
           in:fly={{ y: 10, duration: 400, delay: 100 }}
@@ -704,7 +704,7 @@
   </div>
 {:else if !botInChannel}
   <!-- No Music Placeholder -->
-    <div class="backdrop-blur-xs rounded-2xl border p-6 text-center transition-all"
+  <div class=" rounded-2xl border p-6 text-center transition-all"
        style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
               border-color: {colors.foreground}30;"
          in:fly={{ y: 10, duration: 400, delay: 100 }}

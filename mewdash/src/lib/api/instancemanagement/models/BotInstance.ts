@@ -2,14 +2,30 @@
 
 /**
  * Bot instance information
+ * Maps to DataModel.BotInstance from Database/L2DB/BotInstance.cs
  */
 export interface BotInstance {
-  /** The port number the instance is running on */
-  port: number;
+  /** Primary key */
+  id: number;
+
+  /** Bot username */
+  botName: string;
+
+  /** Date added */
+  dateAdded: string | null;
+
+  /** Bot avatar URL */
+  botAvatar: string;
+
+  /** Bot ID (Discord application ID) */
+  botId: bigint;
 
   /** Whether the instance is active */
-  active: boolean;
+  isActive: boolean;
 
-  /** Instance status message */
-  status?: string;
+  /** Last status update timestamp */
+  lastStatusUpdate: string;
+
+  /** The port number the instance is running on */
+  port: number;
 }

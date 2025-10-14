@@ -472,7 +472,7 @@
     <!-- COMPREHENSIVE PROFILE SECTION -->
     <div class="space-y-6 mb-12">
       <!-- Personal Information -->
-        <div class="rounded-2xl p-6 border backdrop-blur-xs"
+      <div class="rounded-2xl p-6 border "
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                   border-color: {$colorStore.primary}30;
                   box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -663,7 +663,7 @@
       <!-- Privacy & Preferences -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Privacy Settings -->
-          <div class="rounded-2xl p-6 border backdrop-blur-xs"
+        <div class="rounded-2xl p-6 border "
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -746,7 +746,7 @@
         </div>
 
         <!-- Preferences -->
-          <div class="rounded-2xl p-6 border backdrop-blur-xs"
+        <div class="rounded-2xl p-6 border "
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}30;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -940,7 +940,7 @@
 
       {:else}
         <!-- Selected Server Header (Improved) -->
-          <div class="mb-8 p-6 rounded-2xl border backdrop-blur-xs"
+        <div class="mb-8 p-6 rounded-2xl border "
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                     border-color: {$colorStore.primary}40;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1032,7 +1032,7 @@
           <!-- Settings & Activity Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Highlights -->
-              <div class="rounded-2xl p-6 border backdrop-blur-xs"
+            <div class="rounded-2xl p-6 border "
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1085,7 +1085,7 @@
             </div>
 
             <!-- Suggestions Activity -->
-              <div class="rounded-2xl p-6 border backdrop-blur-xs"
+            <div class="rounded-2xl p-6 border "
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1123,7 +1123,7 @@
             </div>
 
             <!-- Currency & Transactions -->
-              <div class="rounded-2xl p-6 border backdrop-blur-xs"
+            <div class="rounded-2xl p-6 border "
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1156,7 +1156,7 @@
             </div>
 
             <!-- AFK Status Management -->
-              <div class="rounded-2xl p-6 border backdrop-blur-xs"
+            <div class="rounded-2xl p-6 border "
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
@@ -1218,7 +1218,7 @@
             </div>
 
             <!-- Activity Summary -->
-              <div class="rounded-2xl p-6 border backdrop-blur-xs"
+            <div class="rounded-2xl p-6 border "
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">

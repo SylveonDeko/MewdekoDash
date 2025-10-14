@@ -115,7 +115,7 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- Recent Activity -->
       <div
-              class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+        class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
               style="background: {$colorStore.primary}05;
                border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -197,7 +197,7 @@
       <!-- Feature Status List -->
       <div class="space-y-3">
         <!-- Multi Greets Status -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -224,7 +224,7 @@
         </div>
 
         <!-- Role States Status -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -251,7 +251,7 @@
         </div>
 
         <!-- AFK System Status -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -284,7 +284,7 @@
       <!-- Action Tools -->
       <div class="space-y-3">
         <!-- Chat Triggers -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -309,7 +309,7 @@
         </div>
 
         <!-- Embed Builder -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -334,7 +334,7 @@
         </div>
 
         <!-- Message Repeaters -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -359,7 +359,7 @@
         </div>
 
         <!-- RSS Feeds -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -384,7 +384,7 @@
         </div>
 
         <!-- Status Roles -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -409,7 +409,7 @@
         </div>
 
         <!-- Vote System -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">

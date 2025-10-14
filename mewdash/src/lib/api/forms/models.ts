@@ -17,6 +17,18 @@ export type ConditionalOperator =
   | "greater_than"
   | "less_than";
 
+export type ConditionalType =
+  | "QuestionBased"
+  | "DiscordRole"
+  | "ServerTenure"
+  | "BoostStatus"
+  | "Permission"
+  | "MultipleConditions";
+
+export type RoleLogicType = "any" | "all" | "none";
+
+export type ConditionLogicType = "AND" | "OR";
+
 export type FormType = "Regular" | "BanAppeal" | "JoinApplication";
 
 export type ResponseStatus =
@@ -29,7 +41,11 @@ export type WorkflowAction =
   | "None"
   | "Unbanned"
   | "InviteSent"
-  | "RolesPreassigned";
+  | "RolesPreassigned"
+  | "RolesAssigned"
+  | "RolesRemoved";
+
+export type RoleActionType = "None" | "AddRoles" | "RemoveRoles";
 
 export interface Form {
   id: number;
@@ -52,6 +68,11 @@ export interface Form {
   inviteMaxUses?: number;
   inviteMaxAge?: number;
   notificationWebhookUrl?: string;
+  requireApproval: boolean;
+  approvalActionType: number; // 0=None, 1=AddRoles, 2=RemoveRoles
+  approvalRoleIds?: string;
+  rejectionActionType: number; // 0=None, 1=AddRoles, 2=RemoveRoles
+  rejectionRoleIds?: string;
   createdBy: bigint;
   createdAt: string;
   updatedAt: string;
@@ -71,11 +92,41 @@ export interface FormQuestion {
   maxValue?: number;
   minLength?: number;
   maxLength?: number;
+
+  // Legacy question-based conditionals
   conditionalParentQuestionId?: number;
   conditionalOperator?: ConditionalOperator;
   conditionalExpectedValue?: string;
+
+  // Advanced conditional logic
+  conditionalType: number; // 0=QuestionBased, 1=DiscordRole, 2=ServerTenure, 3=BoostStatus, 4=Permission, 5=MultipleConditions
+
+  // Discord role-based conditionals
+  conditionalRoleIds?: string;
+  conditionalRoleLogic?: RoleLogicType;
+
+  // Server tenure conditionals
+  conditionalDaysInServer?: number;
+  conditionalAccountAgeDays?: number;
+
+  // Boost/Premium conditionals
+  conditionalRequiresBoost?: boolean;
+  conditionalRequiresNitro?: boolean;
+
+  // Permission-based conditionals
+  conditionalPermissionFlags?: number;
+
+  // Conditional required
+  requiredWhenParentQuestionId?: number;
+  requiredWhenOperator?: ConditionalOperator;
+  requiredWhenValue?: string;
+
+  // Answer piping
+  enableAnswerPiping: boolean;
+
   createdAt: string;
   options?: FormQuestionOption[];
+  conditions?: FormQuestionCondition[];
 }
 
 export interface FormQuestionOption {
@@ -84,6 +135,23 @@ export interface FormQuestionOption {
   optionText: string;
   optionValue: string;
   displayOrder: number;
+}
+
+export interface FormQuestionCondition {
+  id: number;
+  questionId: number;
+  conditionGroup: number;
+  conditionType: number; // 0=Question, 1=Role, 2=Tenure, 3=Boost, 4=Permission
+  targetQuestionId?: number;
+  targetRoleIds?: string;
+  operator?: ConditionalOperator;
+  expectedValue?: string;
+  daysThreshold?: number;
+  requiresBoost?: boolean;
+  requiresNitro?: boolean;
+  permissionFlags?: number;
+  logicType: ConditionLogicType;
+  createdAt: string;
 }
 
 export interface FormResponse {
@@ -113,6 +181,7 @@ export interface FormSubmissionRequest {
   turnstileToken?: string;
   answers: Record<number, string | string[]>;
   ipAddress?: string;
+  premiumType?: number; // 0=None, 1=NitroClassic, 2=Nitro, 3=NitroBasic
 }
 
 export interface FormSubmissionResponse {
@@ -137,7 +206,7 @@ export interface FormResponseWorkflow {
   reviewedBy?: bigint;
   reviewedAt?: string;
   reviewNotes?: string;
-  actionTaken: number; // 0=None, 1=Unbanned, 2=InviteSent, 3=RolesPreassigned
+  actionTaken: number; // 0=None, 1=Unbanned, 2=InviteSent, 3=RolesPreassigned, 4=RolesAssigned, 5=RolesRemoved
   inviteCode?: string;
   inviteExpiresAt?: string;
   statusCheckToken: string;
@@ -268,6 +337,110 @@ export const CONDITIONAL_OPERATORS: Array<{
   { value: "contains", label: "Contains" },
   { value: "greater_than", label: "Greater than" },
   { value: "less_than", label: "Less than" },
+];
+
+export const ROLE_ACTION_TYPES: Array<{
+  value: number;
+  label: string;
+  description: string;
+}> = [
+  { value: 0, label: "None", description: "No role action" },
+  { value: 1, label: "Add Roles", description: "Add roles to user" },
+  { value: 2, label: "Remove Roles", description: "Remove roles from user" },
+];
+
+export const CONDITIONAL_TYPES: Array<{
+  value: number;
+  type: ConditionalType;
+  label: string;
+  icon: string;
+  description: string;
+  requiresDiscord: boolean;
+}> = [
+  {
+    value: 0,
+    type: "QuestionBased",
+    label: "Answer-Based",
+    icon: "fa-question-circle",
+    description: "Show based on previous answers",
+    requiresDiscord: false,
+  },
+  {
+    value: 1,
+    type: "DiscordRole",
+    label: "Role-Based",
+    icon: "fa-crown",
+    description: "Show based on user's roles",
+    requiresDiscord: true,
+  },
+  {
+    value: 2,
+    type: "ServerTenure",
+    label: "Server Tenure",
+    icon: "fa-calendar-days",
+    description: "Show based on time in server",
+    requiresDiscord: true,
+  },
+  {
+    value: 3,
+    type: "BoostStatus",
+    label: "Boost/Nitro",
+    icon: "fa-gem",
+    description: "Show based on boost/Nitro status",
+    requiresDiscord: true,
+  },
+  {
+    value: 4,
+    type: "Permission",
+    label: "Permission-Based",
+    icon: "fa-shield-halved",
+    description: "Show based on user permissions",
+    requiresDiscord: true,
+  },
+  {
+    value: 5,
+    type: "MultipleConditions",
+    label: "Multiple Conditions",
+    icon: "fa-code-branch",
+    description: "Combine multiple conditions with AND/OR",
+    requiresDiscord: false,
+  },
+];
+
+export const ROLE_LOGIC_TYPES: Array<{
+  value: RoleLogicType;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "any",
+    label: "Any Of",
+    description: "User has at least one of these roles",
+  },
+  { value: "all", label: "All Of", description: "User has all of these roles" },
+  {
+    value: "none",
+    label: "None Of",
+    description: "User has none of these roles",
+  },
+];
+
+export const COMMON_PERMISSIONS: Array<{
+  value: number;
+  label: string;
+  flag: string;
+}> = [
+  { value: 0x0000000008, label: "Administrator", flag: "Administrator" },
+  { value: 0x0000000010, label: "Manage Channels", flag: "ManageChannels" },
+  { value: 0x0000000020, label: "Manage Guild", flag: "ManageGuild" },
+  { value: 0x0000002000, label: "Manage Messages", flag: "ManageMessages" },
+  { value: 0x0000004000, label: "Manage Nicknames", flag: "ManageNicknames" },
+  { value: 0x0000010000, label: "Manage Roles", flag: "ManageRoles" },
+  { value: 0x0000020000, label: "Manage Webhooks", flag: "ManageWebhooks" },
+  { value: 0x0000000004, label: "Ban Members", flag: "BanMembers" },
+  { value: 0x0000000002, label: "Kick Members", flag: "KickMembers" },
+  { value: 0x0010000000, label: "Moderate Members", flag: "ModerateMembers" },
+  { value: 0x0000000400, label: "View Audit Log", flag: "ViewAuditLog" },
 ];
 
 export interface FormTypeMetadata {

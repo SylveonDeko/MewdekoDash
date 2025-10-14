@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import { statusRolesApi, clientApi } from "$lib/api/index.ts";
+    import { statusRolesApi, clientApi, type StatusRole } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -18,17 +18,7 @@
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let statusRoles: Array<{
-        id: number;
-        guildId: bigint;
-        status: string;
-        toAdd: string;
-        toRemove: string;
-        readdRemoved: boolean;
-        removeAdded: boolean;
-        statusChannelId: bigint;
-        statusEmbed: string;
-    }> = $state([]);
+    let statusRoles: StatusRole[] = $state([]);
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
     let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
@@ -136,19 +126,19 @@
             const promises = [];
 
             if (editForm.addRoles) {
-              promises.push(statusRolesApi.setStatusRoleAddRoles($currentGuild.id, id, editForm.addRoles));
+              promises.push(statusRolesApi.setAddRoles($currentGuild.id, id, editForm.addRoles));
             }
 
             if (editForm.removeRoles) {
-              promises.push(statusRolesApi.setStatusRoleRemoveRoles($currentGuild.id, id, editForm.removeRoles));
+              promises.push(statusRolesApi.setRemoveRoles($currentGuild.id, id, editForm.removeRoles));
             }
 
             if (editForm.channelId) {
-              promises.push(statusRolesApi.setStatusRoleChannel($currentGuild.id, id, BigInt(editForm.channelId)));
+              promises.push(statusRolesApi.setStatusChannel($currentGuild.id, id, BigInt(editForm.channelId)));
             }
 
             if (editForm.embedText) {
-              promises.push(statusRolesApi.setStatusRoleEmbed($currentGuild.id, id, editForm.embedText));
+              promises.push(statusRolesApi.setStatusEmbed($currentGuild.id, id, editForm.embedText));
             }
 
             await Promise.all(promises);
@@ -170,7 +160,7 @@
 
         saving = true;
         try {
-          await statusRolesApi.toggleStatusRoleRemoveAdded($currentGuild.id, id);
+          await statusRolesApi.toggleRemoveAdded($currentGuild.id, id);
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to toggle remove added:", err);
@@ -186,7 +176,7 @@
 
         saving = true;
         try {
-          await statusRolesApi.toggleStatusRoleReaddRemoved($currentGuild.id, id);
+          await statusRolesApi.toggleReaddRemoved($currentGuild.id, id);
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to toggle readd removed:", err);
@@ -230,8 +220,19 @@
         }).join(", ");
     }
 
+    function handleChannelChange(detail: any) {
+      editForm.channelId = detail.selected;
+      editForm = { ...editForm };
+    }
+
     onMount(() => {
         loadAllStatusRoleData();
+    });
+
+    $effect(() => {
+      if ($currentGuild) {
+        loadAllStatusRoleData();
+      }
     });
 
     // Tabs configuration
@@ -251,51 +252,46 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
-<DashboardPageLayout
-        title="Status Roles"
-        subtitle="Manage roles based on Discord custom status"
-        icon="fa-user-check"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
->
+{#snippet statusMessages()}
+  {#if message}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+         style="background: {messageType === 'success' ? $colorStore.primary + '20' : messageType === 'error' ? $colorStore.accent + '20' : $colorStore.primary + '20'};
+          border: 1px solid {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}30;"
+         in:fly={{ x: 20, duration: 300 }}>
+      {#if messageType === 'success'}
+        <i class="fa-utility-duo fa-regular fa-circle-check"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else if messageType === 'error'}
+        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else}
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {/if}
+      <span
+        style="color: {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+{/snippet}
 
-    <svelte:fragment slot="status-messages">
-        <!-- Status Message -->
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                  <i class="fa-utility-duo fa-regular fa-circle-check"
-                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
-                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                  <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span
-                        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-user-check"
+  statusMessages={statusMessages}
+  subtitle="Manage roles based on Discord custom status"
+  {tabs}
+  title="Status Roles"
+>
 
     <!-- Tab Content -->
     {#if activeTab === 'list'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Status Roles List -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -341,7 +337,7 @@
                                         </button>
                                       <button aria-label="Delete"
                                                 class="p-2 rounded-lg transition-all hover:scale-110"
-                                                style="background: #ef444420; color: #ef4444;"
+                                              style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                                 onclick={() => removeStatusRole(role.id)}
                                         >
                                         <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
@@ -393,11 +389,7 @@
                                                             options={guildChannels}
                                                             selected={editForm.channelId}
                                                             placeholder="No channel"
-                                                            on:change={(e) => {
-                                                                editForm.channelId = e.detail.selected;
-                                                                editForm = { ...editForm };
-                                                            }}
-                                                            aria-labelledby="notification-channel-label" />
+                                                            onchange={handleChannelChange} />
                                                 </div>
 
                                                 <div>
@@ -441,7 +433,7 @@
                                                   <button aria-label="Add role"
                                                             onclick={() => toggleRemoveAdded(role.id)}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                                            style="background: {role.removeAdded ? $colorStore.primary : '#64748b'};"
+                                                          style="background: {role.removeAdded ? $colorStore.primary : $colorStore.muted};"
                                                     >
                                                         <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                                               style="transform: translateX({role.removeAdded ? '1.5rem' : '0.25rem'})"></span>
@@ -454,7 +446,7 @@
                                                   <button aria-label="Remove role"
                                                             onclick={() => toggleReaddRemoved(role.id)}
                                                             class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                                            style="background: {role.readdRemoved ? $colorStore.primary : '#64748b'};"
+                                                          style="background: {role.readdRemoved ? $colorStore.primary : $colorStore.muted};"
                                                     >
                                                         <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                                               style="transform: translateX({role.readdRemoved ? '1.5rem' : '0.25rem'})"></span>
@@ -482,7 +474,7 @@
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <!-- Add New Status Role -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">

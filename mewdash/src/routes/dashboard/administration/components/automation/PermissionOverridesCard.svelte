@@ -19,7 +19,7 @@
   } = $props();
 </script>
 
-<div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
      in:fly={{ y: 20, duration: 300, delay: 400 }}
      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
             border-color: {$colorStore.primary}30;">

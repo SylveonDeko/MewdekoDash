@@ -296,7 +296,7 @@ A modal music search component for finding and adding tracks to the music queue.
 
 {#if isOpen}
   <div
-    class="fixed inset-0 bg-black opacity-50 backdrop-blur-xs z-30 flex items-center justify-center p-0 sm:p-4"
+    class="fixed inset-0 bg-black opacity-50  z-30 flex items-center justify-center p-0 sm:p-4"
     transition:fade={{ duration: 200 }}
     onclick={handleBackdropClick}
     onkeydown={(e) => e.key === 'Escape' && close()}

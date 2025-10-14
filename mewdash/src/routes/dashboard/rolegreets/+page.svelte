@@ -2,45 +2,24 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { roleGreetApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { roleGreetApi, clientApi, type RoleGreet } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {browser} from "$app/environment";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger.ts";
-    import type {PageData} from "./$types";
-
-    interface Props {
-        data: PageData;
-    }
-
-    let {data}: Props = $props();
 
   // State management
-  let botStatus: BotStatusModel | null = null;
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   // Role Greets
-  let roleGreets: Array<{
-    id: number;
-    guildId: bigint;
-    roleId: bigint;
-    channelId: bigint;
-    message: string;
-    deleteTime: number;
-    webhookUrl: string | null;
-    greetBots: boolean;
-    disabled: boolean;
-  }> = $state([]);
+  let roleGreets: RoleGreet[] = $state([]);
 
   // Guild roles and channels
   let guildRoles: Array<{
@@ -67,20 +46,6 @@
   // Management
     let loading = $state(true);
     let error: string | null = $state(null);
-
-  // Fetch bot status
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -209,7 +174,7 @@
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await api.disableRoleGreet($currentGuild.id, greetId, disabled);
+      await roleGreetApi.disableRoleGreet($currentGuild.id, greetId, disabled);
       showNotificationMessage(disabled ? "Role greet disabled" : "Role greet enabled", "success");
       await fetchRoleGreets();
     } catch (err) {
@@ -218,7 +183,7 @@
     }
   }
 
-  function startEditing(greet) {
+  function startEditing(greet: any) {
     editingGreetId = greet.id;
     editGreetMessage = greet.message;
     editGreetDeleteTime = greet.deleteTime;
@@ -242,60 +207,23 @@
       return channel ? channel.name : `Channel ID: ${id}`;
   }
 
+  function handleRoleChange(detail: any) {
+    selectedRoleId = detail.selected;
+  }
+
+  function handleChannelChange(detail: any) {
+    selectedChannelId = detail.selected;
+  }
+
   onMount(() => {
     if (!$currentGuild) goto("/dashboard");
     Promise.all([
       fetchRoleGreets(),
       fetchGuildRoles(),
-      fetchGuildChannels(),
-      fetchBotStatus()
+      fetchGuildChannels()
     ]);
-    checkMobile();
-
-    if (browser) {
-      window.addEventListener("resize", checkMobile);
-    }
   });
 
-  onDestroy(() => {
-    if (browser) {
-      window.removeEventListener("resize", checkMobile);
-    }
-  });
-
-
-    // Convert hex color to rgb values
-    function hexToRgb(hex: string) {
-        hex = hex.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        return `${r}, ${g}, ${b}`;
-    }
-
-
-  $effect(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchRoleGreets(),
-                fetchGuildRoles(),
-                fetchGuildChannels(),
-                fetchBotStatus()
-            ]);
-        }
-    });
-  // Color handling
-    let colorVars = $derived(`
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-    --color-primary-rgb: ${hexToRgb($colorStore.primary)};
-    --color-secondary-rgb: ${hexToRgb($colorStore.secondary)};
-    --color-accent-rgb: ${hexToRgb($colorStore.accent)};
-  `);
-  // Reactive declarations for guild changes
   $effect(() => {
         if ($currentGuild) {
             fetchRoleGreets();
@@ -303,32 +231,23 @@
             fetchGuildChannels();
         }
     });
-  // Reactive declarations for instance changes
-  $effect(() => {
-        if ($currentInstance) {
-            fetchRoleGreets();
-            fetchGuildRoles();
-            fetchGuildChannels();
-        }
-    });
 </script>
 
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="mb-6">
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
 <DashboardPageLayout
-  bind:notificationMessage
-  bind:notificationType
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-envelope"
+  statusMessages={statusMessages}
   subtitle="Configure greeting messages when users receive specific roles"
   title="Role Greets"
 >
-
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="mb-6">
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
       <!-- Add Role Greet Form -->
       <div class="mb-8 p-4 rounded-xl" style="background: {$colorStore.primary}10;">
@@ -341,8 +260,7 @@
               Role to Greet For
             </span>
             <DiscordSelector
-              aria-labelledby="role-to-greet-for-label"
-              on:change={(e) => selectedRoleId = e.detail.selected}
+              onchange={handleRoleChange}
               options={guildRoles}
               placeholder="Select a Role"
               selected={selectedRoleId}
@@ -355,8 +273,7 @@
               Send Greet To Channel
             </span>
             <DiscordSelector
-              aria-labelledby="send-greet-to-channel-label"
-              on:change={(e) => selectedChannelId = e.detail.selected}
+              onchange={handleChannelChange}
               options={guildChannels}
               placeholder="Select a Channel"
               selected={selectedChannelId}
@@ -522,11 +439,11 @@
                         bind:checked={editGreetBots}
                         class="sr-only peer"
                       >
-                      <div
-                        class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                      <span
+                        class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
                         style="background-color: {$colorStore.accent}30;
                                peer-checked:background-color: {$colorStore.accent};"
-                      ></div>
+                      ></span>
                     </label>
                   </div>
 
@@ -590,18 +507,18 @@
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
                       <i class="fa-solid fa-clock" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
-                        <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Delete After</h4>
-                        <p style="color: {$colorStore.text}">
+                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">Delete After</div>
+                        <div style="color: {$colorStore.text}">
                           {greet.deleteTime > 0 ? `${greet.deleteTime} seconds` : 'Never'}
-                        </p>
+                        </div>
                       </div>
                     </div>
 
                     <div class="p-3 rounded-lg flex items-center gap-2" style="background: {$colorStore.secondary}15;">
                       <i class="fa-solid fa-robot" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                       <div>
-                        <h4 class="text-sm font-medium" style="color: {$colorStore.muted}">Greet Bots</h4>
-                        <p style="color: {$colorStore.text}">{greet.greetBots ? 'Yes' : 'No'}</p>
+                        <div class="text-sm font-medium" style="color: {$colorStore.muted}">Greet Bots</div>
+                        <div style="color: {$colorStore.text}">{greet.greetBots ? 'Yes' : 'No'}</div>
                       </div>
                     </div>
                   </div>

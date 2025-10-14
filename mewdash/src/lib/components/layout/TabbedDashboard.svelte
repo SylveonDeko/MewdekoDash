@@ -3,13 +3,8 @@
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
   import {pushState, replaceState} from "$app/navigation";
-  import {fly, slide, fade} from "svelte/transition";
+  import { fly, fade } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import {logger} from "$lib/logger";
-
-  // Import search components
-  import SearchTrigger from "$lib/components/search/SearchTrigger.svelte";
-  import SearchModal from "$lib/components/search/SearchModal.svelte";
 
   // Import tab components
   import OverviewTab from "$lib/components/dashboard/OverviewTab.svelte";
@@ -18,6 +13,14 @@
   import ActionsTab from "$lib/components/dashboard/ActionsTab.svelte";
   import SecurityTab from "$lib/components/dashboard/SecurityTab.svelte";
   import SettingsTab from "$lib/components/dashboard/SettingsTab.svelte";
+
+  // Import UI components
+  import Portal from "$lib/components/ui/Portal.svelte";
+
+  // Import navigation config
+  import { getFeaturesByCategory, categoryOrder } from "$lib/config/navigationItems";
+  import { ownershipApi } from "$lib/api/index";
+  import { userStore } from "$lib/stores/userStore";
 
   
 
@@ -112,14 +115,18 @@
 
   // State management
   let isChangingTab = $state(false);
-  let tabContainerElement: HTMLElement = $state();
-  let showSwipeHint = $state(true);
+  let tabContainerElement: HTMLElement | undefined = $state();
   let tabElements: HTMLElement[] = $state([]);
   let showBounceStart = $state(false);
   let showBounceEnd = $state(false);
+  let showAllFeaturesModal = $state(false);
+  let isOwner = $state(false);
+
+  // Get features grouped by category
+  let featuresByCategory = $derived(getFeaturesByCategory(isOwner));
 
   // Keyboard shortcuts
-  const keyboardShortcuts = {
+  const keyboardShortcuts: Record<string, string> = {
     "1": "overview",
     "2": "community",
     "3": "entertainment",
@@ -276,7 +283,7 @@
     if (!element) return false;
 
     // Check if element or any parent is scrollable
-    let current = element;
+    let current: HTMLElement | null = element;
     while (current && current !== document.body) {
       const style = window.getComputedStyle(current);
       const overflow = style.overflow || style.overflowX || style.overflowY;
@@ -345,12 +352,38 @@
   // Get current tab data
   let currentTabData = $derived(tabs.find(tab => tab.id === activeTab) || tabs[0]);
 
+  // Check if user is owner
+  async function checkOwnership() {
+    const userData = $userStore;
+    if (!userData?.id) return;
+
+    try {
+      isOwner = await ownershipApi.isOwner(BigInt(userData.id));
+    } catch (err) {
+      console.error("Error checking owner status:", err);
+      isOwner = false;
+    }
+  }
+
+  // Toggle all features modal
+  function toggleAllFeaturesModal() {
+    showAllFeaturesModal = !showAllFeaturesModal;
+  }
+
   // Handle browser back/forward buttons
-  function handlePopState(event: PopStateEvent) {
+  function handlePopState() {
     const tabFromUrl = getTabFromUrl();
     if (tabFromUrl !== activeTab) {
       // Don't add to history when handling popstate - this is already a navigation event
       switchTab(tabFromUrl, true, false);
+    }
+  }
+
+  // Keyboard handler for modal
+  function handleModalKeyDown(event: KeyboardEvent) {
+    if (showAllFeaturesModal && event.key === "Escape") {
+      event.preventDefault();
+      toggleAllFeaturesModal();
     }
   }
 
@@ -360,14 +393,13 @@
       updateUrlTab(activeTab, false);
     }
 
-      // Hide swipe hint after 3 seconds
-      setTimeout(() => {
-          showSwipeHint = false;
-      }, 3000);
+    // Check if user is owner for feature filtering
+    checkOwnership();
 
     if (browser) {
       // Add keyboard event listener
       window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keydown", handleModalKeyDown);
 
       // Add popstate listener for browser back/forward buttons
       window.addEventListener("popstate", handlePopState);
@@ -384,6 +416,7 @@
   onDestroy(() => {
     if (browser) {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleModalKeyDown);
       window.removeEventListener("popstate", handlePopState);
 
       if (tabContainerElement) {
@@ -391,6 +424,15 @@
         tabContainerElement.removeEventListener("touchmove", handleTouchMove);
         tabContainerElement.removeEventListener("touchend", handleTouchEnd);
       }
+    }
+  });
+
+  // Prevent body scroll when modal is open
+  $effect(() => {
+    if (browser && showAllFeaturesModal) {
+      document.body.style.overflow = "hidden";
+    } else if (browser) {
+      document.body.style.overflow = "";
     }
   });
 </script>
@@ -496,13 +538,24 @@
                     </div>
                 </div>
 
-                <!-- Right: Search -->
+              <!-- Right: All Features -->
                 <div class="relative group">
-                    <SearchTrigger variant="compact"/>
+                  <button
+                    aria-label="View all dashboard features"
+                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 btn-press"
+                    onclick={toggleAllFeaturesModal}
+                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
+                    title="Browse all features"
+                  >
+                    <i aria-hidden="true"
+                       class="fa-solid fa-grid-2 text-base"
+                       style="color: {$colorStore.primary};"></i>
+                    <span class="text-sm font-medium" style="color: {$colorStore.text};">All Features</span>
+                  </button>
                     <div class="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         <div class="px-2 py-1 rounded text-xs whitespace-nowrap"
-                             style="background: {$colorStore.background}; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;">
-                            Quick Search (/)
+                             style="background: {$colorStore.primary}15; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;">
+                          Browse all 34 modules
                         </div>
                     </div>
                 </div>
@@ -544,9 +597,9 @@
                     <div class="flex items-center gap-1.5">
                         <kbd class="px-1.5 py-0.5 rounded"
                              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            /
+                          Ctrl+←/→
                         </kbd>
-                        <span>Search</span>
+                      <span>Navigate</span>
                     </div>
                 </div>
             </div>
@@ -568,14 +621,14 @@
 
                 <!-- Fade edges for scroll indication -->
                 <div class="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
-                     style="background: linear-gradient(to right, {$colorStore.background}, transparent);"></div>
+                     style="background: linear-gradient(to right, {$colorStore.gradientStart}40, transparent);"></div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
-                     style="background: linear-gradient(to left, {$colorStore.background}, transparent);"></div>
+                     style="background: linear-gradient(to left, {$colorStore.gradientEnd}40, transparent);"></div>
 
                 <!-- Scrollable Tab Container -->
                 <div class="flex gap-2 overflow-x-auto pb-2 pt-2 px-2 scrollbar-hide {showBounceStart ? 'animate-bounce-content-right' : ''} {showBounceEnd ? 'animate-bounce-content-left' : ''}"
                      style="-webkit-overflow-scrolling: touch;">
-                    {#each tabs as tab, index}
+                  {#each tabs as tab}
                         {@const isActive = activeTab === tab.id}
                         <button
                                 class="shrink-0 relative flex items-center gap-2 px-4 py-2.5 rounded-full tab-press min-w-fit"
@@ -604,45 +657,6 @@
                     {/each}
                 </div>
             </div>
-
-            <!-- Mobile Footer with Description and Search -->
-            <div class="flex items-center justify-between mt-3 px-3 h-10">
-                <div class="flex-1">
-                    <div class="relative h-5">
-                        {#key activeTab}
-                            <div class="text-sm font-medium absolute inset-0 whitespace-nowrap"
-                                 style="color: {$colorStore.text}"
-                                 in:fade={{ duration: 200, delay: 100 }}
-                                 out:fade={{ duration: 100 }}>
-                                {currentTabData.label}
-                            </div>
-                        {/key}
-                    </div>
-                    <div class="relative h-4">
-                        {#key activeTab}
-                            <div class="text-xs absolute inset-0 whitespace-nowrap"
-                                 style="color: {$colorStore.muted}; opacity: 0.8;"
-                                 in:fade={{ duration: 200, delay: 150 }}
-                                 out:fade={{ duration: 100 }}>
-                                {currentTabData.description}
-                            </div>
-                        {/key}
-                    </div>
-                </div>
-
-                <!-- Mobile Search -->
-                <SearchTrigger showShortcut={false} variant="mobile"/>
-            </div>
-
-            <!-- Swipe Hint (shows only briefly on first load) -->
-            {#if showSwipeHint}
-                <div class="flex items-center justify-center gap-2 mt-2 text-xs animate-pulse transition-opacity duration-500"
-                     style="color: {$colorStore.muted}; opacity: 0.5;">
-                    <i class="fa-solid fa-chevron-left"></i>
-                    <span>Swipe to navigate</span>
-                    <i class="fa-solid fa-chevron-right"></i>
-                </div>
-            {/if}
       </div>
     </div>
   </div>
@@ -688,8 +702,123 @@
   </div>
 </div>
 
-<!-- Global Search Modal -->
-<SearchModal />
+<!-- All Features Modal -->
+{#if showAllFeaturesModal}
+  <Portal>
+    <!-- Backdrop -->
+    <div
+      class="fixed inset-0 backdrop-blur-sm"
+      style="z-index: 100000; background: {$colorStore.gradientStart}40;"
+      onclick={toggleAllFeaturesModal}
+      transition:fade={{ duration: 200 }}
+      role="button"
+      tabindex="0"
+      aria-label="Close modal"
+    ></div>
+
+    <!-- Modal -->
+    <div
+      class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
+      style="z-index: 100001;"
+      onclick={toggleAllFeaturesModal}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="all-features-title"
+    >
+      <div
+        class="w-full max-w-5xl max-h-[85vh] rounded-2xl shadow-2xl border pointer-events-auto backdrop-blur-xl overflow-hidden"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95, {$colorStore.gradientEnd}95);
+               border-color: {$colorStore.primary}30;"
+        onclick={(e) => e.stopPropagation()}
+        transition:fly={{ y: 20, duration: 300 }}
+        role="document"
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b"
+             style="border-color: {$colorStore.primary}20;">
+          <div>
+            <h2 id="all-features-title" class="text-2xl font-bold" style="color: {$colorStore.text};">
+              All Dashboard Features
+            </h2>
+            <p class="text-sm mt-1" style="color: {$colorStore.muted};">
+              Quick access to all {Object.values(featuresByCategory).flat().length} dashboard modules
+            </p>
+          </div>
+          <button
+            aria-label="Close modal"
+            class="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+            onclick={toggleAllFeaturesModal}
+            style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
+          >
+            <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="overflow-y-auto p-6" style="max-height: calc(85vh - 100px);">
+          {#each categoryOrder as category}
+            {#if featuresByCategory[category] && featuresByCategory[category].length > 0}
+              <div class="mb-8 last:mb-0">
+                <!-- Category Header -->
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-1 h-6 rounded-full"
+                       style="background: linear-gradient(180deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
+                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
+                    {category}
+                  </h3>
+                  <div class="flex-1 h-px" style="background: {$colorStore.primary}15;"></div>
+                  <span class="text-xs px-2 py-1 rounded-full"
+                        style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
+                  {featuresByCategory[category].length} {featuresByCategory[category].length === 1 ? 'module' : 'modules'}
+                </span>
+                </div>
+
+                <!-- Feature Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {#each featuresByCategory[category] as feature}
+                    <a
+                      href={feature.href}
+                      class="flex items-start gap-3 p-4 rounded-xl transition-all duration-200 hover:scale-[1.02] border group"
+                      style="background: {$colorStore.primary}12;
+                           border-color: {$colorStore.primary}15;
+                           hover:background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);
+                           hover:border-color: {$colorStore.primary}30;"
+                      onclick={toggleAllFeaturesModal}
+                    >
+                      <div
+                        class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200"
+                        style="background: {$colorStore.primary}10;
+                                group-hover:background: {$colorStore.primary}20;">
+                        <i class="{feature.icon} text-lg transition-all duration-200"
+                           style="color: {$colorStore.primary};
+                                group-hover:transform: scale(1.1);"
+                           aria-hidden="true"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-sm mb-0.5" style="color: {$colorStore.text};">
+                          {feature.label}
+                        </div>
+                        {#if feature.description}
+                          <div class="text-xs line-clamp-2" style="color: {$colorStore.muted}; opacity: 0.8;">
+                            {feature.description}
+                          </div>
+                        {/if}
+                      </div>
+                      <div class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-arrow-right text-sm" style="color: {$colorStore.primary};"
+                           aria-hidden="true"></i>
+                      </div>
+                    </a>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/each}
+        </div>
+      </div>
+    </div>
+  </Portal>
+{/if}
 
 <style>
     /* Jelly Duo icon color theming *//* Hide scrollbar for mobile tab navigation */

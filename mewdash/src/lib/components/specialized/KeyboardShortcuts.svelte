@@ -114,7 +114,7 @@
 {#if isVisible}
   <!-- Backdrop -->
   <div
-          class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/70  z-50 flex items-center justify-center p-4"
     onclick={closeDialog}
     onkeydown={(e) => e.key === 'Escape' && closeDialog()}
     role="button"

@@ -4,11 +4,19 @@
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { guildApi, administrationApi, roleStatesApi, roleGreetApi, loggingApi, ticketApi } from "$lib/api/index.ts";
+  import {
+    guildApi,
+    administrationApi,
+    roleStatesApi,
+    roleGreetApi,
+    loggingApi,
+    ticketApi,
+    type AutoAssignRoles,
+    type SelfAssignableRole
+  } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
 
   import FeatureCard from "$lib/components/ui/FeatureCard.svelte";
-  import StatCard from "$lib/components/monitoring/StatCard.svelte";
 
   // Props from parent
 
@@ -16,8 +24,8 @@
   // Settings data
     let guildConfig: any = $state({});
     let roleSettings = $state({
-    autoAssignRoles: { normalRoles: [], botRoles: [] },
-    selfAssignableRoles: [],
+      autoAssignRoles: { normalRoles: [], botRoles: [] } as AutoAssignRoles,
+      selfAssignableRoles: [] as SelfAssignableRole[],
     roleStates: 0,
     roleGreets: 0
     });
@@ -29,12 +37,12 @@
     });
 
   let loggingConfig: any = null;
-  let ticketStats = {
+  let ticketStats = $state({
     totalPanels: 0,
     totalTickets: 0,
     openTickets: 0
-  };
-  let loading = true;
+  });
+  let loading = $state(true);
 
   async function fetchSettingsData() {
     if (!$currentGuild?.id) return;
@@ -82,6 +90,13 @@
       // Process logging config
       loggingConfig = loggingConfigData;
 
+      // Process ticket data
+      ticketStats = {
+        totalPanels: (ticketPanelsData || []).length,
+        totalTickets: ticketStatsData?.totalTickets || 0,
+        openTickets: ticketStatsData?.openTickets || 0
+      };
+
     } catch (err) {
       logger.error("Failed to fetch settings data:", err);
       // Reset to safe defaults
@@ -94,6 +109,7 @@
       };
       integrationSettings = { patreonEnabled: false, webhooksCount: 0, apiKeysCount: 0 };
       loggingConfig = null;
+      ticketStats = { totalPanels: 0, totalTickets: 0, openTickets: 0 };
     } finally {
       loading = false;
     }
@@ -142,7 +158,7 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- General Server Settings -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -208,7 +224,7 @@
       </div>
 
       <!-- Role Management -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -290,7 +306,7 @@
       </div>
 
       <!-- Integration Settings -->
-        <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+      <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-4 mb-6">
@@ -332,7 +348,7 @@
       <!-- Configuration Summary -->
       <div class="space-y-3">
         <!-- Auto-Assign Roles -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -357,7 +373,7 @@
         </div>
 
         <!-- Self-Assign Roles -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -382,7 +398,7 @@
         </div>
 
         <!-- Role Features -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -402,7 +418,7 @@
         </div>
 
         <!-- Integrations -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -428,7 +444,7 @@
       </div>
 
       <!-- Quick Actions -->
-        <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+      <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -460,7 +476,7 @@
 
       <!-- Server Info -->
       {#if guildConfig && Object.keys(guildConfig).length > 0}
-          <div class="backdrop-blur-xs rounded-2xl p-6 border"
+        <div class=" rounded-2xl p-6 border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <h3 class="font-semibold mb-4" style="color: {$colorStore.text}">Server Info</h3>

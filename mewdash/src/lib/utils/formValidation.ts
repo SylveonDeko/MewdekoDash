@@ -1,5 +1,6 @@
 // lib/utils/formValidation.ts
 import type { FormQuestion } from "$lib/api/forms/models";
+import { containsZalgo } from "$lib/utils/sanitize";
 
 export interface ValidationError {
   field: string;
@@ -21,6 +22,15 @@ export function validateFormQuestion(
     errors.push({
       field: "questionText",
       message: "Question text is required",
+    });
+  }
+
+  // Check for Zalgo text
+  if (question.questionText && containsZalgo(question.questionText)) {
+    errors.push({
+      field: "questionText",
+      message:
+        "Question text contains invalid characters (excessive combining marks)",
     });
   }
 

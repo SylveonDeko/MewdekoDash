@@ -20,6 +20,62 @@
     changedSettings = changedSettings.add(setting);
   }
 
+  function handleXpPerMessageChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.xpPerMessage = parseInt(String(target.value)) || 0;
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleMessageXpCooldownChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.messageXpCooldown = parseInt(String(target.value)) || 0;
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleVoiceXpPerMinuteChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.voiceXpPerMinute = parseInt(String(target.value)) || 0;
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleVoiceXpTimeoutChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.voiceXpTimeout = parseInt(String(target.value)) || 0;
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleXpMultiplierChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.xpMultiplier = parseFloat(String(target.value)) || 1.0;
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleCustomImageUrlChange(e: Event) {
+    const target = e.target;
+    if (target && "value" in target) {
+      xpSettings.customXpImageUrl = String(target.value);
+      markAsChanged("xpSettings");
+    }
+  }
+
+  function handleCheckboxChange(e: Event) {
+    const target = e.target;
+    if (target && "checked" in target) {
+      xpSettings.xpGainDisabled = Boolean(target.checked);
+      markAsChanged("xpSettings");
+    }
+  }
+
   const xpCurveOptions = [
     { id: "0", name: "Default" },
     { id: "1", name: "Linear" },
@@ -78,9 +134,9 @@
       </div>
       <input
         id="xp-per-message"
-        bind:value={xpSettings.xpPerMessage}
+        value={xpSettings.xpPerMessage}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleXpPerMessageChange}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -109,9 +165,9 @@
       </div>
       <input
         id="message-xp-cooldown"
-        bind:value={xpSettings.messageXpCooldown}
+        value={xpSettings.messageXpCooldown}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleMessageXpCooldownChange}
         style="border-color: {$colorStore.secondary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -139,9 +195,9 @@
       </div>
       <input
         id="voice-xp-per-minute"
-        bind:value={xpSettings.voiceXpPerMinute}
+        value={xpSettings.voiceXpPerMinute}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleVoiceXpPerMinuteChange}
         style="border-color: {$colorStore.accent}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -170,9 +226,9 @@
       </div>
       <input
         id="voice-xp-timeout"
-        bind:value={xpSettings.voiceXpTimeout}
+        value={xpSettings.voiceXpTimeout}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleVoiceXpTimeoutChange}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -200,9 +256,9 @@
       </div>
       <input
         id="xp-multiplier"
-        bind:value={xpSettings.xpMultiplier}
+        value={xpSettings.xpMultiplier}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleXpMultiplierChange}
         style="border-color: {$colorStore.secondary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -235,9 +291,11 @@
         selected={xpSettings.xpCurveType?.toString()}
         placeholder="Select curve type"
         searchable={false}
-        on:change={(e) => {
-          xpSettings.xpCurveType = parseInt(e.detail.selected);
-          markAsChanged("xpSettings");
+        onchange={(detail) => {
+          if (detail.selected && typeof detail.selected === 'string') {
+            xpSettings.xpCurveType = parseInt(detail.selected);
+            markAsChanged("xpSettings");
+          }
         }}
       />
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
@@ -258,9 +316,9 @@
       </div>
       <input
         id="custom-xp-image-url"
-        bind:value={xpSettings.customXpImageUrl}
+        value={xpSettings.customXpImageUrl || ''}
         class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-        oninput={() => markAsChanged("xpSettings")}
+        oninput={handleCustomImageUrlChange}
         style="border-color: {$colorStore.primary}30;
                color: {$colorStore.text};
                focus-visible:outline: none;
@@ -290,18 +348,18 @@
         <label class="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
-            bind:checked={xpSettings.serverExclusionState}
+            checked={xpSettings.xpGainDisabled}
             class="sr-only peer"
-            onchange={() => markAsChanged("xpSettings")}
+            onchange={handleCheckboxChange}
             aria-label="Enable or disable XP gain for the entire server"
             id="server-exclusion"
           >
-          <div
-            class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+          <span
+            class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
             style="background-color: {$colorStore.accent}30;
                    peer-checked:background-color: {$colorStore.accent};"
             aria-hidden="true"
-          ></div>
+          ></span>
         </label>
       </div>
       <p class="mt-2 text-sm" style="color: {$colorStore.muted}">

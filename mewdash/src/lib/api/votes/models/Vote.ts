@@ -5,3 +5,16 @@ export interface VoteRole {
   roleName: string;
   seconds: number;
 }
+
+export interface Vote {
+  id: number;
+  userId: bigint;
+  guildId: bigint;
+  botId: bigint;
+  dateAdded: string | null;
+}
+
+export interface VoteLeaderboardEntry {
+  userId: bigint;
+  voteCount: number;
+}

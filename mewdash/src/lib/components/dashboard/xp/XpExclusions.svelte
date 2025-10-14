@@ -110,7 +110,11 @@
               options={channelOptions}
               selected={selectedChannelId}
               placeholder="Select Channel"
-              on:change={(e) => selectedChannelId = e.detail.selected}
+              onchange={(detail) => {
+                if (detail.selected && typeof detail.selected === 'string') {
+                  selectedChannelId = detail.selected;
+                }
+              }}
             />
           </div>
           <button
@@ -152,7 +156,7 @@
                 aria-label={`Include channel ${guildChannels.find(c => c.id === channelId.toString())?.name || channelId}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}
                         d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -179,7 +183,11 @@
               options={roleOptions}
               selected={selectedRoleId}
               placeholder="Select Role"
-              on:change={(e) => selectedRoleId = e.detail.selected}
+              onchange={(detail) => {
+                if (detail.selected && typeof detail.selected === 'string') {
+                  selectedRoleId = detail.selected;
+                }
+              }}
             />
           </div>
           <button
@@ -221,7 +229,7 @@
                 aria-label={`Include role ${guildRoles.find(r => r.id === roleId.toString())?.name || roleId}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2}
                         d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

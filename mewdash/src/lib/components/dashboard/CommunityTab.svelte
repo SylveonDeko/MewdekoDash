@@ -7,7 +7,6 @@
     import {inviteStore} from "$lib/stores/inviteStore";
     import {
       xpApi,
-      suggestionsApi,
       messageCountApi,
       clientApi,
       patreonApi,
@@ -16,9 +15,9 @@
       countingApi,
       starboardApi,
       formsApi,
-      type SuggestionsModel,
       type MessageStatsResponse,
-      type Form
+      type Form,
+      type BirthdayUser
     } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
@@ -29,11 +28,10 @@
     memberStats: any;
   }
 
-  let { guildFeatures, memberStats }: Props = $props();
+    let { guildFeatures: _guildFeatures, memberStats }: Props = $props();
 
   // Real data from API
   let xpLeaderboard: any[] = $state([]);
-  let recentSuggestions: SuggestionsModel[] = [];
   let starboardHighlights: any[] = $state([]);
   let loading = $state(true);
   let dailyMessages = $state(0);
@@ -43,17 +41,14 @@
   // Enhanced message stats
   let messageStatsData: MessageStatsResponse | null = $state(null);
   let topActiveUsers: any[] = $state([]);
-  let topChannels: any[] = [];
 
   // Patreon data
   let patreonConnected = $state(false);
   let patreonSupporters = $state(0);
-  let patreonAnalytics: any = null;
 
   // Birthday data
-  let birthdayStats: any = null;
-  let todaysBirthdays: any[] = $state([]);
-  let upcomingBirthdays: any[] = $state([]);
+    let todaysBirthdays: BirthdayUser[] = $state([]);
+    let upcomingBirthdays: BirthdayUser[] = $state([]);
 
   // Tickets data
   let ticketStats = $state({
@@ -62,12 +57,9 @@
     closedToday: 0,
     activeStaff: 0
   });
-  let recentTickets: any[] = [];
-  let ticketPanels: any[] = [];
 
   // Counting data
   let countingChannels: any[] = $state([]);
-  let countingStats: any = null;
   let topCountingChannel: any = $state(null);
 
     // Forms data
@@ -79,17 +71,14 @@
 
     try {
       // Fetch all data in parallel for better performance
-      const [leaderboardData, xpStats, suggestionsData, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, patreonAnalyticsData, birthdayStatsData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, ticketPanelsData, countingChannelsData, countingStatsData, formsData] = await Promise.all([
+      const [leaderboardData, xpStats, messageStats, messageStatsDetailed, guildMembers, patreonStatus, patreonSupportersData, todaysBirthdaysData, upcomingBirthdaysData, ticketStatsData, countingChannelsData, formsData] = await Promise.all([
         xpApi.getXpLeaderboard($currentGuild.id, 1, 3),
         xpApi.getXpServerStats($currentGuild.id),
-        suggestionsApi.getSuggestions($currentGuild.id).catch(() => []), // Handle case where suggestions aren't enabled
         messageCountApi.getDailyMessageStats($currentGuild.id).catch(() => ({ enabled: false, dailyMessages: 0 })), // Handle case where message count isn't enabled
         messageCountApi.getMessageStats($currentGuild.id).catch(() => null), // Enhanced message stats
         clientApi.getMembers($currentGuild.id).catch(() => []), // Guild members for user enrichment
         patreonApi.getPatreonOAuthStatus($currentGuild.id).catch(() => ({ isConfigured: false })),
         patreonApi.getPatreonSupporters($currentGuild.id).catch(() => []),
-        patreonApi.getPatreonAnalytics($currentGuild.id).catch(() => null),
-        birthdayApi.getBirthdayStats($currentGuild.id).catch(() => null),
         birthdayApi.getBirthdayToday($currentGuild.id).catch(() => []),
         birthdayApi.getBirthdayUpcoming($currentGuild.id, 7).catch(() => []),
         ticketApi.getTicketStats($currentGuild.id).catch(() => ({
@@ -98,9 +87,7 @@
           closedTickets: 0,
           activeStaff: 0
         })),
-        ticketApi.getTicketPanels($currentGuild.id).catch(() => []),
         countingApi.getCountingChannels($currentGuild.id).catch(() => []), // Counting channels
-        countingApi.getCountingStats($currentGuild.id, null).catch(() => null), // Aggregate counting stats
         formsApi.getGuildForms($currentGuild.id, true).catch(() => []) // Active forms only
       ]);
 
@@ -117,11 +104,6 @@
       // Process XP stats for active members calculation - use actual XP users as engagement indicator
       activeMembers = xpStats.totalUsers || 0;
 
-      // Process suggestions data (recent 3, sorted by ID desc for most recent)
-      recentSuggestions = (suggestionsData || [])
-        .sort((a, b) => b.suggestionId - a.suggestionId)
-        .slice(0, 3);
-
       // Process message count stats
       messageCountEnabled = messageStats.enabled;
       dailyMessages = messageStats.dailyMessages || 0;
@@ -130,7 +112,7 @@
       messageStatsData = messageStatsDetailed;
       if (messageStatsData) {
         // Enhance topActiveUsers with user data from guild members
-        topActiveUsers = (messageStatsData.topUsers || []).slice(0, 5).map((messageUser, index) => {
+        topActiveUsers = (messageStatsData.topUsers || []).slice(0, 5).map((messageUser) => {
           const member = guildMembers?.find(m => m?.id?.toString() === messageUser.userId);
           return {
             ...messageUser,
@@ -139,22 +121,13 @@
             avatarUrl: member?.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`
           };
         });
-        topChannels = (messageStatsData.topChannels || []).slice(0, 3);
-        
-        // Update daily messages with more detailed data if available
-        if (messageStatsData.dailyStats?.enabled) {
-          dailyMessages = messageStatsData.dailyStats.dailyMessages || dailyMessages;
-          messageCountEnabled = messageStatsData.dailyStats.enabled;
-        }
       }
 
       // Process Patreon data
       patreonConnected = patreonStatus.isConfigured || false;
       patreonSupporters = patreonSupportersData?.length || 0;
-      patreonAnalytics = patreonAnalyticsData;
 
       // Process Birthday data
-      birthdayStats = birthdayStatsData;
       todaysBirthdays = todaysBirthdaysData || [];
       upcomingBirthdays = upcomingBirthdaysData?.slice(0, 5) || []; // Show top 5 upcoming
 
@@ -163,13 +136,11 @@
         totalTickets: ticketStatsData?.totalTickets || 0,
         openTickets: ticketStatsData?.openTickets || 0,
         closedToday: ticketStatsData?.closedTickets || 0,
-        activeStaff: ticketStatsData?.activeStaff || 0
+        activeStaff: (ticketStatsData as any)?.activeStaff || 0
       };
-      ticketPanels = (ticketPanelsData || []).slice(0, 3); // Show recent 3 panels
 
       // Process Counting data
       countingChannels = countingChannelsData || [];
-      countingStats = countingStatsData;
 
       // Find the most active counting channel
       if (countingChannels.length > 0) {
@@ -195,7 +166,6 @@
       logger.error("Failed to fetch community data:", err);
       // Reset to empty states on error
       xpLeaderboard = [];
-      recentSuggestions = [];
       starboardHighlights = [];
       activeMembers = Math.floor((memberStats?.totalMembers || 0) * 0.7);
     } finally {
@@ -212,18 +182,6 @@
       fetchCommunityData();
     }
   });
-
-  // Feature descriptions
-  const featureDescriptions = {
-    inviteTracking: "Track who invited users to your server",
-    suggestions: "Let users submit and vote on suggestions",
-    starboard: "Highlight popular messages in a dedicated channel",
-    xp: "Experience points and leveling system for engagement",
-    birthday: "Celebrate member birthdays with announcements and roles",
-    tickets: "Support ticket system for community help and assistance",
-    messageStats: "Track message activity and user engagement",
-    forms: "Create custom forms with conditional logic and collect responses"
-  };
 </script>
 
 <div class="space-y-4" in:fly={{ y: 20, duration: 300 }}>
@@ -234,7 +192,7 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- XP Leaderboard -->
       <div
-              class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+        class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
               style="background: {$colorStore.primary}05;
                border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -321,7 +279,7 @@
       <div class="space-y-3">
 
         <!-- Birthday Celebrations Card -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
@@ -345,7 +303,7 @@
                     <img src={user.avatarUrl || `https://cdn.discordapp.com/embed/avatars/0.png`}
                          alt="" class="w-4 h-4 rounded-full" />
                     <span class="text-xs font-medium" style="color: {$colorStore.text}">
-                      {user.displayName || user.username}
+                      {user.nickname || user.username}
                     </span>
                   </div>
                 {/each}
@@ -362,7 +320,8 @@
               <div class="text-xs" style="color: {$colorStore.muted}">
                 <span class="font-medium">Coming up:</span>
                 {#each upcomingBirthdays.slice(0, 2) as user, index (user.userId)}
-                  <span>{user.displayName || user.username} ({user.daysUntilBirthday}d){index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
+                  <span>{user.nickname || user.username} ({user.daysUntil}
+                    d){index < 1 && upcomingBirthdays.length > 1 ? ', ' : ''}</span>
                 {/each}
                 {#if upcomingBirthdays.length > 2}
                   <span> +{upcomingBirthdays.length - 2} more</span>
@@ -378,7 +337,7 @@
         </div>
 
         <!-- Message Activity Card -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
@@ -404,12 +363,12 @@
               </div>
               <div>
                 <div class="text-base font-bold" style="color: {$colorStore.secondary}">
-                  {messageStatsData?.dailyStats?.averagePerHour || 0}/hr
+                  {messageStatsData?.totalMessages ? messageStatsData.totalMessages.toLocaleString() : '0'}
                 </div>
-                <div class="text-xs" style="color: {$colorStore.muted}">Average</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Total</div>
               </div>
             </div>
-            
+
             {#if topActiveUsers.length > 0}
               <!-- Most Active (Ultra Compact) -->
               <div class="pt-2 border-t" style="border-color: {$colorStore.primary}15;">
@@ -428,18 +387,12 @@
                 </div>
               </div>
             {/if}
-            
-            {#if messageStatsData?.dailyStats?.peakHour}
-              <div class="text-xs mt-2" style="color: {$colorStore.muted}">
-                Peak: {messageStatsData.dailyStats.peakHour}:00 ({messageStatsData.dailyStats.peakHourCount} msgs)
-              </div>
-            {/if}
           </div>
         {/if}
         </div>
 
         <!-- Support Tickets Card -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
@@ -480,7 +433,7 @@
         </div>
 
         <!-- Starboard Highlights Card -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
@@ -519,7 +472,7 @@
         </div>
 
         <!-- Forms Card -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
           <div class="flex items-center justify-between mb-2">
@@ -565,7 +518,7 @@
         </div>
 
         <!-- Counting Activity Card -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
         <div class="flex items-center justify-between mb-2">
@@ -635,7 +588,7 @@
       <!-- Quick Stats List -->
       <div class="space-y-3">
         <!-- Active Members -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 0 }}>
@@ -665,7 +618,7 @@
 
 
         <!-- Total Invites -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 500 }}>
@@ -688,7 +641,7 @@
         </div>
 
         <!-- Average Joins -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 550 }}>
@@ -715,7 +668,7 @@
       <!-- Additional Features -->
       <div class="space-y-3">
         <!-- Reputation System -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 600 }}>
@@ -741,7 +694,7 @@
         </div>
 
         <!-- Confessions -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 650 }}>
@@ -767,7 +720,7 @@
         </div>
 
         <!-- Highlights -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 700 }}>
@@ -793,7 +746,7 @@
         </div>
 
         <!-- Stream Notifications -->
-          <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;"
              in:fly={{ y: 20, duration: 300, delay: 750 }}>
@@ -823,7 +776,7 @@
       <div class="space-y-3">
         {#if patreonConnected}
           <!-- Patreon Supporters -->
-            <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+          <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                  style="background: {$colorStore.primary}05;
                       border-color: {$colorStore.primary}15;">
             <div class="flex items-center gap-3">
@@ -848,7 +801,7 @@
           </div>
         {:else}
           <!-- Connect Patreon -->
-            <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+          <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
                  style="background: {$colorStore.primary}05;
                       border-color: {$colorStore.primary}15;">
             <div class="flex items-center gap-3">

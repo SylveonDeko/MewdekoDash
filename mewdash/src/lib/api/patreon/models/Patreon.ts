@@ -13,9 +13,10 @@ export interface PatreonOAuthCallbackResponse {
 }
 
 export interface PatreonOAuthStatusResponse {
-  isConnected: boolean;
+  isConfigured: boolean;
   campaignId: string | null;
-  creatorName: string | null;
+  lastSync: string | null;
+  tokenExpiry: string | null;
 }
 
 export interface PatreonConfig {
@@ -30,29 +31,41 @@ export interface PatreonConfig {
 }
 
 export interface PatreonConfigUpdateRequest {
-  patreonChannelId?: bigint;
-  patreonMessage?: string | null;
-  patreonAnnouncementDay?: number;
-  patreonEnabled?: boolean;
-  patreonGoalChannel?: bigint;
-  patreonStatsChannel?: bigint;
-  patreonRoleSync?: boolean;
+  channelId?: bigint;
+  message?: string | null;
+  announcementDay?: number;
+  toggleAnnouncements?: boolean;
+  toggleRoleSync?: boolean;
 }
 
 export interface PatreonTier {
   id: string;
-  title: string;
-  amountCents: number;
-  patronCount: number;
+  type: string;
+  attributes?: {
+    title?: string;
+    amountCents?: number;
+    patronCount?: number;
+    description?: string;
+    discordRoleIds?: string[] | null;
+  };
 }
 
 export interface PatreonSupporter {
-  userId: string;
+  id: number;
+  guildId: bigint;
+  patreonUserId: string;
+  discordUserId: bigint;
   fullName: string;
-  email: string;
-  pledgeAmountCents: number;
-  tierTitle: string;
+  email: string | null;
+  tierId: string | null;
+  amountCents: number;
   patronStatus: string;
+  pledgeRelationshipStart: string | null;
+  lastChargeDate: string | null;
+  lastChargeStatus: string | null;
+  lifetimeAmountCents: number;
+  currentlyEntitledAmountCents: number;
+  lastUpdated: string;
 }
 
 export interface PatreonCreator {
@@ -63,13 +76,24 @@ export interface PatreonCreator {
 }
 
 export interface PatreonAnalytics {
-  totalPatrons: number;
-  totalPledgeAmountCents: number;
+  totalSupporters: number;
+  activeSupporters: number;
+  formerSupporters: number;
+  linkedSupporters: number;
+  totalMonthlyRevenue: number;
+  averageSupport: number;
+  lifetimeRevenue: number;
+  newSupportersThisMonth: number;
   tierDistribution: Record<string, number>;
+  topSupporters: Array<{
+    name: string;
+    amount: number;
+    isLinked: boolean;
+  }>;
 }
 
 export interface PatreonOperationRequest {
-  operation: "sync" | "syncRoles" | "announceGoals";
+  operation: string;
 }
 
 export interface PatreonTierMappingRequest {

@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import { feedsApi, clientApi } from "$lib/api/index.ts";
+    import { feedsApi, clientApi, type FeedSub } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -18,15 +18,7 @@
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let feeds: Array<{
-        index: number;
-        id: number;
-        channelId: bigint;
-        url: string;
-        message: string;
-        dateAdded: string;
-        channelName: string;
-    }> = $state([]);
+    let feeds: FeedSub[] = $state([]);
     let feedStats: {
         totalFeeds: number;
         feedsByChannel: Record<string, number>;
@@ -55,18 +47,16 @@
             const [
                 feedsData,
                 statsData,
-                urlsData,
                 channelsData
             ] = await Promise.all([
                 feedsApi.getFeeds($currentGuild.id).catch(() => []),
                 feedsApi.getFeedStats($currentGuild.id).catch(() => null),
-                feedsApi.getFeedUrls($currentGuild.id).catch(() => []),
                 clientApi.getTextChannels($currentGuild.id).catch(() => [])
             ]);
 
             feeds = feedsData;
             feedStats = statsData;
-            feedUrls = urlsData;
+            feedUrls = Array.from(new Set(feedsData.map((f: any) => f.url)));
 
             guildChannels = (channelsData || []).map((channel: any) => ({
                 id: channel.id.toString(),
@@ -86,7 +76,10 @@
 
         saving = true;
         try {
-            await feedsApi.addFeed($currentGuild.id, BigInt(newFeed.channelId), newFeed.url);
+            await feedsApi.addFeed($currentGuild.id, {
+                channelId: BigInt(newFeed.channelId),
+                url: newFeed.url
+            });
             showMessage("RSS feed added successfully!", "success");
             newFeed = { channelId: null, url: "" };
             await loadAllFeedData();
@@ -104,7 +97,7 @@
 
         saving = true;
         try {
-            await feedsApi.updateFeedMessage($currentGuild.id, index, editMessage);
+            await feedsApi.setFeedMessage($currentGuild.id, index, editMessage);
             showMessage("Feed message updated!", "success");
             editingFeed = null;
             editMessage = "";
@@ -136,8 +129,8 @@
     }
 
     // Start editing
-    function startEditing(feed: typeof feeds[0]) {
-        editingFeed = feed.index;
+    function startEditing(feed: FeedSub) {
+        editingFeed = feed.id;
         editMessage = feed.message || "";
     }
 
@@ -150,8 +143,14 @@
         }, 5000);
     }
 
-    function formatDate(dateString: string): string {
+    function formatDate(dateString: string | null): string {
+        if (!dateString) return "Unknown";
         return new Date(dateString).toLocaleString();
+    }
+
+    function getChannelName(channelId: bigint): string {
+        const channel = guildChannels.find(c => c.id === channelId.toString());
+        return channel?.name || "Unknown Channel";
     }
 
     function truncateUrl(url: string, maxLength: number = 50): string {
@@ -180,48 +179,46 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
-<DashboardPageLayout
-        title="RSS Feeds"
-        subtitle="Manage RSS feed subscriptions"
-        icon="fa-newspaper"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
->
+{#snippet statusMessageContent()}
+    {#if message}
+        <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+             style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
+                border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
+             in:fly={{ x: 20, duration: 300 }}>
+            {#if messageType === 'success'}
+                <i class="fa-utility-duo fa-regular fa-circle-check"
+                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
+            {:else if messageType === 'error'}
+                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                   style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+            {:else}
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            {/if}
+            <span
+              style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
+        </div>
+    {/if}
+{/snippet}
 
-    <svelte:fragment slot="status-messages">
-        <!-- Status Message -->
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                    <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                    <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span
-                        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-newspaper"
+  statusMessages={statusMessageContent}
+  subtitle="Manage RSS feed subscriptions"
+  {tabs}
+  title="RSS Feeds"
+>
 
     <!-- Tab Content -->
     {#if activeTab === 'list'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Feeds List -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -250,7 +247,7 @@
                                            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                         <div class="flex-1 min-w-0">
                                             <div class="font-semibold mb-1" style="color: {$colorStore.text}">
-                                                #{feed.channelName}
+                                                #{getChannelName(feed.channelId)}
                                             </div>
                                             <div class="text-sm mb-2 break-all" style="color: {$colorStore.muted}">
                                                 <i class="fa-solid fa-link inline mr-1" style="font-size: 12px;"></i>
@@ -264,13 +261,13 @@
                                     <button aria-label="Delete feed"
                                             class="p-2 rounded-lg transition-all hover:scale-110"
                                             style="background: #ef444420; color: #ef4444;"
-                                            onclick={() => removeFeed(feed.index)}
+                                            onclick={() => removeFeed(feed.id)}
                                     >
                                         <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
                                     </button>
                                 </div>
 
-                                {#if editingFeed === feed.index}
+                                {#if editingFeed === feed.id}
                                     <div class="space-y-3 border-t pt-3" style="border-color: {$colorStore.primary}20;">
                                         <textarea
                                                 bind:value={editMessage}
@@ -283,7 +280,7 @@
                                             <button
                                               class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                                                     style="background: {$colorStore.primary}; color: white;"
-                                                    onclick={() => updateFeedMessage(feed.index)}
+                                              onclick={() => updateFeedMessage(feed.id)}
                                                     disabled={saving}
                                             >
                                                 Save
@@ -305,7 +302,7 @@
                                     </div>
                                 {/if}
 
-                                {#if editingFeed !== feed.index}
+                                {#if editingFeed !== feed.id}
                                     <button
                                       class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
@@ -324,7 +321,7 @@
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <!-- Add New Feed -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -344,10 +341,10 @@
                                 options={guildChannels}
                                 selected={newFeed.channelId}
                                 placeholder="Select channel"
-                                on:change={(e) => {
-                                    newFeed.channelId = e.detail.selected;
-                                    newFeed = { ...newFeed };
-                                }} />
+                                onchange={(detail) => {
+                                    newFeed.channelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
+                                }}
+                        />
                     </div>
 
                     <div>
@@ -415,7 +412,7 @@
 
                 <!-- Feeds by Channel -->
                 {#if Object.keys(feedStats.feedsByChannel).length > 0}
-                    <div class="mt-6 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+                    <div class="mt-6  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">

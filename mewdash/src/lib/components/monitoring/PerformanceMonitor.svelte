@@ -94,7 +94,7 @@
 </script>
 
 <div class="w-full">
-  <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
               border-color: {$colorStore.primary}30;">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

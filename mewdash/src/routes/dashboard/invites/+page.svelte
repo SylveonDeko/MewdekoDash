@@ -2,15 +2,14 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { inviteTrackingApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { inviteTrackingApi, clientApi } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger.ts";
@@ -24,12 +23,10 @@
     let {data}: Props = $props();
 
   // State management
-  let botStatus: BotStatusModel | null = null;
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
     let activeTab = $state("settings");
-  let isMobile = false;
   
   // Layout configuration
   const tabs = [
@@ -113,22 +110,8 @@
     let minAgeHours = $state(0);
     let minAgeMinutes = $state(0);
 
-  // Fetch bot status
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
-  }
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
   }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -312,11 +295,6 @@
   }
 
   onMount(async () => {
-    // Add a small delay to allow the guild store to initialize
-    if (browser) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
     // Check if guild is available after initialization
     if (!$currentGuild) {
       await goto("/dashboard");
@@ -324,24 +302,12 @@
     }
 
     // Continue with normal initialization
-    Promise.all([
+    await Promise.all([
       fetchInviteSettings(),
       fetchLeaderboard(),
       fetchGuildMembers(),
-      calculateStats(),
-      fetchBotStatus()
+      calculateStats()
     ]);
-    checkMobile();
-
-    if (browser) {
-      window.addEventListener("resize", checkMobile);
-    }
-  });
-
-  onDestroy(() => {
-    if (browser) {
-      window.removeEventListener("resize", checkMobile);
-    }
   });
 
 
@@ -351,8 +317,7 @@
                 fetchInviteSettings(),
                 fetchLeaderboard(),
                 fetchGuildMembers(),
-                calculateStats(),
-                fetchBotStatus()
+              calculateStats()
             ]);
         }
     });
@@ -387,23 +352,23 @@
     });
 </script>
 
-<DashboardPageLayout 
-  title="Invite Tracking" 
-  subtitle="Monitor and manage server invites and user referrals" 
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessageContent}
+  subtitle="Monitor and manage server invites and user referrals"
   icon="fa-user-plus"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
-  on:tabChange={(e) => activeTab = e.detail.tabId}
+  title="Invite Tracking"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
   {#if activeTab === 'settings'}
     <!-- Settings Panel -->
     <section>
@@ -463,12 +428,12 @@
                     onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Enable or disable invite tracking"
                   >
-                  <div
-                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                  <span
+                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
                     style="background-color: {$colorStore.accent}30;
                            peer-checked:background-color: {$colorStore.accent};"
                     aria-hidden="true"
-                  ></div>
+                  ></span>
                 </label>
               </div>
               <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
@@ -496,12 +461,12 @@
                     onchange={() => markAsChanged("inviteSettings")}
                     aria-label="Remove invite count when a user leaves"
                   >
-                  <div
-                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                  <span
+                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
                     style="background-color: {$colorStore.accent}30;
                            peer-checked:background-color: {$colorStore.accent};"
                     aria-hidden="true"
-                  ></div>
+                  ></span>
                 </label>
               </div>
               <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
@@ -846,8 +811,9 @@
                 customIcon="fa-user"
                 placeholder="Select a User"
                 selected={selectedUserId}
-                on:change={(e) => selectedUserId = e.detail.selected}
-                aria-label="Select a user to find their inviter"
+                onchange={(detail) => {
+                  selectedUserId = detail.selected && typeof detail.selected === 'string' ? detail.selected : '';
+                }}
               />
               <button
                 aria-label="Find inviter"
@@ -946,8 +912,9 @@
                 customIcon="fa-user-plus"
                 placeholder="Select a User"
                 selected={selectedUserId}
-                on:change={(e) => selectedUserId = e.detail.selected}
-                aria-label="Select a user to find who they invited"
+                onchange={(detail) => {
+                  selectedUserId = detail.selected && typeof detail.selected === 'string' ? detail.selected : '';
+                }}
               />
               <button
                 aria-label="Find invited users"

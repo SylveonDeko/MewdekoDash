@@ -99,18 +99,21 @@ export interface UpdateRepeaterRequest {
 
 /**
  * Repeater statistics response
+ * Maps to Mewdeko.Controllers.Common.Repeaters.RepeaterStatsResponse
  */
 export interface RepeaterStatsResponse {
   totalRepeaters: number;
   activeRepeaters: number;
   disabledRepeaters: number;
-  channelsUsed: number;
-  averageInterval: string;
-  nextScheduledExecution: string | null;
+  totalDisplays: number;
+  triggerModeDistribution: Record<string, number>;
+  mostActiveRepeater: RepeaterResponse | null;
+  timeScheduledRepeaters: number;
+  conversationAwareRepeaters: number;
 }
 
 /**
- * Repeater form data
+ * Repeater form data for UI
  */
 export interface RepeaterFormData {
   channelId: string;
@@ -118,18 +121,30 @@ export interface RepeaterFormData {
   interval: string;
   startTimeOfDay: string;
   noRedundant: boolean;
+  allowMentions?: boolean;
   triggerMode: StickyTriggerMode;
   activityThreshold: number;
   activityTimeWindow: string;
   conversationDetection: boolean;
   conversationThreshold: number;
   priority: number;
-  timeConditions: string;
-  maxAge: string;
+  queuePosition?: number;
+  timeSchedulePreset?: string | null;
+  timeConditions: string | null;
+  maxAge: string | null;
   maxTriggers: number | null;
   threadAutoSticky: boolean;
   threadOnlyMode: boolean;
-  forumTagConditions: string;
+  forumTagConditions: string | null;
+}
+
+/**
+ * Message counting status response
+ */
+export interface MessageCountingStatus {
+  enabled: boolean;
+  available: boolean;
+  message?: string;
 }
 
 // Time schedule presets for UI

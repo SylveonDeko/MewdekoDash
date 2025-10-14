@@ -2,55 +2,32 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { roleStatesApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { roleStatesApi, clientApi, type RoleStateSetting, type UserRoleState } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {browser} from "$app/environment";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger.ts";
     import {loadingStore} from "$lib/stores/loadingStore";
-    import type {PageData} from "./$types";
-
-    interface Props {
-        data: PageData;
-    }
-
-    let {data}: Props = $props();
 
   // State management
-  let botStatus: BotStatusModel | null = null;
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   // Role States Settings
-    let roleStateSettings = $state({
-    guildId: "",
-    enabled: false,
-    clearOnBan: false,
-    ignoreBots: false,
-    deniedRoles: "",
-    deniedUsers: ""
-    });
+  let roleStateSettings: RoleStateSetting | null = $state(null);
 
   // Parsed denied items
     let deniedRolesList: string[] = $state([]);
     let deniedUsersList: string[] = $state([]);
 
   // Role States
-  let roleStates: Array<{
-    id: number;
-    userId: string;
-    guildId: string;
-    savedRoles: string;
-    userName: string;
-  }> = $state([]);
+  let roleStates: UserRoleState[] = $state([]);
 
   // Guild roles and users
   let guildRoles: Array<{
@@ -70,7 +47,6 @@
     let sourceUserId = $state("");
     let targetUserId = $state("");
     let selectedRoleIds: string[] = $state([]);
-    let selectedUserRoles: string[] = $state([]);
     let viewingUserId: string | null = $state(null);
 
   // Denied roles/users management
@@ -84,31 +60,23 @@
     let errorSettings: string | null = $state(null);
     let errorStates: string | null = $state(null);
 
+  // Pagination for states
+  let statesPage = $state(1);
+  let statesPageSize = $state(20);
+  let totalStatesPages = $derived(Math.ceil(roleStates.length / statesPageSize));
+  let paginatedStates = $derived(roleStates.slice((statesPage - 1) * statesPageSize, statesPage * statesPageSize));
+
   // Active tab for settings
     let settingsTab: "general" | "denied" = $state("general");
-  
+
   // Layout state
     let activeTab = $state("settings");
-  
+
   const tabs = [
     { id: "settings", label: "Settings", icon: "fa-gear" },
     { id: "management", label: "Management", icon: "fa-users" },
     { id: "states", label: "Role States", icon: "fa-user-plus" }
   ];
-
-  // Fetch bot status
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -129,19 +97,11 @@
         }
 
         roleStateSettings = await roleStatesApi.getRoleStateSettings($currentGuild.id);
-      if (!roleStateSettings) {
-        roleStateSettings = {
-          guildId: $currentGuild.id.toString(),
-          enabled: false,
-          clearOnBan: false,
-          ignoreBots: false,
-          deniedRoles: "",
-          deniedUsers: ""
-        };
-      }
 
         // Parse denied lists
-        parseDeniedLists();
+        if (roleStateSettings) {
+          parseDeniedLists();
+        }
       } catch (err) {
         logger.error("Failed to fetch role state settings:", err);
         errorSettings = err instanceof Error ? err.message : "Failed to fetch role state settings";
@@ -152,13 +112,13 @@
   }
 
   function parseDeniedLists() {
-    if (roleStateSettings.deniedRoles) {
+    if (roleStateSettings?.deniedRoles) {
       deniedRolesList = roleStateSettings.deniedRoles.split(",");
     } else {
       deniedRolesList = [];
     }
 
-    if (roleStateSettings.deniedUsers) {
+    if (roleStateSettings?.deniedUsers) {
       deniedUsersList = roleStateSettings.deniedUsers.split(",");
     } else {
       deniedUsersList = [];
@@ -222,9 +182,8 @@
   async function toggleClearOnBan() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!roleStateSettings) throw new Error("Settings not loaded");
 
-      const result = await roleStatesApi.toggleClearOnBan($currentGuild.id, roleStateSettings);
+      const result = await roleStatesApi.toggleClearOnBan($currentGuild.id);
       showNotificationMessage(`Clear on ban ${result ? "enabled" : "disabled"}`, "success");
       await fetchRoleStateSettings();
     } catch (err) {
@@ -236,35 +195,13 @@
   async function toggleIgnoreBots() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!roleStateSettings) throw new Error("Settings not loaded");
 
-      const result = await roleStatesApi.toggleIgnoreBots($currentGuild.id, roleStateSettings);
+      const result = await roleStatesApi.toggleIgnoreBots($currentGuild.id);
       showNotificationMessage(`Ignore bots ${result ? "enabled" : "disabled"}`, "success");
       await fetchRoleStateSettings();
     } catch (err) {
       logger.error("Failed to toggle ignore bots:", err);
       showNotificationMessage("Failed to update setting", "error");
-    }
-  }
-
-  async function getUserRoleState(userId: string) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-      if (!userId) throw new Error("No user selected");
-
-      const roleState = await roleStatesApi.getUserRoleState($currentGuild.id, BigInt(userId));
-      viewingUserId = userId;
-
-      // Parse saved roles
-      if (roleState && roleState.savedRoles) {
-        selectedUserRoles = roleState.savedRoles.split(",");
-      } else {
-        selectedUserRoles = [];
-      }
-    } catch (err) {
-      logger.error("Failed to get user role state:", err);
-      showNotificationMessage("Failed to get user role state", "error");
-      selectedUserRoles = [];
     }
   }
 
@@ -293,9 +230,6 @@
       showNotificationMessage("Roles added to user successfully", "success");
       selectedRoleIds = [];
       await fetchRoleStates();
-      if (viewingUserId === selectedUserId) {
-        await getUserRoleState(selectedUserId);
-      }
     } catch (err) {
       logger.error("Failed to add roles to user:", err);
       showNotificationMessage(err instanceof Error ? err.message : "Failed to add roles to user", "error");
@@ -312,9 +246,6 @@
       showNotificationMessage("Roles removed from user successfully", "success");
       selectedRoleIds = [];
       await fetchRoleStates();
-      if (viewingUserId === selectedUserId) {
-        await getUserRoleState(selectedUserId);
-      }
     } catch (err) {
       logger.error("Failed to remove roles from user:", err);
       showNotificationMessage(err instanceof Error ? err.message : "Failed to remove roles from user", "error");
@@ -451,50 +382,16 @@
     return user ? user.username : `User ID: ${userId}`;
   }
 
-  function toggleRoleSelection(roleId: string) {
-    const index = selectedRoleIds.indexOf(roleId);
-    if (index === -1) {
-      selectedRoleIds = [...selectedRoleIds, roleId];
-    } else {
-      selectedRoleIds = selectedRoleIds.filter(id => id !== roleId);
-    }
-  }
-
   onMount(() => {
     if (!$currentGuild) goto("/dashboard");
     Promise.all([
       fetchRoleStateSettings(),
       fetchRoleStates(),
       fetchGuildRoles(),
-      fetchGuildMembers(),
-      fetchBotStatus()
+      fetchGuildMembers()
     ]);
-    checkMobile();
-
-    if (browser) {
-      window.addEventListener("resize", checkMobile);
-    }
   });
 
-  onDestroy(() => {
-    if (browser) {
-      window.removeEventListener("resize", checkMobile);
-    }
-  });
-
-
-  $effect(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchRoleStateSettings(),
-                fetchRoleStates(),
-                fetchGuildRoles(),
-                fetchGuildMembers(),
-                fetchBotStatus()
-            ]);
-        }
-    });
-  // Reactive declarations for guild changes
   $effect(() => {
         if ($currentGuild) {
             fetchRoleStateSettings();
@@ -503,19 +400,18 @@
             fetchGuildMembers();
         }
     });
-  // Reactive declarations for instance changes
-  $effect(() => {
-        if ($currentInstance) {
-            fetchRoleStateSettings();
-            fetchRoleStates();
-            fetchGuildRoles();
-            fetchGuildMembers();
-        }
-    });
 </script>
 
-<DashboardPageLayout 
-  title="Role States" 
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessages}
   actionButtons={[
     {
       label: "Save All States",
@@ -540,21 +436,13 @@
   bind:activeTab
   subtitle="Save user roles when they leave and restore them when they return"
   guildName={$currentGuild?.name || "Dashboard"}
-  on:tabChange={(e) => activeTab = e.detail.tabId}
+  title="Role States"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   {#if activeTab === 'settings'}
     <!-- Settings Section -->
     <section
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+      class=" rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -628,19 +516,19 @@
               <div>
                 <h3 class="font-semibold" style="color: {$colorStore.text}">Role States</h3>
                 <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                  {roleStateSettings.enabled
+                  {roleStateSettings?.enabled
                     ? 'Currently remembering user roles when they leave'
                     : 'Not currently saving user roles'}
                 </p>
               </div>
-              <button 
+              <button
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleRoleStates}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};"
-                aria-label={roleStateSettings.enabled ? "Disable Role States" : "Enable Role States"}
+                aria-label={roleStateSettings?.enabled ? "Disable Role States" : "Enable Role States"}
               >
-                {#if roleStateSettings.enabled}
+                {#if roleStateSettings?.enabled}
                   <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
                   <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
@@ -658,7 +546,7 @@
               <div>
                 <h3 class="font-semibold" style="color: {$colorStore.text}">Clear on Ban</h3>
                 <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                  {roleStateSettings.clearOnBan
+                  {roleStateSettings?.clearOnBan
                     ? 'Role states will be deleted when a user is banned'
                     : 'Role states will be kept when a user is banned'}
                 </p>
@@ -666,13 +554,13 @@
               <button 
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleClearOnBan}
-                disabled={!roleStateSettings.enabled}
+                disabled={!roleStateSettings?.enabled}
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.text};
-                       opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
-                aria-label={roleStateSettings.clearOnBan ? "Don't clear on ban" : "Clear on ban"}
+                       opacity: {!roleStateSettings?.enabled ? '0.5' : '1'};"
+                aria-label={roleStateSettings?.clearOnBan ? "Don't clear on ban" : "Clear on ban"}
               >
-                {#if roleStateSettings.clearOnBan}
+                {#if roleStateSettings?.clearOnBan}
                   <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
                   <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
@@ -690,7 +578,7 @@
               <div>
                 <h3 class="font-semibold" style="color: {$colorStore.text}">Ignore Bots</h3>
                 <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                  {roleStateSettings.ignoreBots
+                  {roleStateSettings?.ignoreBots
                     ? 'Bot roles will not be saved'
                     : 'Bot roles will be saved just like user roles'}
                 </p>
@@ -698,13 +586,13 @@
               <button 
                 class="p-2 rounded-lg transition-all duration-200"
                 onclick={toggleIgnoreBots}
-                disabled={!roleStateSettings.enabled}
+                disabled={!roleStateSettings?.enabled}
                 style="background: {$colorStore.secondary}20;
                        color: {$colorStore.text};
-                       opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
-                aria-label={roleStateSettings.ignoreBots ? "Don't ignore bots" : "Ignore bots"}
+                       opacity: {!roleStateSettings?.enabled ? '0.5' : '1'};"
+                aria-label={roleStateSettings?.ignoreBots ? "Don't ignore bots" : "Ignore bots"}
               >
-                {#if roleStateSettings.ignoreBots}
+                {#if roleStateSettings?.ignoreBots}
                   <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                 {:else}
                   <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
@@ -728,10 +616,10 @@
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
                 onclick={saveAllUserRoleStates}
-                disabled={!roleStateSettings.enabled || savingAllStates}
+                disabled={!roleStateSettings?.enabled || savingAllStates}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
-                       opacity: {!roleStateSettings.enabled || savingAllStates ? '0.5' : '1'};"
+                       opacity: {!roleStateSettings?.enabled || savingAllStates ? '0.5' : '1'};"
               >
                 {#if savingAllStates}
                   <div
@@ -762,25 +650,22 @@
 
             <!-- Add Denied Role -->
             <div class="flex gap-2 mb-4">
-              <select
-                id="denied-role-select"
-                bind:value={selectedDeniedRoleId}
-                class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                disabled={!roleStateSettings.enabled}
-              >
-                <option value="">Select a Role</option>
-                {#each guildRoles.filter(r => r.name !== '@everyone') as role}
-                  <option value={role.id}>{role.name}</option>
-                {/each}
-              </select>
+              <div class="flex-1">
+                <DiscordSelector
+                  type="role"
+                  options={guildRoles.filter(r => r.name !== '@everyone')}
+                  bind:selected={selectedDeniedRoleId}
+                  placeholder="Select a role"
+                  disabled={!roleStateSettings?.enabled}
+                />
+              </div>
               <button
                 class="px-3 py-1 rounded-lg transition-all duration-200 flex items-center gap-1"
                 onclick={addDeniedRole}
-                disabled={!roleStateSettings.enabled || !selectedDeniedRoleId}
+                disabled={!roleStateSettings?.enabled || !selectedDeniedRoleId}
                 style="background: {$colorStore.primary}20;
                        color: {$colorStore.text};
-                       opacity: {!roleStateSettings.enabled || !selectedDeniedRoleId ? '0.5' : '1'};"
+                       opacity: {!roleStateSettings?.enabled || !selectedDeniedRoleId ? '0.5' : '1'};"
               >
                 <i class="fa-solid fa-shield" style="font-size: 16px;"></i>
                 <span>Add</span>
@@ -803,10 +688,10 @@
                       <button
                               class="p-1 rounded-sm transition-all duration-200"
                         onclick={() => removeDeniedRole(roleId)}
-                        disabled={!roleStateSettings.enabled}
+                              disabled={!roleStateSettings?.enabled}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};
-                               opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
+                               opacity: {!roleStateSettings?.enabled ? '0.5' : '1'};"
                         aria-label="Remove denied role"
                       >
                         <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
@@ -830,25 +715,22 @@
 
             <!-- Add Denied User -->
             <div class="flex gap-2 mb-4">
-              <select
-                id="denied-user-select"
-                bind:value={selectedDeniedUserId}
-                class="flex-1 p-3 rounded-lg bg-gray-900/50 border transition-all duration-200"
-                style="border-color: {$colorStore.secondary}30; color: {$colorStore.text};"
-                disabled={!roleStateSettings.enabled}
-              >
-                <option value="">Select a User</option>
-                {#each guildMembers as member}
-                  <option value={member.id}>{member.username}</option>
-                {/each}
-              </select>
+              <div class="flex-1">
+                <DiscordSelector
+                  type="user"
+                  options={guildMembers.map(m => ({ id: m.id, name: m.username }))}
+                  bind:selected={selectedDeniedUserId}
+                  placeholder="Select a user"
+                  disabled={!roleStateSettings?.enabled}
+                />
+              </div>
               <button
                 class="px-3 py-1 rounded-lg transition-all duration-200 flex items-center gap-1"
                 onclick={addDeniedUser}
-                disabled={!roleStateSettings.enabled || !selectedDeniedUserId}
+                disabled={!roleStateSettings?.enabled || !selectedDeniedUserId}
                 style="background: {$colorStore.secondary}20;
                        color: {$colorStore.text};
-                       opacity: {!roleStateSettings.enabled || !selectedDeniedUserId ? '0.5' : '1'};"
+                       opacity: {!roleStateSettings?.enabled || !selectedDeniedUserId ? '0.5' : '1'};"
               >
                 <i class="fa-solid fa-user-minus" style="font-size: 16px;"></i>
                 <span>Add</span>
@@ -871,10 +753,10 @@
                       <button
                               class="p-1 rounded-sm transition-all duration-200"
                         onclick={() => removeDeniedUser(userId)}
-                        disabled={!roleStateSettings.enabled}
+                              disabled={!roleStateSettings?.enabled}
                         style="background: {$colorStore.accent}20;
                                color: {$colorStore.accent};
-                               opacity: {!roleStateSettings.enabled ? '0.5' : '1'};"
+                               opacity: {!roleStateSettings?.enabled ? '0.5' : '1'};"
                         aria-label="Remove denied user"
                       >
                         <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
@@ -891,48 +773,265 @@
   {/if}
 
   {#if activeTab === 'management'}
-    <!-- Management Section would go here -->
-    <section class="text-center py-12">
-      <i class="fa-utility-duo fa-regular fa-user"
-         style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-      <p style="color: {$colorStore.muted}">Role management functionality</p>
-    </section>
+    <!-- Role Management Section -->
+    <div class="space-y-6" in:fade={{ duration: 200 }}>
+      <!-- Add/Remove Roles -->
+      <section class="rounded-2xl border p-6 shadow-2xl"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                      border-color: {$colorStore.primary}30;">
+        <div class="flex items-center gap-3 mb-6">
+          <i class="fa-utility-duo fa-regular fa-user-plus"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Manage User Roles</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- User Selection -->
+          <div>
+            <label for="user-select" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              Select User
+            </label>
+            <DiscordSelector
+              type="user"
+              options={guildMembers.map(m => ({ id: m.id, name: m.username }))}
+              bind:selected={selectedUserId}
+              placeholder="Select a user"
+            />
+          </div>
+
+          <!-- Role Selection -->
+          <div>
+            <label for="role-multi-select" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              Select Roles
+            </label>
+            <DiscordSelector
+              type="role"
+              options={guildRoles.filter(r => r.name !== '@everyone')}
+              bind:selected={selectedRoleIds}
+              multiple={true}
+              placeholder="Select roles to add/remove"
+            />
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button
+            class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+            onclick={addRolesToUser}
+            disabled={!selectedUserId || selectedRoleIds.length === 0}
+            style="background: {$colorStore.primary}; color: {$colorStore.text};
+                   opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
+          >
+            <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+            <span>Add Selected Roles to User</span>
+          </button>
+
+          <button
+            class="flex-1 px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+            onclick={removeRolesFromUser}
+            disabled={!selectedUserId || selectedRoleIds.length === 0}
+            style="background: {$colorStore.accent}; color: {$colorStore.text};
+                   opacity: {!selectedUserId || selectedRoleIds.length === 0 ? '0.5' : '1'};"
+          >
+            <i class="fa-solid fa-minus" style="font-size: 16px;"></i>
+            <span>Remove Selected Roles from User</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Copy Role State -->
+      <section class="rounded-2xl border p-6 shadow-2xl"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                      border-color: {$colorStore.secondary}30;">
+        <div class="flex items-center gap-3 mb-6">
+          <i class="fa-utility-duo fa-regular fa-copy"
+             style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Copy Role State</h2>
+        </div>
+
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">
+          Copy saved roles from one user and apply them to another user
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="source-user" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              Source User (copy from)
+            </label>
+            <DiscordSelector
+              type="user"
+              options={roleStates.map(s => ({ id: s.userId.toString(), name: s.userName }))}
+              bind:selected={sourceUserId}
+              placeholder="Select source user"
+            />
+          </div>
+
+          <div>
+            <label for="target-user" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              Target User (copy to)
+            </label>
+            <DiscordSelector
+              type="user"
+              options={guildMembers.map(m => ({ id: m.id, name: m.username }))}
+              bind:selected={targetUserId}
+              placeholder="Select target user"
+            />
+          </div>
+        </div>
+
+        <button
+          class="w-full mt-4 px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+          onclick={applyRoleState}
+          disabled={!sourceUserId || !targetUserId}
+          style="background: {$colorStore.secondary}; color: {$colorStore.text};
+                 opacity: {!sourceUserId || !targetUserId ? '0.5' : '1'};"
+        >
+          <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
+          <span>Apply Role State</span>
+        </button>
+      </section>
+    </div>
   {/if}
-  
+
   {#if activeTab === 'states'}
-    <!-- Role States List would go here -->
-    <section class="text-center py-12">
-      <i class="fa-utility-duo fa-regular fa-users"
-         style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
-      <p style="color: {$colorStore.muted}">Role states list functionality</p>
+    <!-- Role States List Section -->
+    <section class="rounded-2xl border p-6 shadow-2xl"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                    border-color: {$colorStore.primary}30;">
+      <div class="flex items-center gap-3 mb-6">
+        <i class="fa-utility-duo fa-regular fa-users"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+        <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Saved Role States ({roleStates.length})</h2>
+      </div>
+
+      {#if loadingStates}
+        <div class="flex justify-center items-center min-h-[200px]">
+          <div class="w-12 h-12 border-4 rounded-full animate-spin"
+               style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"></div>
+        </div>
+      {:else if errorStates}
+        <div class="rounded-xl p-4 flex items-center gap-3"
+             style="background: {$colorStore.accent}10;"
+             role="alert">
+          <i class="fa-utility-duo fa-regular fa-circle-xmark"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <p style="color: {$colorStore.accent}">{errorStates}</p>
+        </div>
+      {:else if roleStates.length === 0}
+        <div class="text-center py-12">
+          <i class="fa-utility-duo fa-regular fa-users"
+             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
+          <p style="color: {$colorStore.text}">No Role States Saved</p>
+          <p class="text-sm mt-2" style="color: {$colorStore.muted}">
+            Role states will be saved automatically when users leave the server
+          </p>
+        </div>
+      {:else}
+        <div class="space-y-3">
+          {#each paginatedStates as state}
+            <div class="rounded-xl p-4 border transition-all hover:scale-[1.01]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-user" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                    <span class="font-semibold" style="color: {$colorStore.text}">{state.userName}</span>
+                    <span class="text-xs px-2 py-1 rounded-sm"
+                          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
+                      {state.savedRoles.split(',').length} roles
+                    </span>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    {#each state.savedRoles.split(',').slice(0, 5) as roleId}
+                      <span class="text-xs px-2 py-1 rounded-sm"
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                        {getRoleName(roleId)}
+                      </span>
+                    {/each}
+                    {#if state.savedRoles.split(',').length > 5}
+                      <span class="text-xs px-2 py-1 rounded-sm"
+                            style="background: {$colorStore.muted}15; color: {$colorStore.muted};">
+                        +{state.savedRoles.split(',').length - 5} more
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button
+                    class="p-2 rounded-lg transition-all duration-200"
+                    onclick={() => {
+                      viewingUserId = viewingUserId === state.userId.toString() ? null : state.userId.toString();
+                    }}
+                    style="background: {$colorStore.secondary}20; color: {$colorStore.text};"
+                    aria-label="View details"
+                  >
+                    <i class="fa-solid fa-{viewingUserId === state.userId.toString() ? 'eye-slash' : 'eye'}"
+                       style="font-size: 16px;"></i>
+                  </button>
+
+                  <button
+                    class="p-2 rounded-lg transition-all duration-200"
+                    onclick={() => deleteUserRoleState(state.userId.toString())}
+                    style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                    aria-label="Delete role state"
+                  >
+                    <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
+                  </button>
+                </div>
+              </div>
+
+              {#if viewingUserId === state.userId.toString()}
+                <div class="mt-4 pt-4 border-t" style="border-color: {$colorStore.primary}20;">
+                  <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">All Saved Roles:</h4>
+                  <div class="flex flex-wrap gap-2">
+                    {#each state.savedRoles.split(',') as roleId}
+                      <span class="text-sm px-3 py-1 rounded-lg"
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                        {getRoleName(roleId)}
+                      </span>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <!-- Pagination Controls -->
+        {#if totalStatesPages > 1}
+          <div class="flex items-center justify-center gap-2 mt-6">
+            <button
+              class="px-3 py-2 rounded-lg transition-all"
+              onclick={() => statesPage = Math.max(1, statesPage - 1)}
+              disabled={statesPage === 1}
+              style="background: {$colorStore.primary}20; color: {$colorStore.text};
+                     opacity: {statesPage === 1 ? '0.5' : '1'};"
+              aria-label="Previous page"
+            >
+              <i class="fa-solid fa-chevron-left" style="font-size: 14px;"></i>
+            </button>
+
+            <span class="px-4 py-2 text-sm" style="color: {$colorStore.text}">
+              Page {statesPage} of {totalStatesPages}
+            </span>
+
+            <button
+              class="px-3 py-2 rounded-lg transition-all"
+              onclick={() => statesPage = Math.min(totalStatesPages, statesPage + 1)}
+              disabled={statesPage === totalStatesPages}
+              style="background: {$colorStore.primary}20; color: {$colorStore.text};
+                     opacity: {statesPage === totalStatesPages ? '0.5' : '1'};"
+              aria-label="Next page"
+            >
+              <i class="fa-solid fa-chevron-right" style="font-size: 14px;"></i>
+            </button>
+          </div>
+        {/if}
+      {/if}
     </section>
   {/if}
 </DashboardPageLayout>
 
 
-<style lang="postcss">
-    /* Custom styling for options */
-    option {
-        background-color: #374151;
-        color: white;
-        padding: 0.5rem;
-    }
-
-    :global(.input-field) {
-        transition: all 0.2s ease;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    :global(.input-field):focus {
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
-    }
-
-    /* Prevent stretch in Safari */
-    select {
-        min-height: 44px;
-    }
-
-    /* Improve touchable area on mobile */
-    @media (max-width: 768px) {
-    }
-</style>

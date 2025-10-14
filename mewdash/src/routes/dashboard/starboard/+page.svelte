@@ -2,48 +2,24 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { starboardApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { starboardApi, clientApi, type Starboard } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
     import {goto} from "$app/navigation";
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {browser} from "$app/environment";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger.ts";
-    import type {PageData} from "./$types";
-
-    interface Props {
-        data: PageData;
-    }
-
-    let {data}: Props = $props();
 
   // State management
-  let botStatus: BotStatusModel | null = null;
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   // Starboard configurations
-  let starboards: Array<{
-    id: number;
-    guildId: bigint;
-    starboardChannelId: bigint;
-    emote: string;
-    threshold: number;
-    checkedChannels: string;
-    useBlacklist: boolean;
-    allowBots: boolean;
-    removeOnDelete: boolean;
-    removeOnReactionsClear: boolean;
-    removeBelowThreshold: boolean;
-    repostThreshold: number;
-  }> = $state([]);
+  let starboards: Starboard[] = $state([]);
 
   // Guild channels and emote selection
   let guildTextChannels: Array<{
@@ -82,20 +58,6 @@
 
   // Custom emoji input (for when users want to use a custom emoji)
     let customEmojiInput = $state("");
-
-  // Fetch bot status
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -335,93 +297,61 @@
     return channel ? channel.name : `Channel ID: ${channelId}`;
   }
 
+  function handleChannelChange(detail: any) {
+    newStarboard.channelId = detail.selected || "";
+  }
+
+  function handleChannelListChange(detail: any) {
+    selectedChannelId = detail.selected || "";
+  }
+
   onMount(() => {
     if (!$currentGuild) goto("/dashboard");
     fetchStarboards();
     fetchGuildChannels();
-    fetchBotStatus();
-    checkMobile();
-
-    if (browser) {
-      window.addEventListener("resize", checkMobile);
-    }
   });
 
-  onDestroy(() => {
-    if (browser) {
-      window.removeEventListener("resize", checkMobile);
+  $effect(() => {
+    if ($currentGuild) {
+      fetchStarboards();
+      fetchGuildChannels();
     }
   });
-
-
-  // Convert hex color to rgb values
-  function hexToRgb(hex: string) {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-
-
-    // Initialize data loading
-  $effect(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchStarboards(),
-                fetchGuildChannels(),
-                fetchBotStatus()
-            ]);
-        }
-    });
-  // Reactive declarations for guild changes
-  $effect(() => {
-        if ($currentGuild) {
-            fetchStarboards();
-            fetchGuildChannels();
-        }
-    });
-  // Reactive declarations for instance changes
-  $effect(() => {
-        if ($currentInstance) {
-            fetchStarboards();
-            fetchGuildChannels();
-        }
-    });
 </script>
 
 <svelte:head>
   <title>Starboard - Dashboard</title>
 </svelte:head>
 
-<DashboardPageLayout 
-  title="Starboard" 
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
   actionButtons={[
     {
       label: "Create Starboard",
-      icon: "fa-envelope",
+      icon: "fa-star",
       action: createStarboard,
       loading: creatingStarboard,
       disabled: !newStarboard.channelId || creatingStarboard,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ]}
+  statusMessages={statusMessages}
   icon="fa-star"
   guildName={$currentGuild?.name || "Dashboard"}
   subtitle="Showcase your server's best messages in dedicated channels"
+  title="Starboard"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
     <!-- Create New Starboard Section -->
     <div
-            class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl"
+      class=" rounded-2xl border p-4 md:p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -449,10 +379,7 @@
             options={guildTextChannels}
             selected={newStarboard.channelId}
             placeholder="Select a channel"
-            on:change={(e) => {
-              newStarboard.channelId = e.detail.selected || "";
-            }}
-            aria-labelledby="starboard-channel-label" />
+            onchange={handleChannelChange} />
         </div>
 
         <!-- Emote Selection -->
@@ -563,7 +490,7 @@
 
     <!-- Existing Starboards Section -->
     <div
-            class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl"
+      class=" rounded-2xl border p-4 md:p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -699,10 +626,10 @@
                     <div class="flex items-center gap-1">
                       <div
                         class="w-2 h-2 rounded-full"
-                        style="background-color: {starboard.removeBelowThreshold ? $colorStore.primary : $colorStore.accent};"
+                        style="background-color: {starboard.removeOnBelowThreshold ? $colorStore.primary : $colorStore.accent};"
                       ></div>
                       <span class="text-sm" style="color: {$colorStore.muted}">
-                        {starboard.removeBelowThreshold ? 'Remove' : 'Keep'} Below Threshold
+                        {starboard.removeOnBelowThreshold ? 'Remove' : 'Keep'} Below Threshold
                       </span>
                     </div>
                   </div>
@@ -748,7 +675,7 @@
   <!-- Delete Confirmation Modal -->
   {#if showDeleteModal}
     <div
-            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/50  flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -785,7 +712,7 @@
   <!-- Settings Modal -->
   {#if showSettingsModal && currentEditStarboard}
     <div
-            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/50  flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -937,19 +864,19 @@
                 <div>
                   <p style="color: {$colorStore.text}">Remove Below Threshold</p>
                   <p class="text-sm" style="color: {$colorStore.muted}">
-                    {currentEditStarboard.removeBelowThreshold
+                    {currentEditStarboard.removeOnBelowThreshold
                       ? 'Starred messages are removed when they fall below threshold'
                       : 'Starred messages remain when they fall below threshold'}
                   </p>
                 </div>
                 <button
                   class="p-2 rounded-lg transition-all duration-200"
-                  onclick={() => toggleRemoveBelowThreshold(currentEditStarboard.id, currentEditStarboard.removeBelowThreshold)}
+                  onclick={() => toggleRemoveBelowThreshold(currentEditStarboard.id, currentEditStarboard.removeOnBelowThreshold)}
                   style="background: {$colorStore.primary}20;
                          color: {$colorStore.text};"
-                  aria-label={currentEditStarboard.removeBelowThreshold ? "Disable remove below threshold" : "Enable remove below threshold"}
+                  aria-label={currentEditStarboard.removeOnBelowThreshold ? "Disable remove below threshold" : "Enable remove below threshold"}
                 >
-                  {#if currentEditStarboard.removeBelowThreshold}
+                  {#if currentEditStarboard.removeOnBelowThreshold}
                     <i class="fa-solid fa-toggle-on" style="font-size: 24px;"></i>
                   {:else}
                     <i class="fa-solid fa-toggle-off" style="font-size: 24px;"></i>
@@ -1002,7 +929,7 @@
   <!-- Channel Management Modal -->
   {#if showChannelsModal && currentEditStarboard}
     <div
-            class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/50  flex items-center justify-center z-50"
       transition:fade={{ duration: 200 }}
     >
       <div
@@ -1029,10 +956,7 @@
                   options={guildTextChannels}
                   selected={selectedChannelId}
                   placeholder="Select a channel"
-                  on:change={(e) => {
-                    selectedChannelId = e.detail.selected || "";
-                  }}
-                  aria-labelledby="addremove-channel-label" />
+                  onchange={handleChannelListChange} />
               </div>
               <button
                 class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
@@ -1099,21 +1023,3 @@
   {/if}
 </DashboardPageLayout>
 
-<style lang="postcss">
-    /* Custom styling for options */
-
-    :global(.input-field) {
-        transition: all 0.2s ease;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    :global(.input-field):focus {
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
-    }
-
-    /* Prevent stretch in Safari */
-
-    /* Improve touchable area on mobile */
-    @media (max-width: 768px) {
-    }
-</style>

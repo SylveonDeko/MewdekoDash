@@ -86,7 +86,7 @@
   <div class="container mx-auto max-w-2xl">
     {#if loading && !status}
       <div
-        class="backdrop-blur-xs rounded-xl border p-12 text-center"
+        class=" rounded-xl border p-12 text-center"
         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         in:fade
       >
@@ -98,7 +98,7 @@
       </div>
     {:else if error}
       <div
-        class="backdrop-blur-xs rounded-xl border p-8 text-center"
+        class=" rounded-xl border p-8 text-center"
         style="background: #ef444410; border-color: #ef444430;"
         in:fly={{ y: 20, duration: 300 }}
       >
@@ -110,7 +110,7 @@
       <div class="space-y-6">
         <!-- Header -->
         <div
-          class="backdrop-blur-xs rounded-xl border p-8 text-center"
+          class=" rounded-xl border p-8 text-center"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:fade
         >
@@ -130,7 +130,7 @@
 
         <!-- Status Card -->
         <div
-          class="backdrop-blur-xs rounded-xl border p-6"
+          class=" rounded-xl border p-6"
           style="background: {RESPONSE_STATUS_LABELS[status.status].color}10; border-color: {RESPONSE_STATUS_LABELS[status.status].color}30;"
           in:slide
         >
@@ -194,7 +194,7 @@
         <!-- Invite Link (for approved join applications) -->
         {#if status.status === "Approved" && status.inviteCode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: #10B98110; border-color: #10B98130;"
             in:slide
           >
@@ -263,7 +263,7 @@
         <!-- Action Taken (for ban appeals) -->
         {#if status.status === "Approved" && status.actionTaken.includes("Unbanned")}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: #10B98110; border-color: #10B98130;"
             in:slide
           >
@@ -288,7 +288,7 @@
 
         <!-- Auto-Refresh Toggle -->
         <div
-          class="backdrop-blur-xs rounded-xl border p-4"
+          class=" rounded-xl border p-4"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:slide
         >
@@ -326,7 +326,7 @@
 
         <!-- Informational Footer -->
         <div
-          class="backdrop-blur-xs rounded-xl border p-4 text-center"
+          class=" rounded-xl border p-4 text-center"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         >
           <p class="text-xs" style="color: {$colorStore.muted};">

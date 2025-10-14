@@ -317,7 +317,7 @@
     in:fade
   >
     <!-- Header Section -->
-    <div class="py-4 backdrop-blur-lg border-b shadow-lg"
+    <div class="py-4 border-b shadow-lg"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -341,7 +341,7 @@
                 type="search"
                 id="search-placeholders"
                 placeholder="Search placeholders..."
-                class="block w-full pl-12 pr-4 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
+                class="block w-full pl-12 pr-4 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
                 bind:value={searchQuery}
                 aria-label="Search placeholders"
@@ -382,7 +382,7 @@
     <div class="container mx-auto px-4 py-8">
       <!-- Introduction -->
       <div class="max-w-4xl mx-auto mb-12">
-        <div class="rounded-2xl p-6 backdrop-blur-xs"
+        <div class="rounded-2xl p-6 "
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}20;">
           <div class="grid md:grid-cols-3 gap-6">
             <div class="text-center">
@@ -417,7 +417,7 @@
 
       <!-- Important Note -->
       <div class="max-w-4xl mx-auto mb-8">
-        <div class="rounded-xl p-4 backdrop-blur-xs"
+        <div class="rounded-xl p-4 "
              style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40;">
           <div class="flex items-start gap-3">
             <div class="shrink-0">
@@ -471,7 +471,7 @@
                   <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {#each category.placeholders as placeholder, placeholderIndex}
                       <div
-                              class="placeholder-card group rounded-xl p-4 backdrop-blur-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                        class="placeholder-card group rounded-xl p-4  transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border: 1px solid {$colorStore.primary}20;"
                         in:fly={{ y: 10, duration: 200, delay: placeholderIndex * 50 }}
                         onclick={() => copyToClipboard(placeholder.code)}

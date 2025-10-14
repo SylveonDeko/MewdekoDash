@@ -12,7 +12,6 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import type {OptionType} from "$lib/components/forms/DiscordSelector.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {browser} from "$app/environment";
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {logger} from "$lib/logger.ts";
 
@@ -30,18 +29,15 @@
   let roles: OptionType[] = $state([]);
   let musicStatus: any = $state(null);
   let musicInterval: NodeJS.Timeout;
-  let isMobile = false;
-
-
 
   // Settings based on your MusicPlayerSettings model
   let settings = $state({
     id: 0,
-    guildId: "",
+    guildId: BigInt(0),
     playerRepeat: 2,
-    musicChannelId: null as string | null,
+    musicChannelId: null as bigint | null,
     volume: 100,
-    djRoleId: null as string | null,
+    djRoleId: null as bigint | null,
     autoDisconnect: 1,
     autoPlay: 0,
     voteSkipEnabled: false,
@@ -62,11 +58,6 @@
     All: 2
   } as const;
 
-  // Function to convert RGB to HSL
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
@@ -74,6 +65,36 @@
     setTimeout(() => {
       showNotification = false;
     }, 3000);
+  }
+
+  function handleMusicChannelChange(detail: any) {
+    if (detail.selected) {
+      settings.musicChannelId = detail.selected === "null" ? null : BigInt(detail.selected);
+    }
+  }
+
+  function handleDjRoleChange(detail: any) {
+    if (detail.selected) {
+      settings.djRoleId = detail.selected === "null" ? null : BigInt(detail.selected);
+    }
+  }
+
+  function handleRepeatModeChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      settings.playerRepeat = parseInt(detail.selected);
+    }
+  }
+
+  function handleAutoDisconnectChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      settings.autoDisconnect = parseInt(detail.selected);
+    }
+  }
+
+  function handleAutoPlayChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      settings.autoPlay = parseInt(detail.selected);
+    }
   }
 
   async function fetchSettings() {
@@ -101,10 +122,9 @@
     try {
       if (!$currentGuild?.id) return;
       const roleData = await clientApi.getRoles(BigInt($currentGuild.id));
-      roles = roleData.map(role => ({ 
-        id: role.id, 
-        name: role.name,
-        color: role.color || undefined
+      roles = roleData.map(role => ({
+        id: role.id,
+        name: role.name
       }));
     } catch (err) {
       logger.error("Failed to fetch roles:", err);
@@ -127,13 +147,11 @@
   async function fetchPlaybackStatus() {
     try {
       if (!$currentGuild?.id || !data.user?.id) return;
-      const status = await musicApi.getPlayerStatus(BigInt($currentGuild.id), BigInt(data.user.id));
-      musicStatus = status;
+      musicStatus = await musicApi.getPlayerStatus(BigInt($currentGuild.id), BigInt(data.user.id));
     } catch (err) {
       logger.error("Failed to fetch playback status:", err);
     }
   }
-
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
@@ -141,8 +159,6 @@
     try {
       await Promise.all([fetchSettings(), fetchChannels(), fetchRoles()]);
       musicInterval = setInterval(fetchPlaybackStatus, 5000);
-      checkMobile();
-      if (browser) window.addEventListener("resize", checkMobile);
     } catch (err) {
       error = "Failed to fetch data";
       logger.error(error, err);
@@ -153,7 +169,6 @@
 
   onDestroy(() => {
     if (musicInterval) clearInterval(musicInterval);
-    if (browser) window.removeEventListener("resize", checkMobile);
   });
 
   let colors = $derived($colorStore);
@@ -178,21 +193,22 @@
   });
 </script>
 
-<DashboardPageLayout 
-  title="Music Player Settings" 
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="mb-6" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessages}
   subtitle="Configure music playback settings and controls"
   icon="fa-music"
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
+  title="Music Player Settings"
 >
-  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="mb-6" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
     {#if loading}
       <div class="flex justify-center items-center min-h-[200px]">
@@ -215,7 +231,7 @@
       <!-- Current Playback Section -->
       {#if musicStatus?.currentTrack}
         <div
-                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+          class=" rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
           transition:fade
@@ -257,7 +273,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- General Settings -->
         <div
-                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+          class=" rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -304,12 +320,10 @@
               <DiscordSelector
                 type="channel"
                 options={[{id: 'null', name: 'All Channels'}, ...channels]}
-                selected={settings.musicChannelId === null ? 'null' : settings.musicChannelId}
+                selected={settings.musicChannelId === null ? 'null' : settings.musicChannelId.toString()}
                 placeholder="Select music channel..."
-                on:change={(e) => {
-                  settings.musicChannelId = e.detail.selected === 'null' ? null : e.detail.selected;
-                }}
-                aria-labelledby="music-channel-label" />
+                onchange={handleMusicChannelChange}
+              />
             </div>
 
             <!-- DJ Role -->
@@ -323,12 +337,10 @@
               <DiscordSelector
                 type="role"
                 options={[{id: 'null', name: 'No DJ Role'}, ...roles]}
-                selected={settings.djRoleId === null ? 'null' : settings.djRoleId}
+                selected={settings.djRoleId === null ? 'null' : settings.djRoleId.toString()}
                 placeholder="Select DJ role..."
-                on:change={(e) => {
-                  settings.djRoleId = e.detail.selected === 'null' ? null : e.detail.selected;
-                }}
-                aria-labelledby="dj-role-label" />
+                onchange={handleDjRoleChange}
+              />
             </div>
 
             <!-- Player Repeat -->
@@ -348,9 +360,7 @@
                 ]}
                 selected={settings.playerRepeat.toString()}
                 placeholder="Select repeat mode..."
-                on:change={(e) => {
-                  settings.playerRepeat = parseInt(e.detail.selected);
-                }}
+                onchange={handleRepeatModeChange}
               />
             </div>
           </div>
@@ -358,7 +368,7 @@
 
         <!-- Advanced Settings -->
         <div
-                class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+          class=" rounded-2xl border p-6 shadow-2xl transition-all"
           style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                  border-color: {colors.primary}30;"
         >
@@ -392,9 +402,7 @@
                 ]}
                 selected={settings.autoDisconnect.toString()}
                 placeholder="Select auto disconnect..."
-                on:change={(e) => {
-                  settings.autoDisconnect = parseInt(e.detail.selected);
-                }}
+                onchange={handleAutoDisconnectChange}
               />
             </div>
 
@@ -414,30 +422,28 @@
                 ]}
                 selected={settings.autoPlay.toString()}
                 placeholder="Select auto play..."
-                on:change={(e) => {
-                  settings.autoPlay = parseInt(e.detail.selected);
-                }}
+                onchange={handleAutoPlayChange}
               />
             </div>
 
             <!-- Vote Skip Settings -->
             <div class="space-y-4">
               <label class="flex items-center gap-3">
-                <div
-                  class="relative w-11 h-6 rounded-full transition-all duration-200"
+                <input
+                  type="checkbox"
+                  bind:checked={settings.voteSkipEnabled}
+                  class="sr-only peer"
+                >
+                <span
+                  class="relative w-11 h-6 rounded-full transition-all duration-200 block"
                   style="background: {settings.voteSkipEnabled ? colors.primary : colors.primary + '30'};"
                 >
-                  <input
-                    type="checkbox"
-                    bind:checked={settings.voteSkipEnabled}
-                    class="sr-only peer"
-                  >
-                  <div
-                    class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200"
+                  <span
+                    class="absolute w-4 h-4 rounded-full top-1 left-1 transition-all duration-200 block"
                     style="background: {colors.text};
                            transform: translateX({settings.voteSkipEnabled ? '20px' : '0'});"
-></div>
-                </div>
+                  ></span>
+                </span>
                 <span style="color: {colors.text}">Enable Vote Skip</span>
               </label>
 

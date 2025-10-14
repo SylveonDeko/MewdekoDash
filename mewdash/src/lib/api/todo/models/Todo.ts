@@ -65,6 +65,10 @@ export interface GrantPermissionRequest {
 export interface TodoListPermission {
   listId: number;
   userId: bigint;
+  canView: boolean;
+  canAdd: boolean;
   canEdit: boolean;
+  canComplete: boolean;
   canDelete: boolean;
+  canManageList: boolean;
 }

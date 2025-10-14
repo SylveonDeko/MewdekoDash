@@ -82,7 +82,7 @@
 </script>
 
 <div
-        class="backdrop-blur-xs rounded-xl border p-6 relative overflow-hidden"
+  class=" rounded-xl border p-6 relative overflow-hidden"
   style="background: linear-gradient(135deg, var(--color-primary)08, var(--color-secondary)08);
          border-color: var(--color-primary)20;"
   transition:fade

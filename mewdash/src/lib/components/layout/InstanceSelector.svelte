@@ -178,7 +178,7 @@
 >
   <div class="max-w-4xl mx-auto space-y-8">
     <div
-            class="text-center p-8 rounded-2xl backdrop-blur-xs border"
+      class="text-center p-8 rounded-2xl  border"
       in:fly={{ y: 20, duration: 300 }}
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
@@ -190,7 +190,7 @@
 
   {#if showLoading}
     <div
-            class="flex flex-col items-center justify-center py-12 rounded-2xl backdrop-blur-xs border"
+      class="flex flex-col items-center justify-center py-12 rounded-2xl  border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -211,7 +211,7 @@
     </div>
   {:else if error}
     <div
-            class="rounded-2xl border p-6 backdrop-blur-xs"
+      class="rounded-2xl border p-6 "
       style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.accent}15);
              border-color: {$colorStore.accent}30;"
       role="alert"
@@ -221,7 +221,7 @@
     </div>
   {:else if instances.length === 0}
     <div
-            class="text-center py-12 rounded-2xl backdrop-blur-xs border"
+      class="text-center py-12 rounded-2xl  border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -231,7 +231,7 @@
     </div>
   {:else if visibleInstances.length === 0}
     <div
-            class="text-center py-12 rounded-2xl backdrop-blur-xs border"
+      class="text-center py-12 rounded-2xl  border"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
       role="status"
@@ -251,7 +251,7 @@
         <button
           onclick={() => handleInstanceSelect(instance)}
           onkeydown={(e) => handleKeydown(e, instance)}
-          class="flex items-center p-6 rounded-2xl backdrop-blur-xs border transition-all duration-300 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+          class="flex items-center p-6 rounded-2xl  border transition-all duration-300 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;
                  focus:ring-color: {$colorStore.primary};

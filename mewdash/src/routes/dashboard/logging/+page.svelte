@@ -48,10 +48,6 @@
 
 
 
-  // Handle tab changes from DashboardPageLayout
-  function handleTabChange(event: CustomEvent<{tabId: string}>) {
-    activeTab = event.detail.tabId as "channels" | "ignored";
-  }
 
   // Categories for organization
   const categories = [
@@ -258,10 +254,9 @@
   subtitle="Configure event logging channels and settings"
   icon="fa-file"
   {tabs}
-  {activeTab}
+  bind:activeTab
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
-  on:tabChange={handleTabChange}
 >
 
     <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
@@ -335,7 +330,7 @@
       <div class="grid gap-4">
         {#each filteredLogTypes as mapping (mapping.logType)}
             <div
-                    class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+              class=" rounded-xl border p-4 transition-all"
             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
             transition:slide
           >
@@ -388,7 +383,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Currently Ignored Channels -->
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center gap-3 mb-4">
             <i class="fa-solid fa-xmark" style="color: #ef4444; font-size: 20px;"></i>
@@ -427,7 +422,7 @@
         </div>
 
         <!-- Available Channels to Ignore -->
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-4">
             <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>

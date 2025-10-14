@@ -794,7 +794,7 @@ A comprehensive music player component for Discord bot music functionality.
 </script>
 
 <div
-        class="w-full backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl overflow-hidden transition-all duration-500"
+  class="w-full  rounded-2xl border p-4 md:p-6 shadow-2xl overflow-hidden transition-all duration-500"
   aria-label="Music Player"
   class:State-2={musicStatus?.State === 2}
   role="region"
@@ -820,7 +820,7 @@ A comprehensive music player component for Discord bot music functionality.
       <!-- Rotation Toggle Button -->
       <button
         aria-label={isRotationEnabled ? "Disable rotation" : "Enable rotation"}
-        class="absolute top-2 right-2 z-20 p-1.5 rounded-full backdrop-blur-xs transition-all duration-200 hover:opacity-40 focus:outline-hidden focus:ring-2"
+        class="absolute top-2 right-2 z-20 p-1.5 rounded-full  transition-all duration-200 hover:opacity-40 focus:outline-hidden focus:ring-2"
         onclick={toggleRotation}
         style="background: var(--music-foreground)30; color: var(--music-text); --ring-color: var(--music-accent)"
       >

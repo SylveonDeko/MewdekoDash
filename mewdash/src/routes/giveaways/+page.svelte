@@ -1,8 +1,8 @@
 <!-- routes/giveaways/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { type Giveaways, giveawaysApi } from "$lib/api/index.ts";
+  import { page } from "$app/state";
+  import { type Giveaway, giveawaysApi } from "$lib/api/index.ts";
   import type { PageData } from "../../../.svelte-kit/types/src/routes/dashboard/suggestions/$types";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
@@ -13,7 +13,7 @@
   let guildId: bigint;
   let giveawayId: number;
   let userId: bigint;
-  let turnstileToken: string = $state();
+  let turnstileToken = $state<string | undefined>(undefined);
   let message: string = $state("");
   let isSubmitting = $state(false);
   let mounted = $state(false);
@@ -24,7 +24,7 @@
 
   let { data }: Props = $props();
 
-  let giveaway: Giveaways | null = $state(null);
+  let giveaway: Giveaway | null = $state(null);
   let loading = $state(true);
   let error: string | null = $state(null);
 
@@ -66,13 +66,13 @@
     mounted = true;
 
     if (!data.user) {
-      const currentUrl = $page.url.pathname + $page.url.search;
+      const currentUrl = page.url.pathname + page.url.search;
       goto(`/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`);
       return;
     }
 
-    guildId = BigInt($page.url.searchParams.get("guildId") || "0");
-    giveawayId = Number($page.url.searchParams.get("giveawayId") || "0");
+    guildId = BigInt(page.url.searchParams.get("guildId") || "0");
+    giveawayId = Number(page.url.searchParams.get("giveawayId") || "0");
     userId = data.user.id;
 
     // Validation
@@ -125,7 +125,7 @@
     }
   }
 
-  function onTurnstileSuccess(event: CustomEvent<{ token: string }>) {
+  function onTurnstileSuccess(event: { detail: { token: string } }) {
     turnstileToken = event.detail.token;
   }
 
@@ -157,8 +157,15 @@
     return `${minutes}m`;
   }
 
-  let timeRemaining = $derived(giveaway ? getTimeRemaining(giveaway.when) : "");
-  let isGiveawayActive = $derived(giveaway ? new Date(giveaway.when).getTime() > Date.now() : false);
+  let timeRemaining = $derived.by(() => {
+    if (!giveaway) return "";
+    return getTimeRemaining(giveaway.when);
+  });
+
+  let isGiveawayActive = $derived.by(() => {
+    if (!giveaway) return false;
+    return new Date(giveaway.when).getTime() > Date.now();
+  });
 </script>
 
 <svelte:head>
@@ -219,7 +226,7 @@
           <p class="text-xl" style="color: {$colorStore.text};">Loading giveaway details...</p>
         </div>
       {:else if error}
-        <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
+        <div class="rounded-2xl p-8 text-center  border"
              style="background: linear-gradient(135deg, #DC262620, #B9131930); border-color: #DC2626;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="mb-4">
@@ -241,7 +248,7 @@
       {:else if giveaway}
         <div class="space-y-8">
           <!-- Giveaway Details Card -->
-          <div class="rounded-2xl p-8 backdrop-blur-xs shadow-xl border"
+          <div class="rounded-2xl p-8  shadow-xl border"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300 }}>
 
@@ -268,7 +275,7 @@
 
             <!-- Details Grid -->
             <div class="grid md:grid-cols-3 gap-6 mb-8">
-              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">👥</span>
@@ -277,7 +284,7 @@
                 <p class="text-2xl font-bold" style="color: {$colorStore.primary};">{giveaway.winners}</p>
               </div>
 
-              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">⏰</span>
@@ -288,7 +295,7 @@
                 </p>
               </div>
 
-              <div class="text-center p-4 rounded-xl backdrop-blur-xs" style="background: {$colorStore.primary}08;">
+              <div class="text-center p-4 rounded-xl " style="background: {$colorStore.primary}08;">
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                      style="background: {$colorStore.primary}20;">
                   <span class="text-2xl">📅</span>
@@ -303,7 +310,7 @@
 
           {#if isGiveawayActive}
             <!-- Entry Section -->
-            <div class="rounded-2xl p-8 backdrop-blur-xs shadow-xl border"
+            <div class="rounded-2xl p-8  shadow-xl border"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
 
@@ -318,11 +325,11 @@
 
               <!-- Captcha -->
               <div class="flex justify-center mb-8">
-                <div class="p-4 rounded-xl backdrop-blur-xs"
+                <div class="p-4 rounded-xl "
                      style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;">
                   <Turnstile
                     siteKey="0x4AAAAAAAAvvAPaJgbIJWh-"
-                    on:callback={onTurnstileSuccess}
+                    on:turnstile-callback={onTurnstileSuccess}
                   />
                 </div>
               </div>
@@ -361,7 +368,7 @@
             </div>
           {:else}
             <!-- Giveaway Ended -->
-            <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
+            <div class="rounded-2xl p-8 text-center  border"
                  style="background: linear-gradient(135deg, #6B728020, #4B556330); border-color: #6B7280;"
                  in:fly={{ y: 20, duration: 300, delay: 100 }}>
               <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -379,7 +386,7 @@
 
           <!-- Message Display -->
           {#if message}
-            <div class="rounded-2xl p-6 backdrop-blur-xs border transition-all duration-300"
+            <div class="rounded-2xl p-6  border transition-all duration-300"
                  style="background: {message.includes('🎉') || message.includes('Successfully') 
                    ? 'linear-gradient(135deg, #10B98120, #059669t30)' 
                    : 'linear-gradient(135deg, #DC262620, #B9131930)'}; 
@@ -398,7 +405,7 @@
           {/if}
         </div>
       {:else}
-        <div class="rounded-2xl p-8 text-center backdrop-blur-xs border"
+        <div class="rounded-2xl p-8 text-center  border"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;"
              in:fly={{ y: 20, duration: 300 }}>
           <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -443,7 +450,7 @@
 
     /* High contrast mode */
     @media (prefers-contrast: more) {
-        .backdrop-blur-xs {
+        :global(main) {
             border-width: 2px;
         }
     }

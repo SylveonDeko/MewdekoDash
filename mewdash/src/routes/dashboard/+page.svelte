@@ -806,6 +806,43 @@
                         </div>
                     </div>
 
+                    <!-- Compact Mode Toggle - Glides from bottom to top -->
+                    <div class="absolute z-10"
+                         style="right: 12px;
+                                top: {compactMode ? '12px' : 'calc(100% - 48px)'};
+                                transition: top 500ms ease-out {compactMode ? '250ms' : '0ms'};">
+                        <button
+                          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-50 backdrop-blur-sm"
+                          style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
+                          onclick={toggleCompactMode}
+                          title={compactMode ? "Show header details" : "Hide header details"}
+                          aria-label={compactMode ? "Expand header" : "Compact header"}
+                        >
+                            <!-- Animated chevron -->
+                            <div class="relative w-4 h-4 flex items-center justify-center">
+                                <i class="fa-solid fa-angles-up text-xs absolute transition-all duration-300"
+                                   style="opacity: {compactMode ? '0' : '1'};
+                                          transform: translateY({compactMode ? '4px' : '0'}) scale({compactMode ? '0.8' : '1'});"></i>
+                                <i class="fa-solid fa-angles-down text-xs absolute transition-all duration-300"
+                                   style="opacity: {compactMode ? '1' : '0'};
+                                          transform: translateY({compactMode ? '0' : '-4px'}) scale({compactMode ? '1' : '0.8'});"></i>
+                            </div>
+                            <!-- Animated text -->
+                            <div class="relative h-4 overflow-hidden flex items-center transition-all duration-300">
+                                <span class="invisible"
+                                      style="display: {compactMode ? 'none' : 'inline'};">Compact</span>
+                                <span class="invisible"
+                                      style="display: {compactMode ? 'inline' : 'none'};">Expand</span>
+                                <span class="absolute left-0 transition-all duration-300 whitespace-nowrap"
+                                      style="opacity: {compactMode ? '0' : '1'};
+                                             transform: translateX({compactMode ? '-4px' : '0'});">Compact</span>
+                                <span class="absolute left-0 transition-all duration-300 whitespace-nowrap"
+                                      style="opacity: {compactMode ? '1' : '0'};
+                                             transform: translateX({compactMode ? '0' : '4px'});">Expand</span>
+                            </div>
+                        </button>
+                    </div>
+
                     <!-- Content -->
                     <div class="relative p-6 md:p-8 ease-out"
                          class:!p-3={compactMode}
@@ -1072,13 +1109,12 @@
                                              style="transition: all 500ms {compactMode ? '250ms' : '0ms'};"
                                              in:fade={{ duration: 300, delay: 400 }} out:fade={{ duration: 150 }}>
                                             <!-- Action buttons section -->
+                                            {#if showDetails}
                                             <div
-                                              class="flex items-center gap-3 flex-wrap overflow-hidden md:!opacity-100"
+                                              class="flex items-center gap-3 flex-wrap"
                                                  class:!gap-2={compactMode}
-                                              class:max-w-0={!showDetails}
-                                              class:max-w-[500px]={showDetails}
-                                              style="opacity: {showDetails ? '1' : '0'};
-                                                        transition: opacity 200ms ease-out, max-width 300ms ease-out {showDetails ? '250ms' : '0ms'}, gap 500ms {compactMode ? '250ms' : '0ms'};">
+                                              in:fade={{ duration: 300, delay: 300 }}
+                                              out:fade={{ duration: 200 }}>
                                                 {#if $currentGuild.owner}
                                                     <div in:fade={{ duration: 200, delay: 200 }}
                                                          out:fade={{ duration: 200 }}
@@ -1105,6 +1141,7 @@
                                                     <span class="hidden sm:inline">View Server</span>
                                                 </button>
                                             </div>
+                                            {/if}
                                         </div>
                                     </div>
                                 </div>
@@ -1347,19 +1384,6 @@
                         </div>
                     </div>
                 {/if}
-
-                <!-- Compact Mode Toggle - positioned between banner and tabs -->
-                <div class="flex justify-center mb-1">
-                    <button aria-label="Button action"
-                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all duration-300 hover:opacity-100 opacity-40"
-                            style="color: {$colorStore.muted};"
-                            onclick={toggleCompactMode}
-                            title={compactMode ? "Show header details" : "Hide header details"}
-                    >
-                        <span>{compactMode ? 'Expand' : 'Compact'}</span>
-                        <i class="fa-solid fa-angles-{compactMode ? 'down' : 'up'} text-[10px]"></i>
-                    </button>
-                </div>
 
                 <!-- Tabbed Dashboard -->
                 {#key $currentGuild?.id}

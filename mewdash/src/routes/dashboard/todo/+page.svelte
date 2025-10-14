@@ -10,12 +10,35 @@
     todoApi,
     type AddTodoItemRequest,
     type CreateTodoListRequest,
-    type TodoFilterOptions,
     type TodoItem,
-    type TodoList,
-    type TodoStats,
-    type UserPermissions
+    type TodoList
   } from "$lib/api/index.ts";
+
+  // Local interfaces for UI state (not from backend)
+  interface TodoFilterOptions {
+    completed?: boolean;
+    priority?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }
+
+  interface TodoStats {
+    totalItems: number;
+    completedItems: number;
+    pendingItems: number;
+    overdueItems: number;
+    completionRate: number;
+  }
+
+  interface UserPermissions {
+    canView: boolean;
+    canAdd: boolean;
+    canEdit: boolean;
+    canComplete: boolean;
+    canDelete: boolean;
+    canManage: boolean;
+  }
 
     import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
     import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
@@ -23,7 +46,6 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
 
-  let { data } = $props();
 
   // State
     let todoLists: TodoList[] = $state([]);
@@ -101,8 +123,11 @@
         if (!a.dueDate) return 1 * order;
         if (!b.dueDate) return -1 * order;
         return (new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) * order;
-      case 'createdAt':
-        return (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) * order;
+      case "dateAdded":
+        if (!a.dateAdded && !b.dateAdded) return 0;
+        if (!a.dateAdded) return 1 * order;
+        if (!b.dateAdded) return -1 * order;
+        return (new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()) * order;
       case 'title':
         return a.title.localeCompare(b.title) * order;
       default:
@@ -187,8 +212,8 @@
         };
       }
 
-      // List owner has all permissions
-      if (list.ownerId === $userStore.id) {
+      // List creator has all permissions
+      if (list.userId === BigInt($userStore.id)) {
         return {
           canView: true,
           canAdd: true,
@@ -201,8 +226,8 @@
 
       // Check explicit permissions
       const permissions = await todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($userStore.id));
-      const userPermission = permissions.find(p => p.userId.toString() === $userStore.id);
-      
+      const userPermission = permissions.find(p => p.userId === BigInt($userStore.id));
+
       if (userPermission) {
         return {
           canView: userPermission.canView,
@@ -214,8 +239,8 @@
         };
       }
 
-      // Public server lists have default view permission
-      if (list.isServerList && list.isPublic) {
+      // Server lists are viewable by all (default read access)
+      if (list.isServerList) {
         return {
           canView: true,
           canAdd: false,
@@ -234,7 +259,7 @@
         canDelete: false,
         canManage: false
       };
-      
+
     } catch (err) {
       console.error("Failed to check permissions:", err);
       return {
@@ -379,6 +404,18 @@
   <title>Todo Lists - {$currentGuild?.name || 'Mewdeko'} Dashboard</title>
 </svelte:head>
 
+{#snippet statusMessageContent()}
+  {#if error}
+    <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
+      <div class="flex items-center gap-2">
+        <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+           style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 16px;"></i>
+        <span>{error}</span>
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
 <ErrorBoundary fallback="Todo dashboard failed to load. Please refresh the page.">
   <DashboardPageLayout
     actionButtons={[
@@ -391,27 +428,15 @@
       {
         label: "Filters",
         icon: "fa-filter",
-        action: () => showFilters = !showFilters,
-        variant: "secondary"
+        action: () => showFilters = !showFilters
       }
     ]}
     icon="fa-list"
     subtitle="Organize and track your server's collaborative tasks"
     guildName={$currentGuild?.name || "Dashboard"}
     title="Todo Lists"
+    statusMessages={statusMessageContent}
   >
-      <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-      <svelte:fragment slot="status-messages">
-      {#if error}
-        <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
-          <div class="flex items-center gap-2">
-            <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
-               style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 16px;"></i>
-            <span>{error}</span>
-          </div>
-        </div>
-      {/if}
-    </svelte:fragment>
 
     <!-- Search Bar -->
     <div class="mb-8">
@@ -448,11 +473,15 @@
             options={[
               { id: "priority", name: "Priority", label: "Sort by Priority", emoji: "🎯" },
               { id: "dueDate", name: "Due Date", label: "Sort by Due Date", emoji: "📅" },
-              { id: "createdAt", name: "Created", label: "Sort by Created", emoji: "🗓️" },
+              { id: "dateAdded", name: "Created", label: "Sort by Created", emoji: "🗓️" },
               { id: "title", name: "Title", label: "Sort by Title", emoji: "📝" }
             ]}
             selected={filters.sortBy}
-            on:change={(e) => filters.sortBy = e.detail.selected}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                filters.sortBy = detail.selected;
+              }
+            }}
           />
 
           <DiscordSelector
@@ -465,7 +494,11 @@
               { id: "asc", name: "Ascending", label: "Ascending", emoji: "⬆️" }
             ]}
             selected={filters.sortOrder}
-            on:change={(e) => filters.sortOrder = e.detail.selected}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                filters.sortOrder = detail.selected;
+              }
+            }}
           />
         </div>
       </div>
@@ -508,9 +541,10 @@
             style="color: {$colorStore.text};"
             onclick={() => showNewListModal = true}
           >
-            <div class="p-2 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
+            <span class="p-2 rounded-lg flex items-center justify-center"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); color: white;">
               <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-            </div>
+            </span>
             <span>Create Your First List</span>
           </button>
         {/if}
@@ -526,20 +560,20 @@
             <!-- Todo List Card -->
             <div class="relative p-6 rounded-2xl transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-xl"
                  class:ring-2={list.id === selectedListId}
-                 style="background: linear-gradient(135deg, {list.color || $colorStore.primary}08, {list.color || $colorStore.primary}15);
-                        ring-color: {list.id === selectedListId ? (list.color || $colorStore.primary) : 'transparent'};"
+                 style="background: linear-gradient(135deg, {$colorStore.primary}08, {$colorStore.primary}15);
+                        ring-color: {list.id === selectedListId ? $colorStore.primary : 'transparent'};"
                  onclick={() => handleSelectList({ detail: { listId: list.id } })}
                  onkeydown={(e) => e.key === 'Enter' && handleSelectList({ detail: { listId: list.id } })}
                  tabindex="0"
                  role="button"
                  aria-label="Select todo list {list.name}">
-              
+
               <!-- Header -->
               <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <div class="p-2.5 rounded-xl" style="background: {list.color || $colorStore.primary}20;">
+                  <div class="p-2.5 rounded-xl" style="background: {$colorStore.primary}20;">
                     <i class="fa-solid fa-list"
-                       style="color: {list.color || $colorStore.primary}; font-size: 20px;"></i>
+                       style="color: {$colorStore.primary}; font-size: 20px;"></i>
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="font-bold text-lg truncate" style="color: {$colorStore.text}">
@@ -581,18 +615,6 @@
               
               <!-- Badges -->
               <div class="flex items-center gap-2 mb-4">
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                     style="background: {list.isPublic ? $colorStore.secondary + '20' : $colorStore.muted + '20'}; 
-                            color: {list.isPublic ? $colorStore.secondary : $colorStore.muted};">
-                  {#if list.isPublic}
-                    <i class="fa-solid fa-globe" style="font-size: 10px;"></i>
-                    <span>Public</span>
-                  {:else}
-                    <i class="fa-solid fa-lock" style="font-size: 10px;"></i>
-                    <span>Private</span>
-                  {/if}
-                </div>
-                
                 {#if list.isServerList}
                   <div class="px-3 py-1.5 rounded-full text-xs font-medium"
                        style="background: {$colorStore.accent}20; color: {$colorStore.accent};">
@@ -636,7 +658,7 @@
                     </div>
                     <div class="w-full rounded-full h-2" style="background: {$colorStore.primary}20;">
                       <div class="h-2 rounded-full transition-all duration-1000"
-                           style="background: linear-gradient(90deg, {list.color || $colorStore.primary}, {$colorStore.secondary}); 
+                           style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary});
                                   width: {listStats.completionRate}%"></div>
                     </div>
                   </div>
@@ -650,7 +672,7 @@
               <!-- Selected Indicator -->
               {#if list.id === selectedListId}
                 <div class="absolute inset-0 rounded-2xl pointer-events-none"
-                     style="box-shadow: 0 0 0 2px {list.color || $colorStore.primary};"></div>
+                     style="box-shadow: 0 0 0 2px {$colorStore.primary};"></div>
               {/if}
             </div>
           </div>
@@ -687,14 +709,14 @@
                   type="text"
                   placeholder="What needs to be done?"
                   bind:value={newItemTitle}
-                  class="w-full px-4 py-3 rounded-xl border text-lg backdrop-blur-xs"
+                  class="w-full px-4 py-3 rounded-xl border text-lg "
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 >
                 <textarea
                   placeholder="Add a description (optional)..."
                   bind:value={newItemDescription}
                   rows="2"
-                  class="w-full px-4 py-3 rounded-xl border resize-none backdrop-blur-xs"
+                  class="w-full px-4 py-3 rounded-xl border resize-none "
                   style="background: linear-gradient(135deg, {$colorStore.primary}12, {$colorStore.secondary}08); border-color: {$colorStore.primary}40; color: {$colorStore.text};"
                 ></textarea>
                 <div class="flex items-center justify-between">
@@ -710,7 +732,11 @@
                       { id: "4", name: "Critical Priority", label: "Critical Priority", emoji: "🔴" }
                     ]}
                     selected={newItemPriority.toString()}
-                    on:change={(e) => newItemPriority = parseInt(e.detail.selected)}
+                    onchange={(detail) => {
+                      if (detail.selected && typeof detail.selected === 'string') {
+                        newItemPriority = parseInt(detail.selected);
+                      }
+                    }}
                   />
                   
                   <div class="flex flex-col sm:flex-row gap-3">
@@ -718,7 +744,7 @@
                       class="w-full sm:flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
                       style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
                       onclick={async () => {
-                        if (newItemTitle.trim() && selectedListId) {
+                        if (newItemTitle.trim() && selectedListId && $userStore?.id) {
                           await handleAddTodoItem({
                             detail: {
                               request: {
@@ -837,8 +863,10 @@
                                 </span>
                               </span>
                             {/if}
-                            
-                            <span>Created {new Date(item.createdAt).toLocaleDateString()}</span>
+
+                            {#if item.dateAdded}
+                              <span>Created {new Date(item.dateAdded).toLocaleDateString()}</span>
+                            {/if}
                           </div>
                         </div>
                         
@@ -881,16 +909,12 @@
 
   <!-- New List Modal -->
   {#if showNewListModal}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+    <div class="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4"
          onclick={() => showNewListModal = false}
            in:fly={{ opacity: 0, duration: 200 }}
            role="button"
            tabindex="0"
            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showNewListModal = false; } }}>
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md"
            onclick={(e) => e.stopPropagation()}
            in:fly={{ y: 20, duration: 300, delay: 100 }} role="button" tabindex="0"
@@ -914,7 +938,7 @@
                 type="text"
                 placeholder="Enter list name..."
                 bind:value={newListName}
-                class="w-full px-4 py-3 rounded-lg border backdrop-blur-xs"
+                     class="w-full px-4 py-3 rounded-lg border "
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
                 required
               >
@@ -928,7 +952,7 @@
                 placeholder="Optional description..."
                 bind:value={newListDescription}
                 rows="3"
-                class="w-full px-4 py-3 rounded-lg border resize-none backdrop-blur-xs"
+                        class="w-full px-4 py-3 rounded-lg border resize-none "
                 style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"
               ></textarea>
             </div>
@@ -961,8 +985,8 @@
     <TodoPermissionManager
       listId={selectedPermissionListId}
       isOpen={showPermissionManager}
-      on:close={() => showPermissionManager = false}
-      on:permissionsUpdated={handlePermissionsUpdated}
+      onclose={() => showPermissionManager = false}
+      onpermissionsUpdated={handlePermissionsUpdated}
     />
   {/if}
 </ErrorBoundary>
@@ -990,6 +1014,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+      line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

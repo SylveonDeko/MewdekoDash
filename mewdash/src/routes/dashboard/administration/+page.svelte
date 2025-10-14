@@ -5,9 +5,7 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
-  import { fly } from "svelte/transition";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { loadingStore } from "$lib/stores/loadingStore";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
@@ -40,10 +38,6 @@
   let memberRole: bigint | null = $state(null);
   let guildTimezone: string = $state("UTC");
   let availableTimezones: Array<{ id: string; displayName: string; offset: string }> = $state([]);
-  let deleteMessageOnCommand: {
-    enabled: boolean;
-    channels: Array<{ channelId: bigint; state: boolean; }>
-  } = $state({ enabled: false, channels: [] });
   let gameVoiceChannel: bigint | null = $state(null);
 
   // Auto-assign roles
@@ -112,7 +106,6 @@
   });
 
   // Protection form data
-  let editingProtection: string | null = null;
   let tempProtectionConfig: any = $state({});
 
   // Anti-pattern specific state
@@ -126,22 +119,9 @@
   let newPattern = $state({ name: "", pattern: "", checkUsername: true, checkDisplayName: false });
 
   // Anti-post-channel specific state
-  let selectedHoneypotChannel: string | null = $state(null);
-  let addingChannel = $state(false);
   let selectedHoneypotChannels: string[] = $state([]);
   let selectedIgnoredRoles: string[] = $state([]);
   let selectedIgnoredUsers: string = $state("");
-
-  // Anti-mass-post config (for reactive bindings)
-  let ampChannelThreshold = $state(3);
-  let ampTimeWindow = $state(60);
-  let ampAction = $state(2);
-  let ampPunishDuration = $state(0);
-  let ampCheckLinksOnly = $state(true);
-
-  // Anti-post-channel config (for reactive bindings)
-  let apcAction = $state(2);
-  let apcPunishDuration = $state(0);
 
   // Role Management
   let selfAssignableRoles: {
@@ -218,7 +198,6 @@
   let expandedProtectionCard: string | null = $state(null);
   let expandedRoleCard: string | null = $state(null);
   let showPatternManagement = $state(false);
-  let showAdvancedSettings = false;
 
   // Form data
   let newStaffRole: string | null = $state(null);
@@ -236,11 +215,6 @@
   let selectedPermissionOverrides: string[] = $state([]);
   let selectAllPermissionOverrides = $state(false);
   let newCommandCooldown: { command: string; seconds: number } = $state({ command: "", seconds: 5 });
-  let newDeleteMessageChannel: { channelId: string | null; state: string } = $state({
-    channelId: null,
-    state: "enable"
-  });
-  let searchQuery = $state("");
 
   async function fetchAllData() {
     if (!$currentGuild?.id) return;
@@ -252,7 +226,7 @@
         const [
           autoAssignData, protectionData, selfAssignData, rolesData, textChannelsData, voiceChannelsData,
           staffRoleData, memberRoleData, timezoneData, timezonesData,
-          deleteMsgData, gameVoiceData,
+          _deleteMsgData, gameVoiceData,
           autoBanRolesData, voiceChannelRolesData, reactionRolesData,
           permissionOverridesData, commandsAndModulesData, commandCooldownsData,
           banMessageData, antiPatternPatternsData
@@ -288,12 +262,8 @@
         const memberRoleString = memberRole ? memberRole.toString() : null;
         newStaffRole = staffRoleString;
         newMemberRole = memberRoleString;
-        // Handle timezone data that might be wrapped in an object
-        if (timezoneData && typeof timezoneData === 'object' && 'data' in timezoneData) {
-          guildTimezone = timezoneData.data || "UTC";
-        } else {
-          guildTimezone = timezoneData || "UTC";
-        }
+        // Handle timezone data
+        guildTimezone = (timezoneData as any)?.data || timezoneData || "UTC";
         // Transform timezone data to match DiscordSelector's expected format
         availableTimezones = (timezonesData || []).map((tz: any) => ({
           id: tz.id,
@@ -307,7 +277,6 @@
           tz.id.includes(guildTimezone)
         );
         newTimezone = currentTimezoneOption ? currentTimezoneOption.id : (guildTimezone || "UTC");
-        deleteMessageOnCommand = deleteMsgData || { enabled: false, channels: [] };
         gameVoiceChannel = gameVoiceData;
 
         // Auto-assign roles
@@ -337,19 +306,7 @@
           antiPostChannel: { enabled: false }
         };
 
-        // Sync reactive variables from protectionStatus
-        if (protectionStatus.antiMassPost) {
-          ampChannelThreshold = protectionStatus.antiMassPost.channelThreshold ?? 3;
-          ampTimeWindow = protectionStatus.antiMassPost.timeWindowSeconds ?? 60;
-          ampAction = protectionStatus.antiMassPost.action ?? 2;
-          ampPunishDuration = protectionStatus.antiMassPost.punishDuration ?? 0;
-          ampCheckLinksOnly = protectionStatus.antiMassPost.checkLinksOnly ?? true;
-        }
-
         if (protectionStatus.antiPostChannel) {
-          apcAction = protectionStatus.antiPostChannel.action ?? 2;
-          apcPunishDuration = protectionStatus.antiPostChannel.punishDuration ?? 0;
-
           // Convert channel and role IDs to strings for DiscordSelector
           const channelIds = (protectionStatus.antiPostChannel.channels || []).map((id: any) => id.toString());
           const roleIds = (protectionStatus.antiPostChannel.ignoredRoles || []).map((id: any) => id.toString());
@@ -367,18 +324,18 @@
         antiPatternPatterns = antiPatternPatternsData || [];
 
         // Role Management
-        selfAssignableRoles = selfAssignData || { exclusive: false, roles: [], groups: {} };
+        selfAssignableRoles = (selfAssignData as any) || { exclusive: false, roles: [], groups: {} };
         voiceChannelRoles = voiceChannelRolesData || [];
-        reactionRoles = reactionRolesData || { success: false, reactionRoles: [] };
+        reactionRoles = { success: true, reactionRoles: (reactionRolesData as any) || [] };
 
         // Permissions
         permissionOverrides = permissionOverridesData || [];
 
         // Command Cooldowns
-        commandCooldowns = commandCooldownsData || [];
+        commandCooldowns = (commandCooldownsData as any) || [];
 
         // Advanced Operations
-        banMessage = typeof banMessageData === 'string' ? banMessageData : (banMessageData?.message || "");
+        banMessage = (banMessageData as any)?.message || banMessageData || "";
 
         // Process commands and modules data
         if (commandsAndModulesData) {
@@ -459,25 +416,6 @@
     }, "api", "Loading administration data...");
   }
 
-  function getRoleName(roleId: bigint | null): string {
-    if (!roleId) return "None";
-    const role = availableRoles.find(r => BigInt(r.id) === roleId);
-    return role ? role.name : `Role ${roleId.toString()}`;
-  }
-
-  function getChannelName(channelId: bigint | null): string {
-    if (!channelId) return "None";
-    const channel = guildChannels.find(c => BigInt(c.id) === channelId);
-    return channel ? channel.name : `Channel ${channelId.toString()}`;
-  }
-
-  function formatDuration(minutes: number): string {
-    if (minutes === 0) return "Permanent";
-    if (minutes < 60) return `${minutes}m`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)}h`;
-    return `${Math.floor(minutes / 1440)}d`;
-  }
-
   function showConfirm(title: string, message: string, action: () => void, variant: "danger" | "warning" | "info" = "danger") {
     confirmModalData = { title, message, action, variant };
     showConfirmModal = true;
@@ -548,17 +486,6 @@
     }
   }
 
-  async function toggleDeleteMessageOnCommand() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.toggleDeleteMessageOnCommand($currentGuild.id);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to toggle delete message on command:", err);
-    }
-  }
-
   async function toggleGameVoiceChannel(channelId: bigint) {
     if (!$currentGuild?.id) return;
 
@@ -567,28 +494,6 @@
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to toggle game voice channel:", err);
-    }
-  }
-
-  async function toggleStatsOptOut() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.toggleStatsOptOut($currentGuild.id);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to toggle stats opt-out:", err);
-    }
-  }
-
-  async function deleteStatsData() {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await administrationApi.deleteStatsData($currentGuild.id);
-      await fetchAllData();
-    } catch (err) {
-      logger.error("Failed to delete stats data:", err);
     }
   }
 
@@ -654,34 +559,14 @@
     }
   }
 
-  function togglePermissionOverrideSelection(command: string) {
-    if (selectedPermissionOverrides.includes(command)) {
-      selectedPermissionOverrides = selectedPermissionOverrides.filter(c => c !== command);
-    } else {
-      selectedPermissionOverrides = [...selectedPermissionOverrides, command];
-    }
-    selectAllPermissionOverrides = selectedPermissionOverrides.length === permissionOverrides.length;
-  }
-
-  function toggleSelectAllPermissionOverrides() {
-    if (selectAllPermissionOverrides) {
-      selectedPermissionOverrides = [];
-      selectAllPermissionOverrides = false;
-    } else {
-      selectedPermissionOverrides = permissionOverrides.map(p => p.command);
-      selectAllPermissionOverrides = true;
-    }
-  }
-
   async function deleteSelectedPermissionOverrides() {
     if (!$currentGuild?.id || selectedPermissionOverrides.length === 0) return;
 
     try {
       await Promise.all(
-        selectedPermissionOverrides.map(command => {
-          const override = permissionOverrides.find(o => o.command === command);
-          return administrationApi.removePermissionOverride($currentGuild.id, command);
-        })
+        selectedPermissionOverrides.map(command =>
+          administrationApi.removePermissionOverride($currentGuild.id, command)
+        )
       );
       selectedPermissionOverrides = [];
       selectAllPermissionOverrides = false;
@@ -721,7 +606,6 @@
           break;
       }
       await fetchAllData();
-      editingProtection = null;
     } catch (err) {
       logger.error(`Failed to configure ${type}:`, err);
     } finally {
@@ -736,7 +620,7 @@
 
     // When enabling, send default values that meet validation requirements
     if (!isEnabled) {
-      const defaultConfigs = {
+      const defaultConfigs: Record<string, any> = {
         antiRaid: {
           enabled: true,
           userThreshold: 5,
@@ -941,7 +825,7 @@
     }
   }
 
-  async function removePermissionOverride(command: string, permission: string) {
+  async function removePermissionOverride(command: string) {
     if (!$currentGuild?.id) return;
 
     try {
@@ -1060,14 +944,6 @@
       fetchAllData();
     }
   });
-
-  let filteredRoles = $derived(availableRoles.filter(role =>
-    role.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ));
-
-  let filteredChannels = $derived(guildChannels.filter(channel =>
-    channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ));
 </script>
 
 <DashboardPageLayout
@@ -1077,7 +953,6 @@
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
-  on:tabChange={(e) => activeTab = e.detail.tabId}
 >
 
   {#if loading}
@@ -1086,7 +961,7 @@
       <span class="ml-3" style="color: {$colorStore.text}">Loading administration data...</span>
     </div>
   {:else if error}
-    <div class="backdrop-blur-xs p-6 rounded-xl mb-6 transition-all" role="alert"
+    <div class=" p-6 rounded-xl mb-6 transition-all" role="alert"
          style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
       <div class="flex items-center gap-3">
         <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
@@ -1225,8 +1100,8 @@
   title={confirmModalData.title}
   message={confirmModalData.message}
   variant={confirmModalData.variant}
-  on:confirm={() => confirmModalData.action?.()}
-  on:cancel={() => showConfirmModal = false}
+  oncancel={() => showConfirmModal = false}
+  onconfirm={() => confirmModalData.action?.()}
 />
 
 <style lang="postcss">

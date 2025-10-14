@@ -3,7 +3,7 @@
 
 
   import { onMount } from "svelte";
-  import { suggestionsApi, clientApi, type SuggestionsModel, SuggestionState } from "$lib/api/index.ts";
+  import { suggestionsApi, clientApi, type Suggestion, SuggestionState } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
@@ -103,14 +103,14 @@
   let changedSettings = $state(new Set<string>());
   let showStatusModal = $state(false);
   let statusChangeReason = $state("");
-  let selectedSuggestion: SuggestionsModel | null = null;
+  let selectedSuggestion: Suggestion | null = $state(null);
   let selectedStatus: SuggestionState | null = $state(null);
 
   let sortBy: "dateAdded" | "currentState" = $state("dateAdded");
   let sortDirection: "asc" | "desc" = $state("desc");
 
   // Data
-  let suggestions: SuggestionsModel[] = $state([]);
+  let suggestions: Suggestion[] = $state([]);
   let channels: Array<{ id: string; name: string }> = $state([]);
 
 
@@ -141,8 +141,8 @@
   let hasChanges = $derived(changedSettings.size > 0);
   let sortedSuggestions = $derived([...suggestions].sort((a, b) => {
     if (sortBy === "dateAdded") {
-      const dateA = new Date(a.dateAdded).getTime();
-      const dateB = new Date(b.dateAdded).getTime();
+      const dateA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0;
+      const dateB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0;
       return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
     } else {
       if (a.currentState < b.currentState) return sortDirection === "asc" ? -1 : 1;
@@ -170,7 +170,7 @@
 
   function getStatusString(state: SuggestionState): string {
     return {
-      [SuggestionState.Pending]: "Pending",
+      [SuggestionState.Suggested]: "Pending",
       [SuggestionState.Accepted]: "Accepted",
       [SuggestionState.Denied]: "Denied",
       [SuggestionState.Considered]: "Considered",
@@ -180,7 +180,7 @@
 
   function getStateColor(state: SuggestionState): string {
     return {
-      [SuggestionState.Pending]: $colorStore.primary,
+      [SuggestionState.Suggested]: $colorStore.primary,
       [SuggestionState.Accepted]: "#22c55e",
       [SuggestionState.Denied]: "#ef4444",
       [SuggestionState.Considered]: $colorStore.secondary,
@@ -193,7 +193,7 @@
   }
 
   // Modal Functions
-  function initiateStatusChange(suggestion: SuggestionsModel, status: SuggestionState) {
+  function initiateStatusChange(suggestion: Suggestion, status: SuggestionState) {
     selectedSuggestion = suggestion;
     selectedStatus = status;
     statusChangeReason = "";
@@ -530,13 +530,10 @@
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-comment"
-  on:subTabChange={(e) => {
-    activeSubTab = e.detail.tabId;
-  }}
-  on:tabChange={(e) => {
-    if (e.detail.tabId === 'suggestions') {
+  ontabChange={(detail) => {
+    if (detail.tabId === 'suggestions') {
       activeSubTab = '';
-    } else if (e.detail.tabId === 'settings' && !activeSubTab) {
+    } else if (detail.tabId === 'settings' && !activeSubTab) {
       activeSubTab = 'general';
     }
   }}
@@ -616,7 +613,7 @@
   {#if activeTab === 'suggestions'}
     <div class="space-y-6">
       {#if loading}
-        <div class="backdrop-blur-xs rounded-xl border p-12 transition-all"
+        <div class=" rounded-xl border p-12 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 rounded-full animate-spin mb-4"
@@ -625,7 +622,7 @@
           </div>
         </div>
       {:else if error}
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
              style="background: #ef444410; border-color: #ef444430;">
           <div class="flex items-center gap-3">
             <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
@@ -634,7 +631,7 @@
           </div>
         </div>
       {:else if suggestions.length === 0}
-        <div class="backdrop-blur-xs rounded-xl border p-12 transition-all text-center"
+        <div class=" rounded-xl border p-12 transition-all text-center"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-inbox"
              style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; display: block; margin: 0 auto 16px;"></i>
@@ -643,7 +640,7 @@
         </div>
       {:else}
         <!-- Sort Controls -->
-        <div class="backdrop-blur-xs rounded-xl border p-4 mb-6 transition-all"
+        <div class=" rounded-xl border p-4 mb-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="flex flex-wrap gap-3 items-center">
             <span class="text-sm font-medium" style="color: {$colorStore.text}">Sort by:</span>
@@ -682,7 +679,7 @@
         <div class="space-y-4">
           {#each sortedSuggestions as suggestion, index (suggestion.id)}
             <div
-              class="backdrop-blur-xs rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:-translate-y-px"
+              class=" rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:-translate-y-px"
               style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
               in:slide={{ duration: 300, delay: index * 50 }}
             >
@@ -801,7 +798,7 @@
     <div class="space-y-6">
       <!-- Settings Panels -->
       {#if activeSubTab === 'general'}
-        <div class="backdrop-blur-xs rounded-xl border p-6 space-y-6 transition-all"
+        <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-4">
             <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Length Settings</h3>
@@ -864,7 +861,7 @@
       {/if}
 
       {#if activeSubTab === 'messages'}
-        <div class="backdrop-blur-xs rounded-xl border p-6 space-y-6 transition-all"
+        <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-2">
             <label for="accept-message-textarea" class="block text-sm"
@@ -941,7 +938,7 @@
       {/if}
 
       {#if activeSubTab === 'channels'}
-        <div class="backdrop-blur-xs rounded-xl border p-6 space-y-6 transition-all"
+        <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-4">
             <div class="space-y-2">
@@ -1016,7 +1013,7 @@
       {/if}
 
       {#if activeSubTab === 'archive'}
-        <div class="backdrop-blur-xs rounded-xl border p-6 space-y-6 transition-all"
+        <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="flex items-center justify-between p-3 rounded-lg transition-all hover:scale-[1.01]"
                style="background: {$colorStore.primary}08;">
@@ -1101,7 +1098,7 @@
       {/if}
 
       {#if activeSubTab === 'emotes'}
-        <div class="backdrop-blur-xs rounded-xl border p-6 space-y-6 transition-all"
+        <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <div class="space-y-2">
             <label for="suggest-emotes" class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>

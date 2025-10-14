@@ -2,8 +2,8 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { giveawaysApi, clientApi, type Giveaways } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { giveawaysApi, clientApi, type Giveaway } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
   import { goto } from "$app/navigation";
@@ -11,12 +11,11 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import IntervalPicker from "$lib/components/forms/IntervalPicker.svelte";
-  import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-  let giveaways: Giveaways[] = $state([]);
+  let giveaways: Giveaway[] = $state([]);
   let expandedGiveaway: number | null = $state(null);
   let loading = $state(true);
   let error: string | null = $state(null);
@@ -26,7 +25,6 @@
   let guildRoles: Array<{ id: string; name: string }> = $state([]);
   let selectedRoles: string[] = $state([]);
   let entryMethod: "reaction" | "button" | "captcha" = $state("reaction");
-  let isMobile = false;
 
   // Layout state
   let activeTab = $state("active");
@@ -37,11 +35,11 @@
     { id: "ended", label: "Ended Giveaways", icon: "fa-trophy" }
   ];
 
-  let newGiveaway: Partial<Giveaways> = $state({
+  let newGiveaway: Partial<Giveaway> = $state({
     item: "",
     winners: 1,
     channelId: BigInt(0),
-    when: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    when: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     restrictTo: "",
     useButton: false,
     useCaptcha: false,
@@ -55,18 +53,6 @@
 
   let colors = $derived($colorStore);
 
-  let colorVars = $derived(`
-   --color-primary: ${colors.primary};
-   --color-secondary: ${colors.secondary};
-   --color-accent: ${colors.accent};
-   --color-text: ${colors.text};
-   --color-muted: ${colors.muted};
- `);
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
   function validateGiveaway(): string | null {
     if (!newGiveaway.item || newGiveaway.item.trim() === "") {
       return "Please enter a valid giveaway item.";
@@ -77,10 +63,10 @@
     if (!newGiveaway.channelId || newGiveaway.channelId <= BigInt(0)) {
       return "Please enter a valid channel ID.";
     }
-    if (!newGiveaway.when || newGiveaway.when <= new Date()) {
+    if (!newGiveaway.when || new Date(newGiveaway.when) <= new Date()) {
       return "The end time must be in the future.";
     }
-    if (newGiveaway.messageCountReq < BigInt(0)) {
+    if (newGiveaway.messageCountReq !== undefined && newGiveaway.messageCountReq < BigInt(0)) {
       return "The required message count cannot be negative.";
     }
     return null;
@@ -126,7 +112,7 @@
       }
       if (!$currentGuild?.id) throw new Error("No guild selected");
       newGiveaway.serverId = BigInt($currentGuild.id);
-      await api.createGiveaway($currentGuild.id, newGiveaway);
+      await giveawaysApi.createGiveaway($currentGuild.id, newGiveaway);
       showNotificationMessage("Giveaway created successfully", "success");
       await fetchGiveaways();
       resetNewGiveaway();
@@ -139,7 +125,7 @@
   async function endGiveaway(giveawayId: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      await api.endGiveaway($currentGuild.id, giveawayId);
+      await giveawaysApi.endGiveaway($currentGuild.id, giveawayId);
       showNotificationMessage("Giveaway ended successfully", "success");
       await fetchGiveaways();
     } catch (error) {
@@ -157,7 +143,7 @@
       item: "",
       winners: 1,
       channelId: BigInt(0),
-      when: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      when: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       restrictTo: "",
       useButton: false,
       useCaptcha: false,
@@ -181,14 +167,8 @@
     }, 3000);
   }
 
-  function handleRoleSelection(event: CustomEvent<{ selected: string[] }>) {
-    selectedRoles = event.detail.selected;
-    newGiveaway.restrictTo = selectedRoles.join(" ");
-  }
-
-  function handleDurationChange(event: CustomEvent<Date>) {
-    const selectedEndTime = event.detail;
-    newGiveaway.when = selectedEndTime;
+  function handleDurationChange(endTime: Date) {
+    newGiveaway.when = endTime.toISOString();
   }
 
   function handleWinnersChange(event: Event) {
@@ -232,32 +212,26 @@
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
     await Promise.all([fetchGiveaways(), loadGuildRoles()]);
-    checkMobile();
-    if (browser) window.addEventListener("resize", checkMobile);
-  });
-
-  onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
   });
 </script>
+
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
 
 <DashboardPageLayout
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-gift"
-  on:tabChange={(e) => activeTab = e.detail.tabId}
   subtitle="Manage server giveaways and prizes"
   tabs={tabs}
   title="Giveaways"
+  statusMessages={statusMessageContent}
 >
-  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   {#if loading}
     <div class="flex justify-center items-center min-h-[400px]">
@@ -287,7 +261,7 @@
     {#if activeTab === 'create'}
       <!-- Create New Giveaway Section -->
       <section
-        class="backdrop-blur-xs rounded-xl border p-6 mb-8 transition-all"
+        class=" rounded-xl border p-6 mb-8 transition-all"
         style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
         transition:fade
@@ -367,7 +341,7 @@
                 <i class="fa-solid fa-clock" style="color: {colors.primary}; font-size: 16px;"></i>
                 Duration
               </label>
-              <IntervalPicker id="giveaway-duration" on:change={handleDurationChange} />
+              <IntervalPicker onchange={handleDurationChange} />
             </div>
 
             <!-- Required Roles -->
@@ -382,7 +356,10 @@
                 options={guildRoles}
                 bind:selected={selectedRoles}
                 multiple={true}
-                on:change={handleRoleSelection}
+                onchange={(detail) => {
+                  selectedRoles = Array.isArray(detail.selected) ? detail.selected : [];
+                  newGiveaway.restrictTo = selectedRoles.join(" ");
+                }}
                 placeholder="Select required roles"
               />
             </div>
@@ -453,7 +430,7 @@
     {#if activeTab === 'active'}
       <!-- Active Giveaways -->
       <section
-        class="backdrop-blur-xs rounded-xl border p-6"
+        class=" rounded-xl border p-6"
         style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
               border-color: {colors.primary}30;"
       >
@@ -562,7 +539,7 @@
     {#if activeTab === 'ended'}
       <!-- Ended Giveaways would go here -->
       <section
-        class="backdrop-blur-xs rounded-xl border p-6"
+        class=" rounded-xl border p-6"
         style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                border-color: {colors.primary}30;"
       >
@@ -590,7 +567,7 @@
     }
 
     input[type="number"] {
-        -moz-appearance: textfield;
+        appearance: textfield;
     }
 
     /* Add smooth transitions */

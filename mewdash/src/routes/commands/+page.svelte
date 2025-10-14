@@ -174,7 +174,7 @@
             <input
               aria-label="Search commands and modules"
               bind:value={searchValue}
-              class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
+              class="block w-full pl-12 pr-12 py-2 sm:py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
               id="search"
               onblur={handleSearchBlur}
               onfocus={handleSearchFocus}
@@ -270,7 +270,7 @@
               Module:</label>
             <select
               id="module-select"
-              class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
+              class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
               style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
               bind:value={activeTabIndex}
             >
@@ -305,7 +305,7 @@
                   onkeydown={(e) => handleTabKeydown(e, index)}
                 >
                   <div
-                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform backdrop-blur-xs"
+                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center mr-2 text-xs font-bold group-hover:scale-110 transition-transform "
                     style="{index === activeTabIndex
                          ? `background: linear-gradient(135deg, ${$colorStore.gradientStart}40, ${$colorStore.gradientMid}50); color: ${$colorStore.text};` 
                          : `background: ${$colorStore.primary}20; color: ${$colorStore.text};`}">
@@ -338,7 +338,7 @@
               <div class="mb-6">
                 <div class="flex items-center space-x-4 mb-4">
                   <div
-                          class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-xs"
+                    class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg "
                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}40, {$colorStore.gradientMid}50);
                               border: 1px solid {$colorStore.primary}30;">
                     <span class="text-xl font-bold" style="color: {$colorStore.text}">
@@ -360,7 +360,7 @@
               <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {#each activeModule.Commands as command, cmdIndex}
                   <article
-                          class="command-card backdrop-blur-xs border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden"
+                    class="command-card  border rounded-xl p-4 transition-all duration-200 group focus-within:ring-2 overflow-hidden"
                     style="background: {$colorStore.primary}10;
                               border-color: {$colorStore.primary}20;
                               --tw-ring-color: {$colorStore.primary};"
@@ -418,7 +418,7 @@
                       {#if command.GuildUserPermissions || command.ChannelUserPermissions || command.GuildBotPermissions || command.ChannelBotPermissions}
                         <details class="group/perms">
                           <summary
-                                  class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-all backdrop-blur-xs"
+                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-all "
                             style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}25);
                                           color: {$colorStore.text};
                                           border: 1px solid {$colorStore.primary}30;">

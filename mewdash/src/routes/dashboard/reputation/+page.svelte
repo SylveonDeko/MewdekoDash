@@ -111,9 +111,9 @@
                 channelsData,
                 rolesListData
             ] = await Promise.all([
-              reputationApi.getReputationConfig($currentGuild.id).catch(() => null),
-              reputationApi.getReputationRoleRewards($currentGuild.id).catch(() => []),
-              reputationApi.getReputationLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize).catch(() => []),
+              reputationApi.getRepConfig($currentGuild.id).catch(() => null),
+              reputationApi.getRoleRewards($currentGuild.id).catch(() => []),
+              reputationApi.getLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize).catch(() => []),
               reputationApi.getReputationStats($currentGuild.id).catch(() => null),
               clientApi.getTextChannels($currentGuild.id).catch(() => []),
               clientApi.getRoles($currentGuild.id).catch(() => [])
@@ -173,34 +173,34 @@
             const promises = [];
 
             if (configForm.enabled !== repConfig?.enabled) {
-              promises.push(reputationApi.setReputationEnabled($currentGuild.id, configForm.enabled));
+              promises.push(reputationApi.setEnabled($currentGuild.id, configForm.enabled));
             }
             if (configForm.defaultCooldownMinutes !== repConfig?.defaultCooldownMinutes) {
-              promises.push(reputationApi.setReputationCooldown($currentGuild.id, configForm.defaultCooldownMinutes));
+              promises.push(reputationApi.setDefaultCooldown($currentGuild.id, configForm.defaultCooldownMinutes));
             }
             if (configForm.dailyLimit !== repConfig?.dailyLimit) {
-              promises.push(reputationApi.setReputationDailyLimit($currentGuild.id, configForm.dailyLimit));
+              promises.push(reputationApi.setDailyLimit($currentGuild.id, configForm.dailyLimit));
             }
             if (configForm.weeklyLimit !== repConfig?.weeklyLimit) {
-              promises.push(reputationApi.setReputationWeeklyLimit($currentGuild.id, configForm.weeklyLimit));
+              promises.push(reputationApi.setWeeklyLimit($currentGuild.id, configForm.weeklyLimit));
             }
             if (configForm.minAccountAgeDays !== repConfig?.minAccountAgeDays) {
-              promises.push(reputationApi.setReputationMinAccountAge($currentGuild.id, configForm.minAccountAgeDays));
+              promises.push(reputationApi.setMinAccountAge($currentGuild.id, configForm.minAccountAgeDays));
             }
             if (configForm.minServerMembershipHours !== repConfig?.minServerMembershipHours) {
-              promises.push(reputationApi.setReputationMinServerMembership($currentGuild.id, configForm.minServerMembershipHours));
+              promises.push(reputationApi.setMinServerMembership($currentGuild.id, configForm.minServerMembershipHours));
             }
             if (configForm.minMessageCount !== repConfig?.minMessageCount) {
-              promises.push(reputationApi.setReputationMinMessageCount($currentGuild.id, configForm.minMessageCount));
+              promises.push(reputationApi.setMinMessageCount($currentGuild.id, configForm.minMessageCount));
             }
             if (configForm.enableNegativeRep !== repConfig?.enableNegativeRep) {
-              promises.push(reputationApi.setReputationNegativeRep($currentGuild.id, configForm.enableNegativeRep));
+              promises.push(reputationApi.setNegativeReputation($currentGuild.id, configForm.enableNegativeRep));
             }
             if (configForm.enableAnonymous !== repConfig?.enableAnonymous) {
-              promises.push(reputationApi.setReputationAnonymousRep($currentGuild.id, configForm.enableAnonymous));
+              promises.push(reputationApi.setAnonymousReputation($currentGuild.id, configForm.enableAnonymous));
             }
             if (configForm.notificationChannel !== repConfig?.notificationChannel) {
-              promises.push(reputationApi.setReputationNotificationChannel($currentGuild.id, configForm.notificationChannel));
+              promises.push(reputationApi.setNotificationChannel($currentGuild.id, configForm.notificationChannel));
             }
 
             await Promise.all(promises);
@@ -220,13 +220,13 @@
 
         saving = true;
         try {
-          await reputationApi.addReputationRoleReward($currentGuild.id, {
+          await reputationApi.addOrUpdateRoleReward($currentGuild.id, {
                 roleId: BigInt(newRoleReward.roleId),
                 repRequired: newRoleReward.repRequired,
                 removeOnDrop: newRoleReward.removeOnDrop,
                 announceChannelId: newRoleReward.announceChannelId ? BigInt(newRoleReward.announceChannelId) : null,
                 announceDM: newRoleReward.announceDM,
-                xpReward: newRoleReward.xpReward
+            xpReward: newRoleReward.xpReward || 0
             });
             showMessage("Role reward added successfully!", "success");
             newRoleReward = {
@@ -253,7 +253,7 @@
 
         saving = true;
         try {
-          await reputationApi.removeReputationRoleReward($currentGuild.id, roleId);
+          await reputationApi.removeRoleReward($currentGuild.id, roleId);
             showMessage("Role reward removed!", "success");
             await loadAllReputationData();
         } catch (err) {
@@ -273,13 +273,25 @@
         }, 5000);
     }
 
-    function formatDate(dateString: string): string {
-        return new Date(dateString).toLocaleString();
-    }
-
     function getRoleName(roleId: bigint): string {
         const role = guildRoles.find(r => r.id === roleId.toString());
         return role ? role.name : `Unknown Role`;
+    }
+
+    // DiscordSelector handlers
+    function handleNotificationChannelChange(detail: any) {
+      configForm.notificationChannel = detail.selected ? BigInt(detail.selected) : null;
+      configForm = { ...configForm };
+    }
+
+    function handleRoleChange(detail: any) {
+      newRoleReward.roleId = detail.selected;
+      newRoleReward = { ...newRoleReward };
+    }
+
+    function handleAnnounceChannelChange(detail: any) {
+      newRoleReward.announceChannelId = detail.selected;
+      newRoleReward = { ...newRoleReward };
     }
 
     onMount(() => {
@@ -298,54 +310,52 @@
     let actionButtons = $derived([
         {
             label: "Refresh",
+          icon: "fa-arrows-rotate",
             action: loadAllReputationData,
             loading: loading
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
-<DashboardPageLayout
-        title="Reputation System"
-        subtitle="Manage server reputation and rewards"
-        icon="fa-star"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
->
+{#snippet statusMessages()}
+  {#if message}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+         style="background: {messageType === 'success' ? $colorStore.primary + '20' : messageType === 'error' ? $colorStore.accent + '20' : $colorStore.primary + '20'};
+          border: 1px solid {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}30;"
+         in:fly={{ x: 20, duration: 300 }}>
+      {#if messageType === 'success'}
+        <i class="fa-utility-duo fa-regular fa-circle-check"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else if messageType === 'error'}
+        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else}
+        <i class="fa-utility-duo fa-regular fa-bell"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {/if}
+      <span
+        style="color: {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+{/snippet}
 
-    <svelte:fragment slot="status-messages">
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                  <i class="fa-utility-duo fa-regular fa-circle-check"
-                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
-                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                  <i class="fa-utility-duo fa-regular fa-bell"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-star"
+  statusMessages={statusMessages}
+  subtitle="Manage server reputation and rewards"
+  {tabs}
+  title="Reputation System"
+>
 
     {#if activeTab === 'config'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+              <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -372,7 +382,7 @@
                                         configForm = { ...configForm };
                                     }}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                    style="background: {configForm.enabled ? $colorStore.primary : '#64748b'};"
+                                  style="background: {configForm.enabled ? $colorStore.primary : $colorStore.muted};"
                             >
                                 <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                       style="transform: translateX({configForm.enabled ? '1.5rem' : '0.25rem'})"></span>
@@ -483,11 +493,7 @@
                                     options={guildChannels}
                                     selected={configForm.notificationChannel?.toString() || null}
                                     placeholder="No notifications"
-                                    on:change={(e) => {
-                                        configForm.notificationChannel = e.detail.selected ? BigInt(e.detail.selected) : null;
-                                        configForm = { ...configForm };
-                                    }}
-                                    aria-labelledby="notification-channel-optional-label" />
+                                    onchange={handleNotificationChannelChange} />
                         </div>
                     </div>
 
@@ -505,7 +511,7 @@
                                         configForm = { ...configForm };
                                     }}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                    style="background: {configForm.enableNegativeRep ? $colorStore.primary : '#64748b'};"
+                                  style="background: {configForm.enableNegativeRep ? $colorStore.primary : $colorStore.muted};"
                             >
                                 <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                       style="transform: translateX({configForm.enableNegativeRep ? '1.5rem' : '0.25rem'})"></span>
@@ -524,7 +530,7 @@
                                         configForm = { ...configForm };
                                     }}
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                    style="background: {configForm.enableAnonymous ? $colorStore.primary : '#64748b'};"
+                                  style="background: {configForm.enableAnonymous ? $colorStore.primary : $colorStore.muted};"
                             >
                                 <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                       style="transform: translateX({configForm.enableAnonymous ? '1.5rem' : '0.25rem'})"></span>
@@ -548,7 +554,7 @@
     {:else if activeTab === 'rewards'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Add Role Reward -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -567,11 +573,7 @@
                                 options={guildRoles}
                                 selected={newRoleReward.roleId}
                                 placeholder="Select role"
-                                on:change={(e) => {
-                                    newRoleReward.roleId = e.detail.selected;
-                                    newRoleReward = { ...newRoleReward };
-                                }}
-                                aria-labelledby="role-label" />
+                                onchange={handleRoleChange} />
                     </div>
 
                     <div>
@@ -598,11 +600,7 @@
                                 options={guildChannels}
                                 selected={newRoleReward.announceChannelId}
                                 placeholder="No announcements"
-                                on:change={(e) => {
-                                    newRoleReward.announceChannelId = e.detail.selected;
-                                    newRoleReward = { ...newRoleReward };
-                                }}
-                                aria-labelledby="announce-channel-optional-label" />
+                                onchange={handleAnnounceChannelChange} />
                     </div>
 
                     <div>
@@ -655,7 +653,7 @@
             </div>
 
             <!-- Role Rewards List -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -691,7 +689,7 @@
                                 </div>
                               <button aria-label="Delete"
                                         class="p-2 rounded-lg transition-all hover:scale-110"
-                                        style="background: #ef444420; color: #ef4444;"
+                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                         onclick={() => removeRoleReward(reward.roleId)}
                                 >
                                 </button>
@@ -704,7 +702,7 @@
 
     {:else if activeTab === 'leaderboard'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -748,11 +746,13 @@
                                     </div>
                                 </div>
                                 {#if entry.rank === 1}
-                                  <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 24px;"></i>
+                                  <i class="fa-solid fa-trophy"
+                                     style="color: {$colorStore.primary}; font-size: 24px;"></i>
                                 {:else if entry.rank === 2}
-                                  <i class="fa-solid fa-star" style="color: #94a3b8; font-size: 24px;"></i>
+                                  <i class="fa-solid fa-star"
+                                     style="color: {$colorStore.secondary}; font-size: 24px;"></i>
                                 {:else if entry.rank === 3}
-                                  <i class="fa-solid fa-star" style="color: #c2410c; font-size: 24px;"></i>
+                                  <i class="fa-solid fa-star" style="color: {$colorStore.accent}; font-size: 24px;"></i>
                                 {/if}
                             </div>
                         {/each}

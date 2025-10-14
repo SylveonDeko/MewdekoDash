@@ -22,7 +22,7 @@
 </script>
 
 <section
-  class="group w-full h-max m-6 pt-6 pb-8 max-w-136 grid grid-cols-1 justify-center rounded-2xl backdrop-blur-xs hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 cursor-pointer transform transition-all duration-500 ease-out hover:scale-[1.02]"
+  class="group w-full h-max m-6 pt-6 pb-8 max-w-136 grid grid-cols-1 justify-center rounded-2xl  hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 cursor-pointer transform transition-all duration-500 ease-out hover:scale-[1.02]"
   role="article"
   style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
          border: 1px solid {$colorStore.primary}30;
@@ -54,7 +54,7 @@
   {#if cta}
     <div class="pt-4 flex justify-center">
       <a
-              class="group/cta relative w-max h-max py-3 px-8 font-bold text-xl backdrop-blur-xs rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-110 active:scale-95 overflow-hidden"
+        class="group/cta relative w-max h-max py-3 px-8 font-bold text-xl  rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-110 active:scale-95 overflow-hidden"
         href={cta.href}
         target={cta.target}
         rel="noreferrer"

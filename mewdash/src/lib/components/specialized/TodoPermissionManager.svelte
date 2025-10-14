@@ -6,8 +6,8 @@
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { todoApi, guildApi } from "$lib/api/index.ts";
-  import type { TodoListPermission, GrantPermissionRequest } from "$lib/types/todo";
+  import { userStore } from "$lib/stores/userStore";
+  import { todoApi, clientApi, type TodoListPermission, type GrantPermissionRequest } from "$lib/api/index.ts";
 
   interface Props {
     listId: number;
@@ -39,15 +39,15 @@
   ));
 
   async function loadPermissions() {
-    if (!$currentGuild?.id || !listId) return;
-    
+    if (!$currentGuild?.id || !$userStore?.id || !listId) return;
+
     try {
       loading = true;
       const [permsData, membersData] = await Promise.all([
-        todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($currentGuild.userId)),
-        guildApi.getGuildMembers($currentGuild.id)
+        todoApi.getTodoListPermissions($currentGuild.id, listId, BigInt($userStore.id)),
+        clientApi.getMembers(BigInt($currentGuild.id))
       ]);
-      
+
       permissions = permsData;
       guildMembers = membersData;
     } catch (error) {
@@ -58,19 +58,19 @@
   }
 
   async function grantPermissions() {
-    if (!$currentGuild?.id || !selectedUserId) return;
+    if (!$currentGuild?.id || !$userStore?.id || !selectedUserId) return;
 
     try {
       const request: GrantPermissionRequest = {
         targetUserId: BigInt(selectedUserId),
-        requestingUserId: BigInt($currentGuild.userId),
-        canView: newPermissions.canView,
-        canManage: newPermissions.canManage
+        requestingUserId: BigInt($userStore.id),
+        canEdit: newPermissions.canEdit,
+        canDelete: newPermissions.canManage
       };
 
       await todoApi.grantTodoListPermissions($currentGuild.id, listId, request);
       await loadPermissions();
-      
+
       // Reset form
       selectedUserId = "";
       newPermissions = { canView: true, canEdit: false, canManage: false };
@@ -83,10 +83,10 @@
   }
 
   async function revokePermissions(userId: bigint) {
-    if (!$currentGuild?.id) return;
+    if (!$currentGuild?.id || !$userStore?.id) return;
 
     try {
-      await todoApi.revokeTodoListPermissions($currentGuild.id, listId, userId, BigInt($currentGuild.userId));
+      await todoApi.revokeTodoListPermissions($currentGuild.id, listId, userId, BigInt($userStore.id));
       await loadPermissions();
       onpermissionsUpdated?.();
     } catch (error) {
@@ -132,17 +132,13 @@
 
 <!-- Modal Backdrop -->
 {#if isOpen}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-            class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4"
     onclick={closeModal}
     in:fly={{ opacity: 0, duration: 200 }}
             role="button" tabindex="0"
             onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeModal; } }}>
     <!-- Modal Content -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
       class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
       onclick={(e) => e.stopPropagation()}
@@ -230,10 +226,10 @@
                           onclick={() => { selectedUserId = member.id; searchQuery = member.displayName; }}
                         >
                           <img src={member.avatarUrl} alt="" class="w-8 h-8 rounded-full">
-                          <div>
-                            <div class="font-medium" style="color: {$colorStore.text}">{member.displayName}</div>
-                            <div class="text-sm" style="color: {$colorStore.muted}">@{member.username}</div>
-                          </div>
+                          <span class="flex flex-col">
+                            <span class="font-medium" style="color: {$colorStore.text}">{member.displayName}</span>
+                            <span class="text-sm" style="color: {$colorStore.muted}">@{member.username}</span>
+                          </span>
                           {#if selectedUserId === member.id}
                             <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                           {/if}
@@ -253,43 +249,43 @@
                   <div class="space-y-2">
                     <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
                            style="background: {newPermissions.canView ? $colorStore.primary + '15' : $colorStore.primary + '05'};">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         bind:checked={newPermissions.canView}
                         class="rounded-sm"
                       >
-                      <div class="flex items-center gap-2">
+                      <span class="flex items-center gap-2">
                         <i class="fa-solid fa-eye" style="color: {$colorStore.primary}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can View</span>
-                      </div>
+                      </span>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">See list and items</span>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
                            style="background: {newPermissions.canEdit ? $colorStore.primary + '15' : $colorStore.primary + '05'};">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         bind:checked={newPermissions.canEdit}
                         class="rounded-sm"
                       >
-                      <div class="flex items-center gap-2">
+                      <span class="flex items-center gap-2">
                         <i class="fa-solid fa-pen" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can Edit</span>
-                      </div>
+                      </span>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Add, edit, complete items</span>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
                            style="background: {newPermissions.canManage ? $colorStore.accent + '15' : $colorStore.primary + '05'};">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         bind:checked={newPermissions.canManage}
                         class="rounded-sm"
                       >
-                      <div class="flex items-center gap-2">
+                      <span class="flex items-center gap-2">
                         <i class="fa-solid fa-shield" style="color: {$colorStore.accent}; font-size: 16px;"></i>
                         <span style="color: {$colorStore.text}">Can Manage</span>
-                      </div>
+                      </span>
                       <span class="text-sm ml-auto" style="color: {$colorStore.muted}">Change settings, permissions</span>
                     </label>
                   </div>
@@ -415,9 +411,5 @@
   /* Selected user styling */
   .selected {
     background-color: rgb(239 246 255) !important;
-  }
-  
-  :global(.dark) .selected {
-    background-color: rgb(30 58 138 / 0.2) !important;
   }
 </style>

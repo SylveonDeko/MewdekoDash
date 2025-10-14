@@ -202,7 +202,7 @@
   });
 </script>
 
-<div class="backdrop-blur-xs rounded-xl p-4 md:p-6 transition-all hover:shadow-lg hover:-translate-y-px border"
+<div class=" rounded-xl p-4 md:p-6 transition-all hover:shadow-lg hover:-translate-y-px border"
      style="background: {$colorStore.primary}05;
             border-color: {$colorStore.primary}15;"
      in:fly={{ y: 20, duration: 300 }}>

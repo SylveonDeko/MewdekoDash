@@ -70,7 +70,7 @@
     <div class="lg:col-span-6 space-y-4">
 
       <!-- Main Music Player -->
-      <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+      <div class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
            style="background: {$colorStore.primary}05;
                   border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -111,7 +111,7 @@
 
       <!-- Music Queue Preview (if music is playing) -->
       {#if hasActiveMusic && musicStatus?.Queue?.length > 0}
-        <div class="backdrop-blur-xs rounded-lg p-4 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <h3 class="text-lg font-semibold mb-3" style="color: {$colorStore.text}">Coming Up</h3>
@@ -152,7 +152,7 @@
       <!-- Entertainment Features -->
       <div class="space-y-3">
         <!-- Custom Voice Channels -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -179,7 +179,7 @@
         </div>
 
         <!-- Giveaways -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -208,7 +208,7 @@
 
       <!-- Active Giveaways Details -->
       {#if giveaways.length > 0}
-        <div class="backdrop-blur-xs rounded-lg p-4 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-4 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text}">Active Giveaways</h3>

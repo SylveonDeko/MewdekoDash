@@ -304,7 +304,7 @@
   <!-- Form Info -->
   {#if form}
     <div
-      class="backdrop-blur-xs rounded-xl border p-6"
+      class=" rounded-xl border p-6"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -385,7 +385,7 @@
   <!-- Responses List -->
   {#if loading}
     <div
-      class="backdrop-blur-xs rounded-xl border p-12 text-center"
+      class=" rounded-xl border p-12 text-center"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <div
@@ -396,7 +396,7 @@
     </div>
   {:else if error}
     <div
-      class="backdrop-blur-xs rounded-xl border p-6"
+      class=" rounded-xl border p-6"
       style="background: #ef444410; border-color: #ef444430;"
     >
       <div class="flex items-center gap-3">
@@ -406,7 +406,7 @@
     </div>
   {:else if paginatedData && paginatedData.responses.length === 0}
     <div
-      class="backdrop-blur-xs rounded-xl border p-12 text-center"
+      class=" rounded-xl border p-12 text-center"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <i
@@ -446,7 +446,7 @@
     <div class="space-y-4">
       {#each paginatedData.responses as response, index (response.id)}
         <div
-          class="backdrop-blur-xs rounded-xl border overflow-hidden transition-all hover:shadow-lg"
+          class=" rounded-xl border overflow-hidden transition-all hover:shadow-lg"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:slide={{ duration: 300, delay: index * 50 }}
         >
@@ -507,7 +507,7 @@
       <!-- Pagination -->
       {#if paginatedData && paginatedData.totalPages > 1}
         <div
-          class="backdrop-blur-xs rounded-xl border p-4"
+          class=" rounded-xl border p-4"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         >
           <div class="flex items-center justify-between gap-4 flex-wrap">

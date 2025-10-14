@@ -20,6 +20,70 @@ export function escapeHtml(str: string): string {
 }
 
 /**
+ * Detects and removes Zalgo text (excessive combining characters)
+ * Zalgo text uses combining diacritical marks (U+0300-U+036F and others)
+ * @param text The text to check and clean
+ * @param maxCombiningChars Maximum allowed combining characters per base character (default: 2)
+ * @returns Cleaned text with excessive combining characters removed
+ */
+export function removeZalgoText(text: string, maxCombiningChars: number = 2): string {
+  if (!text) return "";
+
+  // Unicode ranges for combining characters (diacritical marks)
+  // NOTE: No 'g' flag - we test one character at a time
+  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/;
+
+  let result = "";
+  let consecutiveCombining = 0;
+
+  for (const char of text) {
+    // Check if current character is a combining character
+    if (combiningCharsRegex.test(char)) {
+      consecutiveCombining++;
+
+      // Only keep combining characters if under the limit
+      if (consecutiveCombining <= maxCombiningChars) {
+        result += char;
+      }
+      // Otherwise skip (removes excessive combining chars)
+    } else {
+      // Reset counter for non-combining characters
+      consecutiveCombining = 0;
+      result += char;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Checks if text contains excessive Zalgo (for validation/rejection)
+ * @param text The text to check
+ * @param threshold Maximum allowed combining characters per base character
+ * @returns True if text contains excessive Zalgo
+ */
+export function containsZalgo(text: string, threshold: number = 2): boolean {
+  if (!text) return false;
+
+  // NOTE: No 'g' flag - we test one character at a time
+  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/;
+  let consecutiveCombining = 0;
+
+  for (const char of text) {
+    if (combiningCharsRegex.test(char)) {
+      consecutiveCombining++;
+      if (consecutiveCombining > threshold) {
+        return true; // Zalgo detected
+      }
+    } else {
+      consecutiveCombining = 0;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Sanitizes user input using DOMPurify to prevent XSS attacks
  * OWASP Recommendation: Use DOMPurify instead of regex-based sanitization
  * @param input The input string to sanitize
@@ -28,9 +92,12 @@ export function escapeHtml(str: string): string {
 export function sanitizeInput(input: string): string {
   if (!input) return "";
 
-  // Use DOMPurify for robust HTML sanitization
+  // First remove Zalgo text
+  const cleanedZalgo = removeZalgoText(input, 2);
+
+  // Then use DOMPurify for robust HTML sanitization
   // Configure to strip all HTML tags for plain text contexts
-  const cleaned = DOMPurify.sanitize(input, {
+  const cleaned = DOMPurify.sanitize(cleanedZalgo, {
     ALLOWED_TAGS: [], // Strip all HTML tags
     ALLOWED_ATTR: [], // Strip all attributes
     KEEP_CONTENT: true, // Keep text content
@@ -65,13 +132,7 @@ export function sanitizeQuestionText(text: string): string {
  * @returns Sanitized answer text
  */
 export function sanitizeAnswerText(text: string): string {
-  const sanitized = sanitizeInput(text);
-
-  if (sanitized.length > 5000) {
-    throw new Error("Answer text cannot exceed 5000 characters");
-  }
-
-  return sanitized;
+  return sanitizeInput(text);
 }
 
 /**

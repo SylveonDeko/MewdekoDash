@@ -2,8 +2,8 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
-  import { afkApi, botStatusApi, clientApi, type Afk, type UserWithAfk, type BotStatusModel } from "$lib/api/index.ts";
+  import { onMount } from "svelte";
+  import { afkApi, clientApi, type UserWithAfk } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
@@ -12,14 +12,11 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
-  import { browser } from "$app/environment";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
 
-
-  let botStatus: BotStatusModel | null = null;
 
   interface Props {
     data: PageData;
@@ -29,20 +26,17 @@
   let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   let afkUsers: UserWithAfk[] = $state([]);
-  let expandedUser = $state(null);
+  let expandedUser: string | null = $state(null);
   let loading = $state(true);
-  let error = $state(null);
+  let error: string | null = $state(null);
 
   // AFK Settings
   let afkDeletionTime = $state(0);
   let afkMaxLength = $state(0);
   let afkType = $state(1);
   let afkTimeout = $state("0s");
-  let afkTimeoutSeconds = 0;
-  let afkDisabledChannels: string[] = [];
   let customAfkMessage = $state("");
   let changedSettings = $state(new Set());
 
@@ -124,15 +118,6 @@
     return totalSeconds;
   }
 
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
   }
@@ -153,10 +138,6 @@
     return true;
   }
 
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
   async function updateAllAfkSettings() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
@@ -168,6 +149,7 @@
       if (changedSettings.has("maxLength") && !validateAfkMaxLength(afkMaxLength)) {
         return;
       }
+      const afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
       if (changedSettings.has("timeout") && (afkTimeoutSeconds < 1 || afkTimeoutSeconds > 7200)) {
         showNotificationMessage("AFK timeout must be between 1 second and 2 hours", "error");
         return;
@@ -272,7 +254,7 @@
   function handleTimeoutInput(event: Event) {
     const target = event.target as HTMLInputElement;
     afkTimeout = target.value;
-    afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
+    const afkTimeoutSeconds = timeStringToSeconds(afkTimeout);
 
     // Validate timeout range (1s to 2h = 7200s)
     if (afkTimeoutSeconds < 1 || afkTimeoutSeconds > 7200) {
@@ -283,8 +265,8 @@
     markAsChanged("timeout");
   }
 
-  function handleDisabledChannelsChange(event: CustomEvent) {
-    selectedDisabledChannels = Array.isArray(event.detail.selected) ? event.detail.selected : [];
+  function handleDisabledChannelsChange(detail: { selected: string | string[] | null }) {
+    selectedDisabledChannels = Array.isArray(detail.selected) ? detail.selected : [];
     markAsChanged("disabledChannels");
   }
 
@@ -292,14 +274,8 @@
     if (!$currentGuild) await goto("/dashboard");
     await Promise.all([
       fetchAfkUsers(),
-      fetchAfkSettings(),
-      fetchBotStatus()
+      fetchAfkSettings()
     ]);
-    checkMobile();
-    if (browser) window.addEventListener("resize", checkMobile);
-  });
-  onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
   });
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -316,7 +292,7 @@
       try {
         if (!$currentGuild?.id) throw new Error("No guild selected");
 
-        const [deletion, maxLength, type, timeout, disabledChannels, customMessage, channels] = await Promise.all([
+        const [deletion, maxLength, type, timeout, disabledChannels, customMsg, channels] = await Promise.all([
           afkApi.getAfkDel($currentGuild.id),
           afkApi.getAfkLength($currentGuild.id),
           afkApi.getAfkType($currentGuild.id),
@@ -329,26 +305,17 @@
         afkDeletionTime = deletion;
         afkMaxLength = maxLength;
         afkType = type;
-        afkTimeoutSeconds = timeout;
         afkTimeout = secondsToTimeString(timeout);
 
         // Parse disabled channels - handle both direct string and nested object response
-        let disabledChannelsString = "";
-        if (disabledChannels && typeof disabledChannels === "object" && disabledChannels.data) {
-          // API returns nested object with data property
-          disabledChannelsString = disabledChannels.data;
-        } else if (disabledChannels && typeof disabledChannels === "string") {
-          // API returns direct string
-          disabledChannelsString = disabledChannels;
-        }
+        const disabledChannelsString = (disabledChannels as any)?.data || disabledChannels || "";
 
         const disabledChannelIds = disabledChannelsString && disabledChannelsString !== "0"
           ? disabledChannelsString.split(",").filter(Boolean)
           : [];
-        afkDisabledChannels = disabledChannelIds;
         selectedDisabledChannels = disabledChannelIds;
 
-        customAfkMessage = customAfkMessage || "";
+        customAfkMessage = customMsg || "";
         availableChannels = channels;
 
         // Ensure the disabled channels are set after available channels are loaded
@@ -388,10 +355,10 @@
     }, "api", "Loading AFK users...");
   }
 
-  function showClearAfkConfirm(userId: string) {
+  function showClearAfkConfirm(userId: bigint) {
     if (!$currentGuild?.id) return;
 
-    const user = afkUsers.find(u => u.userId.toString() === userId);
+    const user = afkUsers.find(u => u.userId === userId);
     const userName = user ? user.username : "user";
 
     modalConfig = {
@@ -404,16 +371,16 @@
     showConfirmModal = true;
   }
 
-  async function executeClearAfk(userId: string) {
+  async function executeClearAfk(userId: bigint) {
     try {
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
 
-      const user = afkUsers.find(u => u.userId.toString() === userId);
+      const user = afkUsers.find(u => u.userId === userId);
       const userName = user ? user.username : "user";
 
-      await afkApi.deleteAfkStatus($currentGuild.id, BigInt(userId));
+      await afkApi.deleteAfkStatus($currentGuild.id, userId);
       showNotificationMessage(`Successfully cleared AFK status for ${userName}`, "success");
       await fetchAfkUsers();
     } catch (error) {
@@ -423,8 +390,9 @@
     }
   }
 
-  function toggleUserExpand(userId: string) {
-    expandedUser = expandedUser === userId ? null : userId;
+  function toggleUserExpand(userId: bigint) {
+    const userIdStr = userId.toString();
+    expandedUser = expandedUser === userIdStr ? null : userIdStr;
   }
 
 
@@ -432,8 +400,7 @@
     if ($currentInstance) {
       Promise.all([
         fetchAfkUsers(),
-        fetchAfkSettings(),
-        fetchBotStatus()
+        fetchAfkSettings()
       ]);
     }
   });
@@ -456,7 +423,7 @@
       icon: "fa-arrows-rotate",
       action: async () => {
         loading = true;
-        await Promise.all([fetchAfkUsers(), fetchAfkSettings(), fetchBotStatus()]);
+        await Promise.all([fetchAfkUsers(), fetchAfkSettings()]);
         loading = false;
       },
       loading: loading
@@ -471,30 +438,29 @@
   ]);
 </script>
 
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
 <DashboardPageLayout
   {actionButtons}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-clock"
-  on:tabChange={(e) => activeTab = e.detail.tabId}
   subtitle="Configure AFK settings and manage AFK users"
   {tabs}
   title="AFK Management"
+  statusMessages={statusMessageContent}
 >
-
-  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   {#if activeTab === 'settings'}
     <!-- Basic Settings Section -->
     <section
-      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class=" rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -605,9 +571,11 @@
             customIcon="fa-gear"
             placeholder="Select AFK removal behavior"
             selected={afkType.toString()}
-            on:change={(e) => {
-              afkType = parseInt(e.detail.selected);
-              markAsChanged("type");
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                afkType = parseInt(detail.selected);
+                markAsChanged("type");
+              }
             }}
           />
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
@@ -635,7 +603,7 @@
   {#if activeTab === 'advanced'}
     <!-- Advanced Settings Section -->
     <section
-      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class=" rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -699,7 +667,7 @@
             placeholder="Select channels to disable AFK messages"
             multiple={true}
             selected={selectedDisabledChannels}
-            on:change={handleDisabledChannelsChange}
+            onchange={handleDisabledChannelsChange}
           />
           <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
             Channels where AFK messages will not be displayed. Select multiple channels to disable AFK notifications in
@@ -759,7 +727,7 @@
   {#if activeTab === 'users'}
     <!-- User Management Section -->
     <section
-      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      class=" rounded-2xl border p-6 shadow-2xl transition-all"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -862,7 +830,7 @@
                     class="flex items-center gap-3 grow text-left transition-colors duration-200 rounded-lg p-2 min-w-0"
                     style="hover:background: {$colorStore.primary}15;"
                     onclick={() => toggleUserExpand(user.userId)}
-                    aria-expanded={expandedUser === user.userId}
+                    aria-expanded={expandedUser === user.userId.toString()}
                     aria-controls="user-details-{user.userId}"
                   >
                     <img
@@ -872,10 +840,10 @@
                       style="border-color: {$colorStore.primary}30;"
                     >
 
-                    <div class="grow min-w-0">
-                      <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                        <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
-                        <div class="flex flex-wrap gap-1">
+                    <span class="grow min-w-0 flex flex-col gap-1">
+                      <span class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <span class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</span>
+                        <span class="flex flex-wrap gap-1">
                           {#if user.nickname}
                             <span class="text-xs px-2 py-1 rounded-sm"
                                   style="background: {$colorStore.secondary}15; color: {$colorStore.secondary}">
@@ -888,41 +856,41 @@
                               Timed
                             </span>
                           {/if}
-                        </div>
-                      </div>
+                        </span>
+                      </span>
 
-                      <div class="space-y-1 text-sm">
-                        <div class="truncate">
+                      <span class="space-y-1 text-sm flex flex-col">
+                        <span class="truncate">
                           <span style="color: {$colorStore.muted}">Message:</span>
                           <span style="color: {$colorStore.text}"
                                 class="ml-1">{user.afkStatus?.message || 'No message'}</span>
-                        </div>
+                        </span>
 
-                        <div class="hidden sm:grid sm:grid-cols-1 md:grid-cols-2 gap-2">
-                          <div>
+                        <span class="hidden sm:grid sm:grid-cols-1 md:grid-cols-2 gap-2">
+                          <span>
                             <span style="color: {$colorStore.muted}">Since:</span>
                             <span style="color: {$colorStore.text}" class="ml-1">
                               {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleDateString() : 'Unknown'}
                             </span>
-                          </div>
+                          </span>
 
                           {#if user.afkStatus?.wasTimed}
-                            <div>
+                            <span>
                               <span style="color: {$colorStore.muted}">Expires:</span>
                               <span style="color: {$colorStore.text}" class="ml-1">
                                 {user.afkStatus?.when ? new Date(user.afkStatus.when).toLocaleDateString() : 'Unknown'}
                               </span>
-                            </div>
+                            </span>
                           {:else}
-                            <div>
+                            <span>
                               <span style="color: {$colorStore.muted}">Type:</span>
                               <span style="color: {$colorStore.primary}" class="ml-1 font-medium">Permanent AFK</span>
-                            </div>
+                            </span>
                           {/if}
-                        </div>
+                        </span>
 
                         <!-- Mobile summary -->
-                        <div class="sm:hidden text-xs" style="color: {$colorStore.muted}">
+                        <span class="sm:hidden text-xs" style="color: {$colorStore.muted}">
                           Since: {user.afkStatus?.dateAdded ? new Date(user.afkStatus.dateAdded).toLocaleDateString() : 'Unknown'}
                           {#if user.afkStatus?.wasTimed}
                             •
@@ -930,9 +898,9 @@
                           {:else}
                             • Permanent
                           {/if}
-                        </div>
-                      </div>
-                    </div>
+                        </span>
+                      </span>
+                    </span>
                   </button>
                 </div>
 
@@ -952,7 +920,7 @@
               </div>
 
               <!-- Expanded Details -->
-              {#if expandedUser === user.userId}
+              {#if expandedUser === user.userId.toString()}
                 <div
                   transition:slide
                   class="mt-4 pt-4 border-t"
@@ -1027,8 +995,8 @@
   bind:isOpen={showConfirmModal}
   confirmText={modalConfig.confirmText}
   message={modalConfig.message}
-  on:cancel={() => showConfirmModal = false}
-  on:confirm={() => modalConfig.action?.()}
+  oncancel={() => showConfirmModal = false}
+  onconfirm={() => modalConfig.action?.()}
   title={modalConfig.title}
   variant={modalConfig.variant}
 />

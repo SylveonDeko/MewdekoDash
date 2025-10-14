@@ -373,7 +373,7 @@
             <!-- Mobile Step Selector -->
             <div class="lg:hidden mb-6">
               <select
-                      class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden backdrop-blur-xs"
+                class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
                 bind:value={currentStep}
               >
@@ -421,7 +421,7 @@
               </nav>
 
               <!-- Quick Actions -->
-              <div class="mt-6 p-4 rounded-xl backdrop-blur-xs"
+              <div class="mt-6 p-4 rounded-xl "
                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                 <h4 class="font-medium mb-3" style="color: {$colorStore.text};">Quick Actions</h4>
                 <div class="space-y-2">
@@ -453,7 +453,7 @@
             <!-- All Steps View -->
             <div class="space-y-8" in:fade={{ duration: 300 }}>
               {#each steps as step, index}
-                <div class="rounded-2xl p-6 backdrop-blur-xs border"
+                <div class="rounded-2xl p-6  border"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold flex items-center gap-3" style="color: {$colorStore.text};">
@@ -521,7 +521,7 @@
           {:else}
             <!-- Wizard Step View -->
             <div class="wizard-content" in:fade={{ duration: 300 }}>
-              <div class="rounded-2xl p-6 sm:p-8 backdrop-blur-xs border"
+              <div class="rounded-2xl p-6 sm:p-8  border"
                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
 
                 <!-- Step Header -->

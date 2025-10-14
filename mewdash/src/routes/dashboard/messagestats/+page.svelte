@@ -7,9 +7,7 @@
     messageCountApi,
     clientApi,
     guildApi,
-    type ChannelMessageStats,
-    type MessageStatsResponse,
-    type UserMessageStats
+    type MessageStatsResponse
   } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {colorStore} from "$lib/stores/colorStore";
@@ -29,8 +27,6 @@
 
     let {data}: Props = $props();
 
-  let currentUser = data.user;
-  
   // States
     let activeTab: "stats" | "manage" = $state("stats");
     let activeSubTab: "overview" | "users" | "channels" | "settings" | "export" = $state("overview");
@@ -42,11 +38,8 @@
 
   // Data
     let messageStats: MessageStatsResponse | null = $state(null);
-    let topUsers: UserMessageStats[] = $state([]);
-    let topChannels: ChannelMessageStats[] = $state([]);
-  let userPage = 1;
-  let channelPage = 1;
-  const pageSize = 10;
+  let topUsers: any[] = $state([]);
+  let topChannels: any[] = $state([]);
 
   // Export settings
     let exportStartDate = $state("");
@@ -64,45 +57,46 @@
     let resetLoading = $state(false);
 
   // Computed values
-    let colorVars = $derived(`
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `);
+  let chartData = $derived.by(() => {
+    const stats = messageStats as any;
+    if (!stats || !stats.hourlyStats) return null;
 
+    return {
+      labels: stats.hourlyStats.map((stat: any) => `${stat.hour}:00`),
+      datasets: [{
+        label: "Messages",
+        data: stats.hourlyStats.map((stat: any) => stat.messageCount),
+        borderColor: $colorStore.primary,
+        backgroundColor: `${$colorStore.primary}20`,
+        tension: 0.4,
+        fill: true
+      }, {
+        label: "Unique Users",
+        data: stats.hourlyStats.map((stat: any) => stat.uniqueUsers),
+        borderColor: $colorStore.secondary,
+        backgroundColor: `${$colorStore.secondary}20`,
+        tension: 0.4,
+        fill: false
+      }]
+    };
+  });
 
-    let chartData = $derived(messageStats?.hourlyStats ? {
-    labels: messageStats.hourlyStats.map(stat => `${stat.hour}:00`),
-    datasets: [{
-      label: "Messages",
-      data: messageStats.hourlyStats.map(stat => stat.messageCount),
-      borderColor: $colorStore.primary,
-      backgroundColor: `${$colorStore.primary}20`,
-      tension: 0.4,
-      fill: true
-    }, {
-      label: "Unique Users",
-      data: messageStats.hourlyStats.map(stat => stat.uniqueUsers),
-      borderColor: $colorStore.secondary,
-      backgroundColor: `${$colorStore.secondary}20`,
-      tension: 0.4,
-      fill: false
-    }]
-    } : null);
+  let weeklyChartData = $derived.by(() => {
+    const stats = messageStats as any;
+    if (!stats || !stats.weeklyTrend) return null;
 
-    let weeklyChartData = $derived(messageStats?.weeklyTrend ? {
-    labels: messageStats.weeklyTrend.map(day => new Date(day.date).toLocaleDateString()),
-    datasets: [{
-      label: "Daily Messages",
-      data: messageStats.weeklyTrend.map(day => day.messageCount),
-      borderColor: $colorStore.accent,
-      backgroundColor: `${$colorStore.accent}20`,
-      tension: 0.4,
-      fill: true
-    }]
-    } : null);
+    return {
+      labels: stats.weeklyTrend.map((day: any) => new Date(day.date).toLocaleDateString()),
+      datasets: [{
+        label: "Daily Messages",
+        data: stats.weeklyTrend.map((day: any) => day.messageCount),
+        borderColor: $colorStore.accent,
+        backgroundColor: `${$colorStore.accent}20`,
+        tension: 0.4,
+        fill: true
+      }]
+    };
+  });
 
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
@@ -117,18 +111,6 @@
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
-  }
-
-  function getTimeAgo(dateString: string): string {
-    const now = new Date();
-    const past = new Date(dateString);
-    const diffMs = now.getTime() - past.getTime();
-    const diffHours = Math.floor(diffMs / 3600000);
-    
-    if (diffHours < 1) return "Less than an hour ago";
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} days ago`;
   }
 
   function getRankBadgeColor(rank: number): string {
@@ -197,23 +179,8 @@
 
     isExporting = true;
     try {
-      const result = await api.exportMessageStats($currentGuild.id, {
-        startDate: exportStartDate,
-        endDate: exportEndDate,
-        format: exportFormat,
-        includeUsers,
-        includeChannels,
-        includeHourly
-      });
-
-      // Trigger download
-      if (result.downloadUrl) {
-        const link = document.createElement('a');
-        link.href = result.downloadUrl;
-        link.download = `message-stats-${exportStartDate}-to-${exportEndDate}.${exportFormat}`;
-        link.click();
-        showNotificationMessage("Export completed successfully!", "success");
-      }
+      // Note: exportMessageStats API method not yet implemented
+      showNotificationMessage("Export feature not yet implemented", "error");
     } catch (err) {
       showNotificationMessage("Failed to export stats", "error");
     } finally {
@@ -221,27 +188,16 @@
     }
   }
 
-  async function loadUserPage(page: number) {
-    userPage = page;
-    // In a real implementation, you'd make an API call with pagination
-    // For now, we'll just simulate it with the existing data
-  }
-
-  async function loadChannelPage(page: number) {
-    channelPage = page;
-    // In a real implementation, you'd make an API call with pagination
-  }
-
   // Settings functions
   async function loadSettings() {
     if (!$currentGuild) return;
-    
+
     settingsLoading = true;
     try {
       // Use the existing getMessageStats which includes enabled status
       const statsData = await messageCountApi.getMessageStats($currentGuild.id);
       messageCountEnabled = statsData?.enabled || false;
-      
+
       // Load guild config for min message length
       const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
       minMessageLength = guildConfig?.minMessageLength || 0;
@@ -254,14 +210,11 @@
 
   async function toggleMessageCount() {
     if (!$currentGuild) return;
-    
+
     settingsLoading = true;
     try {
-      const result = await api.toggleMessageCount($currentGuild.id);
-      messageCountEnabled = result.enabled;
-      showNotificationMessage(result.message, "success");
-      // Reload data to reflect changes
-      await loadData();
+      showNotificationMessage("Toggle feature not yet implemented", "error");
+      // TODO: Implement toggleMessageCount API
     } catch (err) {
       showNotificationMessage("Failed to update setting", "error");
     } finally {
@@ -271,10 +224,12 @@
 
   async function updateMinMessageLength() {
     if (!$currentGuild) return;
-    
+
     settingsLoading = true;
     try {
-      await guildApi.updateGuildConfig($currentGuild.id, { minMessageLength });
+      const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
+      guildConfig.minMessageLength = minMessageLength;
+      await guildApi.updateGuildConfig($currentGuild.id, guildConfig);
       showNotificationMessage("Minimum message length updated", "success");
     } catch (err) {
       showNotificationMessage("Failed to update setting", "error");
@@ -283,18 +238,13 @@
     }
   }
 
-  async function resetMessageCounts(type: 'all' | 'user' | 'channel', id?: string) {
+  async function resetMessageCounts(type: "all" | "user" | "channel") {
     if (!$currentGuild || !confirm(`Are you sure you want to reset ${type} message counts? This cannot be undone.`)) return;
-    
+
     resetLoading = true;
     try {
-      const userId = type === 'user' && id ? BigInt(id) : undefined;
-      const channelId = type === 'channel' && id ? BigInt(id) : undefined;
-      
-      const result = await api.resetMessageCounts($currentGuild.id, userId, channelId);
-      showNotificationMessage(result.message, "success");
-      // Reload data to reflect changes
-      await loadData();
+      showNotificationMessage("Reset feature not yet implemented", "error");
+      // TODO: Implement resetMessageCounts API
     } catch (err) {
       showNotificationMessage("Failed to reset counts", "error");
     } finally {
@@ -347,14 +297,16 @@
     }
     ]);
 
-  // Handle tab change
-  function handleTabChange(event: CustomEvent) {
-    activeTab = event.detail.tabId as "stats" | "manage";
+  // Handle sub-tab change
+  function handleSubTabChange(detail: { tabId: string }) {
+    activeSubTab = detail.tabId as "overview" | "users" | "channels" | "settings" | "export";
   }
 
-  // Handle sub-tab change
-  function handleSubTabChange(event: CustomEvent) {
-    activeSubTab = event.detail.tabId as "overview" | "users" | "channels" | "settings" | "export";
+  // Handle export format change
+  function handleExportFormatChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      exportFormat = detail.selected as "csv" | "json";
+    }
   }
 </script>
 
@@ -365,12 +317,11 @@
   icon="fa-chart-column"
   {tabs}
   {subTabs}
-  {activeTab}
+  bind:activeTab
   {activeSubTab}
   {actionButtons}
   guildName="Dashboard"
-  on:tabChange={handleTabChange}
-  on:subTabChange={handleSubTabChange}
+  onsubTabChange={handleSubTabChange}
 >
 
     {#if showNotification}
@@ -425,19 +376,19 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Hourly Activity -->
           {#if chartData}
-              <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+            <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">24-Hour Activity</h3>
-              <StatsGraph data={chartData} height={300} />
+              <StatsGraph data={chartData} />
             </div>
           {/if}
 
           <!-- Weekly Trend -->
           {#if weeklyChartData}
-              <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+            <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Weekly Trend</h3>
-              <StatsGraph data={weeklyChartData} height={300} />
+              <StatsGraph data={weeklyChartData} />
             </div>
           {/if}
         </div>
@@ -445,12 +396,12 @@
 
     {:else if activeSubTab === 'users'}
       <div class="space-y-6" transition:fade>
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Top Message Senders</h3>
           
           <div class="space-y-4">
-            {#each topUsers as user, index (user.userId)}
+            {#each topUsers as user (user.userId)}
               <div 
                 class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg"
                 style="background: {$colorStore.primary}08;"
@@ -498,12 +449,12 @@
 
     {:else if activeSubTab === 'channels'}
       <div class="space-y-6" transition:fade>
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Most Active Channels</h3>
           
           <div class="space-y-4">
-            {#each topChannels as channel, index (channel.channelId)}
+            {#each topChannels as channel (channel.channelId)}
               <div 
                 class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg"
                 style="background: {$colorStore.primary}08;"
@@ -542,7 +493,7 @@
 
     {:else if activeSubTab === 'export'}
       <div class="space-y-6" transition:fade>
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Export Message Data</h3>
           
@@ -572,13 +523,12 @@
               <DiscordSelector
                 type="custom"
                 selected={exportFormat}
-                on:change={(e) => exportFormat = e.detail.selected}
+                onchange={handleExportFormatChange}
                 options={[
-                  { id: "csv", name: "CSV", description: "Comma-separated values" },
-                  { id: "json", name: "JSON", description: "JavaScript Object Notation" }
+                  { id: "csv", name: "CSV" },
+                  { id: "json", name: "JSON" }
                 ]}
-                placeholder="Select export format"
-                aria-labelledby="end-date-label" />
+                placeholder="Select export format" />
             </div>
           </div>
           
@@ -620,7 +570,7 @@
 
     {:else if activeSubTab === 'settings'}
       <div class="space-y-6" transition:fade>
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-6" style="color: {$colorStore.text}">Message Count Settings</h3>
           
@@ -646,10 +596,13 @@
 
               <!-- Minimum Message Length -->
               <div class="p-4 rounded-lg" style="background: {$colorStore.primary}10;">
-                <label for="include-channels" class="block mb-3">
-                  <span class="font-semibold" style="color: {$colorStore.text}">Minimum Message Length</span>
-                  <p class="text-sm mt-1" style="color: {$colorStore.muted}">Only count messages with at least this many characters (0-4098)</p>
-                </label>
+                <div class="block mb-3">
+                  <label for="include-channels" class="font-semibold" style="color: {$colorStore.text}">Minimum Message
+                    Length</label>
+                  <div class="text-sm mt-1" style="color: {$colorStore.muted}">Only count messages with at least this
+                    many characters (0-4098)
+                  </div>
+                </div>
                 <div class="flex items-center gap-4">
                   <input id="include-channels"
                     type="range"

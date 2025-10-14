@@ -35,13 +35,9 @@
   ];
 
   // Helper functions
-  function generateUniqueId() {
-    return "select-" + Math.random().toString(36).substr(2, 9);
-  }
-
   function updateComponent(field: string, value: any) {
     const updatedComponent = { ...component };
-    
+
     // Handle nested fields
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -50,9 +46,33 @@
     } else {
       updatedComponent[field] = value;
     }
-    
+
     component = updatedComponent;
     onupdate?.({ component: updatedComponent });
+  }
+
+    // Input handler with type guard
+    function handleInput(event: Event, field: string) {
+      const target = event.target;
+      if (target && ("value" in target)) {
+        updateComponent(field, target.value);
+      }
+    }
+
+    // Number input handler
+    function handleNumberInput(event: Event, field: string, fallback: string = "1") {
+      const target = event.target;
+      if (target && ("value" in target)) {
+        updateComponent(field, parseInt((target.value as string) || fallback));
+      }
+    }
+
+    // Option input handler
+    function handleOptionInput(event: Event, index: number, field: string) {
+      const target = event.target;
+      if (target && ("value" in target)) {
+        updateOption(index, field, target.value);
+      }
   }
 
   function addOption() {
@@ -164,7 +184,7 @@
             placeholder="Button text"
             value={component.displayName || ''}
             maxlength="80"
-            oninput={(e) => updateComponent('displayName', e.target?.value)}
+                 oninput={(e) => handleInput(e, 'displayName')}
           >
         </div>
 
@@ -179,8 +199,12 @@
             selected={component.style?.toString()}
             placeholder="Select button style"
             searchable={false}
-            on:change={(e) => updateComponent('style', parseInt(e.detail.selected))}
-            aria-labelledby="button-style-label" />
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                updateComponent('style', parseInt(detail.selected));
+              }
+            }}
+          />
         </div>
 
         <!-- Emoji -->
@@ -194,7 +218,7 @@
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="😀"
             value={component.emoji || ''}
-            oninput={(e) => updateComponent('emoji', e.target?.value)}
+                 oninput={(e) => handleInput(e, 'emoji')}
           >
         </div>
 
@@ -207,12 +231,12 @@
             <input id="input-4138"
               type="url"
               class="w-full px-3 py-2 rounded-lg border"
-              style="background: {$colorStore.primary}10; 
-                     border-color: {isValidUrl(component.url) ? $colorStore.primary + '30' : '#ED4245'}; 
+                   style="background: {$colorStore.primary}10;
+                     border-color: {isValidUrl(component.url) ? $colorStore.primary + '30' : '#ED4245'};
                      color: {$colorStore.text};"
               placeholder="https://example.com"
               value={component.url || ''}
-              oninput={(e) => updateComponent('url', e.target?.value)}
+                   oninput={(e) => handleInput(e, 'url')}
             >
             {#if component.url && !isValidUrl(component.url)}
               <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
@@ -279,7 +303,7 @@
             placeholder="Choose an option..."
             value={component.displayName || ''}
             maxlength="150"
-            oninput={(e) => updateComponent('displayName', e.target?.value)}
+                 oninput={(e) => handleInput(e, 'displayName')}
           >
         </div>
 
@@ -296,7 +320,7 @@
               class="w-full px-3 py-2 rounded-lg border"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.minOptions || 1}
-              oninput={(e) => updateComponent('minOptions', parseInt(e.target?.value || '1'))}
+                   oninput={(e) => handleNumberInput(e, 'minOptions', '1')}
             >
           </div>
           
@@ -311,7 +335,7 @@
               class="w-full px-3 py-2 rounded-lg border"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.maxOptions || 1}
-              oninput={(e) => updateComponent('maxOptions', parseInt(e.target?.value || '1'))}
+                   oninput={(e) => handleNumberInput(e, 'maxOptions', '1')}
             >
           </div>
         </div>
@@ -367,7 +391,7 @@
                       placeholder="Option name"
                       value={option.name || ''}
                       maxlength="100"
-                      oninput={(e) => updateOption(index, 'name', e.target?.value)}
+                           oninput={(e) => handleOptionInput(e, index, 'name')}
                     >
                   </div>
 
@@ -386,7 +410,7 @@
                       placeholder="Option description"
                       value={option.description || ''}
                       maxlength="100"
-                      oninput={(e) => updateOption(index, 'description', e.target?.value)}
+                           oninput={(e) => handleOptionInput(e, index, 'description')}
                     >
                   </div>
 
@@ -401,7 +425,7 @@
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="😀"
                       value={option.emoji || ''}
-                      oninput={(e) => updateOption(index, 'emoji', e.target?.value)}
+                           oninput={(e) => handleOptionInput(e, index, 'emoji')}
                     >
                   </div>
 
@@ -502,31 +526,27 @@
           <span class="placeholder px-3 py-2">
             {component.displayName || "Select an option..."}
           </span>
-          <div class="icon-container px-2">
+          <span class="icon-container px-2">
             <i class="fa-solid fa-chevron-down" style="font-size: 18px;"></i>
-          </div>
+          </span>
         </button>
       </div>
     {:else}
       <!-- Button Preview -->
-      <button 
-              class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+      <button
+        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none gap-2"
         disabled
         aria-label={component.displayName}
       >
-        <div class="flex items-center justify-center">
-          <div class="flex items-center gap-2">
-            {#if component.emoji}
-              <span class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
-                {component.emoji}
-              </span>
-            {/if}
-            <span class="truncate">{component.displayName}</span>
-            {#if component.style === 5}
-              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px;"></i>
-            {/if}
-          </div>
-        </div>
+        {#if component.emoji}
+          <span class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
+            {component.emoji}
+          </span>
+        {/if}
+        <span class="truncate">{component.displayName}</span>
+        {#if component.style === 5}
+          <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px;"></i>
+        {/if}
       </button>
     {/if}
 

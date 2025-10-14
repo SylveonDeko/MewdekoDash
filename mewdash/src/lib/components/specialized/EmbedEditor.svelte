@@ -115,6 +115,13 @@
     }
   }
 
+    function handleCheckboxChange(event: Event, fieldIndex: number, field: string) {
+      const target = event.target;
+      if (target && ("checked" in target)) {
+        updateField(fieldIndex, field, target.checked);
+      }
+    }
+
   // Character count helpers
   function getCharCount(text: string): number {
     return text ? text.length : 0;
@@ -138,10 +145,6 @@
     }
   }
 
-  function handleTabChange(event: CustomEvent) {
-    activeTab = event.detail.tab;
-  }
-
   // Placeholder handling
   function togglePlaceholderDropdown(fieldId: string) {
     const element = document.getElementById(fieldId) as HTMLInputElement | HTMLTextAreaElement;
@@ -158,14 +161,13 @@
       const start = element.selectionStart || 0;
       const end = element.selectionEnd || 0;
       const text = element.value;
-      const newText = text.substring(0, start) + placeholder.name + text.substring(end);
-      
-      element.value = newText;
+
+      element.value = text.substring(0, start) + placeholder.name + text.substring(end);
       element.selectionStart = element.selectionEnd = start + placeholder.name.length;
-      
+
       // Trigger input event to update the data
       element.dispatchEvent(new Event('input', { bubbles: true }));
-      
+
       showPlaceholderDropdown = '';
       element.focus();
     }
@@ -205,11 +207,10 @@
   </div>
 
   <!-- Tab Navigation -->
-  <TabNavigation 
-    {tabs} 
-    {activeTab} 
+  <TabNavigation
+    bind:activeTab
+    {tabs}
     ariaLabel="Embed editor sections"
-    on:change={handleTabChange}
   />
 
   <!-- Tab Content -->
@@ -253,9 +254,9 @@
               searchTerm={placeholderSearch}
               inline={true}
               inputElement={currentInputElement}
-              on:select={(e) => { insertPlaceholder(e.detail.placeholder, `embed-title-${index}`); }}
-              on:close={() => showPlaceholderDropdown = ''}
-              on:search={(e) => placeholderSearch = e.detail.term}
+              onselect={(detail) => { insertPlaceholder(detail.placeholder, `embed-title-${index}`); }}
+              onclose={() => showPlaceholderDropdown = ''}
+              onsearch={(detail) => placeholderSearch = detail.term}
             />
           </div>
         </div>
@@ -273,13 +274,13 @@
               id="embed-description-{index}"
               rows="6"
               class="w-full px-3 py-2 pr-10 rounded-lg border transition-colors duration-200 focus:outline-hidden focus:ring-2 resize-y"
-              style="background: {$colorStore.primary}10; 
-                     border-color: {$colorStore.primary}30; 
+              style="background: {$colorStore.primary}10;
+                     border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
               placeholder="Enter embed description... (Supports Discord markdown)"
-              value={embed.description}
+              bind:value={embed.description}
               maxlength="4096"
-              oninput={(e) => handleInput(e, 'description')}
+              oninput={() => onupdate?.({ embed, index })}
             ></textarea>
             <button
                     class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
@@ -297,9 +298,9 @@
               searchTerm={placeholderSearch}
               inline={true}
               inputElement={currentInputElement}
-              on:select={(e) => { insertPlaceholder(e.detail.placeholder, `embed-description-${index}`); }}
-              on:close={() => showPlaceholderDropdown = ''}
-              on:search={(e) => placeholderSearch = e.detail.term}
+              onselect={(detail) => { insertPlaceholder(detail.placeholder, `embed-description-${index}`); }}
+              onclose={() => showPlaceholderDropdown = ''}
+              onsearch={(detail) => placeholderSearch = detail.term}
             />
           </div>
           <p class="text-xs mt-1" style="color: {$colorStore.muted};">
@@ -341,8 +342,8 @@
             options={discordColors}
             selected={embed.color}
             placeholder="Select embed color"
-            on:change={(e) => updateEmbed('color', e.detail.selected)}
-            aria-labelledby="embed-color-label" />
+            onchange={(detail) => updateEmbed('color', detail.selected)}
+          />
           
           <!-- Custom Color Input -->
           <div class="mt-3">
@@ -355,7 +356,7 @@
               class="w-16 h-10 rounded-sm border-2"
               style="border-color: {$colorStore.primary}30;"
               value={embed.color}
-              oninput={(e) => updateEmbed('color', e.target?.value)}
+              oninput={(e) => handleInput(e, 'color')}
             >
           </div>
         </div>
@@ -399,9 +400,9 @@
                   searchTerm={placeholderSearch}
                   inline={true}
                   inputElement={currentInputElement}
-                  on:select={(e) => { insertPlaceholder(e.detail.placeholder, `author-name-${index}`); }}
-                  on:close={() => showPlaceholderDropdown = ''}
-                  on:search={(e) => placeholderSearch = e.detail.term}
+                  onselect={(detail) => { insertPlaceholder(detail.placeholder, `author-name-${index}`); }}
+                  onclose={() => showPlaceholderDropdown = ''}
+                  onsearch={(detail) => placeholderSearch = detail.term}
                 />
               </div>
             </div>
@@ -477,9 +478,9 @@
                   searchTerm={placeholderSearch}
                   inline={true}
                   inputElement={currentInputElement}
-                  on:select={(e) => { insertPlaceholder(e.detail.placeholder, `footer-text-${index}`); }}
-                  on:close={() => showPlaceholderDropdown = ''}
-                  on:search={(e) => placeholderSearch = e.detail.term}
+                  onselect={(detail) => { insertPlaceholder(detail.placeholder, `footer-text-${index}`); }}
+                  onclose={() => showPlaceholderDropdown = ''}
+                  onsearch={(detail) => placeholderSearch = detail.term}
                 />
               </div>
             </div>
@@ -571,9 +572,9 @@
                       searchTerm={placeholderSearch}
                       inline={true}
                       inputElement={currentInputElement}
-                      on:select={(e) => { insertPlaceholder(e.detail.placeholder, `field-name-${index}-${fieldIndex}`); }}
-                      on:close={() => showPlaceholderDropdown = ''}
-                      on:search={(e) => placeholderSearch = e.detail.term}
+                      onselect={(detail) => { insertPlaceholder(detail.placeholder, `field-name-${index}-${fieldIndex}`); }}
+                      onclose={() => showPlaceholderDropdown = ''}
+                      onsearch={(detail) => placeholderSearch = detail.term}
                     />
                   </div>
                 </div>
@@ -593,9 +594,9 @@
                       class="w-full px-3 py-2 pr-10 rounded-sm border text-sm resize-y"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Field value"
-                      value={field.value}
+                      bind:value={field.value}
                       maxlength="1024"
-                      oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
+                      oninput={() => onupdate?.({ embed, index })}
                     ></textarea>
                     <button
                             class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
@@ -613,9 +614,9 @@
                       searchTerm={placeholderSearch}
                       inline={true}
                       inputElement={currentInputElement}
-                      on:select={(e) => { insertPlaceholder(e.detail.placeholder, `field-value-${index}-${fieldIndex}`); }}
-                      on:close={() => showPlaceholderDropdown = ''}
-                      on:search={(e) => placeholderSearch = e.detail.term}
+                      onselect={(detail) => { insertPlaceholder(detail.placeholder, `field-value-${index}-${fieldIndex}`); }}
+                      onclose={() => showPlaceholderDropdown = ''}
+                      onsearch={(detail) => placeholderSearch = detail.term}
                     />
                   </div>
                 </div>
@@ -627,7 +628,7 @@
                     id="inline-{index}-{fieldIndex}"
                     class="rounded-sm"
                     checked={field.inline}
-                    onchange={(e) => updateField(fieldIndex, 'inline', e.target?.checked)}
+                    onchange={(e) => handleCheckboxChange(e, fieldIndex, 'inline')}
                   >
                   <label for="inline-{index}-{fieldIndex}" class="text-xs" style="color: {$colorStore.text};">
                     Display inline (up to 3 fields per row)

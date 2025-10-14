@@ -138,7 +138,7 @@
 </script>
 
 <div class="w-full">
-  <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
               border-color: {$colorStore.primary}30;">
     <div class="flex justify-between items-center mb-6">
@@ -185,28 +185,28 @@
     {:else}
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Events</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">
             {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalProcessed), 0))}
           </div>
         </div>
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Total Errors</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.accent}">
             {formatNumber(safeEventMetrics.reduce((sum, metric) => sum + safeNumber(metric?.totalErrors), 0))}
           </div>
         </div>
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Event Types</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.secondary}">
             {safeEventMetrics.length}
           </div>
         </div>
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <h3 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Avg Error Rate</h3>
           <div class="text-2xl font-bold" style="color: {$colorStore.text}">

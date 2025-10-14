@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import { highlightsApi } from "$lib/api/index.ts";
+    import { highlightsApi, type Highlight as HighlightType } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -12,18 +12,11 @@
 
     // Component state
     let loading = $state(false);
-    let saving = $state(false);
     let message = $state("");
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let highlights: Array<{
-        id: number;
-        userId: bigint;
-        username: string;
-        word: string;
-        dateAdded: string;
-    }> = $state([]);
+    let highlights: HighlightType[] = $state([]);
     let stats: {
         totalHighlights: number;
         totalUsers: number;
@@ -54,9 +47,9 @@
                 statsData,
                 disabledData
             ] = await Promise.all([
-                highlightsApi.getGuildHighlights($currentGuild.id).catch(() => []),
+                highlightsApi.getAllHighlights($currentGuild.id).catch(() => []),
                 highlightsApi.getHighlightStats($currentGuild.id).catch(() => null),
-                highlightsApi.getDisabledHighlightUsers($currentGuild.id).catch(() => [])
+                highlightsApi.getDisabledUsers($currentGuild.id).catch(() => [])
             ]);
 
             highlights = highlightsData;
@@ -78,7 +71,7 @@
         }
 
         try {
-            searchResults = await api.searchHighlights($currentGuild.id, searchQuery);
+            searchResults = await highlightsApi.searchHighlights($currentGuild.id, searchQuery);
         } catch (err) {
             logger.error("Failed to search highlights:", err);
             showMessage("Search failed", "error");
@@ -90,9 +83,8 @@
         if (!$currentGuild?.id) return;
         if (!confirm("Are you sure you want to delete this highlight?")) return;
 
-        saving = true;
         try {
-            await highlightsApi.deleteHighlight($currentGuild.id, highlightId);
+            await highlightsApi.removeHighlight($currentGuild.id, highlightId);
             showMessage("Highlight deleted successfully!", "success");
             await loadAllHighlightData();
             if (searchQuery.trim()) {
@@ -101,8 +93,6 @@
         } catch (err) {
             logger.error("Failed to delete highlight:", err);
             showMessage("Failed to delete highlight", "error");
-        } finally {
-            saving = false;
         }
     }
 
@@ -111,16 +101,13 @@
         if (!$currentGuild?.id) return;
         if (!confirm(`Are you sure you want to delete all highlights for ${username}?`)) return;
 
-        saving = true;
         try {
-            const result = await highlightsApi.deleteUserHighlights($currentGuild.id, userId);
+            const result = await highlightsApi.removeUserHighlights($currentGuild.id, userId);
             showMessage(`Deleted ${result.removedCount} highlight(s)!`, "success");
             await loadAllHighlightData();
         } catch (err) {
             logger.error("Failed to delete user highlights:", err);
             showMessage("Failed to delete highlights", "error");
-        } finally {
-            saving = false;
         }
     }
 
@@ -133,12 +120,13 @@
         }, 5000);
     }
 
-    function formatDate(dateString: string): string {
+    function formatDate(dateString: string | null): string {
+        if (!dateString) return "Unknown";
         return new Date(dateString).toLocaleString();
     }
 
     function groupHighlightsByUser() {
-        const grouped = new Map<string, typeof highlights>();
+        const grouped = new Map<string, HighlightType[]>();
         highlights.forEach(h => {
             const key = h.userId.toString();
             if (!grouped.has(key)) {
@@ -148,7 +136,7 @@
         });
         return Array.from(grouped.entries()).map(([userId, userHighlights]) => ({
             userId: BigInt(userId),
-            username: userHighlights[0].username,
+            username: `User ${userId}`,
             highlights: userHighlights
         }));
     }
@@ -175,46 +163,46 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 
     let groupedHighlights = $derived(groupHighlightsByUser());
 </script>
 
-<DashboardPageLayout
-        title="Highlights"
-        subtitle="Manage guild-wide highlight system"
-        icon="fa-bolt"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
->
+{#snippet statusMessageContent()}
+    {#if message}
+        <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+             style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
+                border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
+             in:fly={{ x: 20, duration: 300 }}>
+            {#if messageType === 'success'}
+                <i class="fa-utility-duo fa-regular fa-circle-check"
+                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
+            {:else if messageType === 'error'}
+                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                   style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+            {:else}
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            {/if}
+            <span
+              style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
+        </div>
+    {/if}
+{/snippet}
 
-    <svelte:fragment slot="status-messages">
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                    <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                    <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-bolt"
+  statusMessages={statusMessageContent}
+  subtitle="Manage guild-wide highlight system"
+  {tabs}
+  title="Highlights"
+>
 
     {#if activeTab === 'highlights'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -281,7 +269,7 @@
 
     {:else if activeTab === 'search'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -329,7 +317,7 @@
                                             "{highlight.word}"
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            {highlight.username} • {formatDate(highlight.dateAdded)}
+                                            User {highlight.userId.toString()} • {formatDate(highlight.dateAdded)}
                                         </div>
                                     </div>
                                 </div>
@@ -356,7 +344,7 @@
 
     {:else if activeTab === 'disabled'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+            <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -437,7 +425,7 @@
                 </div>
 
                 {#if stats.topHighlightedWords.length > 0}
-                    <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all mb-6"
+                    <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all mb-6"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
@@ -461,7 +449,7 @@
                 {/if}
 
                 {#if stats.recentHighlights.length > 0}
-                    <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+                    <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">

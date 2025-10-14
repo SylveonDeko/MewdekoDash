@@ -191,7 +191,7 @@
     </div>
 
   {#if user && !userHasReviewed && !loading}
-    <div class="rounded-2xl p-6 mb-8 shadow-xl backdrop-blur-xs transition-all duration-300 hover:shadow-2xl"
+    <div class="rounded-2xl p-6 mb-8 shadow-xl  transition-all duration-300 hover:shadow-2xl"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
          in:fly={{ y: 20, duration: 300, delay: 100 }}>
       <h2 class="text-2xl font-semibold mb-6" style="color: {$colorStore.text}">
@@ -216,7 +216,7 @@
           oninput={handleInput}
           onkeydown={handleKeydown}
           placeholder="Write your review here..."
-          class="w-full p-4 rounded-xl focus:ring-2 focus:outline-hidden min-h-[200px] resize-y transition-all duration-300 backdrop-blur-xs"
+          class="w-full p-4 rounded-xl focus:ring-2 focus:outline-hidden min-h-[200px] resize-y transition-all duration-300 "
           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.accent};"
           rows="8"
         ></textarea>
@@ -224,7 +224,7 @@
       <div class="mb-6">
         <h3 class="text-lg font-medium mb-2" style="color: {$colorStore.muted}">Preview</h3>
         <div
-                class="p-4 rounded-xl prose prose-sm max-w-none backdrop-blur-xs transition-all duration-300"
+          class="p-4 rounded-xl prose prose-sm max-w-none  transition-all duration-300"
           style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
         >
           {@html previewContent ||
@@ -233,7 +233,7 @@
       </div>
       <button
               onclick={submitReview}
-              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-hidden focus:ring-2 active:scale-95 backdrop-blur-xs"
+              class="w-full sm:w-auto mt-4 font-bold py-3 px-8 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-hidden focus:ring-2 active:scale-95 "
         style="background: {$colorStore.primary}; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
       >
         Submit Review
@@ -241,7 +241,7 @@
     </div>
   {:else if !user}
     <div
-            class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-xs transition-all duration-300"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
       style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
@@ -250,7 +250,7 @@
     </div>
   {:else if userHasReviewed}
     <div
-            class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-xs transition-all duration-300"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
       style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.secondary}30); border: 1px solid {$colorStore.secondary}40; color: {$colorStore.text};"
       role="status"
       in:fly={{ y: 20, duration: 300 }}
@@ -261,7 +261,7 @@
 
   {#if error}
     <div
-            class="p-6 rounded-xl mb-8 text-center shadow-xl backdrop-blur-xs transition-all duration-300"
+      class="p-6 rounded-xl mb-8 text-center shadow-xl  transition-all duration-300"
       style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.accent}30); border: 1px solid {$colorStore.accent}40; color: {$colorStore.text};"
       role="alert"
       in:fly={{ y: 20, duration: 300 }}
@@ -300,7 +300,7 @@
     <div class="grid grid-cols-1 gap-8">
       {#each reviewsWithParsedContent as review, index}
         <div
-          class="rounded-2xl p-6 shadow-xl backdrop-blur-xs transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02]"
+          class="rounded-2xl p-6 shadow-xl  transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02]"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20); border: 1px solid {$colorStore.primary}30;"
           in:fly={{ y: 20, duration: 300, delay: index * 100 }}
         >

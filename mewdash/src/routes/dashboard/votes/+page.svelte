@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import { votesApi, clientApi } from "$lib/api/index.ts";
+    import { votesApi, clientApi, type VoteRole, type Vote, type VoteLeaderboardEntry } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -18,12 +18,12 @@
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let voteRoles: Array<{id: number; guildId: bigint; roleId: bigint; timer: number; roleName?: string}> = $state([]);
+    let voteRoles: VoteRole[] = $state([]);
     let voteMessage: string = $state("");
     let votePassword: string = $state("");
     let voteChannel: bigint | null = $state(null);
-    let votes: Array<{id: number; userId: bigint; dateAdded: string}> = $state([]);
-    let leaderboard: Array<{userId: bigint; voteCount: number}> = $state([]);
+    let votes: Vote[] = $state([]);
+    let leaderboard: VoteLeaderboardEntry[] = $state([]);
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
     let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
@@ -31,7 +31,7 @@
     let configForm = $state({
         message: "",
         password: "",
-        channelId: null as bigint | null
+      channelId: null as string | null
     });
     let newVoteRole = $state({
         roleId: null as string | null,
@@ -40,7 +40,6 @@
 
     // UI state
     let activeTab = $state("config");
-    let leaderboardLimit = $state(10);
     let showPasswordField = $state(false);
 
     // Load all vote data
@@ -55,23 +54,29 @@
                 passwordData,
                 channelData,
                 votesData,
+              leaderboardData,
                 channelsData,
-                rolesListData,
-                leaderboardData
+              rolesListData
             ] = await Promise.all([
               votesApi.getVoteRoles($currentGuild.id).catch(() => []),
               votesApi.getVoteMessage($currentGuild.id).catch(() => ""),
               votesApi.getVotePassword($currentGuild.id).catch(() => ""),
               votesApi.getVoteChannel($currentGuild.id).catch(() => null),
               votesApi.getVotes($currentGuild.id).catch(() => []),
+              votesApi.getVoteLeaderboard($currentGuild.id, 10).catch(() => []),
               clientApi.getTextChannels($currentGuild.id).catch(() => []),
-              clientApi.getRoles($currentGuild.id).catch(() => []),
-              votesApi.getVoteLeaderboard($currentGuild.id, leaderboardLimit).catch(() => [])
+              clientApi.getRoles($currentGuild.id).catch(() => [])
             ]);
 
             voteRoles = rolesData;
-            voteMessage = messageData;
-            votePassword = passwordData;
+
+          // Unwrap string responses if they come as { data: "value" }
+          voteMessage = typeof messageData === "object" && messageData !== null && "data" in messageData
+            ? (messageData as any).data
+            : (messageData || "");
+          votePassword = typeof passwordData === "object" && passwordData !== null && "data" in passwordData
+            ? (passwordData as any).data
+            : (passwordData || "");
             voteChannel = channelData;
             votes = votesData;
             leaderboard = leaderboardData;
@@ -82,22 +87,23 @@
             }));
 
             guildRoles = (rolesListData || [])
-                .filter((role: any) =>
+              .filter((role) =>
                     role.id !== $currentGuild?.id?.toString() &&
-                    !role.managed &&
                     !role.name.startsWith("@")
                 )
-                .map((role: any) => ({
-                    id: role.id.toString(),
+              .map((role) => ({
+                id: role.id,
                     name: role.name,
-                    color: role.color || 0
+                color: 0
                 }))
                 .sort((a, b) => a.name.localeCompare(b.name));
+
+          const channelIdStr = voteChannel ? voteChannel.toString() : null;
 
             configForm = {
                 message: voteMessage,
                 password: votePassword,
-                channelId: voteChannel
+              channelId: channelIdStr
             };
         } catch (err) {
             logger.error("Failed to load vote data:", err);
@@ -123,8 +129,10 @@
               promises.push(votesApi.setVotePassword($currentGuild.id, configForm.password));
             }
 
-            if (configForm.channelId !== voteChannel) {
-              promises.push(votesApi.setVoteChannel($currentGuild.id, configForm.channelId || BigInt(0)));
+          const newChannelId = configForm.channelId ? BigInt(configForm.channelId) : null;
+          const voteChannelStr = voteChannel ? voteChannel.toString() : null;
+          if (configForm.channelId !== voteChannelStr) {
+            promises.push(votesApi.setVoteChannel($currentGuild.id, newChannelId || BigInt(0)));
             }
 
             await Promise.all(promises);
@@ -200,21 +208,12 @@
         }, 5000);
     }
 
-    function formatDate(dateString: string): string {
-        return new Date(dateString).toLocaleString();
-    }
-
     function formatDuration(seconds: number): string {
         if (seconds === 0) return "Permanent";
         if (seconds < 60) return `${seconds}s`;
         if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
         if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
         return `${Math.floor(seconds / 86400)}d`;
-    }
-
-    function getRoleName(roleId: bigint): string {
-        const role = guildRoles.find(r => r.id === roleId.toString());
-        return role ? role.name : `Unknown Role`;
     }
 
     onMount(() => {
@@ -238,52 +237,47 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
-<DashboardPageLayout
-        title="Vote Management"
-        subtitle="Configure voting rewards and tracking"
-        icon="fa-check-to-slot"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
->
+{#snippet statusMessageContent()}
+  {#if message}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+         style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
+          border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
+         in:fly={{ x: 20, duration: 300 }}>
+      {#if messageType === 'success'}
+        <i class="fa-utility-duo fa-regular fa-circle-check"
+           style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
+      {:else if messageType === 'error'}
+        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+           style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+      {:else}
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {/if}
+      <span
+        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+{/snippet}
 
-    <svelte:fragment slot="status-messages">
-        <!-- Status Message -->
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                  <i class="fa-utility-duo fa-regular fa-circle-check"
-                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
-                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                  <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span
-                        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-check-to-slot"
+  statusMessages={statusMessageContent}
+  subtitle="Configure voting rewards and tracking"
+  {tabs}
+  title="Vote Management"
+>
 
     <!-- Tab Content -->
     {#if activeTab === 'config'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+              <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -304,13 +298,13 @@
                                 <DiscordSelector
                                         type="channel"
                                         options={guildChannels}
-                                        selected={configForm.channelId?.toString() || null}
+                                        selected={configForm.channelId}
                                         placeholder="No channel selected"
-                                        on:change={(e) => {
-                                            configForm.channelId = e.detail.selected ? BigInt(e.detail.selected) : null;
+                                        onchange={(detail) => {
+                                            configForm.channelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
                                             configForm = { ...configForm };
                                         }}
-                                        aria-labelledby="vote-announcement-channel-label" />
+                                />
                             </div>
                         </div>
 
@@ -343,7 +337,7 @@
                 </div>
 
                 <!-- Custom Message -->
-                <div class="relative z-10 backdrop-blur-xs rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
+              <div class="relative z-10  rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -387,7 +381,7 @@
     {:else if activeTab === 'roles'}
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <!-- Add New Vote Role -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
@@ -408,11 +402,11 @@
                                 options={guildRoles}
                                 selected={newVoteRole.roleId}
                                 placeholder="Select role"
-                                on:change={(e) => {
-                                    newVoteRole.roleId = e.detail.selected;
+                                onchange={(detail) => {
+                                    newVoteRole.roleId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null;
                                     newVoteRole = { ...newVoteRole };
                                 }}
-                                aria-labelledby="role-to-grant-label" />
+                        />
                     </div>
 
                     <div>
@@ -442,7 +436,7 @@
             </div>
 
             <!-- Vote Roles List -->
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
+          <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center justify-between mb-6">
@@ -481,10 +475,10 @@
                                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-semibold" style="color: {$colorStore.text}">
-                                            {getRoleName(voteRole.roleId)}
+                                          {voteRole.roleName}
                                         </div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">
-                                            Duration: {formatDuration(voteRole.timer)}
+                                          Duration: {formatDuration(voteRole.seconds)}
                                         </div>
                                     </div>
                                 </div>
@@ -534,7 +528,7 @@
             </div>
 
             <!-- Leaderboard -->
-            <div class="mt-6 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+          <div class="mt-6  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">

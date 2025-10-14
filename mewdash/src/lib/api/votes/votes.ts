@@ -1,6 +1,6 @@
 // lib/api/votes/votes.ts
 import { apiRequest } from "../core";
-import type { VoteRole } from "./models";
+import type { VoteRole, Vote, VoteLeaderboardEntry } from "./models";
 
 /**
  * Voting system API
@@ -44,4 +44,11 @@ export const votesApi = {
 
   setVoteChannel: (guildId: bigint, channelId: bigint) =>
     apiRequest<void>(`Votes/${guildId}/channel`, "POST", channelId),
+
+  getVotes: (guildId: bigint) => apiRequest<Vote[]>(`Votes/${guildId}/votes`),
+
+  getVoteLeaderboard: (guildId: bigint, limit: number = 10) =>
+    apiRequest<VoteLeaderboardEntry[]>(
+      `Votes/${guildId}/leaderboard?limit=${limit}`,
+    ),
 };

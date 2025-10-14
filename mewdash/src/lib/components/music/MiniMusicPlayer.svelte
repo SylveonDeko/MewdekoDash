@@ -74,7 +74,7 @@
 
 {#if isVisible && (hasTrack || botInChannel)}
   <div
-          class="flex items-center gap-2 p-2 rounded-xl backdrop-blur-xs shadow-lg transition-all duration-300 hover:shadow-xl border"
+    class="flex items-center gap-2 p-2 rounded-xl  shadow-lg transition-all duration-300 hover:shadow-xl border"
           style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
            border-color: {colors.accent}30;
            max-width: 320px;"

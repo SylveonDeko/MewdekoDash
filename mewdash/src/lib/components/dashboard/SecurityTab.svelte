@@ -58,7 +58,13 @@
       }).length;
 
       // Process protection status
-      protectionStatus = protectionData && Object.keys(protectionData).length > 0 ? protectionData : {
+      const protectionDataTyped = protectionData as any;
+      protectionStatus = protectionData && Object.keys(protectionData).length > 0 ? {
+        antiRaid: protectionDataTyped.antiRaid || { enabled: false },
+        antiSpam: protectionDataTyped.antiSpam || { enabled: false },
+        antiAlt: protectionDataTyped.antiAlt || { enabled: false },
+        antiMassMention: protectionDataTyped.antiMassMention || { enabled: false }
+      } : {
         antiRaid: { enabled: false },
         antiSpam: { enabled: false },
         antiAlt: { enabled: false },
@@ -68,18 +74,18 @@
       // Process recent moderation actions (last 5) - use actual API data structure
       recentModerationActions = (moderationData || [])
         .filter(action => action.dateAdded) // Filter out invalid entries
-        .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+        .sort((a, b) => new Date(b.dateAdded!).getTime() - new Date(a.dateAdded!).getTime())
         .slice(0, 5);
 
       // Process logging configuration data
       loggingConfig = loggingConfigData;
       if (loggingConfig) {
-        const logChannels = loggingConfig.logChannels || {};
+        const logTypes = loggingConfig.logTypes || {};
         loggingStats = {
-          configuredChannels: Object.values(logChannels).filter(channelId => channelId && channelId !== BigInt(0)).length,
+          configuredChannels: Object.values(logTypes).filter(channelId => channelId && channelId !== BigInt(0)).length,
           ignoredChannels: (loggingConfig.ignoredChannels || []).length,
-          ignoredUsers: (loggingConfig.ignoredUsers || []).length,
-          totalLogTypes: Object.keys(logChannels).length
+          ignoredUsers: 0, // Not available in API response
+          totalLogTypes: Object.keys(logTypes).length
         };
       } else {
         loggingStats = { configuredChannels: 0, ignoredChannels: 0, ignoredUsers: 0, totalLogTypes: 0 };
@@ -169,7 +175,7 @@
     <div class="lg:col-span-6 space-y-4">
       <!-- Recent Moderation Actions -->
       <div
-              class="backdrop-blur-xs rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
+        class=" rounded-xl p-4 transition-all hover:shadow-lg hover:-translate-y-px border"
               style="background: {$colorStore.primary}05;
                border-color: {$colorStore.primary}15;">
         <div class="flex items-center gap-3 mb-4">
@@ -253,7 +259,7 @@
       <!-- Protection Status List -->
       <div class="space-y-3">
         <!-- Anti-Raid -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -274,7 +280,7 @@
         </div>
 
         <!-- Anti-Spam -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -295,7 +301,7 @@
         </div>
 
         <!-- Anti-Alt -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -316,7 +322,7 @@
         </div>
 
         <!-- Anti-Mass Mention -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -343,7 +349,7 @@
       <!-- Security Stats List -->
       <div class="space-y-3">
         <!-- Total Warnings -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -368,7 +374,7 @@
         </div>
 
         <!-- Recent Actions -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -388,7 +394,7 @@
         </div>
 
         <!-- Log Channels -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">
@@ -413,7 +419,7 @@
         </div>
 
         <!-- Active Protections -->
-        <div class="backdrop-blur-xs rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
+        <div class=" rounded-lg p-3 transition-all hover:scale-[1.01] hover:shadow-md border"
              style="background: {$colorStore.primary}05;
                     border-color: {$colorStore.primary}15;">
           <div class="flex items-center gap-3">

@@ -69,8 +69,8 @@
   } = $state({
     trigger: "",
     response: "",
-    grantedRoles: [],
-    removedRoles: [],
+    grantedRoles: "" as any,
+    removedRoles: "" as any,
     isRegex: false,
     isValidRegex: true,
     validTriggerTypesMessage: true,
@@ -92,7 +92,7 @@
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
 
   // UI state variables - Dual Mode Interface
-    let activeTab: "simple" | "advanced" = $state("simple");
+  let activeTab = $state("simple");
     let expandedTriggerId: number | null = $state(null);
     let loading = $state(true);
     let error: string | null = $state(null);
@@ -207,10 +207,24 @@
         guildId: guild.id,
         trigger: "",
         response: "",
-        grantedRoles: "",
-        removedRoles: "",
+        grantedRoles: "" as any,
+        removedRoles: "" as any,
         isRegex: false,
         isValidRegex: true,
+        validTriggerTypesMessage: true,
+        validTriggerTypesInteraction: false,
+        validTriggerTypesButton: false,
+        validTriggerTypesReactions: false,
+        autoDeleteTrigger: false,
+        reactToTrigger: false,
+        dmResponse: false,
+        containsAnywhere: false,
+        allowTarget: false,
+        noRespond: false,
+        ownerOnly: false,
+        applicationCommandType: CtApplicationCommandType.None,
+        prefixType: RequirePrefixType.None,
+        roleGrantType: CtRoleGrantType.Sender
       };
       newTriggerRegexTestString = "";
       newTriggerRegexTestResult = "";
@@ -500,13 +514,21 @@
   }
 
   // Handle enum selection change
-  function handleEnumChange(trigger: any, key: string, event: CustomEvent) {
-    trigger[key] = parseInt(event.detail.selected);
+  function handleEnumChange(trigger: any, key: string, detail: { selected: string | string[] | null }) {
+    if (detail.selected && typeof detail.selected === "string") {
+      trigger[key] = parseInt(detail.selected);
+    }
+  }
+
+  // Handle role selection change for triggers
+  function handleRoleChange(trigger: any, key: string, detail: { selected: string | string[] | null }) {
+    const roles = Array.isArray(detail.selected) ? detail.selected : (detail.selected ? [detail.selected] : []);
+    trigger[key] = roles;
   }
 
   // Handle trigger type change
-  function handleTriggerTypeChange(event: CustomEvent) {
-    newTrigger.isRegex = event.detail.selected === "true";
+  function handleTriggerTypeChange(detail: { selected: string | string[] | null }) {
+    newTrigger.isRegex = detail.selected === "true";
     handleNewTriggerRegexChange();
   }
 
@@ -606,8 +628,8 @@
     let actionButtons = $derived([]);
 
   // Handle tab change
-  function handleTabChange(event: CustomEvent) {
-    activeTab = event.detail.tabId;
+  function handleTabChange(tabId: string) {
+    activeTab = tabId;
     announceAction(`Switched to ${activeTab === 'simple' ? 'Simple Mode' : 'Advanced Mode'}`);
   }
   
@@ -828,13 +850,11 @@
   subtitle="Create and manage automated responses to messages"
   icon="fa-comment"
   {tabs}
-  {activeTab}
+  bind:activeTab
   {actionButtons}
   guildName="Dashboard"
-  on:tabChange={handleTabChange}
 >
     <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
     <!-- Notifications -->
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
@@ -852,7 +872,6 @@
         </div>
       </div>
     {/if}
-  </svelte:fragment>
 
 
   <!-- Loading State -->
@@ -1180,9 +1199,7 @@
                               multiple={true}
                               selected={trigger.grantedRoles}
                               placeholder="No roles to grant"
-                              on:change={(e) => trigger.grantedRoles = e.detail.selected}
-                              aria-label="Select roles to grant for this trigger"
-                              aria-describedby="roles-grant-help-{trigger.id}"
+                              onchange={(detail) => handleRoleChange(trigger, 'grantedRoles', detail)}
                             />
                             <div id="roles-grant-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
                               Users will receive these roles when the trigger is activated
@@ -1199,9 +1216,7 @@
                               multiple={true}
                               selected={trigger.removedRoles}
                               placeholder="No roles to remove"
-                              on:change={(e) => trigger.removedRoles = e.detail.selected}
-                              aria-label="Select roles to remove for this trigger"
-                              aria-describedby="roles-remove-help-{trigger.id}"
+                              onchange={(detail) => handleRoleChange(trigger, 'removedRoles', detail)}
                             />
                             <div id="roles-remove-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
                               Users will lose these roles when the trigger is activated
@@ -1299,8 +1314,7 @@
                   options={triggerTypeOptions}
                   selected={newTrigger.isRegex ? "true" : "false"}
                   placeholder="Select pattern type"
-                  on:change={handleTriggerTypeChange}
-                  aria-label="Pattern type selector"
+                  onchange={handleTriggerTypeChange}
                 />
               </div>
             </div>
@@ -1443,10 +1457,8 @@
                     multiple={true}
                     selected={newTrigger.grantedRoles}
                     placeholder="Select roles to grant"
-                    on:change={(e) => newTrigger.grantedRoles = e.detail.selected}
-                    aria-label="Roles to grant selector"
-                    aria-describedby="new-roles-grant-help"
-                    aria-labelledby="roles-to-grant-label" />
+                    onchange={(detail) => handleRoleChange(newTrigger, 'grantedRoles', detail)}
+                  />
                   <div id="new-roles-grant-help" class="text-xs mt-1" style="color: {colors.muted}">
                     Users will receive these roles when the trigger is activated
                   </div>
@@ -1461,10 +1473,8 @@
                     multiple={true}
                     selected={newTrigger.removedRoles}
                     placeholder="Select roles to remove"
-                    on:change={(e) => newTrigger.removedRoles = e.detail.selected}
-                    aria-label="Roles to remove selector"
-                    aria-describedby="new-roles-remove-help"
-                    aria-labelledby="roles-to-remove-label" />
+                    onchange={(detail) => handleRoleChange(newTrigger, 'removedRoles', detail)}
+                  />
                   <div id="new-roles-remove-help" class="text-xs mt-1" style="color: {colors.muted}">
                     Users will lose these roles when the trigger is activated
                   </div>
@@ -1619,9 +1629,8 @@
                         options={getEnumOptionsForSelector('prefixType')}
                         selected={newTrigger.prefixType?.toString() || "0"}
                         placeholder="Select prefix type"
-                        on:change={(e) => handleEnumChange(newTrigger, 'prefixType', e)}
-                        aria-label="Prefix requirement selector"
-                        aria-labelledby="prefix-requirement-label" />
+                        onchange={(detail) => handleEnumChange(newTrigger, 'prefixType', detail)}
+                      />
                     </div>
 
                     {#if newTrigger.prefixType === RequirePrefixType.Custom}
@@ -1651,9 +1660,8 @@
                       options={getEnumOptionsForSelector('roleGrantType')}
                       selected={newTrigger.roleGrantType?.toString() || "0"}
                       placeholder="Who gets the roles"
-                      on:change={(e) => handleEnumChange(newTrigger, 'roleGrantType', e)}
-                      aria-label="Role grant target selector"
-                      aria-labelledby="role-grant-target-label" />
+                      onchange={(detail) => handleEnumChange(newTrigger, 'roleGrantType', detail)}
+                    />
                   </div>
 
                   <!-- Additional Options -->

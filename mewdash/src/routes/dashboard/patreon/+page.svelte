@@ -4,13 +4,8 @@
     import {
       patreonApi,
       clientApi,
-      type PatreonAnalytics,
-      type PatreonConfig,
       type PatreonConfigUpdateRequest,
-      type PatreonCreator,
-      type PatreonOAuthStatusResponse,
-      type PatreonSupporter,
-      type PatreonTier
+      type PatreonOAuthStatusResponse
     } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
@@ -18,6 +13,7 @@
     import {goto, invalidateAll} from "$app/navigation";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import Notification from "$lib/components/ui/Notification.svelte";
     import {browser} from "$app/environment";
     import {colorStore} from "$lib/stores/colorStore";
     import {logger} from "$lib/logger";
@@ -40,17 +36,18 @@
     notificationType = type;
   }
 
-    let patreonAnalytics: PatreonAnalytics | null = $state(null);
-    let patreonSupporters: PatreonSupporter[] = $state([]);
-  let patreonConfig: PatreonConfig | null = null;
-    let patreonTiers: PatreonTier[] = $state([]);
-    let patreonCreator: PatreonCreator | null = $state(null);
+    let patreonAnalytics: any = $state(null);
+    let patreonSupporters: any[] = $state([]);
+    let patreonConfig: any = $state(null);
+    let patreonTiers: any[] = $state([]);
+    let patreonCreator: any = $state(null);
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
     let guildChannels: Array<{ id: string; name: string }> = $state([]);
     let isConnecting = $state(false);
     let isRefreshing = $state(false);
     let isSyncing = $state(false);
     let isUpdatingConfig = $state(false);
+    let showNotification = $state(false);
 
   // Config form state
     let configForm: PatreonConfigUpdateRequest = $state({
@@ -73,7 +70,7 @@
     { id: "overview", label: "Overview", icon: "fa-heart" },
     { id: "supporters", label: "Supporters", icon: "fa-users" },
     { id: "tiers", label: "Tier Mapping", icon: "fa-star" },
-    { id: "config", label: "Configuration", icon: "fa-gear" }
+    { id: "settings", label: "Configuration", icon: "fa-gear" }
   ];
 
   // Handle URL parameters for success/error messages
@@ -178,11 +175,11 @@
       patreonConfig = await patreonApi.getPatreonConfig(BigInt($currentGuild.id));
       // Populate form with current config
       configForm = {
-        channelId: patreonConfig.channelId || undefined,
-        message: patreonConfig.message || undefined,
-        announcementDay: patreonConfig.announcementDay || undefined,
-        toggleAnnouncements: undefined,
-        toggleRoleSync: undefined
+        channelId: patreonConfig.patreonChannelId || undefined,
+        message: patreonConfig.patreonMessage || undefined,
+        announcementDay: patreonConfig.patreonAnnouncementDay || undefined,
+        toggleAnnouncements: patreonConfig.patreonEnabled,
+        toggleRoleSync: patreonConfig.patreonRoleSync
       };
     } catch (err) {
       logger.error("Failed to load config:", err);
@@ -237,7 +234,7 @@
 
     try {
       isConnecting = true;
-      const result = await api.handlePatreonOAuthCallback(code, state);
+      const result = await patreonApi.handlePatreonOAuthCallback(code, state);
 
       showNotificationMessage(result.message || "Patreon integration configured successfully!", "success");
 
@@ -281,16 +278,16 @@
     }
   }
 
-  async function triggerOperation(operation: string) {
+    async function triggerOperation(operation: "sync" | "syncRoles" | "announceGoals") {
     if (!$currentGuild) return;
 
     try {
       isSyncing = true;
-      const result = await api.triggerPatreonOperation(BigInt($currentGuild.id), { operation });
+      const result = await patreonApi.triggerPatreonOperation(BigInt($currentGuild.id), { operation });
       showNotificationMessage(result.message, "success");
 
       // Refresh relevant data after operation
-      if (operation === "sync" || operation === "sync_all") {
+      if (operation === "sync" || operation === "syncRoles") {
         await loadPatreonSupporters();
         await loadPatreonTiers();
         await loadPatreonAnalytics();
@@ -324,7 +321,7 @@
 
     try {
       isMappingTier = true;
-      const result = await api.mapPatreonTierToRole(BigInt($currentGuild.id), {
+      const result = await patreonApi.mapPatreonTierToRole(BigInt($currentGuild.id), {
         tierId: selectedTierId,
         roleId: BigInt(selectedRoleId)
       });
@@ -360,7 +357,7 @@
 
     try {
       isConnecting = true;
-      const result = await api.disconnectPatreon(BigInt($currentGuild.id));
+      const result = await patreonApi.disconnectPatreon(BigInt($currentGuild.id));
       showNotificationMessage(result.message, "success");
 
       // Reload data to show disconnected state
@@ -372,7 +369,41 @@
       isConnecting = false;
     }
   }
+
+    // Handler functions for DiscordSelector
+    function handleTierChange(detail: any) {
+      if (detail.selected && typeof detail.selected === "string") {
+        selectedTierId = detail.selected;
+      }
+    }
+
+    function handleRoleChange(detail: any) {
+      if (detail.selected && typeof detail.selected === "string") {
+        selectedRoleId = detail.selected;
+      }
+    }
+
+    function handleChannelChange(detail: any) {
+      if (detail.selected) {
+        configForm.channelId = detail.selected ? BigInt(detail.selected) : undefined;
+      }
+    }
+
+    function getTierOptions() {
+      return patreonTiers.map((tier: any) => ({
+        id: tier.id,
+        name: `${tier.attributes?.title || "Unknown"} - ${formatCurrency(tier.attributes?.amountCents || 0)}`
+      }));
+    }
 </script>
+
+{#snippet statusMessages()}
+  {#if notificationMessage}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
 
 <svelte:head>
   <title>Patreon Integration - {$currentGuild?.name || 'Mewdeko Dashboard'}</title>
@@ -389,7 +420,7 @@
     {
       label: "Sync Supporters",
       icon: "fa-users",
-      action: () => triggerOperation("sync_all"),
+      action: () => triggerOperation("sync"),
       loading: isSyncing
     }
   ] : []}
@@ -398,15 +429,13 @@
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
-  on:tabChange={(e) => activeTab = e.detail.tabId}
-  bind:notificationMessage
-  bind:notificationType
+  statusMessages={statusMessages}
   title="Patreon Integration"
 >
 
     {#if loading}
       <div
-              class="backdrop-blur-xs rounded-2xl border p-8 shadow-2xl transition-all text-center"
+        class=" rounded-2xl border p-8 shadow-2xl transition-all text-center"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
         in:fade
@@ -417,19 +446,20 @@
       </div>
     {:else if error}
       <div
-              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+        class=" rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-               border-color: #ef444430;"
+               border-color: {$colorStore.accent}30;"
         in:fade
       >
         <div class="flex items-center gap-3 mb-2">
           <i class="fa-utility-duo fa-regular fa-circle-xmark"
-             style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 24px;"></i>
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Error</h3>
         </div>
-        <p class="text-red-300">{error}</p>
+        <p style="color: {$colorStore.accent};">{error}</p>
         <button
-          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
+          class="px-4 py-2 rounded-lg mt-4 transition-colors"
+          style="background: {$colorStore.accent}; color: {$colorStore.text};"
           onclick={loadAllData}
         >
           <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
@@ -439,7 +469,7 @@
     {:else if !patreonStatus?.isConfigured}
       <!-- Connection Setup -->
       <div
-              class="backdrop-blur-xs rounded-2xl border p-8 shadow-2xl transition-all text-center"
+        class=" rounded-2xl border p-8 shadow-2xl transition-all text-center"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
         in:fade
@@ -452,12 +482,13 @@
         </p>
 
         <button
-          class="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center gap-3 mx-auto text-lg"
+          class="px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center gap-3 mx-auto text-lg"
+          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary}); color: {$colorStore.text};"
           onclick={connectPatreon}
           disabled={isConnecting}
         >
           {#if isConnecting}
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2" style="border-color: {$colorStore.text};"></div>
             Connecting...
           {:else}
             <i class="fa-solid fa-heart" style="font-size: 20px;"></i>
@@ -467,7 +498,7 @@
 
         <!-- Information Card -->
         <div
-                class="mt-8 backdrop-blur-xs rounded-2xl border p-6 text-left transition-all"
+          class="mt-8  rounded-2xl border p-6 text-left transition-all"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}05, {$colorStore.gradientMid}10);
                  border-color: {$colorStore.primary}20;"
         >
@@ -520,13 +551,13 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Status Card -->
             <div
-                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+              class=" rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
               <div class="flex items-center gap-3 mb-4">
                 <i class="fa-utility-duo fa-regular fa-circle-check"
-                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 24px;"></i>
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
                 <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Connected</h3>
               </div>
               <div class="space-y-2">
@@ -549,7 +580,7 @@
             <!-- Analytics Cards -->
             {#if patreonAnalytics}
               <div
-                      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                class=" rounded-2xl border p-6 shadow-2xl transition-all"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -565,7 +596,7 @@
               </div>
 
               <div
-                      class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                class=" rounded-2xl border p-6 shadow-2xl transition-all"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -583,7 +614,7 @@
             <!-- Creator Card -->
             {#if patreonCreator}
               <div
-                      class="backdrop-blur-xs rounded-2xl border p-4 md:p-6 shadow-2xl transition-all col-span-1 md:col-span-2 lg:col-span-1"
+                class=" rounded-2xl border p-4 md:p-6 shadow-2xl transition-all col-span-1 md:col-span-2 lg:col-span-1"
                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                        border-color: {$colorStore.primary}30;"
               >
@@ -596,9 +627,9 @@
                 <!-- Mobile-first layout -->
                 <div class="space-y-3">
                   <div class="flex items-center gap-3">
-                    {#if patreonCreator.attributes?.image_url}
+                    {#if patreonCreator.imageUrl}
                       <img
-                              src={patreonCreator.attributes.image_url}
+                        src={patreonCreator.imageUrl}
                               alt="Creator avatar"
                               class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shrink-0"
                       >
@@ -611,47 +642,25 @@
                              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 28px;"></i>
                       </div>
                     {/if}
-                    
+
                     <div class="flex-1 min-w-0">
                       <p class="font-semibold text-sm md:text-base truncate" style="color: {$colorStore.text};">
-                        {patreonCreator.attributes?.full_name || patreonCreator.attributes?.first_name || 'Unknown Creator'}
+                        {patreonCreator.fullName || 'Unknown Creator'}
                       </p>
-                      
-                      {#if patreonCreator.attributes?.is_creator}
-                        <div class="flex items-center gap-1 mt-1">
-                          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span class="text-xs" style="color: {$colorStore.muted};">Verified Creator</span>
-                        </div>
-                      {/if}
+
+                      <div class="flex items-center gap-1 mt-1">
+                        <div class="w-2 h-2 rounded-full" style="background: {$colorStore.primary};"></div>
+                        <span class="text-xs"
+                              style="color: {$colorStore.muted};">Patron Count: {patreonCreator.patronCount || 0}</span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <!-- Creator info -->
-                  <div class="space-y-2 text-xs md:text-sm">
-                    {#if patreonCreator.attributes?.created}
-                      <div class="flex justify-between">
-                        <span style="color: {$colorStore.muted};">Member since:</span>
-                        <span style="color: {$colorStore.text};">
-                          {new Date(patreonCreator.attributes.created).getFullYear()}
-                        </span>
-                      </div>
-                    {/if}
-                    
-                    {#if patreonCreator.relationships?.memberships?.data}
-                      <div class="flex justify-between">
-                        <span style="color: {$colorStore.muted};">Memberships:</span>
-                        <span style="color: {$colorStore.text};">
-                          {patreonCreator.relationships.memberships.data.length}
-                        </span>
-                      </div>
-                    {/if}
-                  </div>
-                  
+
                   <!-- Action button -->
-                  {#if patreonCreator.attributes?.url}
-                    <a 
-                      href={patreonCreator.attributes.url} 
-                      target="_blank" 
+                  {#if patreonCreator.url}
+                    <a
+                      href={patreonCreator.url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors w-full justify-center"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -667,7 +676,7 @@
 
           <!-- Quick Actions -->
           <div
-                  class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+            class=" rounded-2xl border p-6 shadow-2xl"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
           >
@@ -676,7 +685,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("sync_all")}
+                onclick={() => triggerOperation("sync")}
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
@@ -686,7 +695,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("sync_roles")}
+                onclick={() => triggerOperation("syncRoles")}
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-star" style="font-size: 16px;"></i>
@@ -696,7 +705,7 @@
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("manual_announcement")}
+                onclick={() => triggerOperation("announceGoals")}
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-comment" style="font-size: 16px;"></i>
@@ -705,17 +714,7 @@
 
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-                onclick={() => triggerOperation("refresh_token")}
-                disabled={isSyncing}
-              >
-                <i class="fa-solid fa-arrows-rotate" style="font-size: 16px;"></i>
-                Refresh Token
-              </button>
-
-              <button
-                class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+                style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
                 onclick={disconnectPatreon}
                 disabled={isConnecting}
               >
@@ -728,7 +727,7 @@
         {:else if activeTab === "supporters"}
           <!-- Supporters Tab -->
           <div
-                  class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+            class=" rounded-2xl border p-6 shadow-2xl"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                    border-color: {$colorStore.primary}30;"
             in:fly={{ y: 20, duration: 300 }}
@@ -738,8 +737,8 @@
                 ({patreonSupporters.length})</h3>
               <button
                 class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style="background: {$colorStore.primary}; color: white;"
-                onclick={() => triggerOperation("sync_all")}
+                style="background: {$colorStore.primary}; color: {$colorStore.text};"
+                onclick={() => triggerOperation("sync")}
                 disabled={isSyncing}
               >
                 <i class="fa-solid fa-sync {isSyncing ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
@@ -780,10 +779,8 @@
                       <td class="py-3 px-4">
                           <span
                             class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-                            class:bg-green-100={supporter.patronStatus === 'active_patron'}
-                            class:text-green-800={supporter.patronStatus === 'active_patron'}
-                            class:bg-red-100={supporter.patronStatus !== 'active_patron'}
-                            class:text-red-800={supporter.patronStatus !== 'active_patron'}>
+                            style="background: {supporter.patronStatus === 'active_patron' ? $colorStore.primary + '20' : $colorStore.accent + '20'};
+                                   color: {supporter.patronStatus === 'active_patron' ? $colorStore.primary : $colorStore.accent};">
                             {supporter.patronStatus.replace('_', ' ')}
                           </span>
                       </td>
@@ -799,7 +796,7 @@
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <!-- Tier Mapping -->
             <div
-                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+              class=" rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -810,15 +807,11 @@
                     Tier</label>
                   <DiscordSelector
                     type="custom"
-                    options={patreonTiers.map(tier => ({
-                      id: tier.tierId,
-                      name: `${tier.tierTitle} - ${formatCurrency(tier.amountCents)}`,
-                      label: `${tier.tierTitle} - ${formatCurrency(tier.amountCents)}`
-                    }))}
+                    options={getTierOptions()}
                     selected={selectedTierId}
                     placeholder="Select a tier..."
                     customIcon="fa-star"
-                    on:change={(e) => selectedTierId = e.detail.selected}
+                    onchange={handleTierChange}
                   />
                 </div>
                 <div>
@@ -829,18 +822,19 @@
                     options={guildRoles}
                     selected={selectedRoleId}
                     placeholder="Select a role..."
-                    on:change={(e) => selectedRoleId = e.detail.selected}
+                    onchange={handleRoleChange}
                   />
                 </div>
                 <div>
                   <button
                     class="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                    style="background: {$colorStore.primary}; color: white;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.text};"
                     onclick={mapTierToRole}
                     disabled={isMappingTier || !selectedTierId || !selectedRoleId}
                   >
                     {#if isMappingTier}
-                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2"
+                           style="border-color: {$colorStore.text};"></div>
                     {:else}
                       <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
                     {/if}
@@ -852,7 +846,7 @@
 
             <!-- Tiers List -->
             <div
-                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+              class=" rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -872,16 +866,17 @@
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
                     >
                       <div class="flex items-start justify-between mb-2">
-                        <h4 class="font-semibold" style="color: {$colorStore.text};">{tier.tierTitle}</h4>
+                        <h4 class="font-semibold"
+                            style="color: {$colorStore.text};">{tier.attributes?.title || 'Unknown Tier'}</h4>
                         <span class="text-sm px-2 py-1 rounded-full"
                               style="background: {$colorStore.primary}20; color: {$colorStore.text};">
-                          {tier.discordRoleId ? 'Mapped' : 'Unmapped'}
+                          {tier.attributes?.discordRoleIds?.length ? 'Mapped' : 'Unmapped'}
                         </span>
                       </div>
                       <p class="text-lg font-bold mb-2"
-                         style="color: {$colorStore.primary};">{formatCurrency(tier.amountCents)}</p>
-                      {#if tier.description}
-                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{tier.description}</p>
+                         style="color: {$colorStore.primary};">{formatCurrency(tier.attributes?.amountCents || 0)}</p>
+                      {#if tier.attributes?.description}
+                        <p class="text-sm mb-3" style="color: {$colorStore.muted};">{tier.attributes.description}</p>
                       {/if}
                     </div>
                   {/each}
@@ -893,7 +888,7 @@
           <!-- Settings Tab -->
           <div class="space-y-6" in:fly={{ y: 20, duration: 300 }}>
             <div
-                    class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+              class=" rounded-2xl border p-6 shadow-2xl"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
             >
@@ -908,7 +903,7 @@
                       options={guildChannels}
                       selected={configForm.channelId ? configForm.channelId.toString() : ""}
                       placeholder="Select a channel..."
-                      on:change={(e) => configForm.channelId = e.detail.selected ? BigInt(e.detail.selected) : undefined}
+                      onchange={handleChannelChange}
                     />
                   </div>
                   <div>
@@ -921,7 +916,7 @@
                       max="28"
                       bind:value={configForm.announcementDay}
                       class="w-full px-3 py-2 rounded-lg border"
-                      style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
+                      style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
                       placeholder="Day of month"
                     >
                   </div>
@@ -935,7 +930,7 @@
                     bind:value={configForm.message}
                     rows="3"
                     class="w-full px-3 py-2 rounded-lg border"
-                    style="background: rgb(18, 24, 40); color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
+                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
                     placeholder="Custom announcement message..."
                   ></textarea>
                 </div>
@@ -966,11 +961,12 @@
                   <button
                     type="submit"
                     class="px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
-                    style="background: {$colorStore.primary}; color: white;"
+                    style="background: {$colorStore.primary}; color: {$colorStore.text};"
                     disabled={isUpdatingConfig}
                   >
                     {#if isUpdatingConfig}
-                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2"
+                           style="border-color: {$colorStore.text};"></div>
                     {:else}
                       <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
                     {/if}

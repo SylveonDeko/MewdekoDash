@@ -9,12 +9,8 @@
     import {
       repeatersApi,
       clientApi,
-      messageCountApi,
       type CreateRepeaterRequest,
-      type MessageCountingStatus,
-      type RepeaterFormData,
       type RepeaterResponse,
-      type RepeaterStatsResponse,
       type UpdateRepeaterRequest,
         formatInterval,
         formatTimeUntilNext,
@@ -39,61 +35,35 @@
 
   // Data state
     let repeaters: RepeaterResponse[] = $state([]);
-    let repeaterStats: RepeaterStatsResponse | null = $state(null);
-    let messageCountStatus: MessageCountingStatus | null = $state(null);
+  let repeaterStats: any = $state(null);
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
-  let forumChannels: Array<{ 
-    id: string; 
-    name: string; 
+  let forumChannels: Array<{
+    id: string;
+    name: string;
     tags: Array<{id: bigint, name: string, emoji: string | null, isModerated: boolean}>;
   }> = $state([]);
-  
+
   // Dynamic channel selection state
     let selectedChannelType: 'text' | 'forum' | null = $state(null);
-    let availableForumTags: Array<{ id: bigint, name: string, emoji: string | null }> = $state([]);
     let selectedForumTags: { required: bigint[], excluded: bigint[] } = $state({required: [], excluded: []});
 
     let messageContent = $state(""); // Plain text content
-  let messageEmbeds: Array<{
-    title: string;
-    description: string;
-    color: string;
-    url: string;
-    author: { name: string; url: string; icon_url: string };
-    thumbnail: { url: string };
-    image: { url: string };
-    footer: { text: string; icon_url: string };
-    fields: Array<{ name: string; value: string; inline: boolean; id: number }>;
-  }> = $state([]);
-  let messageComponents: Array<{
-    componentKey: string;
-    id: string | null;
-    displayName: string;
-    style: number;
-    url: string;
-    emoji: string;
-    isSelect: boolean;
-    maxOptions: number;
-    minOptions: number;
-    options: Array<{ id: string | null; name: string; emoji: string; description: string }>;
-  }> = $state([]);
-
-  // Message builder state
-    let showEmbedBuilder = $state(false);
-    let showComponentBuilder = $state(false);
-  let editingEmbed: any = null;
-  let editingComponent: any = null;
+  let messageEmbeds: Array<any> = $state([]);
+  let messageComponents: Array<any> = $state([]);
 
   // UI state
     let activeTab = $state("overview");
     let selectedRepeater: RepeaterResponse | null = $state(null);
-  let showCreateForm = false;
     let editingRepeaterId: number | null = $state(null);
     let isEditMode = $state(false);
+  let showEmbedBuilder = $state(false);
+  let showComponentBuilder = $state(false);
+  let showAdvancedOptions = $state(false);
+  let showForumTagEditor = $state(false);
 
-  // Form data for creating/editing repeaters - NOW WITH ALL FIELDS
-    let formData: RepeaterFormData = $state({
-    channelId: null,
+  // Form data for creating/editing repeaters - using any for flexibility
+  let formData: any = $state({
+    channelId: "",
     message: "",
     interval: "00:05:00",
     startTimeOfDay: "",
@@ -117,14 +87,6 @@
 
   // Additional state for advanced features
     let selectedRepeaterIds: number[] = $state([]);
-  let showBulkActions = false;
-  let showAdvancedTimeEditor = false;
-    let showForumTagEditor = $state(false);
-  let currentForumTags: Array<{id: bigint, name: string, type: 'required'|'excluded'}> = [];
-  let threadStickyMessages: Array<{threadId: bigint, messageId: bigint, threadName: string, isActive: boolean}> = [];
-  
-  // UI state for simplified form
-    let showAdvancedOptions = $state(false);
 
   // Trigger mode options for DiscordSelector
     let triggerModeOptions = $derived(Object.values(StickyTriggerMode)
@@ -136,54 +98,56 @@
     })));
 
     let allChannels = $derived([
-    ...guildChannels.map(ch => ({ 
-      id: ch.id, 
-      name: ch.name, 
-      type: 'text',
+      ...guildChannels.map(ch => ({
+        id: ch.id,
+        name: ch.name,
       label: `#${ch.name} (Text Channel)`
     })),
-    ...forumChannels.map(ch => ({ 
-      id: ch.id, 
-      name: ch.name, 
-      type: 'forum',
-      label: `#${ch.name} (Forum - ${ch.tags.length} tags)`,
-      tags: ch.tags
+      ...forumChannels.map(ch => ({
+        id: ch.id,
+        name: ch.name,
+        label: `#${ch.name} (Forum - ${ch.tags.length} tags)`
     }))
     ]);
+
+  // Derive available forum tags from selected channel
+  let availableForumTags = $derived.by(() => {
+    if (!formData.channelId) return [];
+    const selectedChannel = forumChannels.find(ch => ch.id === formData.channelId);
+    if (selectedChannel) {
+      return selectedChannel.tags.map((tag: any) => ({
+        id: tag.id,
+        name: tag.name,
+        emoji: tag.emoji
+      }));
+    }
+    return [];
+  });
 
   // Dynamic channel type detection and tag loading
   $effect(() => {
     if (formData.channelId) {
-      const selectedChannel = allChannels.find(ch => ch.id === formData.channelId);
-      if (selectedChannel) {
-        selectedChannelType = selectedChannel.type as 'text' | 'forum';
-        
-        if (selectedChannel.type === 'forum' && selectedChannel.tags) {
-          availableForumTags = selectedChannel.tags.map(tag => ({
-            id: tag.id,
-            name: tag.name,
-            emoji: tag.emoji
-          }));
-          // Auto-enable thread auto-sticky for forum channels (only if not in edit mode)
-          if (!isEditMode) {
-            formData.threadAutoSticky = true;
-            // Auto-enable thread-only mode for immediate trigger on forum channels
-            if (formData.triggerMode === StickyTriggerMode.Immediate) {
-              formData.threadOnlyMode = true;
-            }
+      const isForumChannel = forumChannels.some(ch => ch.id === formData.channelId);
+      selectedChannelType = isForumChannel ? "forum" : "text";
+
+      if (isForumChannel) {
+        // Auto-enable thread auto-sticky for forum channels (only if not in edit mode)
+        if (!isEditMode) {
+          formData.threadAutoSticky = true;
+          // Auto-enable thread-only mode for immediate trigger on forum channels
+          if (formData.triggerMode === StickyTriggerMode.Immediate) {
+            formData.threadOnlyMode = true;
           }
-        } else {
-          availableForumTags = [];
-          // Reset thread auto-sticky for non-forum channels (only if not in edit mode)  
-          if (!isEditMode) {
-            formData.threadAutoSticky = false;
-            formData.threadOnlyMode = false;
-          }
+        }
+      } else {
+        // Reset thread auto-sticky for non-forum channels (only if not in edit mode)
+        if (!isEditMode) {
+          formData.threadAutoSticky = false;
+          formData.threadOnlyMode = false;
         }
       }
     } else {
       selectedChannelType = null;
-      availableForumTags = [];
     }
     });
 
@@ -193,12 +157,11 @@
 
     loading = true;
     logger.info(`Loading repeater data for guild ${$currentGuild.id}`);
-    
+
     try {
       const [
         repeatersData,
         statsData,
-        messageCountData,
         channelsData,
         forumData
       ] = await Promise.all([
@@ -208,10 +171,6 @@
         }),
         repeatersApi.getRepeaterStatistics($currentGuild.id).catch((err) => {
           logger.error("Failed to fetch repeater statistics:", err);
-          return null;
-        }),
-        messageCountApi.getMessageCountingStatus($currentGuild.id).catch((err) => {
-          logger.error("Failed to fetch message counting status:", err);
           return null;
         }),
         clientApi.getTextChannels($currentGuild.id).catch((err) => {
@@ -238,7 +197,6 @@
       });
       repeaters = repeatersData;
       repeaterStats = statsData;
-      messageCountStatus = messageCountData;
 
       // Process channels data
       guildChannels = (channelsData || []).map((ch: any) => ({
@@ -324,12 +282,11 @@
         selectedChannelType: selectedChannelType
       });
 
-      await api.createRepeater($currentGuild.id, request);
+      await repeatersApi.createRepeater($currentGuild.id, request);
       showMessage("Repeater created successfully!", "success");
-      
-      // Reset form and close modal
+
+      // Reset form
       resetForm();
-      showCreateForm = false;
       
       // Reload data
       await loadAllData();
@@ -448,7 +405,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await api.triggerRepeater($currentGuild.id, repeaterId);
+      await repeatersApi.triggerRepeater($currentGuild.id, repeaterId);
       showMessage("Repeater triggered successfully!", "success");
     } catch (err) {
       logger.error("Failed to trigger repeater:", err);
@@ -478,12 +435,12 @@
     }
     
     // Parse forum tag conditions if present
-    let parsedForumTags = { required: [], excluded: [] };
+    let parsedForumTags: any = { required: [], excluded: [] };
     if (repeater.forumTagConditions) {
       try {
         const conditions = JSON.parse(repeater.forumTagConditions);
-        parsedForumTags.required = (conditions.requiredTags || []).map(id => BigInt(id));
-        parsedForumTags.excluded = (conditions.excludedTags || []).map(id => BigInt(id));
+        parsedForumTags.required = (conditions.requiredTags || []).map((id: any) => BigInt(id));
+        parsedForumTags.excluded = (conditions.excludedTags || []).map((id: any) => BigInt(id));
       } catch {
         // Invalid JSON, use defaults
       }
@@ -525,7 +482,7 @@
   // Reset form data
   function resetForm() {
     formData = {
-      channelId: null,
+      channelId: "",
       message: "",
       interval: "00:05:00",
       startTimeOfDay: "",
@@ -546,22 +503,15 @@
       threadOnlyMode: false,
       forumTagConditions: null
     };
-    
+
     // Reset additional state
     selectedRepeaterIds = [];
-    showBulkActions = false;
-    showAdvancedTimeEditor = false;
-    showForumTagEditor = false;
-    currentForumTags = [];
     selectedChannelType = null;
-    availableForumTags = [];
     selectedForumTags = {required: [], excluded: []};
-    
+
     messageContent = "";
     messageEmbeds = [];
     messageComponents = [];
-    showEmbedBuilder = false;
-    showComponentBuilder = false;
     isEditMode = false;
     editingRepeaterId = null;
     selectedRepeater = null;
@@ -617,27 +567,23 @@
     } else {
       selectedRepeaterIds = [...selectedRepeaterIds, repeaterId];
     }
-    showBulkActions = selectedRepeaterIds.length > 0;
   }
 
   function selectAllRepeaters() {
     selectedRepeaterIds = repeaters.map(r => r.id);
-    showBulkActions = true;
   }
 
   function clearSelection() {
     selectedRepeaterIds = [];
-    showBulkActions = false;
   }
 
   async function bulkToggleRepeaters(enable: boolean) {
     if (!$currentGuild?.id || selectedRepeaterIds.length === 0) return;
 
     try {
-      const result = await api.bulkToggleRepeaters($currentGuild.id, selectedRepeaterIds, enable);
-      const successCount = result.results.filter(r => r.success).length;
-      showMessage(`${enable ? 'Enabled' : 'Disabled'} ${successCount} repeaters successfully`, "success");
-      
+      await repeatersApi.bulkToggleRepeaters($currentGuild.id, selectedRepeaterIds, enable);
+      showMessage(`${enable ? "Enabled" : "Disabled"} repeaters successfully`, "success");
+
       clearSelection();
       await loadAllData();
     } catch (err) {
@@ -646,12 +592,12 @@
     }
   }
 
-  // Queue Position Management
+  // Queue Position Management using updateRepeater
   async function updateQueuePosition(repeaterId: number, newPosition: number) {
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeaterQueuePosition($currentGuild.id, repeaterId, newPosition);
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { queuePosition: newPosition });
       showMessage("Queue position updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -672,12 +618,12 @@
     await updateQueuePosition(repeaterId, repeater.queuePosition + 1);
   }
 
-  // Individual Property Updates
+  // Individual Property Updates using updateRepeater
   async function updateRepeaterInterval(repeaterId: number, interval: string) {
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeaterInterval($currentGuild.id, repeaterId, interval);
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { interval });
       showMessage("Interval updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -690,7 +636,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeaterStartTime($currentGuild.id, repeaterId, startTime);
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { startTimeOfDay: startTime } as any);
       showMessage("Start time updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -703,7 +649,7 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeaterConversationThreshold($currentGuild.id, repeaterId, threshold);
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { conversationThreshold: threshold });
       showMessage("Conversation threshold updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -716,7 +662,10 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeaterExpiry($currentGuild.id, repeaterId, maxAge || null, maxTriggers || null);
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
+        maxAge: maxAge || null,
+        maxTriggers: maxTriggers || null
+      });
       showMessage("Expiry settings updated successfully", "success");
       await loadAllData();
     } catch (err) {
@@ -725,78 +674,81 @@
     }
   }
 
-  // Forum Tag Management
-  async function loadForumTags(repeaterId: number) {
+  // Forum Tag Management - uses forumTagConditions JSON field
+  async function updateForumTagConditions(repeaterId: number) {
     if (!$currentGuild?.id) return;
 
     try {
-      const response = await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "list");
-      // Parse the conditions from the response
-      if (response.conditions) {
-        const conditions = JSON.parse(response.conditions);
-        currentForumTags = [
-          ...(conditions.requiredTags || []).map((id: bigint) => ({ id, name: `Tag ${id}`, type: 'required' as const })),
-          ...(conditions.excludedTags || []).map((id: bigint) => ({ id, name: `Tag ${id}`, type: 'excluded' as const }))
-        ];
-      }
+      const conditions = {
+        required: selectedForumTags.required.map(id => id.toString()),
+        excluded: selectedForumTags.excluded.map(id => id.toString())
+      };
+
+      const conditionsJson = JSON.stringify(conditions);
+
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
+        forumTagConditions: conditionsJson
+      });
+      showMessage("Forum tag conditions updated successfully", "success");
+      showForumTagEditor = false;
+      await loadAllData();
     } catch (err) {
-      logger.error("Failed to load forum tags:", err);
+      logger.error("Failed to update forum tag conditions:", err);
+      showMessage("Failed to update forum tag conditions", "error");
     }
   }
 
-  async function addForumTag(repeaterId: number, tagId: bigint, tagType: 'required' | 'excluded') {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "add", tagType, [tagId]);
-      showMessage(`Forum tag ${tagType === 'required' ? 'required' : 'excluded'} successfully`, "success");
-      await loadForumTags(repeaterId);
-    } catch (err) {
-      logger.error("Failed to add forum tag:", err);
-      showMessage("Failed to add forum tag", "error");
-    }
-  }
-
-  async function removeForumTag(repeaterId: number, tagId: bigint, tagType: 'required' | 'excluded') {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "remove", tagType, [tagId]);
-      showMessage("Forum tag removed successfully", "success");
-      await loadForumTags(repeaterId);
-    } catch (err) {
-      logger.error("Failed to remove forum tag:", err);
-      showMessage("Failed to remove forum tag", "error");
-    }
-  }
-
-  async function clearForumTags(repeaterId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      await repeatersApi.updateRepeaterForumTags($currentGuild.id, repeaterId, "clear");
-      showMessage("All forum tags cleared successfully", "success");
-      await loadForumTags(repeaterId);
-    } catch (err) {
-      logger.error("Failed to clear forum tags:", err);
-      showMessage("Failed to clear forum tags", "error");
-    }
-  }
-
-  // Thread Sticky Messages
+  // Thread Sticky Messages - already tracked in threadStickyMessages property
   async function loadThreadStickyMessages(repeaterId: number) {
-    if (!$currentGuild?.id) return;
-
-    try {
-      threadStickyMessages = await repeatersApi.getRepeaterThreadMessages($currentGuild.id, repeaterId);
-    } catch (err) {
-      logger.error("Failed to load thread sticky messages:", err);
-      threadStickyMessages = [];
+    const repeater = repeaters.find(r => r.id === repeaterId);
+    if (repeater?.threadStickyMessages) {
+      // Thread sticky messages are stored as JSON, could parse and display if needed
+      logger.info("Thread sticky messages:", repeater.threadStickyMessages);
     }
   }
 
+  // Forum tags loading - for forum channel sticky posts
+  async function loadForumTags(repeaterId?: number) {
+    // Tags are already loaded with channel data in availableForumTags
+    // If we need to load forum tag conditions for a repeater:
+    if (repeaterId) {
+      const repeater = repeaters.find(r => r.id === repeaterId);
+      if (repeater?.forumTagConditions) {
+        try {
+          const conditions = JSON.parse(repeater.forumTagConditions);
+          selectedForumTags = {
+            required: conditions.required?.map((id: string) => BigInt(id)) || [],
+            excluded: conditions.excluded?.map((id: string) => BigInt(id)) || []
+          };
+        } catch (err) {
+          logger.error("Failed to parse forum tag conditions:", err);
+        }
+      }
+    }
+  }
+
+  // Helper function to handle forum tag toggle
+  function handleRequiredTagToggle(tag: any, checked: boolean) {
+    if (checked) {
+      selectedForumTags.required = [...selectedForumTags.required, tag.id];
+      selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
+    } else {
+      selectedForumTags.required = selectedForumTags.required.filter(id => id !== tag.id);
+    }
+  }
+
+  function handleExcludedTagToggle(tag: any, checked: boolean) {
+    if (checked) {
+      selectedForumTags.excluded = [...selectedForumTags.excluded, tag.id];
+      selectedForumTags.required = selectedForumTags.required.filter(id => id !== tag.id);
+    } else {
+      selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
+    }
+  }
+
+  // Advanced time editor
   function openAdvancedTimeEditor(repeaterId?: number) {
-    showAdvancedTimeEditor = true;
+    // Feature for editing complex time conditions
     if (repeaterId) {
       const repeater = repeaters.find(r => r.id === repeaterId);
       if (repeater?.timeConditions) {
@@ -805,19 +757,16 @@
     }
   }
 
-  async function saveAdvancedTimeConditions(repeaterId: number) {
-    if (!$currentGuild?.id) return;
+  // Embed update handler
+  function handleEmbedUpdate(embedIndex: number, detail: any) {
+    messageEmbeds[embedIndex] = detail.embed;
+    messageEmbeds = [...messageEmbeds];
+  }
 
-    try {
-      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
-        timeConditions: formData.timeConditions || null
-      });
-      showMessage("Time conditions updated successfully", "success");
-      showAdvancedTimeEditor = false;
-      await loadAllData();
-    } catch (err) {
-      logger.error("Failed to update time conditions:", err);
-      showMessage("Failed to update time conditions", "error");
+  // Trigger mode change handler
+  function handleTriggerModeChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      formData.triggerMode = parseInt(detail.selected);
     }
   }
 
@@ -841,66 +790,41 @@
       loading: loading
     }
     ]);
-
-  // Handle tab change
-  function handleTabChange(event: CustomEvent) {
-    activeTab = event.detail.tabId;
-    if (activeTab === "create") {
-      showCreateForm = true;
-      resetForm();
-    } else {
-      showCreateForm = false;
-    }
-  }
 </script>
 
-<DashboardPageLayout
-  title="Message Repeaters"
-  subtitle="Manage automated recurring messages and sticky posts"
-  icon="fa-clock"
-  {tabs}
-  {activeTab}
-  {actionButtons}
-  guildName={$currentGuild?.name || "Dashboard"}
-  on:tabChange={handleTabChange}
->
-  <svelte:fragment slot="status-messages">
-    <!-- Status Message -->
-    {#if message}
-      <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-           style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-            border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-           in:fly={{ x: 20, duration: 300 }}>
-        {#if messageType === 'success'}
-          <i class="fa-utility-duo fa-regular fa-circle-check"
-             style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-        {:else if messageType === 'error'}
-          <i class="fa-utility-duo fa-regular fa-circle-xmark"
-             style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-        {:else}
-          <i class="fa-utility-duo fa-regular fa-bell"
-             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-        {/if}
-        <span
-          style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-      </div>
-    {/if}
-
-    <!-- Message Counting Warning -->
-    {#if messageCountStatus && !messageCountStatus.enabled && messageCountStatus.available}
-      <div class="mb-6 p-4 rounded-xl flex items-center gap-3 border"
-           style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;"
-           in:fly={{ x: -20, duration: 300 }}>
+{#snippet statusMessages()}
+  <!-- Status Message -->
+  {#if message}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+         style="background: {messageType === 'success' ? $colorStore.primary + '20' : messageType === 'error' ? $colorStore.accent + '20' : $colorStore.primary + '20'};
+          border: 1px solid {messageType === 'success' ? $colorStore.primary + '30' : messageType === 'error' ? $colorStore.accent + '30' : $colorStore.primary + '30'};"
+         in:fly={{ x: 20, duration: 300 }}>
+      {#if messageType === 'success'}
+        <i class="fa-utility-duo fa-regular fa-circle-check"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else if messageType === 'error'}
+        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else}
         <i class="fa-utility-duo fa-regular fa-bell"
-           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-        <div>
-          <span style="color: {$colorStore.text}">
-            <strong>Message Counting Disabled:</strong> Some trigger modes require message counting to be enabled.
-          </span>
-        </div>
-      </div>
-    {/if}
-  </svelte:fragment>
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {/if}
+      <span
+        style="color: {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-clock"
+  {statusMessages}
+  subtitle="Manage automated recurring messages and sticky posts"
+  {tabs}
+  title="Message Repeaters"
+>
 
   <!-- Tab Content -->
   {#if activeTab === 'overview'}
@@ -1136,9 +1060,9 @@
                 <!-- Status indicator -->
                 <div class="flex items-center gap-2">
                   <div class="w-3 h-3 rounded-full"
-                       style="background: {repeater.isEnabled ? '#10b981' : '#6b7280'};"></div>
+                       style="background: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted};"></div>
                   <span class="text-sm font-medium"
-                        style="color: {repeater.isEnabled ? '#10b981' : '#6b7280'}">
+                        style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}">
                     {repeater.isEnabled ? 'Active' : 'Disabled'}
                   </span>
                 </div>
@@ -1165,12 +1089,11 @@
                     </div>
                     <!-- Compact preview using PreviewCard -->
                     <div class="max-h-48 overflow-hidden">
-                      <PreviewCard 
+                      <PreviewCard
                         content={parsedMessage.content}
                         embeds={parsedMessage.embeds.slice(0, 2)}
                         components={parsedMessage.components.slice(0, 1)}
                         showEmpty={false}
-                        compact={true}
                       />
                     </div>
                     {#if parsedMessage.embeds.length > 2 || parsedMessage.components.length > 1}
@@ -1502,10 +1425,9 @@
             </span>
             <DiscordSelector
               type="channel"
-              options={allChannels}
+              options={allChannels.map(ch => ({ id: ch.id, name: ch.name }))}
               bind:selected={formData.channelId}
-              placeholder="Select channel..."
-              aria-labelledby="target-channel-label" />
+              placeholder="Select channel..." />
 
           <!-- Forum Tag Filters (when forum channel selected) -->
           {#if selectedChannelType === 'forum' && availableForumTags.length > 0}
@@ -1557,28 +1479,21 @@
                           type="checkbox"
                           class="sr-only"
                           checked={selectedForumTags.required.includes(tag.id)}
-                          onchange={(e) => {
-                            if (e.target.checked) {
-                              selectedForumTags.required = [...selectedForumTags.required, tag.id];
-                              selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
-                            } else {
-                              selectedForumTags.required = selectedForumTags.required.filter(id => id !== tag.id);
-                            }
-                          }}
+                          onchange={(e) => handleRequiredTagToggle(tag, e.currentTarget.checked)}
                         >
-                          <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                             style="border-color: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : $colorStore.muted}; 
+                        <span class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
+                              style="border-color: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : $colorStore.muted};
                                     background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : 'transparent'};">
                           {#if selectedForumTags.required.includes(tag.id)}
                             <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
                           {/if}
-                        </div>
-                        <div class="flex items-center gap-2">
+                        </span>
+                        <span class="flex items-center gap-2">
                           {#if tag.emoji}
                             <span>{tag.emoji}</span>
                           {/if}
                           <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
-                        </div>
+                        </span>
                       </label>
                     {/each}
                     
@@ -1607,23 +1522,17 @@
                           class="sr-only"
                           checked={selectedForumTags.excluded.includes(tag.id)}
                           disabled={selectedForumTags.required.includes(tag.id)}
-                          onchange={(e) => {
-                            if (e.target.checked) {
-                              selectedForumTags.excluded = [...selectedForumTags.excluded, tag.id];
-                            } else {
-                              selectedForumTags.excluded = selectedForumTags.excluded.filter(id => id !== tag.id);
-                            }
-                          }}
+                          onchange={(e) => handleExcludedTagToggle(tag, e.currentTarget.checked)}
                         >
-                          <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                             style="border-color: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : $colorStore.muted}; 
+                        <span class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
+                              style="border-color: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : $colorStore.muted};
                                     background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : 'transparent'};
                                     opacity: {selectedForumTags.required.includes(tag.id) ? '0.3' : '1'};">
                           {#if selectedForumTags.excluded.includes(tag.id)}
                             <i class="fa-solid fa-xmark" style="color: white; font-size: 8px;"></i>
                           {/if}
-                        </div>
-                        <div class="flex items-center gap-2" 
+                        </span>
+                        <span class="flex items-center gap-2"
                              style="opacity: {selectedForumTags.required.includes(tag.id) ? '0.5' : '1'}">
                           {#if tag.emoji}
                             <span>{tag.emoji}</span>
@@ -1633,7 +1542,7 @@
                               <span class="text-xs px-1 rounded-sm"
                                     style="background: {$colorStore.primary}; color: white;">Required</span>
                           {/if}
-                        </div>
+                        </span>
                       </label>
                     {/each}
                     
@@ -1838,10 +1747,7 @@
                             { category: "Server", name: "%server%", description: "Server name" },
                             { category: "Server", name: "%server.members%", description: "Number of server members" }
                           ]}
-                          on:update={(e) => {
-                            messageEmbeds[embedIndex] = e.detail.embed;
-                            messageEmbeds = [...messageEmbeds];
-                          }}
+                          onupdate={(detail) => handleEmbedUpdate(embedIndex, detail)}
                         />
                       </div>
                     </div>
@@ -1981,7 +1887,7 @@
               options={triggerModeOptions}
               selected={formData.triggerMode.toString()}
               placeholder="Select trigger mode..."
-              on:change={(e) => formData.triggerMode = parseInt(e.detail.selected)} />
+              onchange={handleTriggerModeChange} />
           </div>
 
           <!-- ===== CONTEXTUAL INTERVAL SELECTION (Only for TimeInterval mode) ===== -->
@@ -2202,15 +2108,15 @@
                     {#each TIME_SCHEDULE_PRESETS as preset}
                       <label for="input-6736"
                              class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] text-sm"
-                             style="background: {formData.timeSchedulePreset === preset.id ? $colorStore.primary + '20' : $colorStore.primary + '08'};
-                                    border-color: {formData.timeSchedulePreset === preset.id ? $colorStore.primary : $colorStore.primary + '30'};">
+                             style="background: {formData.timeSchedulePreset === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
+                                    border-color: {formData.timeSchedulePreset === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                         <input
                           type="radio"
                           bind:group={formData.timeSchedulePreset}
-                          value={preset.id}
+                          value={preset.value}
                           class="sr-only"
                         >
-                        <span style="color: {$colorStore.text}">{preset.name}</span>
+                        <span style="color: {$colorStore.text}">{preset.label}</span>
                       </label>
                     {/each}
                   </div>
@@ -2287,7 +2193,7 @@
                 <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 20px;"></i>
                 {isEditMode ? 'Updating...' : 'Creating...'}
               {:else if isEditMode}
-                <Edit3 class="w-5 h-5" />
+                <i class="fa-solid fa-pen" style="font-size: 20px;"></i>
                 Update Repeater
               {:else}
                 <i class="fa-solid fa-plus" style="font-size: 20px;"></i>

@@ -3,7 +3,7 @@
 
 
   import { onMount } from "svelte";
-  import { chatApi, clientApi, type ChatLogMessage, type ChatLogSummary, type ChatLog } from "$lib/api/index.ts";
+  import { chatApi, clientApi, type ChatLogMessage, type ChatLogSummary } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
@@ -312,8 +312,8 @@
     if (validMessages.length === 0) return [];
 
     const MAX_TIME_BETWEEN_MESSAGES = 5 * 60 * 1000; // 5 minutes in milliseconds
-    const result: Message[][] = [];
-    let currentGroup: Message[] = [validMessages[0]];
+    const result: ChatLogMessage[][] = [];
+    let currentGroup: ChatLogMessage[] = [validMessages[0]];
 
     for (let i = 1; i < validMessages.length; i++) {
       const currentMessage = validMessages[i];
@@ -680,7 +680,7 @@
   <main class="messages">`;
 
     // Group messages by day
-    const groupedMessages: Record<string, Message[]> = {};
+    const groupedMessages: Record<string, ChatLogMessage[]> = {};
     messages.forEach(message => {
       const date = new Date(message.timestamp).toDateString();
       if (!groupedMessages[date]) {
@@ -828,8 +828,7 @@
     const a = document.createElement("a");
     a.href = url;
 
-    const filename = `${channelName}-${new Date().toISOString().slice(0, 10)}.html`;
-    a.download = filename;
+    a.download = `${channelName}-${new Date().toISOString().slice(0, 10)}.html`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
@@ -845,30 +844,45 @@
             loadSavedLogs();
         }
     });
+
+  // Group messages by date for display
+  let messagesByDate = $derived(() => {
+    const grouped: Record<string, ChatLogMessage[]> = {};
+    messages.forEach(message => {
+      const date = new Date(message.timestamp).toLocaleDateString();
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(message);
+    });
+    return Object.entries(grouped).sort(([dateA], [dateB]) =>
+      new Date(dateA).getTime() - new Date(dateB).getTime()
+    );
+  });
 </script>
 
-<DashboardPageLayout 
-  title="Chat Saver" 
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessageContent}
   icon="fa-envelope"
   subtitle="Save and view chat logs from your Discord channels"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={tabs}
   bind:activeTab
-  on:tabChange={(e) => activeTab = e.detail.tabId}
+  title="Chat Saver"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   {#if activeTab === 'fetch'}
     <!-- Fetch Messages Tab -->
     <section
-            class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+      class=" rounded-2xl border p-6 shadow-2xl"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
              border-color: {$colorStore.primary}30;"
     >
@@ -945,7 +959,7 @@
 
       <div class="flex flex-wrap justify-center sm:justify-end gap-4 mt-6">
         <button
-                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
+          class="px-6 py-3 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
           disabled={loading}
           onclick={fetchMessages}
           style="background: linear-gradient(to right, {$colorStore.primary}40, {$colorStore.secondary}40);
@@ -963,7 +977,7 @@
     <!-- Saved Logs Tab -->
     {#if savedLogs.length > 0}
       <section
-              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+        class=" rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -1073,7 +1087,7 @@
     <!-- Message Display Tab -->
     {#if messages.length > 0}
       <section
-              class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+        class=" rounded-2xl border p-6 shadow-2xl"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -1094,7 +1108,7 @@
           <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {#if !currentLogId}
               <button
-                      class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] justify-center"
+                class="px-4 py-2 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] justify-center"
                 style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                       color: {$colorStore.text};"
                 onclick={saveLog}
@@ -1105,7 +1119,7 @@
             {/if}
 
             <button
-                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-xs flex items-center gap-2 min-h-[44px] justify-center"
+              class="px-4 py-2 rounded-lg font-medium transition-all duration-200  flex items-center gap-2 min-h-[44px] justify-center"
               style="background: linear-gradient(to right, {$colorStore.primary}30, {$colorStore.secondary}30);
                     color: {$colorStore.text};"
               onclick={exportAsHTML}
@@ -1117,14 +1131,7 @@
         </div>
 
         <!-- Group messages by date -->
-        {#each Object.entries(messages.reduce((groups, message) => {
-          const date = new Date(message.timestamp).toLocaleDateString();
-          if (!groups[date]) {
-            groups[date] = [];
-          }
-          groups[date].push(message);
-          return groups;
-        }, {})).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()) as [date, messagesOnDate], i}
+        {#each messagesByDate() as [date, messagesOnDate]}
           <div class="mb-6">
             <div
               class="text-center relative mb-4"

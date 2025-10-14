@@ -36,7 +36,7 @@ Setup suggestion banner for experienced users with unconfigured guilds
 
 {#if visible}
   <div
-          class="setup-suggestion-banner relative overflow-hidden backdrop-blur-xs rounded-xl border p-4 shadow-lg mb-6"
+    class="setup-suggestion-banner relative overflow-hidden  rounded-xl border p-4 shadow-lg mb-6"
     style="
       background: linear-gradient(135deg, {$colorStore.secondary}12, {$colorStore.primary}08);
       border-color: {$colorStore.secondary}30;

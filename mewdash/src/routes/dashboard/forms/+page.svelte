@@ -311,8 +311,8 @@
   })());
 
   // Handle tab change
-  function handleTabChange(event: CustomEvent) {
-    const newTab = event.detail.tabId;
+  function handleTabChange(detail: { tabId: string }) {
+    const newTab = detail.tabId;
 
     // If switching away from edit/responses without a selected form, go to list
     if ((newTab === "edit" || newTab === "responses") && !selectedFormId) {
@@ -342,7 +342,7 @@
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-clipboard-list"
-  on:tabChange={handleTabChange}
+  ontabChange={handleTabChange}
   subtitle="Create and manage custom forms for your community"
   {tabs}
   title="Forms"

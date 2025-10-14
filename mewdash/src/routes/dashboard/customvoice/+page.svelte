@@ -18,7 +18,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -27,8 +26,6 @@
 
     let {data}: Props = $props();
 
-  let currentUser = data.user;
-  
   // States
     let activeTab: "config" | "channels" | "preferences" = $state("config");
     let loading = $state(true);
@@ -36,7 +33,6 @@
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   // Data
     let config: CustomVoiceConfigurationResponse | null = $state(null);
@@ -65,20 +61,6 @@
     let autoPermission = $state(true);
   let customVoiceAdminRoleId: string | null = null;
 
-  // Computed values
-    let colorVars = $derived(`
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `);
-
-    let tabStyle = $derived((isActive: boolean) => `
-    background: ${isActive ? $colorStore.primary : `${$colorStore.primary}20`};
-    color: ${isActive ? $colorStore.text : $colorStore.muted};
-  `);
-
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -87,22 +69,19 @@
     setTimeout(() => showNotification = false, 3000);
   }
 
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
-
   function markAsChanged() {
     hasChanges = true;
   }
 
-  function formatBitrate(bitrate: number): string {
-    return `${bitrate / 1000}kbps`;
+  function getChannelName(channelId: bigint): string {
+    const channel = voiceChannels.find(ch => ch.id === channelId.toString());
+    return channel?.name || `Channel ${channelId}`;
   }
 
-  function formatChannelType(channel: CustomVoiceChannelResponse): string {
+  function formatChannelStatus(channel: CustomVoiceChannelResponse): string {
     if (channel.isLocked) return "🔒 Private";
-    if (channel.userLimit > 0) return `👥 ${channel.userCount}/${channel.userLimit}`;
-    return `👥 ${channel.userCount}`;
+    if (channel.keepAlive) return "📌 Persistent";
+    return "🔓 Public";
   }
 
   function getTimeAgo(dateString: string): string {
@@ -130,8 +109,8 @@
 
     try {
       const [configData, activeChannelsData, voiceChannelsData, categoriesData] = await Promise.all([
-        customVoiceApi.getConfig($currentGuild.id),
-        customVoiceApi.getActiveChannels($currentGuild.id),
+        customVoiceApi.getCustomVoiceConfig($currentGuild.id),
+        customVoiceApi.getActiveCustomVoiceChannels($currentGuild.id),
         clientApi.getVoiceChannels($currentGuild.id),
         clientApi.getCategories($currentGuild.id)
       ]);
@@ -199,7 +178,7 @@
         customVoiceAdminRoleId: customVoiceAdminRoleId ? BigInt(customVoiceAdminRoleId) : null
       };
 
-      await customVoiceApi.updateConfig($currentGuild.id, configData);
+      await customVoiceApi.updateCustomVoiceConfig($currentGuild.id, configData);
       hasChanges = false;
       showNotificationMessage("Configuration saved successfully!", "success");
       
@@ -215,11 +194,11 @@
     if (!$currentGuild) return;
     
     try {
-      await customVoiceApi.deleteChannel($currentGuild.id, channelId);
+      await customVoiceApi.deleteCustomVoiceChannel($currentGuild.id, channelId);
       showNotificationMessage("Channel deleted successfully!", "success");
       
       // Remove from local array
-      activeChannels = activeChannels.filter(ch => ch.id !== channelId);
+      activeChannels = activeChannels.filter(ch => ch.channelId !== channelId);
     } catch (err) {
       console.error("Failed to delete channel:", err);
       showNotificationMessage("Failed to delete channel", "error");
@@ -228,14 +207,14 @@
 
   async function lockChannel(channelId: bigint, lock: boolean) {
     if (!$currentGuild) return;
-    
+
     try {
-      await customVoiceApi.updateChannel($currentGuild.id, channelId, { isLocked: lock });
+      await customVoiceApi.updateCustomVoiceChannel($currentGuild.id, channelId, { isLocked: lock });
       showNotificationMessage(`Channel ${lock ? 'locked' : 'unlocked'} successfully!`, "success");
-      
+
       // Update local array
-      activeChannels = activeChannels.map(ch => 
-        ch.id === channelId ? { ...ch, isLocked: lock } : ch
+      activeChannels = activeChannels.map(ch =>
+        ch.channelId === channelId ? { ...ch, isLocked: lock } : ch
       );
     } catch (err) {
       console.error("Failed to update channel:", err);
@@ -245,18 +224,7 @@
 
   // Event handlers
   onMount(() => {
-    if (browser) {
-      checkMobile();
-      window.addEventListener("resize", checkMobile);
-    }
-    
     loadData();
-
-    return () => {
-      if (browser) {
-        window.removeEventListener("resize", checkMobile);
-      }
-    };
   });
 
   $effect(() => {
@@ -276,9 +244,31 @@
   <title>Custom Voice Channels - Dashboard</title>
 </svelte:head>
 
-<DashboardPageLayout 
-  title="Custom Voice Channels" 
-  subtitle="Create and manage temporary voice channels" 
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+
+  {#if config && config.enabled}
+    <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
+         style="background: #22c55e15; border: 1px solid #22c55e30;">
+      <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 16px;"></i>
+      <span class="text-sm" style="color: #22c55e">Custom Voice is enabled</span>
+    </div>
+  {:else}
+    <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
+         style="background: #f59e0b15; border: 1px solid #f59e0b30;">
+      <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
+      <span class="text-sm" style="color: #f59e0b">Custom Voice is not configured</span>
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessageContent}
+  subtitle="Create and manage temporary voice channels"
   icon="fa-microphone"
   guildName={$currentGuild?.name || "Dashboard"}
   tabs={[
@@ -295,30 +285,9 @@
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ] : []}
+  title="Custom Voice Channels"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-    
-    {#if config && config.enabled}
-      <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #22c55e15; border: 1px solid #22c55e30;">
-        <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 16px;"></i>
-        <span class="text-sm" style="color: #22c55e">Custom Voice is enabled</span>
-      </div>
-    {:else}
-      <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #f59e0b15; border: 1px solid #f59e0b30;">
-        <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
-        <span class="text-sm" style="color: #f59e0b">Custom Voice is not configured</span>
-      </div>
-    {/if}
-  </svelte:fragment>
-
-    <!-- Content -->
+  <!-- Content -->
     {#if loading}
       <SkeletonLoader />
     {:else if error}
@@ -331,7 +300,7 @@
     {:else if activeTab === 'config'}
       <div class="space-y-6" transition:fade>
         <!-- Basic Configuration -->
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Configuration</h3>
           
@@ -346,7 +315,7 @@
                 options={voiceChannels}
                 bind:selected={hubChannelId}
                 placeholder="Select voice channel..."
-                on:change={markAsChanged} />
+                onchange={markAsChanged} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Channel users join to create their own temporary voice channel
               </p>
@@ -362,7 +331,7 @@
                 options={categories}
                 bind:selected={categoryId}
                 placeholder="Select category..."
-                on:change={markAsChanged} />
+                onchange={markAsChanged} />
               <p class="text-sm mt-1" style="color: {$colorStore.muted}">
                 Category where temporary channels will be created
               </p>
@@ -371,7 +340,7 @@
         </div>
 
         <!-- Channel Defaults -->
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Defaults</h3>
           
@@ -423,9 +392,11 @@
                 selected={defaultBitrate.toString()}
                 placeholder="Select bitrate..."
                 searchable={false}
-                on:change={(e) => {
-                  defaultBitrate = parseInt(e.detail.selected);
-                  markAsChanged();
+                onchange={(detail) => {
+                  if (detail.selected && typeof detail.selected === 'string') {
+                    defaultBitrate = parseInt(detail.selected);
+                    markAsChanged();
+                  }
                 }}
               />
             </div>
@@ -433,7 +404,7 @@
         </div>
 
         <!-- Channel Management -->
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Channel Management</h3>
           
@@ -562,9 +533,9 @@
           </div>
         {:else}
           <div class="grid gap-4">
-            {#each activeChannels as channel (channel.id)}
+            {#each activeChannels as channel (channel.channelId.toString())}
                 <div
-                        class="backdrop-blur-xs rounded-xl border p-4 flex items-center justify-between transition-all"
+                  class=" rounded-xl border p-4 flex items-center justify-between transition-all"
                 style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
                 transition:slide
               >
@@ -572,16 +543,17 @@
                   <div class="flex items-center gap-2">
                     {#if channel.isLocked}
                       <i class="fa-solid fa-lock" style="color: #f59e0b; font-size: 20px;"></i>
+                    {:else if channel.keepAlive}
+                      <i class="fa-solid fa-thumbtack" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
                     {:else}
                       <i class="fa-solid fa-unlock" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                     {/if}
-                    <h3 class="font-medium" style="color: {$colorStore.text}">{channel.channelName}</h3>
+                    <h3 class="font-medium" style="color: {$colorStore.text}">{getChannelName(channel.channelId)}</h3>
                   </div>
-                  
+
                   <div class="flex items-center gap-4 text-sm" style="color: {$colorStore.muted}">
-                    <span>Owner: {channel.ownerName}</span>
-                    <span>{formatChannelType(channel)}</span>
-                    <span>{formatBitrate(channel.bitrate)}</span>
+                    <span>Owner: {channel.ownerId}</span>
+                    <span>{formatChannelStatus(channel)}</span>
                     <span>{getTimeAgo(channel.createdAt)}</span>
                   </div>
                 </div>
@@ -590,7 +562,7 @@
                   <button
                     class="p-2 rounded-lg transition-colors"
                     style="color: {$colorStore.muted}; hover:background: {$colorStore.primary}20;"
-                    onclick={() => lockChannel(channel.id, !channel.isLocked)}
+                    onclick={() => lockChannel(channel.channelId, !channel.isLocked)}
                     title={channel.isLocked ? "Unlock channel" : "Lock channel"}
                   >
                     {#if channel.isLocked}
@@ -602,7 +574,7 @@
 
                   <button aria-label="Delete channel"
                     class="p-2 rounded-lg transition-colors text-red-500 hover:bg-red-500/20"
-                    onclick={() => deleteChannel(channel.id)}
+                          onclick={() => deleteChannel(channel.channelId)}
                     title="Delete channel"
                   >
                     <i class="fa-solid fa-trash" style="font-size: 16px;"></i>

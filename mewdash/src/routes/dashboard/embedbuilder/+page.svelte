@@ -4,7 +4,6 @@
 
   import { onMount } from "svelte";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
   import { chatTriggersApi } from "$lib/api/index.ts";
     import {fade} from "svelte/transition";
     import {logger} from "$lib/logger.ts";
@@ -79,8 +78,8 @@
 
   interface ChatTrigger {
     id: number;
-    trigger: string;
-    response: string;
+    trigger: string | null;
+    response: string | null;
   }
 
   interface Placeholder {
@@ -133,10 +132,6 @@
     let validationErrors: any[] = $state([]);
     let validationWarnings: any[] = $state([]);
 
-  // Guild handling
-    let selectedGuild: any = $state(null);
-
-
   // Main tab configuration for DashboardPageLayout
   const mainTabs = [
     { id: "templates", label: "Templates", icon: "fa-sparkles" },
@@ -162,25 +157,22 @@
   });
 
   // Load chat triggers
-  async function loadChatTriggers(guildId: string) {
+  async function loadChatTriggers(guildId: bigint) {
     try {
-      const response = await chatTriggersApi.getChatTriggers(guildId);
-      if (response.success) {
-        chatTriggers = response.data;
-      }
+      chatTriggers = await chatTriggersApi.getChatTriggers(guildId);
     } catch (error) {
       logger.error('Failed to load chat triggers:', error);
     }
   }
 
   // Template handling
-  function handleTemplateSelect(event: CustomEvent) {
-    const template = event.detail.template;
-    
+  function handleTemplateSelect(detail: { template: any }) {
+    const template = detail.template;
+
     // Apply template to first embed
     embeds[0] = { ...template.embed };
     embeds = [...embeds];
-    
+
     // Switch to editor tab
     activeMainTab = "editor";
     showNotificationMessage(`Applied template: ${template.name}`);
@@ -218,8 +210,8 @@
     showNotificationMessage("Embed duplicated");
   }
 
-  function handleEmbedUpdate(event: CustomEvent) {
-    const { embed, index } = event.detail;
+  function handleEmbedUpdate(detail: { embed: any; index: number }) {
+    const { embed, index } = detail;
     embeds[index] = embed;
     embeds = [...embeds];
     validateEmbeds();
@@ -246,8 +238,8 @@
     showNotificationMessage(`${type === "button" ? "Button" : "Select menu"} added`);
   }
 
-  function handleComponentUpdate(event: CustomEvent) {
-    const { component } = event.detail;
+  function handleComponentUpdate(detail: { component: NewEmbedComponent }) {
+    const { component } = detail;
     const index = components.findIndex(c => c.componentKey === component.componentKey);
     if (index !== -1) {
       components[index] = component;
@@ -256,19 +248,19 @@
     }
   }
 
-  function handleComponentRemove(event: CustomEvent) {
-    const { componentKey } = event.detail;
+  function handleComponentRemove(detail: { componentKey: string }) {
+    const { componentKey } = detail;
     components = components.filter(c => c.componentKey !== componentKey);
     showNotificationMessage("Component removed");
   }
 
-  function handleComponentEdit(event: CustomEvent) {
-    const { component } = event.detail;
+  function handleComponentEdit(detail: { component: NewEmbedComponent }) {
+    const { component } = detail;
     editingComponent = JSON.parse(JSON.stringify(component));
   }
 
-  function handleTriggerSelect(event: CustomEvent) {
-    const { component, optionIndex } = event.detail;
+  function handleTriggerSelect(detail: { component: NewEmbedComponent; optionIndex?: number }) {
+    const { component, optionIndex } = detail;
     currentTriggerComponent = component;
     currentEditingOptionIndex = optionIndex ?? null;
     showTriggerSelect = true;
@@ -283,7 +275,7 @@
       }
       
       // Update the component in the array
-      const index = components.findIndex(c => c.componentKey === currentTriggerComponent.componentKey);
+      const index = components.findIndex(c => c.componentKey === currentTriggerComponent?.componentKey);
       if (index !== -1) {
         components[index] = currentTriggerComponent;
         components = [...components];
@@ -301,37 +293,24 @@
   }
 
   // Placeholder handling
-  function showPlaceholderMenu(element: HTMLInputElement | HTMLTextAreaElement, field: string) {
-    currentEditingElement = element;
-    currentEditingField = field;
-    
-    const rect = element.getBoundingClientRect();
-    placeholderPosition = {
-      x: rect.left,
-      y: rect.bottom + 8
-    };
-    
-    showPlaceholderPicker = true;
-  }
-
   function showPlaceholderFromButton(buttonElement: HTMLButtonElement, field: string) {
     const inputElement = buttonElement.previousElementSibling as HTMLInputElement | HTMLTextAreaElement;
     if (inputElement) {
       currentEditingElement = inputElement;
       currentEditingField = field;
-      
+
       const rect = inputElement.getBoundingClientRect();
       placeholderPosition = {
         x: rect.left,
         y: rect.bottom + 8
       };
-      
+
       showPlaceholderPicker = true;
     }
   }
 
-  function handlePlaceholderSelect(event: CustomEvent) {
-    const { placeholder } = event.detail;
+  function handlePlaceholderSelect(detail: { placeholder: Placeholder }) {
+    const { placeholder } = detail;
     insertPlaceholder(placeholder);
   }
 
@@ -341,9 +320,8 @@
     const start = currentEditingElement.selectionStart || 0;
     const end = currentEditingElement.selectionEnd || 0;
     const text = currentEditingElement.value;
-    const newText = text.substring(0, start) + placeholder.name + text.substring(end);
 
-    currentEditingElement.value = newText;
+    currentEditingElement.value = text.substring(0, start) + placeholder.name + text.substring(end);
     currentEditingElement.selectionStart = currentEditingElement.selectionEnd = start + placeholder.name.length;
 
     // Update the corresponding data
@@ -541,8 +519,8 @@
 
 
   // Tab change handler for DashboardPageLayout
-  function handleMainTabChange(event: CustomEvent) {
-    activeMainTab = event.detail.tabId;
+  function handleMainTabChange(detail: { tabId: string }) {
+    activeMainTab = detail.tabId;
     
     // Validate when switching tabs
     validateEmbeds();
@@ -550,13 +528,10 @@
   }
 
 
-    let isLoggedIn = $derived($userAdminGuilds !== null);
-    let hasAdminGuilds = $derived(isLoggedIn && $userAdminGuilds.length > 0);
   $effect(() => {
         currentGuild.subscribe((guild) => {
-            selectedGuild = guild;
             if (guild) {
-                loadChatTriggers(guild.id);
+              loadChatTriggers(BigInt(guild.id));
             }
         });
     });
@@ -564,14 +539,6 @@
     let canCopyJson = $derived(embeds.some(embed =>
         embed.title || embed.description || embed.fields.length > 0
     ) || content.trim().length > 0);
-    // Color variables for styling
-    let colorVars = $derived(`
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `);
   // Action buttons for DashboardPageLayout
     let actionButtons = $derived([
     {
@@ -596,6 +563,14 @@
     ]);
 </script>
 
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
 <DashboardPageLayout
   title="Discord Embed Builder"
   subtitle="Create and customize embeds for your Discord server"
@@ -604,16 +579,9 @@
   tabs={isSimpleMode ? mainTabs.filter(t => t.id !== 'components') : mainTabs}
   activeTab={activeMainTab}
   {actionButtons}
-  on:tabChange={handleMainTabChange}
+  ontabChange={handleMainTabChange}
+  statusMessages={statusMessageContent}
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   <!-- Main Content Area -->
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 h-full w-full">
@@ -636,8 +604,8 @@
               </p>
             </div>
 
-            <TemplateGallery 
-              on:select={handleTemplateSelect}
+            <TemplateGallery
+              onselect={handleTemplateSelect}
             />
             
             <div class="text-center pt-6 border-t" style="border-color: {$colorStore.primary}20;">
@@ -710,10 +678,9 @@
                   {embed}
                   {index}
                   {placeholders}
-                  on:update={handleEmbedUpdate}
-                  on:remove={(e) => removeEmbed(e.detail.index)}
-                  on:duplicate={(e) => duplicateEmbed(e.detail.index)}
-                  on:showPlaceholders={(e) => showPlaceholderMenu(e.detail.element, e.detail.field)}
+                  onupdate={handleEmbedUpdate}
+                  onremove={(detail) => removeEmbed(detail.index)}
+                  onduplicate={(detail) => duplicateEmbed(detail.index)}
                 />
               {/each}
             </div>
@@ -779,14 +746,14 @@
                           <button
                             class="px-3 py-1 text-xs rounded-lg transition-colors"
                             style="background: {$colorStore.primary}; color: {$colorStore.text};"
-                            onclick={() => handleComponentEdit({ detail: { component } })}
+                            onclick={() => handleComponentEdit({ component })}
                           >
                             Edit
                           </button>
                           <button
                             class="px-3 py-1 text-xs rounded-lg transition-colors"
                             style="background: #ED4245; color: white;"
-                            onclick={() => handleComponentRemove({ detail: { componentKey: component.componentKey } })}
+                            onclick={() => handleComponentRemove({ componentKey: component.componentKey })}
                           >
                             Remove
                           </button>
@@ -797,10 +764,10 @@
                         {component}
                         triggers={chatTriggers}
                         isEditing={false}
-                        on:update={handleComponentUpdate}
-                        on:remove={handleComponentRemove}
-                        on:edit={handleComponentEdit}
-                        on:selectTrigger={handleTriggerSelect}
+                        onupdate={handleComponentUpdate}
+                        onremove={handleComponentRemove}
+                        onedit={handleComponentEdit}
+                        onselectTrigger={handleTriggerSelect}
                       />
                     </div>
 
@@ -809,7 +776,7 @@
                       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
                            role="button"
                            tabindex="0"
-                           onclick={self(() => editingComponent = null)}
+                           onclick={(e) => { if (e.target === e.currentTarget) editingComponent = null; }}
                            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); editingComponent = null; } }}>
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
                              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border: 1px solid {$colorStore.primary}30;">
@@ -817,16 +784,16 @@
                             component={editingComponent}
                             triggers={chatTriggers}
                             isEditing={true}
-                            on:update={(e) => {
-                              handleComponentUpdate(e);
+                            onupdate={(detail) => {
+                              handleComponentUpdate(detail);
                               editingComponent = null;
                             }}
-                            on:remove={(e) => {
-                              handleComponentRemove(e);
+                            onremove={(detail) => {
+                              handleComponentRemove(detail);
                               editingComponent = null;
                             }}
-                            on:edit={handleComponentEdit}
-                            on:selectTrigger={handleTriggerSelect}
+                            onedit={handleComponentEdit}
+                            onselectTrigger={handleTriggerSelect}
                           />
                           <div class="flex justify-end gap-2 mt-6">
                             <button
@@ -840,10 +807,13 @@
                               class="px-4 py-2 rounded-lg"
                               style="background: {$colorStore.primary}; color: {$colorStore.text};"
                               onclick={() => {
-                                const index = components.findIndex(c => c.componentKey === editingComponent.componentKey);
-                                if (index !== -1) {
-                                  components[index] = editingComponent;
-                                  components = [...components];
+                                const componentToSave = editingComponent;
+                                if (componentToSave) {
+                                  const index = components.findIndex(c => c.componentKey === componentToSave.componentKey);
+                                  if (index !== -1) {
+                                    components[index] = componentToSave;
+                                    components = [...components];
+                                  }
                                 }
                                 editingComponent = null;
                               }}
@@ -903,16 +873,16 @@
   position={placeholderPosition}
   {placeholders}
   searchTerm={placeholderSearchTerm}
-  on:select={handlePlaceholderSelect}
-  on:close={() => showPlaceholderPicker = false}
-  on:search={(e) => placeholderSearchTerm = e.detail.term}
+  onclose={() => showPlaceholderPicker = false}
+  onsearch={(detail) => placeholderSearchTerm = detail.term}
+  onselect={handlePlaceholderSelect}
 />
 
 <!-- Trigger Select Modal -->
 {#if showTriggerSelect}
   <div
     class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-    onclick={self(() => showTriggerSelect = false)}
+    onclick={(e) => { if (e.target === e.currentTarget) showTriggerSelect = false; }}
     onkeydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
     role="dialog"
     tabindex="-1"
@@ -945,7 +915,7 @@
         {:else}
           {#each chatTriggers as trigger}
             <button
-              class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:opacity-20"
+              class="w-full text-left p-4 rounded-lg border transition-all duration-200 hover:opacity-20 flex flex-col gap-1"
               style="background: {$colorStore.primary}10;
                      border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
@@ -953,10 +923,10 @@
               role="option"
               aria-selected="false"
             >
-              <div class="font-medium mb-1">{trigger.trigger}</div>
-              <div class="text-sm truncate" style="color: {$colorStore.muted};">
+              <span class="font-medium">{trigger.trigger}</span>
+              <span class="text-sm truncate" style="color: {$colorStore.muted};">
                 {trigger.response}
-              </div>
+              </span>
             </button>
           {/each}
         {/if}

@@ -21,61 +21,9 @@
 
   // Mouse tracking for desktop button effects
   let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
-
-  // Carousel state variables
-  let moderationCurrentIndex = 0;
-  let moderationItemCount = 0;
-  let responsesCurrentIndex = 0;
-  let responsesItemCount = 0;
-  let suggestionsCurrentIndex = 0;
-  let suggestionsItemCount = 0;
   
   // Feature expansion state
   let showAllFeatures = $state(false);
-
-  // Primary buttons for mobile view
-  const primaryButtons = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      ariaLabel: "Open Mewdeko Dashboard",
-      primary: true
-    },
-    {
-      label: "Invite Bot",
-      href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot",
-      ariaLabel: "Invite Stable Version of Mewdeko",
-      primary: true
-    }
-  ];
-
-  // Desktop buttons list
-  const buttons = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-        ariaLabel: "Open Mewdeko Dashboard",
-        icon: "home"
-    },
-    {
-        label: "Invite Bot",
-        href: "https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot",
-        ariaLabel: "Invite Mewdeko to your server",
-        icon: "add"
-    },
-    {
-      label: "Donate",
-        href: "https://ko-fi.com/mewdeko",
-        ariaLabel: "Support Mewdeko on Ko-fi",
-        icon: "heart"
-    },
-    {
-        label: "Discord",
-      href: "https://discord.gg/twQw45rBjN",
-        ariaLabel: "Join the Mewdeko Discord Server",
-        icon: "discord"
-    }
-  ];
 
     async function fetchGitHubStats() {
       try {
@@ -115,6 +63,7 @@
 
       if (response.ok) {
         guilds = await response.json();
+        console.log(guilds);
         guilds.sort((a, b) => b.MemberCount - a.MemberCount);
         guilds = guilds.slice(0, MAX_GUILDS_TO_SHOW);
         fetched = true;
@@ -725,7 +674,7 @@
       <!-- Stats Grid - Mobile: 2x2, Desktop: 4x1 -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <!-- 34 Modules -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
+        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
              in:fly={{ y: 20, duration: 400, delay: 100 }}
              style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
                     border-color: {$colorStore.primary}30;">
@@ -734,7 +683,7 @@
         </div>
 
         <!-- 1,082 Commands -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
+        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
              in:fly={{ y: 20, duration: 400, delay: 200 }}
              style="background: linear-gradient(135deg, {$colorStore.secondary}10, {$colorStore.accent}10);
                     border-color: {$colorStore.secondary}30;">
@@ -743,7 +692,7 @@
         </div>
 
         <!-- 11,400+ Servers -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
+        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
              in:fly={{ y: 20, duration: 400, delay: 300 }}
              style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.primary}10);
                     border-color: {$colorStore.accent}30;">
@@ -752,7 +701,7 @@
         </div>
 
         <!-- $0/month -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
+        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
              in:fly={{ y: 20, duration: 400, delay: 400 }}
              style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
                     border-color: {$colorStore.primary}30;">
@@ -765,7 +714,7 @@
 
   <section
     aria-labelledby="features-heading"
-    class="py-24 backdrop-blur-xs relative overflow-hidden"
+    class="py-24  relative overflow-hidden"
     style="background: radial-gradient(circle at center,
       {$colorStore.gradientStart}15 0%,
       {$colorStore.gradientEnd}10 50%,

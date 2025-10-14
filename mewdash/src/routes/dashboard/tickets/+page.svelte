@@ -1,7 +1,7 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import {
     ticketApi,
     clientApi,
@@ -19,7 +19,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore.ts";
     import {loadingStore} from "$lib/stores/loadingStore";
@@ -34,8 +33,6 @@
   // State
     let activeTab: "overview" | "panels" | "tickets" | "cases" | "settings" | string = $state("overview");
     let channels: Array<{ id: string; name: string }> = $state([]);
-  let categories: Array<{ id: string; name: string }> = [];
-  let roles: Array<{ id: string; name: string }> = [];
     let panels: TicketPanel[] = $state([]);
     let cases: TicketCase[] = $state([]);
     let stats: GuildStatistics | null = $state(null);
@@ -48,13 +45,10 @@
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
 
   // Modal states
     let showCreatePanel = $state(false);
     let showCreateCase = $state(false);
-
-    let showPanelButtons: TicketPanel | null = $state(null);
     let showSettings = $state(false);
 
   // Form states
@@ -77,12 +71,6 @@
     transcriptChannelId: "",
     logChannelId: ""
     });
-
-    let colorVars = $derived($colorStore);
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   function showNotificationMessage(
     message: string,
@@ -110,8 +98,6 @@
         casesResult,
         statsResult,
         channelsResult,
-        categoriesResult,
-        rolesResult,
         prioritiesResult,
         tagsResult,
         blacklistResult
@@ -120,8 +106,6 @@
         ticketApi.getTicketCases(guildId),
         ticketApi.getTicketStats(guildId),
         clientApi.getTextChannels(guildId),
-        clientApi.getCategories(guildId),
-        clientApi.getRoles(guildId),
         ticketApi.getTicketPriorities(guildId),
         ticketApi.getTicketTags(guildId),
         ticketApi.getTicketBlacklist(guildId)
@@ -131,8 +115,6 @@
       if (casesResult.status === "fulfilled") cases = casesResult.value;
       if (statsResult.status === "fulfilled") stats = statsResult.value;
       if (channelsResult.status === "fulfilled") channels = channelsResult.value;
-      if (categoriesResult.status === "fulfilled") categories = categoriesResult.value;
-      if (rolesResult.status === "fulfilled") roles = rolesResult.value;
       if (prioritiesResult.status === "fulfilled") priorities = prioritiesResult.value;
       if (tagsResult.status === "fulfilled") tags = tagsResult.value;
       if (blacklistResult.status === "fulfilled") blacklistedUsers = blacklistResult.value;
@@ -156,13 +138,11 @@
       const colorValue = parseInt(newPanelData.color.replace("#", ""), 16);
 
       const requestData = {
-        channelId: BigInt(newPanelData.channelId), // Keep as BigInt for precision
+        channelId: BigInt(newPanelData.channelId),
         title: newPanelData.title,
         description: newPanelData.description,
         embedJson: "",
-        color: {
-          rawValue: colorValue
-        }
+        color: colorValue
       };
 
       console.log("Sending panel data:", requestData);
@@ -189,10 +169,10 @@
     }
   }
 
-  async function deletePanel(panelId: bigint) {
+  async function deletePanel(panelId: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
-      await ticketApi.deleteTicketPanel(BigInt($currentGuild.id), panelId);
+      await ticketApi.deleteTicketPanel(BigInt($currentGuild.id), BigInt(panelId));
       showNotificationMessage("Panel deleted successfully");
       await fetchData();
     } catch (error) {
@@ -203,12 +183,12 @@
     }
   }
 
-  async function duplicatePanel(panelId: bigint) {
+  async function duplicatePanel(panelId: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
       console.log(`Would duplicate panel ${panelId} in guild ${$currentGuild.id}`);
       showNotificationMessage("Panel duplication feature coming soon");
-      // await ticketApi.duplicateTicketPanel(BigInt($currentGuild.id), panelId);
+      // await ticketApi.duplicateTicketPanel(BigInt($currentGuild.id), BigInt(panelId));
       // await fetchData();
     } catch (error) {
       showNotificationMessage(
@@ -268,11 +248,11 @@
       const promises = [];
 
       if (settingsData.transcriptChannelId) {
-        promises.push(ticketApi.setTicketTranscriptChannel(guildId, BigInt(settingsData.transcriptChannelId)));
+        promises.push(ticketApi.setTicketTranscriptChannel(guildId, { channelId: BigInt(settingsData.transcriptChannelId) }));
       }
 
       if (settingsData.logChannelId) {
-        promises.push(ticketApi.setTicketLogChannel(guildId, BigInt(settingsData.logChannelId)));
+        promises.push(ticketApi.setTicketLogChannel(guildId, { channelId: BigInt(settingsData.logChannelId) }));
       }
 
       await Promise.all(promises);
@@ -294,36 +274,6 @@
       return (num / 1000).toFixed(1) + "K";
     }
     return num.toString();
-  }
-
-  function getPriorityColor(level: number): string {
-    switch (level) {
-      case 4:
-        return "#ef4444"; // Critical - Red
-      case 3:
-        return "#f97316"; // High - Orange
-      case 2:
-        return "#eab308"; // Medium - Yellow
-      case 1:
-        return "#22c55e"; // Low - Green
-      default:
-        return $colorStore.muted;
-    }
-  }
-
-  function getPriorityLabel(level: number): string {
-    switch (level) {
-      case 4:
-        return "Critical";
-      case 3:
-        return "High";
-      case 2:
-        return "Medium";
-      case 1:
-        return "Low";
-      default:
-        return "Unknown";
-    }
   }
 
   $effect(() => {
@@ -376,41 +326,31 @@
     }
     ]);
 
-  // Handle tab change
-  function handleTabChange(event: CustomEvent) {
-    activeTab = event.detail.tabId;
-  }
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
     await fetchData();
-    checkMobile();
-    if (browser) window.addEventListener("resize", checkMobile);
-  });
-
-  onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
   });
 </script>
+
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
 
 <DashboardPageLayout
   title="Tickets Management"
   subtitle="Manage support tickets and help desk"
   icon="fa-ticket"
   {tabs}
-  {activeTab}
+  bind:activeTab
   {actionButtons}
   guildName={$currentGuild?.name || "Dashboard"}
-  on:tabChange={handleTabChange}
+  statusMessages={statusMessageContent}
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
   <div class="space-y-8">
 
@@ -448,6 +388,7 @@
           <!-- Stats Cards -->
           {#if stats}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <!-- Note: GuildStatistics doesn't have activeStaff property yet -->
               {#each [
                 {
                   label: 'Total Tickets',
@@ -466,8 +407,7 @@
                   value: stats?.closedTickets ?? 0,
                   icon: 'fa-check',
                   color: $colorStore.accent
-                },
-                { label: 'Active Staff', value: stats?.activeStaff ?? 0, icon: 'fa-users', color: '#10b981' }
+                }
               ] as stat (stat.label)}
                 <div
                   class="p-6 rounded-xl  border"
@@ -506,51 +446,13 @@
                   Average Response Time
                 </h3>
                 <div class="text-3xl font-bold" style="color: {$colorStore.primary}">
-                  {stats?.avgResponseTime ?? 'N/A'}
+                  {stats?.averageResponseTime ?? 'N/A'}
                 </div>
                 <p class="text-sm mt-2" style="color: {$colorStore.muted}">
                   Across all open tickets
                 </p>
               </div>
 
-              <div
-                class="p-6 rounded-xl  border"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-                       border-color: {$colorStore.primary}30;"
-              >
-                <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                  <i class="fa-solid fa-chart-column" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-                  Top Categories
-                </h3>
-                <div class="space-y-3">
-                  {#each (stats?.topCategories ?? []).slice(0, 3) as category (category.name)}
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm" style="color: {$colorStore.text}">
-                        {category.name}
-                      </span>
-                      <div class="flex items-center gap-2">
-                        <div
-                          class="h-2 rounded-full"
-                          style="background: {$colorStore.secondary}30; width: 80px"
-                        >
-                          <div
-                            class="h-2 rounded-full"
-                            style="background: {$colorStore.secondary}; width: {(category.count / Math.max(...(stats?.topCategories ?? []).map(c => c.count))) * 100}%"
-                          ></div>
-                        </div>
-                        <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                          {category.count}
-                        </span>
-                      </div>
-                    </div>
-                  {/each}
-                  {#if !stats?.topCategories?.length}
-                    <p class="text-sm" style="color: {$colorStore.muted}">
-                      No data available
-                    </p>
-                  {/if}
-                </div>
-              </div>
             </div>
           {/if}
         </div>
@@ -573,41 +475,34 @@
             <div class="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
               {#each panels as panel (panel.id)}
                 <div
-                  class=" rounded-xl border shadow-lg overflow-hidden"
+                  class="rounded-xl border shadow-lg overflow-hidden"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                          border-color: {$colorStore.primary}30;"
                   transition:fade={{ duration: 100 }}
                 >
                   <div
                     class="p-4 border-b"
-                    style="background: linear-gradient(to bottom, {panel.color}20, {panel.color}10);
+                    style="background: {$colorStore.primary}10;
                            border-color: {$colorStore.primary}30;"
                   >
                     <div class="flex justify-between items-start gap-4">
                       <div class="flex-1">
                         <h3 class="font-medium text-lg" style="color: {$colorStore.text}">
-                          {panel.title || `Panel #${panel.id}`}
+                          Panel #{panel.id}
                         </h3>
                         <p class="text-sm mt-1" style="color: {$colorStore.muted}">
-                          #{panel.channelId}
+                          Channel: {panel.channelId}
                         </p>
                       </div>
                       <div class="flex gap-2">
-                        <button aria-label="Delete"
-                          class="p-2 rounded-lg transition-all duration-75"
-                          style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
-                          onclick={() => showPanelButtons = panel}
-                        >
-                          <i class="fa-solid fa-gear" style="font-size: 16px;"></i>
-                        </button>
-                        <button aria-label="Edit"
+                        <button aria-label="Duplicate"
                           class="p-2 rounded-lg transition-all duration-75"
                           style="background: {$colorStore.secondary}10; color: {$colorStore.muted}"
                           onclick={() => duplicatePanel(panel.id)}
                         >
                           <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
                         </button>
-                        <button aria-label="View"
+                        <button aria-label="Delete"
                           class="p-2 rounded-lg transition-all duration-75 hover:bg-red-500/10"
                           style="color: {$colorStore.muted}"
                           onclick={() => deletePanel(panel.id)}
@@ -618,38 +513,12 @@
                     </div>
                   </div>
 
-                  <div class="p-4 space-y-4">
-                    <div>
-                      <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                        Description
-                      </h4>
-                      <p class="text-sm" style="color: {$colorStore.muted}">
-                        {panel.description || "No description"}
-                      </p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-4 pt-4 border-t" style="border-color: {$colorStore.primary}20">
-                      <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-robot" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                        <span class="text-sm" style="color: {$colorStore.text}">
-                          {panel.buttonCount} buttons
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-message" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                        <span class="text-sm" style="color: {$colorStore.text}">
-                          {panel.selectMenuCount} menus
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        {#if panel.isActive}
-                          <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                          <span class="text-sm text-green-400">Active</span>
-                        {:else}
-                          <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span class="text-sm text-red-400">Inactive</span>
-                        {/if}
-                      </div>
+                  <div class="p-4">
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                      <span class="text-sm" style="color: {$colorStore.text}">
+                        Message ID: {panel.messageId}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -676,7 +545,7 @@
             <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
               {#each cases as ticketCase (ticketCase.id)}
                 <div
-                  class=" rounded-xl border shadow-lg overflow-hidden"
+                  class="rounded-xl border shadow-lg overflow-hidden"
                   style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                          border-color: {$colorStore.primary}30;"
                   transition:fade={{ duration: 100 }}
@@ -684,23 +553,14 @@
                   <div class="p-6">
                     <div class="flex justify-between items-start gap-4 mb-4">
                       <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                          <h3 class="font-medium text-lg" style="color: {$colorStore.text}">
-                            {ticketCase.title}
-                          </h3>
-                          <span
-                                  class="px-2 py-1 rounded-sm text-xs font-medium"
-                            style="background: {getPriorityColor(ticketCase.priority)}20;
-                                   color: {getPriorityColor(ticketCase.priority)}"
-                          >
-                            {getPriorityLabel(ticketCase.priority)}
-                          </span>
-                        </div>
+                        <h3 class="font-medium text-lg mb-2" style="color: {$colorStore.text}">
+                          {ticketCase.title}
+                        </h3>
                         <p class="text-sm" style="color: {$colorStore.muted}">
                           {ticketCase.description || "No description"}
                         </p>
                       </div>
-                      {#if ticketCase.isOpen}
+                      {#if !ticketCase.closedAt}
                         <button
                           class="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-75"
                           style="background: {$colorStore.accent}; color: {$colorStore.text}"
@@ -720,17 +580,19 @@
 
                     <div class="flex flex-wrap gap-4 pt-4 border-t" style="border-color: {$colorStore.primary}20">
                       <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-ticket" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                        <span class="text-sm" style="color: {$colorStore.text}">
-                          {ticketCase.ticketCount} tickets
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
                         <i class="fa-solid fa-calendar" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                         <span class="text-sm" style="color: {$colorStore.text}">
-                          {new Date(ticketCase.createdAt).toLocaleDateString()}
+                          Created: {new Date(ticketCase.createdAt).toLocaleDateString()}
                         </span>
                       </div>
+                      {#if ticketCase.closedAt}
+                        <div class="flex items-center gap-2">
+                          <i class="fa-solid fa-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
+                          <span class="text-sm" style="color: {$colorStore.text}">
+                            Closed: {new Date(ticketCase.closedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      {/if}
                     </div>
                   </div>
                 </div>
@@ -854,7 +716,12 @@
             type="channel"
             options={channels}
             placeholder="Select a channel"
-            bind:selectedId={newPanelData.channelId}
+            selected={newPanelData.channelId}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                newPanelData.channelId = detail.selected;
+              }
+            }}
           />
         </div>
 
@@ -975,9 +842,11 @@
             ]}
             customIcon="fa-flag"
             placeholder="Select priority"
-            selectedId={newCaseData.priority.toString()}
-            on:change={(e) => {
-              newCaseData.priority = parseInt(e.detail.selected);
+            selected={newCaseData.priority.toString()}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                newCaseData.priority = parseInt(detail.selected);
+              }
             }}
           />
         </div>
@@ -1024,7 +893,12 @@
             type="channel"
             options={channels}
             placeholder="None"
-            bind:selectedId={settingsData.transcriptChannelId}
+            selected={settingsData.transcriptChannelId}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                settingsData.transcriptChannelId = detail.selected;
+              }
+            }}
           />
         </div>
 
@@ -1036,7 +910,12 @@
             type="channel"
             options={channels}
             placeholder="None"
-            bind:selectedId={settingsData.logChannelId}
+            selected={settingsData.logChannelId}
+            onchange={(detail) => {
+              if (detail.selected && typeof detail.selected === 'string') {
+                settingsData.logChannelId = detail.selected;
+              }
+            }}
           />
         </div>
       </div>

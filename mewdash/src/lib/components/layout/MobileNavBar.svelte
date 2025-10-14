@@ -1,20 +1,21 @@
 <!-- lib/components/MobileNavBar.svelte -->
 <script lang="ts">
-    import {fade, scale, slide} from "svelte/transition";
-    import {cubicOut} from "svelte/easing";
-    import { page } from "$app/state";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {currentInstance} from "$lib/stores/instanceStore";
-    import {musicStore} from "$lib/stores/musicStore";
-    import {userStore} from "$lib/stores/userStore";
-    import {onMount} from "svelte";
-    import {browser} from "$app/environment";
-    import {goto} from "$app/navigation";
-    import { instanceManagementApi, clientApi, ownershipApi, type BotInstance } from "$lib/api/index.ts";
+  import { fade, scale, slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import { page } from "$app/state";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { currentInstance } from "$lib/stores/instanceStore";
+  import { musicStore } from "$lib/stores/musicStore";
+  import { userStore } from "$lib/stores/userStore";
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import { instanceManagementApi, clientApi, ownershipApi, type BotInstance } from "$lib/api/index.ts";
+  import { allDashboardFeatures } from "$lib/config/navigationItems";
 
 
-    interface Props {
+  interface Props {
     // Props
     showInstanceSelector?: boolean;
     data?: any;
@@ -24,70 +25,35 @@
 
   // Define navigation items (main visible buttons)
   const navItems = [
-      {label: "Home", icon: "fa-utility-duo fa-regular fa-home", href: "/dashboard", priority: 1},
-      {label: "Settings", icon: "fa-utility-duo fa-regular fa-cog", href: "/dashboard/settings", priority: 2},
-      {label: "Music", icon: "fa-utility-duo fa-regular fa-music", href: "/dashboard/music", priority: 3},
-      {label: "XP", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/xp", priority: 4},
-      {label: "Instance", icon: "fa-utility-duo fa-regular fa-database", href: "#", isInstanceSelector: true, priority: 5},
-      {label: "More", icon: "fa-utility-duo fa-regular fa-bars", href: "#", isMore: true, priority: 6}
-  ];
-
-  // Base items for more menu
-  const baseMoreItems = [
-      {label: "Administration", icon: "fa-utility-duo fa-regular fa-cog", href: "/dashboard/administration", category: "Security"},
-      {label: "AFK System", icon: "fa-utility-duo fa-regular fa-moon", href: "/dashboard/afk", category: "Actions"},
-      {label: "Birthdays", icon: "fa-utility-duo fa-regular fa-birthday-cake", href: "/dashboard/birthday", category: "Community"},
-      {label: "Chat Saver", icon: "fa-utility-duo fa-regular fa-folder", href: "/dashboard/chatsaver", category: "Security"},
-      {label: "Confessions", icon: "fa-utility-duo fa-regular fa-comment", href: "/dashboard/confessions", category: "Community"},
-      {label: "Counting", icon: "fa-utility-duo fa-regular fa-hashtag", href: "/dashboard/counting", category: "Community"},
-      {label: "Custom Voice", icon: "fa-utility-duo fa-regular fa-microphone", href: "/dashboard/customvoice", category: "Entertainment"},
-      {label: "Embeds", icon: "fa-utility-duo fa-regular fa-link", href: "/dashboard/embedbuilder", category: "Actions"},
-      {label: "Feeds", icon: "fa-utility-duo fa-regular fa-newspaper", href: "/dashboard/feeds", category: "Actions"},
+    { label: "Home", icon: "fa-utility-duo fa-regular fa-home", href: "/dashboard", priority: 1 },
+    { label: "Settings", icon: "fa-utility-duo fa-regular fa-cog", href: "/dashboard/settings", priority: 2 },
+    { label: "Music", icon: "fa-utility-duo fa-regular fa-music", href: "/dashboard/music", priority: 3 },
+    { label: "XP", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/xp", priority: 4 },
     {
-      label: "Forms",
-      icon: "fa-utility-duo fa-regular fa-clipboard-list",
-      href: "/dashboard/forms",
-      category: "Community"
+      label: "Instance",
+      icon: "fa-utility-duo fa-regular fa-database",
+      href: "#",
+      isInstanceSelector: true,
+      priority: 5
     },
-      {label: "Giveaways", icon: "fa-utility-duo fa-regular fa-gift", href: "/dashboard/giveaways", category: "Entertainment"},
-      {label: "Greets", icon: "fa-utility-duo fa-regular fa-bell", href: "/dashboard/multigreets", category: "Actions"},
-      {label: "Highlights", icon: "fa-utility-duo fa-regular fa-bolt", href: "/dashboard/highlights", category: "Community"},
-      {label: "Invites", icon: "fa-utility-duo fa-regular fa-users", href: "/dashboard/invites", category: "Community"},
-      {label: "Logging", icon: "fa-utility-duo fa-regular fa-file", href: "/dashboard/logging", category: "Security"},
-      {label: "Message Stats", icon: "fa-utility-duo fa-regular fa-envelope", href: "/dashboard/messagestats", category: "Analytics"},
-      {label: "Moderation", icon: "fa-utility-duo fa-regular fa-flag", href: "/dashboard/moderation", category: "Security"},
-      {label: "Patreon", icon: "fa-utility-duo fa-regular fa-heart", href: "/dashboard/patreon", category: "Community"},
-      {label: "Performance", icon: "fa-utility-duo fa-regular fa-clock", href: "/dashboard/performance", category: "Analytics", ownerOnly: true},
-      {label: "Repeaters", icon: "fa-utility-duo fa-regular fa-sync", href: "/dashboard/repeaters", category: "Actions"},
-      {label: "Reputation", icon: "fa-utility-duo fa-regular fa-trophy", href: "/dashboard/reputation", category: "Community"},
-      {label: "Role Greets", icon: "fa-utility-duo fa-regular fa-user", href: "/dashboard/rolegreets", category: "Actions"},
-      {label: "Role States", icon: "fa-utility-duo fa-regular fa-tag", href: "/dashboard/rolestates", category: "Actions"},
-      {label: "Starboard", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/starboard", category: "Community"},
-      {label: "Status Roles", icon: "fa-utility-duo fa-regular fa-user-circle", href: "/dashboard/statusroles", category: "Actions"},
-      {label: "Streams", icon: "fa-utility-duo fa-regular fa-video", href: "/dashboard/streams", category: "Community"},
-      {label: "Suggestions", icon: "fa-utility-duo fa-regular fa-lightbulb", href: "/dashboard/suggestions", category: "Community"},
-      {label: "Tickets", icon: "fa-utility-duo fa-regular fa-ticket", href: "/dashboard/tickets", category: "Entertainment"},
-      {label: "Todo Lists", icon: "fa-utility-duo fa-regular fa-check", href: "/dashboard/todo", category: "Community"},
-      {label: "Triggers", icon: "fa-utility-duo fa-regular fa-comments", href: "/dashboard/chat-triggers", category: "Actions"},
-      {label: "Votes", icon: "fa-utility-duo fa-regular fa-thumbs-up", href: "/dashboard/votes", category: "Community"},
-      {label: "XP System", icon: "fa-utility-duo fa-regular fa-star", href: "/dashboard/xp", category: "Community"},
+    { label: "More", icon: "fa-utility-duo fa-regular fa-bars", href: "#", isMore: true, priority: 6 }
   ];
 
   // Filter items based on ownership
-  let moreItems = $derived(baseMoreItems.filter(item => !item.ownerOnly || isOwner));
+  let moreItems = $derived(allDashboardFeatures.filter(item => !item.ownerOnly || isOwner));
 
   // State
   let showLabels = true;
   let showMoreMenu = $state(false);
   let showInstanceMenu = $state(false);
-    let activeMenuType = $state<'more' | 'instance' | null>(null);
+  let activeMenuType = $state<"more" | "instance" | null>(null);
   let prevScrollPos = 0;
   let visible = $state(true);
   let musicPlaying = $state(false);
   let lastTapTime = 0;
   let isAnimating = $state(false);
   let isNavigating = $state(false);
-  let navigationLoadingTarget = $state(null);
+  let navigationLoadingTarget = $state<string | null>(null);
 
   // Instance selection state
   let instances: BotInstance[] = $state([]);
@@ -102,7 +68,7 @@
   let isOwner = $state(false);
 
   // Derived state
-    let currentPath = $derived(page.url.pathname);
+  let currentPath = $derived(page.url.pathname);
   let activeIndex = $derived(navItems.findIndex(item =>
       !item.isMore && (
         currentPath === item.href ||
@@ -116,7 +82,7 @@
     currentPath.startsWith(item.href + "/")
   ));
   let moreMenuActive = $derived(activeMoreIndex >= 0);
-    $effect(() => {
+  $effect(() => {
     musicPlaying = $musicStore.status?.IsPlaying || false;
   });
 
@@ -128,17 +94,18 @@
   }));
   let stillCheckingInstances = $derived(Object.values(instanceStates).some(state => state.loading));
 
-    // Modify nav items when in instance selector mode or always show instance selector
+  // Modify nav items when in instance selector mode or always show instance selector
   let effectiveNavItems = $derived(showInstanceSelector ? (
-      // In instance selector mode, show the selector
-      [
-          {label: "Instances", icon: "fa-server", href: "#", isInstanceSelector: true, priority: 1},
-          {label: "Home", icon: "fa-home", href: "/", priority: 2}
+    // In instance selector mode, show the selector
+    [
+      { label: "Instances", icon: "fa-server", href: "#", isInstanceSelector: true, priority: 1 },
+      { label: "Home", icon: "fa-home", href: "/", priority: 2 }
     ]
   ) : navItems); // Always show all nav items including instance selector
 
   // Show/hide the navbar based on scroll direction with debouncing
   let scrollTimeout: NodeJS.Timeout;
+
   function handleScroll() {
     if (typeof window !== "undefined") {
       // Debounce scroll events for better performance
@@ -168,7 +135,7 @@
 
     showMoreMenu = !showMoreMenu;
     showInstanceMenu = false; // Close instance menu when opening more menu
-      activeMenuType = showMoreMenu ? 'more' : null;
+    activeMenuType = showMoreMenu ? "more" : null;
 
     // Add haptic feedback on supported devices
     if ("vibrate" in navigator && showMoreMenu) {
@@ -182,7 +149,7 @@
 
     showInstanceMenu = !showInstanceMenu;
     showMoreMenu = false; // Close more menu when opening instance menu
-      activeMenuType = showInstanceMenu ? 'instance' : null;
+    activeMenuType = showInstanceMenu ? "instance" : null;
 
     // Add haptic feedback on supported devices
     if ("vibrate" in navigator && showInstanceMenu) {
@@ -288,7 +255,7 @@
 
     try {
       const mutualGuilds = await clientApi.getMutualGuilds(userData.id, true, fetch, customHeaders);
-      const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
+      const hasMutual = !!(mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0);
 
       instanceStates[instanceId] = {
         loading: false,
@@ -389,12 +356,12 @@
     }
   }
 
-    // Close menus when route changes
-    $effect(() => {
-      page.url.pathname;
-      showMoreMenu = false;
-      showInstanceMenu = false;
-    });
+  // Close menus when route changes
+  $effect(() => {
+    page.url.pathname;
+    showMoreMenu = false;
+    showInstanceMenu = false;
+  });
 
   onMount(() => {
     if (!browser) return;
@@ -418,96 +385,98 @@
 <!-- Only show on mobile -->
 <div class="md:hidden">
   {#if $currentInstance}
-      <!-- Music Mini Player - Floating above nav -->
+    <!-- Music Mini Player - Floating above nav -->
     {#if musicPlaying}
-        <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-40"
-             style="padding-bottom: calc(80px + env(safe-area-inset-bottom));">
+      <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-40"
+           style="padding-bottom: calc(80px + env(safe-area-inset-bottom));">
+        <div
+          class="pointer-events-auto mx-4 w-full max-w-md py-2 px-3 backdrop-blur-md rounded-2xl shadow-lg"
+          style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
+          transition:slide={{ duration: 200, axis: 'y' }}
+          role="status"
+          aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
+        >
+          <div class="flex items-center gap-3">
             <div
-                    class="pointer-events-auto mx-4 w-full max-w-md py-2 px-3 backdrop-blur-md rounded-2xl shadow-lg"
-                    style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
-                    transition:slide={{ duration: 200, axis: 'y' }}
-                    role="status"
-                    aria-label="Currently playing: {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}"
+              class="w-8 h-8 rounded-lg shrink-0 overflow-hidden bg-cover bg-center"
+              style="background-image: url('{$musicStore.status?.CurrentTrack?.AlbumArt || '/img/music-placeholder.png'}');"
             >
-        <div class="flex items-center gap-3">
-          <div
-                  class="w-8 h-8 rounded-lg shrink-0 overflow-hidden bg-cover bg-center"
-            style="background-image: url('{$musicStore.status?.CurrentTrack?.AlbumArt || '/img/music-placeholder.png'}');"
-          >
-            <!-- Animated equalizer bars -->
-            <div class="w-full h-full bg-black opacity-50 flex items-end justify-center p-1" aria-hidden="true">
-              <div class="bar-1 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
-              <div class="bar-2 w-1 mx-px rounded-t" style="background-color: {$colorStore.secondary};"></div>
-              <div class="bar-3 w-1 mx-px rounded-t" style="background-color: {$colorStore.accent};"></div>
-              <div class="bar-4 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
+              <!-- Animated equalizer bars -->
+              <div class="w-full h-full bg-black opacity-50 flex items-end justify-center p-1" aria-hidden="true">
+                <div class="bar-1 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
+                <div class="bar-2 w-1 mx-px rounded-t" style="background-color: {$colorStore.secondary};"></div>
+                <div class="bar-3 w-1 mx-px rounded-t" style="background-color: {$colorStore.accent};"></div>
+                <div class="bar-4 w-1 mx-px rounded-t" style="background-color: {$colorStore.primary};"></div>
+              </div>
             </div>
-          </div>
 
-          <div class="flex-1 min-w-0 text-sm">
-            <div class="font-medium truncate" style:color={$colorStore.text}>
-              {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}
+            <div class="flex-1 min-w-0 text-sm">
+              <div class="font-medium truncate" style:color={$colorStore.text}>
+                {$musicStore.status?.CurrentTrack?.Title || 'Unknown Track'}
+              </div>
+              <div class="text-xs truncate" style:color={$colorStore.muted}>
+                {$musicStore.status?.CurrentTrack?.Author || 'Unknown Artist'}
+              </div>
             </div>
-            <div class="text-xs truncate" style:color={$colorStore.muted}>
-              {$musicStore.status?.CurrentTrack?.Author || 'Unknown Artist'}
-            </div>
-          </div>
 
-          <a
-            href="/dashboard/music"
-            class="w-8 h-8 rounded-full flex items-center justify-center"
-            style:background="{$colorStore.primary}30"
-            aria-label="Go to music player"
-          >
-              <i class="fa-utility-duo fa-regular fa-music text-sm" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};" aria-hidden="true"></i>
-          </a>
+            <a
+              href="/dashboard/music"
+              class="w-8 h-8 rounded-full flex items-center justify-center"
+              style:background="{$colorStore.primary}30"
+              aria-label="Go to music player"
+            >
+              <i class="fa-utility-duo fa-regular fa-music text-sm"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"
+                 aria-hidden="true"></i>
+            </a>
+          </div>
         </div>
-            </div>
       </div>
     {/if}
 
-      <!-- Bottom Navigation Bar - Floating Pill Style -->
-      <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-50"
-           style="padding-bottom: calc(12px + env(safe-area-inset-bottom));">
-          <nav
-                  class="pointer-events-auto mx-4 w-full max-w-md transition-all duration-300 ease-out backdrop-blur-md rounded-full shadow-2xl"
-                  class:translate-y-0={visible}
-                  class:translate-y-full={!visible}
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
-                  aria-label="Mobile navigation"
-          >
-              <div class="flex justify-around py-1.5 px-2">
-        {#each effectiveNavItems as item, i}
-          {#if item.isMore || item.isInstanceSelector}
-            <!-- More menu / Instance selector button -->
-            <button
-              class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-[1.02] active:scale-95"
-              onclick={(e) => { e.stopPropagation(); item.isInstanceSelector ? toggleInstanceMenu() : toggleMoreMenu(); }}
-              onkeydown={item.isInstanceSelector ? handleInstanceMenuKeydown : handleMoreMenuKeydown}
-              style:color={moreMenuActive || showMoreMenu || showInstanceMenu || (item.isInstanceSelector && $currentInstance) ? $colorStore.primary : $colorStore.muted}
-              aria-expanded={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}
-              aria-haspopup="menu"
-              aria-label="{item.isInstanceSelector ? 'Instance selection' : 'More navigation options'}"
-            >
-              <div class="relative">
-                <div class="transition-transform duration-200"
-                     class:rotate-180={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}>
+    <!-- Bottom Navigation Bar - Floating Pill Style -->
+    <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-50"
+         style="padding-bottom: calc(12px + env(safe-area-inset-bottom));">
+      <nav
+        class="pointer-events-auto mx-4 w-full max-w-md transition-all duration-300 ease-out backdrop-blur-md rounded-full shadow-2xl"
+        class:translate-y-0={visible}
+        class:translate-y-full={!visible}
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
+        aria-label="Mobile navigation"
+      >
+        <div class="flex justify-around py-1.5 px-2">
+          {#each effectiveNavItems as item, i}
+            {#if item.isMore || item.isInstanceSelector}
+              <!-- More menu / Instance selector button -->
+              <button
+                class="flex flex-col items-center justify-center py-2 px-4 relative more-button transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                onclick={(e) => { e.stopPropagation(); item.isInstanceSelector ? toggleInstanceMenu() : toggleMoreMenu(); }}
+                onkeydown={item.isInstanceSelector ? handleInstanceMenuKeydown : handleMoreMenuKeydown}
+                style:color={moreMenuActive || showMoreMenu || showInstanceMenu || (item.isInstanceSelector && $currentInstance) ? $colorStore.primary : $colorStore.muted}
+                aria-expanded={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}
+                aria-haspopup="menu"
+                aria-label="{item.isInstanceSelector ? 'Instance selection' : 'More navigation options'}"
+              >
+              <span class="relative">
+                <span class="transition-transform duration-200 block"
+                      class:rotate-180={item.isInstanceSelector ? showInstanceMenu : showMoreMenu}>
                     <i class="{item.icon} text-xl" aria-hidden="true"></i>
-                </div>
+                </span>
 
                 {#if (item.isInstanceSelector && showInstanceMenu) || (item.isMore && showMoreMenu)}
-                  <div
-                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
+                  <span
+                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse block"
                     style:background={$colorStore.primary}
-                  ></div>
+                  ></span>
                 {:else if item.isInstanceSelector && $currentInstance}
                   <!-- Instance indicator when not showing menu -->
-                  <div
-                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                  <span
+                    class="absolute -top-1 -right-1 w-2 h-2 rounded-full block"
                     style:background={$currentInstance.isActive ? '#10B981' : $colorStore.accent}
-                  ></div>
+                  ></span>
                 {/if}
-              </div>
-              {#if showLabels}
+              </span>
+                {#if showLabels}
                 <span class="text-xs mt-1">
                   {#if item.isInstanceSelector && $currentInstance}
                     {$currentInstance.botName.length > 8 ? $currentInstance.botName.substring(0, 8) + '...' : $currentInstance.botName}
@@ -515,18 +484,18 @@
                     {item.label}
                   {/if}
                 </span>
-              {/if}
-            </button>
-          {:else}
+                {/if}
+              </button>
+            {:else}
               <!-- Regular nav item -->
               <a
-                      href={item.href}
-                      class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-[1.02] active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      aria-current={activeIndex === i ? 'page' : undefined}
-                      style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
-                      style:focus:ring-color={$colorStore.primary}
-                      aria-label="Navigate to {item.label}"
-                      onclick={(e) => {
+                href={item.href}
+                class="flex flex-col items-center justify-center py-2 px-4 relative transition-all duration-300 hover:scale-[1.02] active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                aria-current={activeIndex === i ? 'page' : undefined}
+                style:color={activeIndex === i ? $colorStore.primary : $colorStore.muted}
+                style:focus:ring-color={$colorStore.primary}
+                aria-label="Navigate to {item.label}"
+                onclick={(e) => {
                 e.preventDefault();
                 if ($currentGuild && !item.isInstanceSelector) {
                   if (browser) {
@@ -550,158 +519,159 @@
                 handleNavItemTap(item);
               }}
               >
-                  <div class="relative">
-                      <i class="{item.icon} text-xl {isNavigating && navigationLoadingTarget === item.label ? 'animate-pulse' : ''}"
-                         aria-hidden="true"
-                         style="color: {isNavigating && navigationLoadingTarget === item.label ? $colorStore.primary : 'inherit'}"></i>
+                <div class="relative">
+                  <i
+                    class="{item.icon} text-xl {isNavigating && navigationLoadingTarget === item.label ? 'animate-pulse' : ''}"
+                    aria-hidden="true"
+                    style="color: {isNavigating && navigationLoadingTarget === item.label ? $colorStore.primary : 'inherit'}"></i>
 
-                      <!-- Active indicator dot -->
-                      {#if activeIndex === i && !(isNavigating && navigationLoadingTarget === item.label)}
-                          <div
-                                  class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
-                                  style:background={$colorStore.primary}
-                                  transition:scale={{ duration: 300, easing: cubicOut }}
-                          ></div>
-                      {/if}
-
-                      <!-- Music playing indicator -->
-                      {#if item.href === '/dashboard/music' && musicPlaying}
-                          <div
-                                  class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
-                                  style:background={$colorStore.accent}
-                          ></div>
-                      {/if}
-                  </div>
-                  {#if showLabels}
-                      <span class="text-xs mt-1">{item.label}</span>
+                  <!-- Active indicator dot -->
+                  {#if activeIndex === i && !(isNavigating && navigationLoadingTarget === item.label)}
+                    <div
+                      class="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
+                      style:background={$colorStore.primary}
+                      transition:scale={{ duration: 300, easing: cubicOut }}
+                    ></div>
                   {/if}
 
-                  {#if activeIndex === i}
-                      <div
-                              class="absolute -bottom-px left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-md"
-                              style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary})"
-                              in:scale|local={{ duration: 300, start: 0, delay: 50, easing: cubicOut }}
-                              out:scale|local={{ duration: 200 }}
-                      ></div>
+                  <!-- Music playing indicator -->
+                  {#if item.href === '/dashboard/music' && musicPlaying}
+                    <div
+                      class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
+                      style:background={$colorStore.accent}
+                    ></div>
                   {/if}
+                </div>
+                {#if showLabels}
+                  <span class="text-xs mt-1">{item.label}</span>
+                {/if}
+
+                {#if activeIndex === i}
+                  <div
+                    class="absolute -bottom-px left-1/2 transform -translate-x-1/2 w-8 h-1 rounded-t-md"
+                    style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary})"
+                    in:scale|local={{ duration: 300, start: 0, delay: 50, easing: cubicOut }}
+                    out:scale|local={{ duration: 200 }}
+                  ></div>
+                {/if}
               </a>
-          {/if}
-        {/each}
-      </div>
-          </nav>
-      </div>
+            {/if}
+          {/each}
+        </div>
+      </nav>
+    </div>
 
-      <!-- Menus rendered outside nav to avoid blur stacking -->
-      {#if activeMenuType && (showInstanceMenu || showMoreMenu)}
-          <!-- Backdrop -->
-          <div
-                  class="fixed inset-0 z-40 backdrop-blur-md"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}60 0%, {$colorStore.gradientMid}50 50%, {$colorStore.gradientEnd}60 100%);"
-                  onclick={() => {
+    <!-- Menus rendered outside nav to avoid blur stacking -->
+    {#if activeMenuType && (showInstanceMenu || showMoreMenu)}
+      <!-- Backdrop -->
+      <div
+        class="fixed inset-0 z-40 backdrop-blur-md"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}60 0%, {$colorStore.gradientMid}50 50%, {$colorStore.gradientEnd}60 100%);"
+        onclick={() => {
           showMoreMenu = false;
           showInstanceMenu = false;
           activeMenuType = null;
         }}
-                  transition:fade={{ duration: 200 }}
-                  aria-hidden="true"
-          ></div>
+        transition:fade={{ duration: 200 }}
+        aria-hidden="true"
+      ></div>
 
-          <!-- Menu -->
-          <div
-                  class="fixed left-4 right-4 rounded-2xl shadow-2xl border z-50 backdrop-blur-md"
-                  style="bottom: calc(80px + env(safe-area-inset-bottom)); max-height: 60vh;
+      <!-- Menu -->
+      <div
+        class="fixed left-4 right-4 rounded-2xl shadow-2xl border z-50 backdrop-blur-md"
+        style="bottom: calc(80px + env(safe-area-inset-bottom)); max-height: 60vh;
          background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95, {$colorStore.gradientEnd}95);
          border-color: {$colorStore.primary}50;"
-                  transition:slide={{ duration: 250, axis: 'y', easing: cubicOut }}
-                  role="menu"
-                  aria-label="{activeMenuType === 'instance' ? 'Instance selection' : 'Additional navigation options'}"
-          >
-              {#if activeMenuType === 'instance'}
-                  <!-- Instance Selection Menu -->
-                  <div class="p-4 overflow-y-auto" style="max-height: 55vh;">
-                      <div class="text-center mb-4">
-                          <h3 class="text-base font-semibold" style="color: {$colorStore.text};">Bot Instances</h3>
-                          {#if $currentInstance}
-                              <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                                  Current: {$currentInstance.botName}</p>
-                          {:else}
-                              <p class="text-xs mt-1" style="color: {$colorStore.muted};">Choose an instance to
-                                  manage</p>
-                          {/if}
-                      </div>
+        transition:slide={{ duration: 250, axis: 'y', easing: cubicOut }}
+        role="menu"
+        aria-label="{activeMenuType === 'instance' ? 'Instance selection' : 'Additional navigation options'}"
+      >
+        {#if activeMenuType === 'instance'}
+          <!-- Instance Selection Menu -->
+          <div class="p-4 overflow-y-auto" style="max-height: 55vh;">
+            <div class="text-center mb-4">
+              <h3 class="text-base font-semibold" style="color: {$colorStore.text};">Bot Instances</h3>
+              {#if $currentInstance}
+                <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                  Current: {$currentInstance.botName}</p>
+              {:else}
+                <p class="text-xs mt-1" style="color: {$colorStore.muted};">Choose an instance to
+                  manage</p>
+              {/if}
+            </div>
 
-                      {#if instancesLoading || stillCheckingInstances}
-                          <div class="text-center py-4" style="color: {$colorStore.muted};">
-                              <div class="animate-spin mx-auto mb-2 h-6 w-6 border-2 rounded-full"
-                                   style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
-                              <p class="text-xs">{instancesLoading ? 'Loading instances...' : 'Checking access...'}</p>
-                          </div>
-                      {:else if instancesError}
-                          <div class="text-center py-4" style="color: {$colorStore.accent};">
-                              <p class="text-xs">{instancesError}</p>
-                          </div>
-                      {:else if visibleInstances.length === 0}
-                          <div class="text-center py-4" style="color: {$colorStore.muted};">
-                              <p class="text-xs">No accessible instances found</p>
-                          </div>
-                      {:else}
-                          <div class="space-y-2">
-                              {#each visibleInstances as instance, j}
-                                  <button
-                                          class="w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 border"
-                                          style="color: {$colorStore.text};
+            {#if instancesLoading || stillCheckingInstances}
+              <div class="text-center py-4" style="color: {$colorStore.muted};">
+                <div class="animate-spin mx-auto mb-2 h-6 w-6 border-2 rounded-full"
+                     style="border-color: {$colorStore.primary}30; border-top-color: {$colorStore.primary};"></div>
+                <p class="text-xs">{instancesLoading ? 'Loading instances...' : 'Checking access...'}</p>
+              </div>
+            {:else if instancesError}
+              <div class="text-center py-4" style="color: {$colorStore.accent};">
+                <p class="text-xs">{instancesError}</p>
+              </div>
+            {:else if visibleInstances.length === 0}
+              <div class="text-center py-4" style="color: {$colorStore.muted};">
+                <p class="text-xs">No accessible instances found</p>
+              </div>
+            {:else}
+              <div class="space-y-2">
+                {#each visibleInstances as instance, j}
+                  <button
+                    class="w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 border"
+                    style="color: {$colorStore.text};
                            background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
                            border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
                            hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                            hover:border-color: {$colorStore.primary}40;"
-                                          onclick={() => {
+                    onclick={() => {
                       handleInstanceSelect(instance);
                       showInstanceMenu = false;
                       activeMenuType = null;
                     }}
-                                          in:slide|local={{ delay: j * 30, duration: 200 }}
-                                  >
-                                      <img
-                                              src={instance.botAvatar}
-                                              alt=""
-                                              class="w-8 h-8 rounded-full"
-                                      >
-                                      <div class="flex-1 text-left">
-                                          <div class="text-sm font-medium">{instance.botName}</div>
-                                          <div class="text-xs" style="color: {$colorStore.muted};">
+                    in:slide|local={{ delay: j * 30, duration: 200 }}
+                  >
+                    <img
+                      src={instance.botAvatar}
+                      alt=""
+                      class="w-8 h-8 rounded-full"
+                    >
+                    <span class="flex-1 text-left block">
+                                          <span class="text-sm font-medium block">{instance.botName}</span>
+                                          <span class="text-xs block" style="color: {$colorStore.muted};">
                                               {instance.isActive ? 'Online' : 'Offline'}
-                                          </div>
-                                      </div>
-                                      {#if !instance.isActive}
+                                          </span>
+                                      </span>
+                    {#if !instance.isActive}
                       <span class="px-2 py-1 rounded-sm text-xs"
                             style="color: {$colorStore.accent}; background: {$colorStore.accent}15;">
                         Offline
                       </span>
-                                      {/if}
-                                  </button>
-                              {/each}
-                          </div>
-                      {/if}
-                  </div>
-              {:else if activeMenuType === 'more'}
-                  <!-- Regular More Menu -->
-                  <div class="grid grid-cols-2 gap-2 p-4 overflow-y-auto" style="max-height: 55vh;">
-                      {#each moreItems as moreItem, j}
-                          <a
-                                  href={moreItem.href}
-                                  data-sveltekit-preload-data="hover"
-                                  data-sveltekit-noscroll
-                                  class="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-center transition-all duration-200 hover:scale-[1.02] active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2 border"
-                                  style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {:else if activeMenuType === 'more'}
+          <!-- Regular More Menu -->
+          <div class="grid grid-cols-2 gap-2 p-4 overflow-y-auto" style="max-height: 55vh;">
+            {#each moreItems as moreItem, j}
+              <a
+                href={moreItem.href}
+                data-sveltekit-preload-data="hover"
+                data-sveltekit-noscroll
+                class="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-center transition-all duration-200 hover:scale-[1.02] active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-offset-2 border"
+                style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : $colorStore.text};
                        background: {currentPath.startsWith(moreItem.href) ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)` : 'transparent'};
                        border-color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary + '40' : 'transparent'};
                        hover:background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                        hover:border-color: {$colorStore.primary}30;"
-                                  in:slide|local={{ delay: j * 30, duration: 200 }}
-                                  role="menuitem"
-                                  aria-label="Navigate to {moreItem.label}"
-                                  onkeydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
-                                  onclick={(e) => {
+                in:slide|local={{ delay: j * 30, duration: 200 }}
+                role="menuitem"
+                aria-label="Navigate to {moreItem.label}"
+                onkeydown={(e) => handleMenuItemKeydown(e, moreItem.href)}
+                onclick={(e) => {
                   e.preventDefault();
                   if ($currentGuild) {
                     if (browser) {
@@ -726,18 +696,18 @@
                   showMoreMenu = false;
                   activeMenuType = null;
                 }}
-                          >
-                              <i class="{moreItem.icon} text-base"
-                                 aria-hidden="true"
-                                 style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : 'inherit'}">
-                              </i>
-                              <span class="text-xs font-medium whitespace-normal leading-tight">{moreItem.label}</span>
-                          </a>
-                      {/each}
-                  </div>
-              {/if}
+              >
+                <i class="{moreItem.icon} text-base"
+                   aria-hidden="true"
+                   style="color: {currentPath.startsWith(moreItem.href) ? $colorStore.primary : 'inherit'}">
+                </i>
+                <span class="text-xs font-medium whitespace-normal leading-tight">{moreItem.label}</span>
+              </a>
+            {/each}
           </div>
-      {/if}
+        {/if}
+      </div>
+    {/if}
   {/if}
 </div>
 

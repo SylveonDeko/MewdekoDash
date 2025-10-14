@@ -2,7 +2,7 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { multiGreetApi, clientApi, type MultiGreet, MultiGreetType } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
@@ -11,7 +11,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore.ts";
     import {colorStore} from "$lib/stores/colorStore.ts"; // Import the global colorStore
     import {logger} from "$lib/logger.ts";
@@ -34,13 +33,8 @@
     let editDeleteTime: { id: number; time: string } | null = $state(null);
     let editWebhook: { id: number; name: string; avatarUrl: string } | null = $state(null);
     let greetType: MultiGreetType = $state(MultiGreetType.MultiGreet);
-  let isMobile = false;
 
     let sortedGreets = $derived([...greets].sort((a, b) => a.id - b.id));
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   function showNotificationMessage(
     message: string,
@@ -52,6 +46,12 @@
     setTimeout(() => {
       showNotification = false;
     }, 3000);
+  }
+
+  function handleChannelChange(detail: any) {
+    if (detail.selected && typeof detail.selected === "string") {
+      selectedChannel = detail.selected;
+    }
   }
 
   async function fetchGreets() {
@@ -235,20 +235,23 @@
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
     await Promise.all([fetchGreets(), fetchChannels()]);
-    checkMobile();
-    if (browser) window.addEventListener("resize", checkMobile);
-  });
-
-  onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
   });
 </script>
 
-<DashboardPageLayout 
-  title="MultiGreets Configuration" 
-  subtitle="Configure multiple greeting messages for your server" 
+{#snippet statusMessages()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessages}
+  subtitle="Configure multiple greeting messages for your server"
   icon="fa-comment"
   guildName={$currentGuild?.name || "Dashboard"}
+  title="MultiGreets Configuration"
   actionButtons={[
     {
       label: "Add Greet",
@@ -259,14 +262,6 @@
     }
   ]}
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-  </svelte:fragment>
 
     <!-- Greet Type Section -->
     <section
@@ -286,17 +281,15 @@
           { type: MultiGreetType.Off, label: "Disabled", icon: "⭕", desc: "Disable all greets" }
         ] as option}
           <button
-            class="flex-1 px-4 py-3 rounded-lg transition-all duration-200"
+            class="flex-1 px-4 py-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1"
             style="background: {greetType === option.type ? $colorStore.primary + '30' : $colorStore.primary + '08'};
                    color: {greetType === option.type ? $colorStore.primary : $colorStore.muted};
                    border: 1px solid {greetType === option.type ? $colorStore.primary + '50' : $colorStore.primary + '20'};"
             onclick={() => updateGreetType(option.type)}
           >
-            <div class="flex flex-col items-center gap-1">
-              <span class="text-xl mb-1">{option.icon}</span>
-              <span class="font-medium">{option.label}</span>
-              <span class="text-xs opacity-75">{option.desc}</span>
-            </div>
+            <span class="text-xl mb-1">{option.icon}</span>
+            <span class="font-medium">{option.label}</span>
+            <span class="text-xs opacity-75">{option.desc}</span>
           </button>
         {/each}
       </div>
@@ -329,7 +322,7 @@
     {:else}
       <!-- Add New Greet Section -->
       <section
-              class="mb-8 backdrop-blur-xs rounded-xl border p-6 transition-all"
+        class="mb-8  rounded-xl border p-6 transition-all"
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                border-color: {$colorStore.primary}30;"
       >
@@ -344,9 +337,7 @@
               options={channels}
               selected={selectedChannel}
               placeholder="Select a channel"
-              on:change={(e) => {
-                selectedChannel = e.detail.selected;
-              }}
+              onchange={handleChannelChange}
             />
           </div>
         </div>
@@ -355,7 +346,7 @@
       <!-- Greets List -->
       {#if !greets.length}
         <div
-                class="text-center p-8 backdrop-blur-xs rounded-xl border transition-all"
+          class="text-center p-8  rounded-xl border transition-all"
           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                  border-color: {$colorStore.primary}30;"
           transition:fade
@@ -370,7 +361,7 @@
         <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {#each sortedGreets as greet (greet.id)}
             <div
-                    class="backdrop-blur-xs rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
+              class=" rounded-xl border shadow-lg overflow-hidden transition-all duration-200"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                      border-color: {$colorStore.primary}30;"
               transition:fade
@@ -420,7 +411,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          onclick={() => updateMessage(greet.id, editMessage.message)}
+                          onclick={() => editMessage && updateMessage(greet.id, editMessage.message)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                           Save
@@ -486,7 +477,7 @@
                         <button
                           class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
                           style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          onclick={() => updateDeleteTime(greet.id, editDeleteTime.time)}
+                          onclick={() => editDeleteTime && updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>
                           Save
@@ -628,12 +619,12 @@
                       checked={greet.greetBots}
                       onchange={(e) => updateGreetBots(greet.id, e.currentTarget.checked)}
                     >
-                    <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
+                    <span class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
-                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full block"
                          style="background: {greet.greetBots ? $colorStore.primary : `${$colorStore.primary}20`};
                                 ring-color: {$colorStore.primary}50">
-                    </div>
+                    </span>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
                           style="color: {$colorStore.text}">
                       Greet Bots
@@ -647,12 +638,12 @@
                       checked={!greet.disabled}
                       onchange={(e) => updateDisabled(greet.id, !e.currentTarget.checked)}
                     >
-                    <div class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
+                    <span class="w-11 h-6 rounded-full peer-focus:ring-2 after:content-['']
                               after:absolute after:top-[2px] after:left-[2px] after:bg-white
-                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                              after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full block"
                          style="background: {!greet.disabled ? $colorStore.primary : `${$colorStore.primary}20`};
                                 ring-color: {$colorStore.primary}50">
-                    </div>
+                    </span>
                     <span class="ml-3 text-sm font-medium transition-colors duration-200"
                           style="color: {$colorStore.text}">
                       Enabled

@@ -75,7 +75,7 @@
 </script>
 
 <div class="w-full">
-  <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+  <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
               border-color: {$colorStore.primary}30;">
     <div class="flex justify-between items-center mb-6">
@@ -115,7 +115,7 @@
     {:else if systemInfo}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <!-- CPU Usage -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-circle"
@@ -133,7 +133,7 @@
         </div>
 
         <!-- Memory Usage -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
@@ -153,7 +153,7 @@
         </div>
 
         <!-- Uptime -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-clock"
@@ -166,7 +166,7 @@
         </div>
 
         <!-- Thread Count -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01]"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01]"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-3">
             <i class="fa-utility-duo fa-regular fa-square"
@@ -179,7 +179,7 @@
         </div>
 
         <!-- Top Methods -->
-        <div class="backdrop-blur-xs rounded-xl p-4 transition-all hover:scale-[1.01] md:col-span-2"
+        <div class=" rounded-xl p-4 transition-all hover:scale-[1.01] md:col-span-2"
              style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
           <div class="flex items-center gap-2 mb-4">
             <i class="fa-utility-duo fa-regular fa-bell"

@@ -21,7 +21,9 @@
     isValidNumber,
     isValidUrl,
     sanitizeAnswerText,
-    sanitizeUrlPath
+    sanitizeUrlPath,
+    containsZalgo,
+    removeZalgoText
   } from "$lib/utils/sanitize";
 
   interface Props {
@@ -47,21 +49,11 @@
   let showLoginPrompt = $state(false);
   let statusCheckUrl = $state<string>("");
   let statusCheckToken = $state<string>("");
+  let userGuildMember = $state<any>(null); // Guild member data for Discord conditionals
 
-  // Computed
+  // Computed - Filter visible questions based on ALL conditional types
   let visibleQuestions = $derived(
-    questions.filter((q) => {
-      if (!q.conditionalParentQuestionId) return true;
-
-      const parentAnswer = answers[q.conditionalParentQuestionId];
-      if (!parentAnswer) return false;
-
-      return evaluateCondition(
-        parentAnswer,
-        q.conditionalOperator || "equals",
-        q.conditionalExpectedValue || ""
-      );
-    })
+    questions.filter((q) => shouldShowQuestion(q))
   );
 
   let answeredQuestions = $derived(
@@ -77,6 +69,203 @@
   let progressPercentage = $derived(
     visibleQuestions.length > 0 ? Math.round((answeredQuestions.length / visibleQuestions.length) * 100) : 0
   );
+
+  // Comprehensive conditional evaluation
+  function shouldShowQuestion(question: FormQuestion): boolean {
+    const condType = question.conditionalType || 0;
+
+    switch (condType) {
+      case 0: // QuestionBased
+        return evaluateQuestionBasedCondition(question);
+      case 1: // DiscordRole
+        return evaluateDiscordRoleCondition(question);
+      case 2: // ServerTenure
+        return evaluateServerTenureCondition(question);
+      case 3: // BoostStatus
+        return evaluateBoostStatusCondition(question);
+      case 4: // Permission
+        return evaluatePermissionCondition(question);
+      case 5: // MultipleConditions
+        return evaluateMultipleConditions(question);
+      default:
+        return true;
+    }
+  }
+
+  function evaluateQuestionBasedCondition(question: FormQuestion): boolean {
+    if (!question.conditionalParentQuestionId) return true;
+
+    const parentAnswer = answers[question.conditionalParentQuestionId];
+    if (!parentAnswer) return false;
+
+    return evaluateCondition(
+      parentAnswer,
+      question.conditionalOperator || "equals",
+      question.conditionalExpectedValue || ""
+    );
+  }
+
+  function evaluateDiscordRoleCondition(question: FormQuestion): boolean {
+    if (!question.conditionalRoleIds || !userGuildMember) return true;
+
+    const requiredRoleIds = question.conditionalRoleIds.split(",").filter(x => x);
+    const userRoleIds = userGuildMember.roles || [];
+    const logic = question.conditionalRoleLogic || "any";
+
+    switch (logic) {
+      case "any":
+        return requiredRoleIds.some(roleId => userRoleIds.includes(roleId));
+      case "all":
+        return requiredRoleIds.every(roleId => userRoleIds.includes(roleId));
+      case "none":
+        return !requiredRoleIds.some(roleId => userRoleIds.includes(roleId));
+      default:
+        return true;
+    }
+  }
+
+  function evaluateServerTenureCondition(question: FormQuestion): boolean {
+    if (!userGuildMember) return true;
+
+    const now = new Date();
+
+    // Check days in server
+    if (question.conditionalDaysInServer) {
+      if (!userGuildMember.joined_at) return false;
+      const joinDate = new Date(userGuildMember.joined_at);
+      const daysInServer = (now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysInServer < question.conditionalDaysInServer) return false;
+    }
+
+    // Check account age
+    if (question.conditionalAccountAgeDays) {
+      // Account created date is in the user snowflake ID
+      const userId = BigInt(data.user.id);
+      const timestamp = Number(userId >> 22n) + 1420070400000; // Discord epoch
+      const accountCreated = new Date(timestamp);
+      const accountAgeDays = (now.getTime() - accountCreated.getTime()) / (1000 * 60 * 60 * 24);
+      if (accountAgeDays < question.conditionalAccountAgeDays) return false;
+    }
+
+    return true;
+  }
+
+  function evaluateBoostStatusCondition(question: FormQuestion): boolean {
+    if (!userGuildMember) return true;
+
+    // Check boost requirement
+    if (question.conditionalRequiresBoost && !userGuildMember.premium_since) {
+      return false;
+    }
+
+    // Check Nitro requirement using OAuth premium_type
+    if (question.conditionalRequiresNitro) {
+      const premiumType = (data.user as any).premium_type || 0;
+      if (premiumType === 0) return false; // No Nitro
+    }
+
+    return true;
+  }
+
+  function evaluatePermissionCondition(question: FormQuestion): boolean {
+    if (!question.conditionalPermissionFlags || !userGuildMember) return true;
+
+    const userPerms = BigInt(userGuildMember.permissions || "0");
+    const requiredPerms = BigInt(question.conditionalPermissionFlags);
+
+    // Check if user has ALL required permissions
+    return (userPerms & requiredPerms) === requiredPerms;
+  }
+
+  function evaluateMultipleConditions(question: FormQuestion): boolean {
+    if (!question.conditions || question.conditions.length === 0) return true;
+
+    // Group conditions by conditionGroup
+    const groups: { [key: number]: typeof question.conditions } = {};
+    question.conditions.forEach(cond => {
+      if (!groups[cond.conditionGroup]) {
+        groups[cond.conditionGroup] = [];
+      }
+      groups[cond.conditionGroup].push(cond);
+    });
+
+    // Evaluate each group (conditions within group are ANDed)
+    const groupResults: boolean[] = [];
+
+    for (const groupKey of Object.keys(groups)) {
+      const groupConditions = groups[parseInt(groupKey)];
+      let groupResult = true;
+
+      for (const condition of groupConditions) {
+        const conditionResult = evaluateSingleCondition(condition);
+
+        if (condition.logicType.toUpperCase() === "AND") {
+          groupResult = groupResult && conditionResult;
+        } else {
+          groupResult = groupResult || conditionResult;
+        }
+
+        // Early exit if AND fails
+        if (!groupResult && condition.logicType.toUpperCase() === "AND") {
+          break;
+        }
+      }
+
+      groupResults.push(groupResult);
+    }
+
+    // Different groups are ORed together
+    return groupResults.some(r => r);
+  }
+
+  function evaluateSingleCondition(condition: FormQuestionCondition): boolean {
+    switch (condition.conditionType) {
+      case 0: // QuestionBased
+        if (!condition.targetQuestionId || !answers[condition.targetQuestionId]) {
+          return false;
+        }
+        return evaluateCondition(
+          answers[condition.targetQuestionId],
+          condition.operator || "equals",
+          condition.expectedValue || ""
+        );
+
+      case 1: // DiscordRole
+        if (!condition.targetRoleIds || !userGuildMember) return true;
+        const roleIds = condition.targetRoleIds.split(",").filter(x => x);
+        const userRoles = userGuildMember.roles || [];
+        // Default to "any" logic for individual conditions
+        return roleIds.some(roleId => userRoles.includes(roleId));
+
+      case 2: // ServerTenure
+        if (!condition.daysThreshold || !userGuildMember) return true;
+        const now = new Date();
+        if (userGuildMember.joined_at) {
+          const joinDate = new Date(userGuildMember.joined_at);
+          const daysInServer = (now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24);
+          return daysInServer >= condition.daysThreshold;
+        }
+        return false;
+
+      case 3: // BoostStatus
+        if (!userGuildMember) return true;
+        if (condition.requiresBoost && !userGuildMember.premium_since) return false;
+        if (condition.requiresNitro) {
+          const premiumType = (data.user as any).premium_type || 0;
+          if (premiumType === 0) return false;
+        }
+        return true;
+
+      case 4: // Permission
+        if (!condition.permissionFlags || !userGuildMember) return true;
+        const userPerms = BigInt(userGuildMember.permissions || "0");
+        const requiredPerms = BigInt(condition.permissionFlags);
+        return (userPerms & requiredPerms) === requiredPerms;
+
+      default:
+        return true;
+    }
+  }
 
   function evaluateCondition(
     actualValue: string | string[],
@@ -101,11 +290,46 @@
     }
   }
 
+  // Check if question is conditionally required
+  function isQuestionConditionallyRequired(question: FormQuestion): boolean {
+    if (!question.requiredWhenParentQuestionId) return false;
+
+    const parentAnswer = answers[question.requiredWhenParentQuestionId];
+    if (!parentAnswer) return false;
+
+    return evaluateCondition(
+      parentAnswer,
+      question.requiredWhenOperator || "equals",
+      question.requiredWhenValue || ""
+    );
+  }
+
+  // Apply answer piping to question text
+  function applyAnswerPiping(text: string): string {
+    if (!text) return text;
+
+    // Replace {{QX}} with actual answers
+    return text.replace(/\{\{Q(\d+)\}\}/g, (match, questionId) => {
+      const qId = parseInt(questionId);
+      const answer = answers[qId];
+
+      if (!answer) return "[Not answered]";
+
+      if (Array.isArray(answer)) {
+        return answer.join(", ");
+      }
+
+      const answerStr = String(answer);
+      return answerStr.length > 50 ? answerStr.slice(0, 47) + "..." : answerStr;
+    });
+  }
+
   function validateQuestion(question: FormQuestion): string | null {
     const answer = answers[question.id];
 
-    // Check if required
-    if (question.isRequired) {
+    // Check if required (base or conditional)
+    const isRequired = question.isRequired || isQuestionConditionallyRequired(question);
+    if (isRequired) {
       if (!answer || (typeof answer === "string" && !answer.trim())) {
         return "This question is required";
       }
@@ -115,6 +339,11 @@
     }
 
     if (!answer) return null; // Not required and empty is OK
+
+    // Check for Zalgo text in answers
+    if (typeof answer === "string" && containsZalgo(answer)) {
+      return "Answer contains invalid characters (excessive combining marks)";
+    }
 
     // Validate based on type
     switch (question.questionType) {
@@ -164,16 +393,38 @@
   function validateAllQuestions(): boolean {
     validationErrors = {};
     let isValid = true;
+    let firstErrorQuestionId: number | null = null;
 
     for (const question of visibleQuestions) {
       const errorMsg = validateQuestion(question);
       if (errorMsg) {
         validationErrors[question.id] = errorMsg;
+        if (firstErrorQuestionId === null) {
+          firstErrorQuestionId = question.id;
+        }
         isValid = false;
       }
     }
 
+    // Scroll to first error
+    if (!isValid && firstErrorQuestionId !== null) {
+      setTimeout(() => {
+        const errorElement = document.querySelector(`[data-question-id="${firstErrorQuestionId}"]`);
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
+
     return isValid;
+  }
+
+  // Clear validation error when user updates an answer
+  function clearValidationError(questionId: number) {
+    if (validationErrors[questionId]) {
+      const { [questionId]: _, ...rest } = validationErrors;
+      validationErrors = rest;
+    }
   }
 
   async function loadForm() {
@@ -183,6 +434,15 @@
 
       form = await formsApi.getForm(formId);
       questions = await formsApi.getFormQuestions(formId);
+
+      // Load guild member data for Discord-based conditionals
+      try {
+        const guildIdStr = form.guildId.toString();
+        userGuildMember = await clientApi.getGuildMember(guildIdStr, data.user.id);
+      } catch (err) {
+        console.warn("Could not load guild member data for conditionals:", err);
+        // Continue anyway - Discord conditionals will show by default
+      }
 
       // Check eligibility for ban appeals and join applications (formType !== 0 means not Regular)
       if (!isPreviewMode && form.formType !== 0) {
@@ -244,7 +504,8 @@
   function proceedToConfirmation() {
     // Validate before showing confirmation
     if (!validateAllQuestions()) {
-      error = "Please fix the errors below before proceeding";
+      const errorCount = Object.keys(validationErrors).length;
+      error = `Please fix ${errorCount} error${errorCount > 1 ? "s" : ""} highlighted below`;
       return;
     }
 
@@ -284,7 +545,8 @@
         userId: data.user.id,
         username: data.user.username,
         answers: sanitizedAnswers,
-        turnstileToken
+        turnstileToken,
+        premiumType: (data.user as any).premium_type
       };
 
       const result = await formsApi.submitForm(formId, request);
@@ -310,6 +572,30 @@
 
   function onTurnstileSuccess(event: CustomEvent<{ token: string }>) {
     turnstileToken = event.detail.token;
+  }
+
+  // Handle text input with Zalgo cleaning
+  function handleAnswerInput(e: Event, questionId: number) {
+    const input = e.currentTarget as HTMLInputElement | HTMLTextAreaElement;
+    const cleaned = removeZalgoText(input.value, 2);
+
+    if (cleaned !== input.value) {
+      // Zalgo detected and removed
+      input.value = cleaned;
+      answers[questionId] = cleaned;
+      error = "Excessive combining characters were removed from your answer";
+      // Clear error after 3 seconds
+      setTimeout(() => {
+        if (error === "Excessive combining characters were removed from your answer") {
+          error = null;
+        }
+      }, 3000);
+    } else {
+      answers[questionId] = input.value;
+    }
+
+    // Clear validation error when user types
+    clearValidationError(questionId);
   }
 
   onMount(async () => {
@@ -363,7 +649,7 @@
   <div class="container mx-auto max-w-3xl">
     {#if showLoginPrompt}
       <div
-        class="backdrop-blur-xs rounded-xl border p-8 text-center"
+        class=" rounded-xl border p-8 text-center"
         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         in:fly={{ y: 20, duration: 300 }}
       >
@@ -425,7 +711,7 @@
       </div>
     {:else if loading}
       <div
-        class="backdrop-blur-xs rounded-xl border p-12 text-center"
+        class=" rounded-xl border p-12 text-center"
         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
         in:fade
       >
@@ -435,24 +721,29 @@
         ></div>
         <p style="color: {$colorStore.muted};">Loading form...</p>
       </div>
-    {:else if error}
+    {:else if error && !form}
+      <!-- Only show full error page for critical errors (when form failed to load) -->
       <div
-        class="backdrop-blur-xs rounded-xl border p-8 text-center"
+        class=" rounded-xl border p-8 text-center"
         style="background: #ef444410; border-color: #ef444430;"
         in:fly={{ y: 20, duration: 300 }}
       >
-        <i class="fa-solid fa-triangle-exclamation mb-4" style="color: #ef4444; font-size: 48px; display: block;"></i>
+        <div class="flex justify-center mb-4">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 48px;"></i>
+        </div>
         <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">Error</h2>
         <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
       </div>
     {:else if success}
       <div class="space-y-6">
         <div
-          class="backdrop-blur-xs rounded-xl border p-8 text-center"
+          class=" rounded-xl border p-8 text-center"
           style="background: #10B98110; border-color: #10B98130;"
           in:fly={{ y: 20, duration: 300 }}
         >
-          <i class="fa-solid fa-check-circle mb-4" style="color: #10B981; font-size: 48px; display: block;"></i>
+          <div class="flex justify-center mb-4">
+            <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 48px;"></i>
+          </div>
           <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">Success!</h2>
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
             {#if form?.successMessage}
@@ -550,7 +841,7 @@
         <!-- Preview Mode Banner -->
         {#if isPreviewMode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-4"
+            class=" rounded-xl border p-4"
             style="background: #f59e0b20; border-color: #f59e0b;"
             in:slide
           >
@@ -569,7 +860,7 @@
         <!-- Ban Appeal / Join Application Info Banner -->
         {#if form.formType === 1 && !isPreviewMode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: #ef444410; border-color: #ef444430;"
             in:slide
           >
@@ -596,7 +887,7 @@
           </div>
         {:else if form.formType === 2 && !isPreviewMode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: #3b82f610; border-color: #3b82f630;"
             in:slide
           >
@@ -626,7 +917,7 @@
         <!-- Anonymous Mode Privacy Notice -->
         {#if form.allowAnonymous && !isPreviewMode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: #8b5cf610; border-color: #8b5cf630;"
             in:slide
           >
@@ -671,7 +962,7 @@
 
         <!-- Form Header -->
         <div
-          class="backdrop-blur-xs rounded-xl border p-8 text-center"
+          class=" rounded-xl border p-8 text-center"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:fade
         >
@@ -725,7 +1016,7 @@
         <!-- Progress Indicator -->
         {#if visibleQuestions.length > 1 && !isPreviewMode}
           <div
-            class="backdrop-blur-xs rounded-xl border p-4"
+            class=" rounded-xl border p-4"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
             in:slide
           >
@@ -755,7 +1046,7 @@
         <!-- Confirmation Screen -->
         {#if showConfirmation}
           <div
-            class="backdrop-blur-xs rounded-xl border p-6"
+            class=" rounded-xl border p-6"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
             in:slide
           >
@@ -826,11 +1117,33 @@
         {:else}
           <!-- Questions -->
           <form onsubmit={(e) => { e.preventDefault(); proceedToConfirmation(); }}>
+            <!-- Validation Error Banner -->
+            {#if error && Object.keys(validationErrors).length > 0}
+              <div
+                class=" rounded-xl border p-4 mb-4"
+                style="background: #ef444410; border-color: #ef4444;"
+                in:slide
+              >
+                <div class="flex items-center gap-3">
+                  <i class="fa-solid fa-exclamation-triangle flex-shrink-0"
+                     style="color: #ef4444; font-size: 20px;"></i>
+                  <div>
+                    <div class="font-semibold" style="color: #ef4444;">{error}</div>
+                    <div class="text-sm mt-1" style="color: {$colorStore.muted};">
+                      Questions with errors are highlighted in red. Scroll down to see them.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/if}
+
             <div class="space-y-4">
               {#each visibleQuestions as question, index (question.id)}
                 <div
-                  class="backdrop-blur-xs rounded-xl border p-6 transition-all"
-                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
+                  data-question-id={question.id}
+                  class=" rounded-xl p-6 transition-all"
+                  style="background: {validationErrors[question.id] ? '#ef444408' : $colorStore.primary + '05'};
+                         border: {validationErrors[question.id] ? '2px' : '1px'} solid {validationErrors[question.id] ? '#ef4444' : $colorStore.primary + '30'};"
                   in:slide={{ duration: 300, delay: index * 50 }}
                 >
                   <label class="block mb-3">
@@ -843,9 +1156,13 @@
                     </span>
                       <div class="flex-1">
                       <span class="font-semibold" style="color: {$colorStore.text};">
-                        {@html escapeHtml(question.questionText)}
+                        {#if question.enableAnswerPiping}
+                          {@html escapeHtml(applyAnswerPiping(question.questionText))}
+                        {:else}
+                          {@html escapeHtml(question.questionText)}
+                        {/if}
                       </span>
-                        {#if question.isRequired}
+                        {#if question.isRequired || isQuestionConditionallyRequired(question)}
                           <span style="color: #ef4444;"> *</span>
                         {/if}
                       </div>
@@ -855,8 +1172,9 @@
                     {#if question.questionType === "short_text"}
                       <input
                         type="text"
-                        bind:value={answers[question.id]}
-                        placeholder={question.placeholder || "Type your answer..."}
+                        value={answers[question.id] || ""}
+                        oninput={(e) => handleAnswerInput(e, question.id)}
+                        placeholder={question.enableAnswerPiping && question.placeholder ? applyAnswerPiping(question.placeholder) : (question.placeholder || "Type your answer...")}
                         class="w-full p-3 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                         minlength={question.minLength}
@@ -864,8 +1182,9 @@
                       />
                     {:else if question.questionType === "long_text"}
                     <textarea
-                      bind:value={answers[question.id]}
-                      placeholder={question.placeholder || "Type your answer..."}
+                      value={answers[question.id] || ""}
+                      oninput={(e) => handleAnswerInput(e, question.id)}
+                      placeholder={question.enableAnswerPiping && question.placeholder ? applyAnswerPiping(question.placeholder) : (question.placeholder || "Type your answer...")}
                       rows="4"
                       class="w-full p-3 rounded-lg resize-none"
                       style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -876,7 +1195,8 @@
                       <input
                         type="number"
                         bind:value={answers[question.id]}
-                        placeholder={question.placeholder || "Enter a number..."}
+                        oninput={() => clearValidationError(question.id)}
+                        placeholder={question.enableAnswerPiping && question.placeholder ? applyAnswerPiping(question.placeholder) : (question.placeholder || "Enter a number...")}
                         class="w-full p-3 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                         min={question.minValue}
@@ -885,16 +1205,18 @@
                     {:else if question.questionType === "email"}
                       <input
                         type="email"
-                        bind:value={answers[question.id]}
-                        placeholder={question.placeholder || "your.email@example.com"}
+                        value={answers[question.id] || ""}
+                        oninput={(e) => handleAnswerInput(e, question.id)}
+                        placeholder={question.enableAnswerPiping && question.placeholder ? applyAnswerPiping(question.placeholder) : (question.placeholder || "your.email@example.com")}
                         class="w-full p-3 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                       />
                     {:else if question.questionType === "url"}
                       <input
                         type="url"
-                        bind:value={answers[question.id]}
-                        placeholder={question.placeholder || "https://example.com"}
+                        value={answers[question.id] || ""}
+                        oninput={(e) => handleAnswerInput(e, question.id)}
+                        placeholder={question.enableAnswerPiping && question.placeholder ? applyAnswerPiping(question.placeholder) : (question.placeholder || "https://example.com")}
                         class="w-full p-3 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                       />
@@ -911,6 +1233,7 @@
                                 name="question-{question.id}"
                                 value={option.optionValue}
                                 bind:group={answers[question.id]}
+                                onchange={() => clearValidationError(question.id)}
                                 class="w-4 h-4"
                                 style="accent-color: {$colorStore.primary};"
                               />
@@ -940,6 +1263,7 @@
                                 } else {
                                   answers[question.id] = (Array.isArray(current) ? current : []).filter((v) => v !== option.optionValue);
                                 }
+                                clearValidationError(question.id);
                               }}
                                 class="w-4 h-4 rounded"
                                 style="accent-color: {$colorStore.primary};"
@@ -952,6 +1276,7 @@
                     {:else if question.questionType === "dropdown"}
                       <select
                         bind:value={answers[question.id]}
+                        onchange={() => clearValidationError(question.id)}
                         class="w-full p-3 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                       >
@@ -972,7 +1297,8 @@
                       style="background: #ef444410; border: 1px solid #ef444430;"
                       transition:slide
                     >
-                      <i class="fa-solid fa-exclamation-circle" style="color: #ef4444; font-size: 14px;"></i>
+                      <i class="fa-solid fa-exclamation-circle flex-shrink-0"
+                         style="color: #ef4444; font-size: 14px;"></i>
                       <span class="text-sm" style="color: #ef4444;">
                       {validationErrors[question.id]}
                     </span>
@@ -985,7 +1311,7 @@
             <!-- Captcha (if required) -->
             {#if form.requireCaptcha}
               <div
-                class="backdrop-blur-xs rounded-xl border p-6 mt-6"
+                class=" rounded-xl border p-6 mt-6"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
                 in:slide
               >

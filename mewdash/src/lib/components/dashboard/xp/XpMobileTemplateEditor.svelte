@@ -357,48 +357,50 @@
   function redrawCanvas() {
     if (!ctx || !canvas) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
+    const context = ctx;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.save();
 
     // Apply zoom and pan
-    ctx.translate(panX, panY);
-    ctx.scale(zoom, zoom);
+    context.translate(panX, panY);
+    context.scale(zoom, zoom);
 
     // Draw background
     if (backgroundImage && !backgroundImageLoading) {
-      ctx.drawImage(backgroundImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      context.drawImage(backgroundImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
     } else if (defaultBgImage) {
       // Draw gradient
-      const bgGradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      const bgGradient = context.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
       bgGradient.addColorStop(0, `${$colorStore.primary}15`);
       bgGradient.addColorStop(0.5, `${$colorStore.primary}20`);
       bgGradient.addColorStop(1, `${$colorStore.secondary}15`);
-      ctx.fillStyle = bgGradient;
-      ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
-      ctx.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      context.fillStyle = bgGradient;
+      context.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      context.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
     }
 
     // Draw grid if enabled
     if (showGrid && previewMode === "edit") {
-      ctx.strokeStyle = `${$colorStore.primary}20`;
-      ctx.lineWidth = 0.5;
-      ctx.setLineDash([2, 4]);
+      context.strokeStyle = `${$colorStore.primary}20`;
+      context.lineWidth = 0.5;
+      context.setLineDash([2, 4]);
 
       for (let x = 0; x <= localTemplate.outputSizeX; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, localTemplate.outputSizeY);
-        ctx.stroke();
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, localTemplate.outputSizeY);
+        context.stroke();
       }
 
       for (let y = 0; y <= localTemplate.outputSizeY; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(localTemplate.outputSizeX, y);
-        ctx.stroke();
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(localTemplate.outputSizeX, y);
+        context.stroke();
       }
 
-      ctx.setLineDash([]);
+      context.setLineDash([]);
     }
 
     // Draw elements
@@ -409,42 +411,42 @@
       const isHovered = hoveredElement === element.id;
 
       if (element.type === "image") {
-        ctx.fillStyle = `${$colorStore.primary}30`;
-        ctx.fillRect(element.x, element.y, element.width, element.height);
+        context.fillStyle = `${$colorStore.primary}30`;
+        context.fillRect(element.x, element.y, element.width, element.height);
 
-        ctx.strokeStyle = isSelected ? $colorStore.accent : isHovered ? $colorStore.primary : `${$colorStore.primary}40`;
-        ctx.lineWidth = isSelected ? 2 : 1;
-        ctx.strokeRect(element.x, element.y, element.width, element.height);
+        context.strokeStyle = isSelected ? $colorStore.accent : isHovered ? $colorStore.primary : `${$colorStore.primary}40`;
+        context.lineWidth = isSelected ? 2 : 1;
+        context.strokeRect(element.x, element.y, element.width, element.height);
 
-        ctx.fillStyle = $colorStore.text;
-        ctx.font = "12px Inter";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(element.label, element.x + element.width / 2, element.y + element.height / 2);
+        context.fillStyle = $colorStore.text;
+        context.font = "12px Inter";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(element.label, element.x + element.width / 2, element.y + element.height / 2);
       } else if (element.type === "text") {
-        ctx.fillStyle = element.color.startsWith("#") ? element.color : `#${element.color}`;
-        ctx.font = `${element.fontSize}px Inter`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
+        context.fillStyle = element.color.startsWith("#") ? element.color : `#${element.color}`;
+        context.font = `${element.fontSize}px Inter`;
+        context.textAlign = "left";
+        context.textBaseline = "top";
 
         const displayText = useRealData && currentUserData
           ? getTextContent(element.id, currentUserData)
           : getTextContent(element.id, sampleData);
 
-        ctx.fillText(displayText, element.x, element.y);
+        context.fillText(displayText, element.x, element.y);
 
         if (previewMode === "edit" && (isSelected || isHovered)) {
-          const metrics = ctx.measureText(displayText);
-          ctx.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
-          ctx.lineWidth = isSelected ? 2 : 1;
-          ctx.setLineDash(isSelected ? [] : [4, 4]);
-          ctx.strokeRect(
+          const metrics = context.measureText(displayText);
+          context.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+          context.lineWidth = isSelected ? 2 : 1;
+          context.setLineDash(isSelected ? [] : [4, 4]);
+          context.strokeRect(
             element.x - 5,
             element.y - 5,
             metrics.width + 10,
             element.fontSize + 10
           );
-          ctx.setLineDash([]);
+          context.setLineDash([]);
         }
       } else if (element.type === "bar") {
         const percent = (useRealData && currentUserData?.progress ? currentUserData.progress : sampleData.progress) / 100;
@@ -487,7 +489,7 @@
             break;
         }
 
-        ctx.save();
+        context.save();
 
         let barColor = element.color;
         if (!barColor.startsWith("#")) {
@@ -498,85 +500,85 @@
           }
         }
 
-        ctx.fillStyle = barColor;
-        ctx.globalAlpha = transparency / 255;
+        context.fillStyle = barColor;
+        context.globalAlpha = transparency / 255;
 
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.lineTo(x2, y2);
-        ctx.closePath();
-        ctx.fill();
+        context.beginPath();
+        context.moveTo(x1, y1);
+        context.lineTo(x3, y3);
+        context.lineTo(x4, y4);
+        context.lineTo(x2, y2);
+        context.closePath();
+        context.fill();
 
-        ctx.restore();
+        context.restore();
 
         if (previewMode === "edit" && (isSelected || isHovered)) {
-          ctx.fillStyle = isSelected ? $colorStore.accent : $colorStore.primary;
-          ctx.beginPath();
-          ctx.arc(x1, y1, 5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(x2, y2, 5, 0, Math.PI * 2);
-          ctx.fill();
+          context.fillStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+          context.beginPath();
+          context.arc(x1, y1, 5, 0, Math.PI * 2);
+          context.fill();
+          context.beginPath();
+          context.arc(x2, y2, 5, 0, Math.PI * 2);
+          context.fill();
         }
       }
 
       if (element.locked && previewMode === "edit") {
-        ctx.fillStyle = $colorStore.accent;
-        ctx.font = "10px Inter";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "top";
-        ctx.fillText("🔒", element.x + element.width - 5, element.y + 5);
+        context.fillStyle = $colorStore.accent;
+        context.font = "10px Inter";
+        context.textAlign = "right";
+        context.textBaseline = "top";
+        context.fillText("🔒", element.x + element.width - 5, element.y + 5);
       }
     });
 
     // Draw rulers if enabled
     if (showRulers && previewMode === "edit") {
-      ctx.fillStyle = `${$colorStore.primary}08`;
-      ctx.fillRect(0, -30, localTemplate.outputSizeX, 30);
-      ctx.strokeStyle = `${$colorStore.primary}40`;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, -30, localTemplate.outputSizeX, 30);
+      context.fillStyle = `${$colorStore.primary}08`;
+      context.fillRect(0, -30, localTemplate.outputSizeX, 30);
+      context.strokeStyle = `${$colorStore.primary}40`;
+      context.lineWidth = 1;
+      context.strokeRect(0, -30, localTemplate.outputSizeX, 30);
 
-      ctx.fillStyle = `#${$colorStore.text}`;
-      ctx.font = "10px Inter";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      context.fillStyle = `#${$colorStore.text}`;
+      context.font = "10px Inter";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
       for (let x = 0; x <= localTemplate.outputSizeX; x += 50) {
-        ctx.beginPath();
-        ctx.moveTo(x, -30);
-        ctx.lineTo(x, -20);
-        ctx.stroke();
-        ctx.fillText(x.toString(), x, -10);
+        context.beginPath();
+        context.moveTo(x, -30);
+        context.lineTo(x, -20);
+        context.stroke();
+        context.fillText(x.toString(), x, -10);
       }
 
-      ctx.fillStyle = `${$colorStore.primary}08`;
-      ctx.fillRect(-30, 0, 30, localTemplate.outputSizeY);
-      ctx.strokeStyle = `${$colorStore.primary}40`;
-      ctx.strokeRect(-30, 0, 30, localTemplate.outputSizeY);
+      context.fillStyle = `${$colorStore.primary}08`;
+      context.fillRect(-30, 0, 30, localTemplate.outputSizeY);
+      context.strokeStyle = `${$colorStore.primary}40`;
+      context.strokeRect(-30, 0, 30, localTemplate.outputSizeY);
 
-      ctx.save();
-      ctx.rotate(-Math.PI / 2);
+      context.save();
+      context.rotate(-Math.PI / 2);
       for (let y = 0; y <= localTemplate.outputSizeY; y += 50) {
-        ctx.beginPath();
-        ctx.moveTo(-y, -30);
-        ctx.lineTo(-y, -20);
-        ctx.stroke();
-        ctx.fillText(y.toString(), -y, -10);
+        context.beginPath();
+        context.moveTo(-y, -30);
+        context.lineTo(-y, -20);
+        context.stroke();
+        context.fillText(y.toString(), -y, -10);
       }
-      ctx.restore();
+      context.restore();
     }
 
-    ctx.restore();
+    context.restore();
 
     // Draw zoom indicator
     if (zoom !== 1) {
-      ctx.fillStyle = $colorStore.primary;
-      ctx.font = "12px Inter";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "bottom";
-      ctx.fillText(`${Math.round(zoom * 100)}%`, canvas.width - 10, canvas.height - 10);
+      context.fillStyle = $colorStore.primary;
+      context.font = "12px Inter";
+      context.textAlign = "right";
+      context.textBaseline = "bottom";
+      context.fillText(`${Math.round(zoom * 100)}%`, canvas.width - 10, canvas.height - 10);
     }
   }
 
@@ -841,12 +843,20 @@
   onMount(() => {
     initCanvas();
     window.addEventListener("resize", handleResize);
+
+    // Add touch handlers
+    if (canvas) {
+      canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+      canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    }
   });
 
   onDestroy(() => {
     window.removeEventListener("resize", handleResize);
     if (canvas) {
       canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchend", handleTouchEnd);
     }
   });
 
@@ -859,8 +869,9 @@
 
 <Portal target="body">
   <div class="fixed inset-0 z-[9999] flex flex-col" transition:fade={{ duration: 300 }}>
+    <div class="absolute inset-0" style="background: #0a0a0a"></div>
+
     <!-- Background -->
-    <div class="absolute inset-0" style="background: {$colorStore.background || '#0a0a0a'};"></div>
     <div class="absolute inset-0"
          style="background: radial-gradient(circle at center,
               {$colorStore.gradientStart}20 0%,
@@ -870,7 +881,7 @@
     <!-- Top Toolbar -->
     <div class="relative z-10">
       <div
-        class="flex items-center justify-between px-3 py-2 border-b backdrop-blur-xs"
+        class="flex items-center justify-between px-3 py-2 border-b "
         style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
              border-color: {$colorStore.primary}30;"
       >
@@ -946,7 +957,7 @@
       <!-- Expanded toolbar -->
       {#if toolbarExpanded}
         <div
-          class="px-3 py-2 border-b backdrop-blur-xs"
+          class="px-3 py-2 border-b "
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
           transition:slide={{ duration: 200 }}
         >
@@ -1005,8 +1016,6 @@
         <canvas
           bind:this={canvas}
           class="w-full h-full touch-none"
-          ontouchend={handleTouchEnd}
-          ontouchstart={handleTouchStart}
         ></canvas>
       </div>
 
@@ -1055,8 +1064,8 @@
     <!-- Bottom Sheet -->
     {#if bottomSheetOpen}
       <div
-        class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all backdrop-blur-md"
-        style="background: {$colorStore.background}E6; border-color: {$colorStore.primary}30;
+        class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;
              max-height: 70vh;"
         transition:fly={{ y: 100, duration: 300 }}
       >

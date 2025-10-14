@@ -77,8 +77,24 @@
     });
 </script>
 
-<DashboardPageLayout 
-  title="Moderation Dashboard" 
+{#snippet statusMessages()}
+  {#if error}
+    <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
+         style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
+      <div class="flex items-center gap-3">
+        <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+        <div style="color: {$colorStore.accent}">
+          <div class="font-semibold text-lg">Error Occurred</div>
+          <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
+        </div>
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  statusMessages={statusMessages}
   subtitle="Manage warnings, punishments, and moderation activity"
   icon="fa-shield"
   {tabs}
@@ -92,24 +108,8 @@
     }
   ]}
   guildName={$currentGuild?.name || "Dashboard"}
-  on:tabChange={(e) => activeTab = e.detail.tabId}
+  title="Moderation Dashboard"
 >
-
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if error}
-      <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
-           style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
-        <div class="flex items-center gap-3">
-          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
-          <div style="color: {$colorStore.accent}">
-            <div class="font-semibold text-lg">Error Occurred</div>
-            <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
-          </div>
-        </div>
-      </div>
-    {/if}
-  </svelte:fragment>
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
@@ -121,7 +121,7 @@
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" in:fly={{ y: 20, duration: 300, delay: 100 }}>
         <!-- Total Warnings -->
-          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -136,7 +136,7 @@
         </div>
 
         <!-- Active Warnings -->
-          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -151,7 +151,7 @@
         </div>
 
         <!-- Forgiven Warnings -->
-          <div class="backdrop-blur-xs rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
+        <div class=" rounded-2xl p-6 shadow-xl transition-all hover:shadow-2xl hover:translate-y-[-2px]"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);">
           <div class="flex items-center justify-between">
             <div>
@@ -168,7 +168,7 @@
     
     {#if activeTab === 'warnings'}
       <!-- All Warnings Section -->
-        <section class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      <section class=" rounded-2xl border p-6 shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -191,7 +191,7 @@
           <div class="space-y-4 max-h-96 overflow-y-auto">
             {#each warnings as warning (warning.id)}
               <div
-                      class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
+                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg  border"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                 in:fade={{ duration: 200 }}>
                 <div class="p-2 rounded-lg"
@@ -233,7 +233,7 @@
     
     {#if activeTab === 'activity'}
       <!-- Recent Activity -->
-        <section class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+      <section class=" rounded-2xl border p-6 shadow-2xl transition-all"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                       border-color: {$colorStore.primary}30;"
                in:fly={{ y: 20, duration: 300, delay: 200 }}>
@@ -256,7 +256,7 @@
           <div class="space-y-4 max-h-96 overflow-y-auto">
             {#each recentActivity as warning (warning.id)}
               <div
-                      class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20 backdrop-blur-xs border hover:border-opacity-40"
+                class="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20  border hover:border-opacity-40"
                 style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                 in:fade={{ duration: 200 }}>
 

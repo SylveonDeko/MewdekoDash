@@ -28,9 +28,16 @@ A unified navigation component that provides responsive navigation with server a
   import { onDestroy, onMount } from "svelte";
   import type { DiscordGuild } from "$lib/types/discordGuild.ts";
   import type { DiscordUser } from "$lib/types/discord.ts";
-  import { type BotInstance, clientApi, instanceManagementApi, ownershipApi, wizardApi } from "$lib/api/index.ts";
+  import {
+    type BotInstance,
+    type MutualGuild,
+    clientApi,
+    instanceManagementApi,
+    ownershipApi,
+    wizardApi
+  } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { derived, get, writable } from "svelte/store";
+  import { get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
   import { logger } from "$lib/logger.ts";
@@ -81,7 +88,7 @@ A unified navigation component that provides responsive navigation with server a
   let sidebarOpen = $state(false);
   let dropdownOpen = $state(false);
   let isMobile = $state(false);
-  let adminGuilds = $state<DiscordGuild[]>([]);
+  let adminGuilds = $state<MutualGuild[]>([]);
   let isFetchingGuilds = $state(false);
   let initialized = $state(false);
   let checkingInstances = $state(false);
@@ -131,8 +138,7 @@ A unified navigation component that provides responsive navigation with server a
       return [];
     }
     const isDashboard = page.url.pathname.startsWith("/dashboard");
-    const isOwner = $isOwnerStore;
-    return isDashboard ? buildDashboardItems(isOwner) : buildMainItems(items);
+    return isDashboard ? buildDashboardItems($isOwnerStore) : buildMainItems(items);
   });
 
   function debounce(fn: (...args: any[]) => void, ms: number) {
@@ -207,7 +213,7 @@ A unified navigation component that provides responsive navigation with server a
 
     try {
       const mutualGuilds = await clientApi.getMutualGuilds(currentUser.id, true, fetch, customHeaders);
-      const hasMutual = mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0;
+      const hasMutual = !!(mutualGuilds && Array.isArray(mutualGuilds) && mutualGuilds.length > 0);
 
       instanceStates[instanceId] = {
         loading: false,
@@ -481,12 +487,12 @@ A unified navigation component that provides responsive navigation with server a
         guildFetchError = "No available servers";
       }
 
-      userAdminGuilds.set(adminGuilds);
+      userAdminGuilds.set(adminGuilds as any);
 
       if (initialized && lastSelectedGuild) {
         const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
         if (guild) {
-          await selectGuild(guild);
+          await selectGuild(guild as any);
         }
       }
 
@@ -605,7 +611,7 @@ A unified navigation component that provides responsive navigation with server a
         if (adminGuilds.length > 0) {
           const guild = adminGuilds.find(g => g.id === lastSelectedGuild);
           if (guild) {
-            await selectGuild(guild);
+            await selectGuild(guild as any);
           }
         }
       } catch (err) {
@@ -639,26 +645,26 @@ A unified navigation component that provides responsive navigation with server a
   }
 
   onMount(() => {
-    if (browser) {
-      window.addEventListener("keydown", handleKeyDown);
-      window.addEventListener("resize", debouncedResize);
+    if (!browser) return;
 
-      checkMobile();
-      initialize();
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", debouncedResize);
 
-      // Watch for instance changes to refetch guilds
-      const unsubscribe = currentInstance.subscribe(value => {
-        if (value && initialized) {
-          fetchGuildsIfReady();
-        }
-      });
+    checkMobile();
+    initialize();
 
-      return () => {
-        unsubscribe();
-        window.removeEventListener("resize", debouncedResize);
-        window.removeEventListener("keydown", handleKeyDown);
-      };
-    }
+    // Watch for instance changes to refetch guilds
+    const unsubscribe = currentInstance.subscribe(value => {
+      if (value && initialized) {
+        fetchGuildsIfReady();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("resize", debouncedResize);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   });
 
   onDestroy(() => {
@@ -870,7 +876,7 @@ A unified navigation component that provides responsive navigation with server a
       {#if !currentUser}
         <a href="/api/discord/login"
            data-sveltekit-reload
-           class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg backdrop-blur-xs border inline-block"
+           class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg  border inline-block"
            style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
                   color: {$colorStore.text};
                   border-color: {$colorStore.primary}50;
@@ -879,9 +885,9 @@ A unified navigation component that provides responsive navigation with server a
         </a>
       {:else}
         <!-- Desktop User & Instance Display -->
-        <div class="hidden md:flex relative" use:clickOutside onclickoutside={() => closeDropdown()}>
+        <div class="hidden md:flex relative" use:clickOutside onclickoutside={closeDropdown}>
           <button
-                  class="ripple-effect flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out backdrop-blur-xs border hover:scale-[1.02] shadow-lg hover:shadow-xl"
+            class="ripple-effect flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out  border hover:scale-[1.02] shadow-lg hover:shadow-xl"
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    border-color: {$colorStore.primary}40;
                    box-shadow: 0 2px 8px {$colorStore.primary}15;"
@@ -903,24 +909,24 @@ A unified navigation component that provides responsive navigation with server a
             >
 
             <!-- Username and instance display -->
-            <div class="flex flex-col items-start">
+            <span class="flex flex-col items-start">
               <span class="text-sm font-medium" style:color={$colorStore.text}>
                 {currentUser.username}
               </span>
               {#if $currentInstance}
-                <div class="flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full"
+                <span class="flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full block"
                         style:background-color={$currentInstance.isActive ? '#10B981' : $colorStore.accent}></span>
                   <span class="text-xs" style:color={$colorStore.muted}>
                     {$currentInstance.botName}
                   </span>
-                </div>
+                </span>
               {:else}
                 <span class="text-xs" style:color={$colorStore.muted}>
                   Select Instance
                 </span>
               {/if}
-            </div>
+            </span>
 
             <svg
               class="h-5 w-5 transition-transform ml-1"
@@ -957,7 +963,7 @@ A unified navigation component that provides responsive navigation with server a
               transition:slide|local={{ duration: 200 }}
             >
               <!-- Enhanced User Info -->
-                <div class="p-3 rounded-lg mb-3 border backdrop-blur-xs"
+              <div class="p-3 rounded-lg mb-3 border "
                    style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);
                           border-color: {$colorStore.primary}40;">
                     <div class="flex items-center space-x-2">
@@ -1029,11 +1035,11 @@ A unified navigation component that provides responsive navigation with server a
                             alt=""
                             class="w-5 h-5 rounded-full"
                           >
-                          <div class="flex flex-col flex-1 min-w-0">
+                          <span class="flex flex-col flex-1 min-w-0">
                             <span class="text-xs truncate">
                               {instance.botName}
                             </span>
-                          </div>
+                          </span>
                           {#if !instance.isActive}
                             <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                                   style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">
@@ -1122,7 +1128,7 @@ A unified navigation component that provides responsive navigation with server a
             onclick={toggleMenu}
           >
             <span class="sr-only">Toggle navigation menu</span>
-              <div class="relative w-5 h-5 flex flex-col justify-center">
+            <span class="relative w-5 h-5 flex flex-col justify-center">
               <span
                       class="block w-5 h-0.5 rounded-sm transition-all duration-200 ease-in-out"
                 class:rotate-45={menuOpen || sidebarOpen}
@@ -1140,7 +1146,7 @@ A unified navigation component that provides responsive navigation with server a
                       class:-translate-y-1.5={menuOpen || sidebarOpen}
                 style:background-color={$colorStore.text}
               ></span>
-            </div>
+            </span>
           </button>
         {/if}
       {/if}
@@ -1240,11 +1246,11 @@ A unified navigation component that provides responsive navigation with server a
                     class="w-6 h-6 rounded-full"
                     style="background: {$colorStore.primary}15;"
                   >
-                  <div class="flex flex-col flex-1 min-w-0">
+                  <span class="flex flex-col flex-1 min-w-0">
                     <span class="text-sm truncate">
                       {instance.botName}
                     </span>
-                  </div>
+                  </span>
                   {#if !instance.isActive}
                     <span class="px-1.5 py-0.5 rounded-sm text-xs bg-opacity-10"
                           style="color: {$colorStore.accent}; background-color: {$colorStore.accent}10;">

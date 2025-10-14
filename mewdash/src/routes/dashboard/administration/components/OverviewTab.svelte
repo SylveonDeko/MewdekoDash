@@ -35,7 +35,7 @@
   <div class="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
     <!-- Protection Status -->
     <div
-      class="backdrop-blur-xs rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-[1.02] cursor-pointer"
+      class=" rounded-2xl border p-4 sm:p-6 shadow-2xl transition-all hover:scale-[1.02] cursor-pointer"
       onclick={() => activeTab = 'protection'}
       onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activeTab = 'protection'; } }}
       role="button"
@@ -58,7 +58,7 @@
     </div>
 
     <!-- Role Management -->
-    <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
+    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                 border-color: {$colorStore.secondary}30;">
       <div class="flex items-center gap-3 mb-4">
@@ -77,7 +77,7 @@
     </div>
 
     <!-- Auto-Assign Roles -->
-    <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
+    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                 border-color: {$colorStore.accent}30;">
       <div class="flex items-center gap-3 mb-4">
@@ -96,7 +96,7 @@
     </div>
 
     <!-- Command Cooldowns -->
-    <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
+    <div class=" rounded-2xl border p-6 shadow-2xl transition-all hover:scale-[1.02]"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                 border-color: {$colorStore.primary}30;">
       <div class="flex items-center gap-3 mb-4">

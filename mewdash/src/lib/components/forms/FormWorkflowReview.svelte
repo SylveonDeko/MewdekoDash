@@ -562,7 +562,7 @@
   <!-- Form Info -->
   {#if form}
     <div
-      class="backdrop-blur-xs rounded-xl border p-6"
+      class=" rounded-xl border p-6"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -582,7 +582,7 @@
 
   <!-- Filter Tabs -->
   <div
-    class="backdrop-blur-xs rounded-xl border p-4"
+    class=" rounded-xl border p-4"
     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
   >
     <div class="flex items-center gap-2 flex-wrap">
@@ -631,7 +631,7 @@
   <!-- Responses List -->
   {#if loading}
     <div
-      class="backdrop-blur-xs rounded-xl border p-12 text-center"
+      class=" rounded-xl border p-12 text-center"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <div
@@ -642,7 +642,7 @@
     </div>
   {:else if error}
     <div
-      class="backdrop-blur-xs rounded-xl border p-6"
+      class=" rounded-xl border p-6"
       style="background: #ef444410; border-color: #ef444430;"
     >
       <div class="flex items-center gap-3">
@@ -652,7 +652,7 @@
     </div>
   {:else if pendingResponses.length === 0}
     <div
-      class="backdrop-blur-xs rounded-xl border p-12 text-center"
+      class=" rounded-xl border p-12 text-center"
       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
     >
       <i
@@ -675,7 +675,7 @@
       {#each pendingResponses as item, index (item.response.id)}
         {@const itemStatusStr = intToResponseStatus(item.workflow.status)}
         <div
-          class="backdrop-blur-xs rounded-xl border overflow-hidden transition-all hover:shadow-lg"
+          class=" rounded-xl border overflow-hidden transition-all hover:shadow-lg"
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:slide={{ duration: 300, delay: index * 50 }}
         >

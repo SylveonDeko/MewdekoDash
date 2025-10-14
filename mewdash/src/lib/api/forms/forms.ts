@@ -4,6 +4,7 @@ import type {
   Form,
   FormQuestion,
   FormQuestionOption,
+  FormQuestionCondition,
   FormResponse,
   FormSubmissionRequest,
   FormSubmissionResponse,
@@ -175,6 +176,43 @@ export const formsApi = {
       `forms/questions/${questionId}/options`,
       "POST",
       option,
+    ),
+
+  /**
+   * Gets all conditions for a question
+   * @param questionId The question ID
+   * @returns List of conditions
+   */
+  getQuestionConditions: (questionId: number) =>
+    apiRequest<FormQuestionCondition[]>(
+      `forms/questions/${questionId}/conditions`,
+    ),
+
+  /**
+   * Adds a condition to a question
+   * @param questionId The question ID
+   * @param condition The condition to add
+   * @returns The created condition
+   */
+  addQuestionCondition: (
+    questionId: number,
+    condition: Partial<FormQuestionCondition>,
+  ) =>
+    apiRequest<FormQuestionCondition>(
+      `forms/questions/${questionId}/conditions`,
+      "POST",
+      condition,
+    ),
+
+  /**
+   * Deletes a condition
+   * @param conditionId The condition ID
+   * @returns Success message
+   */
+  deleteCondition: (conditionId: number) =>
+    apiRequest<{ message: string }>(
+      `forms/conditions/${conditionId}`,
+      "DELETE",
     ),
 
   // ============================================

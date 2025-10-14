@@ -108,7 +108,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
     <!-- Bot Status Column -->
-    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
@@ -142,7 +142,7 @@
     </div>
 
     <!-- Server Stats Column -->
-    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
@@ -180,7 +180,7 @@
     </div>
 
     <!-- Bot Info Column -->
-    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
@@ -218,7 +218,7 @@
     </div>
 
     <!-- Quick Actions Column -->
-    <div class="backdrop-blur-xs rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
+    <div class=" rounded-2xl p-6 transition-all hover:shadow-lg hover:translate-y-[-2px] border"
          style="background: {$colorStore.primary}05;
                 border-color: {$colorStore.primary}15;">
       <div class="flex items-center gap-4 mb-6">
@@ -272,7 +272,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {#if joinStats}
       <div
-              class="backdrop-blur-xs rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+        class=" rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
               style="background: {$colorStore.primary}05;
               border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 400 }}
@@ -283,7 +283,7 @@
 
     {#if leaveStats}
       <div
-              class="backdrop-blur-xs rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
+        class=" rounded-2xl border p-6 transition-all hover:shadow-lg hover:translate-y-[-2px]"
               style="background: {$colorStore.primary}05;
               border-color: {$colorStore.primary}15;"
         in:fly={{ y: 20, duration: 300, delay: 500 }}

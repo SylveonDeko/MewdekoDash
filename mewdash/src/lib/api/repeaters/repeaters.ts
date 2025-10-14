@@ -4,6 +4,8 @@ import type {
   RepeaterResponse,
   CreateRepeaterRequest,
   UpdateRepeaterRequest,
+  RepeaterStatsResponse,
+  MessageCountingStatus,
 } from "./models";
 
 /**
@@ -71,7 +73,7 @@ export const repeatersApi = {
    * @returns Repeater statistics
    */
   getRepeaterStatistics: (guildId: bigint) =>
-    apiRequest<any>(`Repeaters/${guildId}/statistics`),
+    apiRequest<RepeaterStatsResponse>(`Repeaters/${guildId}/statistics`),
 
   /**
    * Bulk toggles multiple repeaters
@@ -95,7 +97,10 @@ export const repeatersApi = {
    * @returns Message counting status
    */
   getMessageCountingStatus: (guildId: bigint) =>
-    apiRequest<{ enabled: boolean }>(
+    apiRequest<MessageCountingStatus>(
       `Repeaters/${guildId}/message-counting-status`,
     ),
 };
+
+// Re-export types for convenience
+export type { RepeaterStatsResponse, MessageCountingStatus };

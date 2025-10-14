@@ -4,7 +4,7 @@
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import {currentGuild} from "$lib/stores/currentGuild";
-    import { streamNotificationsApi, clientApi } from "$lib/api/index.ts";
+    import { streamNotificationsApi, clientApi, type FollowedStream, StreamType } from "$lib/api/index.ts";
     import {logger} from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
@@ -18,27 +18,11 @@
     let messageType: "success" | "error" | "info" = $state("info");
 
     // Data state
-    let streams: Array<{
-        index: number;
-        id: number;
-        channelId: bigint;
-        username: string;
-        type: number;
-        typeName: string;
-        onlineMessage: string;
-        offlineMessage: string;
-        dateAdded: string;
-        channelName: string;
-    }> = $state([]);
+    let streams: FollowedStream[] = $state([]);
     let customMessage: string = $state("");
     let offlineNotifications: boolean = $state(false);
-    let stats: {
-        totalStreams: number;
-        streamsByType: Record<string, number>;
-        streamsByChannel: Record<string, number>;
-        oldestStream: string | null;
-    } | null = $state(null);
-    let streamers: Array<{username: string; type: number; typeName: string; followCount: number}> = $state([]);
+    let stats: any | null = $state(null);
+    let streamers: any[] = $state([]);
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
 
     // Form data
@@ -55,11 +39,11 @@
     // UI state
     let activeTab = $state("list");
 
-    const platformTypes = {
-        0: { name: "Twitch", color: "#9146FF", icon: "🟣" },
-        1: { name: "YouTube", color: "#FF0000", icon: "🔴" },
-        2: { name: "Trovo", color: "#20C05C", icon: "🟢" },
-        3: { name: "Facebook", color: "#1877F2", icon: "🔵" }
+    const platformTypes: Record<number, { name: string; color: string; icon: string }> = {
+      [StreamType.Twitch]: { name: "Twitch", color: $colorStore.primary, icon: "🟣" },
+      [StreamType.YouTube]: { name: "YouTube", color: $colorStore.accent, icon: "🔴" },
+      [StreamType.Trovo]: { name: "Trovo", color: $colorStore.secondary, icon: "🟢" },
+      [StreamType.Facebook]: { name: "Facebook", color: $colorStore.primary, icon: "🔵" }
     };
 
     // Load all stream data
@@ -76,11 +60,11 @@
                 streamersData,
                 channelsData
             ] = await Promise.all([
-              streamNotificationsApi.getStreamNotifications($currentGuild.id).catch(() => []),
-              streamNotificationsApi.getStreamCustomMessage($currentGuild.id).catch(() => ""),
-              streamNotificationsApi.getStreamOfflineNotifications($currentGuild.id).catch(() => false),
+              streamNotificationsApi.getFollowedStreams($currentGuild.id).catch(() => []),
+              streamNotificationsApi.getCustomStreamMessage($currentGuild.id).catch(() => ""),
+              streamNotificationsApi.getOfflineNotificationSetting($currentGuild.id).catch(() => false),
               streamNotificationsApi.getStreamStats($currentGuild.id).catch(() => null),
-              streamNotificationsApi.getStreamers($currentGuild.id).catch(() => []),
+              streamNotificationsApi.getUniqueStreamers($currentGuild.id).catch(() => []),
               clientApi.getTextChannels($currentGuild.id).catch(() => [])
             ]);
 
@@ -108,8 +92,11 @@
 
         saving = true;
         try {
-          const result = await streamNotificationsApi.followStream($currentGuild.id, BigInt(newStream.channelId), newStream.url);
-            showMessage(`Now following ${result.username} on ${result.platform}!`, "success");
+          const result = await streamNotificationsApi.followStream($currentGuild.id, {
+            channelId: BigInt(newStream.channelId),
+            url: newStream.url
+          });
+          showMessage(`Now following stream!`, "success");
             newStream = { channelId: null, url: "" };
             await loadAllStreamData();
         } catch (err) {
@@ -121,13 +108,13 @@
     }
 
     // Unfollow stream
-    async function unfollowStream(index: number) {
+    async function unfollowStream(id: number) {
         if (!$currentGuild?.id) return;
         if (!confirm("Are you sure you want to stop following this stream?")) return;
 
         saving = true;
         try {
-          await streamNotificationsApi.unfollowStream($currentGuild.id, index);
+          await streamNotificationsApi.unfollowStream($currentGuild.id, id);
             showMessage("Stream unfollowed successfully!", "success");
             await loadAllStreamData();
         } catch (err) {
@@ -157,7 +144,7 @@
     }
 
     // Update stream messages
-    async function updateStreamMessages(index: number) {
+    async function updateStreamMessages(id: number) {
         if (!$currentGuild?.id) return;
 
         saving = true;
@@ -165,11 +152,11 @@
             const promises = [];
 
             if (editForm.onlineMessage) {
-              promises.push(streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, index, editForm.onlineMessage));
+              promises.push(streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, id, editForm.onlineMessage));
             }
 
             if (editForm.offlineMessage) {
-              promises.push(streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, index, editForm.offlineMessage));
+              promises.push(streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, id, editForm.offlineMessage));
             }
 
             await Promise.all(promises);
@@ -191,7 +178,7 @@
 
         saving = true;
         try {
-          await streamNotificationsApi.setStreamCustomMessage($currentGuild.id, customMessage);
+          await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, customMessage);
             showMessage("Custom message saved!", "success");
         } catch (err) {
             logger.error("Failed to save custom message:", err);
@@ -207,7 +194,7 @@
 
         saving = true;
         try {
-          await streamNotificationsApi.toggleStreamOfflineNotifications($currentGuild.id);
+          await streamNotificationsApi.toggleOfflineNotifications($currentGuild.id);
             await loadAllStreamData();
         } catch (err) {
             logger.error("Failed to toggle offline notifications:", err);
@@ -218,8 +205,8 @@
     }
 
     // Start editing
-    function startEditing(stream: typeof streams[0]) {
-        editingStream = stream.index;
+    function startEditing(stream: FollowedStream) {
+      editingStream = stream.id;
         editForm = {
             onlineMessage: stream.onlineMessage || "",
             offlineMessage: stream.offlineMessage || ""
@@ -235,16 +222,33 @@
         }, 5000);
     }
 
-    function formatDate(dateString: string): string {
-        return new Date(dateString).toLocaleString();
+    function formatDate(dateString: string | null): string {
+      if (!dateString) return "Unknown";
+      return new Date(dateString).toLocaleDateString();
     }
 
-    function getPlatformInfo(type: number) {
-        return platformTypes[type] || { name: "Unknown", color: "#6B7280", icon: "❓" };
+    function getPlatformInfo(type: StreamType) {
+      return platformTypes[type] || { name: "Unknown", color: $colorStore.muted, icon: "❓" };
+    }
+
+    function getChannelName(channelId: bigint): string {
+      const channel = guildChannels.find(c => c.id === channelId.toString());
+      return channel ? channel.name : "Unknown Channel";
+    }
+
+    function handleNewStreamChannelChange(detail: any) {
+      newStream.channelId = detail.selected;
+      newStream = { ...newStream };
     }
 
     onMount(() => {
         loadAllStreamData();
+    });
+
+    $effect(() => {
+      if ($currentGuild) {
+        loadAllStreamData();
+      }
     });
 
     // Tabs configuration
@@ -265,48 +269,45 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
+{#snippet statusMessages()}
+  {#if message}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+         style="background: {messageType === 'success' ? $colorStore.primary + '20' : messageType === 'error' ? $colorStore.accent + '20' : $colorStore.primary + '20'};
+          border: 1px solid {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}30;"
+         in:fly={{ x: 20, duration: 300 }}>
+      {#if messageType === 'success'}
+        <i class="fa-utility-duo fa-regular fa-circle-check"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else if messageType === 'error'}
+        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+           style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {:else}
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+      {/if}
+      <span
+        style="color: {messageType === 'success' ? $colorStore.primary : messageType === 'error' ? $colorStore.accent : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+{/snippet}
+
 <DashboardPageLayout
-        title="Stream Notifications"
-        subtitle="Track Twitch, YouTube, Trovo & Facebook streams"
-        icon="fa-radio"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-radio"
+  statusMessages={statusMessages}
+  subtitle="Track Twitch, YouTube, Trovo & Facebook streams"
+  {tabs}
+  title="Stream Notifications"
 >
 
-    <svelte:fragment slot="status-messages">
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                  <i class="fa-utility-duo fa-regular fa-circle-check"
-                     style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                  <i class="fa-utility-duo fa-regular fa-circle-xmark"
-                     style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                  <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-    </svelte:fragment>
-
     {#if activeTab === 'list'}
-        <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
+        <div class="rounded-2xl border p-6 shadow-2xl"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
@@ -317,7 +318,7 @@
                     {#if streams.length > 0}
                         <button
                           class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
-                                style="background: #ef444420; color: #ef4444;"
+                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                 onclick={clearAllStreams}
                         >
                           <i class="fa-solid fa-trash inline mr-1" style="font-size: 16px;"></i>
@@ -330,7 +331,7 @@
                     {#if streams.length === 0}
                         <div class="text-center py-8">
                           <i class="fa-utility-duo fa-regular fa-radio"
-                             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+                             style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                             <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No Streams Followed</h3>
                             <p class="text-sm" style="color: {$colorStore.muted}">
                                 Start following streamers to get notifications when they go live!
@@ -355,27 +356,28 @@
                                                 {platform.name}
                                             </div>
                                             <div class="text-xs mb-2" style="color: {$colorStore.muted}">
-                                                #{stream.channelName} • Added {formatDate(stream.dateAdded)}
+                                              #{getChannelName(stream.channelId)} • Added {formatDate(stream.dateAdded)}
                                             </div>
                                         </div>
                                     </div>
                                   <button aria-label="Delete"
                                             class="p-2 rounded-lg transition-all hover:scale-110"
-                                            style="background: #ef444420; color: #ef4444;"
-                                            onclick={() => unfollowStream(stream.index)}
+                                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                                          onclick={() => unfollowStream(stream.id)}
                                     >
                                     <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
                                     </button>
                                 </div>
 
-                                {#if editingStream === stream.index}
+                              {#if editingStream === stream.id}
                                     <div class="space-y-3 border-t pt-3" style="border-color: {$colorStore.primary}20;">
                                         <div>
-                                          <label for="input-7271" class="block text-sm font-medium mb-2"
+                                          <label for="online-message-{stream.id}" class="block text-sm font-medium mb-2"
                                                  style="color: {$colorStore.text}">
                                                 Online Message
                                             </label>
                                             <textarea
+                                              id="online-message-{stream.id}"
                                                     bind:value={editForm.onlineMessage}
                                                     placeholder="Custom online message..."
                                                     rows="2"
@@ -384,11 +386,13 @@
                                             ></textarea>
                                         </div>
                                         <div>
-                                          <label for="input-7271" class="block text-sm font-medium mb-2"
+                                          <label for="offline-message-{stream.id}"
+                                                 class="block text-sm font-medium mb-2"
                                                  style="color: {$colorStore.text}">
                                                 Offline Message
                                             </label>
                                             <textarea
+                                              id="offline-message-{stream.id}"
                                                     bind:value={editForm.offlineMessage}
                                                     placeholder="Custom offline message..."
                                                     rows="2"
@@ -399,8 +403,8 @@
                                         <div class="flex gap-2">
                                             <button
                                               class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                                                    style="background: {$colorStore.primary}; color: white;"
-                                                    onclick={() => updateStreamMessages(stream.index)}
+                                              style="background: {$colorStore.primary}; color: {$colorStore.text};"
+                                              onclick={() => updateStreamMessages(stream.id)}
                                                     disabled={saving}
                                             >
                                                 Save
@@ -418,9 +422,10 @@
                                     {#if stream.onlineMessage || stream.offlineMessage}
                                         <div class="border-t pt-3 space-y-2" style="border-color: {$colorStore.primary}20;">
                                             {#if stream.onlineMessage}
-                                                <div class="text-sm p-2 rounded-lg" style="background: #10b98110; color: {$colorStore.text}">
+                                              <div class="text-sm p-2 rounded-lg"
+                                                   style="background: {$colorStore.primary}10; color: {$colorStore.text}">
                                                   <i class="fa-solid fa-bell inline mr-1"
-                                                     style="color: #10b981; font-size: 12px;"></i>
+                                                     style="color: {$colorStore.primary}; font-size: 12px;"></i>
                                                     {stream.onlineMessage}
                                                 </div>
                                             {/if}
@@ -451,8 +456,8 @@
 
     {:else if activeTab === 'add'}
         <div class="w-full" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+          <div class="rounded-2xl border p-6 shadow-2xl"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-plus"
@@ -462,7 +467,7 @@
 
                 <div class="space-y-4">
                     <div>
-                        <span id="notification-channel-label" class="block text-sm font-medium mb-2"
+                        <span class="block text-sm font-medium mb-2"
                               style="color: {$colorStore.text}">
                             <i class="fa-solid fa-hashtag inline mr-1" style="font-size: 14px;"></i>
                             Notification Channel
@@ -472,23 +477,19 @@
                                 options={guildChannels}
                                 selected={newStream.channelId}
                                 placeholder="Select channel"
-                                on:change={(e) => {
-                                    newStream.channelId = e.detail.selected;
-                                    newStream = { ...newStream };
-                                }}
-                                aria-labelledby="notification-channel-label" />
+                                onchange={handleNewStreamChannelChange} />
                     </div>
 
                     <div>
-                      <label for="input-7271" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                      <label for="stream-url" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                         <i class="fa-solid fa-globe inline mr-1" style="font-size: 14px;"></i>
                             Stream URL
                         </label>
-                      <input id="input-7271"
+                      <input id="stream-url"
                                 type="url"
                                 bind:value={newStream.url}
                                 placeholder="https://twitch.tv/username or https://youtube.com/@username"
-                                class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base"
+                             class="w-full p-3 rounded-xl border transition-all"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       >
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
@@ -496,9 +497,9 @@
                         </p>
                     </div>
 
-                  <button aria-label="Add"
-                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
+                  <button
+                    class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                    style="background: {$colorStore.primary}; color: {$colorStore.text};"
                             onclick={followStream}
                             disabled={saving || !newStream.channelId || !newStream.url.trim()}
                     >
@@ -510,9 +511,9 @@
         </div>
 
     {:else if activeTab === 'config'}
-        <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
-            <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+      <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
+        <div class="rounded-2xl border p-6 shadow-2xl"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
                   <i class="fa-utility-duo fa-regular fa-gear"
@@ -529,17 +530,17 @@
                         </label>
                       <textarea id="stream-message"
                                 bind:value={customMessage}
-                                placeholder="{`{streamer} is now live on {platform}! {url}`}"
+                                placeholder="Custom message with placeholders..."
                                 rows="3"
                                 class="w-full p-3 rounded-xl border resize-none"
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                         ></textarea>
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            Available placeholders: {`{streamer}`, `{platform}`, `{url}`, `{title}`, `{game}`}
+                          Available placeholders: streamer, platform, url, title, game
                         </p>
                         <button
                           class="mt-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                                style="background: {$colorStore.primary}; color: white;"
+                          style="background: {$colorStore.primary}; color: {$colorStore.text};"
                                 onclick={saveCustomMessage}
                                 disabled={saving}
                         >
@@ -557,10 +558,10 @@
                                 Send notifications when streams go offline
                             </div>
                         </div>
-                      <button aria-label="Delete"
+                      <button aria-label="Toggle offline notifications"
                                 onclick={toggleOfflineNotifications}
                                 class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
-                                style="background: {offlineNotifications ? $colorStore.primary : '#64748b'};"
+                              style="background: {offlineNotifications ? $colorStore.primary : $colorStore.muted};"
                         >
                             <span class="inline-block w-4 h-4 transform transition-transform bg-white rounded-full"
                                   style="transform: translateX({offlineNotifications ? '1.5rem' : '0.25rem'})"></span>
@@ -573,7 +574,7 @@
     {:else if activeTab === 'stats'}
         <div class="w-full" in:fade={{ duration: 200 }}>
             {#if stats}
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <StatCard
                       icon="fa-radio"
                             label="Total Streams"
@@ -595,7 +596,7 @@
                     <StatCard
                       icon="fa-hashtag"
                             label="Channels"
-                            value={Object.keys(stats.streamsByChannel).length}
+                      value={Object.keys(stats.streamsByChannel || {}).length}
                             subtitle="with notifications"
                             iconColor="accent"
                             animationDelay={200}
@@ -604,16 +605,16 @@
                     <StatCard
                       icon="fa-globe"
                             label="Platforms"
-                            value={Object.keys(stats.streamsByType).length}
+                      value={Object.keys(stats.streamsByType || {}).length}
                             subtitle="in use"
                             iconColor="primary"
                             animationDelay={300}
                     />
                 </div>
 
-                {#if Object.keys(stats.streamsByType).length > 0}
-                    <div class="mt-6 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
-                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+              {#if stats.streamsByType && Object.keys(stats.streamsByType).length > 0}
+                <div class="mt-6 rounded-2xl border p-6 shadow-2xl"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
                         <div class="flex items-center gap-3 mb-6">
                           <i class="fa-utility-duo fa-regular fa-chart-line"
@@ -641,7 +642,7 @@
             {:else}
                 <div class="text-center py-12">
                   <i class="fa-utility-duo fa-regular fa-chart-column"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+                     style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                     <p style="color: {$colorStore.muted}">
                         Stream statistics will appear here once you follow streamers.

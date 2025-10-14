@@ -63,6 +63,12 @@ export interface Suggestion {
 
   /** Date added */
   dateAdded: string | null;
+
+  /** User data (populated by frontend) */
+  user?: {
+    username: string;
+    avatarUrl: string;
+  };
 }
 
 /**

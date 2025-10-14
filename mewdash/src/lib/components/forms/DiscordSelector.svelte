@@ -15,8 +15,7 @@
 
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
-  import Portal from "$lib/components/ui/Portal.svelte";
-
+  import { fly, scale } from "svelte/transition";
 
   interface Props {
     // Props
@@ -146,17 +145,7 @@
       focusedIndex = -1;
       searchTerm = "";
 
-      // Calculate position for portal positioning
       setTimeout(() => {
-        if (containerRef && dropdownRef) {
-          const rect = containerRef.getBoundingClientRect();
-          dropdownRef.style.position = "fixed";
-          dropdownRef.style.left = `${rect.left}px`;
-          dropdownRef.style.top = `${rect.bottom + 4}px`;
-          dropdownRef.style.width = `${rect.width}px`;
-          dropdownRef.style.zIndex = "9999";
-        }
-
         if (searchable && searchInputRef) {
           searchInputRef.focus();
         }
@@ -210,12 +199,33 @@
   }
 
   // Click outside handler
-  function handleClickOutside(event: Event) {
-    if (containerRef && !containerRef.contains(event.target as Node) && 
-        dropdownRef && !dropdownRef.contains(event.target as Node)) {
+  function handleClickOutside(event: MouseEvent) {
+    if (!isOpen) return;
+
+    const target = event.target as Node;
+
+    // Check if click is outside container (dropdown is inside container now)
+    if (containerRef && !containerRef.contains(target)) {
       closeDropdown();
     }
   }
+
+  // Setup click outside listener
+  $effect(() => {
+    if (isOpen) {
+      // Small delay to prevent immediate close on open
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("mousedown", handleClickOutside);
+      }, 10);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+    return () => {
+    };
+  });
 
   // Clear all selections
   function clearAll(event: Event) {
@@ -260,8 +270,6 @@
   })());
 </script>
 
-<svelte:window onclick={handleClickOutside} />
-
 <div
   aria-controls={dropdownId}
   aria-expanded={isOpen}
@@ -274,7 +282,7 @@
 >
   <!-- Main selector button -->
   <button aria-label="Button action"
-          class="group w-full p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] text-left flex items-center min-h-[50px] backdrop-blur-md relative overflow-hidden"
+          class="group w-full p-2.5 rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
           onmouseleave={() => handleButtonMouseLeave('selector-main')}
           onmousemove={(e) => handleButtonMouseMove(e, 'selector-main')}
     class:cursor-not-allowed={disabled}
@@ -283,7 +291,8 @@
     onclick={toggleDropdown}
     style="background: {$colorStore.primary}08;
            border-color: {isOpen ? $colorStore.primary : $colorStore.primary + '30'};
-           color: {$colorStore.text};"
+           color: {$colorStore.text};
+           min-height: 50px;"
     type="button"
   >
     <!-- Mouse spotlight -->
@@ -312,14 +321,14 @@
       {/if}
 
       <!-- Selected content -->
-      <div class="flex-1 min-w-0 pr-2">
+      <div class="flex-1 min-w-0 pr-2 flex items-center h-[28px]">
         {#if multiple && selectedArray.length > 0}
-          <div class="flex flex-wrap gap-1">
+          <div class="flex flex-nowrap gap-1 overflow-x-auto scrollbar-hide w-full">
             {#each selectedArray.slice(0, 3) as selectedId}
               {@const option = options.find(opt => opt.id === selectedId)}
               {#if option}
                 <span
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm max-w-[120px]"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm max-w-[120px] flex-shrink-0"
                   style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                 >
                   <span class="truncate">{getOptionDisplayName(option)}</span>
@@ -338,15 +347,15 @@
             {/each}
             {#if selectedArray.length > 3}
               <span
-                class="px-2 py-1 rounded-lg text-sm"
+                class="px-2 py-0.5 rounded-lg text-sm flex-shrink-0"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
-                +{selectedArray.length - 3} more
+                +{selectedArray.length - 3}
               </span>
             {/if}
           </div>
         {:else}
-          <span class="truncate" class:opacity-60={!hasSelection}>
+          <span class="truncate flex items-center h-full" class:opacity-60={!hasSelection}>
             {selectedDisplayText}
           </span>
         {/if}
@@ -379,20 +388,22 @@
 
   <!-- Dropdown -->
   {#if isOpen}
-    <Portal>
-      <div
-        bind:this={dropdownRef}
-        id={dropdownId}
-        class="rounded-lg p-4 flex flex-col space-y-4 shadow-2xl max-h-64 border overflow-hidden backdrop-blur-md"
-        style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
-               border-color: {$colorStore.primary}50;
-               box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;"
-        role="listbox"
-        aria-multiselectable={multiple}
-      >
+    <div
+      bind:this={dropdownRef}
+      id={dropdownId}
+      class="absolute left-0 right-0 mt-1 rounded-lg flex flex-col shadow-2xl border backdrop-blur-md z-[9999] overflow-hidden"
+      style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
+             border-color: {$colorStore.primary}50;
+             box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;
+             max-height: min(16rem, 60vh);
+             transform-origin: top;"
+      role="listbox"
+      aria-multiselectable={multiple}
+      transition:fly={{ y: -8, duration: 200 }}
+    >
       <!-- Search input -->
       {#if searchable}
-        <div class="pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
+        <div class="p-4 pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
           <div class="relative">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2"
                style="color: {$colorStore.muted}; font-size: 16px;"></i>
@@ -411,7 +422,7 @@
       {/if}
 
       <!-- Options list -->
-      <div class="max-h-40 overflow-y-auto -mx-4">
+      <div class="flex-1 overflow-y-auto overflow-x-hidden">
         {#if filteredOptions.length === 0}
           <div class="px-4 py-3 text-center" style="color: {$colorStore.muted}">
             {searchTerm ? 'No matches found' : 'No options available'}
@@ -427,7 +438,7 @@
               type="button"
               onmousemove={(e) => handleButtonMouseMove(e, `option-${option.id}`)}
               onmouseleave={() => handleButtonMouseLeave(`option-${option.id}`)}
-              class="option-item w-full px-4 py-3 text-left transition-all duration-200 ease-in-out flex items-center gap-3 border border-transparent rounded-md relative group overflow-hidden"
+              class="option-item w-full px-4 py-3 text-left transition-all duration-200 ease-in-out flex items-center gap-3 border border-transparent rounded-md relative group"
               class:font-medium={isSelected}
               style="color: {$colorStore.text};
                      background: {isFocused
@@ -435,9 +446,7 @@
                        : isSelected
                          ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)`
                          : 'transparent'};
-                     border-color: {isSelected ? $colorStore.primary + '50' : 'transparent'};
-                     hover:background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
-                     hover:border-color: {$colorStore.primary}40;"
+                     border-color: {isSelected ? $colorStore.primary + '50' : 'transparent'};"
               onclick={() => selectOption(option.id)}
               role="option"
               aria-selected={isSelected}
@@ -490,16 +499,24 @@
           {/each}
         {/if}
       </div>
-      </div>
-    </Portal>
+    </div>
   {/if}
 </div>
 
 <style lang="postcss">
+    /* Hide scrollbar but keep functionality */
+    .scrollbar-hide {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+
     /* Discord-style option hover effect */
     .option-item {
         position: relative;
-        overflow: hidden;
     }
 
     /* Subtle highlight bar on the left like Discord */
@@ -520,15 +537,6 @@
     .option-item:hover::before {
         height: 70%;
         opacity: 0.8;
-    }
-
-    /* Subtle scale and brightness on hover */
-    .option-item:hover {
-        transform: translateX(2px);
-    }
-
-    .option-item:active {
-        transform: translateX(1px) scale(0.98);
     }
 
     /* Smooth focus outline */

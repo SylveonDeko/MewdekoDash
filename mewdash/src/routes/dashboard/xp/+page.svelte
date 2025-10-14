@@ -1,7 +1,8 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
     import {onDestroy, onMount} from "svelte";
-    import { xpApi, clientApi, botStatusApi, type BotStatusModel } from "$lib/api/index.ts";
+    import { xpApi, clientApi } from "$lib/api/index.ts";
+    import type { GuildXpSetting } from "$lib/api/xp/models/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {goto} from "$app/navigation";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -24,29 +25,27 @@
     let {data}: Props = $props();
 
   // State management
-  let botStatus: BotStatusModel | null = null;
     let notificationMessage = $state("");
-    let notificationType = $state("success");
+    let notificationType: "success" | "error" = $state("success");
     let isMobile = $state(false);
   let lastDragUpdate = 0;
   const THROTTLE_MS = 16;
   let dragAnimationFrameId: number | null = null;
-    let currentUserData: any = $state(null);
-  let isLoadingUserData = false;
+
+    interface CurrentUserData {
+      username: string;
+      avatarUrl: string;
+      level: number;
+      rank: number;
+      timeOnLevel: string;
+      clubName: string;
+      progress: number;
+    }
+
+    let currentUserData: CurrentUserData | null = $state(null);
 
   // XP Settings
-    let xpSettings = $state({
-    guildId: $currentGuild?.id || BigInt(0),
-    xpPerMessage: 3,
-    messageXpCooldown: 60,
-    voiceXpPerMinute: 2,
-    voiceXpTimeout: 60,
-    xpMultiplier: 1.0,
-    xpCurveType: 0,
-    customXpImageUrl: "",
-    xpGainDisabled: false,
-    serverExclusionState: false
-    });
+    let xpSettings: GuildXpSetting | null = $state(null);
 
   // XP Stats
     let serverStats = $state({
@@ -123,51 +122,68 @@
     });
 
   // Template Editor State
-  let editorActiveTab = "general";
-    let localTemplate: any = $state(null);
-  let previewContainerRef: HTMLDivElement;
-  let draggingElement: any = null;
+    interface TemplateData {
+      id: number;
+      guildId: bigint;
+      outputSizeX: number;
+      outputSizeY: number;
+      customXpImageUrl?: string;
+      templateBar?: {
+        barWidth?: number;
+        barLength?: number;
+        barDirection?: number;
+        barColor?: string;
+        barTransparency?: number;
+        showBar?: boolean;
+        barPointAx: number;
+        barPointAy: number;
+        barPointBx: number;
+        barPointBy: number;
+      };
+      templateUser?: {
+        showText?: boolean;
+        textColor?: string;
+        fontSize?: number;
+        textX?: number;
+        textY?: number;
+      };
+      templateGuild?: {
+        showGuildRank?: boolean;
+        guildRankColor?: string;
+        guildRankFontSize?: number;
+        guildRankX?: number;
+        guildRankY?: number;
+        showGuildLevel?: boolean;
+        guildLevelColor?: string;
+        guildLevelFontSize?: number;
+        guildLevelX?: number;
+        guildLevelY?: number;
+      };
+    }
+
+    let localTemplate: TemplateData | null = $state(null);
+    let previewContainerRef: HTMLDivElement | undefined = undefined;
+    let draggingElement: ElementHelper | null = null;
     let showTemplateEditor = $state(false);
-    let previewCanvas: HTMLCanvasElement = $state(null as any);
-    let previewCtx: CanvasRenderingContext2D | null = null;
+    let previewCanvas: HTMLCanvasElement | null = $state(null);
     let previewBgImage = $state<HTMLImageElement | null>(null);
     let defaultBgImage = $state<HTMLImageElement | null>(null);
-  let hoverElement: any = null;
   let dragStartPos = { x: 0, y: 0 };
   let dragStartElementPos = { x: 0, y: 0 };
   let previewScale = 1;
-  let previewWidth = 0;
-  let previewHeight = 0;
-  let previewOffset = { x: 0, y: 0 };
-  let isDesignMode = false;
-  let imageUrl = "";
-  let updateSizeFromImage = true;
-  let imageLoading = false;
-  let imageError = "";
-  let previewBackgroundUrl: string | null = null;
-  let showGrid = false;
   let gridSize = 10;
   let snapToGrid = false;
-  let showRealDataPreview = false;
   let undoStack: string[] = [];
-  let redoStack: string[] = [];
 
-  let showCoordinateOverlay = false;
-  let showTooltips = true;
-  let isDragging = false;
-  let showGuideLines = false;
-  let guideLinesPos = { x: null as number | null, y: null as number | null };
-  let showSnapping = false;
-  let snapLines: any[] = [];
-  let editorMobileView: "preview" | "controls" = "preview";
+    interface ElementHelper {
+      getX(): number;
 
-  // Direction options for the progress bar
-  const directions = [
-    { id: "0", name: "Up" },
-    { id: "1", name: "Down" },
-    { id: "2", name: "Left" },
-    { id: "3", name: "Right" }
-  ];
+      getY(): number;
+
+      setPos(x: number, y: number): void;
+
+      isVisible(): boolean;
+    }
 
   // Enhanced sample data for preview with realistic information
     let sampleData = $state({
@@ -194,41 +210,6 @@
     topEmoji: "😎"
     });
 
-
-  // Fetch bot status
-  async function fetchBotStatus() {
-    try {
-      botStatus = await botStatusApi.getBotStatus();
-    } catch (err) {
-      logger.error("Failed to fetch bot status:", err);
-    }
-  }
-
-  function activateTab(tab: "settings" | "stats" | "leaderboard" | "rewards" | "template" | "exclusions") {
-    activeTab = tab;
-
-    // If switching to template tab, schedule a refresh after DOM update
-    if (tab === "template") {
-      // Wait for component to render, then update scale
-      setTimeout(() => {
-        if (previewContainerRef && localTemplate) {
-          updatePreviewScale();
-
-          // Also ensure image loading if URL exists
-          if (localTemplate.customXpImageUrl) {
-            imageUrl = localTemplate.customXpImageUrl;
-            previewBackgroundUrl = imageUrl;
-          }
-        }
-      }, 100);
-    }
-  }
-
-
-  function markAsChanged(setting: string) {
-    changedSettings = changedSettings.add(setting);
-  }
-
   function checkMobile() {
     isMobile = browser && window.innerWidth < 768;
   }
@@ -236,8 +217,6 @@
   async function fetchCurrentUserData() {
     try {
       if (!$currentGuild?.id) return;
-
-      isLoadingUserData = true;
 
       const currentUserId = data.user?.id;
 
@@ -269,8 +248,6 @@
     } catch (err) {
       logger.error("Failed to fetch user XP data:", err);
       showNotificationMessage("Could not load user data", "error");
-    } finally {
-      isLoadingUserData = false;
     }
   }
 
@@ -287,19 +264,7 @@
         throw new Error("No guild selected");
       }
 
-      const settings = await xpApi.getXpSettings($currentGuild.id);
-      xpSettings = {
-        guildId: $currentGuild?.id || BigInt(0),
-        xpPerMessage: settings.xpPerMessage || 3,
-        messageXpCooldown: settings.messageXpCooldown || 60,
-        voiceXpPerMinute: settings.voiceXpPerMinute || 2,
-        voiceXpTimeout: settings.voiceXpTimeout || 60,
-        xpMultiplier: settings.xpMultiplier || 1.0,
-        xpCurveType: settings.xpCurveType || 0,
-        customXpImageUrl: settings.customXpImageUrl || "",
-        xpGainDisabled: settings.xpGainDisabled || false,
-        serverExclusionState: settings.xpGainDisabled || false
-      };
+      xpSettings = await xpApi.getXpSettings($currentGuild.id);
     } catch (err) {
       logger.error("Failed to fetch XP settings:", err);
       error.settings = err instanceof Error ? err.message : "Failed to fetch XP settings";
@@ -375,27 +340,21 @@
       localTemplate = JSON.parse(JSON.stringify(template));
 
         // Initialize missing properties with C# defaults
+      if (localTemplate) {
         if (localTemplate.templateBar) {
-            if (!localTemplate.templateBar.barWidth) {
-                localTemplate.templateBar.barWidth = 20; // C# default
-            }
-            if (typeof localTemplate.templateBar.barLength === 'undefined') {
-                localTemplate.templateBar.barLength = 452; // C# default value from DrawXpBar
-            }
-            if (typeof localTemplate.templateBar.barDirection === 'undefined') {
-                localTemplate.templateBar.barDirection = 3; // Default to Right (3 in C# enum)
-            }
-      }
+          if (!localTemplate.templateBar.barWidth) {
+            localTemplate.templateBar.barWidth = 20; // C# default
+          }
+          if (typeof localTemplate.templateBar.barLength === "undefined") {
+            localTemplate.templateBar.barLength = 452; // C# default value from DrawXpBar
+          }
+          if (typeof localTemplate.templateBar.barDirection === "undefined") {
+            localTemplate.templateBar.barDirection = 3; // Default to Right (3 in C# enum)
+          }
+        }
 
         // Set customXpImageUrl from settings
-
-        localTemplate.customXpImageUrl = settingsData?.customXpImageUrl || xpSettings.customXpImageUrl || "";
-
-      // Update the UI variables
-        if (localTemplate.customXpImageUrl) {
-            imageUrl = localTemplate.customXpImageUrl;
-            previewBackgroundUrl = localTemplate.customXpImageUrl;
-        } else {
+        localTemplate.customXpImageUrl = settingsData?.customXpImageUrl || xpSettings?.customXpImageUrl || "";
       }
 
     } catch (err) {
@@ -480,8 +439,8 @@
   async function updateXpSettings() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!xpSettings) throw new Error("No settings to update");
 
-      xpSettings.guildId = $currentGuild.id;
       await xpApi.updateXpSettings($currentGuild.id, xpSettings);
       showNotificationMessage("XP settings updated successfully", "success");
       changedSettings.clear();
@@ -495,20 +454,23 @@
   async function updateXpTemplate() {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!localTemplate) throw new Error("No template to update");
+      if (!xpSettings) throw new Error("Settings not loaded");
 
-      template = JSON.parse(JSON.stringify(localTemplate));
+      const templateCopy = JSON.parse(JSON.stringify(localTemplate));
+      const imageUrl = templateCopy.customXpImageUrl;
 
-      const imageUrl = template.customXpImageUrl;
+      delete templateCopy.customXpImageUrl;
 
-      delete template.customXpImageUrl;
-
-      await xpApi.updateXpTemplate($currentGuild.id, template);
+      await xpApi.updateXpTemplate($currentGuild.id, templateCopy);
 
       if (imageUrl) {
-        await xpApi.updateXpSettings($currentGuild.id, {
-          guildId: $currentGuild.id,
+        // Update settings with new image URL
+        const updatedSettings: GuildXpSetting = {
+          ...xpSettings,
           customXpImageUrl: imageUrl
-        });
+        };
+        await xpApi.updateXpSettings($currentGuild.id, updatedSettings);
       }
 
       showNotificationMessage("XP template updated successfully", "success");
@@ -638,60 +600,13 @@
 
   // Save current state for undo functionality
   function saveStateForUndo() {
-    undoStack.push(JSON.stringify(localTemplate));
-    redoStack = []; // Clear redo stack when a new change is made
-    // Keep undo stack limited to prevent memory issues
-    if (undoStack.length > 20) {
-      undoStack = undoStack.slice(-20);
-    }
-  }
-
-  // Undo last change
-  function undo() {
-    if (undoStack.length > 0) {
-      // Save current state for redo
-      redoStack.push(JSON.stringify(localTemplate));
-
-      // Pop the previous state from undo stack
-      const previousState = undoStack.pop() as string;
-      localTemplate = JSON.parse(previousState);
-      markAsChanged("template");
-    }
-  }
-
-  // Handle changes to the template
-  function handleChange(path: string, value: any) {
-    if (!changedSettings.has("template")) {
-      // Only save state for undo if this is a new change sequence
-      saveStateForUndo();
-    }
-
-    markAsChanged("template");
-
-    // Handle nested paths like 'templateUser.textColor'
-    const pathParts = path.split(".");
-    let current = localTemplate;
-
-    // Navigate to the nested property
-    for (let i = 0; i < pathParts.length - 1; i++) {
-      current = current[pathParts[i]];
-    }
-
-    // Set the value
-    current[pathParts[pathParts.length - 1]] = value;
-
-    // Force Svelte to detect the change
-    localTemplate = { ...localTemplate };
-  }
-
-  // Color input handlers with type safety
-  function handleColorInput(path: string) {
-    return (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target) {
-        handleChange(path, parseColor(target.value));
+    if (localTemplate) {
+      undoStack.push(JSON.stringify(localTemplate));
+      // Keep undo stack limited to prevent memory issues
+      if (undoStack.length > 20) {
+        undoStack = undoStack.slice(-20);
       }
-    };
+    }
   }
 
   // Apply snap to grid
@@ -704,22 +619,6 @@
     };
   }
 
-  // Format color to include # prefix for display
-  function formatColor(colorString: string) {
-    if (colorString && !colorString.startsWith("#")) {
-      return `#${colorString}`;
-    }
-    return colorString;
-  }
-
-  // Parse color to remove # prefix for storage
-  function parseColor(colorString: string) {
-    if (colorString && colorString.startsWith("#")) {
-      return colorString.substring(1);
-    }
-    return colorString;
-  }
-
   // Reset changes
   function resetChanges() {
     // Save current state for undo
@@ -728,146 +627,21 @@
     changedSettings.delete("template");
   }
 
-  // Toggle design mode
-  function toggleDesignMode() {
-    isDesignMode = !isDesignMode;
-    // Reset guide lines and other design mode specific states
-    guideLinesPos = { x: null, y: null };
-    snapLines = [];
-  }
-
-  // Load image and update template size
-  async function loadImage() {
-    if (!imageUrl) return;
-
-    imageLoading = true;
-    imageError = "";
-
-    try {
-      const img = document.createElement("img");
-
-      // Create a promise that resolves when the image loads
-      const imageLoaded = new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load image"));
-
-        // Set a timeout in case the image takes too long
-        setTimeout(() => reject(new Error("Image load timeout")), 10000);
-      });
-
-      // Start loading
-      img.src = imageUrl;
-
-      // Wait for load
-      await imageLoaded;
-
-      if (updateSizeFromImage) {
-        // Update template dimensions
-        handleChange("outputSizeX", img.width);
-        handleChange("outputSizeY", img.height);
-
-        // Update preview scale
-        updatePreviewScale();
-      }
-
-      // Update background image in preview
-      previewBackgroundUrl = imageUrl;
-      handleChange("customXpImageUrl", imageUrl);
-
-    } catch (error) {
-      imageError = "Failed to load image. Please check the URL.";
-    } finally {
-      imageLoading = false;
-    }
-  }
-
-  function calculateProgressPosition() {
-    if (!localTemplate || !localTemplate.templateBar) return { x: 0, y: 0 };
-
-    const startX = localTemplate.templateBar.barPointAx;
-    const startY = localTemplate.templateBar.barPointAy;
-    const endX = localTemplate.templateBar.barPointBx;
-    const endY = localTemplate.templateBar.barPointBy;
-
-    // Calculate the point at the percentage position (using real or sample data)
-    const progressValue = (showRealDataPreview && currentUserData) ?
-      currentUserData.progress : sampleData.progress;
-    const progress = progressValue / 100;
-
-    const x = startX + (endX - startX) * progress;
-    const y = startY + (endY - startY) * progress;
-
-    return { x, y };
-  }
-
-  // Start dragging an element
-  function startDrag(event: MouseEvent | TouchEvent, element: any) {
-    if (!isDesignMode) return;
-
-    // Prevent default to avoid triggering other events
-    event.preventDefault();
-    event.stopPropagation();
-
-    draggingElement = element;
-    isDragging = true;
-
-    // Get initial pointer position
-    const clientX = event.type.includes("mouse")
-      ? (event as MouseEvent).clientX
-      : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-        ? (event as TouchEvent).touches[0].clientX : 0;
-
-    const clientY = event.type.includes("mouse")
-      ? (event as MouseEvent).clientY
-      : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
-        ? (event as TouchEvent).touches[0].clientY : 0;
-
-    dragStartPos = {
-      x: clientX,
-      y: clientY
-    };
-
-    // Get initial element position
-    dragStartElementPos = {
-      x: element.getX(),
-      y: element.getY()
-    };
-
-    // Show coordinate overlay during drag
-    showCoordinateOverlay = true;
-
-    document.body.classList.add("dragging-active");
-
-    // Add event listeners for drag movement and end
-    window.addEventListener("mousemove", handleDragMove, { passive: false });
-    window.addEventListener("touchmove", handleDragMove, { passive: false });
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchend", endDrag);
-
-    // Only update UI once to show initial drag state
-    localTemplate = { ...localTemplate };
-  }
-
-  // Handle drag movement
   function handleDragMove(event: MouseEvent | TouchEvent) {
     if (!draggingElement) return;
 
-    // Prevent default behaviors
     event.preventDefault();
     event.stopPropagation();
 
-    // Throttle event handling
     const now = Date.now();
     if (now - lastDragUpdate < THROTTLE_MS) return;
     lastDragUpdate = now;
 
-    // Cancel any existing animation frame to prevent queuing
     if (dragAnimationFrameId) {
       cancelAnimationFrame(dragAnimationFrameId);
     }
 
     dragAnimationFrameId = requestAnimationFrame(() => {
-      // Get current pointer position
       const clientX = event.type.includes("mouse")
         ? (event as MouseEvent).clientX
         : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
@@ -878,54 +652,29 @@
         : (event as TouchEvent).touches && (event as TouchEvent).touches[0]
           ? (event as TouchEvent).touches[0].clientY : 0;
 
-      // Calculate the difference in position, accounting for preview scale
       const deltaX = (clientX - dragStartPos.x) / previewScale;
       const deltaY = (clientY - dragStartPos.y) / previewScale;
 
-      // Calculate new element position
       let newX = dragStartElementPos.x + deltaX;
       let newY = dragStartElementPos.y + deltaY;
 
-      // Apply snapping if enabled
       if (snapToGrid) {
         const snapped = applySnapToGrid(newX, newY);
         newX = snapped.x;
         newY = snapped.y;
-      } else if (showSnapping) {
-        const snapResult = calculateSimplifiedSnapLines(draggingElement, newX, newY);
-
-        if (snapResult.snapX !== null) {
-          newX = snapResult.snapX;
-          guideLinesPos.x = snapResult.snapX;
-        } else {
-          guideLinesPos.x = null;
-        }
-
-        if (snapResult.snapY !== null) {
-          newY = snapResult.snapY;
-          guideLinesPos.y = snapResult.snapY;
-        } else {
-          guideLinesPos.y = null;
-        }
-
-        // Show guidelines during snapping
-        showGuideLines = (guideLinesPos.x !== null || guideLinesPos.y !== null);
       }
 
-      // Update element position
-      draggingElement.setPos(newX, newY);
+      if (draggingElement) {
+        draggingElement.setPos(newX, newY);
+      }
 
-      // Only update the UI elements we actually need for visual feedback during drag
-      if (localTemplate && draggingElement) {
-        // Force Svelte to update just what we need
-        localTemplate = { ...localTemplate };
+      if (localTemplate) {
+        localTemplate = { ...localTemplate } as TemplateData;
       }
     });
   }
 
-  // End dragging
   function endDrag() {
-    // Cancel any pending animation frame
     if (dragAnimationFrameId) {
       cancelAnimationFrame(dragAnimationFrameId);
       dragAnimationFrameId = null;
@@ -934,129 +683,17 @@
     document.body.classList.remove("dragging-active");
 
     draggingElement = null;
-    isDragging = false;
-    showCoordinateOverlay = false;
-    showGuideLines = false;
 
-    // Remove event listeners
     window.removeEventListener("mousemove", handleDragMove);
     window.removeEventListener("touchmove", handleDragMove);
     window.removeEventListener("mouseup", endDrag);
     window.removeEventListener("touchend", endDrag);
 
-    // One final update to ensure the UI is in sync
-    localTemplate = { ...localTemplate };
-  }
-
-  function calculateSimplifiedSnapLines(currentElement: any, x: number, y: number) {
-    const snapDistance = 5; // Distance in pixels to trigger snapping
-    let snapX = null;
-    let snapY = null;
-
-    // Center of the canvas
-    const canvasCenterX = localTemplate.outputSizeX / 2;
-    const canvasCenterY = localTemplate.outputSizeY / 2;
-
-    // Quick checks for basic alignment points
-
-    // Canvas center
-    if (Math.abs(x - canvasCenterX) < snapDistance) snapX = canvasCenterX;
-    if (Math.abs(y - canvasCenterY) < snapDistance) snapY = canvasCenterY;
-
-    // Canvas edges
-    if (Math.abs(x) < snapDistance) snapX = 0;
-    if (Math.abs(y) < snapDistance) snapY = 0;
-    if (Math.abs(x - localTemplate.outputSizeX) < snapDistance) snapX = localTemplate.outputSizeX;
-    if (Math.abs(y - localTemplate.outputSizeY) < snapDistance) snapY = localTemplate.outputSizeY;
-
-    // Only check other elements if we haven't found a snap yet
-    if (snapX === null || snapY === null) {
-      // Check only visible elements that aren't the current one
-      const visibleElements = draggableElements.filter(element =>
-        element !== currentElement && element.isVisible()
-      );
-
-      const limitedElements = visibleElements.slice(0, 5);
-
-      for (const element of limitedElements) {
-        const elementX = element.getX();
-        const elementY = element.getY();
-
-        // Only check for X alignment if we haven't found one yet
-        if (snapX === null && Math.abs(x - elementX) < snapDistance) {
-          snapX = elementX;
-        }
-
-        // Only check for Y alignment if we haven't found one yet
-        if (snapY === null && Math.abs(y - elementY) < snapDistance) {
-          snapY = elementY;
-        }
-
-        // If we've found both alignments, we can stop
-        if (snapX !== null && snapY !== null) break;
-      }
+    if (localTemplate) {
+      localTemplate = { ...localTemplate } as TemplateData;
     }
-
-    return { snapX, snapY };
   }
 
-  // Toggle grid visibility
-  function toggleGrid() {
-    showGrid = !showGrid;
-  }
-
-  // Toggle snap to grid
-  function toggleSnapToGrid() {
-    snapToGrid = !snapToGrid;
-  }
-
-  // Toggle real data preview
-  async function toggleRealDataPreview() {
-    if (!currentUserData && !showRealDataPreview) {
-      await fetchCurrentUserData();
-    }
-
-    showRealDataPreview = !showRealDataPreview;
-  }
-
-  // Toggle snapping to elements
-  function toggleSnapping() {
-    showSnapping = !showSnapping;
-  }
-
-  // Zoom in preview
-  function zoomIn() {
-    previewScale = Math.min(previewScale * 1.2, 3);
-    updatePreviewDimensions();
-  }
-
-  // Zoom out preview
-  function zoomOut() {
-    previewScale = Math.max(previewScale / 1.2, 0.2);
-    updatePreviewDimensions();
-  }
-
-  // Reset zoom preview
-  function resetZoom() {
-    previewScale = 1;
-    updatePreviewDimensions();
-  }
-
-  // Update preview dimensions
-  function updatePreviewDimensions() {
-    if (!previewContainerRef || !localTemplate) return;
-
-    previewWidth = localTemplate.outputSizeX * previewScale;
-    previewHeight = localTemplate.outputSizeY * previewScale;
-
-    // Center the preview
-    previewOffset = {
-      x: (previewContainerRef.clientWidth - previewWidth) / 2,
-      y: (previewContainerRef.clientHeight - previewHeight) / 2
-    };
-  }
-
-  // Calculate preview scale based on container size
   function updatePreviewScale() {
     if (!previewContainerRef || !localTemplate) return;
 
@@ -1065,18 +702,9 @@
     const templateWidth = localTemplate.outputSizeX;
     const templateHeight = localTemplate.outputSizeY;
 
-    // Calculate scale to fit template within container
     const widthScale = (containerWidth - 40) / templateWidth;
     const heightScale = (containerHeight - 40) / templateHeight;
     previewScale = Math.min(widthScale, heightScale, 1);
-
-    updatePreviewDimensions();
-  }
-
-  // After mounting
-  function handleInputFocus(event: FocusEvent) {
-    const target = event.target as HTMLInputElement;
-    target.select();
   }
 
   onMount(() => {
@@ -1088,8 +716,7 @@
       fetchXpTemplate(),
       fetchRewards(),
       fetchExclusions(),
-      fetchChannelsAndRoles(),
-      fetchBotStatus()
+      fetchChannelsAndRoles()
     ]);
     checkMobile();
 
@@ -1109,15 +736,6 @@
       window.removeEventListener("touchend", endDrag);
     }
   });
-
-  // Convert hex color to rgb values
-  function hexToRgb(hex: string) {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
 
     // Render XP card preview
     function renderPreview() {
@@ -1270,7 +888,7 @@
                     previewBgImage = img;
                     renderPreview();
                 };
-                img.onerror = (err) => {
+              img.onerror = () => {
                     previewBgImage = null;
                     renderPreview();
                 };
@@ -1312,11 +930,10 @@
   ] : []}
   icon="fa-star"
   bind:notificationMessage
-  bind:notificationType
+  bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
   subtitle="Configure XP settings, rewards, and manage users' experience"
-  activeTab={activeTab}
-  on:tabChange={(e) => activeTab = e.detail.tabId}
+  notificationType={notificationType}
   tabs={[
     {id: "settings", label: "Settings", icon: "fa-gear"},
     {id: "stats", label: "Stats", icon: "fa-chart-bar"},
@@ -1329,7 +946,7 @@
 
   <!-- Tab Content -->
   <div
-          class="backdrop-blur-xs border shadow-2xl"
+    class=" border shadow-2xl"
     class:rounded-2xl={activeTab !== 'template'}
     class:p-6={activeTab !== 'template'}
     class:h-[calc(100vh-200px)]={activeTab === 'template'}

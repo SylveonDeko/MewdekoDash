@@ -16,7 +16,7 @@
   }
 </script>
 
-<div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+<div class=" rounded-2xl border p-6 shadow-2xl transition-all"
      in:fly={{ y: 20, duration: 300, delay: 500 }}
      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
             border-color: {$colorStore.primary}30;">
@@ -46,7 +46,7 @@
       <div class="space-y-4">
         {#each reactionRoles.reactionRoles as rr (rr.messageId)}
           <div
-            class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg backdrop-blur-xs border"
+            class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             <div class="flex items-center justify-between mb-3">
               <p class="font-medium" style="color: {$colorStore.text}">

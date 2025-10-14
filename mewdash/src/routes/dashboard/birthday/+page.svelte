@@ -263,9 +263,11 @@
     ]);
 
     // Handle day selection change
-    function handleDayChange(event: CustomEvent) {
-        upcomingDays = parseInt(event.detail.selected);
-        loadBirthdayData();
+    function handleDayChange(detail: { selected: string | string[] | null }) {
+        if (detail.selected && typeof detail.selected === "string") {
+            upcomingDays = parseInt(detail.selected);
+            loadBirthdayData();
+        }
     }
 
     onMount(() => {
@@ -289,55 +291,54 @@
         }
     ]);
 
-    // Handle tab change
-    function handleTabChange(event: CustomEvent) {
-        activeTab = event.detail.tabId;
-    }
 </script>
 
+{#snippet statusMessageContent()}
+    <!-- Status Message -->
+    {#if message}
+        <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
+             style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
+                border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
+             in:fly={{ x: 20, duration: 300 }}>
+            {#if messageType === 'success'}
+                <i class="fa-utility-duo fa-regular fa-circle-check"
+                   style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
+            {:else if messageType === 'error'}
+                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                   style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+            {:else}
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
+                   style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            {/if}
+            <span
+              style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
+        </div>
+    {/if}
+
+    <!-- Today's Birthdays Alert -->
+    {#if todaysBirthdays.length > 0}
+        <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
+             style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
+             in:fly={{ x: -20, duration: 300 }}>
+            <i class="fa-utility-duo fa-regular fa-gift"
+               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+            <span style="color: {$colorStore.text}">
+        🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
+      </span>
+        </div>
+    {/if}
+{/snippet}
+
 <DashboardPageLayout
-        title="Birthday Management"
-        subtitle="Configure birthday announcements and celebrations"
-        icon="fa-cake-candles"
-        {tabs}
-        {activeTab}
-        {actionButtons}
-        guildName={$currentGuild?.name || "Dashboard"}
-        on:tabChange={handleTabChange}
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-cake-candles"
+  statusMessages={statusMessageContent}
+  subtitle="Configure birthday announcements and celebrations"
+  {tabs}
+  title="Birthday Management"
 >
-
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-    <svelte:fragment slot="status-messages">
-        <!-- Status Message -->
-        {#if message}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3 transition-all"
-                 style="background: {messageType === 'success' ? '#10b98120' : messageType === 'error' ? '#ef444420' : $colorStore.primary + '20'};
-                  border: 1px solid {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}30;"
-                 in:fly={{ x: 20, duration: 300 }}>
-                {#if messageType === 'success'}
-                    <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
-                {:else if messageType === 'error'}
-                    <i class="fa-utility-duo fa-regular fa-circle-xmark" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
-                {:else}
-                    <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-                {/if}
-                <span
-                        style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
-            </div>
-        {/if}
-
-        <!-- Today's Birthdays Alert -->
-        {#if todaysBirthdays.length > 0}
-            <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
-                 style="background: linear-gradient(135deg, {$colorStore.accent}20, {$colorStore.primary}20); border: 1px solid {$colorStore.accent}30;"
-                 in:fly={{ x: -20, duration: 300 }}>
-                <i class="fa-utility-duo fa-regular fa-gift" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
-                <span style="color: {$colorStore.text}">
-          🎉 {todaysBirthdays.length} birthday{todaysBirthdays.length !== 1 ? 's' : ''} today!
-        </span>
-            </div>
-        {/if}
-    </svelte:fragment>
 
 
     <!-- Tab Content -->
@@ -346,7 +347,7 @@
             <!-- Configuration Form -->
             <div class="space-y-6 md:space-y-8">
                 <!-- Basic Settings -->
-                <div class="relative z-20 backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+                <div class="relative z-20  rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -368,11 +369,10 @@
                                         options={guildChannels}
                                         selected={configForm.birthdayChannelId?.toString() || null}
                                         placeholder="No channel selected"
-                                        on:change={(e) => {
-                    configForm.birthdayChannelId = e.detail.selected ? BigInt(e.detail.selected) : null;
-                    configForm = { ...configForm };
+                                        onchange={(detail) => {
+                    configForm.birthdayChannelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
                   }}
-                                        aria-labelledby="birthday-channel-label" />
+                                />
                             </div>
                         </div>
 
@@ -389,11 +389,10 @@
                                         options={guildRoles}
                                         selected={configForm.birthdayRoleId?.toString() || null}
                                         placeholder="No role selected"
-                                        on:change={(e) => {
-                    configForm.birthdayRoleId = e.detail.selected ? BigInt(e.detail.selected) : null;
-                    configForm = { ...configForm };
+                                        onchange={(detail) => {
+                    configForm.birthdayRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
                   }}
-                                        aria-labelledby="birthday-role-24-hour-temporary-label" />
+                                />
                             </div>
                         </div>
 
@@ -410,11 +409,10 @@
                                         options={guildRoles}
                                         selected={configForm.birthdayPingRoleId?.toString() || null}
                                         placeholder="No ping role"
-                                        on:change={(e) => {
-                    configForm.birthdayPingRoleId = e.detail.selected ? BigInt(e.detail.selected) : null;
-                    configForm = { ...configForm };
+                                        onchange={(detail) => {
+                    configForm.birthdayPingRoleId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : null;
                   }}
-                                        aria-labelledby="ping-role-notifies-when-announcing-label" />
+                                />
                             </div>
                         </div>
 
@@ -437,9 +435,8 @@
                   }))}
                                         selected={configForm.defaultTimezone}
                                         placeholder="Select timezone"
-                                        on:change={(e) => {
-                    configForm.defaultTimezone = e.detail.selected || "UTC";
-                    configForm = { ...configForm };
+                                        onchange={(detail) => {
+                    configForm.defaultTimezone = (detail.selected && typeof detail.selected === 'string') ? detail.selected : "UTC";
                   }}
                                 />
                             </div>
@@ -465,7 +462,7 @@
                 </div>
 
                 <!-- Custom Message -->
-                <div class="relative z-10 backdrop-blur-xs rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
+                <div class="relative z-10  rounded-2xl p-6 md:p-8 shadow-2xl transition-all border"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -519,7 +516,7 @@
             <!-- Feature Toggles & Preview -->
             <div class="space-y-6">
                 <!-- Feature Controls -->
-                <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -546,9 +543,9 @@
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.Announcements) : false}
                                             onchange={() => toggleFeature(BirthdayFeatures.Announcements)}
                                     >
-                                    <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                            style="peer-checked:bg-color: {$colorStore.primary}"></div>
+                                    <span
+                                      class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
+                                      style="peer-checked:bg-color: {$colorStore.primary}"></span>
                                 </label>
                             </div>
 
@@ -569,9 +566,9 @@
                                             onchange={() => toggleFeature(BirthdayFeatures.BirthdayRole)}
                                             disabled={!configForm.birthdayRoleId}
                                     >
-                                    <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
-                                            style="peer-checked:bg-color: {$colorStore.primary}"></div>
+                                    <span
+                                      class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50 block"
+                                      style="peer-checked:bg-color: {$colorStore.primary}"></span>
                                 </label>
                             </div>
 
@@ -591,9 +588,9 @@
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.Reminders) : false}
                                             onchange={() => toggleFeature(BirthdayFeatures.Reminders)}
                                     >
-                                    <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                            style="peer-checked:bg-color: {$colorStore.primary}"></div>
+                                    <span
+                                      class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
+                                      style="peer-checked:bg-color: {$colorStore.primary}"></span>
                                 </label>
                             </div>
 
@@ -614,9 +611,9 @@
                                             onchange={() => toggleFeature(BirthdayFeatures.PingRole)}
                                             disabled={!configForm.birthdayPingRoleId}
                                     >
-                                    <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50"
-                                            style="peer-checked:bg-color: {$colorStore.primary}"></div>
+                                    <span
+                                      class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-disabled:opacity-50 block"
+                                      style="peer-checked:bg-color: {$colorStore.primary}"></span>
                                 </label>
                             </div>
 
@@ -636,9 +633,9 @@
                                             checked={birthdayConfig ? hasBirthdayFeature(birthdayConfig.enabledFeatures, BirthdayFeatures.TimezoneSupport) : false}
                                             onchange={() => toggleFeature(BirthdayFeatures.TimezoneSupport)}
                                     >
-                                    <div
-                                            class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                                            style="peer-checked:bg-color: {$colorStore.primary}"></div>
+                                    <span
+                                      class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
+                                      style="peer-checked:bg-color: {$colorStore.primary}"></span>
                                 </label>
                             </div>
                         </div>
@@ -646,7 +643,7 @@
                 </div>
 
                 <!-- Configuration Preview -->
-                <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl transition-all"
+                <div class=" rounded-2xl border p-6 shadow-2xl transition-all"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -686,7 +683,7 @@
         <div class="w-full space-y-6 md:space-y-8" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                 <!-- Upcoming Birthdays -->
-                <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
+                <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-20"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center justify-between mb-6">
@@ -700,7 +697,7 @@
                                     options={dayOptions}
                                     selected={upcomingDays.toString()}
                                     placeholder="Select period"
-                                    on:change={handleDayChange}
+                                    onchange={handleDayChange}
                                     searchable={false}
                             />
                         </div>
@@ -762,7 +759,7 @@
                 </div>
 
                 <!-- All Users with Birthdays -->
-                <div class="backdrop-blur-xs rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
+                <div class=" rounded-2xl border p-6 md:p-8 shadow-2xl transition-all relative z-10"
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                             border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
@@ -860,7 +857,7 @@
 </DashboardPageLayout>
 
 <style>
-    .peer:checked ~ div {
+    .peer:checked ~ span {
         background-color: var(--primary-color);
     }
 </style>

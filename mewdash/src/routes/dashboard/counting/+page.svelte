@@ -25,7 +25,6 @@
     import Notification from "$lib/components/ui/Notification.svelte";
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {browser} from "$app/environment";
     import {currentInstance} from "$lib/stores/instanceStore";
 
     interface Props {
@@ -34,8 +33,6 @@
 
     let {data}: Props = $props();
 
-  let currentUser = data.user;
-  
   // States
     let activeTab: "channels" | "config" | "stats" | "leaderboard" | "management" = $state("channels");
     let loading = $state(true);
@@ -43,7 +40,6 @@
     let showNotification = $state(false);
     let notificationMessage = $state("");
     let notificationType: "success" | "error" = $state("success");
-  let isMobile = false;
     let hasChanges = $state(false);
 
   // Data
@@ -69,7 +65,7 @@
     let maxNumber = $state(0);
     let resetOnError = $state(true);
     let deleteWrongMessages = $state(true);
-    let pattern = $state(CountingPattern.Normal);
+  let pattern = $state(CountingPattern.Sequential);
     let numberBase = $state(10);
     let successEmote = $state("");
     let errorEmote = $state("");
@@ -87,25 +83,12 @@
   // Save point form
     let saveReason = $state("");
 
-  // Computed values
-    let colorVars = $derived(`
-    --color-primary: ${$colorStore.primary};
-    --color-secondary: ${$colorStore.secondary};
-    --color-accent: ${$colorStore.accent};
-    --color-text: ${$colorStore.text};
-    --color-muted: ${$colorStore.muted};
-  `);
-
   // Helper Functions
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
     notificationType = type;
     showNotification = true;
     setTimeout(() => showNotification = false, 3000);
-  }
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
   }
 
   function markAsChanged() {
@@ -118,15 +101,14 @@
 
   function formatPattern(pattern: CountingPattern): string {
     switch (pattern) {
-      case CountingPattern.Normal: return "Normal (1, 2, 3...)";
-      case CountingPattern.Roman: return "Roman (I, II, III...)";
-      case CountingPattern.Binary: return "Binary (1, 10, 11...)";
-      case CountingPattern.Hexadecimal: return "Hexadecimal (1, 2... A, B...)";
-      case CountingPattern.Words: return "Words (one, two, three...)";
-      case CountingPattern.Ordinal: return "Ordinal (1st, 2nd, 3rd...)";
+      case CountingPattern.Sequential:
+        return "Sequential (1, 2, 3...)";
+      case CountingPattern.SkipMultiples:
+        return "Skip Multiples";
       case CountingPattern.Fibonacci: return "Fibonacci (1, 1, 2, 3, 5...)";
       case CountingPattern.Primes: return "Primes (2, 3, 5, 7...)";
-      case CountingPattern.Custom: return "Custom Pattern";
+      case CountingPattern.PowersOfTwo:
+        return "Powers of Two (2, 4, 8...)";
       default: return "Unknown";
     }
   }
@@ -232,7 +214,7 @@
         1,
         leaderboardLimit
       );
-      leaderboard = leaderboardData.entries || [];
+      leaderboard = leaderboardData.users || [];
     } catch (err) {
       console.error("Failed to load leaderboard:", err);
       showNotificationMessage("Failed to load leaderboard", "error");
@@ -301,12 +283,12 @@
   }
 
   async function resetChannel() {
-    if (!selectedChannel || !$currentGuild || !currentUser) return;
+    if (!selectedChannel || !$currentGuild || !data.user) return;
 
     try {
       const request: ResetCountingChannelRequest = {
         newNumber: resetNumber,
-        userId: BigInt(currentUser.id),
+        userId: BigInt(data.user.id),
         reason: resetReason || undefined
       };
 
@@ -327,11 +309,11 @@
   }
 
   async function createSavePoint() {
-    if (!selectedChannel || !$currentGuild || !currentUser) return;
+    if (!selectedChannel || !$currentGuild || !data.user) return;
 
     try {
       const request: CreateSavePointRequest = {
-        userId: BigInt(currentUser.id),
+        userId: BigInt(data.user.id),
         reason: saveReason || undefined
       };
 
@@ -351,7 +333,7 @@
   }
 
   async function disableChannel(channel: CountingChannelResponse) {
-    if (!$currentGuild || !currentUser) return;
+    if (!$currentGuild) return;
 
     try {
       await countingApi.removeCountingChannel($currentGuild.id, channel.channelId);
@@ -372,18 +354,7 @@
 
   // Event handlers
   onMount(() => {
-    if (browser) {
-      checkMobile();
-      window.addEventListener("resize", checkMobile);
-    }
-    
     loadData();
-
-    return () => {
-      if (browser) {
-        window.removeEventListener("resize", checkMobile);
-      }
-    };
   });
 
   $effect(() => {
@@ -409,19 +380,32 @@
   <title>Counting Channels - Dashboard</title>
 </svelte:head>
 
-<DashboardPageLayout 
-  title="Counting Channels" 
-  subtitle="Manage counting games and competitions in your server" 
-  icon="fa-hashtag"
-  guildName={$currentGuild?.name || "Dashboard"}
-  tabs={[
-    { id: "channels", label: `Channels (${countingChannels.length || 0})`, icon: "fa-hashtag" },
-    { id: "config", label: "Configuration", icon: "fa-gear", disabled: !selectedChannel },
-    { id: "stats", label: "Statistics", icon: "fa-chart-column", disabled: !selectedChannel },
-    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy", disabled: !selectedChannel },
-    { id: "management", label: "Management", icon: "fa-shield", disabled: !selectedChannel }
-  ]}
-  bind:activeTab
+{#snippet statusMessageContent()}
+  {#if showNotification}
+    <div class="fixed top-4 right-4 z-50" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
+
+  {#if selectedChannel}
+    <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
+         style="background: {getChannelStatus(selectedChannel).color}15; border: 1px solid {getChannelStatus(selectedChannel).color}30;">
+      <i class="fa-solid fa-circle-check"
+         style="color: {getChannelStatus(selectedChannel).color}; font-size: 16px;"></i>
+      <span class="text-sm" style="color: {getChannelStatus(selectedChannel).color}">
+        Selected: #{selectedChannel.channelName} - {getChannelStatus(selectedChannel).text}
+      </span>
+    </div>
+  {:else if countingChannels.length === 0}
+    <div class="mb-6 flex items-center gap-2 p-4 rounded-lg"
+         style="background: #f59e0b15; border: 1px solid #f59e0b30;">
+      <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
+      <span class="text-sm" style="color: #f59e0b">No counting channels configured</span>
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
   actionButtons={hasChanges ? [
     {
       label: "Save Configuration",
@@ -430,29 +414,20 @@
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ] : []}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-hashtag"
+  statusMessages={statusMessageContent}
+  subtitle="Manage counting games and competitions in your server"
+  tabs={[
+    { id: "channels", label: `Channels (${countingChannels.length || 0})`, icon: "fa-hashtag" },
+    { id: "config", label: "Configuration", icon: "fa-gear" },
+    { id: "stats", label: "Statistics", icon: "fa-chart-column" },
+    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy" },
+    { id: "management", label: "Management", icon: "fa-shield" }
+  ]}
+  title="Counting Channels"
 >
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    {#if showNotification}
-      <div class="fixed top-4 right-4 z-50" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-    
-    {#if selectedChannel}
-      <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: {getChannelStatus(selectedChannel).color}15; border: 1px solid {getChannelStatus(selectedChannel).color}30;">
-        <i class="fa-solid fa-circle-check" style="color: {getChannelStatus(selectedChannel).color}; font-size: 16px;"></i>
-        <span class="text-sm" style="color: {getChannelStatus(selectedChannel).color}">
-          Selected: #{selectedChannel.channelName} - {getChannelStatus(selectedChannel).text}
-        </span>
-      </div>
-    {:else if countingChannels.length === 0}
-      <div class="mb-6 flex items-center gap-2 p-4 rounded-lg" style="background: #f59e0b15; border: 1px solid #f59e0b30;">
-        <i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; font-size: 16px;"></i>
-        <span class="text-sm" style="color: #f59e0b">No counting channels configured</span>
-      </div>
-    {/if}
-  </svelte:fragment>
 
   <!-- Content -->
   {#if loading}
@@ -467,7 +442,7 @@
   {:else if activeTab === 'channels'}
     <div class="space-y-6" transition:fade>
       <!-- Setup New Channel -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Setup New Counting Channel</h3>
         
@@ -529,7 +504,7 @@
         <div class="grid gap-4">
           {#each countingChannels as channel (channel.id)}
               <div
-                      class="backdrop-blur-xs rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
+                class=" rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02]"
               style="border-color: {selectedChannel?.id === channel.id ? $colorStore.primary : $colorStore.primary + '30'}; background: {selectedChannel?.id === channel.id ? $colorStore.primary + '15' : $colorStore.primary + '05'};"
                       role="button"
                       tabindex="0"
@@ -599,7 +574,7 @@
   {:else if activeTab === 'config' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Basic Settings -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Basic Settings</h3>
         
@@ -611,21 +586,20 @@
               type="custom"
               customIcon="fa-hashtag"
               options={[
-                { id: "0", name: "Normal (1, 2, 3...)", label: "Normal" },
-                { id: "1", name: "Roman (I, II, III...)", label: "Roman" },
-                { id: "2", name: "Binary (1, 10, 11...)", label: "Binary" },
-                { id: "3", name: "Hexadecimal (1, 2... A, B...)", label: "Hex" },
-                { id: "4", name: "Words (one, two, three...)", label: "Words" },
-                { id: "5", name: "Ordinal (1st, 2nd, 3rd...)", label: "Ordinal" },
-                { id: "6", name: "Fibonacci (1, 1, 2, 3, 5...)", label: "Fibonacci" },
-                { id: "7", name: "Primes (2, 3, 5, 7...)", label: "Primes" }
+                { id: "0", name: "Sequential (1, 2, 3...)", label: "Sequential" },
+                { id: "1", name: "Skip Multiples", label: "Skip Multiples" },
+                { id: "2", name: "Fibonacci (1, 1, 2, 3, 5...)", label: "Fibonacci" },
+                { id: "3", name: "Primes (2, 3, 5, 7...)", label: "Primes" },
+                { id: "4", name: "Powers of Two (2, 4, 8...)", label: "Powers of Two" }
               ]}
-              selected={pattern.toString()}
+              selected={pattern?.toString() ?? "0"}
               placeholder="Select pattern..."
               searchable={false}
-              on:change={(e) => {
-                pattern = parseInt(e.detail.selected);
-                markAsChanged();
+              onchange={(detail) => {
+                if (detail.selected && typeof detail.selected === 'string') {
+                  pattern = parseInt(detail.selected);
+                  markAsChanged();
+                }
               }}
             />
           </div>
@@ -697,7 +671,7 @@
       </div>
 
       <!-- Behavior Settings -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Behavior Settings</h3>
         
@@ -759,7 +733,7 @@
       </div>
 
       <!-- Role Restrictions -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Role Restrictions</h3>
         
@@ -772,7 +746,7 @@
               bind:selected={requiredRoles}
               placeholder="Select required roles..."
               multiple={true}
-              on:change={markAsChanged}
+              onchange={markAsChanged}
             />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users must have one of these roles</p>
           </div>
@@ -785,7 +759,8 @@
               bind:selected={bannedRoles}
               placeholder="Select banned roles..."
               multiple={true}
-              on:change={markAsChanged} />
+              onchange={markAsChanged}
+            />
             <p class="text-sm mt-1" style="color: {$colorStore.muted}">Users with these roles cannot count</p>
           </div>
         </div>
@@ -796,7 +771,7 @@
     <div class="space-y-6" transition:fade>
       <!-- Overview Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+        <div class=" rounded-xl border p-4 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center justify-between">
             <div>
@@ -807,7 +782,7 @@
           </div>
         </div>
 
-          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+        <div class=" rounded-xl border p-4 transition-all"
                style="border-color: {$colorStore.secondary}30; background: {$colorStore.secondary}05;">
           <div class="flex items-center justify-between">
             <div>
@@ -818,7 +793,7 @@
           </div>
         </div>
 
-          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+        <div class=" rounded-xl border p-4 transition-all"
                style="border-color: {$colorStore.accent}30; background: {$colorStore.accent}05;">
           <div class="flex items-center justify-between">
             <div>
@@ -830,7 +805,7 @@
           </div>
         </div>
 
-          <div class="backdrop-blur-xs rounded-xl border p-4 transition-all"
+        <div class=" rounded-xl border p-4 transition-all"
                style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center justify-between">
             <div>
@@ -844,7 +819,7 @@
 
       <!-- Top Contributor -->
       {#if channelStats.topContributor}
-          <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+        <div class=" rounded-xl border p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Top Contributor</h3>
           
@@ -882,7 +857,7 @@
       {/if}
 
       <!-- Milestones -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Milestones</h3>
         
@@ -915,7 +890,7 @@
   {:else if activeTab === 'leaderboard' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Leaderboard Controls -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <div class="flex items-center gap-4 mb-4">
           <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Leaderboard Settings</h3>
@@ -936,9 +911,11 @@
               selected={leaderboardType}
               placeholder="Select sort type..."
               searchable={false}
-              on:change={(e) => {
-                leaderboardType = e.detail.selected;
-                loadLeaderboard();
+              onchange={(detail) => {
+                if (detail.selected && typeof detail.selected === 'string') {
+                  leaderboardType = detail.selected;
+                  loadLeaderboard();
+                }
               }}
             />
           </div>
@@ -969,7 +946,7 @@
         <div class="space-y-3">
           {#each leaderboard as entry, index (entry.userId)}
               <div
-                      class="backdrop-blur-xs rounded-xl border p-4 flex items-center gap-4 transition-all"
+                class=" rounded-xl border p-4 flex items-center gap-4 transition-all"
               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
               transition:slide={{ delay: index * 50 }}
             >
@@ -1020,7 +997,7 @@
   {:else if activeTab === 'management' && selectedChannel}
     <div class="space-y-6" transition:fade>
       <!-- Reset Channel -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: #f59e0b30; background: #f59e0b05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Reset Channel</h3>
         
@@ -1059,7 +1036,7 @@
       </div>
 
       <!-- Save Points -->
-        <div class="backdrop-blur-xs rounded-xl border p-6 transition-all"
+      <div class=" rounded-xl border p-6 transition-all"
              style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
         <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Save Points</h3>
         
@@ -1094,7 +1071,7 @@
           <div class="space-y-3">
             {#each savePoints as savePoint (savePoint.id)}
                 <div
-                        class="backdrop-blur-xs rounded-lg border p-4 flex items-center justify-between transition-all"
+                  class=" rounded-lg border p-4 flex items-center justify-between transition-all"
                 style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08;"
                 transition:slide
               >

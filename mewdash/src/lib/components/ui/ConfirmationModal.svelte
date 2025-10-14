@@ -68,7 +68,7 @@
   >
     <!-- Modal -->
     <div
-            class="rounded-2xl border shadow-2xl max-w-md w-full backdrop-blur-xs"
+      class="rounded-2xl border shadow-2xl max-w-md w-full "
       style="background: {$colorStore.background}90; border-color: {$colorStore.primary}30;"
             onclick={(e) => e.stopPropagation()}
       in:fly={{ y: 20, duration: 200 }}

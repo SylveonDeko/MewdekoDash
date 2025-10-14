@@ -1,7 +1,13 @@
 // lib/clickOutside.ts
 import type { Action } from "svelte/action";
 
-export const clickOutside: Action<HTMLElement, void> = (node) => {
+interface ClickOutsideAttributes {
+  onclickoutside?: (event: CustomEvent) => void;
+}
+
+export const clickOutside: Action<HTMLElement, void, ClickOutsideAttributes> = (
+  node,
+) => {
   const handleClick = (event: MouseEvent) => {
     if (
       node &&
@@ -14,11 +20,17 @@ export const clickOutside: Action<HTMLElement, void> = (node) => {
 
   document.addEventListener("click", handleClick, true);
 
-  return {};
+  return {
+    destroy() {
+      document.removeEventListener("click", handleClick, true);
+    },
+  };
 };
 
-// Add this type declaration
 declare global {
-  namespace svelte.JSX {
+  namespace svelteHTML {
+    interface HTMLAttributes<T> {
+      onclickoutside?: (event: CustomEvent) => void;
+    }
   }
 }

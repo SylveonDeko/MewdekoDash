@@ -66,7 +66,7 @@
     in:fade
   >
     <!-- Header Section -->
-    <div class="sticky top-0 z-50 backdrop-blur-lg border-b shadow-lg"
+    <div class="sticky top-0 backdrop-blur-lg border-b shadow-lg"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-4 py-6">
         <div class="text-center">
@@ -103,7 +103,7 @@
         {#each staffMembers as member, index}
           <div class="group" in:fly={{ y: 40, duration: 400, delay: 200 + (index * 100) }}>
             <div
-                    class="rounded-2xl p-8 backdrop-blur-xs border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+              class="rounded-2xl p-8  border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}20;">
 
               <!-- Profile Image -->
@@ -146,7 +146,7 @@
       </div>
 
       <!-- Thank You Section -->
-      <div class="text-center rounded-2xl p-12 backdrop-blur-xs border"
+      <div class="text-center rounded-2xl p-12  border"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12); border-color: {$colorStore.primary}20;"
            in:fly={{ y: 40, duration: 400, delay: 600 }}>
         <div class="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"

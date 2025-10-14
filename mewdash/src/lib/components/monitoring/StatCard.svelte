@@ -180,7 +180,7 @@
   <!-- Tooltip -->
   {#if showTooltip && tooltipData.length > 0}
     <div
-            class="absolute z-20 bottom-full left-0 mb-2 bg-gray-800/95 backdrop-blur-xs rounded-lg p-3 shadow-xl min-w-[200px]"
+      class="absolute z-20 bottom-full left-0 mb-2 bg-gray-800/95  rounded-lg p-3 shadow-xl min-w-[200px]"
       transition:fade={{ duration: 200 }}
       role="dialog"
       aria-labelledby="tooltip-title"

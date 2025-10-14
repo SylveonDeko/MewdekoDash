@@ -44,7 +44,6 @@
   guildName="Bot Performance Dashboard"
   tabs={tabs}
   bind:activeTab
-  on:tabChange={(e) => activeTab = e.detail.tabId}
 >
   {#if activeTab === 'overview'}
     <SystemInfoMonitor {data} />

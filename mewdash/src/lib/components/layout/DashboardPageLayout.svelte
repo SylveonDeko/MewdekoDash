@@ -350,7 +350,7 @@
         <!-- Left scroll button -->
         {#if tabsOverflow}
           <button
-            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] backdrop-blur-xs"
+            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             onclick={() => scrollTabs('left', tabContainer)}
             aria-label="Scroll tabs left"
@@ -392,7 +392,7 @@
         <!-- Right scroll button -->
         {#if tabsOverflow}
           <button
-            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] backdrop-blur-xs"
+            class="shrink-0 p-2 rounded-lg transition-all hover:scale-[1.02] "
             style="background: rgba(15, 23, 42, 0.9); border: 1px solid {$colorStore.primary}30; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
             onclick={() => scrollTabs('right', tabContainer)}
             aria-label="Scroll tabs right"

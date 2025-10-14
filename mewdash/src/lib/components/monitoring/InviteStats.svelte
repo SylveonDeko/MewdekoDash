@@ -14,7 +14,7 @@
 </script>
 
 {#if stats && stats !== undefined && stats.averageJoins !== undefined}
-    <div class="backdrop-blur-xs rounded-2xl border p-6 shadow-2xl"
+  <div class=" rounded-2xl border p-6 shadow-2xl"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                 border-color: {$colorStore.primary}30;">
     <div class="flex items-center gap-4 mb-6">
