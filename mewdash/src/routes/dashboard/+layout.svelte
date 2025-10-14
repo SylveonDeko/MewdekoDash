@@ -1,20 +1,19 @@
 <!-- routes/dashboard/+layout.svelte -->
 <script lang="ts">
 
-    import {onMount} from "svelte";
-    import {currentInstance} from "$lib/stores/instanceStore";
-    import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
-    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-    import {colorStore} from "$lib/stores/colorStore.ts";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {userStore} from "$lib/stores/userStore.ts";
-    import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
-    import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
-    import {browser} from "$app/environment";
-    import { wizardApi } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger.ts";
+  import { onMount } from "svelte";
+  import { currentInstance } from "$lib/stores/instanceStore";
+  import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
+  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { userStore } from "$lib/stores/userStore.ts";
+  import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
+  import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
+  import { browser } from "$app/environment";
+  import { wizardApi } from "$lib/api/index.ts";
 
-    let {data, children} = $props();
+  let { data, children } = $props();
 
   // Setup suggestion banner state
     let showSetupSuggestion = $state(false);
@@ -30,10 +29,11 @@
         return;
       }
       const wizardDecision = await wizardApi.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
+      console.log("Wizard decision:", wizardDecision);
 
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
-          const wizardTypeString = wizardDecision.wizardType === 'FirstTime' ? 'first-time' : 'quick-setup';
+        const wizardTypeString = wizardDecision.wizardType === 1 ? "first-time" : "quick-setup";
         window.location.href = `/wizard?guild=${$currentGuild.id}&type=${wizardTypeString}`;
       } else if (wizardDecision.showSuggestion) {
         showSetupSuggestion = true;
@@ -122,8 +122,8 @@
               guild={$currentGuild}
               context={setupSuggestionContext}
               visible={showSetupSuggestion}
-              on:dismiss={dismissSetupSuggestion}
-              on:startSetup={startQuickSetup}
+              ondismiss={dismissSetupSuggestion}
+              onstartSetup={startQuickSetup}
             />
           </div>
         {/if}

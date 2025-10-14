@@ -3,12 +3,12 @@ import { apiRequest } from "../core";
 import type {
   AfkRequest,
   HighlightSettingsRequest,
-  UserPreferencesRequest,
-  UserProfileRequest,
   UserAfkStatus,
-  UserReputationStats,
   UserPreferences,
+  UserPreferencesRequest,
   UserProfile,
+  UserProfileRequest,
+  UserReputationStats
 } from "./models";
 
 /**
@@ -173,4 +173,152 @@ export const meApi = {
    */
   getMyCurrency: (guildId: bigint, userId: bigint) =>
     apiRequest<any>(`me/${guildId}/${userId}/currency`),
+
+  /**
+   * Gets user's giveaway activity
+   * @param guildId The guild ID
+   * @param userId The user ID
+   * @returns Giveaway entries and wins
+   */
+  getMyGiveaways: (guildId: bigint, userId: bigint) =>
+    apiRequest<any[]>(`me/${guildId}/${userId}/giveaways`),
+
+  /**
+   * Gets user's reminders
+   * @param guildId The guild ID
+   * @param userId The user ID
+   * @returns User's reminders
+   */
+  getMyReminders: (guildId: bigint, userId: bigint) =>
+    apiRequest<any[]>(`me/${guildId}/${userId}/reminders`),
+
+  /**
+   * Gets global cross-server analytics
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns Global analytics
+   */
+  getMyGlobalAnalytics: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`me/${guildId}/${userId}/analytics`),
+
+  /**
+   * Gets user's invite statistics
+   * @param guildId The guild ID
+   * @param userId The user ID
+   * @returns Invite statistics
+   */
+  getMyInvites: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`me/${guildId}/${userId}/invites`),
+
+  /**
+   * Gets user's message statistics
+   * @param guildId The guild ID
+   * @param userId The user ID
+   * @returns Message statistics
+   */
+  getMyMessages: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`me/${guildId}/${userId}/messages`),
+
+  /**
+   * Gets user's starboard statistics
+   * @param guildId The guild ID
+   * @param userId The user ID
+   * @returns Starboard statistics
+   */
+  getMyStarboard: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`me/${guildId}/${userId}/starboard`),
+
+  /**
+   * Toggles greet DMs opt-out
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New opt-out status
+   */
+  toggleGreetDms: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ greetDmsOptOut: boolean }>(
+      `me/${guildId}/${userId}/profile/toggle-greet-dms`,
+      "POST",
+    ),
+
+  /**
+   * Toggles stats opt-out
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New opt-out status
+   */
+  toggleStats: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ statsOptOut: boolean }>(
+      `me/${guildId}/${userId}/profile/toggle-stats`,
+      "POST",
+    ),
+
+  /**
+   * Toggles birthday announcements
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New announcement status
+   */
+  toggleBirthdayAnnouncements: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ birthdayAnnouncementsEnabled: boolean }>(
+      `me/${guildId}/${userId}/profile/toggle-birthday-announcements`,
+      "POST",
+    ),
+
+  /**
+   * Toggles level-up pings preference
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New preference status
+   */
+  toggleLevelUpPings: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ levelUpPingsDisabled: boolean }>(
+      `me/${guildId}/${userId}/preferences/toggle-levelup-pings`,
+      "POST",
+    ),
+
+  /**
+   * Toggles pronoun fetching preference
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New preference status
+   */
+  togglePronouns: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ pronounsDisabled: boolean }>(
+      `me/${guildId}/${userId}/preferences/toggle-pronouns`,
+      "POST",
+    ),
+
+  /**
+   * Toggles guided setup preference
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns New preference status
+   */
+  toggleGuidedSetup: (guildId: bigint, userId: bigint) =>
+    apiRequest<{ prefersGuidedSetup: boolean }>(
+      `me/${guildId}/${userId}/preferences/toggle-guided-setup`,
+      "POST",
+    ),
+
+  /**
+   * Resets wizard completion state
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @returns Success response
+   */
+  resetWizard: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`me/${guildId}/${userId}/wizard/reset`, "POST"),
+
+  /**
+   * Resets wizard completion for a specific guild
+   * @param guildId The guild ID (for route consistency)
+   * @param userId The user ID
+   * @param resetGuildId The guild ID to reset wizard for
+   * @returns Success response
+   */
+  resetGuildWizard: (guildId: bigint, userId: bigint, resetGuildId: bigint) =>
+    apiRequest<any>(
+      `me/${guildId}/${userId}/wizard/reset/${resetGuildId}`,
+      "POST",
+    ),
 };

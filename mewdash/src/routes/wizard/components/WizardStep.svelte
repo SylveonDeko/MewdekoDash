@@ -4,7 +4,8 @@ Wrapper component for individual wizard steps with consistent styling and animat
 -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
-  import { fly } from "svelte/transition";
+  import { fade, fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
 
 
   interface Props {
@@ -31,10 +32,10 @@ Wrapper component for individual wizard steps with consistent styling and animat
 </script>
 
 {#if isActive}
-  <div 
+  <div
     class="wizard-step w-full flex flex-col items-center px-3 py-4 sm:px-4 sm:py-8"
-    in:fly={{ y: 30, duration: 400, delay: 100 }}
-    out:fly={{ y: -30, duration: 300 }}
+    in:fly={{ y: 20, duration: 500, delay: 150, easing: cubicOut }}
+    out:fade={{ duration: 200 }}
   >
     <!-- Step container -->
     <div class="w-full {maxWidth} mx-auto">
@@ -51,12 +52,7 @@ Wrapper component for individual wizard steps with consistent styling and animat
               "
             >
               {#if icon}
-                {#if typeof icon === 'string'}
-                  <i class="{icon}" style="font-size: 32px;"></i>
-                {:else}
-                  {@const SvelteComponent = icon}
-                  <SvelteComponent class="w-6 h-6 sm:w-8 sm:h-8" />
-                {/if}
+                <i class="{icon}" style="font-size: 32px;"></i>
               {:else}
                 <span class="text-lg sm:text-2xl font-bold">{stepNumber}</span>
               {/if}

@@ -1,29 +1,17 @@
 <!-- routes/me/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {
-      meApi,
-      clientApi,
-      highlightsApi,
-      afkApi,
-      xpApi,
-      reputationApi,
-      suggestionsApi,
-      inviteTrackingApi,
-      messageCountApi,
-      starboardApi,
-      guildApi
-    } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
-    import {clickOutside} from "$lib/clickOutside";
-    import Notification from "$lib/components/ui/Notification.svelte";
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { clientApi, guildApi, meApi, xpApi } from "$lib/api/index.ts";
+  import { logger } from "$lib/logger";
+  import { clickOutside } from "$lib/clickOutside";
+  import Notification from "$lib/components/ui/Notification.svelte";
 
-    let {data} = $props();
+  let {data} = $props();
 
   // State
-  let loading = false;
+    let loading = $state(false);
   let saving = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
@@ -81,18 +69,18 @@
 
       userProfile = profile;
       userPreferences = preferences;
-      
+
       profileForm = {
-        bio: profile.bio || "",
-        pronouns: profile.pronouns || "",
-        zodiacSign: profile.zodiacSign || "",
-        switchFriendCode: profile.switchFriendCode || "",
-        profileImageUrl: profile.profileImageUrl || "",
-        profileColor: profile.profileColor ? '#' + profile.profileColor.toString(16).padStart(6, '0') : "",
-        birthday: profile.birthday ? new Date(profile.birthday).toISOString().split('T')[0] : "",
-        birthdayTimezone: profile.birthdayTimezone || "UTC",
-        profilePrivacy: profile.profilePrivacy || 0,
-        birthdayDisplayMode: profile.birthdayDisplayMode || 0
+        bio: (profile as any).bio || "",
+        pronouns: (profile as any).pronouns || "",
+        zodiacSign: (profile as any).zodiacSign || "",
+        switchFriendCode: (profile as any).switchFriendCode || "",
+        profileImageUrl: (profile as any).profileImageUrl || "",
+        profileColor: (profile as any).profileColor ? "#" + (profile as any).profileColor.toString(16).padStart(6, "0") : "",
+        birthday: (profile as any).birthday ? new Date((profile as any).birthday).toISOString().split("T")[0] : "",
+        birthdayTimezone: (profile as any).birthdayTimezone || "UTC",
+        profilePrivacy: (profile as any).profilePrivacy || 0,
+        birthdayDisplayMode: (profile as any).birthdayDisplayMode || 0
       };
     } catch (err) {
       logger.error("Failed to load profile:", err);
@@ -121,31 +109,31 @@
     loading = true;
     try {
       const [
-        highlights, hlSettings, afk, xpStats, reputation, suggestions, 
+        highlights, hlSettings, afk, xpStats, reputation, suggestions,
         currency, giveaways, reminders, invites, messages, starboard, analytics, config
       ] = await Promise.all([
-        highlightsApi.getUserHighlights(selectedGuild.id, userId).catch(() => []),
-        highlightsApi.getUserHighlightSettings(selectedGuild.id, userId).catch(() => ({
+        meApi.getHighlights(selectedGuild.id, userId).catch(() => []),
+        meApi.getHighlightSettings(selectedGuild.id, userId).catch(() => ({
           highlightsEnabled: true, ignoredChannels: [], ignoredUsers: []
         })),
-        afkApi.getUserAfkStatus(selectedGuild.id, userId).catch(() => ({
+        meApi.getAfkStatus(selectedGuild.id, userId).catch(() => ({
           isAfk: false, message: "", when: null, wasTimed: false
         })),
         xpApi.getUserXpStats(selectedGuild.id, userId).catch(() => null),
-        reputationApi.getUserReputation(selectedGuild.id, userId).catch(() => ({
+        meApi.getReputation(selectedGuild.id, userId).catch(() => ({
           totalRep: 0, rank: 0, totalGiven: 0, totalReceived: 0
         })),
-        suggestionsApi.getUserSuggestions(selectedGuild.id, userId).catch(() => []),
-        meApi.getUserCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, recentTransactions: [] })),
-        meApi.getUserGiveaways(selectedGuild.id, userId).catch(() => []),
-        meApi.getUserReminders(selectedGuild.id, userId).catch(() => []),
-        inviteTrackingApi.getInviteCount(selectedGuild.id, userId).catch(() => 0),
-        messageCountApi.getUserMessages(selectedGuild.id, userId).catch(() => ({
+        meApi.getMySuggestions(selectedGuild.id, userId).catch(() => []),
+        meApi.getMyCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, recentTransactions: [] })),
+        meApi.getMyGiveaways(selectedGuild.id, userId).catch(() => []),
+        meApi.getMyReminders(selectedGuild.id, userId).catch(() => []),
+        meApi.getMyInvites(selectedGuild.id, userId).catch(() => ({ inviteCount: 0, invitedUsers: [] })),
+        meApi.getMyMessages(selectedGuild.id, userId).catch(() => ({
           totalMessages: 0,
           channelBreakdown: []
         })),
-        starboardApi.getUserStarboard(selectedGuild.id, userId).catch(() => null),
-        meApi.getUserAnalytics(selectedGuild.id, userId).catch(() => ({})),
+        meApi.getMyStarboard(selectedGuild.id, userId).catch(() => null),
+        meApi.getMyGlobalAnalytics(selectedGuild.id, userId).catch(() => ({})),
         // Only load guild config if user has admin access
         selectedGuild.hasAdminAccess ? guildApi.getGuildConfig(selectedGuild.id).catch(() => null) : Promise.resolve(null)
       ]);
@@ -179,8 +167,8 @@
   async function toggleGreetDms() {
     saving = true;
     try {
-      const result = await api.toggleUserGreetDms(BigInt("0"), userId);
-      userProfile.greetDmsOptOut = result.greetDmsOptOut;
+      const result = await meApi.toggleGreetDms(BigInt("0"), userId);
+      (userProfile as any).greetDmsOptOut = result.greetDmsOptOut;
       showMessage(`Welcome DMs ${result.greetDmsOptOut ? 'blocked' : 'allowed'}!`, "success");
     } catch (err) {
       showMessage("Failed to update setting", "error");
@@ -192,8 +180,8 @@
   async function toggleStats() {
     saving = true;
     try {
-      const result = await api.toggleUserStats(BigInt("0"), userId);
-      userProfile.statsOptOut = result.statsOptOut;
+      const result = await meApi.toggleStats(BigInt("0"), userId);
+      (userProfile as any).statsOptOut = result.statsOptOut;
       showMessage(`Stats tracking ${result.statsOptOut ? 'blocked' : 'allowed'}!`, "success");
     } catch (err) {
       showMessage("Failed to update setting", "error");
@@ -205,8 +193,8 @@
   async function toggleLevelUpPings() {
     saving = true;
     try {
-      const result = await api.toggleUserLevelUpPings(BigInt("0"), userId);
-      userPreferences.levelUpPingsDisabled = result.levelUpPingsDisabled;
+      const result = await meApi.toggleLevelUpPings(BigInt("0"), userId);
+      (userPreferences as any).levelUpPingsDisabled = result.levelUpPingsDisabled;
       showMessage(`Level-up pings ${result.levelUpPingsDisabled ? 'disabled' : 'enabled'}!`, "success");
     } catch (err) {
       showMessage("Failed to update preference", "error");
@@ -218,8 +206,8 @@
   async function togglePronouns() {
     saving = true;
     try {
-      const result = await api.toggleUserPronouns(BigInt("0"), userId);
-      userPreferences.pronounsDisabled = result.pronounsDisabled;
+      const result = await meApi.togglePronouns(BigInt("0"), userId);
+      (userPreferences as any).pronounsDisabled = result.pronounsDisabled;
       showMessage(`Pronoun fetching ${result.pronounsDisabled ? 'disabled' : 'enabled'}!`, "success");
     } catch (err) {
       showMessage("Failed to update preference", "error");
@@ -231,8 +219,8 @@
   async function toggleBirthdayAnnouncements() {
     saving = true;
     try {
-      const result = await api.toggleUserBirthdayAnnouncements(BigInt("0"), userId);
-      userProfile.birthdayAnnouncementsEnabled = result.birthdayAnnouncementsEnabled;
+      const result = await meApi.toggleBirthdayAnnouncements(BigInt("0"), userId);
+      (userProfile as any).birthdayAnnouncementsEnabled = result.birthdayAnnouncementsEnabled;
       showMessage(`Birthday announcements ${result.birthdayAnnouncementsEnabled ? 'enabled' : 'disabled'}!`, "success");
     } catch (err) {
       showMessage("Failed to update setting", "error");
@@ -244,8 +232,8 @@
   async function toggleGuidedSetup() {
     saving = true;
     try {
-      const result = await api.toggleUserGuidedSetup(BigInt("0"), userId);
-      userPreferences.prefersGuidedSetup = result.prefersGuidedSetup;
+      const result = await meApi.toggleGuidedSetup(BigInt("0"), userId);
+      (userPreferences as any).prefersGuidedSetup = result.prefersGuidedSetup;
       showMessage(`Guided setup ${result.prefersGuidedSetup ? 'enabled' : 'disabled'}!`, "success");
     } catch (err) {
       showMessage("Failed to update preference", "error");
@@ -257,9 +245,9 @@
   async function resetWizard() {
     saving = true;
     try {
-      const result = await api.resetUserWizard(BigInt("0"), userId);
-      userPreferences.hasCompletedAnyWizard = result.hasCompletedAnyWizard;
-      userPreferences.prefersGuidedSetup = result.prefersGuidedSetup;
+      const result = await meApi.resetWizard(BigInt("0"), userId);
+      (userPreferences as any).hasCompletedAnyWizard = result.hasCompletedAnyWizard;
+      (userPreferences as any).prefersGuidedSetup = result.prefersGuidedSetup;
       showMessage("Wizard state reset! You'll see setup guides again.", "success");
       await loadGlobalData(); // Refresh data
     } catch (err) {
@@ -274,11 +262,9 @@
 
     saving = true;
     try {
-      // For guild wizard reset, we need to reset the guild config, not user data
-      // This should probably call a different endpoint that resets guildConfig.wizardCompleted/wizardSkipped
-      const result = await api.resetGuildWizard(BigInt("0"), userId, selectedGuild.id);
+      await meApi.resetGuildWizard(BigInt("0"), userId, selectedGuild.id);
       showMessage(`Setup wizard reset for ${selectedGuild.name}!`, "success");
-      
+
       // Refresh server data to update guild config
       if (guildConfig) {
         guildConfig.wizardCompleted = false;
@@ -323,7 +309,7 @@
     if (!selectedGuild?.id || !newHighlightWord.trim()) return;
 
     try {
-      await highlightsApi.addUserHighlight(selectedGuild.id, userId, newHighlightWord.trim());
+      await meApi.addHighlight(selectedGuild.id, userId, newHighlightWord.trim());
       newHighlightWord = "";
       showMessage("Highlight added!", "success");
       await loadServerData();
@@ -337,7 +323,7 @@
     if (!selectedGuild?.id) return;
 
     try {
-      await highlightsApi.removeUserHighlight(selectedGuild.id, userId, highlightId);
+      await meApi.removeHighlight(selectedGuild.id, userId, highlightId);
       showMessage("Highlight removed!", "success");
       await loadServerData();
     } catch (err) {
@@ -351,8 +337,8 @@
 
     saving = true;
     try {
-      await afkApi.setUserAfkStatus(selectedGuild.id, userId, {
-        message: newAfkMessage.trim() || undefined,
+      await meApi.setAfkStatus(selectedGuild.id, userId, {
+        message: newAfkMessage.trim() || "",
         isTimed: false,
         until: undefined
       });
@@ -372,7 +358,7 @@
 
     saving = true;
     try {
-      await afkApi.removeUserAfkStatus(selectedGuild.id, userId);
+      await meApi.removeAfkStatus(selectedGuild.id, userId);
       showMessage("AFK status removed!", "success");
       await loadServerData();
     } catch (err) {
@@ -688,12 +674,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userProfile.greetDmsOptOut ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userProfile.greetDmsOptOut}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -711,12 +698,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userProfile.statsOptOut ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userProfile.statsOptOut}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -734,12 +722,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userProfile.birthdayAnnouncementsEnabled ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userProfile.birthdayAnnouncementsEnabled}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
           </div>
@@ -771,12 +760,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userPreferences.levelUpPingsDisabled ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userPreferences.levelUpPingsDisabled}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -794,12 +784,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userPreferences.pronounsDisabled ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userPreferences.pronounsDisabled}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -817,12 +808,13 @@
                   disabled={saving}
                   class="sr-only"
                 >
-                <div class="w-11 h-6 rounded-full transition-all relative shadow-inner"
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
                      style="background: {userPreferences.prefersGuidedSetup ? $colorStore.primary : '#374151'};">
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userPreferences.prefersGuidedSetup}>
-                  </div>
-                </div>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -919,14 +911,14 @@
                           alt=""
                           class="w-10 h-10 rounded-lg"
                         >
-                        <div class="flex-1 min-w-0">
-                          <div class="font-medium truncate" style="color: {$colorStore.text}">
+                        <span class="flex-1 min-w-0 block">
+                          <span class="font-medium truncate block" style="color: {$colorStore.text}">
                             {guild.name}
-                          </div>
-                          <div class="text-xs" style="color: {$colorStore.muted}">
+                          </span>
+                          <span class="text-xs block" style="color: {$colorStore.muted}">
                             {guild.memberCount?.toLocaleString() || 'Unknown'} members
-                          </div>
-                        </div>
+                          </span>
+                        </span>
                       </button>
                     {/each}
                   </div>
@@ -1105,13 +1097,13 @@
                           {suggestion.suggestion1?.substring(0, 60)}{suggestion.suggestion1?.length > 60 ? '...' : ''}
                         </p>
                       </div>
-                        <div class="px-2 py-1 rounded-sm text-xs"
-                           style="background: {suggestion.currentState === 1 ? '#10b981' : 
+                      <span class="px-2 py-1 rounded-sm text-xs"
+                            style="background: {suggestion.currentState === 1 ? '#10b981' :
                                             suggestion.currentState === 2 ? '#ef4444' : '#6b7280'}20;
-                                  color: {suggestion.currentState === 1 ? '#10b981' : 
+                                  color: {suggestion.currentState === 1 ? '#10b981' :
                                          suggestion.currentState === 2 ? '#ef4444' : '#6b7280'};">
-                        {suggestion.stateName}
-                      </div>
+                        {suggestion.currentState === 1 ? 'Accepted' : suggestion.currentState === 2 ? 'Denied' : 'Pending'}
+                      </span>
                     </div>
                   </div>
                 {:else}

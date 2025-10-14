@@ -22,7 +22,7 @@ Wizard progress indicator showing current step and completion status
   // Default step titles if not provided
   const defaultStepTitles = [
     "Welcome",
-    "Permissions", 
+    "Permissions",
     "Features",
     "Configuration",
     "Complete"
@@ -54,27 +54,10 @@ Wizard progress indicator showing current step and completion status
   </div>
   
   <!-- Current step title -->
-  <div class="text-center">
+  <div class="text-center mt-2">
     <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
       {displayTitles[currentStep - 1]}
     </h3>
-  </div>
-  
-  <!-- Simple dot indicators (optional) -->
-  <div class="flex justify-center gap-2 mt-3">
-    {#each displayTitles as _, index}
-      {@const stepNumber = index + 1}
-      {@const isActive = stepNumber === currentStep}
-      {@const isCompleted = completedSteps.includes(stepNumber)}
-      {@const isPast = stepNumber < currentStep}
-      
-      <div 
-        class="w-2 h-2 rounded-full transition-all duration-300"
-        style="
-          background: {isCompleted || isPast || isActive ? $colorStore.primary : $colorStore.primary + '30'};
-        "
-      ></div>
-    {/each}
   </div>
 </div>
 

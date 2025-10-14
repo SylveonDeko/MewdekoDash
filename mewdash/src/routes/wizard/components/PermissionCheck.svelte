@@ -3,9 +3,9 @@
 Permission check component for verifying bot permissions during wizard
 -->
 <script lang="ts">
-    import {colorStore} from "$lib/stores/colorStore";
+  import { colorStore } from "$lib/stores/colorStore";
 
-    interface Props {
+  interface Props {
     permission: string;
     hasPermission: boolean;
     importance?: string | number;
@@ -41,8 +41,6 @@ Permission check component for verifying bot permissions during wizard
     "recommended": { label: "Recommended", color: "#f59e0b", icon: "fa-bell" },
     "optional": { label: "Optional", color: $colorStore.muted, icon: "fa-circle-info" }
   }[importanceString] || { label: "Unknown", color: $colorStore.muted, icon: "fa-circle-info" });
-
-  const SvelteComponent = $derived(statusIcon);
 </script>
 
 <div 

@@ -7,8 +7,9 @@ Wizard layout - minimal layout for focused setup experience
 
   import { colorStore } from "$lib/stores/colorStore";
   import { userStore } from "$lib/stores/userStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
   import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import type { LayoutData } from "./$types";
@@ -24,7 +25,7 @@ Wizard layout - minimal layout for focused setup experience
   onMount(() => {
     if (browser && !$userStore && !data?.user) {
       // Redirect to login if not authenticated, preserving the wizard URL
-      const currentUrl = $page.url.pathname + $page.url.search;
+      const currentUrl = page.url.pathname + page.url.search;
       goto(`/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`);
     }
   });
@@ -35,6 +36,14 @@ Wizard layout - minimal layout for focused setup experience
             userStore.set(data.user);
         }
     });
+
+  // Extract colors from guild icon when available
+  $effect(() => {
+    if ($currentGuild?.icon) {
+      const guildIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png?size=128`;
+      colorStore.extractFromServerIcon(guildIconUrl);
+    }
+  });
 </script>
 
 <svelte:head>
@@ -49,8 +58,8 @@ Wizard layout - minimal layout for focused setup experience
   {$colorStore?.gradientEnd}08
 );">
   <!-- Simple header with logo -->
-  <header class="py-3 px-4 sm:py-4 sm:px-6 border-b border-opacity-20" 
-          style="border-color: {$colorStore.primary}30; background: {$colorStore.background}95; backdrop-filter: blur(10px);">
+  <header class="py-3 px-4 sm:py-4 sm:px-6 border-b border-opacity-20"
+          style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05; backdrop-filter: blur(10px);">
     <div class="flex items-center justify-center max-w-6xl mx-auto">
       <div class="flex items-center gap-2 sm:gap-3">
         <img alt="Mewdeko" class="h-8 w-8 sm:h-10 sm:w-10" src="/img/Mewdeko.png">

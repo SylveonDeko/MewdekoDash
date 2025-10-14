@@ -1,10 +1,10 @@
 // lib/api/wizard/wizard.ts
 import { apiRequest } from "../core";
 import type {
+  WizardCompleteResponse,
   WizardDecisionResponse,
   WizardStateResponse,
-  WizardCompleteResponse,
-  WizardStateUpdateRequest,
+  WizardStateUpdateRequest
 } from "./models";
 
 /**
@@ -56,4 +56,20 @@ export const wizardApi = {
       "POST",
       configuredFeatures,
     ),
+
+  /**
+   * Skips the wizard for a guild
+   * @param guildId The guild ID
+   * @param userId User ID who is skipping
+   */
+  skipWizard: (guildId: bigint, userId: bigint) =>
+    apiRequest<void>(`Wizard/skip/${guildId}`, "POST", userId),
+
+  /**
+   * Checks bot permissions in a guild
+   * @param guildId The guild ID
+   * @returns Permission check results
+   */
+  checkBotPermissions: (guildId: bigint) =>
+    apiRequest<any>(`Wizard/permissions/${guildId}`),
 };

@@ -3,9 +3,9 @@
 Feature card for selecting features during wizard setup
 -->
 <script lang="ts">
-    import {colorStore} from "$lib/stores/colorStore";
+  import { colorStore } from "$lib/stores/colorStore";
 
-    interface Props {
+  interface Props {
     id: string;
     title: string;
     description: string;
@@ -41,8 +41,6 @@ Feature card for selecting features during wizard setup
     'medium': '#f59e0b',
     'advanced': '#ef4444'
   }[difficulty]);
-
-  const SvelteComponent = $derived(icon);
 </script>
 
 <button
@@ -60,47 +58,42 @@ Feature card for selecting features during wizard setup
   aria-pressed={selected}
 >
   <!-- Background decoration -->
-  <div class="absolute top-0 right-0 w-20 h-20 opacity-5 transform rotate-12 translate-x-6 -translate-y-6">
-    <SvelteComponent class="w-full h-full" />
-  </div>
+  <span class="absolute top-0 right-0 w-20 h-20 opacity-5 transform rotate-12 translate-x-6 -translate-y-6 block">
+    <i class="{icon}" style="font-size: 80px;"></i>
+  </span>
 
   <!-- Selected indicator -->
   {#if selected}
-    <div class="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
+    <span class="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center block"
          style="background: {$colorStore.primary};">
       <i class="fa-solid fa-check text-white" style="font-size: 16px;"></i>
-    </div>
+    </span>
   {/if}
 
   <!-- Recommended badge -->
   {#if recommended}
-    <div class="absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
+    <span class="absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};">
       <i class="fa-solid fa-star" style="font-size: 12px;"></i>
       Recommended
-    </div>
+    </span>
   {/if}
 
   <!-- Icon and header -->
-  <div class="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4" class:mt-6={recommended} class:sm:mt-8={recommended}>
-      <div
-              class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg border transition-colors shrink-0"
+  <span class="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4" class:mt-6={recommended} class:sm:mt-8={recommended}>
+      <span
+        class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg border transition-colors shrink-0 block"
       style="
         background: {selected ? $colorStore.primary + '20' : $colorStore.primary + '08'};
         border-color: {selected ? $colorStore.primary + '40' : $colorStore.primary + '20'};
         color: {selected ? $colorStore.primary : $colorStore.muted};
       "
     >
-        {#if typeof icon === 'string'}
-          <i class="{icon}" style="font-size: 24px;"></i>
-        {:else}
-          {@const SvelteComponent = icon}
-          <SvelteComponent class="w-5 h-5 sm:w-6 sm:h-6" />
-        {/if}
-    </div>
-    
-    <div class="flex-1 min-w-0">
-      <h3 class="text-base sm:text-lg font-bold mb-1 leading-tight" 
+        <i class="{icon}" style="font-size: 24px;"></i>
+    </span>
+
+    <span class="flex-1 min-w-0 block">
+      <h3 class="text-base sm:text-lg font-bold mb-1 leading-tight"
           style="color: {disabled ? $colorStore.muted : $colorStore.text};">
         {title}
       </h3>
@@ -108,41 +101,43 @@ Feature card for selecting features during wizard setup
          style="color: {disabled ? $colorStore.muted : $colorStore.text + 'c0'};">
         {description}
       </p>
-    </div>
-  </div>
+    </span>
+  </span>
 
   <!-- Feature metadata -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-opacity-20 gap-2 sm:gap-4"
+  <span
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-opacity-20 gap-2 sm:gap-4"
        style="border-color: {$colorStore.primary}30;">
-    <div class="flex items-center gap-3 sm:gap-4">
+    <span class="flex items-center gap-3 sm:gap-4">
       <!-- Setup time -->
       {#if setupTime}
-        <div class="flex items-center gap-1 text-xs"
+        <span class="flex items-center gap-1 text-xs"
              style="color: {$colorStore.muted};">
           <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
           {setupTime}
-        </div>
+        </span>
       {/if}
-      
+
       <!-- Difficulty indicator -->
-      <div class="flex items-center gap-1 text-xs">
-        <div class="w-2 h-2 rounded-full" style="background: {difficultyColor};"></div>
+      <span class="flex items-center gap-1 text-xs">
+        <span class="w-2 h-2 rounded-full block" style="background: {difficultyColor};"></span>
         <span style="color: {difficultyColor};">
           {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
         </span>
-      </div>
-    </div>
-    
+      </span>
+    </span>
+
     <!-- Selection indicator -->
-    <div class="text-xs font-medium sm:text-right"
+    <span class="text-xs font-medium sm:text-right"
          style="color: {selected ? $colorStore.primary : $colorStore.muted};">
       {selected ? 'Selected' : 'Click to select'}
-    </div>
-  </div>
+    </span>
+  </span>
 
   <!-- Hover effect overlay -->
-  <div class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-200 pointer-events-none"
-       style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
+  <span
+    class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-200 pointer-events-none block"
+    style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});"></span>
 </button>
 
 <style>
