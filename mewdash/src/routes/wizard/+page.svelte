@@ -5,7 +5,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 -->
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { fade, fly, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { colorStore } from "$lib/stores/colorStore";
@@ -891,20 +891,36 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     await loadExistingConfigurations();
   });
 
-  // Reload wizard data when instance changes
+  // Track the last instance to detect changes
+  let lastInstancePort = $state<number | null>(null);
+
+  // Reload wizard data when instance changes (but not when guild changes from loading)
   $effect(() => {
-    if ($currentInstance && guild) {
-      // Reload all data when instance changes
-      (async () => {
-        await loadWizardData();
+    const currentPort = $currentInstance?.port;
 
-        if (data.wizardType === "first-time") {
-          await loadPermissions();
-        }
+    if (currentPort && currentPort !== lastInstancePort && lastInstancePort !== null) {
+      // Instance changed - reload all data
+      untrack(() => {
+        lastInstancePort = currentPort;
+      });
 
-        await loadAvailableChannels();
-        await loadExistingConfigurations();
-      })();
+      untrack(() => {
+        (async () => {
+          await loadWizardData();
+
+          if (data.wizardType === "first-time") {
+            await loadPermissions();
+          }
+
+          await loadAvailableChannels();
+          await loadExistingConfigurations();
+        })();
+      });
+    } else if (currentPort && lastInstancePort === null) {
+      // First load - just track the instance
+      untrack(() => {
+        lastInstancePort = currentPort;
+      });
     }
   });
 
