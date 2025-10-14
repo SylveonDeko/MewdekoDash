@@ -900,8 +900,18 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   // Reload wizard data when instance changes
   $effect(() => {
-    if ($currentInstance) {
-      loadWizardData();
+    if ($currentInstance && guild) {
+      // Reload all data when instance changes
+      (async () => {
+        await loadWizardData();
+
+        if (data.wizardType === "first-time") {
+          await loadPermissions();
+        }
+
+        await loadAvailableChannels();
+        await loadExistingConfigurations();
+      })();
     }
   });
 
