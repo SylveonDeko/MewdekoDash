@@ -3,7 +3,7 @@
 
 
   import { onMount } from "svelte";
-  import { giveawaysApi, clientApi, type Giveaway } from "$lib/api/index.ts";
+  import { clientApi, type Giveaway, giveawaysApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
   import { goto } from "$app/navigation";
@@ -15,6 +15,8 @@
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
 
+  let { data } = $props();
+
   let giveaways: Giveaway[] = $state([]);
   let expandedGiveaway: number | null = $state(null);
   let loading = $state(true);
@@ -23,6 +25,7 @@
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
   let guildRoles: Array<{ id: string; name: string }> = $state([]);
+  let guildChannels: Array<{ id: string; name: string }> = $state([]);
   let selectedRoles: string[] = $state([]);
   let entryMethod: "reaction" | "button" | "captcha" = $state("reaction");
 
@@ -103,6 +106,19 @@
     }
   }
 
+  async function loadGuildChannels() {
+    try {
+      if (!$currentGuild?.id) throw new Error("No guild selected");
+      const channels = await clientApi.getTextChannels($currentGuild.id);
+      guildChannels = channels.map((channel: any) => ({
+        id: channel.id.toString(),
+        name: channel.name
+      }));
+    } catch (err) {
+      logger.error("Failed to fetch guild channels:", err);
+    }
+  }
+
   async function createGiveaway() {
     try {
       const validationError = validateGiveaway();
@@ -111,7 +127,17 @@
         return;
       }
       if (!$currentGuild?.id) throw new Error("No guild selected");
+      if (!data?.user?.id) throw new Error("User not authenticated");
+
+      // Set required fields
       newGiveaway.serverId = BigInt($currentGuild.id);
+      newGiveaway.userId = BigInt(data.user.id);
+
+      // Set default emote if none provided
+      if (!newGiveaway.emote || newGiveaway.emote.trim() === "") {
+        newGiveaway.emote = "🎉";
+      }
+
       await giveawaysApi.createGiveaway($currentGuild.id, newGiveaway);
       showNotificationMessage("Giveaway created successfully", "success");
       await fetchGiveaways();
@@ -206,12 +232,13 @@
     if ($currentGuild) {
       fetchGiveaways();
       loadGuildRoles();
+      loadGuildChannels();
     }
   });
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
-    await Promise.all([fetchGiveaways(), loadGuildRoles()]);
+    await Promise.all([fetchGiveaways(), loadGuildRoles(), loadGuildChannels()]);
   });
 </script>
 
@@ -261,8 +288,8 @@
     {#if activeTab === 'create'}
       <!-- Create New Giveaway Section -->
       <section
-        class=" rounded-xl border p-6 mb-8 transition-all"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        class="rounded-2xl border p-6 md:p-8 mb-8 shadow-2xl transition-all"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
               border-color: {colors.primary}30;"
         transition:fade
       >
@@ -313,25 +340,24 @@
               >
             </div>
 
-            <!-- Channel ID -->
+            <!-- Channel Selection -->
             <div class="space-y-2 md:col-span-2">
-              <label for="giveaway-channel" class="flex items-center gap-2 text-sm font-medium"
+              <span id="giveaway-channel-label" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-hashtag" style="color: {colors.primary}; font-size: 16px;"></i>
                 Channel
-              </label>
-              <input
-                id="giveaway-channel"
-                bind:value={newGiveaway.channelId}
-                placeholder="Enter channel ID"
-                class="w-full p-3 rounded-lg border focus:ring-2"
-                style="background: {colors.primary}08;
-                      border-color: {colors.primary}30;
-                      color: {colors.text}"
-                required
-                inputmode="numeric"
-                pattern="[0-9]*"
-              >
+              </span>
+              <div class="min-h-[44px]">
+                <DiscordSelector
+                  type="channel"
+                  options={guildChannels}
+                  selected={newGiveaway.channelId?.toString() || null}
+                  placeholder="Select a channel"
+                  onchange={(detail) => {
+                    newGiveaway.channelId = detail.selected && typeof detail.selected === 'string' ? BigInt(detail.selected) : BigInt(0);
+                  }}
+                />
+              </div>
             </div>
 
             <!-- Duration -->
@@ -365,7 +391,7 @@
             </div>
 
             <!-- Message Count Requirement -->
-            <div class="space-y-2 md:col-span-2">
+            <div class="space-y-2">
               <label for="giveaway-message-count" class="flex items-center gap-2 text-sm font-medium"
                      style="color: {colors.text}">
                 <i class="fa-solid fa-message" style="color: {colors.primary}; font-size: 16px;"></i>
@@ -385,6 +411,27 @@
                 pattern="[0-9]*"
               >
             </div>
+
+            <!-- Reaction Emoji -->
+            <div class="space-y-2">
+              <label for="giveaway-emote" class="flex items-center gap-2 text-sm font-medium"
+                     style="color: {colors.text}">
+                <i class="fa-solid fa-face-smile" style="color: {colors.primary}; font-size: 16px;"></i>
+                Reaction Emoji
+              </label>
+              <input
+                id="giveaway-emote"
+                bind:value={newGiveaway.emote}
+                placeholder="🎉 or :tada:"
+                class="w-full p-3 rounded-lg border focus:ring-2"
+                style="background: {colors.primary}08;
+                      border-color: {colors.primary}30;
+                      color: {colors.text}"
+              >
+              <p class="text-xs" style="color: {colors.muted}">
+                Enter an emoji (🎉) or Discord emoji name (:tada:)
+              </p>
+            </div>
           </div>
 
           <!-- Entry Method -->
@@ -401,9 +448,11 @@
               ] as method}
                 <button
                   type="button"
-                  class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200"
-                  style="background: {entryMethod === method.id ? colors.primary : `${colors.primary}20`};
-                        color: {entryMethod === method.id ? colors.text : colors.muted}"
+                  aria-label="Select {method.label} entry method"
+                  class="flex items-center gap-2 px-4 py-3 rounded-xl transition-all hover:scale-[1.02] font-medium"
+                  style="background: {entryMethod === method.id ? `${colors.primary}20` : 'transparent'};
+                        color: {entryMethod === method.id ? colors.primary : colors.muted};
+                        border: 1px solid {entryMethod === method.id ? `${colors.primary}30` : `${colors.primary}15`};"
                   onclick={() => handleEntryMethodChange(method.id === 'reaction' ? 'reaction' : method.id === 'button' ? 'button' : 'captcha')}
                 >
                   <i class="fa-solid {method.icon}" style="font-size: 16px;"></i>
@@ -415,10 +464,9 @@
 
           <button
             type="submit"
-            class="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200
-                  flex items-center justify-center gap-2"
-            style="background: {colors.primary};
-                  color: {colors.text}"
+            aria-label="Create giveaway"
+            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px] w-full"
+            style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
           >
             <i class="fa-solid fa-trophy" style="font-size: 20px;"></i>
             Create Giveaway
@@ -430,8 +478,8 @@
     {#if activeTab === 'active'}
       <!-- Active Giveaways -->
       <section
-        class=" rounded-xl border p-6"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
               border-color: {colors.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">
@@ -517,10 +565,12 @@
 
                     {#if !giveaway.ended}
                       <button
-                        class="mt-6 w-full py-2 px-4 rounded-lg font-medium transition-all duration-200
+                        aria-label="End giveaway"
+                        class="mt-6 w-full px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]
                               flex items-center justify-center gap-2"
                         style="background: {colors.accent}20;
-                              color: {colors.accent}"
+                              color: {colors.accent};
+                              border: 1px solid {colors.accent}30;"
                         onclick={() => endGiveaway(giveaway.id)}
                       >
                         <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
@@ -539,8 +589,8 @@
     {#if activeTab === 'ended'}
       <!-- Ended Giveaways would go here -->
       <section
-        class=" rounded-xl border p-6"
-        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+        class="rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+        style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15, {colors.gradientEnd}10);
                border-color: {colors.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-6 flex items-center gap-2" style="color: {colors.text}">

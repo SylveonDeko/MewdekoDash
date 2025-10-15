@@ -114,7 +114,7 @@
       saving = true;
       error = null;
       await guildApi.setBotGuildProfile($currentGuild.id, {
-        avatar: avatarInput.trim()
+        avatarUrl: avatarInput.trim()
       });
       success = "Avatar updated successfully!";
       setTimeout(() => success = null, 3000);
@@ -136,7 +136,7 @@
       saving = true;
       error = null;
       await guildApi.setBotGuildProfile($currentGuild.id, {
-        banner: bannerInput.trim()
+        bannerUrl: bannerInput.trim()
       });
       success = "Banner updated successfully!";
       setTimeout(() => success = null, 3000);

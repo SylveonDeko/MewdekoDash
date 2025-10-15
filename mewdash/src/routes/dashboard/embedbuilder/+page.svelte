@@ -3,22 +3,22 @@
 
 
   import { onMount } from "svelte";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { chatTriggersApi } from "$lib/api/index.ts";
-    import {fade} from "svelte/transition";
-    import {logger} from "$lib/logger.ts";
-    import {colorStore} from "$lib/stores/colorStore.ts";
+  import { fade } from "svelte/transition";
+  import { logger } from "$lib/logger.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
 
-    import TemplateGallery from "$lib/components/specialized/TemplateGallery.svelte";
-    import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
-    import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
-    import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
-    import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
-    import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import TemplateGallery from "$lib/components/specialized/TemplateGallery.svelte";
+  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
+  import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
+  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
+  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
-    interface Author {
+  interface Author {
     name: string;
     url: string;
     icon_url: string;
@@ -881,7 +881,7 @@
 <!-- Trigger Select Modal -->
 {#if showTriggerSelect}
   <div
-    class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+    class="fixed background-blur-md inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
     onclick={(e) => { if (e.target === e.currentTarget) showTriggerSelect = false; }}
     onkeydown={(e) => e.key === 'Escape' && (showTriggerSelect = false)}
     role="dialog"
