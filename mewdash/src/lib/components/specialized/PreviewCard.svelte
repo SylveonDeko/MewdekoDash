@@ -2,14 +2,14 @@
 https://svelte.dev/e/css_expected_identifier -->
 <!-- PreviewCard.svelte -->
 <script lang="ts">
-    import {marked} from "marked";
-    import DOMPurify from "dompurify";
+  import { marked } from "marked";
+  import DOMPurify from "dompurify";
 
-    // Props
+  // Props
     interface Props {
       content?: string;
       embeds?: any[];
-      components?: any[];
+      componentRows?: any[];
       showEmpty?: boolean;
       emptyMessage?: string;
     }
@@ -17,7 +17,7 @@ https://svelte.dev/e/css_expected_identifier -->
     let {
       content = "",
       embeds = [],
-      components = [],
+      componentRows = [],
       showEmpty = true,
       emptyMessage = "Your embed preview will appear here"
     }: Props = $props();
@@ -27,8 +27,17 @@ https://svelte.dev/e/css_expected_identifier -->
     return DOMPurify.sanitize(marked.parse(text) as string);
   }
 
-  function parseEmojis(text: string): string {
-    return text; // Simplified for now
+    // Parse Discord emoji format for rendering
+    function parseEmojiForDisplay(emojiString: string): { url: string; name: string } | null {
+      if (!emojiString) return null;
+      const match = emojiString.match(/<(a?):([^:]+):(\d+)>/);
+      if (!match) return null;
+
+      const [, animatedFlag, name, id] = match;
+      const animated = animatedFlag === "a";
+      const url = `https://cdn.discordapp.com/emojis/${id}.${animated ? "png" : "png"}?size=32&quality=lossless`;
+
+      return { url, name };
   }
 
   function getButtonColorClass(style: number): string {
@@ -42,37 +51,23 @@ https://svelte.dev/e/css_expected_identifier -->
     }
   }
 
-  function getComponentRows(components: any[]): any[][] {
-    const rows: any[][] = [];
-    let currentRow: any[] = [];
-
-    for (const component of components) {
-      if (component.isSelect) {
-        if (currentRow.length > 0) {
-          rows.push([...currentRow]);
-          currentRow = [];
-        }
-        rows.push([component]);
-      } else {
-        currentRow.push(component);
-        if (currentRow.length === 5) {
-          rows.push([...currentRow]);
-          currentRow = [];
-        }
-      }
-    }
-
-    if (currentRow.length > 0) {
-      rows.push(currentRow);
-    }
-
-    return rows;
-  }
-
   // Check if we have any content to display
     let hasContent = $derived(content.trim() ||
       embeds.some(e => e.title || e.description || e.fields?.length > 0) ||
-      components.length > 0);
+      componentRows.some(row => row.components && row.components.length > 0));
+
+    // State for select menu dropdowns
+    let openSelectMenus = $state<Set<number>>(new Set());
+
+    function toggleSelectMenu(index: number) {
+      const newSet = new Set(openSelectMenus);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      openSelectMenus = newSet;
+    }
 </script>
 
 <div class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px] preview-content">
@@ -176,22 +171,25 @@ https://svelte.dev/e/css_expected_identifier -->
     {/each}
 
     <!-- Components Preview -->
-    {#if components.length > 0}
+    {#if componentRows.length > 0}
       <div class="mt-4 space-y-2">
-        {#each getComponentRows(components) as row}
-          <div class="flex flex-wrap justify-start gap-2">
-            {#each row as component}
+        {#each componentRows as row, rowIndex (row.rowKey)}
+          {#if row.components && row.components.length > 0}
+            <div class="flex flex-wrap justify-start gap-2">
+              {#each row.components as component, compIndex (component.componentKey)}
               {#if component.isSelect}
                 <!-- Select Menu -->
-                <div class="w-full">
+                {@const selectIndex = rowIndex * 100 + compIndex}
+                {@const isOpen = openSelectMenus.has(selectIndex)}
+                <div class="w-full relative">
                   <button
-                          class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
-                    disabled
+                    class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left hover:bg-[#3a3d44] transition-colors"
+                    onclick={() => toggleSelectMenu(selectIndex)}
                   >
                     <span class="placeholder px-3 py-2">
                       {component.displayName || "Select an option..."}
                     </span>
-                    <div class="icon-container px-2">
+                    <div class="icon-container px-2 transition-transform" class:rotate-180={isOpen}>
                       <svg
                         aria-hidden="true"
                         role="img"
@@ -209,6 +207,34 @@ https://svelte.dev/e/css_expected_identifier -->
                       </svg>
                     </div>
                   </button>
+
+                  <!-- Options Dropdown -->
+                  {#if isOpen && component.options?.length > 0}
+                    <div
+                      class="absolute top-full left-0 right-0 mt-1 bg-[#2F3136] rounded-sm border border-[#202225] shadow-lg z-10 max-h-60 overflow-y-auto">
+                      {#each component.options as option}
+                        <div
+                          class="px-3 py-2 hover:bg-[#3a3d44] cursor-pointer transition-colors border-b border-[#202225] last:border-b-0">
+                          <div class="flex items-center gap-2">
+                            {#if option.emoji}
+                              {@const parsedEmoji = parseEmojiForDisplay(option.emoji)}
+                              {#if parsedEmoji}
+                                <img src={parsedEmoji.url} alt={parsedEmoji.name} class="w-4 h-4" />
+                              {:else}
+                                <span>{option.emoji}</span>
+                              {/if}
+                            {/if}
+                            <div class="flex-1">
+                              <div class="font-medium text-sm">{option.name}</div>
+                              {#if option.description}
+                                <div class="text-xs text-gray-400">{option.description}</div>
+                              {/if}
+                            </div>
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
               {:else}
                 <!-- Button -->
@@ -220,17 +246,25 @@ https://svelte.dev/e/css_expected_identifier -->
                   <div class="flex items-center justify-center">
                     <div class="flex items-center gap-2">
                       {#if component.emoji}
-                        <span class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
-                          {@html parseEmojis(component.emoji)}
-                        </span>
+                        {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
+                        {#if parsedEmoji}
+                          <img src={parsedEmoji.url} alt={parsedEmoji.name}
+                               class="w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]" />
+                        {:else}
+                          <span
+                            class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
+                            {component.emoji}
+                          </span>
+                        {/if}
                       {/if}
                       <span class="truncate">{component.displayName}</span>
                     </div>
                   </div>
                 </button>
               {/if}
-            {/each}
-          </div>
+              {/each}
+            </div>
+          {/if}
         {/each}
       </div>
     {/if}

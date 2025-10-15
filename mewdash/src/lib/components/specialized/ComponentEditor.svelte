@@ -1,29 +1,56 @@
 <!-- ComponentEditor.svelte -->
 <script lang="ts">
-    import {colorStore} from "$lib/stores/colorStore";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
+  import { clientApi } from "$lib/api/client/client";
+  import type { GuildEmojiInfo } from "$lib/api/client/models";
+  import type { DiscordUser } from "$lib/types/discord";
 
 
-    interface Props {
+  interface Props {
     // Props
     component: any;
     triggers?: any[];
     isEditing?: boolean;
+      user?: DiscordUser;
       onupdate?: (detail: { component: any }) => void;
       onremove?: (detail: { componentKey: string }) => void;
       onedit?: (detail: { component: any }) => void;
-      onselectTrigger?: (detail: { component: any; optionIndex?: number }) => void;
+      onduplicate?: (detail: { componentKey: string }) => void;
   }
 
     let {
       component = $bindable(),
       triggers = [],
       isEditing = false,
+      user,
       onupdate,
       onremove,
       onedit,
-      onselectTrigger
+      onduplicate
     }: Props = $props();
+
+    // Guild emojis state
+    let guildEmojis = $state<GuildEmojiInfo[]>([]);
+    let emojisLoading = $state(false);
+
+    // Load guild emojis when user is available
+    $effect(() => {
+      if (user?.id && !emojisLoading && guildEmojis.length === 0) {
+        emojisLoading = true;
+        clientApi.getEmojis(BigInt(user.id), false)
+          .then(data => {
+            guildEmojis = data;
+          })
+          .catch(err => {
+            console.error("Failed to load guild emojis:", err);
+          })
+          .finally(() => {
+            emojisLoading = false;
+          });
+      }
+    });
 
   // Button style options
   const buttonStyles = [
@@ -100,6 +127,18 @@
     onupdate?.({ component: updatedComponent });
   }
 
+    function duplicateOption(index: number) {
+      if (!component.options) return;
+      if (component.options.length >= 25) return;
+
+      const updatedComponent = { ...component };
+      const optionToDuplicate = JSON.parse(JSON.stringify(updatedComponent.options[index]));
+      updatedComponent.options.splice(index + 1, 0, optionToDuplicate);
+
+      component = updatedComponent;
+      onupdate?.({ component: updatedComponent });
+    }
+
   function updateOption(index: number, field: string, value: any) {
     const updatedComponent = { ...component };
     if (!updatedComponent.options[index]) return;
@@ -120,11 +159,6 @@
     }
   }
 
-  function getSelectedTrigger(triggerId: string | null) {
-    if (!triggerId) return null;
-    return triggers.find(t => t.id.toString() === triggerId);
-  }
-
   function isValidUrl(url: string): boolean {
     if (!url) return true;
     try {
@@ -135,11 +169,24 @@
     }
   }
 
+    // Parse emoji for rendering
+    function parseEmojiForDisplay(emojiString: string): { url: string; name: string } | null {
+      if (!emojiString) return null;
+      const match = emojiString.match(/<(a?):([^:]+):(\d+)>/);
+      if (!match) return null;
+
+      const [, animatedFlag, name, id] = match;
+      const animated = animatedFlag === "a";
+      const url = `https://cdn.discordapp.com/emojis/${id}.${animated ? "png" : "png"}?size=32&quality=lossless`;
+
+      return { url, name };
+    }
+
   // Validation
-  let isButtonValid = $derived(component.isSelect || 
+    let isButtonValid = $derived(component.isSelect ||
     (component.style === 5 ? isValidUrl(component.url) : component.id !== null));
-  
-  let isSelectValid = $derived(!component.isSelect || 
+
+    let isSelectValid = $derived(!component.isSelect ||
     (component.options && component.options.every((opt: any) => opt.id && opt.description?.trim())));
 
   let isValid = $derived(isButtonValid && isSelectValid);
@@ -147,39 +194,61 @@
 
 {#if isEditing}
   <!-- Edit Mode -->
-  <div class="space-y-6 p-6 border rounded-xl" 
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
-              border-color: {$colorStore.primary}30;">
-    
+  <div class="space-y-4 sm:space-y-6"
+       style="color: {$colorStore.text};">
+
     <!-- Header -->
     <div class="flex justify-between items-center">
-      <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
+      <h3 class="text-base sm:text-lg font-semibold" style="color: {$colorStore.text};">
         Edit {component.isSelect ? 'Select Menu' : 'Button'}
       </h3>
-      
-      <div class="flex items-center gap-2">
+
+      <div class="flex items-center gap-1 sm:gap-2">
         <!-- Validation Status -->
-        <div class="w-3 h-3 rounded-full" 
+        <div class="w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full"
              style="background: {isValid ? '#57F287' : '#ED4245'};"
              title="{isValid ? 'Valid' : 'Has validation errors'}">
         </div>
+
+        <!-- Duplicate Button -->
+        <button
+          aria-label="Duplicate component"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+          onclick={() => onduplicate?.({ componentKey: component.componentKey })}
+        >
+          <i class="fa-solid fa-copy" style="font-size: 10px;"></i>
+          <span class="hidden sm:inline">Duplicate</span>
+        </button>
+
+        <!-- Delete Button -->
+        <button
+          aria-label="Delete component"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
+          onclick={() => onremove?.({ componentKey: component.componentKey })}
+        >
+          <i class="fa-solid fa-trash" style="font-size: 10px;"></i>
+          <span class="hidden sm:inline">Delete</span>
+        </button>
       </div>
     </div>
 
     {#if !component.isSelect}
       <!-- Button Fields -->
-      <div class="space-y-4">
+      <div class="space-y-3 sm:space-y-4">
         <!-- Display Name -->
         <div>
-          <label for="input-6378" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <label for="input-6378" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                 style="color: {$colorStore.text};">
             Display Name
-            <span class="text-xs ml-2" style="color: {$colorStore.muted};">
+            <span class="text-[10px] sm:text-xs ml-1 sm:ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/80
             </span>
           </label>
           <input id="input-6378"
             type="text"
-            class="w-full px-3 py-2 rounded-lg border"
+                 class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="Button text"
             value={component.displayName || ''}
@@ -190,7 +259,8 @@
 
         <!-- Style -->
         <div>
-          <span id="button-style-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <span id="button-style-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                style="color: {$colorStore.text};">
             Button Style
           </span>
           <DiscordSelector
@@ -209,28 +279,33 @@
 
         <!-- Emoji -->
         <div>
-          <label for="input-8959" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-            Emoji (optional)
+          <label for="button-emoji-picker" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                 style="color: {$colorStore.text};">
+            Emoji <span class="text-[10px] sm:text-xs">(optional)</span>
           </label>
-          <input id="input-8959"
-            type="text"
-            class="w-full px-3 py-2 rounded-lg border"
-            style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            placeholder="😀"
-            value={component.emoji || ''}
-                 oninput={(e) => handleInput(e, 'emoji')}
-          >
+          <EmojiPicker
+            {guildEmojis}
+            selected={component.emoji || null}
+            multiple={false}
+            placeholder="Select an emoji..."
+            searchable={true}
+            groupByGuild={true}
+            onchange={(detail) => {
+              updateComponent('emoji', detail.selected || '');
+            }}
+          />
         </div>
 
         {#if component.style === 5}
           <!-- URL for Link Button -->
           <div>
-            <label for="input-4138" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <label for="input-4138" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                   style="color: {$colorStore.text};">
               URL
             </label>
             <input id="input-4138"
               type="url"
-              class="w-full px-3 py-2 rounded-lg border"
+                   class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
                    style="background: {$colorStore.primary}10;
                      border-color: {isValidUrl(component.url) ? $colorStore.primary + '30' : '#ED4245'};
                      color: {$colorStore.text};"
@@ -239,66 +314,51 @@
                    oninput={(e) => handleInput(e, 'url')}
             >
             {#if component.url && !isValidUrl(component.url)}
-              <p class="text-xs mt-1 text-red-400">Please enter a valid URL</p>
+              <p class="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-red-400">Please enter a valid URL</p>
             {/if}
           </div>
         {:else}
           <!-- Trigger Selection -->
           <div>
-            <label for="input-9302" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+            <span id="trigger-action-label" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                  style="color: {$colorStore.text};">
               Trigger Action
-            </label>
-            
-            {#if component.id}
-              {@const selectedTrigger = getSelectedTrigger(component.id)}
-              <div class="p-3 rounded-lg border" 
-                   style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <div class="font-medium text-sm" style="color: {$colorStore.text};">
-                      {selectedTrigger?.trigger || 'Unknown Trigger'}
-                    </div>
-                    <div class="text-xs truncate" style="color: {$colorStore.muted};">
-                      {selectedTrigger?.response || 'No response'}
-                    </div>
-                  </div>
-                  <button aria-label="Change trigger"
-                          class="ml-2 p-1 rounded-sm hover:bg-black/10"
-                          onclick={() => onselectTrigger?.({ component })}
-                    title="Change trigger"
-                  >
-                    <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
-                  </button>
-                </div>
-              </div>
-            {:else}
-              <button
-                class="w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 border border-dashed"
-                style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                onclick={() => onselectTrigger?.({ component })}
-              >
-                <i class="fa-solid fa-bolt inline mr-2" style="font-size: 16px;"></i>
-                Select Trigger
-              </button>
-            {/if}
+            </span>
+            <div class="min-h-[40px] sm:min-h-[50px]">
+              <DiscordSelector
+                type="custom"
+                customIcon="fa-bolt"
+                options={triggers.map(t => ({
+                  id: t.id.toString(),
+                  name: t.trigger || 'Unnamed trigger',
+                  label: t.response || 'No response'
+                }))}
+                selected={component.id}
+                placeholder="Select a trigger"
+                onchange={(detail) => {
+                  updateComponent('id', detail.selected);
+                }}
+              />
+            </div>
           </div>
         {/if}
       </div>
 
     {:else}
       <!-- Select Menu Fields -->
-      <div class="space-y-4">
+      <div class="space-y-3 sm:space-y-4">
         <!-- Placeholder Text -->
         <div>
-          <label for="input-9302" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+          <label for="input-9302" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                 style="color: {$colorStore.text};">
             Placeholder Text
-            <span class="text-xs ml-2" style="color: {$colorStore.muted};">
+            <span class="text-[10px] sm:text-xs ml-1 sm:ml-2" style="color: {$colorStore.muted};">
               {component.displayName?.length || 0}/150
             </span>
           </label>
           <input id="input-9302"
             type="text"
-            class="w-full px-3 py-2 rounded-lg border"
+                 class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
             style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
             placeholder="Choose an option..."
             value={component.displayName || ''}
@@ -308,31 +368,35 @@
         </div>
 
         <!-- Min/Max Options -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-2 sm:gap-4">
           <div>
-            <label for="input-1535" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-              Min Options
+            <label for="input-1535" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                   style="color: {$colorStore.text};">
+              <span class="hidden sm:inline">Min Options</span>
+              <span class="sm:hidden">Min</span>
             </label>
             <input id="input-1535"
               type="number"
               min="1"
               max="25"
-              class="w-full px-3 py-2 rounded-lg border"
+                   class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.minOptions || 1}
                    oninput={(e) => handleNumberInput(e, 'minOptions', '1')}
             >
           </div>
-          
+
           <div>
-            <label for="input-2620" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-              Max Options
+            <label for="input-2620" class="block text-xs sm:text-sm font-medium mb-1 sm:mb-2"
+                   style="color: {$colorStore.text};">
+              <span class="hidden sm:inline">Max Options</span>
+              <span class="sm:hidden">Max</span>
             </label>
             <input id="input-2620"
               type="number"
               min="1"
               max="25"
-              class="w-full px-3 py-2 rounded-lg border"
+                   class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg border text-sm"
               style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               value={component.maxOptions || 1}
                    oninput={(e) => handleNumberInput(e, 'maxOptions', '1')}
@@ -342,51 +406,64 @@
 
         <!-- Options -->
         <div>
-          <div class="flex justify-between items-center mb-4">
-            <label for="input-9558" class="text-sm font-medium" style="color: {$colorStore.text};">
+          <div class="flex justify-between items-center mb-3 sm:mb-4">
+            <label for="input-9558" class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
               Options ({component.options?.length || 0}/25)
             </label>
             <button
-              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1"
-              style="background: {$colorStore.primary}; color: {$colorStore.text};"
+              aria-label="Add option"
+              class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-1 disabled:opacity-50"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               disabled={(component.options?.length || 0) >= 25}
               onclick={addOption}
             >
-              <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
-              Add Option
+              <i class="fa-solid fa-plus" style="font-size: 11px;"></i>
+              <span class="hidden sm:inline">Add Option</span>
+              <span class="sm:hidden">Add</span>
             </button>
           </div>
 
-          <div class="space-y-3">
+          <div class="space-y-2 sm:space-y-3">
             {#each (component.options || []) as option, index}
-              <div class="p-4 border rounded-lg" 
+              <div class="p-3 sm:p-4 border rounded-md sm:rounded-lg"
                    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                
-                <div class="flex justify-between items-center mb-3">
-                  <span class="text-sm font-medium" style="color: {$colorStore.text};">
+
+                <div class="flex justify-between items-center mb-2 sm:mb-3">
+                  <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text};">
                     Option {index + 1}
                   </span>
-                  <button aria-label="Remove option"
-                          class="p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
-                    onclick={() => removeOption(index)}
-                    title="Remove option"
-                  >
-                    <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
-                  </button>
+                  <div class="flex gap-1">
+                    <button aria-label="Duplicate option"
+                            class="p-0.5 sm:p-1 rounded-sm hover:bg-white/10 transition-colors"
+                            style="color: {$colorStore.primary};"
+                            onclick={() => duplicateOption(index)}
+                            title="Duplicate option"
+                    >
+                      <i class="fa-solid fa-copy" style="font-size: 12px;"></i>
+                    </button>
+                    <button aria-label="Remove option"
+                            class="p-0.5 sm:p-1 rounded-sm text-red-400 hover:bg-red-400/10 transition-colors"
+                            onclick={() => removeOption(index)}
+                            title="Remove option"
+                    >
+                      <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3">
                   <!-- Option Name -->
                   <div>
-                    <label for="input-9558" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="input-9558" class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
+                           style="color: {$colorStore.text};">
                       Name
-                      <span class="ml-2" style="color: {$colorStore.muted};">
+                      <span class="ml-1 sm:ml-2 text-[9px] sm:text-[10px]" style="color: {$colorStore.muted};">
                         {option.name?.length || 0}/100
                       </span>
                     </label>
                     <input id="input-9558"
                       type="text"
-                      class="w-full px-3 py-2 rounded-sm border text-sm"
+                           class="w-full px-2 sm:px-3 py-1 sm:py-2 rounded-sm border text-xs sm:text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Option name"
                       value={option.name || ''}
@@ -397,15 +474,16 @@
 
                   <!-- Option Description -->
                   <div>
-                    <label for="input-9067" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <label for="input-9067" class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
+                           style="color: {$colorStore.text};">
                       Description
-                      <span class="ml-2" style="color: {$colorStore.muted};">
+                      <span class="ml-1 sm:ml-2 text-[9px] sm:text-[10px]" style="color: {$colorStore.muted};">
                         {option.description?.length || 0}/100
                       </span>
                     </label>
                     <input id="input-9067"
                       type="text"
-                      class="w-full px-3 py-2 rounded-sm border text-sm"
+                           class="w-full px-2 sm:px-3 py-1 sm:py-2 rounded-sm border text-xs sm:text-sm"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Option description"
                       value={option.description || ''}
@@ -416,57 +494,47 @@
 
                   <!-- Option Emoji -->
                   <div>
-                    <label for="input-8959" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
-                      Emoji (optional)
+                    <label for="option-emoji-picker-{index}"
+                           class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
+                           style="color: {$colorStore.text};">
+                      Emoji <span class="text-[9px] sm:text-[10px]">(optional)</span>
                     </label>
-                    <input id="input-8959"
-                      type="text"
-                      class="w-full px-3 py-2 rounded-sm border text-sm"
-                      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="😀"
-                      value={option.emoji || ''}
-                           oninput={(e) => handleOptionInput(e, index, 'emoji')}
-                    >
+                    <EmojiPicker
+                      {guildEmojis}
+                      selected={option.emoji || null}
+                      multiple={false}
+                      placeholder="Select an emoji..."
+                      searchable={true}
+                      groupByGuild={true}
+                      onchange={(detail) => {
+                        updateOption(index, 'emoji', detail.selected || '');
+                      }}
+                    />
                   </div>
 
                   <!-- Option Trigger -->
                   <div>
-                    <label for="option-id" class="block text-xs font-medium mb-1" style="color: {$colorStore.text};">
+                    <span id="option-trigger-label-{index}"
+                          class="block text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1"
+                          style="color: {$colorStore.text};">
                       Trigger Action
-                    </label>
-                    
-                    {#if option.id}
-                      {@const selectedTrigger = getSelectedTrigger(option.id)}
-                        <div class="p-2 rounded-sm border text-sm"
-                           style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;">
-                        <div class="flex justify-between items-start">
-                          <div class="flex-1">
-                            <div class="font-medium" style="color: {$colorStore.text};">
-                              {selectedTrigger?.trigger || 'Unknown Trigger'}
-                            </div>
-                            <div class="text-xs truncate" style="color: {$colorStore.muted};">
-                              {selectedTrigger?.response || 'No response'}
-                            </div>
-                          </div>
-                          <button aria-label="Change trigger"
-                                  class="ml-1 p-1 rounded-sm hover:bg-black/10"
-                                  onclick={() => onselectTrigger?.({ component, optionIndex: index })}
-                            title="Change trigger"
-                          >
-                            <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
-                          </button>
-                        </div>
-                      </div>
-                    {:else}
-                      <button
-                              class="w-full px-3 py-2 rounded-sm border border-dashed text-sm transition-all duration-200"
-                        style="border-color: {$colorStore.primary}30; color: {$colorStore.primary};"
-                              onclick={() => onselectTrigger?.({ component, optionIndex: index })}
-                      >
-                        <i class="fa-solid fa-bolt inline mr-1" style="font-size: 14px;"></i>
-                        Select Trigger
-                      </button>
-                    {/if}
+                    </span>
+                    <div class="min-h-[36px] sm:min-h-[44px]">
+                      <DiscordSelector
+                        type="custom"
+                        customIcon="fa-bolt"
+                        options={triggers.map(t => ({
+                          id: t.id.toString(),
+                          name: t.trigger || 'Unnamed trigger',
+                          label: t.response || 'No response'
+                        }))}
+                        selected={option.id}
+                        placeholder="Select a trigger"
+                        onchange={(detail) => {
+                          updateOption(index, 'id', detail.selected);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -474,9 +542,9 @@
           </div>
 
           {#if !component.options || component.options.length === 0}
-            <div class="text-center py-8">
-              <p class="text-sm" style="color: {$colorStore.muted};">
-                No options added yet. Click "Add Option" to get started.
+            <div class="text-center py-6 sm:py-8">
+              <p class="text-xs sm:text-sm" style="color: {$colorStore.muted};">
+                No options added yet. Click "Add" to get started.
               </p>
             </div>
           {/if}
@@ -486,10 +554,10 @@
 
     <!-- Validation Messages -->
     {#if !isValid}
-      <div class="p-3 rounded-lg border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20">
-        <div class="text-sm text-red-700 dark:text-red-300">
-          <p class="font-medium mb-1">Validation Errors:</p>
-          <ul class="list-disc list-inside space-y-1">
+      <div class="p-2 sm:p-3 rounded-md sm:rounded-lg border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20">
+        <div class="text-xs sm:text-sm text-red-700 dark:text-red-300">
+          <p class="font-medium mb-0.5 sm:mb-1">Validation Errors:</p>
+          <ul class="list-disc list-inside space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
             {#if !component.isSelect && component.style !== 5 && !component.id}
               <li>Please select a trigger for this button</li>
             {/if}
@@ -514,72 +582,44 @@
 
 {:else}
   <!-- Display Mode -->
-  <div class="group relative">
-    <!-- Component Preview -->
-    {#if component.isSelect}
-      <!-- Select Menu Preview -->
-      <div class="w-full">
-        <button aria-label="Toggle"
-                class="border border-transparent bg-[#2F3136] text-white font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
-          disabled
-        >
-          <span class="placeholder px-3 py-2">
-            {component.displayName || "Select an option..."}
-          </span>
-          <span class="icon-container px-2">
-            <i class="fa-solid fa-chevron-down" style="font-size: 18px;"></i>
-          </span>
-        </button>
-      </div>
-    {:else}
-      <!-- Button Preview -->
-      <button
-        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none gap-2"
-        disabled
-        aria-label={component.displayName}
-      >
-        {#if component.emoji}
-          <span class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
+  {#if component.isSelect}
+    <!-- Select Menu Preview (full width) -->
+    <button aria-label="Toggle"
+            class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left pointer-events-none"
+            disabled
+    >
+      <span class="placeholder px-2 sm:px-3 py-1 sm:py-2">
+        {component.displayName || "Select an option..."}
+      </span>
+      <span class="icon-container px-1.5 sm:px-2">
+        <i class="fa-solid fa-chevron-down text-xs sm:text-base"></i>
+      </span>
+    </button>
+  {:else}
+    <!-- Button Preview -->
+    <button
+      class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2 pointer-events-none"
+      disabled
+      aria-label={component.displayName}
+    >
+      {#if component.emoji}
+        {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
+        {#if parsedEmoji}
+          <img src={parsedEmoji.url} alt={parsedEmoji.name}
+               class="w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em]" />
+        {:else}
+          <span
+            class="emoji w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em] text-[10px] sm:text-xs">
             {component.emoji}
           </span>
         {/if}
-        <span class="truncate">{component.displayName}</span>
-        {#if component.style === 5}
-          <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px;"></i>
-        {/if}
-      </button>
-    {/if}
-
-    <!-- Actions Overlay -->
-    <div class="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
-      <button
-        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-[1.02]"
-        style="background: {$colorStore.primary}; color: {$colorStore.text};"
-        onclick={() => onedit?.({ component })}
-        title="Edit component"
-        aria-label="Edit component"
-      >
-        <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
-      </button>
-
-      <button
-        class="p-1.5 rounded-lg shadow-lg transition-all duration-200 hover:scale-[1.02]"
-        style="background: #ED4245; color: white;"
-        onclick={() => onremove?.({ componentKey: component.componentKey })}
-        title="Remove component"
-        aria-label="Remove component"
-      >
-        <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
-      </button>
-    </div>
-
-    <!-- Validation Indicator -->
-    {#if !isValid}
-      <div class="absolute -top-1 -left-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white"
-           title="Has validation errors">
-      </div>
-    {/if}
-  </div>
+      {/if}
+      <span class="truncate">{component.displayName}</span>
+      {#if component.style === 5}
+        <i class="fa-solid fa-arrow-up-right-from-square text-[9px] sm:text-xs"></i>
+      {/if}
+    </button>
+  {/if}
 {/if}
 
 <style>

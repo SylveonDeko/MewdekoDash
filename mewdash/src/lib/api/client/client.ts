@@ -2,13 +2,14 @@
 import { apiRequest } from "../core";
 import type {
   ChannelType,
-  NeededRoleInfo,
   ForumChannelInfo,
-  ThreadInfo,
+  GuildEmojiInfo,
   GuildMember,
-  UserInfo,
-  MutualGuild,
   HasGuildResponse,
+  MutualGuild,
+  NeededRoleInfo,
+  ThreadInfo,
+  UserInfo
 } from "./models";
 
 /**
@@ -60,7 +61,7 @@ export const clientApi = {
    */
   getVoiceChannels: (guildId: bigint) =>
     apiRequest<Array<{ id: string; name: string }>>(
-      `ClientOperations/channels/${guildId}/2`,
+      `ClientOperations/channels/${guildId}/1`,
     ),
 
   /**
@@ -168,5 +169,16 @@ export const clientApi = {
   ) =>
     apiRequest<ThreadInfo[]>(
       `ClientOperations/forumthreads/${guildId}/${forumId}?includeArchived=${includeArchived}`,
+    ),
+
+  /**
+   * Gets emojis from mutual guilds for the emoji picker
+   * @param userId The user ID
+   * @param adminOnly Whether to only include guilds where user has admin permissions
+   * @returns List of guild emojis grouped by guild
+   */
+  getEmojis: (userId: bigint, adminOnly: boolean = true) =>
+    apiRequest<GuildEmojiInfo[]>(
+      `ClientOperations/emojis/${userId}?adminOnly=${adminOnly}`,
     ),
 };

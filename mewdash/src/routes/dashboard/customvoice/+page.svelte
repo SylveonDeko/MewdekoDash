@@ -4,23 +4,23 @@
 
   import { onMount } from "svelte";
   import {
-    customVoiceApi,
     clientApi,
+    customVoiceApi,
     type CustomVoiceChannelResponse,
     type CustomVoiceConfigurationRequest,
     type CustomVoiceConfigurationResponse
   } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {fade, slide} from "svelte/transition";
-    import type {PageData} from "./$types";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {currentInstance} from "$lib/stores/instanceStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { fade, slide } from "svelte/transition";
+  import type { PageData } from "./$types";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { currentInstance } from "$lib/stores/instanceStore";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
@@ -311,7 +311,8 @@
                 Hub Voice Channel <span style="color: #ef4444">*</span>
               </span>
               <DiscordSelector
-                type="channel"
+                type="custom"
+                customIcon="fa-microphone"
                 options={voiceChannels}
                 bind:selected={hubChannelId}
                 placeholder="Select voice channel..."
@@ -327,7 +328,8 @@
                 Channel Category <span style="color: #ef4444">*</span>
               </span>
               <DiscordSelector
-                type="channel"
+                type="custom"
+                customIcon="fa-folder"
                 options={categories}
                 bind:selected={categoryId}
                 placeholder="Select category..."

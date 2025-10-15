@@ -6,6 +6,7 @@
     clientApi,
     type Form,
     type FormQuestion,
+    type FormQuestionCondition,
     formsApi,
     type FormSubmissionRequest,
     instanceManagementApi
@@ -16,14 +17,14 @@
   import { fade, fly, slide } from "svelte/transition";
   import { Turnstile } from "svelte-turnstile";
   import {
+    containsZalgo,
     escapeHtml,
     isValidEmail,
     isValidNumber,
     isValidUrl,
+    removeZalgoText,
     sanitizeAnswerText,
-    sanitizeUrlPath,
-    containsZalgo,
-    removeZalgoText
+    sanitizeUrlPath
   } from "$lib/utils/sanitize";
 
   interface Props {
@@ -309,7 +310,7 @@
     if (!text) return text;
 
     // Replace {{QX}} with actual answers
-    return text.replace(/\{\{Q(\d+)\}\}/g, (match, questionId) => {
+    return text?.replace(/\{\{Q(\d+)\}\}/g, (match, questionId) => {
       const qId = parseInt(questionId);
       const answer = answers[qId];
 
@@ -437,8 +438,7 @@
 
       // Load guild member data for Discord-based conditionals
       try {
-        const guildIdStr = form.guildId.toString();
-        userGuildMember = await clientApi.getGuildMember(guildIdStr, data.user.id);
+        userGuildMember = await clientApi.getUser(form.guildId, data.user.id);
       } catch (err) {
         console.warn("Could not load guild member data for conditionals:", err);
         // Continue anyway - Discord conditionals will show by default

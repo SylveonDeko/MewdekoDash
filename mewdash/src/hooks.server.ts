@@ -35,7 +35,6 @@ export const handle: Handle = async ({ event, resolve }) => {
       "base-uri 'self'", // Prevent base tag hijacking
       "form-action 'self'", // Restrict form submissions
       "frame-ancestors 'none'", // Prevent clickjacking
-      "upgrade-insecure-requests", // Upgrade HTTP to HTTPS
     ].join("; ");
 
     response.headers.set("Content-Security-Policy", cspDirectives);

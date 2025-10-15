@@ -6,3 +6,4 @@ export * from "./ForumChannelInfo";
 export * from "./GuildMember";
 export * from "./MutualGuild";
 export * from "./GuildInfo";
+export * from "./GuildEmojiInfo";

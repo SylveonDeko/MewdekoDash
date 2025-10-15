@@ -335,7 +335,7 @@
         commandCooldowns = (commandCooldownsData as any) || [];
 
         // Advanced Operations
-        banMessage = (banMessageData as any)?.message || banMessageData || "";
+        banMessage = typeof banMessageData === "string" ? banMessageData : ((banMessageData as any)?.message || "");
 
         // Process commands and modules data
         if (commandsAndModulesData) {
