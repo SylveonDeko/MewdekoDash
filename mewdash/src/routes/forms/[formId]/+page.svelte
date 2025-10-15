@@ -535,9 +535,9 @@
       for (const [qId, answer] of Object.entries(answers)) {
         const questionId = parseInt(qId);
         if (Array.isArray(answer)) {
-          sanitizedAnswers[questionId] = answer.map((a) => sanitizeAnswerText(a));
+          sanitizedAnswers[questionId] = answer.map((a) => sanitizeAnswerText(String(a)));
         } else {
-          sanitizedAnswers[questionId] = sanitizeAnswerText(answer);
+          sanitizedAnswers[questionId] = sanitizeAnswerText(String(answer));
         }
       }
 
@@ -552,11 +552,9 @@
       const result = await formsApi.submitForm(formId, request);
       success = true;
       statusCheckToken = result.statusCheckToken;
-
       // Validate URL before using in href to prevent XSS
       const rawUrl = result.statusCheckUrl || `/forms/status/${result.statusCheckToken}`;
       const validatedUrl = sanitizeUrlPath(rawUrl);
-
       if (!validatedUrl) {
         throw new Error("Invalid status check URL received from server");
       }
@@ -1080,7 +1078,7 @@
                         </ul>
                       {:else}
                         <div class="whitespace-pre-wrap">
-                          {@html escapeHtml(answers[question.id])}
+                          {@html escapeHtml(String(answers[question.id] || ""))}
                         </div>
                       {/if}
                     </div>
@@ -1117,8 +1115,8 @@
         {:else}
           <!-- Questions -->
           <form onsubmit={(e) => { e.preventDefault(); proceedToConfirmation(); }}>
-            <!-- Validation Error Banner -->
-            {#if error && Object.keys(validationErrors).length > 0}
+            <!-- Error Banners -->
+            {#if error}
               <div
                 class=" rounded-xl border p-4 mb-4"
                 style="background: #ef444410; border-color: #ef4444;"
@@ -1129,9 +1127,11 @@
                      style="color: #ef4444; font-size: 20px;"></i>
                   <div>
                     <div class="font-semibold" style="color: #ef4444;">{error}</div>
-                    <div class="text-sm mt-1" style="color: {$colorStore.muted};">
-                      Questions with errors are highlighted in red. Scroll down to see them.
-                    </div>
+                    {#if Object.keys(validationErrors).length > 0}
+                      <div class="text-sm mt-1" style="color: {$colorStore.muted};">
+                        Questions with errors are highlighted in red. Scroll down to see them.
+                      </div>
+                    {/if}
                   </div>
                 </div>
               </div>
