@@ -3,13 +3,14 @@
 
 
   import { onMount } from "svelte";
-  import { clientApi, type Giveaway, giveawaysApi } from "$lib/api/index.ts";
+  import { clientApi, type Giveaway, giveawaysApi, type GuildEmojiInfo } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade, slide } from "svelte/transition";
   import { goto } from "$app/navigation";
   import Notification from "$lib/components/ui/Notification.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import IntervalPicker from "$lib/components/forms/IntervalPicker.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { logger } from "$lib/logger.ts";
@@ -26,6 +27,7 @@
   let notificationType: "success" | "error" = $state("success");
   let guildRoles: Array<{ id: string; name: string }> = $state([]);
   let guildChannels: Array<{ id: string; name: string }> = $state([]);
+  let guildEmojis: GuildEmojiInfo[] = $state([]);
   let selectedRoles: string[] = $state([]);
   let entryMethod: "reaction" | "button" | "captcha" = $state("reaction");
 
@@ -116,6 +118,15 @@
       }));
     } catch (err) {
       logger.error("Failed to fetch guild channels:", err);
+    }
+  }
+
+  async function loadGuildEmojis() {
+    try {
+      if (!data?.user?.id) throw new Error("User not authenticated");
+      guildEmojis = await clientApi.getEmojis(data.user.id, true);
+    } catch (err) {
+      logger.error("Failed to fetch guild emojis:", err);
     }
   }
 
@@ -233,12 +244,13 @@
       fetchGiveaways();
       loadGuildRoles();
       loadGuildChannels();
+      loadGuildEmojis();
     }
   });
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
-    await Promise.all([fetchGiveaways(), loadGuildRoles(), loadGuildChannels()]);
+    await Promise.all([fetchGiveaways(), loadGuildRoles(), loadGuildChannels(), loadGuildEmojis()]);
   });
 </script>
 
@@ -419,17 +431,16 @@
                 <i class="fa-solid fa-face-smile" style="color: {colors.primary}; font-size: 16px;"></i>
                 Reaction Emoji
               </label>
-              <input
-                id="giveaway-emote"
-                bind:value={newGiveaway.emote}
-                placeholder="🎉 or :tada:"
-                class="w-full p-3 rounded-lg border focus:ring-2"
-                style="background: {colors.primary}08;
-                      border-color: {colors.primary}30;
-                      color: {colors.text}"
-              >
+              <EmojiPicker
+                guildEmojis={guildEmojis}
+                bind:selected={newGiveaway.emote}
+                placeholder="Select an emoji..."
+                onchange={(detail) => {
+                  newGiveaway.emote = detail.selected; as; string || "";
+                }}
+              />
               <p class="text-xs" style="color: {colors.muted}">
-                Enter an emoji (🎉) or Discord emoji name (:tada:)
+                Select a custom emoji or paste Discord emoji code
               </p>
             </div>
           </div>

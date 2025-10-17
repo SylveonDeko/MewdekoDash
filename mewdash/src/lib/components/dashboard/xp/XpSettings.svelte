@@ -17,7 +17,7 @@
   }: Props = $props();
 
   function markAsChanged(setting: string) {
-    changedSettings = changedSettings.add(setting);
+    changedSettings = new Set(changedSettings).add(setting);
   }
 
   function handleXpPerMessageChange(e: Event) {

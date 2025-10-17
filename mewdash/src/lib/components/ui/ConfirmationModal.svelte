@@ -1,7 +1,8 @@
 <script lang="ts">
 
-    import {fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
+  import { fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import Portal from "./Portal.svelte";
 
   interface Props {
     isOpen?: boolean;
@@ -56,8 +57,9 @@
 
 {#if isOpen}
   <!-- Backdrop -->
+  <Portal>
   <div
-    class="fixed inset-0 bg-black opacity-50 backdrop-blur-md flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4"
     onclick={handleCancel}
     onkeydown={handleKeydown}
     role="dialog"
@@ -68,13 +70,13 @@
   >
     <!-- Modal -->
     <div
-      class="rounded-2xl border shadow-2xl max-w-md w-full "
-      style="background: {$colorStore.background}90; border-color: {$colorStore.primary}30;"
-            onclick={(e) => e.stopPropagation()}
+      class="rounded-2xl border shadow-2xl max-w-md w-full"
+      style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
+      onclick={(e) => e.stopPropagation()}
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
-            role="button" tabindex="0"
-            onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
+      role="button" tabindex="0"
+      onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">
@@ -103,15 +105,15 @@
       <!-- Actions -->
       <div class="flex gap-3 p-6 pt-0">
         <button
-          class="flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:opacity-80"
-          style="background: {$colorStore.primary}20; color: {$colorStore.text}"
+          class="flex-1 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px]"
+          style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
           onclick={handleCancel}
         >
           {cancelText}
         </button>
         <button
-          class="flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:opacity-80 disabled:opacity-50"
-          style="background: {variantColor}; color: white"
+          class="flex-1 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
+          style="background: {variantColor}20; color: {variantColor}; border: 1px solid {variantColor}30;"
           onclick={handleConfirm}
           disabled={confirmDisabled}
         >
@@ -120,4 +122,5 @@
       </div>
     </div>
   </div>
+  </Portal>
 {/if}

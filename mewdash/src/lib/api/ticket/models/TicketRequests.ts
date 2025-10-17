@@ -70,6 +70,8 @@ export interface UpdateButtonRequest {
   renameOnArchive?: boolean | null;
   removeCreatorOnArchive?: boolean | null;
   autoArchiveOnClose?: boolean | null;
+  modalJson?: string | null;
+  openMessageJson?: string | null;
 }
 
 /**
@@ -266,4 +268,29 @@ export interface LinkTicketsRequest {
  */
 export interface UnlinkTicketsRequest {
   ticketIds: number[];
+}
+
+/**
+ * Edit note request
+ * Maps to Mewdeko.Controllers.Common.Tickets.EditNoteRequest
+ */
+export interface EditNoteRequest {
+  content: string;
+  authorId: bigint;
+}
+
+/**
+ * Delete note request
+ * Maps to Mewdeko.Controllers.Common.Tickets.DeleteNoteRequest
+ */
+export interface DeleteNoteRequest {
+  authorId: bigint;
+}
+
+/**
+ * Reorder buttons request
+ * Maps to Mewdeko.Controllers.Common.Tickets.ReorderButtonsRequest
+ */
+export interface ReorderButtonsRequest {
+  buttonOrder: number[];
 }

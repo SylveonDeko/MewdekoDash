@@ -1,44 +1,43 @@
 // lib/api/ticket/ticket.ts
 import { apiRequest } from "../core";
 import type {
-  Ticket,
-  TicketPanel,
-  PanelButton,
-  PanelSelectMenu,
-  TicketCase,
-  TicketPriority,
-  TicketTag,
-  GuildStatistics,
-  UserStatistics,
-  StaffResponseStats,
-  TicketActivity,
-  PanelStatus,
-  RecreateAllPanelsResponse,
-  BlacklistedUserResponse,
-  CreatePanelRequest,
-  UpdateEmbedRequest,
   AddButtonRequest,
-  UpdateButtonRequest,
   AddSelectMenuRequest,
   AddSelectOptionRequest,
-  UpdatePlaceholderRequest,
-  ClaimTicketRequest,
-  SetPriorityRequest,
   AddTagsRequest,
-  RemoveTagsRequest,
-  CreatePriorityRequest,
-  CreateTagRequest,
-  CreateCaseRequest,
-  UpdateCaseRequest,
-  BlacklistUserRequest,
+  BatchAddRoleRequest,
   BatchMoveTicketsRequest,
   BatchTransferTicketsRequest,
-  BatchAddRoleRequest,
-  AddNoteRequest,
+  BlacklistedUserResponse,
+  BlacklistUserRequest,
+  ClaimTicketRequest,
+  CreateCaseRequest,
+  CreatePanelRequest,
+  CreatePriorityRequest,
+  CreateTagRequest,
+  DeleteNoteRequest,
+  EditNoteRequest,
+  GuildStatistics,
+  PanelButton,
+  PanelSelectMenu,
+  PanelStatus,
+  RecreateAllPanelsResponse,
+  RemoveTagsRequest,
+  ReorderButtonsRequest,
   SetChannelRequest,
-  MovePanelRequest,
-  LinkTicketsRequest,
-  UnlinkTicketsRequest,
+  SetPriorityRequest,
+  StaffResponseStats,
+  Ticket,
+  TicketActivity,
+  TicketCase,
+  TicketPanel,
+  TicketPriority,
+  TicketTag,
+  UpdateButtonRequest,
+  UpdateCaseRequest,
+  UpdateEmbedRequest,
+  UpdatePlaceholderRequest,
+  UserStatistics
 } from "./models";
 
 /**
@@ -86,12 +85,12 @@ export const ticketApi = {
   /**
    * Updates a ticket panel's embed
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @param embed Embed configuration
    */
   updateTicketPanelEmbed: (
     guildId: bigint,
-    panelId: number,
+    panelId: bigint,
     embed: UpdateEmbedRequest,
   ) =>
     apiRequest<void>(`ticket/${guildId}/panels/${panelId}/embed`, "PUT", embed),
@@ -99,10 +98,10 @@ export const ticketApi = {
   /**
    * Moves a ticket panel to another channel
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @param channelId Target channel ID
    */
-  moveTicketPanel: (guildId: bigint, panelId: number, channelId: bigint) =>
+  moveTicketPanel: (guildId: bigint, panelId: bigint, channelId: bigint) =>
     apiRequest<void>(`ticket/${guildId}/panels/${panelId}/move`, "PUT", {
       channelId,
     }),
@@ -110,17 +109,17 @@ export const ticketApi = {
   /**
    * Duplicates a ticket panel
    * @param guildId The guild ID
-   * @param panelId The panel ID to duplicate
+   * @param panelId The panel ID (message ID) to duplicate
    */
-  duplicateTicketPanel: (guildId: bigint, panelId: number) =>
+  duplicateTicketPanel: (guildId: bigint, panelId: bigint) =>
     apiRequest<void>(`ticket/${guildId}/panels/${panelId}/duplicate`, "POST"),
 
   /**
    * Recreates a ticket panel message
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    */
-  recreateTicketPanel: (guildId: bigint, panelId: number) =>
+  recreateTicketPanel: (guildId: bigint, panelId: bigint) =>
     apiRequest<void>(`ticket/${guildId}/panels/${panelId}/recreate`, "POST"),
 
   /**
@@ -149,21 +148,21 @@ export const ticketApi = {
   /**
    * Gets panel buttons
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @returns List of buttons
    */
-  getPanelButtons: (guildId: bigint, panelId: number) =>
+  getPanelButtons: (guildId: bigint, panelId: bigint) =>
     apiRequest<PanelButton[]>(`ticket/${guildId}/panels/${panelId}/buttons`),
 
   /**
    * Adds a button to a panel
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @param button Button configuration
    */
   addPanelButton: (
     guildId: bigint,
-    panelId: number,
+    panelId: bigint,
     button: AddButtonRequest,
   ) =>
     apiRequest<void>(
@@ -194,6 +193,23 @@ export const ticketApi = {
   ) => apiRequest<void>(`ticket/${guildId}/buttons/${buttonId}`, "PUT", button),
 
   /**
+   * Reorders buttons on a panel
+   * @param guildId The guild ID
+   * @param panelId The panel ID
+   * @param request Request containing the new button order
+   */
+  reorderPanelButtons: (
+    guildId: bigint,
+    panelId: bigint,
+    request: ReorderButtonsRequest,
+  ) =>
+    apiRequest<void>(
+      `ticket/${guildId}/panels/${panelId}/buttons/reorder`,
+      "PUT",
+      request,
+    ),
+
+  /**
    * Deletes a button
    * @param guildId The guild ID
    * @param buttonId The button ID
@@ -208,10 +224,10 @@ export const ticketApi = {
   /**
    * Gets panel select menus
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @returns List of select menus
    */
-  getPanelSelectMenus: (guildId: bigint, panelId: number) =>
+  getPanelSelectMenus: (guildId: bigint, panelId: bigint) =>
     apiRequest<PanelSelectMenu[]>(
       `ticket/${guildId}/panels/${panelId}/selectmenus`,
     ),
@@ -219,12 +235,12 @@ export const ticketApi = {
   /**
    * Adds a select menu to a panel
    * @param guildId The guild ID
-   * @param panelId The panel ID
+   * @param panelId The panel ID (message ID)
    * @param menu Select menu configuration
    */
   addPanelSelectMenu: (
     guildId: bigint,
-    panelId: number,
+    panelId: bigint,
     menu: AddSelectMenuRequest,
   ) =>
     apiRequest<void>(
@@ -268,6 +284,28 @@ export const ticketApi = {
     ),
 
   /**
+   * Gets a specific select menu option
+   * @param guildId The guild ID
+   * @param optionId The option ID
+   * @returns Option details
+   */
+  getSelectMenuOption: (guildId: bigint, optionId: number) =>
+    apiRequest<any>(`ticket/${guildId}/selectmenus/options/${optionId}`),
+
+  /**
+   * Updates a select menu option
+   * @param guildId The guild ID
+   * @param optionId The option ID
+   * @param option Option updates
+   */
+  updateSelectMenuOption: (guildId: bigint, optionId: number, option: any) =>
+    apiRequest<void>(
+      `ticket/${guildId}/selectmenus/options/${optionId}`,
+      "PUT",
+      option,
+    ),
+
+  /**
    * Deletes a select menu
    * @param guildId The guild ID
    * @param menuId The menu ID
@@ -307,6 +345,24 @@ export const ticketApi = {
    */
   getTicketByChannel: (guildId: bigint, channelId: bigint) =>
     apiRequest<Ticket>(`ticket/${guildId}/tickets/by-channel/${channelId}`),
+
+  /**
+   * Gets all tickets for a guild
+   * @param guildId The guild ID
+   * @param includeArchived Whether to include archived tickets (default: true)
+   * @param includeClosed Whether to include closed tickets (default: true)
+   * @param includeDeleted Whether to include soft-deleted tickets (default: false)
+   * @returns List of tickets
+   */
+  getGuildTickets: (
+    guildId: bigint,
+    includeArchived: boolean = true,
+    includeClosed: boolean = true,
+    includeDeleted: boolean = false,
+  ) =>
+    apiRequest<Ticket[]>(
+      `ticket/${guildId}/tickets?includeArchived=${includeArchived}&includeClosed=${includeClosed}&includeDeleted=${includeDeleted}`,
+    ),
 
   /**
    * Claims a ticket
@@ -419,6 +475,36 @@ export const ticketApi = {
       `ticket/${guildId}/tickets/by-channel/${channelId}/notes`,
       "POST",
       { notes },
+    ),
+
+  /**
+   * Edits an existing ticket note
+   * @param guildId The guild ID
+   * @param noteId The note ID
+   * @param request Edit note request
+   */
+  editTicketNote: (guildId: bigint, noteId: number, request: EditNoteRequest) =>
+    apiRequest<void>(
+      `ticket/${guildId}/tickets/notes/${noteId}`,
+      "PUT",
+      request,
+    ),
+
+  /**
+   * Deletes a ticket note
+   * @param guildId The guild ID
+   * @param noteId The note ID
+   * @param request Delete note request
+   */
+  deleteTicketNote: (
+    guildId: bigint,
+    noteId: number,
+    request: DeleteNoteRequest,
+  ) =>
+    apiRequest<void>(
+      `ticket/${guildId}/tickets/notes/${noteId}`,
+      "DELETE",
+      request,
     ),
 
   // ============================================
@@ -687,6 +773,19 @@ export const ticketApi = {
   // ============================================
   // Settings
   // ============================================
+
+  /**
+   * Gets ticket settings for the guild
+   * @param guildId The guild ID
+   * @returns Ticket settings including transcript and log channels
+   */
+  getTicketSettings: (guildId: bigint) =>
+    apiRequest<{
+      transcriptChannelId?: bigint;
+      logChannelId?: bigint;
+      defaultMaxTickets?: number;
+      blacklistedUsers?: bigint[];
+    }>(`ticket/${guildId}/settings`),
 
   /**
    * Sets ticket transcript channel

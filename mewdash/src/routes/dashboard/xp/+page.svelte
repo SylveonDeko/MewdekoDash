@@ -1,24 +1,24 @@
 <!-- routes/dashboard/xp/+page.svelte -->
 <script lang="ts">
-    import {onDestroy, onMount} from "svelte";
-    import { xpApi, clientApi } from "$lib/api/index.ts";
-    import type { GuildXpSetting } from "$lib/api/xp/models/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {goto} from "$app/navigation";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
-    import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
-    import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
-    import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
-    import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
-    import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
-    import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
-    import {browser} from "$app/environment";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger.ts";
-    import type {PageData} from "./$types";
+  import { onDestroy, onMount } from "svelte";
+  import { clientApi, xpApi } from "$lib/api/index.ts";
+  import type { GuildXpSetting } from "$lib/api/xp/models/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { goto } from "$app/navigation";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
+  import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
+  import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
+  import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
+  import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
+  import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
+  import XpMobileTemplateEditor from "$lib/components/dashboard/xp/XpMobileTemplateEditor.svelte";
+  import { browser } from "$app/environment";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger.ts";
+  import type { PageData } from "./$types";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
@@ -443,7 +443,7 @@
 
       await xpApi.updateXpSettings($currentGuild.id, xpSettings);
       showNotificationMessage("XP settings updated successfully", "success");
-      changedSettings.clear();
+      changedSettings = new Set();
       await fetchXpSettings();
     } catch (err) {
       logger.error("Failed to update XP settings:", err);
@@ -474,7 +474,9 @@
       }
 
       showNotificationMessage("XP template updated successfully", "success");
-      changedSettings.delete("template");
+      const newSet = new Set(changedSettings);
+      newSet.delete("template");
+      changedSettings = newSet;
     } catch (err) {
       logger.error("Failed to update XP template:", err);
       showNotificationMessage("Failed to update XP template", "error");
@@ -624,7 +626,9 @@
     // Save current state for undo
     saveStateForUndo();
     localTemplate = JSON.parse(JSON.stringify(template));
-    changedSettings.delete("template");
+    const newSet = new Set(changedSettings);
+    newSet.delete("template");
+    changedSettings = newSet;
   }
 
   function handleDragMove(event: MouseEvent | TouchEvent) {

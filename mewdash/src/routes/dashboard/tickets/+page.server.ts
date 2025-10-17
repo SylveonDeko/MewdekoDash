@@ -1,3 +1,4 @@
+// routes/dashboard/tickets/+page.server.ts
 import type { PageServerLoad } from "./$types";
 import type { DiscordUser } from "$lib/types/discord";
 
