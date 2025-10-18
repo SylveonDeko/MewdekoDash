@@ -310,7 +310,7 @@
   }
 
   async function saveNewOption() {
-    if (creatingOptionForMenu !== null && newOption.label.trim()) {
+    if (creatingOptionForMenu !== null && newOption.label.trim() && newOption.description.trim()) {
       await addSelectOption(creatingOptionForMenu, newOption);
       showOptionCreator = false;
       creatingOptionForMenu = null;
@@ -1441,13 +1441,14 @@
                                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description</label>
+                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description
+                                    *</label>
                                   <input
                                     type="text"
                                     bind:value={editingOptionData.description}
                                     maxlength="100"
                                     class="w-full px-3 py-2 rounded-lg border"
-                                    placeholder="Optional description"
+                                    placeholder="Describe this option"
                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   />
                                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
@@ -1648,8 +1649,10 @@
                             </button>
                             <button
                               class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
-                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                              disabled={saving}
+                              style="background: {!editingOptionData?.label?.trim() || !editingOptionData?.description?.trim() || saving ? $colorStore.muted + '30' : $colorStore.primary + '20'};
+                                     color: {!editingOptionData?.label?.trim() || !editingOptionData?.description?.trim() || saving ? $colorStore.muted : $colorStore.primary};
+                                     border: {!editingOptionData?.label?.trim() || !editingOptionData?.description?.trim() || saving ? '2px dashed ' + $colorStore.muted + '60' : '1px solid ' + $colorStore.primary + '30'};"
+                              disabled={!editingOptionData?.label?.trim() || !editingOptionData?.description?.trim() || saving}
                               onclick={saveOptionEdit}
                             >
                               {#if saving}
@@ -1755,7 +1758,7 @@
                         </div>
                         <div>
                           <label class="block text-sm font-medium mb-2"
-                                 style="color: {$colorStore.text}">Description</label>
+                                 style="color: {$colorStore.text}">Description *</label>
                           <input
                             type="text"
                             bind:value={newOption.description}
@@ -1942,8 +1945,10 @@
                     </button>
                     <button
                       class="px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px] flex items-center gap-2"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                      disabled={!newOption.label || saving}
+                      style="background: {!newOption.label.trim() || !newOption.description.trim() || saving ? $colorStore.muted + '30' : $colorStore.primary + '20'};
+                             color: {!newOption.label.trim() || !newOption.description.trim() || saving ? $colorStore.muted : $colorStore.primary};
+                             border: {!newOption.label.trim() || !newOption.description.trim() || saving ? '2px dashed ' + $colorStore.muted + '60' : '1px solid ' + $colorStore.primary + '30'};"
+                      disabled={!newOption.label.trim() || !newOption.description.trim() || saving}
                       onclick={saveNewOption}
                     >
                       {#if saving}

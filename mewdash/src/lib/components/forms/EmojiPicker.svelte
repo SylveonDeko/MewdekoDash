@@ -5,6 +5,15 @@
     guildId: string;
     guildName: string;
   };
+
+  export type UnicodeEmojiOption = {
+    name: string;
+    unicode: string;
+    searchTerms: string[];
+    isUnicode: true;
+  };
+
+  export type AnyEmojiOption = EmojiOption | UnicodeEmojiOption;
 </script>
 
 <script lang="ts">
@@ -13,6 +22,7 @@
   import reducedMotion from "$lib/reducedMotion";
   import Portal from "$lib/components/ui/Portal.svelte";
   import { onMount } from "svelte";
+  import { unicodeEmojiStore } from "$lib/stores/unicodeEmojiStore";
 
   interface Props {
     // Props
@@ -24,7 +34,11 @@
     searchable?: boolean;
     disabled?: boolean;
     groupByGuild?: boolean;
-    onchange?: (detail: { selected: string | string[] | null; emoji: EmojiOption | EmojiOption[] | null }) => void;
+    showUnicodeEmojis?: boolean; // Enable Unicode emoji tab
+    onchange?: (detail: {
+      selected: string | string[] | null;
+      emoji: AnyEmojiOption | AnyEmojiOption[] | null
+    }) => void;
   }
 
   let {
@@ -36,6 +50,7 @@
     searchable = true,
     disabled = false,
     groupByGuild = true,
+    showUnicodeEmojis = true,
     onchange
   }: Props = $props();
 
@@ -48,8 +63,12 @@
   let searchInputRef: HTMLInputElement = $state()!;
   let containerRef: HTMLDivElement = $state()!;
   let dropdownId = `emoji-dropdown-${Math.random().toString(36).substring(2, 9)}`;
-  let hoveredEmojiId = $state<string | null>(null);
   let isMobile = $state(false);
+  let activeTab = $state<"discord" | "unicode">("discord"); // Tab state
+  let dropdownPosition = $state<"below" | "above">("below"); // Dropdown position
+  let scrollContainerRef: HTMLElement = $state()!;
+  let isLoadingTab = $state(false);
+
 
   // Detect mobile
   onMount(() => {
@@ -60,6 +79,30 @@
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   });
+
+  // Reset scroll position when switching tabs
+  $effect(() => {
+    // Track activeTab so effect runs when it changes
+    activeTab;
+    if (scrollContainerRef && isOpen) {
+      scrollContainerRef.scrollTop = 0;
+    }
+  });
+
+  // Handle tab switching with loading state
+  function switchTab(newTab: "discord" | "unicode") {
+    if (activeTab === newTab) return;
+
+    isLoadingTab = true;
+    // Defer tab switch to next tick to show loading state
+    setTimeout(() => {
+      activeTab = newTab;
+      // Give browser time to render
+      requestAnimationFrame(() => {
+        isLoadingTab = false;
+      });
+    }, 0);
+  }
 
   // Flatten emojis with guild info (state so we can add custom emojis)
   let customEmojis = $state<EmojiOption[]>([]);
@@ -95,13 +138,20 @@
     }
   });
 
-  // Filter emojis based on search
+  // Get all emojis - render everything, let browser optimize with content-visibility
+  let unicodeEmojis = $derived(
+    activeTab === "unicode" && showUnicodeEmojis && isOpen
+      ? unicodeEmojiStore.search(searchTerm)
+      : []
+  );
+
+  // Filter emojis based on search - render all, browser optimizes
   let filteredEmojis = $derived(
-    searchable && searchTerm
+    searchable && searchTerm && activeTab === "discord"
       ? allEmojis.filter(emoji =>
         emoji.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      : allEmojis
+      : activeTab === "discord" ? allEmojis : []
   );
 
   // Group filtered emojis by guild
@@ -139,15 +189,56 @@
     multiple && maxSelection ? selectedArray.length >= maxSelection : false
   );
 
-  // Get emoji URL based on animation state and reduced motion preference
-  function getEmojiUrl(emoji: EmojiOption, forceStatic = false): string {
-    const shouldAnimate = emoji.animated && !$reducedMotion && hoveredEmojiId === emoji.id && !forceStatic;
-    const ext = shouldAnimate ? "gif" : "png";
-    return `https://cdn.discordapp.com/emojis/${emoji.id}.${ext}?size=256&quality=lossless`;
+  // Type guard to check if emoji is Unicode
+  function isUnicodeEmoji(emoji: AnyEmojiOption): emoji is UnicodeEmojiOption {
+    return "isUnicode" in emoji && emoji.isUnicode === true;
+  }
+
+  // Get emoji URL using WebP like Discord does
+  function getEmojiUrl(emoji: EmojiOption): string {
+    const baseUrl = `https://cdn.discordapp.com/emojis/${emoji.id}.webp?size=48`;
+    return emoji.animated ? `${baseUrl}&animated=true` : baseUrl;
   }
 
   // Handle emoji selection
-  function selectEmoji(emoji: EmojiOption) {
+  function selectEmoji(emoji: AnyEmojiOption) {
+    // Handle Unicode emoji selection
+    if (isUnicodeEmoji(emoji)) {
+      if (multiple) {
+        const currentSelected = Array.isArray(selected) ? selected : [];
+        const emojiValue = emoji.unicode;
+
+        // Check if already selected
+        const index = currentSelected.indexOf(emojiValue);
+
+        if (index === -1) {
+          // Check if we can add more
+          if (maxSelection && currentSelected.length >= maxSelection) {
+            return;
+          }
+          selected = [...currentSelected, emojiValue];
+        } else {
+          // Remove
+          selected = currentSelected.filter(s => s !== emojiValue);
+        }
+
+        // Get selected emoji objects for the callback (only new selection, not filtering all)
+        const selectedEmojis = index === -1 ? [emoji] : [];
+        onchange?.({ selected, emoji: selectedEmojis });
+
+        if (!isMobile) {
+          // Desktop: could auto-close or stay open
+        }
+      } else {
+        // Single selection - use the actual unicode character
+        selected = emoji.unicode;
+        closeDropdown();
+        onchange?.({ selected, emoji });
+      }
+      return;
+    }
+
+    // Handle Discord custom emoji selection (existing code)
     if (multiple) {
       const currentSelected = Array.isArray(selected) ? selected : [];
       const emojiId = emoji.id;
@@ -200,6 +291,23 @@
     }
   }
 
+  // Calculate dropdown position based on available space
+  function calculateDropdownPosition() {
+    if (!containerRef || isMobile) {
+      dropdownPosition = "above"; // Default to above
+      return;
+    }
+
+    const rect = containerRef.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropdownHeight = 600; // Approximate dropdown height
+
+    // Prefer above, only go below if not enough space above
+    dropdownPosition = spaceAbove >= dropdownHeight ? "above" : "below";
+  }
+
   // Dropdown control
   function toggleDropdown() {
     if (disabled) return;
@@ -208,6 +316,7 @@
       searchTerm = "";
       manualInput = "";
       manualInputError = "";
+      calculateDropdownPosition();
       setTimeout(() => {
         if (searchable && searchInputRef) {
           searchInputRef.focus();
@@ -382,15 +491,38 @@
   }
 
   // Get selected emoji objects for display
-  let selectedEmojis = $derived(
-    allEmojis.filter(e => {
+  let selectedEmojis = $derived(() => {
+    const discordEmojis = allEmojis.filter(e => {
       if (multiple) {
         return selectedArray.includes(e.id);
       }
       const currentId = selectedIds();
       return currentId !== null && e.id === currentId;
-    })
-  );
+    });
+
+    // Also check for Unicode emojis in selection
+    const unicodeSelected: UnicodeEmojiOption[] = [];
+
+    if (multiple && Array.isArray(selected)) {
+      for (const sel of selected) {
+        // Check if it's a Unicode emoji (not Discord format)
+        if (!sel.startsWith("<")) {
+          const match = unicodeEmojiStore.getByUnicode(sel);
+          if (match) {
+            unicodeSelected.push({ ...match, isUnicode: true });
+          }
+        }
+      }
+    } else if (selected && typeof selected === "string" && !selected.startsWith("<")) {
+      // Single Unicode emoji selected
+      const match = unicodeEmojiStore.getByUnicode(selected);
+      if (match) {
+        unicodeSelected.push({ ...match, isUnicode: true });
+      }
+    }
+
+    return [...discordEmojis, ...unicodeSelected];
+  });
 
   let selectedDisplayText = $derived(() => {
     if (!hasSelection) return placeholder;
@@ -400,20 +532,59 @@
       if (count === 0) return placeholder;
       return `${count} emoji${count !== 1 ? "s" : ""} selected`;
     } else {
-      return selectedEmojis[0]?.name || placeholder;
+      const firstEmoji = selectedEmojis()[0];
+      if (!firstEmoji) return placeholder;
+      return isUnicodeEmoji(firstEmoji) ? firstEmoji.name : firstEmoji.name;
     }
   });
 
-  // Get emoji URL for display in selector button
-  function getSelectedEmojiUrl(): string | null {
+  // Get emoji URL or unicode for display in selector button
+  function getSelectedEmojiDisplay(): { type: "url" | "unicode"; value: string } | null {
     if (!hasSelection || multiple) return null;
-    const emoji = selectedEmojis[0];
+    const emoji = selectedEmojis()[0];
     if (!emoji) return null;
-    return `https://cdn.discordapp.com/emojis/${emoji.id}.png?size=32&quality=lossless`;
+
+    if (isUnicodeEmoji(emoji)) {
+      return { type: "unicode", value: emoji.unicode };
+    }
+    return {
+      type: "url",
+      value: `https://cdn.discordapp.com/emojis/${emoji.id}.png?size=32&quality=lossless`
+    };
   }
 </script>
 
 {#snippet emojiContent()}
+  <!-- Tab switcher -->
+  {#if showUnicodeEmojis}
+    <div class="p-3 border-b border-opacity-30 flex gap-2" style="border-color: {$colorStore.primary};">
+      <button
+        type="button"
+        class="flex-1 py-2 px-4 rounded-lg font-medium"
+        class:shadow-md={activeTab === 'discord'}
+        disabled={isLoadingTab}
+        style="background: {activeTab === 'discord' ? $colorStore.primary + '40' : $colorStore.primary + '10'};
+               color: {$colorStore.text};"
+        onclick={() => switchTab('discord')}
+      >
+        <i class="fa-brands fa-discord mr-2"></i>
+        Discord
+      </button>
+      <button
+        type="button"
+        class="flex-1 py-2 px-4 rounded-lg font-medium"
+        class:shadow-md={activeTab === 'unicode'}
+        disabled={isLoadingTab}
+        style="background: {activeTab === 'unicode' ? $colorStore.primary + '40' : $colorStore.primary + '10'};
+               color: {$colorStore.text};"
+        onclick={() => switchTab('unicode')}
+      >
+        <i class="fa-regular fa-face-smile mr-2"></i>
+        Unicode
+      </button>
+    </div>
+  {/if}
+
   <!-- Search input -->
   {#if searchable}
     <div class="p-4 pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
@@ -436,11 +607,12 @@
     </div>
   {/if}
 
-  <!-- Manual emoji input -->
-  <div class="p-4 pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
-    <div class="text-xs font-semibold mb-2" style="color: {$colorStore.muted}">
-      Or paste emoji code:
-    </div>
+  <!-- Manual emoji input (Discord tab only) -->
+  {#if activeTab === 'discord'}
+    <div class="p-4 pb-2 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
+      <div class="text-xs font-semibold mb-2" style="color: {$colorStore.muted}">
+        Or paste emoji code:
+      </div>
     <div class="flex gap-2">
       <div class="relative flex-1">
         <i
@@ -467,16 +639,84 @@
         <i class="fa-solid fa-plus"></i>
       </button>
     </div>
-    {#if manualInputError}
-      <div class="text-xs mt-1" style="color: #ef4444">
-        {manualInputError}
-      </div>
-    {/if}
-  </div>
+      {#if manualInputError}
+        <div class="text-xs mt-1" style="color: #ef4444">
+          {manualInputError}
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <!-- Emojis grid -->
-  <div class="flex-1 overflow-y-auto overflow-x-hidden p-4">
-    {#if filteredEmojis.length === 0}
+  <div bind:this={scrollContainerRef} class="flex-1 overflow-y-auto overflow-x-hidden p-4 relative">
+    <!-- Loading skeleton (position absolute to prevent size changes) -->
+    {#if isLoadingTab}
+      <div
+        class="absolute inset-0 grid gap-2 p-4 bg-gradient-to-b from-transparent via-black/20 to-transparent"
+        class:grid-cols-6={isMobile}
+        class:grid-cols-12={!isMobile}
+        in:fly={{ y: 0, opacity: 0, duration: 150 }}
+        out:fly={{ y: 0, opacity: 0, duration: 150 }}
+      >
+        {#each Array(60) as _, i (i)}
+          <div
+            class="aspect-square rounded-lg animate-pulse"
+            style="background: {$colorStore.primary}15;"
+          ></div>
+        {/each}
+      </div>
+    {/if}
+
+    <!-- Content with fade transition -->
+    <div class="transition-opacity duration-150" class:opacity-0={isLoadingTab}>
+      {#if activeTab === 'unicode'}
+        <!-- Unicode emoji grid -->
+        {#if unicodeEmojis.length === 0}
+          <div class="text-center py-8" style="color: {$colorStore.muted}">
+            {searchTerm ? 'No matching emojis found' : 'No emojis available'}
+          </div>
+        {:else}
+          <div class="grid gap-2" class:grid-cols-6={isMobile} class:grid-cols-12={!isMobile}>
+            {#each unicodeEmojis as emoji (emoji.unicode)}
+              {@const
+                isSelected = multiple ? (Array.isArray(selected) ? selected : []).includes(emoji.unicode) : selected === emoji.unicode}
+              {@const canSelect = !isSelected && (!isMaxReached || !multiple)}
+
+              <button
+                type="button"
+                class="emoji-item aspect-square rounded-lg p-2 relative"
+                class:opacity-50={!canSelect && !isSelected}
+                class:cursor-not-allowed={!canSelect && !isSelected}
+                disabled={!canSelect && !isSelected}
+                style="background: {isSelected ? `${$colorStore.primary}40` : 'transparent'};
+                     border: 2px solid {isSelected ? $colorStore.primary : 'transparent'};
+                     --hover-bg: {$colorStore.primary}20;
+                     content-visibility: auto;
+                     contain-intrinsic-size: 56px;"
+                onclick={() => selectEmoji({ ...emoji, isUnicode: true })}
+                role="option"
+                aria-selected={isSelected}
+                title={emoji.name}
+              >
+                <!-- Unicode emoji -->
+                <div class="w-full h-full flex items-center justify-center text-3xl">
+                  {emoji.unicode}
+                </div>
+
+                <!-- Selection indicator -->
+                {#if isSelected}
+                  <div
+                    class="absolute top-0 right-0 w-4 h-4 rounded-full flex items-center justify-center"
+                    style="background: {$colorStore.primary}"
+                  >
+                    <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
+                  </div>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      {:else if filteredEmojis.length === 0}
       <div class="text-center py-8" style="color: {$colorStore.muted}">
         {searchTerm ? 'No matching emojis found' : 'No emojis available'}
       </div>
@@ -496,30 +736,25 @@
 
               <button
                 type="button"
-                class="emoji-item aspect-square rounded-lg p-2 transition-all duration-200 relative group"
+                class="emoji-item aspect-square rounded-lg p-2 relative"
                 class:opacity-50={!canSelect && !isSelected}
                 class:cursor-not-allowed={!canSelect && !isSelected}
                 disabled={!canSelect && !isSelected}
                 style="background: {isSelected ? `${$colorStore.primary}40` : 'transparent'};
-                       border: 2px solid {isSelected ? $colorStore.primary : 'transparent'};"
+                       border: 2px solid {isSelected ? $colorStore.primary : 'transparent'};
+                       --hover-bg: {$colorStore.primary}20;
+                       content-visibility: auto;
+                       contain-intrinsic-size: 56px;"
                 onclick={() => selectEmoji(emoji)}
-                onmouseenter={() => hoveredEmojiId = emoji.id}
-                onmouseleave={() => hoveredEmojiId = null}
                 role="option"
                 aria-selected={isSelected}
                 title={emoji.name}
               >
-                <!-- Hover effect -->
-                <div
-                  class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"
-                  style="background: {$colorStore.primary}20;"
-                ></div>
-
                 <!-- Emoji image -->
                 <img
                   src={getEmojiUrl(emoji)}
                   alt={emoji.name}
-                  class="w-full h-full object-contain relative z-10"
+                  class="w-full h-full object-contain"
                   loading="lazy"
                 />
 
@@ -546,30 +781,25 @@
 
           <button
             type="button"
-            class="emoji-item aspect-square rounded-lg p-2 transition-all duration-200 relative group"
+            class="emoji-item aspect-square rounded-lg p-2 relative"
             class:opacity-50={!canSelect && !isSelected}
             class:cursor-not-allowed={!canSelect && !isSelected}
             disabled={!canSelect && !isSelected}
             style="background: {isSelected ? `${$colorStore.primary}40` : 'transparent'};
-                   border: 2px solid {isSelected ? $colorStore.primary : 'transparent'};"
+                   border: 2px solid {isSelected ? $colorStore.primary : 'transparent'};
+                   --hover-bg: {$colorStore.primary}20;
+                   content-visibility: auto;
+                   contain-intrinsic-size: 56px;"
             onclick={() => selectEmoji(emoji)}
-            onmouseenter={() => hoveredEmojiId = emoji.id}
-            onmouseleave={() => hoveredEmojiId = null}
             role="option"
             aria-selected={isSelected}
             title={emoji.name}
           >
-            <!-- Hover effect -->
-            <div
-              class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"
-              style="background: {$colorStore.primary}20;"
-            ></div>
-
             <!-- Emoji image -->
             <img
               src={getEmojiUrl(emoji)}
               alt={emoji.name}
-              class="w-full h-full object-contain relative z-10"
+              class="w-full h-full object-contain"
               loading="lazy"
             />
 
@@ -586,6 +816,7 @@
         {/each}
       </div>
     {/if}
+    </div>
   </div>
 
   <!-- Footer with Done button for multi-select -->
@@ -635,12 +866,19 @@
 
     <div class="flex items-center gap-3 flex-1 min-w-0 overflow-hidden relative z-10">
       <!-- Type icon or selected emoji -->
-      {#if !multiple && getSelectedEmojiUrl()}
-        <img
-          src={getSelectedEmojiUrl()}
-          alt={selectedEmojis[0]?.name || 'emoji'}
-          class="w-6 h-6 shrink-0 object-contain"
-        />
+      {#if !multiple && getSelectedEmojiDisplay()}
+        {@const display = getSelectedEmojiDisplay()}
+        {#if display && display.type === 'unicode'}
+          <div class="text-xl shrink-0">
+            {display.value}
+          </div>
+        {:else if display && display.type === 'url'}
+          <img
+            src={display.value}
+            alt={selectedEmojis()[0]?.name || 'emoji'}
+            class="w-6 h-6 shrink-0 object-contain"
+          />
+        {/if}
       {:else}
         <i
           class="fa-utility-duo fa-regular fa-face-smile"
@@ -652,27 +890,56 @@
       <div class="flex-1 min-w-0 pr-2 flex items-center h-[28px]">
         {#if multiple && selectedArray.length > 0}
           <div class="flex flex-nowrap gap-1 overflow-x-auto scrollbar-hide w-full">
-            {#each selectedEmojis.slice(0, 5) as emoji}
+            {#each selectedEmojis().slice(0, 5) as emoji}
               <span
                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm flex-shrink-0"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
-                <img src={getEmojiUrl(emoji, true)} alt={emoji.name} class="w-4 h-4 object-contain" />
-                <span
-                  class="hover:bg-black/20 rounded-sm p-0.5 cursor-pointer"
-                  onclick={(e) => removeEmoji(emoji.id, e)}
-                  onkeydown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      removeEmoji(emoji.id, e);
-                    }
-                  }}
-                  role="button"
-                  tabindex="0"
-                  aria-label="Remove {emoji.name}"
-                >
-                  <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
-                </span>
+                {#if isUnicodeEmoji(emoji)}
+                  <span class="text-base">{emoji.unicode}</span>
+                  <span
+                    class="hover:bg-black/20 rounded-sm p-0.5 cursor-pointer"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      if (multiple && Array.isArray(selected)) {
+                        selected = selected.filter(s => s !== emoji.unicode);
+                        onchange?.({ selected, emoji: selectedEmojis() });
+                      }
+                    }}
+                    onkeydown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (multiple && Array.isArray(selected)) {
+                          selected = selected.filter(s => s !== emoji.unicode);
+                          onchange?.({ selected, emoji: selectedEmojis() });
+                        }
+                      }
+                    }}
+                    role="button"
+                    tabindex="0"
+                    aria-label="Remove {emoji.name}"
+                  >
+                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
+                  </span>
+                {:else}
+                  <img src={getEmojiUrl(emoji)} alt={emoji.name} class="w-4 h-4 object-contain" />
+                  <span
+                    class="hover:bg-black/20 rounded-sm p-0.5 cursor-pointer"
+                    onclick={(e) => removeEmoji(emoji.id, e)}
+                    onkeydown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        removeEmoji(emoji.id, e);
+                      }
+                    }}
+                    role="button"
+                    tabindex="0"
+                    aria-label="Remove {emoji.name}"
+                  >
+                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
+                  </span>
+                {/if}
               </span>
             {/each}
             {#if selectedArray.length > 5}
@@ -762,16 +1029,20 @@
     <div
       bind:this={dropdownRef}
       id={dropdownId}
-      class="absolute left-0 right-0 mt-1 rounded-lg flex flex-col shadow-2xl border backdrop-blur-md z-[9999] overflow-hidden"
+      class="absolute left-0 right-0 rounded-lg flex flex-col shadow-2xl border backdrop-blur-md z-[9999] overflow-hidden"
+      class:bottom-full={dropdownPosition === 'above'}
+      class:mb-1={dropdownPosition === 'above'}
+      class:top-full={dropdownPosition === 'below'}
+      class:mt-1={dropdownPosition === 'below'}
       style="background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.8)), linear-gradient(135deg, {$colorStore.gradientStart}25, {$colorStore.gradientMid}30, {$colorStore.gradientEnd}25);
              border-color: {$colorStore.primary}50;
              box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px {$colorStore.primary}20;
-             max-height: min(400px, 60vh);
-             transform-origin: top;"
+             max-height: min(600px, 80vh);
+             transform-origin: {dropdownPosition === 'above' ? 'bottom' : 'top'};"
       role="listbox"
       aria-multiselectable={multiple}
-      in:fly={{ y: -8, duration: 200 }}
-      out:fly={{ y: -8, duration: 200 }}
+      in:fly={{ y: dropdownPosition === 'above' ? 8 : -8, duration: 200 }}
+      out:fly={{ y: dropdownPosition === 'above' ? 8 : -8, duration: 200 }}
     >
       {@render emojiContent()}
     </div>
@@ -789,13 +1060,9 @@
         display: none; /* Chrome, Safari, Opera */
     }
 
-    /* Emoji item hover effect */
-    .emoji-item {
-        position: relative;
-    }
-
+    /* Simple hover effect - just background color change (GPU accelerated) */
     .emoji-item:hover:not(:disabled) {
-        transform: scale(1.1);
+        background: var(--hover-bg) !important;
     }
 
     .emoji-item:focus-visible {

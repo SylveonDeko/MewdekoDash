@@ -46,7 +46,7 @@
     let categoryId: string | null = $state(null);
     let defaultNameFormat = $state("{username}'s Channel");
     let defaultUserLimit = $state(0);
-    let defaultBitrate = $state(64000);
+  let defaultBitrate = $state(64);
     let deleteWhenEmpty = $state(true);
     let emptyChannelTimeout = $state(60);
     let allowMultipleChannels = $state(false);
@@ -56,7 +56,7 @@
     let allowLocking = $state(true);
     let allowUserManagement = $state(true);
   let maxUserLimit = 99;
-  let maxBitrate = 384000;
+  let maxBitrate = 384;
     let persistUserPreferences = $state(true);
     let autoPermission = $state(true);
   let customVoiceAdminRoleId: string | null = null;
@@ -126,7 +126,7 @@
         categoryId = config.channelCategoryId?.toString() || null;
         defaultNameFormat = config.defaultNameFormat || "{username}'s Channel";
         defaultUserLimit = config.defaultUserLimit || 0;
-        defaultBitrate = config.defaultBitrate || 64000;
+        defaultBitrate = config.defaultBitrate || 64;
         deleteWhenEmpty = config.deleteWhenEmpty ?? true;
         emptyChannelTimeout = config.emptyChannelTimeout || 60;
         allowMultipleChannels = config.allowMultipleChannels ?? false;
@@ -136,7 +136,7 @@
         allowLocking = config.allowLocking ?? true;
         allowUserManagement = config.allowUserManagement ?? true;
         maxUserLimit = config.maxUserLimit || 99;
-        maxBitrate = config.maxBitrate || 384000;
+        maxBitrate = config.maxBitrate || 96;
         persistUserPreferences = config.persistUserPreferences ?? true;
         autoPermission = config.autoPermission ?? true;
         customVoiceAdminRoleId = config.customVoiceAdminRoleId?.toString() || null;
@@ -385,11 +385,11 @@
                 type="custom"
                 customIcon="fa-volume"
                 options={[
-                  { id: "64000", name: "64kbps", label: "64kbps" },
-                  { id: "96000", name: "96kbps", label: "96kbps" },
-                  { id: "128000", name: "128kbps", label: "128kbps" },
-                  { id: "256000", name: "256kbps", label: "256kbps" },
-                  { id: "384000", name: "384kbps", label: "384kbps" }
+                  { id: "64", name: "64kbps", label: "64kbps" },
+                  { id: "96", name: "96kbps", label: "96kbps" },
+                  { id: "128", name: "128kbps", label: "128kbps" },
+                  { id: "256", name: "256kbps", label: "256kbps" },
+                  { id: "384", name: "384kbps", label: "384kbps" }
                 ]}
                 selected={defaultBitrate.toString()}
                 placeholder="Select bitrate..."
