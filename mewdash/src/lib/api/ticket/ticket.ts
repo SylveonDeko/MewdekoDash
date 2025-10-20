@@ -123,6 +123,17 @@ export const ticketApi = {
     apiRequest<void>(`ticket/${guildId}/panels/${panelId}/recreate`, "POST"),
 
   /**
+   * Gets a single panel status
+   * @param guildId The guild ID
+   * @param panelId The panel ID (message ID)
+   * @returns Panel status information
+   */
+  getSinglePanelStatus: (guildId: bigint, panelId: bigint) =>
+    apiRequest<{ panelId: bigint; status: number }>(
+      `ticket/${guildId}/panels/${panelId}/status`,
+    ),
+
+  /**
    * Gets panel statuses
    * @param guildId The guild ID
    * @returns Panel status information
@@ -597,6 +608,17 @@ export const ticketApi = {
   // ============================================
   // Statistics
   // ============================================
+
+  /**
+   * Gets optimized overview data for the dashboard without expensive Discord API calls
+   * @param guildId The guild ID
+   * @param activityDays Number of days to include in activity summary (default 30)
+   * @returns Overview data with statistics and counts
+   */
+  getTicketOverview: (guildId: bigint, activityDays?: number) =>
+    apiRequest<any>(
+      `ticket/${guildId}/overview${activityDays ? `?activityDays=${activityDays}` : ""}`,
+    ),
 
   /**
    * Gets ticket statistics for the guild

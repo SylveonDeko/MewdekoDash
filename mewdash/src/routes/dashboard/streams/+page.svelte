@@ -1,17 +1,26 @@
 <!-- routes/dashboard/streams/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { streamNotificationsApi, clientApi, type FollowedStream, StreamType } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+  import type { PageData } from "./$types";
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { clientApi, type FollowedStream, streamNotificationsApi, StreamType } from "$lib/api/index.ts";
+  import { logger } from "$lib/logger";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
+  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
 
-    import StatCard from "$lib/components/monitoring/StatCard.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  interface Props {
+    data: PageData;
+  }
 
-    // Component state
+  let { data }: Props = $props();
+
+  // Component state
     let loading = $state(false);
     let saving = $state(false);
     let message = $state("");
@@ -31,20 +40,65 @@
         url: ""
     });
     let editingStream: number | null = $state(null);
+  let editingMessageType: "online" | "offline" = $state("online");
     let editForm = $state({
         onlineMessage: "",
         offlineMessage: ""
     });
 
+  // Embed builder state (arrays for multi-embed support)
+  let globalMessageEmbeds = $state<any[]>([{
+    title: "",
+    description: "",
+    color: "#5865F2",
+    fields: []
+  }]);
+  let globalMessageComponents = $state<any[]>([]);
+
+  let streamOnlineEmbeds = $state<any[]>([{
+    title: "",
+    description: "",
+    color: "#57F287",
+    fields: []
+  }]);
+  let streamOnlineComponents = $state<any[]>([]);
+
+  let streamOfflineEmbeds = $state<any[]>([{
+    title: "",
+    description: "",
+    color: "#ED4245",
+    fields: []
+  }]);
+  let streamOfflineComponents = $state<any[]>([]);
+
+  // Component editing state
+  let editingComponent: any = $state(null);
+
     // UI state
     let activeTab = $state("list");
 
-    const platformTypes: Record<number, { name: string; color: string; icon: string }> = {
-      [StreamType.Twitch]: { name: "Twitch", color: $colorStore.primary, icon: "🟣" },
-      [StreamType.YouTube]: { name: "YouTube", color: $colorStore.accent, icon: "🔴" },
-      [StreamType.Trovo]: { name: "Trovo", color: $colorStore.secondary, icon: "🟢" },
-      [StreamType.Facebook]: { name: "Facebook", color: $colorStore.primary, icon: "🔵" }
+  const platformTypes: Record<number, { name: string; color: string; faIcon: string; faClass: string }> = {
+    [StreamType.Twitch]: { name: "Twitch", color: "#9146FF", faIcon: "fa-twitch", faClass: "fa-brands" },
+    [StreamType.YouTube]: { name: "YouTube", color: "#FF0000", faIcon: "fa-youtube", faClass: "fa-brands" },
+    [StreamType.Trovo]: { name: "Trovo", color: "#1DB954", faIcon: "fa-video", faClass: "fa-solid" },
+    [StreamType.Picarto]: { name: "Picarto", color: "#1DA362", faIcon: "fa-palette", faClass: "fa-solid" },
+    [StreamType.Kick]: { name: "Kick", color: "#53FC18", faIcon: "fa-video", faClass: "fa-solid" }
     };
+
+  // Stream-specific placeholders (from backend CreateStreamReplacer)
+  const streamPlaceholders = [
+    { name: "%stream.name%", description: "Display name of the streamer" },
+    { name: "%stream.username%", description: "Login name/username" },
+    { name: "%stream.url%", description: "Direct URL to the stream" },
+    { name: "%stream.title%", description: "Current stream title" },
+    { name: "%stream.game%", description: "Game/category being streamed" },
+    { name: "%stream.viewers%", description: "Current viewer count (- if offline)" },
+    { name: "%stream.platform%", description: "Platform name (Twitch, YouTube, etc.)" },
+    { name: "%stream.avatar%", description: "URL to streamer's avatar" },
+    { name: "%stream.preview%", description: "URL to stream preview/thumbnail" },
+    { name: "%stream.status%", description: "🟢 Online or 🔴 Offline" },
+    { name: "%stream.channelid%", description: "Platform-specific channel ID" }
+  ];
 
     // Load all stream data
     async function loadAllStreamData() {
@@ -143,34 +197,253 @@
         }
     }
 
-    // Update stream messages
-    async function updateStreamMessages(id: number) {
+  // Embed management functions
+  function getActiveEmbeds() {
+    if (editingStream !== null) {
+      return editingMessageType === "online" ? streamOnlineEmbeds : streamOfflineEmbeds;
+    }
+    return globalMessageEmbeds;
+  }
+
+  function setActiveEmbeds(embeds: any[]) {
+    if (editingStream !== null) {
+      if (editingMessageType === "online") {
+        streamOnlineEmbeds = embeds;
+      } else {
+        streamOfflineEmbeds = embeds;
+      }
+    } else {
+      globalMessageEmbeds = embeds;
+    }
+  }
+
+  function addEmbed() {
+    const embeds = getActiveEmbeds();
+    if (embeds.length >= 10) return; // Discord limit
+
+    const newEmbed = {
+      title: "",
+      description: "",
+      color: "#5865F2",
+      fields: []
+    };
+
+    setActiveEmbeds([...embeds, newEmbed]);
+  }
+
+  function removeEmbed(detail: { index: number }) {
+    const embeds = getActiveEmbeds();
+    if (embeds.length <= 1) return; // Keep at least one
+    setActiveEmbeds(embeds.filter((_, i) => i !== detail.index));
+  }
+
+  function duplicateEmbed(detail: { index: number }) {
+    const embeds = getActiveEmbeds();
+    if (embeds.length >= 10) return;
+
+    const embedToCopy = embeds[detail.index];
+    const duplicated = JSON.parse(JSON.stringify(embedToCopy));
+
+    embeds.splice(detail.index + 1, 0, duplicated);
+    setActiveEmbeds([...embeds]);
+  }
+
+  function updateEmbed(detail: { embed: any; index: number }) {
+    const embeds = getActiveEmbeds();
+    embeds[detail.index] = detail.embed;
+    setActiveEmbeds([...embeds]);
+  }
+
+  // Component management functions
+  function getActiveComponents() {
+    if (editingStream !== null) {
+      return editingMessageType === "online" ? streamOnlineComponents : streamOfflineComponents;
+    }
+    return globalMessageComponents;
+  }
+
+  function setActiveComponents(components: any[]) {
+    if (editingStream !== null) {
+      if (editingMessageType === "online") {
+        streamOnlineComponents = components;
+      } else {
+        streamOfflineComponents = components;
+      }
+    } else {
+      globalMessageComponents = components;
+    }
+  }
+
+  function addComponentRow() {
+    const components = getActiveComponents();
+    if (components.length >= 5) return;
+
+    const newRow = {
+      componentKey: crypto.randomUUID(),
+      rowKey: crypto.randomUUID(),
+      components: []
+    };
+
+    setActiveComponents([...components, newRow]);
+  }
+
+  function removeComponentRow(rowKey: string) {
+    const components = getActiveComponents();
+    setActiveComponents(components.filter(r => r.rowKey !== rowKey));
+  }
+
+  function addComponentToRow(rowKey: string, type: "button" | "select") {
+    const components = getActiveComponents();
+    const rowIndex = components.findIndex(r => r.rowKey === rowKey);
+    if (rowIndex === -1) return;
+
+    const row = components[rowIndex];
+
+    const newComponent = {
+      componentKey: crypto.randomUUID(),
+      id: null,
+      rowIndex: rowIndex,
+      displayName: type === "button" ? "New Button" : "Select an option",
+      style: type === "button" ? 1 : 0,
+      url: "",
+      emoji: null,
+      isSelect: type === "select",
+      maxOptions: 1,
+      minOptions: 1,
+      options: []
+    };
+
+    row.components.push(newComponent);
+    setActiveComponents([...components]);
+  }
+
+  function handleComponentUpdate(detail: { component: any }) {
+    const components = getActiveComponents();
+    const updated = components.map(row => ({
+      ...row,
+      components: row.components.map((c: any) =>
+        c.componentKey === detail.component.componentKey ? detail.component : c
+      )
+    }));
+    setActiveComponents(updated);
+  }
+
+  function handleComponentRemove(detail: { componentKey: string }) {
+    const components = getActiveComponents();
+    const updated = components.map(row => ({
+      ...row,
+      components: row.components.filter((c: any) => c.componentKey !== detail.componentKey)
+    }));
+    setActiveComponents(updated);
+    if (editingComponent?.componentKey === detail.componentKey) {
+      editingComponent = null;
+    }
+  }
+
+  function handleComponentEdit(detail: { component: any }) {
+    editingComponent = detail.component;
+  }
+
+  function getTotalComponentCount() {
+    const components = getActiveComponents();
+    return components.reduce((sum, row) => sum + row.components.length, 0);
+  }
+
+  // Update single stream message (online or offline)
+  async function updateSingleStreamMessage(id: number, type: "online" | "offline") {
         if (!$currentGuild?.id) return;
 
         saving = true;
         try {
-            const promises = [];
-
-            if (editForm.onlineMessage) {
-              promises.push(streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, id, editForm.onlineMessage));
+          if (type === "online") {
+            const msg = embedsToJson(streamOnlineEmbeds, streamOnlineComponents);
+            await streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, id, msg);
+            showMessage("Online message saved!", "success");
+          } else {
+            const msg = embedsToJson(streamOfflineEmbeds, streamOfflineComponents);
+            await streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, id, msg);
+            showMessage("Offline message saved!", "success");
             }
 
-            if (editForm.offlineMessage) {
-              promises.push(streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, id, editForm.offlineMessage));
-            }
-
-            await Promise.all(promises);
-            showMessage("Stream messages updated!", "success");
-            editingStream = null;
-            editForm = { onlineMessage: "", offlineMessage: "" };
             await loadAllStreamData();
         } catch (err) {
-            logger.error("Failed to update stream messages:", err);
-            showMessage("Failed to update messages", "error");
+          logger.error("Failed to update stream message:", err);
+          showMessage("Failed to save message", "error");
         } finally {
             saving = false;
         }
     }
+
+  // Helper: Convert embeds and components to SmartEmbed JSON
+  function embedsToJson(embeds: any[], components: any[] = []): string {
+    const smartEmbed: any = { embeds: [] };
+
+    // Convert all embeds
+    smartEmbed.embeds = embeds.map(embed => {
+      const e: any = {};
+
+      if (embed.title) e.title = embed.title;
+      if (embed.description) e.description = embed.description;
+      if (embed.url) e.url = embed.url;
+      if (embed.color) e.color = embed.color;
+
+      if (embed.author?.name) {
+        e.author = { name: embed.author.name };
+        if (embed.author.url) e.author.url = embed.author.url;
+        if (embed.author.icon_url) e.author.icon_url = embed.author.icon_url;
+      }
+
+      if (embed.footer?.text) {
+        e.footer = { text: embed.footer.text };
+        if (embed.footer.icon_url) e.footer.icon_url = embed.footer.icon_url;
+      }
+
+      if (embed.thumbnail?.url) e.thumbnail = { url: embed.thumbnail.url };
+      if (embed.image?.url) e.image = { url: embed.image.url };
+      if (embed.fields && embed.fields.length > 0) {
+        e.fields = embed.fields.map((f: any) => ({
+          name: f.name || "",
+          value: f.value || "",
+          inline: f.inline || false
+        }));
+      }
+
+      return e;
+    });
+
+    // Add components if they exist
+    if (components && components.length > 0) {
+      smartEmbed.components = components;
+    }
+
+    return JSON.stringify(smartEmbed, null, 2);
+  }
+
+  // Helper: Try to parse message as JSON with embeds
+  function tryParseEmbed(message: string | null): {
+    isEmbed: boolean;
+    embeds?: any[];
+    components?: any[];
+    text?: string
+  } {
+    if (!message) return { isEmbed: false };
+
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.embeds && Array.isArray(parsed.embeds) && parsed.embeds.length > 0) {
+        return {
+          isEmbed: true,
+          embeds: parsed.embeds,
+          components: parsed.components || [],
+          text: parsed.plainText || ""
+        };
+      }
+    } catch {
+      // Not valid JSON or not a SmartEmbed format
+    }
+
+    return { isEmbed: false, text: message || "" };
+  }
 
     // Save global custom message
     async function saveCustomMessage() {
@@ -178,7 +451,9 @@
 
         saving = true;
         try {
-          await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, customMessage);
+          const messageToSave = embedsToJson(globalMessageEmbeds, globalMessageComponents);
+
+          await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, messageToSave);
             showMessage("Custom message saved!", "success");
         } catch (err) {
             logger.error("Failed to save custom message:", err);
@@ -207,10 +482,40 @@
     // Start editing
     function startEditing(stream: FollowedStream) {
       editingStream = stream.id;
-        editForm = {
-            onlineMessage: stream.onlineMessage || "",
-            offlineMessage: stream.offlineMessage || ""
-        };
+      editingMessageType = "online";
+      editingComponent = null;
+
+      // Parse online message
+      const onlineParsed = tryParseEmbed(stream.onlineMessage);
+      if (onlineParsed.isEmbed && onlineParsed.embeds) {
+        streamOnlineEmbeds = onlineParsed.embeds;
+        streamOnlineComponents = onlineParsed.components || [];
+      } else {
+        // Initialize with empty embed
+        streamOnlineEmbeds = [{
+          title: "",
+          description: "",
+          color: "#57F287",
+          fields: []
+        }];
+        streamOnlineComponents = [];
+      }
+
+      // Parse offline message
+      const offlineParsed = tryParseEmbed(stream.offlineMessage);
+      if (offlineParsed.isEmbed && offlineParsed.embeds) {
+        streamOfflineEmbeds = offlineParsed.embeds;
+        streamOfflineComponents = offlineParsed.components || [];
+      } else {
+        // Initialize with empty embed
+        streamOfflineEmbeds = [{
+          title: "",
+          description: "",
+          color: "#ED4245",
+          fields: []
+        }];
+        streamOfflineComponents = [];
+      }
     }
 
     // Utility functions
@@ -228,7 +533,12 @@
     }
 
     function getPlatformInfo(type: StreamType) {
-      return platformTypes[type] || { name: "Unknown", color: $colorStore.muted, icon: "❓" };
+      return platformTypes[type] || {
+        name: "Unknown",
+        color: $colorStore.muted,
+        faIcon: "fa-circle-question",
+        faClass: "fa-solid"
+      };
     }
 
     function getChannelName(channelId: bigint): string {
@@ -250,6 +560,25 @@
         loadAllStreamData();
       }
     });
+
+  // Reset editing state when switching contexts
+  $effect(() => {
+    // When activeTab changes, reset all editing state
+    if (activeTab) {
+      editingComponent = null;
+      // If not on the list tab, clear stream editing
+      if (activeTab !== "list") {
+        editingStream = null;
+      }
+    }
+  });
+
+  // Reset component editing when switching message types
+  $effect(() => {
+    if (editingMessageType) {
+      editingComponent = null;
+    }
+  });
 
     // Tabs configuration
     const tabs = [
@@ -299,7 +628,7 @@
   guildName={$currentGuild?.name || "Dashboard"}
   icon="fa-radio"
   statusMessages={statusMessages}
-  subtitle="Track Twitch, YouTube, Trovo & Facebook streams"
+  subtitle="Track Twitch, YouTube, Kick, Trovo & Picarto streams"
   {tabs}
   title="Stream Notifications"
 >
@@ -317,11 +646,11 @@
                     </div>
                     {#if streams.length > 0}
                         <button
-                          class="px-4 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                          class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02]"
                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                 onclick={clearAllStreams}
                         >
-                          <i class="fa-solid fa-trash inline mr-1" style="font-size: 16px;"></i>
+                          <i class="fa-solid fa-trash inline mr-1" style="font-size: 12px sm:14px;"></i>
                             Clear All
                         </button>
                     {/if}
@@ -346,7 +675,8 @@
                                     <div class="flex items-start gap-3 flex-1">
                                         <div class="flex items-center justify-center w-10 h-10 rounded-full"
                                              style="background: {platform.color}20;">
-                                            <span class="text-xl">{platform.icon}</span>
+                                          <i class="{platform.faClass} {platform.faIcon}"
+                                             style="color: {platform.color}; font-size: 20px;"></i>
                                         </div>
                                         <div class="flex-1">
                                             <div class="font-semibold mb-1" style="color: {$colorStore.text}">
@@ -361,61 +691,219 @@
                                         </div>
                                     </div>
                                   <button aria-label="Delete"
-                                            class="p-2 rounded-lg transition-all hover:scale-110"
+                                          class="p-1.5 sm:p-2 rounded-lg transition-all hover:scale-110"
                                           style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                                           onclick={() => unfollowStream(stream.id)}
                                     >
-                                    <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
+                                    <i class="fa-solid fa-circle-xmark" style="font-size: 14px sm:16px;"></i>
                                     </button>
                                 </div>
 
                               {#if editingStream === stream.id}
-                                    <div class="space-y-3 border-t pt-3" style="border-color: {$colorStore.primary}20;">
+                                <!-- Flattened editing layout -->
+                                <div class="border-t pt-3 space-y-3" style="border-color: {$colorStore.primary}20;">
+                                  <!-- Message Type Toggle -->
+                                  <div class="flex gap-1 sm:gap-2">
+                                    <button
+                                      class="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium"
+                                      style="background: {editingMessageType === 'online' ? $colorStore.primary : $colorStore.muted}20; color: {editingMessageType === 'online' ? $colorStore.text : $colorStore.muted};"
+                                      onclick={() => {
+                                              editingMessageType = 'online';
+                                              editingComponent = null;
+                                            }}
+                                    >
+                                      <i class="fa-solid fa-circle-check inline mr-1"
+                                         style="color: #57F287; font-size: 10px;"></i>
+                                      <span class="hidden sm:inline">Online</span>
+                                      <span class="sm:hidden">On</span>
+                                    </button>
+                                    <button
+                                      class="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium"
+                                      style="background: {editingMessageType === 'offline' ? $colorStore.primary : $colorStore.muted}20; color: {editingMessageType === 'offline' ? $colorStore.text : $colorStore.muted};"
+                                      onclick={() => {
+                                              editingMessageType = 'offline';
+                                              editingComponent = null;
+                                            }}
+                                    >
+                                      <i class="fa-solid fa-circle-xmark inline mr-1"
+                                         style="color: #ED4245; font-size: 10px;"></i>
+                                      <span class="hidden sm:inline">Offline</span>
+                                      <span class="sm:hidden">Off</span>
+                                    </button>
+                                  </div>
+
+                                  <!-- Embeds Section -->
                                         <div>
-                                          <label for="online-message-{stream.id}" class="block text-sm font-medium mb-2"
-                                                 style="color: {$colorStore.text}">
-                                                Online Message
-                                            </label>
-                                            <textarea
-                                              id="online-message-{stream.id}"
-                                                    bind:value={editForm.onlineMessage}
-                                                    placeholder="Custom online message..."
-                                                    rows="2"
-                                                    class="w-full p-3 rounded-xl border resize-none text-sm"
-                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                            ></textarea>
+                                          <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs sm:text-sm font-medium"
+                                                  style="color: {$colorStore.text}">
+                                              Embeds ({getActiveEmbeds().length}/10)
+                                            </span>
+                                            <button
+                                              class="px-2 py-1 text-xs rounded disabled:opacity-50"
+                                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                              disabled={getActiveEmbeds().length >= 10}
+                                              onclick={addEmbed}
+                                            >
+                                              <i class="fa-solid fa-plus" style="font-size: 9px;"></i> Embed
+                                            </button>
+                                          </div>
+
+                                          <div class="space-y-2">
+                                            {#each getActiveEmbeds() as embed, index (index)}
+                                              <EmbedEditor
+                                                {embed}
+                                                {index}
+                                                placeholders={streamPlaceholders}
+                                                onupdate={updateEmbed}
+                                                onremove={removeEmbed}
+                                                onduplicate={duplicateEmbed}
+                                              />
+                                            {/each}
+                                          </div>
                                         </div>
+
+                                  <!-- Components Section -->
                                         <div>
-                                          <label for="offline-message-{stream.id}"
-                                                 class="block text-sm font-medium mb-2"
-                                                 style="color: {$colorStore.text}">
-                                                Offline Message
-                                            </label>
-                                            <textarea
-                                              id="offline-message-{stream.id}"
-                                                    bind:value={editForm.offlineMessage}
-                                                    placeholder="Custom offline message..."
-                                                    rows="2"
-                                                    class="w-full p-3 rounded-xl border resize-none text-sm"
-                                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                            ></textarea>
+                                          <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs sm:text-sm font-medium"
+                                                  style="color: {$colorStore.text}">
+                                              Buttons ({getTotalComponentCount()}/25)
+                                            </span>
+                                            <button
+                                              class="px-2 py-1 text-xs rounded disabled:opacity-50"
+                                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                              disabled={getActiveComponents().length >= 5}
+                                              onclick={addComponentRow}
+                                            >
+                                              <i class="fa-solid fa-plus" style="font-size: 9px;"></i> Row
+                                            </button>
+                                          </div>
+
+                                          {#if getActiveComponents().length === 0}
+                                            <p class="text-xs text-center py-2" style="color: {$colorStore.muted}">
+                                              Add a row to create buttons
+                                            </p>
+                                          {:else}
+                                            <div class="space-y-2">
+                                              {#each getActiveComponents() as row (row.componentKey)}
+                                                <div class="p-2 border rounded"
+                                                     style="background: {$colorStore.primary}03; border-color: {$colorStore.primary}15;">
+                                                  <div class="flex justify-between items-center mb-1">
+                                                    <span class="text-xs"
+                                                          style="color: {$colorStore.muted}">Row {getActiveComponents().indexOf(row) + 1}</span>
+                                                    <button
+                                                      class="px-1.5 py-0.5 text-xs rounded"
+                                                      style="background: #ED424515; color: #ED4245;"
+                                                      onclick={() => removeComponentRow(row.rowKey)}
+                                                    >
+                                                      <i class="fa-solid fa-trash" style="font-size: 8px;"></i>
+                                                    </button>
+                                                  </div>
+
+                                                  {#if row.components.length === 0}
+                                                    <button
+                                                      class="w-full px-2 py-1 text-xs rounded"
+                                                      style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                                      onclick={() => addComponentToRow(row.rowKey, 'button')}
+                                                    >
+                                                      <i class="fa-solid fa-plus" style="font-size: 9px;"></i> Button
+                                                    </button>
+                                                  {:else}
+                                                    {#if editingComponent && row.components.some((c: any) => c.componentKey === editingComponent.componentKey)}
+                                                      <div class="p-2 mb-1 border rounded"
+                                                           style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}30;">
+                                                        <ComponentEditor
+                                                          component={editingComponent}
+                                                          isEditing={true}
+                                                          user={data.user}
+                                                          onupdate={(detail) => { editingComponent = detail.component; }}
+                                                          onremove={handleComponentRemove}
+                                                          onedit={handleComponentEdit}
+                                                        />
+                                                        <div class="flex gap-1 mt-2">
+                                                          <button
+                                                            class="px-2 py-1 text-xs rounded"
+                                                            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                                            onclick={() => {
+                                                              if (editingComponent) handleComponentUpdate({ component: editingComponent });
+                                                              editingComponent = null;
+                                                            }}
+                                                          >
+                                                            Done
+                                                          </button>
+                                                          <button
+                                                            class="px-2 py-1 text-xs rounded"
+                                                            style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                                                            onclick={() => editingComponent = null}
+                                                          >
+                                                            Cancel
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    {/if}
+
+                                                    <div class="flex gap-1 flex-wrap">
+                                                      {#each row.components as component (component.componentKey)}
+                                                        <div
+                                                          class="cursor-pointer"
+                                                          class:w-full={component.isSelect}
+                                                          onclick={() => handleComponentEdit({ component })}
+                                                        >
+                                                          <ComponentEditor
+                                                            {component}
+                                                            isEditing={false}
+                                                            user={data.user}
+                                                            onupdate={handleComponentUpdate}
+                                                            onremove={handleComponentRemove}
+                                                            onedit={handleComponentEdit}
+                                                          />
+                                                        </div>
+                                                      {/each}
+                                                    </div>
+
+                                                    {#if !row.components.some((c: any) => c.isSelect) && row.components.length < 5}
+                                                      <div class="flex justify-center pt-1 border-t mt-1"
+                                                           style="border-color: {$colorStore.primary}15;">
+                                                        <button
+                                                          class="px-2 py-0.5 text-xs rounded"
+                                                          style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
+                                                          onclick={() => addComponentToRow(row.rowKey, 'button')}
+                                                        >
+                                                          <i class="fa-solid fa-plus" style="font-size: 9px;"></i>
+                                                          Button
+                                                        </button>
+                                                      </div>
+                                                    {/if}
+                                                  {/if}
+                                                </div>
+                                              {/each}
+                                            </div>
+                                          {/if}
                                         </div>
+
+                                  <!-- Save Buttons -->
                                         <div class="flex gap-2">
-                                            <button
-                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                                              style="background: {$colorStore.primary}; color: {$colorStore.text};"
-                                              onclick={() => updateStreamMessages(stream.id)}
-                                                    disabled={saving}
-                                            >
-                                                Save
-                                            </button>
-                                            <button
-                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                                                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                                                    onclick={() => editingStream = null}
-                                            >
-                                                Cancel
-                                            </button>
+                                          <button
+                                            class="flex-1 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium"
+                                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                                            onclick={() => updateSingleStreamMessage(stream.id, editingMessageType)}
+                                            disabled={saving}
+                                          >
+                                            <i class="fa-solid fa-floppy-disk inline mr-1" style="font-size: 10px;"></i>
+                                            Save
+                                          </button>
+                                          <button
+                                            class="flex-1 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium"
+                                            style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                                            onclick={() => {
+                                              editingStream = null;
+                                              editingComponent = null;
+                                            }}
+                                          >
+                                            <i class="fa-solid fa-xmark inline mr-1" style="font-size: 10px;"></i>
+                                            Cancel
+                                          </button>
                                         </div>
                                     </div>
                                 {:else}
@@ -440,10 +928,11 @@
                                     {/if}
 
                                     <button
-                                      class="mt-2 text-sm px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
+                                      class="mt-2 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg transition-all hover:scale-[1.02]"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                                             onclick={() => startEditing(stream)}
                                     >
+                                      <i class="fa-solid fa-pen-to-square inline mr-1" style="font-size: 10px;"></i>
                                         Customize Messages
                                     </button>
                                 {/if}
@@ -493,17 +982,17 @@
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       >
                         <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            Supports: Twitch, YouTube, Trovo, and Facebook Gaming
+                          Supports: Twitch, YouTube, Kick, Trovo, and Picarto
                         </p>
                     </div>
 
                   <button
-                    class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.primary}; color: {$colorStore.text};"
+                    class="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-medium transition-all hover:scale-[1.02]"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                             onclick={followStream}
                             disabled={saving || !newStream.channelId || !newStream.url.trim()}
                     >
-                    <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
+                    <i class="fa-solid fa-plus" style="font-size: 16px sm:20px;"></i>
                         {saving ? "Following..." : "Follow Stream"}
                     </button>
                 </div>
@@ -523,27 +1012,190 @@
 
                 <div class="space-y-6">
                     <div>
-                      <label for="stream-message" class="block text-sm font-medium mb-2"
+                      <label class="block text-sm font-medium mb-3"
                              style="color: {$colorStore.text}">
                         <i class="fa-solid fa-message inline mr-1" style="font-size: 14px;"></i>
-                            Global Stream Message
-                        </label>
-                      <textarea id="stream-message"
-                                bind:value={customMessage}
-                                placeholder="Custom message with placeholders..."
-                                rows="3"
-                                class="w-full p-3 rounded-xl border resize-none"
-                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        ></textarea>
-                        <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                          Available placeholders: streamer, platform, url, title, game
-                        </p>
-                        <button
-                          class="mt-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                          style="background: {$colorStore.primary}; color: {$colorStore.text};"
+                        Global Stream Message
+                      </label>
+
+                      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Editor -->
+                        <div class="space-y-3">
+                          <!-- Embeds -->
+                          <div>
+                            <div class="flex items-center justify-between mb-2">
+                                  <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text}">
+                                    Embeds ({globalMessageEmbeds.length}/10)
+                                  </span>
+                              <button
+                                class="px-2 py-1 text-xs rounded disabled:opacity-50"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                disabled={globalMessageEmbeds.length >= 10}
+                                onclick={addEmbed}
+                              >
+                                <i class="fa-solid fa-plus" style="font-size: 9px;"></i> Embed
+                              </button>
+                            </div>
+
+                            <div class="space-y-3">
+                              {#each globalMessageEmbeds as embed, index (index)}
+                                <EmbedEditor
+                                  {embed}
+                                  {index}
+                                  placeholders={streamPlaceholders}
+                                  onupdate={updateEmbed}
+                                  onremove={removeEmbed}
+                                  onduplicate={duplicateEmbed}
+                                />
+                              {/each}
+                            </div>
+                          </div>
+
+                          <!-- Components Section -->
+                          <div class="border rounded-xl p-3 sm:p-4"
+                               style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+                            <div class="flex items-center justify-between mb-3">
+                              <h4 class="text-sm sm:text-base font-semibold" style="color: {$colorStore.text}">
+                                Buttons ({getTotalComponentCount()}/25)
+                              </h4>
+                              <button
+                                class="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-lg transition-all hover:scale-[1.02] disabled:opacity-50"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                disabled={globalMessageComponents.length >= 5}
+                                onclick={addComponentRow}
+                              >
+                                <i class="fa-solid fa-plus inline mr-1" style="font-size: 10px;"></i>
+                                Row
+                              </button>
+                            </div>
+
+                            {#if globalMessageComponents.length === 0}
+                              <div class="text-center py-4 sm:py-6">
+                                <p class="text-xs sm:text-sm" style="color: {$colorStore.muted}">
+                                  No buttons yet. Add a row to start.
+                                </p>
+                              </div>
+                            {:else}
+                              <div class="space-y-3">
+                                {#each globalMessageComponents as row, rowIndex (row.componentKey)}
+                                  <div class="border rounded-lg p-2 sm:p-3"
+                                       style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                                    <!-- Row Header -->
+                                    <div class="flex items-center justify-between mb-2">
+                                          <span class="text-xs font-medium" style="color: {$colorStore.text}">
+                                            Row {rowIndex + 1} ({row.components.length})
+                                          </span>
+                                      <button
+                                        class="px-2 py-1 text-xs rounded transition-all"
+                                        style="background: #ED424520; color: #ED4245;"
+                                        onclick={() => removeComponentRow(row.rowKey)}
+                                      >
+                                        <i class="fa-solid fa-trash" style="font-size: 10px;"></i>
+                                      </button>
+                                    </div>
+
+                                    <!-- Components in row -->
+                                    {#if row.components.length === 0}
+                                      <div class="flex gap-2 justify-center py-2">
+                                        <button
+                                          class="px-2 sm:px-3 py-1 text-xs rounded-lg transition-all"
+                                          style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                          onclick={() => addComponentToRow(row.rowKey, 'button')}
+                                        >
+                                          <i class="fa-solid fa-plus" style="font-size: 10px;"></i> Button
+                                        </button>
+                                      </div>
+                                    {:else}
+                                      <!-- Editing Mode -->
+                                      {#if editingComponent && row.components.some((c: any) => c.componentKey === editingComponent.componentKey)}
+                                        <div class="p-2 border rounded-lg mb-2"
+                                             style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}30;">
+                                          <ComponentEditor
+                                            component={editingComponent}
+                                            isEditing={true}
+                                            user={data.user}
+                                            onupdate={(detail) => {
+                                                  editingComponent = detail.component;
+                                                }}
+                                            onremove={handleComponentRemove}
+                                            onedit={handleComponentEdit}
+                                          />
+                                          <div class="flex gap-2 mt-3">
+                                            <button
+                                              class="px-3 py-1 text-xs rounded-lg transition-all"
+                                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                              onclick={() => {
+                                                    if (editingComponent) handleComponentUpdate({ component: editingComponent });
+                                                    editingComponent = null;
+                                                  }}
+                                            >
+                                              Done
+                                            </button>
+                                            <button
+                                              class="px-3 py-1 text-xs rounded-lg transition-all"
+                                              style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                                              onclick={() => editingComponent = null}
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      {/if}
+
+                                      <!-- Display Mode -->
+                                      <div class="flex gap-2 flex-wrap">
+                                        {#each row.components as component (component.componentKey)}
+                                          <div
+                                            class="cursor-pointer"
+                                            class:w-full={component.isSelect}
+                                            onclick={() => handleComponentEdit({ component })}
+                                          >
+                                            <ComponentEditor
+                                              {component}
+                                              isEditing={false}
+                                              user={data.user}
+                                              onupdate={handleComponentUpdate}
+                                              onremove={handleComponentRemove}
+                                              onedit={handleComponentEdit}
+                                            />
+                                          </div>
+                                        {/each}
+                                      </div>
+
+                                      <!-- Add Button to Row -->
+                                      {#if !row.components.some((c: any) => c.isSelect) && row.components.length < 5}
+                                        <div class="flex justify-center pt-2 border-t mt-2"
+                                             style="border-color: {$colorStore.primary}20;">
+                                          <button
+                                            class="px-2 py-1 text-xs rounded-lg transition-all"
+                                            style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
+                                            onclick={() => addComponentToRow(row.rowKey, 'button')}
+                                          >
+                                            <i class="fa-solid fa-plus" style="font-size: 10px;"></i> Button
+                                          </button>
+                                        </div>
+                                      {/if}
+                                    {/if}
+                                  </div>
+                                {/each}
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="sticky top-4">
+                          <PreviewCard embeds={globalMessageEmbeds} componentRows={globalMessageComponents} />
+                        </div>
+                      </div>
+
+                      <button
+                        class="mt-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-medium transition-all hover:scale-[1.02]"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
                                 onclick={saveCustomMessage}
                                 disabled={saving}
                         >
+                        <i class="fa-solid fa-floppy-disk inline mr-1" style="font-size: 12px sm:14px;"></i>
                             Save Message
                         </button>
                     </div>
@@ -625,14 +1277,16 @@
                         <div class="space-y-2">
                             {#each Object.entries(stats.streamsByType) as [type, count]}
                                 {@const platform = getPlatformInfo(parseInt(type))}
+                              {@const streamCount = typeof count === 'number' ? count : parseInt(String(count)) || 0}
                                 <div class="flex items-center justify-between p-3 rounded-lg"
                                      style="background: {$colorStore.primary}08;">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-lg">{platform.icon}</span>
+                                      <i class="{platform.faClass} {platform.faIcon}"
+                                         style="color: {platform.color}; font-size: 18px;"></i>
                                         <span style="color: {$colorStore.text}">{platform.name}</span>
                                     </div>
                                     <span class="font-semibold" style="color: {platform.color}">
-                                        {count} stream{count !== 1 ? 's' : ''}
+                                        {streamCount} stream{streamCount !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                             {/each}

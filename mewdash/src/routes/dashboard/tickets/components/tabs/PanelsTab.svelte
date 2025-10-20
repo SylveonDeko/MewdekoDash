@@ -11,7 +11,7 @@
 
   interface Props {
     panels: any[];
-    panelStatuses: any[];
+    panelStatuses: Map<bigint, number>;
     selectedPanel: any;
     panelButtons: any[];
     panelSelectMenus: any[];
@@ -51,6 +51,7 @@
     deleteSelectOption: (optionId: number) => Promise<void>;
     showConfirm: (title: string, message: string, action: () => void, variant?: "danger" | "warning" | "info") => void;
     fetchAllData: () => Promise<void>;
+    checkPanelStatus: (panelId: bigint) => Promise<void>;
   }
 
   let {
@@ -94,7 +95,8 @@
     saveSelectOption,
     deleteSelectOption,
     showConfirm,
-    fetchAllData
+    fetchAllData,
+    checkPanelStatus
   }: Props = $props();
 
   let activeTab = $state("buttons");
@@ -183,18 +185,24 @@
   }
 
   function getPanelStatus(panelId: bigint) {
-    const status = panelStatuses.find(s => s.panelId === panelId);
-    return status?.status || 0;
+    // Trigger lazy loading if not already checked
+    if (!panelStatuses.has(panelId)) {
+      checkPanelStatus(panelId);
+      return -1; // Loading state
+    }
+    return panelStatuses.get(panelId) || 0;
   }
 
   function getStatusColor(status: number) {
     switch (status) {
+      case -1:
+        return $colorStore.muted; // Loading
       case 0:
-        return "#10b981";
+        return "#10b981"; // OK
       case 1:
-        return "#f59e0b";
+        return "#f59e0b"; // Message deleted
       case 2:
-        return "#ef4444";
+        return "#ef4444"; // Channel deleted
       default:
         return $colorStore.muted;
     }
@@ -202,12 +210,14 @@
 
   function getStatusIcon(status: number) {
     switch (status) {
+      case -1:
+        return "fa-spinner fa-spin"; // Loading
       case 0:
-        return "fa-circle-check";
+        return "fa-circle-check"; // OK
       case 1:
-        return "fa-triangle-exclamation";
+        return "fa-triangle-exclamation"; // Message deleted
       case 2:
-        return "fa-circle-xmark";
+        return "fa-circle-xmark"; // Channel deleted
       default:
         return "fa-circle-question";
     }

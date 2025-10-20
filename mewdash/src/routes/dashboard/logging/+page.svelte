@@ -4,30 +4,28 @@
 
   import { onMount } from "svelte";
   import {
-    loggingApi,
     clientApi,
+    LOG_TYPE_MAPPINGS,
+    loggingApi,
     type LoggingConfigurationResponse,
-    type LogType,
-    LOG_TYPE_MAPPINGS
+    type LogType
   } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {fade, slide} from "svelte/transition";
-    import type {PageData} from "./$types";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {currentInstance} from "$lib/stores/instanceStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { fade } from "svelte/transition";
+  import type { PageData } from "./$types";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { currentInstance } from "$lib/stores/instanceStore";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
     let {data}: Props = $props();
 
-  let currentUser = data.user;
-  
   // States
     let activeTab: "channels" | "ignored" = $state("channels");
     let loading = $state(true);
@@ -55,7 +53,10 @@
     { id: "users", name: "Users", icon: "fa-user-plus" },
     { id: "messages", name: "Messages", icon: "fa-message" },
     { id: "moderation", name: "Moderation", icon: "fa-shield" },
-    { id: "server", name: "Server", icon: "fa-hashtag" },
+    { id: "server", name: "Server", icon: "fa-server" },
+    { id: "channels", name: "Channels", icon: "fa-hashtag" },
+    { id: "roles", name: "Roles", icon: "fa-user-tag" },
+    { id: "threads", name: "Threads", icon: "fa-comments" },
     { id: "voice", name: "Voice", icon: "fa-microphone" },
     { id: "all", name: "All Events", icon: "fa-file-lines" }
   ];
@@ -86,8 +87,8 @@
 
   // Popular log types to highlight for new users
   const popularLogTypes = [
-    'user_joined', 'user_left', 'message_deleted', 'message_edited', 
-    'user_banned', 'user_unbanned', 'channel_created', 'channel_deleted'
+    "UserJoined", "UserLeft", "MessageDeleted", "MessageUpdated",
+    "UserBanned", "UserUnbanned", "ChannelCreated", "ChannelDestroyed"
   ];
 
 
@@ -128,8 +129,7 @@
       // Convert logChannels to string IDs and initialize missing ones
       logChannels = {} as any;
       for (const mapping of LOG_TYPE_MAPPINGS) {
-        // API returns 'logTypes' instead of 'logChannels'
-        const channelId = (config.logChannels || config.logTypes)?.[mapping.logType];
+        const channelId = config.logTypes?.[mapping.logType];
         logChannels[mapping.logType] = channelId ? channelId.toString() : null;
       }
 
@@ -152,8 +152,8 @@
       const logTypeMappings = [];
       for (const [logType, channelId] of Object.entries(logChannels)) {
         logTypeMappings.push({
-          LogType: logType,
-          ChannelId: channelId ? BigInt(channelId) : null
+          logType: logType,
+          channelId: channelId ? BigInt(channelId) : null
         });
       }
 
@@ -177,17 +177,32 @@
   }
 
   async function setLogChannel(logType: LogType, channelId: string | null) {
-    logChannels[logType] = channelId;
+    logChannels = { ...logChannels, [logType]: channelId };
     markAsChanged();
   }
 
-  function toggleIgnoredChannel(channelId: string) {
-    const index = ignoredChannels.indexOf(channelId);
-    if (index === -1) {
-      ignoredChannels = [...ignoredChannels, channelId];
-    } else {
-      ignoredChannels = ignoredChannels.filter(id => id !== channelId);
+  function clearCategory(category: string) {
+    // Get all log types in this category
+    const categoryLogTypes = LOG_TYPE_MAPPINGS
+      .filter(mapping => mapping.category === category)
+      .map(mapping => mapping.logType);
+
+    // Clear all channels for this category
+    const updatedChannels = { ...logChannels };
+    for (const logType of categoryLogTypes) {
+      updatedChannels[logType] = null;
     }
+    logChannels = updatedChannels;
+    markAsChanged();
+  }
+
+  function clearAllChannels() {
+    // Clear all log channels
+    const updatedChannels = { ...logChannels };
+    for (const mapping of LOG_TYPE_MAPPINGS) {
+      updatedChannels[mapping.logType] = null;
+    }
+    logChannels = updatedChannels;
     markAsChanged();
   }
 
@@ -225,10 +240,6 @@
             style: `background: ${$colorStore.primary}; color: white; box-shadow: 0 4px 12px ${$colorStore.primary}30;`
         }
     ] : []);
-    // Reactive: Filter channels for search
-    let filteredChannels = $derived(textChannels.filter(channel =>
-        channel.name.toLowerCase().includes(channelSearchQuery.toLowerCase())
-    ));
     // Reactive: Separate ignored and active channels for better UX
     let ignoredChannelList = $derived(textChannels.filter(channel => ignoredChannels.includes(channel.id)));
     let activeChannelList = $derived(textChannels.filter(channel => !ignoredChannels.includes(channel.id)));
@@ -249,55 +260,56 @@
     });
 </script>
 
-<DashboardPageLayout
-  title="Logging Configuration"
-  subtitle="Configure event logging channels and settings"
-  icon="fa-file"
-  {tabs}
-  bind:activeTab
-  {actionButtons}
-  guildName={$currentGuild?.name || "Dashboard"}
->
+{#snippet statusMessagesSnippet()}
+  <!-- Status Messages -->
+  {#if showNotification}
+    <div class="mb-6" transition:fade>
+      <Notification message={notificationMessage} type={notificationType} />
+    </div>
+  {/if}
 
-    <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
-    <!-- Status Messages -->
-    {#if showNotification}
-      <div class="mb-6" transition:fade>
-        <Notification message={notificationMessage} type={notificationType} />
-      </div>
-    {/if}
-
-    <!-- Logging Status -->
-    {#if isLoggingEnabled}
-      <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
-           style="background: #10b98120; border: 1px solid #10b98130;"
-           in:fade={{ duration: 300 }}>
-        <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 16px;"></i>
-        <span style="color: #10b981">
-          Logging is active • {Object.values(logChannels).filter(ch => ch && ch !== '0').length} event types configured
-        </span>
-      </div>
-    {:else}
-      <div class="mb-6 p-6 rounded-xl"
-           style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10); border: 1px solid {$colorStore.primary}30;"
-           in:fade={{ duration: 300 }}>
-        <div class="flex items-start gap-4">
-          <i class="fa-utility-duo fa-regular fa-file"
-             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-          <div>
-            <h3 class="font-semibold mb-2" style="color: {$colorStore.text}">Set up Event Logging</h3>
-            <p class="text-sm mb-3" style="color: {$colorStore.muted}">
-              Track important server events like joins, leaves, message edits, and moderation actions by assigning channels below.
-            </p>
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              💡 Start with "User Joined" and "Message Deleted" for basic monitoring
-            </p>
-          </div>
+  <!-- Logging Status -->
+  {#if isLoggingEnabled}
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3"
+         style="background: #10b98120; border: 1px solid #10b98130;"
+         in:fade={{ duration: 300 }}>
+      <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 16px;"></i>
+      <span style="color: #10b981">
+        Logging is active • {Object.values(logChannels).filter(ch => ch && ch !== '0').length} event types configured
+      </span>
+    </div>
+  {:else}
+    <div class="mb-6 p-6 rounded-xl"
+         style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10); border: 1px solid {$colorStore.primary}30;"
+         in:fade={{ duration: 300 }}>
+      <div class="flex items-start gap-4">
+        <i class="fa-utility-duo fa-regular fa-file"
+           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+        <div>
+          <h3 class="font-semibold mb-2" style="color: {$colorStore.text}">Set up Event Logging</h3>
+          <p class="text-sm mb-3" style="color: {$colorStore.muted}">
+            Track important server events like joins, leaves, message edits, and moderation actions by assigning
+            channels below.
+          </p>
+          <p class="text-xs" style="color: {$colorStore.muted}">
+            💡 Start with "User Joined" and "Message Deleted" for basic monitoring
+          </p>
         </div>
       </div>
-    {/if}
-  </svelte:fragment>
+    </div>
+  {/if}
+{/snippet}
+
+<DashboardPageLayout
+  {actionButtons}
+  bind:activeTab
+  guildName={$currentGuild?.name || "Dashboard"}
+  icon="fa-file"
+  statusMessages={statusMessagesSnippet}
+  subtitle="Configure event logging channels and settings"
+  {tabs}
+  title="Logging Configuration"
+>
 
   <!-- Tab Content -->
   {#if loading}
@@ -310,48 +322,71 @@
       </div>
     </div>
   {:else if activeTab === 'channels'}
-    <div class="space-y-6" transition:fade>
+    <div class="space-y-6" transition:fade={{ duration: 200 }}>
       <!-- Category Filter -->
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
         {#each categories as category}
           <button
-            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
-            style="background: {selectedCategory === category.id ? $colorStore.secondary : `${$colorStore.primary}10`};
-                   color: {selectedCategory === category.id ? $colorStore.text : $colorStore.muted};"
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation"
+            style="background: {selectedCategory === category.id ? `${$colorStore.primary}` : `${$colorStore.primary}15`};
+                   color: {selectedCategory === category.id ? 'white' : $colorStore.text};
+                   border: 1px solid {selectedCategory === category.id ? $colorStore.primary : `${$colorStore.primary}30`};"
             onclick={() => selectedCategory = category.id}
+            aria-label="Filter by {category.name}"
           >
-              <i class="fa-solid {category.icon}" style="font-size: 16px;"></i>
-            {category.name}
+            <i class="fa-solid {category.icon}" style="font-size: 14px;"></i>
+            <span class="whitespace-nowrap">{category.name}</span>
           </button>
         {/each}
+
+        {#if selectedCategory === "all"}
+          <button
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation ml-auto"
+            style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
+            onclick={clearAllChannels}
+            aria-label="Clear all log channels"
+          >
+            <i class="fa-solid fa-broom" style="font-size: 14px;"></i>
+            <span class="whitespace-nowrap">Clear All</span>
+          </button>
+        {:else if selectedCategory !== "popular"}
+          <button
+            class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-all hover:scale-[1.02] touch-manipulation ml-auto"
+            style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
+            onclick={() => clearCategory(selectedCategory)}
+            aria-label="Clear all channels in {selectedCategory}"
+          >
+            <i class="fa-solid fa-broom" style="font-size: 14px;"></i>
+            <span class="whitespace-nowrap">Clear Category</span>
+          </button>
+        {/if}
       </div>
 
       <!-- Log Channel Configuration -->
       <div class="grid gap-4">
         {#each filteredLogTypes as mapping (mapping.logType)}
             <div
-              class=" rounded-xl border p-4 transition-all"
+              class="rounded-xl border p-4 transition-all"
             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;"
-            transition:slide
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <div class="p-2 rounded-lg flex-shrink-0" style="background: {$colorStore.primary}20;">
                     <i class="fa-solid {getIconComponent(mapping.icon)}" style="color: {$colorStore.primary}; font-size: 20px;"></i>
                 </div>
-                <div>
-                  <h3 class="font-medium" style="color: {$colorStore.text}">{mapping.displayName}</h3>
-                  <p class="text-sm" style="color: {$colorStore.muted}">{mapping.description}</p>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-medium truncate" style="color: {$colorStore.text}">{mapping.displayName}</h3>
+                    <p class="text-sm line-clamp-2" style="color: {$colorStore.muted}">{mapping.description}</p>
                 </div>
               </div>
-              
-              <div class="w-64">
+
+                <div class="w-full sm:w-64 flex-shrink-0">
                 <DiscordSelector
                   type="channel"
                   options={textChannels}
                   bind:selected={logChannels[mapping.logType]}
                   placeholder="Select channel..."
-                  on:change={() => markAsChanged()}
+                  onchange={() => setLogChannel(mapping.logType, logChannels[mapping.logType])}
                 />
               </div>
             </div>
@@ -361,17 +396,18 @@
     </div>
 
   {:else if activeTab === 'ignored'}
-    <div class="space-y-6" transition:fade>
+    <div class="space-y-6" transition:fade={{ duration: 200 }}>
       <!-- Info Section -->
-      <div class="rounded-xl border p-6" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
-        <div class="flex items-start gap-4 mb-4">
-          <i class="fa-solid fa-xmark mt-1" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-          <div>
-            <h3 class="text-lg font-bold mb-2" style="color: {$colorStore.text}">Channel Exclusions</h3>
+      <div class="rounded-xl border p-4 sm:p-6"
+           style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="flex items-start gap-3 sm:gap-4 mb-4">
+          <i class="fa-solid fa-xmark mt-1 flex-shrink-0" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base sm:text-lg font-bold mb-2" style="color: {$colorStore.text}">Channel Exclusions</h3>
             <p class="text-sm mb-3" style="color: {$colorStore.muted}">
               Prevent logging for specific channels like staff rooms, bot commands, or spam channels.
             </p>
-            <div class="flex items-center gap-4 text-xs" style="color: {$colorStore.muted}">
+            <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-xs" style="color: {$colorStore.muted}">
               <span>💡 <strong>{ignoredChannelList.length}</strong> channels ignored</span>
               <span>📝 <strong>{activeChannelList.length}</strong> channels logged</span>
             </div>
@@ -383,11 +419,12 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Currently Ignored Channels -->
-        <div class=" rounded-xl border p-6 transition-all"
+        <div class="rounded-xl border p-4 sm:p-6 transition-all"
                style="border-color: #ef444430; background: #ef444405;">
           <div class="flex items-center gap-3 mb-4">
-            <i class="fa-solid fa-xmark" style="color: #ef4444; font-size: 20px;"></i>
-            <h3 class="font-bold" style="color: {$colorStore.text}">Ignored Channels ({ignoredChannelList.length})</h3>
+            <i class="fa-solid fa-xmark" style="color: #ef4444; font-size: 18px;"></i>
+            <h3 class="text-base sm:text-lg font-bold" style="color: {$colorStore.text}">Ignored Channels
+              ({ignoredChannelList.length})</h3>
           </div>
           
           {#if ignoredChannelList.length === 0}
@@ -408,9 +445,10 @@
                   </div>
 
                     <button
-                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02] touch-manipulation"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => removeFromIgnored(channel.id)}
+                      aria-label="Enable logging for {channel.name}"
                   >
                     <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
                     <span>Log</span>
@@ -422,11 +460,13 @@
         </div>
 
         <!-- Available Channels to Ignore -->
-        <div class=" rounded-xl border p-6 transition-all"
+        <div class="rounded-xl border p-4 sm:p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-4">
-            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h3 class="font-bold" style="color: {$colorStore.text}">Active Channels ({activeChannelList.length})</h3>
+            <i class="fa-utility-duo fa-regular fa-hashtag"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
+            <h3 class="text-base sm:text-lg font-bold" style="color: {$colorStore.text}">Active Channels
+              ({activeChannelList.length})</h3>
           </div>
 
           <!-- Search Box -->
@@ -459,9 +499,10 @@
                   </div>
 
                     <button
-                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm transition-all hover:scale-[1.02] touch-manipulation"
                     style="background: #ef444420; color: #ef4444;"
                     onclick={() => addToIgnored(channel.id)}
+                      aria-label="Ignore logging for {channel.name}"
                   >
                     <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
                     <span>Ignore</span>

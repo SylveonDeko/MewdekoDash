@@ -2,9 +2,10 @@
 
 export enum StreamType {
   Twitch = 0,
-  YouTube = 1,
-  Trovo = 2,
-  Facebook = 3,
+  Picarto = 3,
+  YouTube = 4,
+  Trovo = 6,
+  Kick = 7,
 }
 
 export interface FollowedStream {

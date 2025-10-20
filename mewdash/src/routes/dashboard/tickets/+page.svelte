@@ -40,7 +40,7 @@
 
   // Panel data
   let panels: any[] = $state([]);
-  let panelStatuses: any[] = $state([]);
+  let panelStatuses = $state(new Map<bigint, number>()); // Map<panelId, status>
   let selectedPanel: any = $state(null);
   let panelButtons: any[] = $state([]);
   let panelSelectMenus: any[] = $state([]);
@@ -163,16 +163,11 @@
       try {
         loading = true;
 
+        // Use the optimized overview endpoint for the main data
+        // Only fetch auxiliary data (roles, channels, etc.) separately
+        // Note: allTickets and panelStatuses are loaded lazily when their tabs are accessed
         const [
-          statsData,
-          activityData,
-          staffStatsData,
-          panelsData,
-          panelStatusData,
-          prioritiesData,
-          tagsData,
-          casesData,
-          ticketsData,
+          overviewData,
           blacklistData,
           settingsData,
           rolesData,
@@ -180,15 +175,7 @@
           categoriesData,
           emojisData
         ] = await Promise.all([
-          ticketApi.getTicketStats($currentGuild.id).catch(() => null),
-          ticketApi.getTicketActivity($currentGuild.id, 30).catch(() => []),
-          ticketApi.getStaffResponseStats($currentGuild.id).catch(() => []),
-          ticketApi.getTicketPanels($currentGuild.id).catch(() => []),
-          ticketApi.getPanelStatus($currentGuild.id).catch(() => []),
-          ticketApi.getTicketPriorities($currentGuild.id).catch(() => []),
-          ticketApi.getTicketTags($currentGuild.id).catch(() => []),
-          ticketApi.getTicketCases($currentGuild.id).catch(() => []),
-          ticketApi.getGuildTickets($currentGuild.id, true, true, false).catch(() => []),
+          ticketApi.getTicketOverview($currentGuild.id, 30).catch(() => null),
           ticketApi.getTicketBlacklist($currentGuild.id).catch(() => []),
           ticketApi.getTicketSettings($currentGuild.id).catch(() => null),
           clientApi.getRoles($currentGuild.id),
@@ -197,15 +184,27 @@
           clientApi.getEmojis(BigInt(data.user.id), false).catch(() => [])
         ]);
 
-        statistics = statsData;
-        ticketActivity = activityData || [];
-        staffResponseStats = staffStatsData || [];
-        panels = panelsData || [];
-        panelStatuses = panelStatusData || [];
-        priorities = prioritiesData || [];
-        tags = tagsData || [];
-        cases = casesData || [];
-        allTickets = ticketsData || [];
+        // Unpack the overview data
+        if (overviewData) {
+          statistics = overviewData.statistics || null;
+          ticketActivity = overviewData.ticketActivity || [];
+          staffResponseStats = overviewData.staffResponseStats || [];
+          panels = overviewData.panels || [];
+          priorities = overviewData.priorities || [];
+          tags = overviewData.tags || [];
+          cases = overviewData.cases || [];
+        } else {
+          statistics = null;
+          ticketActivity = [];
+          staffResponseStats = [];
+          panels = [];
+          priorities = [];
+          tags = [];
+          cases = [];
+        }
+
+        // Set the rest of the data
+        // panelStatuses and allTickets are loaded lazily when needed (Panels/Cases tabs)
         blacklistedUsers = blacklistData || [];
         transcriptChannelId = settingsData?.transcriptChannelId || null;
         logChannelId = settingsData?.logChannelId || null;
@@ -236,6 +235,30 @@
       panelSelectMenus = menus || [];
     } catch (err) {
       logger.error("Failed to load panel details:", err);
+    }
+  }
+
+  async function loadAllTickets() {
+    if (!$currentGuild?.id || allTickets.length > 0) return;
+
+    try {
+      const tickets = await ticketApi.getGuildTickets($currentGuild.id, true, true, false);
+      allTickets = tickets || [];
+    } catch (err) {
+      logger.error("Failed to load all tickets:", err);
+    }
+  }
+
+  async function checkPanelStatus(panelId: bigint) {
+    if (!$currentGuild?.id || panelStatuses.has(panelId)) return;
+
+    try {
+      const result = await ticketApi.getSinglePanelStatus($currentGuild.id, panelId);
+      panelStatuses.set(result.panelId, result.status);
+      // Trigger reactivity
+      panelStatuses = new Map(panelStatuses);
+    } catch (err) {
+      logger.error("Failed to check panel status:", err);
     }
   }
 
@@ -952,6 +975,13 @@
       fetchAllData();
     }
   });
+
+  // Lazy-load tickets when Cases tab is accessed
+  $effect(() => {
+    if (activeTab === "cases" && $currentGuild?.id) {
+      loadAllTickets();
+    }
+  });
 </script>
 
 <DashboardPageLayout
@@ -1038,6 +1068,7 @@
         {deleteSelectOption}
         {showConfirm}
         {fetchAllData}
+        {checkPanelStatus}
       />
     {/if}
 
