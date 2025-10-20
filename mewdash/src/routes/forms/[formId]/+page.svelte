@@ -440,7 +440,6 @@
       try {
         userGuildMember = await clientApi.getUser(form.guildId, data.user.id);
       } catch (err) {
-        console.warn("Could not load guild member data for conditionals:", err);
         // Continue anyway - Discord conditionals will show by default
       }
 
@@ -449,11 +448,26 @@
         try {
           const eligibilityCheck = await formsApi.checkEligibility(formId, data.user.id);
           if (!eligibilityCheck.isEligible) {
-            error = eligibilityCheck.reason || "You are not eligible to submit this form";
+            // Provide more specific error messages based on form type
+            if (form.formType === 1) {
+              // Ban appeal - user is not banned
+              error = eligibilityCheck.reason || "You are not banned from this server. Ban appeals are only for users who have been banned.";
+            } else if (form.formType === 2) {
+              // Join application - user is already a member or other issue
+              error = eligibilityCheck.reason || "You are not eligible to submit this join application. You may already be a member of this server.";
+            } else {
+              error = eligibilityCheck.reason || "You are not eligible to submit this form";
+            }
+            // Clear the form so it's not displayed
+            form = null;
+            questions = [];
             return;
           }
         } catch (err) {
-          error = "Failed to verify eligibility";
+          error = "Failed to verify eligibility. Please try again later.";
+          // Clear the form so it's not displayed
+          form = null;
+          questions = [];
           return;
         }
       }
@@ -466,11 +480,17 @@
 
           if (!guild) {
             error = "Preview mode is only available to server administrators";
+            // Clear the form so it's not displayed
+            form = null;
+            questions = [];
             return;
           }
           isAdmin = true;
         } catch {
           error = "Failed to verify administrator permissions";
+          // Clear the form so it's not displayed
+          form = null;
+          questions = [];
           return;
         }
       }
@@ -479,23 +499,40 @@
       if (!isPreviewMode) {
         if (!form.isActive) {
           error = "This form is no longer accepting responses";
+          // Clear the form so it's not displayed
+          form = null;
+          questions = [];
           return;
         }
 
         // Check if form has expired
         if (form.expiresAt && new Date(form.expiresAt) < new Date()) {
           error = "This form has expired and is no longer accepting responses";
+          // Clear the form so it's not displayed
+          form = null;
+          questions = [];
           return;
         }
 
         // Check if max responses reached
         if (form.maxResponses && form.responseCount && form.responseCount >= form.maxResponses) {
           error = "This form has reached its maximum number of responses";
+          // Clear the form so it's not displayed
+          form = null;
+          questions = [];
           return;
         }
       }
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to load form";
+    } catch (err: any) {
+      // Check if it's a specific error message
+      if (err?.message?.toLowerCase().includes("not found") || err?.status === 404) {
+        error = "Form not found. It may have been deleted or the link may be incorrect.";
+      } else {
+        error = err instanceof Error ? err.message : "Failed to load form";
+      }
+      // Clear the form so nothing is displayed
+      form = null;
+      questions = [];
     } finally {
       loading = false;
     }
@@ -598,31 +635,72 @@
 
   onMount(async () => {
     const shareCode = $page.params.formId;
-    console.log("Share code:", shareCode);
 
-    // Resolve share code to get form ID and instance
+    // First, get all instances to find which one has this share code
+    let instances: any[] = [];
     try {
-      const resolved = await formsApi.resolveShareLink(shareCode);
-      console.log("Resolved to:", resolved);
-      formId = resolved.formId;
-
-      // Set the correct instance
-      const instances = await instanceManagementApi.getBotInstances();
-      const targetInstance = instances.find((i) => i.port.toString() === resolved.instanceIdentifier);
-      if (targetInstance) {
-        console.log("Setting instance:", targetInstance);
-        currentInstance.set(targetInstance);
-      } else {
-        console.warn("Could not find matching instance for identifier:", resolved.instanceIdentifier);
-      }
+      instances = await instanceManagementApi.getBotInstances();
     } catch (err) {
-      console.error("Failed to resolve share code:", err);
-      error = "Invalid or expired form link";
+      error = "Failed to load bot instances. Please try again later.";
       loading = false;
       return;
     }
 
-    console.log("Final formId before loading:", formId);
+    // Try to resolve the share code on each instance WITHOUT changing the global instance
+    let resolved: any = null;
+    let targetInstance: any = null;
+
+    for (const instance of instances) {
+      try {
+        // Make a direct API call with specific instance headers instead of changing the global store
+        const baseUrl = `http://localhost:${instance.port}/botapi`;
+        const response = await fetch(`/api/forms/share/${shareCode}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Instance-Url": baseUrl
+          }
+        });
+
+        const responseText = await response.text();
+        let resolveResult: any;
+        try {
+          resolveResult = JSON.parse(responseText);
+        } catch {
+          // Invalid response, try next instance
+          continue;
+        }
+
+        // Check if the result is actually valid (not an error response)
+        if (response.ok && resolveResult && !resolveResult.error && resolveResult.formId) {
+          resolved = resolveResult;
+          targetInstance = instance;
+          break; // Found it, stop searching
+        } else {
+          // Got a response but it's an error, try next instance
+
+        }
+      } catch (err: any) {
+        // This instance doesn't have the share code, try next one
+
+      }
+    }
+
+    if (!resolved || !targetInstance) {
+      error = "This form link is invalid or has expired. Please request a new link from the server administrator.";
+      loading = false;
+      // Clear the instance since we didn't find the form
+      currentInstance.set(null);
+      return;
+    }
+
+    formId = resolved.formId;
+
+    // NOW set the correct instance only once, after we've found it
+    currentInstance.set(targetInstance);
+
+    // Wait longer for the store to update and propagate through all components
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     if (!data.user) {
       showLoginPrompt = true;

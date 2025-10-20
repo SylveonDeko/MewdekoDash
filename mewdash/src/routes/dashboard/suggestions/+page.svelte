@@ -3,13 +3,16 @@
 
 
   import { onMount } from "svelte";
-  import { suggestionsApi, clientApi, type Suggestion, SuggestionState } from "$lib/api/index.ts";
+  import { clientApi, type GuildEmojiInfo, type Suggestion, suggestionsApi, SuggestionState } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
-  import { fade, slide } from "svelte/transition";
+  import { fade, fly, slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import Notification from "$lib/components/ui/Notification.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
   import { goto } from "$app/navigation";
@@ -24,87 +27,18 @@
 
   let currentUser = data.user;
 
-  // Helper function to validate and format Discord custom emotes
-  function formatEmote(emote: string): string {
-    const trimmed = emote.trim();
-    // Check if it's a Discord custom emote format <a:name:id> or <:name:id>
-    const customEmoteRegex = /^<(a?):(\w+):(\d+)>$/;
-    if (customEmoteRegex.test(trimmed)) {
-      return trimmed;
-    }
-    // Check if it's just the emote without brackets, and wrap it properly
-    const partialEmoteRegex = /^(a?):(\w+):(\d+)$/;
-    if (partialEmoteRegex.test(trimmed)) {
-      return `<${trimmed}>`;
-    }
-    // Otherwise return as-is (Unicode emoji or plain text)
-    return trimmed;
-  }
-
-  // Helper function to parse and validate emote list
-  function parseEmotesList(emotesString: string): string {
-    if (!emotesString || emotesString === "disabled" || emotesString === "-") {
-      return emotesString;
-    }
-
-    const emotes = emotesString.split(",").map(e => formatEmote(e));
-    if (emotes.length > 5) {
-      showNotificationMessage("Maximum 5 emotes allowed. Only first 5 will be saved.", "error");
-      return emotes.slice(0, 5).join(",");
-    }
-    return emotes.join(",");
-  }
-
-  // Helper function to render Discord emote as image or fallback to text
-  function renderEmote(emote: string): { type: "image" | "text", content: string, animated?: boolean } {
-    const trimmed = emote.trim();
-
-    // Check for Discord custom emote
-    const customEmoteMatch = trimmed.match(/^<(a?):(\w+):(\d+)>$/);
-    if (customEmoteMatch) {
-      const [, animated, name, id] = customEmoteMatch;
-      const extension = animated === "a" ? "gif" : "png";
-      return {
-        type: "image",
-        content: `https://cdn.discordapp.com/emojis/${id}.${extension}`,
-        animated: animated === "a"
-      };
-    }
-
-    // Otherwise it's a Unicode emoji or text
-    return {
-      type: "text",
-      content: trimmed
-    };
-  }
-
-  // Helper to parse emotes string for preview
-  function parseEmotesForPreview(emotesString: string): Array<{
-    type: "image" | "text",
-    content: string,
-    animated?: boolean
-  }> {
-    if (!emotesString || emotesString === "disabled" || emotesString === "-") {
-      return [{ type: "text", content: "👍" }, { type: "text", content: "👎" }];
-    }
-
-    return emotesString.split(",").map(e => renderEmote(formatEmote(e)));
-  }
-
   // States
   let activeTab = $state("suggestions");
   let activeSubTab = $state("general");
-  let isMobile = false;
   let loading = $state(true);
+  let saving = $state(false);
   let error: string | null = $state(null);
   let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
-  let changedSettings = $state(new Set<string>());
-  let showStatusModal = $state(false);
-  let statusChangeReason = $state("");
-  let selectedSuggestion: Suggestion | null = $state(null);
-  let selectedStatus: SuggestionState | null = $state(null);
+  let showInlineConfirm: { [key: number]: SuggestionState | null } = $state({});
+  let inlineReasons: { [key: number]: string } = $state({});
+  let confirmingStatus: { [key: number]: boolean } = $state({});
 
   let sortBy: "dateAdded" | "currentState" = $state("dateAdded");
   let sortDirection: "asc" | "desc" = $state("desc");
@@ -112,44 +46,171 @@
   // Data
   let suggestions: Suggestion[] = $state([]);
   let channels: Array<{ id: string; name: string }> = $state([]);
+  let guildEmojis: GuildEmojiInfo[] = $state([]);
 
 
-  // Settings
+  // Settings - Current values
   let minLength = $state(0);
   let maxLength = $state(2000);
-  let acceptMessage = $state("");
-  let denyMessage = $state("");
-  let considerMessage = $state("");
-  let implementMessage = $state("");
-  let acceptChannel = $state("");
-  let denyChannel = $state("");
-  let considerChannel = $state("");
-  let implementChannel = $state("");
-  let suggestChannel = $state("");
+  let suggestionMessage: any = $state({});
+  let acceptMessage: any = $state({});
+  let denyMessage: any = $state({});
+  let considerMessage: any = $state({});
+  let implementMessage: any = $state({});
+  let acceptChannel: string = $state("");
+  let denyChannel: string = $state("");
+  let considerChannel: string = $state("");
+  let implementChannel: string = $state("");
+  let suggestChannel: string = $state("");
   let threadType = $state(0);
-  let suggestButtonMessage = $state("");
-  let suggestButtonLabel = $state("");
-  let suggestButtonEmote = $state("");
-  let suggestEmotes = $state("");
+  let emoteMode = $state(0); // 0 = reactions, 1 = buttons
+  let suggestButtonColor = $state(1); // 1=Blue, 2=Grey, 3=Green, 4=Red
+  let emote1Style = $state(1);
+  let emote2Style = $state(1);
+  let emote3Style = $state(1);
+  let emote4Style = $state(1);
+  let emote5Style = $state(1);
+  let suggestButtonMessage: any = $state({});
+  let suggestButtonLabel: string = $state("");
+  let suggestButtonEmote: string | string[] | null = $state(null);
+  let suggestEmotes: string[] | string | null = $state([]);
   let archiveOnDeny = $state(false);
   let archiveOnAccept = $state(false);
   let archiveOnConsider = $state(false);
   let archiveOnImplement = $state(false);
   let suggestButtonChannel: bigint | null = null;
 
+  // Suggestion-specific placeholders
+  const suggestionPlaceholders = [
+    {
+      category: "Suggestions",
+      name: "%suggest.user%",
+      description: "The full username of the user who's suggestion got updated"
+    },
+    {
+      category: "Suggestions",
+      name: "%suggest.user.id%",
+      description: "The Id of the user who's suggestion got updated"
+    },
+    { category: "Suggestions", name: "%suggest.message%", description: "The original suggestion" },
+    { category: "Suggestions", name: "%suggest.number%", description: "The suggestion number that was updated" },
+    {
+      category: "Suggestions",
+      name: "%suggest.user.name%",
+      description: "The name of the user who's suggestion got updated"
+    },
+    { category: "Suggestions", name: "%suggest.user.avatar%", description: "The avatar of the original suggester" },
+    {
+      category: "Suggestions",
+      name: "%suggest.mod.user%",
+      description: "The full username of the one who updated the suggestion"
+    },
+    {
+      category: "Suggestions",
+      name: "%suggest.mod.avatar%",
+      description: "The pfp of the one who updated the suggestion"
+    },
+    {
+      category: "Suggestions",
+      name: "%suggest.mod.name%",
+      description: "The name of the person who updated the suggestion"
+    },
+    { category: "Suggestions", name: "%suggest.mod.message%", description: "The reason the suggestion was updated" }
+  ];
+
+  // Original values (fetched from API)
+  let originalValues = $state({
+    minLength: 0,
+    maxLength: 2000,
+    suggestionMessage: {} as any,
+    acceptMessage: {} as any,
+    denyMessage: {} as any,
+    considerMessage: {} as any,
+    implementMessage: {} as any,
+    acceptChannel: "",
+    denyChannel: "",
+    considerChannel: "",
+    implementChannel: "",
+    suggestChannel: "",
+    threadType: 0,
+    emoteMode: 0,
+    suggestButtonColor: 1,
+    emote1Style: 1,
+    emote2Style: 1,
+    emote3Style: 1,
+    emote4Style: 1,
+    emote5Style: 1,
+    suggestButtonMessage: {} as any,
+    suggestButtonLabel: "",
+    suggestButtonEmote: null as string | string[] | null,
+    suggestEmotes: [] as string[] | string | null,
+    archiveOnDeny: false,
+    archiveOnAccept: false,
+    archiveOnConsider: false,
+    archiveOnImplement: false,
+    suggestButtonChannel: null as bigint | null
+  });
+
   // Computed values
-  let hasChanges = $derived(changedSettings.size > 0);
-  let sortedSuggestions = $derived([...suggestions].sort((a, b) => {
-    if (sortBy === "dateAdded") {
-      const dateA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0;
-      const dateB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0;
-      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-    } else {
-      if (a.currentState < b.currentState) return sortDirection === "asc" ? -1 : 1;
-      if (a.currentState > b.currentState) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    }
-  }));
+  let hasChanges = $derived.by(() => {
+    // Helper to compare arrays
+    const arraysEqual = (a: any, b: any) => {
+      if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
+      if (a.length !== b.length) return false;
+      return a.every((val, idx) => val === b[idx]);
+    };
+
+    // Helper to compare objects
+    const objectsEqual = (a: any, b: any) => {
+      if (typeof a !== "object" || typeof b !== "object") return a === b;
+      return JSON.stringify(a) === JSON.stringify(b);
+    };
+
+    return minLength !== originalValues.minLength ||
+      maxLength !== originalValues.maxLength ||
+      !objectsEqual(suggestionMessage, originalValues.suggestionMessage) ||
+      !objectsEqual(acceptMessage, originalValues.acceptMessage) ||
+      !objectsEqual(denyMessage, originalValues.denyMessage) ||
+      !objectsEqual(considerMessage, originalValues.considerMessage) ||
+      !objectsEqual(implementMessage, originalValues.implementMessage) ||
+      acceptChannel !== originalValues.acceptChannel ||
+      denyChannel !== originalValues.denyChannel ||
+      considerChannel !== originalValues.considerChannel ||
+      implementChannel !== originalValues.implementChannel ||
+      suggestChannel !== originalValues.suggestChannel ||
+      threadType !== originalValues.threadType ||
+      emoteMode !== originalValues.emoteMode ||
+      suggestButtonColor !== originalValues.suggestButtonColor ||
+      emote1Style !== originalValues.emote1Style ||
+      emote2Style !== originalValues.emote2Style ||
+      emote3Style !== originalValues.emote3Style ||
+      emote4Style !== originalValues.emote4Style ||
+      emote5Style !== originalValues.emote5Style ||
+      suggestButtonMessage !== originalValues.suggestButtonMessage ||
+      suggestButtonLabel !== originalValues.suggestButtonLabel ||
+      suggestButtonEmote !== originalValues.suggestButtonEmote ||
+      !arraysEqual(suggestEmotes, originalValues.suggestEmotes) ||
+      archiveOnDeny !== originalValues.archiveOnDeny ||
+      archiveOnAccept !== originalValues.archiveOnAccept ||
+      archiveOnConsider !== originalValues.archiveOnConsider ||
+      archiveOnImplement !== originalValues.archiveOnImplement ||
+      suggestButtonChannel !== originalValues.suggestButtonChannel;
+  });
+  let sortedSuggestions = $derived.by(() => {
+    // Use slice() instead of spread operator to avoid hydration issues
+    const suggestionsCopy = Array.isArray(suggestions) ? suggestions.slice() : [];
+    return suggestionsCopy.sort((a, b) => {
+      if (sortBy === "dateAdded") {
+        const dateA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0;
+        const dateB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0;
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      } else {
+        if (a.currentState < b.currentState) return sortDirection === "asc" ? -1 : 1;
+        if (a.currentState > b.currentState) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+    });
+  });
 
 
   // Helper Functions
@@ -158,14 +219,6 @@
     notificationType = type;
     showNotification = true;
     setTimeout(() => showNotification = false, 3000);
-  }
-
-  function markAsChanged(setting: string) {
-    changedSettings = changedSettings.add(setting);
-  }
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
   }
 
   function getStatusString(state: SuggestionState): string {
@@ -192,19 +245,43 @@
     sortDirection = sortDirection === "asc" ? "desc" : "asc";
   }
 
-  // Modal Functions
+  // Inline Confirmation Functions
   function initiateStatusChange(suggestion: Suggestion, status: SuggestionState) {
-    selectedSuggestion = suggestion;
-    selectedStatus = status;
-    statusChangeReason = "";
-    showStatusModal = true;
+    // Use inline confirmation for all devices
+    showInlineConfirm[suggestion.id] = status;
+    inlineReasons[suggestion.id] = "";
   }
 
-  function closeStatusModal() {
-    showStatusModal = false;
-    statusChangeReason = "";
-    selectedSuggestion = null;
-    selectedStatus = null;
+  function cancelInlineConfirm(suggestionId: number) {
+    delete showInlineConfirm[suggestionId];
+    delete inlineReasons[suggestionId];
+    delete confirmingStatus[suggestionId];
+    showInlineConfirm = { ...showInlineConfirm };
+    inlineReasons = { ...inlineReasons };
+    confirmingStatus = { ...confirmingStatus };
+  }
+
+  async function confirmInlineStatusChange(suggestion: Suggestion) {
+    const status = showInlineConfirm[suggestion.id];
+    const reason = inlineReasons[suggestion.id] || "";
+
+    if (status !== null && status !== undefined && $currentGuild?.id && currentUser?.id) {
+      confirmingStatus[suggestion.id] = true;
+      try {
+        await suggestionsApi.updateSuggestionStatus($currentGuild.id, suggestion.suggestionId, {
+          state: status,
+          reason: reason || null,
+          userId: currentUser.id
+        });
+
+        await fetchSuggestions();
+        showNotificationMessage("Status updated successfully");
+        cancelInlineConfirm(suggestion.id);
+      } catch (err) {
+        showNotificationMessage("Failed to update status", "error");
+        confirmingStatus[suggestion.id] = false;
+      }
+    }
   }
 
   // API Functions
@@ -250,6 +327,7 @@
         const [
           fetchedMinLength,
           fetchedMaxLength,
+          fetchedSuggestionMessage,
           fetchedAcceptMessage,
           fetchedDenyMessage,
           fetchedConsiderMessage,
@@ -260,6 +338,13 @@
           fetchedImplementChannel,
           fetchedSuggestChannel,
           fetchedThreadType,
+          fetchedEmoteMode,
+          fetchedButtonColor,
+          fetchedEmote1Style,
+          fetchedEmote2Style,
+          fetchedEmote3Style,
+          fetchedEmote4Style,
+          fetchedEmote5Style,
           fetchedArchiveOnDeny,
           fetchedArchiveOnAccept,
           fetchedArchiveOnConsider,
@@ -272,6 +357,7 @@
         ] = await Promise.all([
           suggestionsApi.getMinLength($currentGuild.id),
           suggestionsApi.getMaxLength($currentGuild.id),
+          suggestionsApi.getSuggestionMessage($currentGuild.id),
           suggestionsApi.getAcceptMessage($currentGuild.id),
           suggestionsApi.getDenyMessage($currentGuild.id),
           suggestionsApi.getConsiderMessage($currentGuild.id),
@@ -282,6 +368,13 @@
           suggestionsApi.getImplementChannel($currentGuild.id),
           suggestionsApi.getSuggestChannel($currentGuild.id),
           suggestionsApi.getSuggestThreadsType($currentGuild.id),
+          suggestionsApi.getEmoteMode($currentGuild.id),
+          suggestionsApi.getSuggestButtonColor($currentGuild.id),
+          suggestionsApi.getEmoteButtonStyle($currentGuild.id, 1),
+          suggestionsApi.getEmoteButtonStyle($currentGuild.id, 2),
+          suggestionsApi.getEmoteButtonStyle($currentGuild.id, 3),
+          suggestionsApi.getEmoteButtonStyle($currentGuild.id, 4),
+          suggestionsApi.getEmoteButtonStyle($currentGuild.id, 5),
           suggestionsApi.getArchiveOnDeny($currentGuild.id),
           suggestionsApi.getArchiveOnAccept($currentGuild.id),
           suggestionsApi.getArchiveOnConsider($currentGuild.id),
@@ -295,57 +388,150 @@
 
         minLength = fetchedMinLength;
         maxLength = fetchedMaxLength;
+        console.log(fetchedMinLength, fetchedMaxLength, fetchedAcceptMessage, fetchedDenyMessage, fetchedArchiveOnConsider);
 
-        // Extract string values from API response objects (they come as {"data": "value"})
-        acceptMessage = typeof fetchedAcceptMessage === "string" ? fetchedAcceptMessage :
-          fetchedAcceptMessage?.data || "";
+        // Helper to convert string to embed object
+        const stringToEmbed = (str: any) => {
+          const text = typeof str === "string" ? str : (str?.data || "");
+          if (!text || text === "-") return {};
 
-        denyMessage = typeof fetchedDenyMessage === "string" ? fetchedDenyMessage :
-          fetchedDenyMessage?.data || "";
+          // Try to parse as JSON first (for rich embeds)
+          try {
+            const parsed = JSON.parse(text);
+            if (typeof parsed === "object") return parsed;
+          } catch {
+            // Not JSON, treat as simple text
+          }
 
-        considerMessage = typeof fetchedConsiderMessage === "string" ? fetchedConsiderMessage :
-          fetchedConsiderMessage?.data || "";
+          return { content: text };
+        };
 
-        implementMessage = typeof fetchedImplementMessage === "string" ? fetchedImplementMessage :
-          fetchedImplementMessage?.data || "";
+        // Extract string values from API response objects and convert to embed format
+        suggestionMessage = fetchedSuggestionMessage;
+        acceptMessage = fetchedAcceptMessage;
+        denyMessage = fetchedDenyMessage;
+        considerMessage = fetchedConsiderMessage;
+        implementMessage = fetchedImplementMessage;
+        suggestButtonMessage = fetchedButtonMessage;
 
         acceptChannel = fetchedAcceptChannel?.toString() || "";
         denyChannel = fetchedDenyChannel?.toString() || "";
         considerChannel = fetchedConsiderChannel?.toString() || "";
         implementChannel = fetchedImplementChannel?.toString() || "";
         suggestChannel = fetchedSuggestChannel?.toString() || "";
-        threadType = fetchedThreadType;
+
+        // Extract numeric values safely (API might return {data: number} or just number)
+        const extractNumber = (val: any, defaultVal: number): number => {
+          // Direct number
+          if (typeof val === "number") return val;
+
+          // Object with data property
+          if (val && typeof val === "object" && typeof val.data === "number") return val.data;
+
+          // Try to parse string representation
+          if (typeof val === "string") {
+            const parsed = parseInt(val);
+            return isNaN(parsed) ? defaultVal : parsed;
+          }
+
+          // Default fallback
+          return defaultVal;
+        };
+
+        threadType = extractNumber(fetchedThreadType, 0);
+        emoteMode = extractNumber(fetchedEmoteMode, 0);
+        suggestButtonColor = extractNumber(fetchedButtonColor, 1);
+        emote1Style = extractNumber(fetchedEmote1Style, 1);
+        emote2Style = extractNumber(fetchedEmote2Style, 1);
+        emote3Style = extractNumber(fetchedEmote3Style, 1);
+        emote4Style = extractNumber(fetchedEmote4Style, 1);
+        emote5Style = extractNumber(fetchedEmote5Style, 1);
         archiveOnDeny = fetchedArchiveOnDeny;
         archiveOnAccept = fetchedArchiveOnAccept;
         archiveOnConsider = fetchedArchiveOnConsider;
         archiveOnImplement = fetchedArchiveOnImplement;
 
-        // Handle suggestEmotes - could be string or object with data property
-        suggestEmotes = typeof fetchedSuggestEmotes === "string" ? fetchedSuggestEmotes :
-          fetchedSuggestEmotes?.data || "";
+        // Handle suggestEmotes - convert comma-separated string to array for EmojiPicker
+        const rawEmotes = (fetchedSuggestEmotes as any)?.data || fetchedSuggestEmotes || "";
+        // Convert to array if not empty, disabled, or "-"
+        if (rawEmotes && rawEmotes !== "disabled" && rawEmotes !== "-") {
+          suggestEmotes = String(rawEmotes).split(",").map((e: string) => e.trim()).filter((e: string) => e);
+        } else {
+          suggestEmotes = [];
+        }
 
-        // Handle button message - extract from object if needed
-        suggestButtonMessage = typeof fetchedButtonMessage === "string" ? fetchedButtonMessage :
-          fetchedButtonMessage?.data || "";
+        // Handle button message - parse JSON or convert string to embed format
+        const buttonMessageAny = fetchedButtonMessage as any;
+        if (typeof buttonMessageAny === "string") {
+          try {
+            suggestButtonMessage = JSON.parse(buttonMessageAny);
+          } catch {
+            // Legacy string format - convert to embed format
+            suggestButtonMessage = { content: buttonMessageAny };
+          }
+        } else if (buttonMessageAny?.data && typeof buttonMessageAny.data === "string") {
+          try {
+            suggestButtonMessage = JSON.parse(buttonMessageAny.data);
+          } catch {
+            suggestButtonMessage = { content: buttonMessageAny.data };
+          }
+        } else if (typeof buttonMessageAny === "object" && buttonMessageAny !== null) {
+          suggestButtonMessage = buttonMessageAny;
+        } else {
+          suggestButtonMessage = {};
+        }
 
         // Handle button label - should be a simple string, but API might return component structure
-        if (typeof fetchedButtonLabel === "string") {
-          suggestButtonLabel = fetchedButtonLabel;
-        } else if (fetchedButtonLabel?.data) {
-          // API returning object with data property, extract it
-          suggestButtonLabel = typeof fetchedButtonLabel.data === "string" ? fetchedButtonLabel.data : "";
-        } else if (fetchedButtonLabel?.actionRows?.[0]?.components?.[0]?.label) {
-          // API incorrectly returning full component structure, extract just the label
-          suggestButtonLabel = fetchedButtonLabel.actionRows[0].components[0].label;
+        const buttonLabelAny = fetchedButtonLabel as any;
+        if (typeof buttonLabelAny === "string") {
+          suggestButtonLabel = buttonLabelAny;
+        } else if (buttonLabelAny?.data && typeof buttonLabelAny.data === "string") {
+          suggestButtonLabel = buttonLabelAny.data;
+        } else if (buttonLabelAny?.actionRows?.[0]?.components?.[0]?.label) {
+          suggestButtonLabel = String(buttonLabelAny.actionRows[0].components[0].label);
         } else {
           suggestButtonLabel = "";
         }
 
         // Handle button emote - extract from object if needed
-        suggestButtonEmote = typeof fetchedButtonEmote === "string" ? fetchedButtonEmote :
-          fetchedButtonEmote?.data || "";
+        const rawButtonEmote = (fetchedButtonEmote as any)?.data || fetchedButtonEmote || "";
+        // Set to null if empty, disabled, or "-"
+        suggestButtonEmote = (rawButtonEmote && rawButtonEmote !== "disabled" && rawButtonEmote !== "-") ? String(rawButtonEmote) : null;
 
         suggestButtonChannel = fetchedButtonChannel;
+
+        // Store original values for comparison (with deep copies for objects)
+        originalValues = {
+          minLength,
+          maxLength,
+          suggestionMessage: JSON.parse(JSON.stringify(suggestionMessage)),
+          acceptMessage: JSON.parse(JSON.stringify(acceptMessage)),
+          denyMessage: JSON.parse(JSON.stringify(denyMessage)),
+          considerMessage: JSON.parse(JSON.stringify(considerMessage)),
+          implementMessage: JSON.parse(JSON.stringify(implementMessage)),
+          acceptChannel,
+          denyChannel,
+          considerChannel,
+          implementChannel,
+          suggestChannel,
+          threadType,
+          emoteMode,
+          suggestButtonColor,
+          emote1Style,
+          emote2Style,
+          emote3Style,
+          emote4Style,
+          emote5Style,
+          suggestButtonMessage: JSON.parse(JSON.stringify(suggestButtonMessage)),
+          suggestButtonLabel,
+          suggestButtonEmote,
+          suggestEmotes: Array.isArray(suggestEmotes) ? [...suggestEmotes] : suggestEmotes,
+          archiveOnDeny,
+          archiveOnAccept,
+          archiveOnConsider,
+          archiveOnImplement,
+          suggestButtonChannel
+        };
       } catch (err) {
         console.error("Error loading settings:", err);
         showNotificationMessage("Failed to load settings", "error");
@@ -362,113 +548,179 @@
     }
   }
 
-  async function saveSettings() {
-    if (!$currentGuild?.id || changedSettings.size === 0) return;
+  async function loadGuildEmojis() {
+    try {
+      if (!currentUser?.id) throw new Error("User not authenticated");
+      guildEmojis = await clientApi.getEmojis(currentUser.id, true);
+    } catch (err) {
+      console.error("Failed to fetch guild emojis:", err);
+    }
+  }
 
+  async function saveSettings() {
+    if (!$currentGuild?.id || !hasChanges) return;
+
+    saving = true;
     return await loadingStore.wrap("save-settings", async () => {
       try {
         const updatePromises = [];
 
-        if (changedSettings.has("minLength")) {
+        // Helper to convert embed object to JSON string for sending
+        const embedToString = (embed: any) => {
+          if (!embed || Object.keys(embed).length === 0) return null;
+          return JSON.stringify(embed);
+        };
+
+        // Only save settings that have actually changed
+        if (minLength !== originalValues.minLength) {
           updatePromises.push(suggestionsApi.setMinLength($currentGuild.id, minLength));
         }
-        if (changedSettings.has("maxLength")) {
+        if (maxLength !== originalValues.maxLength) {
           updatePromises.push(suggestionsApi.setMaxLength($currentGuild.id, maxLength));
         }
-        if (changedSettings.has("acceptMessage")) {
-          updatePromises.push(suggestionsApi.setAcceptMessage($currentGuild.id, acceptMessage || null));
+        if (JSON.stringify(suggestionMessage) !== JSON.stringify(originalValues.suggestionMessage)) {
+          updatePromises.push(suggestionsApi.setSuggestionMessage($currentGuild.id, embedToString(suggestionMessage)));
         }
-        if (changedSettings.has("denyMessage")) {
-          updatePromises.push(suggestionsApi.setDenyMessage($currentGuild.id, denyMessage || null));
+        if (JSON.stringify(acceptMessage) !== JSON.stringify(originalValues.acceptMessage)) {
+          updatePromises.push(suggestionsApi.setAcceptMessage($currentGuild.id, embedToString(acceptMessage)));
         }
-        if (changedSettings.has("considerMessage")) {
-          updatePromises.push(suggestionsApi.setConsiderMessage($currentGuild.id, considerMessage || null));
+        if (JSON.stringify(denyMessage) !== JSON.stringify(originalValues.denyMessage)) {
+          updatePromises.push(suggestionsApi.setDenyMessage($currentGuild.id, embedToString(denyMessage)));
         }
-        if (changedSettings.has("implementMessage")) {
-          updatePromises.push(suggestionsApi.setImplementMessage($currentGuild.id, implementMessage || null));
+        if (JSON.stringify(considerMessage) !== JSON.stringify(originalValues.considerMessage)) {
+          updatePromises.push(suggestionsApi.setConsiderMessage($currentGuild.id, embedToString(considerMessage)));
         }
-        if (changedSettings.has("acceptChannel")) {
+        if (JSON.stringify(implementMessage) !== JSON.stringify(originalValues.implementMessage)) {
+          updatePromises.push(suggestionsApi.setImplementMessage($currentGuild.id, embedToString(implementMessage)));
+        }
+        if (acceptChannel !== originalValues.acceptChannel) {
           updatePromises.push(suggestionsApi.setAcceptChannel($currentGuild.id, acceptChannel ? BigInt(acceptChannel) : 0n));
         }
-        if (changedSettings.has("denyChannel")) {
+        if (denyChannel !== originalValues.denyChannel) {
           updatePromises.push(suggestionsApi.setDenyChannel($currentGuild.id, denyChannel ? BigInt(denyChannel) : 0n));
         }
-        if (changedSettings.has("considerChannel")) {
+        if (considerChannel !== originalValues.considerChannel) {
           updatePromises.push(suggestionsApi.setConsiderChannel($currentGuild.id, considerChannel ? BigInt(considerChannel) : 0n));
         }
-        if (changedSettings.has("implementChannel")) {
+        if (implementChannel !== originalValues.implementChannel) {
           updatePromises.push(suggestionsApi.setImplementChannel($currentGuild.id, implementChannel ? BigInt(implementChannel) : 0n));
         }
-        if (changedSettings.has("suggestChannel")) {
+        if (suggestChannel !== originalValues.suggestChannel) {
           updatePromises.push(suggestionsApi.setSuggestChannel($currentGuild.id, suggestChannel ? BigInt(suggestChannel) : 0n));
         }
-        if (changedSettings.has("threadType")) {
+        if (threadType !== originalValues.threadType) {
           updatePromises.push(suggestionsApi.setSuggestThreadsType($currentGuild.id, threadType));
         }
-        if (changedSettings.has("archiveOnDeny")) {
+        if (emoteMode !== originalValues.emoteMode) {
+          updatePromises.push(suggestionsApi.setEmoteMode($currentGuild.id, emoteMode));
+        }
+        if (suggestButtonColor !== originalValues.suggestButtonColor) {
+          updatePromises.push(suggestionsApi.setSuggestButtonColor($currentGuild.id, suggestButtonColor));
+        }
+        if (emote1Style !== originalValues.emote1Style) {
+          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 1, emote1Style));
+        }
+        if (emote2Style !== originalValues.emote2Style) {
+          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 2, emote2Style));
+        }
+        if (emote3Style !== originalValues.emote3Style) {
+          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 3, emote3Style));
+        }
+        if (emote4Style !== originalValues.emote4Style) {
+          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 4, emote4Style));
+        }
+        if (emote5Style !== originalValues.emote5Style) {
+          updatePromises.push(suggestionsApi.setEmoteButtonStyle($currentGuild.id, 5, emote5Style));
+        }
+        if (archiveOnDeny !== originalValues.archiveOnDeny) {
           updatePromises.push(suggestionsApi.setArchiveOnDeny($currentGuild.id, archiveOnDeny));
         }
-        if (changedSettings.has("archiveOnAccept")) {
+        if (archiveOnAccept !== originalValues.archiveOnAccept) {
           updatePromises.push(suggestionsApi.setArchiveOnAccept($currentGuild.id, archiveOnAccept));
         }
-        if (changedSettings.has("archiveOnConsider")) {
+        if (archiveOnConsider !== originalValues.archiveOnConsider) {
           updatePromises.push(suggestionsApi.setArchiveOnConsider($currentGuild.id, archiveOnConsider));
         }
-        if (changedSettings.has("archiveOnImplement")) {
+        if (archiveOnImplement !== originalValues.archiveOnImplement) {
           updatePromises.push(suggestionsApi.setArchiveOnImplement($currentGuild.id, archiveOnImplement));
         }
-        if (changedSettings.has("suggestEmotes")) {
-          const parsedEmotes = parseEmotesList(suggestEmotes);
-          updatePromises.push(suggestionsApi.setSuggestEmotes($currentGuild.id, parsedEmotes || null));
+
+        // Compare arrays properly
+        const arraysEqual = (a: any, b: any) => {
+          if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
+          if (a.length !== b.length) return false;
+          return a.every((val, idx) => val === b[idx]);
+        };
+
+        if (!arraysEqual(suggestEmotes, originalValues.suggestEmotes)) {
+          const emotesString = Array.isArray(suggestEmotes) ? suggestEmotes.join(",") : (suggestEmotes || null);
+          updatePromises.push(suggestionsApi.setSuggestEmotes($currentGuild.id, emotesString));
         }
-        if (changedSettings.has("suggestButtonMessage")) {
-          updatePromises.push(suggestionsApi.setSuggestButtonMessage($currentGuild.id, suggestButtonMessage || null));
+        if (JSON.stringify(suggestButtonMessage) !== JSON.stringify(originalValues.suggestButtonMessage)) {
+          const messageToSend = Object.keys(suggestButtonMessage).length > 0 ? JSON.stringify(suggestButtonMessage) : null;
+          updatePromises.push(suggestionsApi.setSuggestButtonMessage($currentGuild.id, messageToSend));
         }
-        if (changedSettings.has("suggestButtonLabel")) {
+        if (suggestButtonLabel !== originalValues.suggestButtonLabel) {
           updatePromises.push(suggestionsApi.setSuggestButtonLabel($currentGuild.id, suggestButtonLabel || null));
         }
-        if (changedSettings.has("suggestButtonEmote")) {
-          const formattedEmote = formatEmote(suggestButtonEmote);
-          updatePromises.push(suggestionsApi.setSuggestButtonEmote($currentGuild.id, formattedEmote || null));
+        if (suggestButtonEmote !== originalValues.suggestButtonEmote) {
+          const emoteValue = Array.isArray(suggestButtonEmote) ? suggestButtonEmote[0] : suggestButtonEmote;
+          updatePromises.push(suggestionsApi.setSuggestButtonEmote($currentGuild.id, emoteValue || null));
         }
-        if (changedSettings.has("suggestButtonChannel")) {
-          updatePromises.push(suggestionsApi.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel));
+        if (suggestButtonChannel !== originalValues.suggestButtonChannel) {
+          updatePromises.push(suggestionsApi.setSuggestButtonChannel($currentGuild.id, suggestButtonChannel || 0n));
         }
 
         await Promise.all(updatePromises);
-        changedSettings.clear();
+
+        // Update original values after successful save (with deep copies for objects)
+        originalValues = {
+          minLength,
+          maxLength,
+          suggestionMessage: JSON.parse(JSON.stringify(suggestionMessage)),
+          acceptMessage: JSON.parse(JSON.stringify(acceptMessage)),
+          denyMessage: JSON.parse(JSON.stringify(denyMessage)),
+          considerMessage: JSON.parse(JSON.stringify(considerMessage)),
+          implementMessage: JSON.parse(JSON.stringify(implementMessage)),
+          acceptChannel,
+          denyChannel,
+          considerChannel,
+          implementChannel,
+          suggestChannel,
+          threadType,
+          emoteMode,
+          suggestButtonColor,
+          emote1Style,
+          emote2Style,
+          emote3Style,
+          emote4Style,
+          emote5Style,
+          suggestButtonMessage: JSON.parse(JSON.stringify(suggestButtonMessage)),
+          suggestButtonLabel,
+          suggestButtonEmote,
+          suggestEmotes: Array.isArray(suggestEmotes) ? [...suggestEmotes] : suggestEmotes,
+          archiveOnDeny,
+          archiveOnAccept,
+          archiveOnConsider,
+          archiveOnImplement,
+          suggestButtonChannel
+        };
+
         showNotificationMessage("Settings saved successfully");
       } catch (err) {
         showNotificationMessage("Failed to save settings", "error");
+      } finally {
+        saving = false;
       }
     }, "operation", "Saving settings...");
   }
 
-  async function confirmStatusChange() {
-    if (!selectedSuggestion || selectedStatus === null || !$currentGuild?.id) return;
-
-    return await loadingStore.wrap("update-status", async () => {
-      try {
-        await suggestionsApi.updateSuggestionStatus($currentGuild.id, selectedSuggestion.suggestionId, {
-          state: selectedStatus,
-          reason: statusChangeReason || null,
-          userId: currentUser.id
-        });
-
-        await fetchSuggestions();
-        showNotificationMessage("Status updated successfully");
-        closeStatusModal();
-      } catch (err) {
-        showNotificationMessage("Failed to update status", "error");
-      }
-    }, "operation", "Updating status...");
-  }
 
   async function deleteSuggestion(id: number) {
     return await loadingStore.wrap("delete-suggestion", async () => {
       try {
         if (!$currentGuild?.id) throw new Error("No guild selected");
-        await suggestionsApi.deleteSuggestion($currentGuild.id, id);
+        await suggestionsApi.deleteSuggestion($currentGuild.id, BigInt(id));
         await fetchSuggestions();
         showNotificationMessage("Suggestion deleted successfully");
       } catch (err) {
@@ -479,19 +731,14 @@
 
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
-    checkMobile();
     if (browser) {
-      window.addEventListener("resize", checkMobile);
       await Promise.all([
         fetchSuggestions(),
         fetchChannels(),
-        loadSettings()
+        loadSettings(),
+        loadGuildEmojis()
       ]);
     }
-
-    return () => {
-      if (browser) window.removeEventListener("resize", checkMobile);
-    };
   });
 
   $effect(() => {
@@ -520,9 +767,10 @@
 <DashboardPageLayout
   actionButtons={hasChanges ? [
     {
-      label: "Save Settings",
-      icon: "fa-check",
+      label: saving ? "Saving..." : "Save Settings",
+      icon: "fa-floppy-disk",
       action: saveSettings,
+      loading: saving,
       style: `background: linear-gradient(to right, ${$colorStore.primary}, ${$colorStore.secondary}); color: ${$colorStore.text}; box-shadow: 0 0 20px ${$colorStore.primary}20;`
     }
   ] : []}
@@ -560,54 +808,6 @@
     {/if}
   </svelte:fragment>
 
-  <!-- Status Change Modal -->
-  {#if showStatusModal}
-    <div
-      class="fixed inset-0 bg-black opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      transition:fade
-    >
-      <div
-        class="w-full max-w-md backdrop-blur-md rounded-xl border p-6 shadow-2xl"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}98);
-                 border-color: {$colorStore.primary}30;"
-        transition:slide
-      >
-        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">
-          Update Status to {selectedStatus !== null ? getStatusString(selectedStatus) : ''}
-        </h2>
-        <div class="mb-4">
-          <label for="suggest-enabled" class="block text-sm mb-2" style="color: {$colorStore.muted}">Reason
-            (optional)</label>
-          <textarea id="suggest-enabled"
-                    bind:value={statusChangeReason}
-                    class="w-full min-h-[100px] p-3 rounded-lg resize-none"
-                    style="background: {$colorStore.primary}10;
-                     border: 1px solid {$colorStore.primary}30;
-                     color: {$colorStore.text};"
-                    placeholder="Enter reason for status change..."
-          ></textarea>
-        </div>
-        <div class="flex gap-3 justify-end">
-          <button
-            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
-            onclick={closeStatusModal}
-          >
-            Cancel
-          </button>
-          <button
-            class="px-5 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
-                     color: white;
-                     box-shadow: 0 4px 12px {$colorStore.primary}30;"
-            onclick={confirmStatusChange}
-          >
-            Update Status
-          </button>
-        </div>
-      </div>
-    </div>
-  {/if}
 
   <!-- Main Content -->
   {#if activeTab === 'suggestions'}
@@ -630,7 +830,7 @@
             <span style="color: #ef4444">{error}</span>
           </div>
         </div>
-      {:else if suggestions.length === 0}
+      {:else if sortedSuggestions.length === 0}
         <div class=" rounded-xl border p-12 transition-all text-center"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
           <i class="fa-utility-duo fa-regular fa-inbox"
@@ -640,37 +840,50 @@
         </div>
       {:else}
         <!-- Sort Controls -->
-        <div class=" rounded-xl border p-4 mb-6 transition-all"
+        <div class="rounded-xl border p-3 md:p-4 mb-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
-          <div class="flex flex-wrap gap-3 items-center">
-            <span class="text-sm font-medium" style="color: {$colorStore.text}">Sort by:</span>
-            <DiscordSelector
-              type="custom"
-              options={[
-                  { id: "dateAdded", name: "Date Added", label: "Date Added" },
-                  { id: "currentState", name: "Status", label: "Status" }
-                ]}
-              selected={sortBy}
-              searchable={false}
-              placeholder="Sort by..."
-              on:change={(e) => sortBy = e.detail.selected}
-            />
-            <button aria-label="Navigate"
-                    class="px-4 py-2 rounded-lg border transition-all hover:scale-[1.02] flex items-center gap-2"
+          <div class="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 sm:items-center">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <span class="text-xs md:text-sm font-medium whitespace-nowrap"
+                    style="color: {$colorStore.text}">Sort:</span>
+              <div class="flex-1 sm:flex-none">
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "dateAdded", name: "Date", label: "Date" },
+                      { id: "currentState", name: "Status", label: "Status" }
+                    ]}
+                  selected={sortBy}
+                  searchable={false}
+                  placeholder="Sort..."
+                  onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    if (selected === "dateAdded" || selected === "currentState") {
+                      sortBy = selected;
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <button aria-label="Toggle sort direction"
+                    class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg border transition-all hover:scale-[1.02] flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     onclick={toggleSortDirection}
             >
               {#if sortDirection === 'asc'}
-                <i class="fa-solid fa-arrow-up" style="font-size: 16px;"></i>
+                <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
+                <span class="hidden sm:inline">Ascending</span>
+                <span class="sm:hidden">Asc</span>
               {:else}
-                <i class="fa-solid fa-arrow-down" style="font-size: 16px;"></i>
+                <i class="fa-solid fa-arrow-down" style="font-size: 12px;"></i>
+                <span class="hidden sm:inline">Descending</span>
+                <span class="sm:hidden">Desc</span>
               {/if}
-              <span class="text-sm">{sortDirection === 'asc' ? 'Ascending' : 'Descending'}</span>
             </button>
-            <div class="ml-auto flex items-center gap-2">
-                <span class="text-sm" style="color: {$colorStore.muted}">
-                  {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
-                </span>
+            <div class="ml-auto">
+              <span class="text-xs md:text-sm" style="color: {$colorStore.muted}">
+                {sortedSuggestions.length} {sortedSuggestions.length !== 1 ? 'items' : 'item'}
+              </span>
             </div>
           </div>
         </div>
@@ -684,27 +897,34 @@
               in:slide={{ duration: 300, delay: index * 50 }}
             >
               <!-- Suggestion Header -->
-              <div class="p-4 flex items-start justify-between gap-4"
+              <div class="p-3 md:p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
                    style="background: {$colorStore.primary}08; border-bottom: 1px solid {$colorStore.primary}20;">
-                <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                   <img
                     src={suggestion.user?.avatarUrl}
                     alt=""
-                    class="w-10 h-10 rounded-full ring-2 ring-opacity-20"
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full ring-2 ring-opacity-20"
                     style="ring-color: {$colorStore.primary};"
                   >
-                  <div class="min-w-0">
-                    <p class="font-semibold truncate" style="color: {$colorStore.text}">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-semibold truncate text-sm sm:text-base" style="color: {$colorStore.text}">
                       {suggestion.user?.username}
                     </p>
                     <p class="text-xs" style="color: {$colorStore.muted}">
-                      {new Date(suggestion.dateAdded).toLocaleDateString()}
-                      • {new Date(suggestion.dateAdded).toLocaleTimeString()}
+                      {suggestion.dateAdded ? new Date(suggestion.dateAdded).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      }) : "Unknown"}
+                      <span
+                        class="hidden sm:inline"> • {suggestion.dateAdded ? new Date(suggestion.dateAdded).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : "Unknown"}</span>
                     </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                    <span class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium whitespace-nowrap"
                           style="background: {getStateColor(suggestion.currentState)}20; color: {getStateColor(suggestion.currentState)};">
                       {getStatusString(suggestion.currentState)}
                     </span>
@@ -732,60 +952,172 @@
                       <span>Modified by: {suggestion.stateChangeUser}</span>
                     </div>
                   {/if}
+                  {#if suggestion.stateChangeCount}
+                    <div class="flex items-center gap-1">
+                      <i class="fa-solid fa-history" style="font-size: 12px;"></i>
+                      <span>Changes: {suggestion.stateChangeCount}</span>
+                    </div>
+                  {/if}
                 </div>
+
+                <!-- Emote Counts -->
+                {#if suggestion.emoteCounts}
+                  <div class="flex flex-wrap gap-3 mb-4 p-3 rounded-lg" style="background: {$colorStore.primary}08;">
+                    <span class="text-xs font-medium" style="color: {$colorStore.muted}">Reactions:</span>
+                    {#if suggestion.emoteCounts.emote1 !== undefined}
+                      <div class="flex items-center gap-1">
+                        <span class="text-sm">👍</span>
+                        <span class="text-xs font-medium"
+                              style="color: {$colorStore.text}">{suggestion.emoteCounts.emote1}</span>
+                      </div>
+                    {/if}
+                    {#if suggestion.emoteCounts.emote2 !== undefined}
+                      <div class="flex items-center gap-1">
+                        <span class="text-sm">👎</span>
+                        <span class="text-xs font-medium"
+                              style="color: {$colorStore.text}">{suggestion.emoteCounts.emote2}</span>
+                      </div>
+                    {/if}
+                    {#if suggestion.emoteCounts.emote3 !== undefined && suggestion.emoteCounts.emote3 > 0}
+                      <div class="flex items-center gap-1">
+                        <span class="text-xs font-medium"
+                              style="color: {$colorStore.text}">Emote 3: {suggestion.emoteCounts.emote3}</span>
+                      </div>
+                    {/if}
+                    {#if suggestion.emoteCounts.emote4 !== undefined && suggestion.emoteCounts.emote4 > 0}
+                      <div class="flex items-center gap-1">
+                        <span class="text-xs font-medium"
+                              style="color: {$colorStore.text}">Emote 4: {suggestion.emoteCounts.emote4}</span>
+                      </div>
+                    {/if}
+                    {#if suggestion.emoteCounts.emote5 !== undefined && suggestion.emoteCounts.emote5 > 0}
+                      <div class="flex items-center gap-1">
+                        <span class="text-xs font-medium"
+                              style="color: {$colorStore.text}">Emote 5: {suggestion.emoteCounts.emote5}</span>
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
 
                 <!-- Action Buttons -->
                 <div class="flex flex-wrap gap-2 pt-3" style="border-top: 1px solid {$colorStore.primary}15;">
-                  <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
-                    style="background: #22c55e20; color: #22c55e; border: 1px solid #22c55e30;"
-                    onclick={() => initiateStatusChange(suggestion, SuggestionState.Accepted)}
-                    disabled={suggestion.currentState === SuggestionState.Accepted}
-                  >
-                    <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                    Accept
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
-                    style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
-                    onclick={() => initiateStatusChange(suggestion, SuggestionState.Denied)}
-                    disabled={suggestion.currentState === SuggestionState.Denied}
-                  >
-                    <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                    Deny
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
-                    disabled={suggestion.currentState === SuggestionState.Considered}
-                  >
-                    <i class="fa-solid fa-comment" style="font-size: 16px;"></i>
-                    Consider
-                  </button>
-                  <button
-                    class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                    onclick={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
-                    disabled={suggestion.currentState === SuggestionState.Implemented}
-                  >
-                    <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                    Implement
-                  </button>
-                  <div class="ml-auto">
-                    <button
-                      class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20"
-                      style="background: {$colorStore.primary}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;"
-                      onclick={() => {
-                          if (confirm('Are you sure you want to delete this suggestion?')) {
-                            deleteSuggestion(suggestion.id);
-                          }
-                        }}
-                    >
-                      <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-                      Delete
-                    </button>
-                  </div>
+                  {#if !showInlineConfirm[suggestion.id]}
+                    <!-- Regular action buttons -->
+                    <div class="flex flex-wrap gap-2 w-full"
+                         transition:fade={{ duration: 200, easing: cubicOut }}>
+                      <button
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 focus:ring-green-500/50 disabled:opacity-60"
+                        style="{suggestion.currentState === SuggestionState.Accepted
+                          ? 'background: #22c55e; color: white; border: 1px solid #22c55e;'
+                          : 'background: #22c55e20; color: #22c55e; border: 1px solid #22c55e30;'}"
+                        onclick={() => initiateStatusChange(suggestion, SuggestionState.Accepted)}
+                        disabled={suggestion.currentState === SuggestionState.Accepted}
+                      >
+                        <i class="fa-solid fa-check" style="font-size: 14px;"></i>
+                        <span
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Accepted ? 'Accepted' : 'Accept'}</span>
+                      </button>
+                      <button
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 focus:ring-red-500/50 disabled:opacity-60"
+                        style="{suggestion.currentState === SuggestionState.Denied
+                          ? 'background: #ef4444; color: white; border: 1px solid #ef4444;'
+                          : 'background: #ef444420; color: #ef4444; border: 1px solid #ef444430;'}"
+                        onclick={() => initiateStatusChange(suggestion, SuggestionState.Denied)}
+                        disabled={suggestion.currentState === SuggestionState.Denied}
+                      >
+                        <i class="fa-solid fa-xmark" style="font-size: 14px;"></i>
+                        <span
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Denied ? 'Denied' : 'Deny'}</span>
+                      </button>
+                      <button
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
+                        style="{suggestion.currentState === SuggestionState.Considered
+                          ? `background: ${$colorStore.secondary}; color: white; border: 1px solid ${$colorStore.secondary};`
+                          : `background: ${$colorStore.secondary}20; color: ${$colorStore.secondary}; border: 1px solid ${$colorStore.secondary}30;`} --tw-ring-color: {$colorStore.secondary}50;"
+                        onclick={() => initiateStatusChange(suggestion, SuggestionState.Considered)}
+                        disabled={suggestion.currentState === SuggestionState.Considered}
+                      >
+                        <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
+                        <span
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Considered ? 'Considered' : 'Consider'}</span>
+                      </button>
+                      <button
+                        class="px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-60"
+                        style="{suggestion.currentState === SuggestionState.Implemented
+                          ? `background: ${$colorStore.accent}; color: white; border: 1px solid ${$colorStore.accent};`
+                          : `background: ${$colorStore.accent}20; color: ${$colorStore.accent}; border: 1px solid ${$colorStore.accent}30;`} --tw-ring-color: {$colorStore.accent}50;"
+                        onclick={() => initiateStatusChange(suggestion, SuggestionState.Implemented)}
+                        disabled={suggestion.currentState === SuggestionState.Implemented}
+                      >
+                        <i class="fa-solid fa-code" style="font-size: 14px;"></i>
+                        <span
+                          class="hidden sm:inline">{suggestion.currentState === SuggestionState.Implemented ? 'Implemented' : 'Implement'}</span>
+                      </button>
+                      <button
+                        class="ml-auto px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20 focus:ring-2"
+                        style="background: {$colorStore.muted}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}20; --tw-ring-color: {$colorStore.muted}50;"
+                        onclick={() => {
+                            if (confirm('Are you sure you want to delete this suggestion?')) {
+                              deleteSuggestion(suggestion.id);
+                            }
+                          }}
+                      >
+                        <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
+                        <span class="hidden sm:inline">Delete</span>
+                      </button>
+                    </div>
+                  {:else}
+                    <!-- Inline confirmation UI -->
+                    <div class="w-full space-y-3"
+                         transition:slide={{ duration: 300, easing: cubicOut }}
+                         style="transform-origin: top;">
+                      <div class="p-3 rounded-lg"
+                           style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
+                           transition:fade={{ duration: 200, delay: 100 }}>
+                        <p class="text-xs md:text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                          Confirm {getStatusString(showInlineConfirm[suggestion.id] || SuggestionState.Suggested)}
+                        </p>
+                        <textarea
+                          bind:value={inlineReasons[suggestion.id]}
+                          class="w-full min-h-[60px] p-2 rounded-lg text-xs md:text-sm resize-none transition-all focus:ring-2"
+                          style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text}; --tw-ring-color: {$colorStore.primary}50;"
+                          placeholder="Reason (optional)..."
+                        ></textarea>
+                      </div>
+                      <div class="flex gap-2 justify-end"
+                           transition:fly={{ duration: 250, y: 10, delay: 150, easing: cubicOut }}>
+                        <button
+                          class="px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-50"
+                          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30; --tw-ring-color: {$colorStore.secondary}50;"
+                          onclick={() => cancelInlineConfirm(suggestion.id)}
+                          disabled={confirmingStatus[suggestion.id]}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          class="px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] focus:ring-2 disabled:opacity-50 min-w-[80px]"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.primary}50;"
+                          onclick={() => confirmInlineStatusChange(suggestion)}
+                          disabled={confirmingStatus[suggestion.id]}
+                        >
+                          {#if confirmingStatus[suggestion.id]}
+                            <span class="flex items-center justify-center gap-2">
+                              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                   viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <span class="text-xs">Updating...</span>
+                            </span>
+                          {:else}
+                            Confirm
+                          {/if}
+                        </button>
+                      </div>
+                    </div>
+                  {/if}
                 </div>
               </div>
             </div>
@@ -810,8 +1142,9 @@
                 <input
                   id="min-length"
                   type="number"
+                  min="0"
+                  max="2000"
                   bind:value={minLength}
-                  oninput={() => markAsChanged('minLength')}
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -825,8 +1158,9 @@
                 <input
                   id="max-length"
                   type="number"
+                  min="0"
+                  max="2000"
                   bind:value={maxLength}
-                  oninput={() => markAsChanged('maxLength')}
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -850,9 +1184,10 @@
                 selected={threadType.toString()}
                 searchable={false}
                 placeholder="Select thread type..."
-                on:change={(e) => {
-                    threadType = parseInt(e.detail.selected);
-                    markAsChanged('threadType');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    threadType = parseInt(selected || "0");
+                    
                   }}
               />
             </div>
@@ -863,76 +1198,121 @@
       {#if activeSubTab === 'messages'}
         <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
-          <div class="space-y-2">
-            <label for="accept-message-textarea" class="block text-sm"
-                   style="color: {$colorStore.muted}">Accept Message</label>
-            <textarea
-              id="accept-message-textarea"
-              bind:value={acceptMessage}
-              oninput={() => markAsChanged('acceptMessage')}
-              class="w-full p-3 rounded-lg min-h-[100px] resize-none"
-              style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              placeholder="Enter message template..."
-            ></textarea>
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Supports placeholders: %suggest.user%, %suggest.message%
-            </p>
-          </div>
+          <div class="space-y-6">
+            <!-- Suggestion Message -->
+            <div>
+              <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
+                Suggestion Message
+              </h3>
+              <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                Format for displaying new suggestions. Supports Discord embeds and placeholders.
+              </p>
+              <FullscreenEmbedBuilder
+                bind:value={suggestionMessage}
+                previewTitle="Suggestion Message"
+                previewDescription="Message sent when a new suggestion is created"
+                allowMultipleEmbeds={false}
+                allowComponents={false}
+                allowContent={true}
+                additionalPlaceholders={suggestionPlaceholders}
+                placeholder="Click to configure the suggestion message"
+                icon="fa-comment"
+                guildId={$currentGuild?.id}
+                user={data.user}
+              />
+            </div>
 
-          <div class="space-y-2">
-            <label for="deny-message-textarea" class="block text-sm"
-                   style="color: {$colorStore.muted}">Deny Message</label>
-            <textarea
-              id="deny-message-textarea"
-              bind:value={denyMessage}
-              oninput={() => markAsChanged('denyMessage')}
-              class="w-full p-3 rounded-lg min-h-[100px] resize-none"
-              style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              placeholder="Enter message template..."
-            ></textarea>
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Supports placeholders: %suggest.user%, %suggest.message%
-            </p>
-          </div>
+            <!-- Accept Message -->
+            <div>
+              <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
+                Accept Message
+              </h3>
+              <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                Message sent when a suggestion is accepted. Supports Discord embeds and placeholders.
+              </p>
+              <FullscreenEmbedBuilder
+                bind:value={acceptMessage}
+                previewTitle="Accept Message"
+                previewDescription="Message sent when a suggestion is accepted"
+                allowMultipleEmbeds={false}
+                allowComponents={false}
+                allowContent={true}
+                additionalPlaceholders={suggestionPlaceholders}
+                placeholder="Click to configure the accept message"
+                icon="fa-check-circle"
+                guildId={$currentGuild?.id}
+                user={data.user}
+              />
+            </div>
 
-          <div class="space-y-2">
-            <label for="consider-message-textarea" class="block text-sm"
-                   style="color: {$colorStore.muted}">Consider Message</label>
-            <textarea
-              id="consider-message-textarea"
-              bind:value={considerMessage}
-              oninput={() => markAsChanged('considerMessage')}
-              class="w-full p-3 rounded-lg min-h-[100px] resize-none"
-              style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              placeholder="Enter message template..."
-            ></textarea>
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Supports placeholders: %suggest.user%, %suggest.message%
-            </p>
-          </div>
+            <!-- Deny Message -->
+            <div>
+              <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
+                Deny Message
+              </h3>
+              <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                Message sent when a suggestion is denied. Supports Discord embeds and placeholders.
+              </p>
+              <FullscreenEmbedBuilder
+                bind:value={denyMessage}
+                previewTitle="Deny Message"
+                previewDescription="Message sent when a suggestion is denied"
+                allowMultipleEmbeds={false}
+                allowComponents={false}
+                allowContent={true}
+                additionalPlaceholders={suggestionPlaceholders}
+                placeholder="Click to configure the deny message"
+                icon="fa-times-circle"
+                guildId={$currentGuild?.id}
+                user={data.user}
+              />
+            </div>
 
-          <div class="space-y-2">
-            <label for="implement-message-textarea" class="block text-sm"
-                   style="color: {$colorStore.muted}">Implement Message</label>
-            <textarea
-              id="implement-message-textarea"
-              bind:value={implementMessage}
-              oninput={() => markAsChanged('implementMessage')}
-              class="w-full p-3 rounded-lg min-h-[100px] resize-none"
-              style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              placeholder="Enter message template..."
-            ></textarea>
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Supports placeholders: %suggest.user%, %suggest.message%
-            </p>
+            <!-- Consider Message -->
+            <div>
+              <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
+                Consider Message
+              </h3>
+              <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                Message sent when a suggestion is being considered. Supports Discord embeds and placeholders.
+              </p>
+              <FullscreenEmbedBuilder
+                bind:value={considerMessage}
+                previewTitle="Consider Message"
+                previewDescription="Message sent when a suggestion is being considered"
+                allowMultipleEmbeds={false}
+                allowComponents={false}
+                allowContent={true}
+                additionalPlaceholders={suggestionPlaceholders}
+                placeholder="Click to configure the consider message"
+                icon="fa-lightbulb"
+                guildId={$currentGuild?.id}
+                user={data.user}
+              />
+            </div>
+
+            <!-- Implement Message -->
+            <div>
+              <h3 class="text-base font-semibold mb-3" style="color: {$colorStore.text};">
+                Implement Message
+              </h3>
+              <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                Message sent when a suggestion is implemented. Supports Discord embeds and placeholders.
+              </p>
+              <FullscreenEmbedBuilder
+                bind:value={implementMessage}
+                previewTitle="Implement Message"
+                previewDescription="Message sent when a suggestion is implemented"
+                allowMultipleEmbeds={false}
+                allowComponents={false}
+                allowContent={true}
+                additionalPlaceholders={suggestionPlaceholders}
+                placeholder="Click to configure the implement message"
+                icon="fa-code"
+                guildId={$currentGuild?.id}
+                user={data.user}
+              />
+            </div>
           </div>
         </div>
       {/if}
@@ -949,11 +1329,12 @@
                 options={channels}
                 selected={suggestChannel}
                 placeholder="Select suggest channel..."
-                on:change={(e) => {
-                    suggestChannel = e.detail.selected;
-                    markAsChanged('suggestChannel');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    suggestChannel = selected || "";
+                    
                   }}
-                aria-labelledby="suggest-channel-label" />
+              />
             </div>
             <div class="space-y-2">
               <span id="accept-channel-label" class="block text-sm"
@@ -963,11 +1344,12 @@
                 options={channels}
                 selected={acceptChannel}
                 placeholder="Select accept channel..."
-                on:change={(e) => {
-                    acceptChannel = e.detail.selected;
-                    markAsChanged('acceptChannel');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    acceptChannel = selected || "";
+                    
                   }}
-                aria-labelledby="accept-channel-label" />
+              />
             </div>
             <div class="space-y-2">
               <span id="deny-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Deny Channel</span>
@@ -976,11 +1358,12 @@
                 options={channels}
                 selected={denyChannel}
                 placeholder="Select deny channel..."
-                on:change={(e) => {
-                    denyChannel = e.detail.selected;
-                    markAsChanged('denyChannel');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    denyChannel = selected || "";
+                    
                   }}
-                aria-labelledby="deny-channel-label" />
+              />
             </div>
             <div class="space-y-2">
               <span id="consider-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Consider Channel</span>
@@ -989,11 +1372,12 @@
                 options={channels}
                 selected={considerChannel}
                 placeholder="Select consider channel..."
-                on:change={(e) => {
-                    considerChannel = e.detail.selected;
-                    markAsChanged('considerChannel');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    considerChannel = selected || "";
+                    
                   }}
-                aria-labelledby="consider-channel-label" />
+              />
             </div>
             <div class="space-y-2">
               <span id="implement-channel-label" class="block text-sm" style="color: {$colorStore.muted}">Implement Channel</span>
@@ -1002,11 +1386,12 @@
                 options={channels}
                 selected={implementChannel}
                 placeholder="Select implement channel..."
-                on:change={(e) => {
-                    implementChannel = e.detail.selected;
-                    markAsChanged('implementChannel');
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    implementChannel = selected || "";
+                    
                   }}
-                aria-labelledby="implement-channel-label" />
+              />
             </div>
           </div>
         </div>
@@ -1023,7 +1408,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnAccept}
-                onchange={() => markAsChanged('archiveOnAccept')}
+
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1043,7 +1428,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnDeny}
-                onchange={() => markAsChanged('archiveOnDeny')}
+
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1063,7 +1448,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnConsider}
-                onchange={() => markAsChanged('archiveOnConsider')}
+
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1083,7 +1468,7 @@
                 type="checkbox"
                 class="sr-only peer"
                 bind:checked={archiveOnImplement}
-                onchange={() => markAsChanged('archiveOnImplement')}
+
               >
               <div
                 class="w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer
@@ -1100,54 +1485,43 @@
       {#if activeSubTab === 'emotes'}
         <div class=" rounded-xl border p-6 space-y-6 transition-all"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;">
-          <div class="space-y-2">
-            <label for="suggest-emotes" class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
-            <input
-              id="suggest-emotes"
-              type="text"
-              bind:value={suggestEmotes}
-              oninput={() => markAsChanged('suggestEmotes')}
-              class="w-full p-3 rounded-lg"
-              style="background: {$colorStore.primary}10;
-                       border: 1px solid {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-              placeholder="e.g. 👍,👎,🤔 or <a:HaneMeow:914307922287276052>,<:HaneJudge:914307916285227008>"
-            >
-            <p class="text-xs" style="color: {$colorStore.muted}">
-              Enter up to 5 emotes separated by commas. Supports Unicode (👍,👎) and Discord custom emotes
-              (&lt;:name:id&gt; or &lt;a:name:id&gt; for animated). Use "disabled" or "-" for default 👍/👎
-            </p>
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Emote Display Mode</h3>
+            <div class="space-y-2">
+              <span id="emote-mode-label" class="block text-sm" style="color: {$colorStore.muted}">Mode</span>
+              <DiscordSelector
+                type="custom"
+                options={[
+                    { id: "0", name: "Reactions", label: "Reactions" },
+                    { id: "1", name: "Buttons", label: "Buttons" }
+                  ]}
+                selected={emoteMode.toString()}
+                searchable={false}
+                placeholder="Select emote mode..."
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    emoteMode = parseInt(selected || "0");
+                  }}
+              />
+              <p class="text-xs" style="color: {$colorStore.muted}">
+                Choose how users interact with suggestions: traditional reactions or interactive buttons
+              </p>
+            </div>
+          </div>
 
-            <!-- Emote Preview -->
-            {#if suggestEmotes}
-              <div class="mt-3 p-3 rounded-lg"
-                   style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                <p class="text-xs mb-2" style="color: {$colorStore.muted}">Preview:</p>
-                <div class="flex items-center gap-2">
-                  {#each parseEmotesForPreview(suggestEmotes) as emote}
-                    {#if emote.type === 'image'}
-                      <img
-                        src={emote.content}
-                        alt="Discord Emote"
-                        class="w-6 h-6 object-contain"
-                        onerror={(e) => {
-                            if (e.currentTarget instanceof HTMLImageElement) {
-                              e.currentTarget.style.display = 'none';
-                              const fallback = e.currentTarget.nextElementSibling;
-                              if (fallback instanceof HTMLElement) {
-                                fallback.style.display = 'inline';
-                              }
-                            }
-                          }}
-                      >
-                      <span style="display: none; color: {$colorStore.muted};" class="text-xs">❓</span>
-                    {:else}
-                      <span class="text-xl">{emote.content}</span>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-            {/if}
+          <div class="space-y-2">
+            <label class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
+            <EmojiPicker
+              guildEmojis={guildEmojis}
+              bind:selected={suggestEmotes}
+              multiple={true}
+              maxSelection={5}
+              placeholder="Select up to 5 emotes..."
+              showUnicodeEmojis={true}
+            />
+            <p class="text-xs" style="color: {$colorStore.muted}">
+              Select up to 5 emotes. Supports Unicode and Discord custom emotes. Leave empty for default 👍/👎
+            </p>
           </div>
 
           <div class="space-y-4">
@@ -1160,7 +1534,7 @@
                   id="suggest-button-label"
                   type="text"
                   bind:value={suggestButtonLabel}
-                  oninput={() => markAsChanged('suggestButtonLabel')}
+
                   class="w-full p-3 rounded-lg"
                   style="background: {$colorStore.primary}10;
                            border: 1px solid {$colorStore.primary}30;
@@ -1169,66 +1543,163 @@
                 >
               </div>
               <div class="space-y-2">
-                <label for="suggest-button-emote" class="block text-sm" style="color: {$colorStore.muted}">Button
-                  Emote</label>
-                <input
-                  id="suggest-button-emote"
-                  type="text"
-                  bind:value={suggestButtonEmote}
-                  oninput={() => markAsChanged('suggestButtonEmote')}
-                  class="w-full p-3 rounded-lg"
-                  style="background: {$colorStore.primary}10;
-                           border: 1px solid {$colorStore.primary}30;
-                           color: {$colorStore.text};"
-                  placeholder="e.g. 💡 or <:hanestare:968161429679112242>"
-                >
+                <label class="block text-sm" style="color: {$colorStore.muted}">Button Emote</label>
+                <EmojiPicker
+                  guildEmojis={guildEmojis}
+                  bind:selected={suggestButtonEmote}
+                  placeholder="Select button emote..."
+                  showUnicodeEmojis={true}
+                />
                 <p class="text-xs" style="color: {$colorStore.muted}">
-                  Single emote for the suggest button. Supports Unicode (💡) or Discord custom (&lt;:name:id&gt;,
-                  &lt;a:name:id&gt;).
-                  Leave empty or use "disabled"/"-" for no emote.
+                  Single emote for the suggest button. Supports Unicode or Discord custom emotes. Leave empty for no
+                  emote.
                 </p>
-
-                <!-- Button Emote Preview -->
-                {#if suggestButtonEmote && suggestButtonEmote !== "disabled" && suggestButtonEmote !== "-"}
-                  {@const buttonEmote = renderEmote(formatEmote(suggestButtonEmote))}
-                  <div class="mt-2 inline-flex items-center gap-2">
-                    {#if buttonEmote.type === 'image'}
-                      <img
-                        src={buttonEmote.content}
-                        alt="Button Emote"
-                        class="w-5 h-5 object-contain"
-                        onerror={(e) => {
-                            if (e.currentTarget instanceof HTMLImageElement) {
-                              e.currentTarget.style.display = 'none';
-                              const fallback = e.currentTarget.nextElementSibling;
-                              if (fallback instanceof HTMLElement) {
-                                fallback.style.display = 'inline';
-                              }
-                            }
-                          }}
-                      >
-                      <span style="display: none; color: {$colorStore.muted};" class="text-xs">❓</span>
-                    {:else}
-                      <span class="text-lg">{buttonEmote.content}</span>
-                    {/if}
-                  </div>
-                {/if}
               </div>
             </div>
             <div class="space-y-2">
               <label for="suggest-button-message" class="block text-sm" style="color: {$colorStore.muted}">Button
                 Message</label>
-              <textarea
-                id="suggest-button-message"
+              <FullscreenEmbedBuilder
                 bind:value={suggestButtonMessage}
-                oninput={() => markAsChanged('suggestButtonMessage')}
-                class="w-full p-3 rounded-lg min-h-[100px] resize-none"
-                style="background: {$colorStore.primary}10;
-                         border: 1px solid {$colorStore.primary}30;
-                         color: {$colorStore.text};"
-                placeholder="Enter button message"
-              ></textarea>
+                previewTitle="Button Message"
+                previewDescription="Configure the message sent when users click the suggestion button"
+                icon="fa-comment-dots"
+                allowContent={true}
+                allowMultipleEmbeds={false}
+                maxEmbeds={1}
+                allowComponents={false}
+                additionalPlaceholders={suggestionPlaceholders}
+                user={currentUser}
+              />
             </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Button Colors</h3>
+            <div class="space-y-2">
+              <span id="suggest-button-color-label" class="block text-sm" style="color: {$colorStore.muted}">Suggest Button Color</span>
+              <DiscordSelector
+                type="custom"
+                options={[
+                    { id: "1", name: "Blue", label: "Blue" },
+                    { id: "2", name: "Grey", label: "Grey" },
+                    { id: "3", name: "Green", label: "Green" },
+                    { id: "4", name: "Red", label: "Red" }
+                  ]}
+                selected={suggestButtonColor.toString()}
+                searchable={false}
+                placeholder="Select button color..."
+                onchange={(e) => {
+                    const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                    suggestButtonColor = parseInt(selected || "1");
+                  }}
+              />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 1 Button</span>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "1", name: "Blue", label: "Blue" },
+                      { id: "2", name: "Grey", label: "Grey" },
+                      { id: "3", name: "Green", label: "Green" },
+                      { id: "4", name: "Red", label: "Red" }
+                    ]}
+                  selected={emote1Style.toString()}
+                  searchable={false}
+                  placeholder="Color..."
+                  onchange={(e) => {
+                      const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                      emote1Style = parseInt(selected || "1");
+                    }}
+                />
+              </div>
+
+              <div class="space-y-2">
+                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 2 Button</span>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "1", name: "Blue", label: "Blue" },
+                      { id: "2", name: "Grey", label: "Grey" },
+                      { id: "3", name: "Green", label: "Green" },
+                      { id: "4", name: "Red", label: "Red" }
+                    ]}
+                  selected={emote2Style.toString()}
+                  searchable={false}
+                  placeholder="Color..."
+                  onchange={(e) => {
+                      const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                      emote2Style = parseInt(selected || "1");
+                    }}
+                />
+              </div>
+
+              <div class="space-y-2">
+                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 3 Button</span>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "1", name: "Blue", label: "Blue" },
+                      { id: "2", name: "Grey", label: "Grey" },
+                      { id: "3", name: "Green", label: "Green" },
+                      { id: "4", name: "Red", label: "Red" }
+                    ]}
+                  selected={emote3Style.toString()}
+                  searchable={false}
+                  placeholder="Color..."
+                  onchange={(e) => {
+                      const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                      emote3Style = parseInt(selected || "1");
+                    }}
+                />
+              </div>
+
+              <div class="space-y-2">
+                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 4 Button</span>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "1", name: "Blue", label: "Blue" },
+                      { id: "2", name: "Grey", label: "Grey" },
+                      { id: "3", name: "Green", label: "Green" },
+                      { id: "4", name: "Red", label: "Red" }
+                    ]}
+                  selected={emote4Style.toString()}
+                  searchable={false}
+                  placeholder="Color..."
+                  onchange={(e) => {
+                      const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                      emote4Style = parseInt(selected || "1");
+                    }}
+                />
+              </div>
+
+              <div class="space-y-2">
+                <span class="block text-sm" style="color: {$colorStore.muted}">Emote 5 Button</span>
+                <DiscordSelector
+                  type="custom"
+                  options={[
+                      { id: "1", name: "Blue", label: "Blue" },
+                      { id: "2", name: "Grey", label: "Grey" },
+                      { id: "3", name: "Green", label: "Green" },
+                      { id: "4", name: "Red", label: "Red" }
+                    ]}
+                  selected={emote5Style.toString()}
+                  searchable={false}
+                  placeholder="Color..."
+                  onchange={(e) => {
+                      const selected = Array.isArray(e.selected) ? e.selected[0] : e.selected;
+                      emote5Style = parseInt(selected || "1");
+                    }}
+                />
+              </div>
+            </div>
+            <p class="text-xs" style="color: {$colorStore.muted}">
+              Customize button colors for each emote when using button mode (applies to all 5 emote buttons)
+            </p>
           </div>
         </div>
       {/if}

@@ -161,6 +161,10 @@
 
   function isValidUrl(url: string): boolean {
     if (!url) return true;
+
+    // Allow URLs with placeholders (anything containing %...%)
+    if (url.includes("%")) return true;
+
     try {
       new URL(url);
       return true;

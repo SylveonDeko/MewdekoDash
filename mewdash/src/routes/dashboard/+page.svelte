@@ -1,26 +1,26 @@
 <!-- routes/dashboard/+page.svelte -->
 <script lang="ts">
 
-    import {onDestroy, onMount} from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import {
         botStatusApi,
+        type BotStatusModel,
         clientApi,
+        type GraphStatsResponse,
         guildApi,
         inviteTrackingApi,
         joinLeaveApi,
         roleGreetApi,
-        roleStatesApi,
-        type BotStatusModel,
-        type GraphStatsResponse
+        roleStatesApi
     } from "$lib/api/index.ts";
-    import {fade, fly, slide} from "svelte/transition";
-    import {goto} from "$app/navigation";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {currentInstance} from "$lib/stores/instanceStore";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger";
-    import {browser} from "$app/environment";
-    import {clickOutside} from "$lib/clickOutside.ts";
+    import { fade, fly, slide } from "svelte/transition";
+    import { goto } from "$app/navigation";
+    import { currentGuild } from "$lib/stores/currentGuild";
+    import { currentInstance } from "$lib/stores/instanceStore";
+    import { colorStore } from "$lib/stores/colorStore";
+    import { logger } from "$lib/logger";
+    import { browser } from "$app/environment";
+    import { clickOutside } from "$lib/clickOutside.ts";
 
     // Import  components
     import TabbedDashboard from "$lib/components/layout/TabbedDashboard.svelte";
@@ -28,10 +28,10 @@
     import KeyboardShortcuts from "$lib/components/specialized/KeyboardShortcuts.svelte";
 
     // Import stores
-    import {musicStore} from "$lib/stores/musicStore";
-    import {inviteStore} from "$lib/stores/inviteStore";
-    import {dashboardStore} from "$lib/stores/dashboardStore";
-    import {userAdminGuilds} from "$lib/stores/adminGuildsStore.ts";
+    import { musicStore } from "$lib/stores/musicStore";
+    import { inviteStore } from "$lib/stores/inviteStore";
+    import { dashboardStore } from "$lib/stores/dashboardStore";
+    import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
 
     // Import search component
 
@@ -51,6 +51,14 @@
     let playerExists = $state(false);
     let compactMode = $state(false);
     let showDetails = $state(true); // Controls visibility of description/stats
+
+    // Halloween easter egg state
+    let showWitch = $state(false);
+    let witchMessage = $state("");
+    let showBats = $state(false);
+    let halloweenTriggered = $state(false);
+    let halloweenKeySequence = $state("");
+    const HALLOWEEN_SECRET = "hallo"; // Secret word to trigger manually
 
     // Derived state
     let musicStatus = $derived($musicStore.status);
@@ -437,11 +445,65 @@
         }
     }
 
+    // Halloween trigger function
+    function triggerHalloweenEffect() {
+      if (halloweenTriggered) return; // Only trigger once per session
+
+      halloweenTriggered = true;
+      showWitch = true;
+
+      // Random witch messages
+      const messages = [
+        "Your colors are MINE! 🎃",
+        "Trick or treat! 🧙‍♀️",
+        "Happy Halloween! 👻",
+        "Color swap spell cast! ✨",
+        "Boo! 🦇"
+      ];
+      witchMessage = messages[Math.floor(Math.random() * messages.length)];
+
+      // Swap the colors immediately for better UX
+      colorStore.halloweenSwap();
+
+      // Hide witch after showing message
+      setTimeout(() => {
+        showWitch = false;
+      }, 3000);
+
+      // Mark as triggered in session
+      if (browser) {
+        sessionStorage.setItem("mewdeko-halloween-triggered", "true");
+      }
+    }
+
     // Keyboard shortcut handler
     function handleKeyDown(event: KeyboardEvent) {
         // Only process if no input element is focused
         const target = event.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      // Track Halloween secret key sequence
+      const key = event.key.toLowerCase();
+      halloweenKeySequence += key;
+      if (halloweenKeySequence.length > HALLOWEEN_SECRET.length) {
+        halloweenKeySequence = halloweenKeySequence.slice(-HALLOWEEN_SECRET.length);
+      }
+
+      // Check for Halloween trigger
+      if (halloweenKeySequence === HALLOWEEN_SECRET && !halloweenTriggered) {
+        event.preventDefault();
+        triggerHalloweenEffect();
+        halloweenKeySequence = ""; // Reset sequence
+        return;
+      }
+
+      // Check if current key could be part of Halloween sequence
+      // If so, don't trigger other shortcuts to avoid conflicts
+      const potentialSequence = HALLOWEEN_SECRET.slice(0, halloweenKeySequence.length);
+      if (halloweenKeySequence === potentialSequence && halloweenKeySequence.length > 0) {
+        // We're potentially typing the Halloween sequence, skip shortcuts
+        return;
+      }
 
         // Keyboard shortcuts
         switch (event.key.toLowerCase()) {
@@ -490,6 +552,27 @@
             // Sync showDetails with compactMode on page load
             showDetails = !compactMode;
 
+          // Clean up Halloween state if it's after Halloween
+          if (!colorStore.isHalloween() && sessionStorage.getItem("mewdeko-halloween-active") === "true") {
+            sessionStorage.removeItem("mewdeko-halloween-active");
+            sessionStorage.removeItem("mewdeko-halloween-triggered");
+          }
+
+          // Check if Halloween was already triggered this session
+          if (sessionStorage.getItem("mewdeko-halloween-triggered") === "true") {
+            halloweenTriggered = true;
+          }
+
+          // Check for Halloween and trigger effect if not already done
+          if (colorStore.isHalloween() && !halloweenTriggered && !colorStore.isHalloweenActive()) {
+            // Delay Halloween effect until page is loaded
+            setTimeout(() => {
+              if (!loading) {
+                triggerHalloweenEffect();
+              }
+            }, 2000);
+          }
+
             // Set up keyboard event listeners
             window.addEventListener("keydown", handleServerDropdownKeydown);
 
@@ -506,6 +589,7 @@
             await fetchAllData();
 
             // Extract colors: server icon > user avatar > bot avatar
+          // (Halloween swap will be applied automatically if active)
             if (guildInfo?.iconUrl) {
                 await colorStore.extractFromServerIcon(guildInfo.iconUrl);
             } else if ($currentGuild?.icon) {
@@ -528,6 +612,25 @@
             // Setup keyboard shortcuts
             if (browser) {
                 window.addEventListener("keydown", handleKeyDown);
+
+              // Add debug commands to window for easy testing (no console spam)
+              // @ts-ignore
+              window.mewdekoHalloween = {
+                trigger: () => triggerHalloweenEffect(),
+                enableDebug: () => {
+                  colorStore.enableHalloweenDebug();
+                },
+                disableDebug: () => {
+                  colorStore.disableHalloweenDebug();
+                  colorStore.reset();
+                },
+                reset: () => {
+                  halloweenTriggered = false;
+                  colorStore.reset();
+                  colorStore.disableHalloweenDebug();
+                  sessionStorage.removeItem("mewdeko-halloween-triggered");
+                }
+              };
             }
         } catch (err) {
             error = "Failed to fetch dashboard data";
@@ -554,6 +657,7 @@
     $effect(() => {
         if ($currentInstance) {
             // Extract colors from server icon if available, otherwise use user avatar, then bot avatar as fallback
+          // (Halloween swap will be applied automatically if active)
             if (guildInfo?.iconUrl) {
                 colorStore.extractFromServerIcon(guildInfo.iconUrl);
             } else if ($currentGuild?.icon) {
@@ -583,6 +687,7 @@
     $effect(() => {
         if ($currentGuild) {
             // When guild changes, update colors based on server icon
+          // (Halloween swap will be applied automatically if active)
             if (guildInfo?.iconUrl) {
                 colorStore.extractFromServerIcon(guildInfo.iconUrl);
             } else if ($currentGuild.icon) {
@@ -596,15 +701,17 @@
                 musicStore.startPolling(currentUser.id);
             }
             fetchAllData();
-        } else if (!$currentGuild && currentUser?.avatar) {
+        } else if (!$currentGuild) {
+          if (currentUser?.avatar) {
             // No guild selected - use user avatar colors
             const userAvatarUrl = currentUser.avatar.startsWith("a_")
-                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
-                : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
+              ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+              : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
             colorStore.extractFromImage(userAvatarUrl);
-        } else if (!$currentGuild && $currentInstance?.botAvatar) {
+          } else if ($currentInstance?.botAvatar) {
             // No guild and no user avatar - fall back to bot avatar
             colorStore.extractFromImage($currentInstance.botAvatar);
+          }
         }
     });
 
@@ -1424,6 +1531,20 @@
             {/if}
         </div>
     </div>
+
+  <!-- Halloween Message -->
+  {#if showWitch}
+    <div
+      class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[200] pointer-events-none"
+      style="animation: fadeInOut 3s ease-in-out forwards;"
+    >
+      <div class="bg-purple-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+        <span class="text-2xl">🎃</span>
+        <span class="font-medium">{witchMessage}</span>
+        <span class="text-2xl">🎃</span>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style lang="postcss">
@@ -1478,5 +1599,25 @@
     .transform {
         transform: translateZ(0);
         backface-visibility: hidden;
+    }
+
+    /* Halloween Animation - Simple fade in/out */
+    @keyframes fadeInOut {
+        0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px) scale(0.95);
+        }
+        20% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+        80% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px) scale(0.95);
+        }
     }
 </style>

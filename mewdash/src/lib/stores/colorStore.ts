@@ -583,6 +583,9 @@ function createColorStore() {
     }
   }
 
+  // Halloween state management
+  let isHalloweenSwapped = false;
+
   return {
     subscribe: store.subscribe,
 
@@ -608,6 +611,98 @@ function createColorStore() {
       `.trim();
     },
 
+    // Halloween special: Swap primary and secondary colors (with animation)
+    halloweenSwap(): void {
+      const current = { ...currentPalette };
+
+      // Add transition class to body for smooth color change
+      if (typeof window !== "undefined" && document.body) {
+        document.body.classList.add("halloween-color-transition");
+
+        // Remove the class after transition completes
+        setTimeout(() => {
+          document.body.classList.remove("halloween-color-transition");
+        }, 2000);
+      }
+
+      // Swap primary and secondary
+      const newPalette: ColorPalette = {
+        ...current,
+        primary: current.secondary,
+        secondary: current.primary,
+        // Also swap gradients for full effect
+        gradientStart: current.gradientEnd,
+        gradientEnd: current.gradientStart,
+      };
+
+      store.set(newPalette);
+      isHalloweenSwapped = true;
+
+      // Mark that Halloween swap is active (to persist across server switches)
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        sessionStorage.setItem("mewdeko-halloween-active", "true");
+      }
+    },
+
+    // Check if Halloween swap is currently active
+    isHalloweenActive(): boolean {
+      if (typeof window === "undefined" || !window.sessionStorage) return false;
+
+      // Auto-clear if it's no longer Halloween
+      if (
+        !this.isHalloween() &&
+        sessionStorage.getItem("mewdeko-halloween-active") === "true"
+      ) {
+        // Clear the Halloween state
+        sessionStorage.removeItem("mewdeko-halloween-active");
+        sessionStorage.removeItem("mewdeko-halloween-triggered");
+        isHalloweenSwapped = false;
+        return false;
+      }
+
+      return sessionStorage.getItem("mewdeko-halloween-active") === "true";
+    },
+
+    // Check if it's Halloween (October 31)
+    isHalloween(): boolean {
+      // Check for debug mode from localStorage or URL params
+      if (typeof window !== "undefined") {
+        // Check localStorage for debug flag
+        if (localStorage.getItem("mewdeko-halloween-debug") === "true") {
+          return true;
+        }
+
+        // Check URL params for testing
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("halloween") === "test") {
+          return true;
+        }
+      }
+
+      const now = new Date();
+      return now.getMonth() === 9 && now.getDate() === 31; // October is month 9 (0-indexed)
+    },
+
+    // Enable Halloween debug mode (for testing)
+    enableHalloweenDebug(): void {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("mewdeko-halloween-debug", "true");
+      }
+    },
+
+    // Disable Halloween debug mode
+    disableHalloweenDebug(): void {
+      if (typeof window !== "undefined") {
+        if (window.localStorage) {
+          localStorage.removeItem("mewdeko-halloween-debug");
+        }
+        if (window.sessionStorage) {
+          sessionStorage.removeItem("mewdeko-halloween-active");
+        }
+      }
+      isHalloweenSwapped = false;
+    },
+
     // Reset to default palette
     reset(): void {
       store.set(DEFAULT_PALETTE);
@@ -631,6 +726,11 @@ function createColorStore() {
       try {
         const palette = await extractColors(imageUrl);
         store.set(palette);
+
+        // If Halloween is active, swap the colors after extraction
+        if (this.isHalloweenActive()) {
+          this.applyHalloweenSwap();
+        }
       } catch (err) {
         store.set(DEFAULT_PALETTE);
       }
@@ -648,9 +748,32 @@ function createColorStore() {
       try {
         const palette = await extractColors(iconUrl);
         store.set(palette);
+
+        // If Halloween is active, swap the colors after extraction
+        if (this.isHalloweenActive()) {
+          this.applyHalloweenSwap();
+        }
       } catch (err) {
         store.set(DEFAULT_PALETTE);
       }
+    },
+
+    // Apply Halloween swap without animation (for server switches)
+    applyHalloweenSwap(): void {
+      const current = { ...currentPalette };
+
+      // Swap primary and secondary
+      const newPalette: ColorPalette = {
+        ...current,
+        primary: current.secondary,
+        secondary: current.primary,
+        // Also swap gradients for full effect
+        gradientStart: current.gradientEnd,
+        gradientEnd: current.gradientStart,
+      };
+
+      store.set(newPalette);
+      isHalloweenSwapped = true;
     },
   };
 }

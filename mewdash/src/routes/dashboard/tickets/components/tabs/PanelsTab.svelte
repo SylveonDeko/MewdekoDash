@@ -8,10 +8,12 @@
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import ModalBuilder from "../editors/ModalBuilder.svelte";
   import OpenMessageEditor from "../editors/OpenMessageEditor.svelte";
+  import { onMount } from "svelte";
 
   interface Props {
     panels: any[];
     panelStatuses: Map<bigint, number>;
+    checkingPanelStatus: boolean;
     selectedPanel: any;
     panelButtons: any[];
     panelSelectMenus: any[];
@@ -57,6 +59,7 @@
   let {
     panels,
     panelStatuses,
+    checkingPanelStatus,
     selectedPanel = $bindable(),
     panelButtons,
     panelSelectMenus,
@@ -180,48 +183,14 @@
     { id: "message", label: "Message", icon: "fa-message" }
   ];
 
+  onMount(() => {
+    console.log(panels);
+  });
   function handleEmbedUpdate(detail: { embed: any; index: number }) {
     panelEmbed = detail.embed;
   }
 
-  function getPanelStatus(panelId: bigint) {
-    // Trigger lazy loading if not already checked
-    if (!panelStatuses.has(panelId)) {
-      checkPanelStatus(panelId);
-      return -1; // Loading state
-    }
-    return panelStatuses.get(panelId) || 0;
-  }
-
-  function getStatusColor(status: number) {
-    switch (status) {
-      case -1:
-        return $colorStore.muted; // Loading
-      case 0:
-        return "#10b981"; // OK
-      case 1:
-        return "#f59e0b"; // Message deleted
-      case 2:
-        return "#ef4444"; // Channel deleted
-      default:
-        return $colorStore.muted;
-    }
-  }
-
-  function getStatusIcon(status: number) {
-    switch (status) {
-      case -1:
-        return "fa-spinner fa-spin"; // Loading
-      case 0:
-        return "fa-circle-check"; // OK
-      case 1:
-        return "fa-triangle-exclamation"; // Message deleted
-      case 2:
-        return "fa-circle-xmark"; // Channel deleted
-      default:
-        return "fa-circle-question";
-    }
-  }
+  // Status helper functions removed - status now only checked on-demand via Troubleshoot button
 
   // Parse Discord emoji format for display
   function parseEmojiForDisplay(emojiString: string | null): { url: string; name: string; isCustom: boolean } | {
@@ -443,11 +412,12 @@
 <div class="mb-6">
   <div class="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
     {#each panels as panel}
-      {@const status = getPanelStatus(panel.messageId)}
+      {@const isSelected = selectedPanel?.messageId === panel.messageId && !showPanelCreator}
       <button
-        class="flex-shrink-0 px-4 py-3 rounded-xl transition-all hover:opacity-80 min-w-[200px]"
-        style="background: {selectedPanel?.id === panel.id && !showPanelCreator ? $colorStore.primary + '20' : $colorStore.primary + '08'};
-               border: 2px solid {selectedPanel?.id === panel.id && !showPanelCreator ? $colorStore.primary + '40' : $colorStore.primary + '15'};"
+        class="flex-shrink-0 px-4 py-3 rounded-xl transition-all hover:opacity-80 min-w-[200px] relative"
+        style="background: {isSelected ? $colorStore.primary + '25' : $colorStore.primary + '08'};
+               border: 2px solid {isSelected ? $colorStore.primary : $colorStore.primary + '15'};
+               border-left: 4px solid {isSelected ? $colorStore.primary : 'transparent'};"
         onclick={() => {
           selectedPanel = panel;
           loadPanelDetails(panel.messageId);
@@ -455,16 +425,18 @@
           showPanelCreator = false;
         }}
       >
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
           <div class="text-left flex-1 min-w-0">
             <p class="font-medium text-sm truncate" style="color: {$colorStore.text}">
+              {#if isSelected}
+                <i class="fa-solid fa-circle-check mr-1.5" style="color: {$colorStore.primary}"></i>
+              {/if}
               #{panel.channelName}
             </p>
             <p class="text-xs" style="color: {$colorStore.muted}">
               {panel.buttonCount || 0}B • {panel.selectMenuCount || 0}M
             </p>
           </div>
-          <i class="fa-solid {getStatusIcon(status)}" style="color: {getStatusColor(status)}; font-size: 16px;"></i>
         </div>
       </button>
     {/each}
@@ -554,13 +526,25 @@
   </div>
 {:else if selectedPanel}
   <!-- Panel Actions -->
-  {@const status = getPanelStatus(selectedPanel.messageId)}
   <div class="flex items-center justify-between mb-6">
     <h3 class="text-xl font-bold" style="color: {$colorStore.text}">
       #{selectedPanel.channelName}
     </h3>
     <div class="flex gap-2">
-      {#if status === 1}
+      <button
+        class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; opacity: {checkingPanelStatus ? 0.5 : 1};"
+        onclick={() => checkPanelStatus(selectedPanel.messageId)}
+        disabled={checkingPanelStatus}
+      >
+        {#if checkingPanelStatus}
+          <i class="fa-solid fa-spinner fa-spin"></i>
+        {:else}
+          <i class="fa-solid fa-stethoscope"></i>
+        {/if}
+        Troubleshoot
+      </button>
+      {#if panelStatuses.get(selectedPanel.messageId) === 1}
         <button
           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
           style="background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30;"

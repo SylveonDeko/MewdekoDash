@@ -1,12 +1,12 @@
 <!-- EmbedEditor.svelte -->
 <script lang="ts">
-    import {colorStore} from "$lib/stores/colorStore";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
-    import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
+  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
 
 
-    interface Props {
+  interface Props {
     // Props
     embed: any;
     index?: number;
@@ -16,7 +16,7 @@
       onduplicate?: (detail: { index: number }) => void;
   }
 
-    let { embed = $bindable(), index = 0, placeholders = [], onupdate, onremove, onduplicate }: Props = $props();
+    let { embed, index = 0, placeholders = [], onupdate, onremove, onduplicate }: Props = $props();
 
   // Internal state
   let activeTab = $state('content');
@@ -137,6 +137,10 @@
   // URL validation
   function isValidUrl(url: string): boolean {
     if (!url) return true; // Empty is valid
+
+    // Allow URLs with placeholders (anything containing %...%)
+    if (url.includes("%")) return true;
+
     try {
       new URL(url);
       return true;
@@ -178,30 +182,30 @@
 
 <div class="space-y-6">
   <!-- Header with Actions -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+    <h3 class="text-base sm:text-lg font-semibold" style="color: {$colorStore.text};">
       Embed {index + 1}
     </h3>
-    
-    <div class="flex items-center gap-2">
+
+    <div class="flex items-center gap-1.5 sm:gap-2">
       <button
-        class="p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
         onclick={() => onduplicate?.({ index })}
         title="Duplicate embed"
         aria-label="Duplicate embed"
       >
-        <i class="fa-solid fa-copy" style="font-size: 16px;"></i>
+        <i class="fa-solid fa-copy" style="font-size: 14px;"></i>
       </button>
 
       <button
-        class="p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+        class="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-[1.02]"
         style="background: #ED424515; color: #ED4245;"
         onclick={() => onremove?.({ index })}
         title="Remove embed"
         aria-label="Remove embed"
       >
-        <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
+        <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
       </button>
     </div>
   </div>
@@ -278,9 +282,9 @@
                      border-color: {$colorStore.primary}30;
                      color: {$colorStore.text};"
               placeholder="Enter embed description... (Supports Discord markdown)"
-              bind:value={embed.description}
+              value={embed.description}
               maxlength="4096"
-              oninput={() => onupdate?.({ embed, index })}
+              oninput={(e) => handleInput(e, 'description')}
             ></textarea>
             <button
                     class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
@@ -507,17 +511,18 @@
       <div class="space-y-6" role="tabpanel" aria-labelledby="fields-tab">
         <!-- Add Field Button -->
         <div class="flex justify-between items-center">
-          <h4 class="text-md font-medium" style="color: {$colorStore.text};">
+          <h4 class="text-sm sm:text-md font-medium" style="color: {$colorStore.text};">
             Fields ({embed.fields?.length || 0}/25)
           </h4>
           <button
-            class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+            class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 text-sm"
             style="background: {$colorStore.primary}; color: {$colorStore.text};"
             disabled={(embed.fields?.length || 0) >= 25}
             onclick={addField}
           >
-            <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-            Add Field
+            <i class="fa-solid fa-plus" style="font-size: 14px;"></i>
+            <span class="hidden sm:inline">Add Field</span>
+            <span class="sm:hidden">Add</span>
           </button>
         </div>
 
@@ -594,9 +599,9 @@
                       class="w-full px-3 py-2 pr-10 rounded-sm border text-sm resize-y"
                       style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                       placeholder="Field value"
-                      bind:value={field.value}
+                      value={field.value}
                       maxlength="1024"
-                      oninput={() => onupdate?.({ embed, index })}
+                      oninput={(e) => handleFieldInput(e, fieldIndex, 'value')}
                     ></textarea>
                     <button
                             class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"

@@ -170,13 +170,17 @@
         const { shareCode } = await formsApi.generateShareLink(formId, instanceId);
         const link = `${window.location.origin}/forms/${shareCode}`;
 
-        console.log(`Share link: ${link} (code: ${shareCode})`);
+        console.log(`Share link generated successfully: ${link} (code: ${shareCode})`);
 
         currentShareLink = link;
         showShareLinkModal = true;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to generate share link:", err);
-        showNotificationMessage("Failed to generate share link", "error");
+        console.error("Error details:", err?.error || err);
+
+        // Provide more detailed error message
+        const errorMessage = err?.error?.message || err?.message || "Failed to generate share link";
+        showNotificationMessage(errorMessage, "error");
       }
     }, "operation", "Getting share link...");
   }
@@ -199,10 +203,17 @@
           return;
         }
 
-        const { shareCode } = await formsApi.generateShareLink(formId, instance.port.toString());
+        const instanceId = instance.port.toString();
+        console.log(`Generating preview link for form ${formId} with instance ${instanceId}`);
+
+        const { shareCode } = await formsApi.generateShareLink(formId, instanceId);
+        console.log(`Preview link generated: /forms/${shareCode}?preview=true`);
+
         window.open(`/forms/${shareCode}?preview=true`, "_blank");
-      } catch (err) {
-        showNotificationMessage("Failed to generate preview link", "error");
+      } catch (err: any) {
+        console.error("Failed to generate preview link:", err);
+        const errorMessage = err?.error?.message || err?.message || "Failed to generate preview link";
+        showNotificationMessage(errorMessage, "error");
       }
     }, "operation", "Generating preview...");
   }
@@ -228,10 +239,21 @@
     activeTab = "review";
   }
 
-  function handleFormCreated(formId: number) {
-    loadForms();
-    selectedFormId = formId;
-    activeTab = "responses";
+  async function handleFormCreated(formId: number) {
+    await loadForms(); // Wait for forms to load before setting selectedFormId
+
+    // Verify the form exists in our forms array before setting it as selected
+    const createdForm = forms.find(f => f.id === formId);
+    if (createdForm) {
+      selectedFormId = formId;
+      activeTab = "responses";
+    } else {
+      // If form not found, stay on list view
+      console.warn(`Created form with ID ${formId} not found in forms list`);
+      activeTab = "list";
+      selectedFormId = null;
+      showNotificationMessage("Form created successfully", "success");
+    }
   }
 
   async function handleFormUpdated() {
@@ -250,18 +272,21 @@
     if (selectedFormId) {
       const selectedForm = forms.find(f => f.id === selectedFormId);
 
-      baseTabs.push(
-        { id: "edit", label: "Edit", icon: "fa-edit" },
-        { id: "responses", label: "Responses", icon: "fa-chart-bar" }
-      );
+      // Only add tabs if the form exists in our forms array
+      if (selectedForm) {
+        baseTabs.push(
+          { id: "edit", label: "Edit", icon: "fa-edit" },
+          { id: "responses", label: "Responses", icon: "fa-chart-bar" }
+        );
 
-      // Add Review tab for forms that require workflow (formType !== 0 means not Regular)
-      if (selectedForm && selectedForm.formType !== 0) {
-        baseTabs.push({
-          id: "review",
-          label: `Review${selectedForm.pendingCount ? ` (${selectedForm.pendingCount})` : ""}`,
-          icon: "fa-clipboard-check"
-        });
+        // Add Review tab for forms that require workflow (formType !== 0 means not Regular)
+        if (selectedForm.formType !== 0) {
+          baseTabs.push({
+            id: "review",
+            label: `Review${selectedForm.pendingCount ? ` (${selectedForm.pendingCount})` : ""}`,
+            icon: "fa-clipboard-check"
+          });
+        }
       }
     }
 

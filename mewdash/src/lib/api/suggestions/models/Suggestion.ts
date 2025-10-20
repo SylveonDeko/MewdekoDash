@@ -49,6 +49,15 @@ export interface Suggestion {
   /** Emote count 5 */
   emoteCount5: number;
 
+  /** Emote counts (returned from API as nested object) */
+  emoteCounts?: {
+    emote1: number;
+    emote2: number;
+    emote3: number;
+    emote4: number;
+    emote5: number;
+  };
+
   /** User who changed the state */
   stateChangeUser: bigint;
 

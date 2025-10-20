@@ -11,7 +11,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
-  import { instanceManagementApi, clientApi, ownershipApi, type BotInstance } from "$lib/api/index.ts";
+  import { type BotInstance, clientApi, instanceManagementApi, ownershipApi } from "$lib/api/index.ts";
   import { allDashboardFeatures } from "$lib/config/navigationItems";
 
 
@@ -54,6 +54,8 @@
   let isAnimating = $state(false);
   let isNavigating = $state(false);
   let navigationLoadingTarget = $state<string | null>(null);
+  let isPinned = $state(false); // Pin state to prevent auto-hide
+  let manuallyHidden = $state(false); // Track manual hide state
 
   // Instance selection state
   let instances: BotInstance[] = $state([]);
@@ -82,6 +84,7 @@
     currentPath.startsWith(item.href + "/")
   ));
   let moreMenuActive = $derived(activeMoreIndex >= 0);
+  let effectivelyVisible = $derived(visible && !manuallyHidden);
   $effect(() => {
     musicPlaying = $musicStore.status?.IsPlaying || false;
   });
@@ -108,6 +111,9 @@
 
   function handleScroll() {
     if (typeof window !== "undefined") {
+      // Don't auto-hide/show if pinned or manually hidden
+      if (isPinned || manuallyHidden) return;
+
       // Debounce scroll events for better performance
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
@@ -116,7 +122,7 @@
 
         // Only update if scroll delta is significant (reduces jitter)
         if (scrollDelta > 5) {
-          // Always show navbar when near the top
+          // Always show navbar when near the top (unless manually hidden)
           if (currentScrollPos < 50) {
             visible = true;
           } else {
@@ -126,6 +132,39 @@
           prevScrollPos = currentScrollPos;
         }
       }, 10);
+    }
+  }
+
+  // Toggle navbar visibility manually
+  function toggleNavbar() {
+    if (manuallyHidden) {
+      // Show navbar
+      visible = true;
+      manuallyHidden = false;
+    } else {
+      // Hide navbar
+      manuallyHidden = true;
+    }
+
+    // Haptic feedback
+    if ("vibrate" in navigator) {
+      navigator.vibrate(30);
+    }
+  }
+
+  // Toggle pin state
+  function togglePin() {
+    isPinned = !isPinned;
+
+    // If pinning, make sure navbar is visible
+    if (isPinned) {
+      visible = true;
+      manuallyHidden = false;
+    }
+
+    // Haptic feedback
+    if ("vibrate" in navigator) {
+      navigator.vibrate(isPinned ? [30, 30] : 30);
     }
   }
 
@@ -369,6 +408,16 @@
     window.addEventListener("scroll", handleScroll);
     document.addEventListener("click", handleClick);
 
+    // Restore pin state from localStorage
+    try {
+      const savedPinState = localStorage.getItem("mobileNavPinned");
+      if (savedPinState !== null) {
+        isPinned = savedPinState === "true";
+      }
+    } catch (err) {
+      console.error("Error loading pin state:", err);
+    }
+
     // Check if user is owner
     checkOwnership();
 
@@ -379,6 +428,17 @@
       window.removeEventListener("scroll", handleScroll);
       document.removeEventListener("click", handleClick);
     };
+  });
+
+  // Save pin state to localStorage when it changes
+  $effect(() => {
+    if (browser) {
+      try {
+        localStorage.setItem("mobileNavPinned", isPinned.toString());
+      } catch (err) {
+        console.error("Error saving pin state:", err);
+      }
+    }
   });
 </script>
 
@@ -438,12 +498,79 @@
     <div class="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-50"
          style="padding-bottom: calc(12px + env(safe-area-inset-bottom));">
       <nav
-        class="pointer-events-auto mx-4 w-full max-w-md transition-all duration-300 ease-out backdrop-blur-md rounded-full shadow-2xl"
-        class:translate-y-0={visible}
-        class:translate-y-full={!visible}
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);"
+        class="pointer-events-auto mx-4 w-full max-w-md transition-all duration-300 ease-out backdrop-blur-md rounded-full shadow-2xl relative"
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);
+               transform: translateY({effectivelyVisible ? '0' : '100%'});"
         aria-label="Mobile navigation"
       >
+        <!-- Control Handles - Always visible -->
+        <!-- Show handle when hidden -->
+        {#if !effectivelyVisible}
+          <button
+            class="absolute -top-4 left-1/2 transform -translate-x-1/2 px-6 py-1 rounded-t-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+            style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);
+                   border: 1px solid {$colorStore.primary}20;
+                   border-bottom: none;"
+            onclick={toggleNavbar}
+            aria-label="Show navigation bar"
+            transition:scale={{ duration: 200, start: 0.5 }}
+          >
+            <div class="flex items-center gap-1">
+              <i
+                class="fa-solid fa-chevron-up text-xs"
+                style="color: {$colorStore.text};"
+                aria-hidden="true"
+              ></i>
+              <i
+                class="fa-solid fa-chevron-up text-xs"
+                style="color: {$colorStore.text};"
+                aria-hidden="true"
+              ></i>
+            </div>
+          </button>
+        {/if}
+
+        <!-- Hide handle when visible -->
+        {#if effectivelyVisible}
+          <button
+            class="absolute -top-10 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+            style="background: linear-gradient(135deg, {$colorStore.gradientStart}60, {$colorStore.gradientMid}60); backdrop-filter: blur(8px);"
+            onclick={toggleNavbar}
+            aria-label="Hide navigation bar"
+            transition:scale={{ duration: 200, start: 0.5 }}
+          >
+            <div class="flex items-center gap-1">
+              <i
+                class="fa-solid fa-chevron-down text-xs"
+                style="color: {$colorStore.muted};"
+                aria-hidden="true"
+              ></i>
+              <i
+                class="fa-solid fa-chevron-down text-xs"
+                style="color: {$colorStore.muted};"
+                aria-hidden="true"
+              ></i>
+            </div>
+          </button>
+
+          <!-- Pin Button on the right -->
+          <button
+            class="absolute -top-10 right-4 p-2 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+            style="background: {isPinned ? $colorStore.primary + '30' : 'linear-gradient(135deg, ' + $colorStore.gradientStart + '60, ' + $colorStore.gradientMid + '60)'}; backdrop-filter: blur(8px);"
+            onclick={togglePin}
+            aria-label="{isPinned ? 'Unpin' : 'Pin'} navigation bar"
+            aria-pressed={isPinned}
+            transition:scale={{ duration: 200, start: 0.5 }}
+          >
+            <i
+              class="fa-solid fa-thumbtack text-sm transition-transform duration-200"
+              class:rotate-0={isPinned}
+              class:-rotate-45={!isPinned}
+              style="color: {isPinned ? $colorStore.primary : $colorStore.muted};"
+              aria-hidden="true"
+            ></i>
+          </button>
+        {/if}
         <div class="flex justify-around py-1.5 px-2">
           {#each effectiveNavItems as item, i}
             {#if item.isMore || item.isInstanceSelector}

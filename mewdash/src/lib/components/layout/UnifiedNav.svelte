@@ -30,9 +30,9 @@ A unified navigation component that provides responsive navigation with server a
   import type { DiscordUser } from "$lib/types/discord.ts";
   import {
     type BotInstance,
-    type MutualGuild,
     clientApi,
     instanceManagementApi,
+    type MutualGuild,
     ownershipApi,
     wizardApi
   } from "$lib/api/index.ts";
@@ -93,6 +93,14 @@ A unified navigation component that provides responsive navigation with server a
   let initialized = $state(false);
   let checkingInstances = $state(false);
 
+  // Mouse tracking for nav hover effects
+  let navItemMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
+  let navMouseX = $state(0);
+  let navMouseY = $state(0);
+  let isNavHovered = $state(false);
+  let booTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+  let showBoo = $state(false);
+
   let instanceStates = $state<Record<string, {
     loading: boolean;
     hasMutualGuild: boolean;
@@ -131,14 +139,12 @@ A unified navigation component that provides responsive navigation with server a
   // Derived computed items based on current state
   let computedItems = $derived.by(() => {
     if (!browser) {
-      // During SSR, return empty items
       return [];
     }
     if (!page || !page.url) {
       return [];
     }
-    const isDashboard = page.url.pathname.startsWith("/dashboard");
-    return isDashboard ? buildDashboardItems($isOwnerStore) : buildMainItems(items);
+    return buildMainItems(items);
   });
 
   function debounce(fn: (...args: any[]) => void, ms: number) {
@@ -149,6 +155,50 @@ A unified navigation component that provides responsive navigation with server a
         timer = setTimeout(() => fn(...args), ms);
       }
     };
+  }
+
+  function handleNavMouseMove(e: MouseEvent, itemId: string) {
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    navItemMousePositions[itemId] = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function handleNavMouseLeave(itemId: string) {
+    delete navItemMousePositions[itemId];
+  }
+
+  function handleNavContainerMouseMove(e: MouseEvent) {
+    if (!browser) return;
+    const nav = e.currentTarget as HTMLElement;
+    const rect = nav.getBoundingClientRect();
+    navMouseX = e.clientX - rect.left;
+    navMouseY = e.clientY - rect.top;
+  }
+
+  function handleNavContainerEnter() {
+    isNavHovered = true;
+    // Halloween surprise! 🎃
+    if (browser && Math.random() < 0.3) { // 30% chance to show BOO
+      if (booTimer) clearTimeout(booTimer);
+      booTimer = setTimeout(() => {
+        showBoo = true;
+        booTimer = setTimeout(() => {
+          showBoo = false;
+        }, 2000);
+      }, 800);
+    }
+  }
+
+  function handleNavContainerLeave() {
+    isNavHovered = false;
+    if (booTimer) {
+      clearTimeout(booTimer);
+      booTimer = null;
+    }
+    showBoo = false;
   }
 
 
@@ -251,82 +301,6 @@ A unified navigation component that provides responsive navigation with server a
     }
   }
 
-  // Dashboard items with icons
-  function getDashboardItems(isOwner: boolean = false) {
-    const items = [
-      {
-        category: "Core",
-        items: [
-          { title: "Dashboard", href: "/dashboard", icon: "fa-chart-bar" },
-          { title: "Settings", href: "/dashboard/settings", icon: "fa-gear" }
-        ]
-      },
-      {
-        category: "Community",
-        items: [
-          { title: "AFK", href: "/dashboard/afk", icon: "fa-moon" },
-          { title: "XP", href: "/dashboard/xp", icon: "fa-star" },
-          { title: "Suggestions", href: "/dashboard/suggestions", icon: "fa-lightbulb" },
-          { title: "Forms", href: "/dashboard/forms", icon: "fa-clipboard-list" },
-          { title: "MultiGreets", href: "/dashboard/multigreets", icon: "fa-hand-horns" },
-          { title: "Invites", href: "/dashboard/invites", icon: "fa-users" },
-          { title: "Role Greets", href: "/dashboard/rolegreets", icon: "fa-tag" },
-          { title: "Role States", href: "/dashboard/rolestates", icon: "fa-rotate-left" },
-          { title: "Starboard", href: "/dashboard/starboard", icon: "fa-star" },
-          { title: "Patreon", href: "/dashboard/patreon", icon: "fa-heart" }
-        ]
-      },
-      {
-        category: "Content",
-        items: [
-          { title: "Music", href: "/dashboard/music", icon: "fa-music" },
-          { title: "Triggers", href: "/dashboard/chat-triggers", icon: "fa-comment" },
-          { title: "Embed Builder", href: "/dashboard/embedbuilder", icon: "fa-link" }
-        ]
-      },
-      {
-        category: "Management",
-        items: [
-          { title: "Moderation", href: "/dashboard/moderation", icon: "fa-shield" },
-          { title: "Administration", href: "/dashboard/administration", icon: "fa-badge" },
-          { title: "Permissions", href: "/dashboard/permissions", icon: "fa-lock" },
-          { title: "Tickets", href: "/dashboard/tickets", icon: "fa-comment" },
-          { title: "Giveaways", href: "/dashboard/giveaways", icon: "fa-gift" },
-          { title: "Chat Saver", href: "/dashboard/chatsaver", icon: "fa-floppy-disk" }
-        ]
-      }
-    ];
-
-    if (isOwner) {
-      items.find(item => item.category === "Management")?.items.push(
-        { title: "Performance", href: "/dashboard/performance", icon: "fa-arrow-trend-up" }
-      );
-    }
-
-    return items;
-  }
-
-  function buildDashboardItems(isOwner: boolean = false): ProcessedItem[] {
-    if (!get(currentGuild)) {
-      return [{ title: "Dashboard", wrapped: false, href: "/dashboard", icon: "fa-chart-bar" }];
-    }
-
-    const items = getDashboardItems(isOwner);
-
-    if (isMobile) {
-      return [];
-    } else {
-      return items.map(category => ({
-        title: category.category,
-        wrapped: true,
-        children: category.items.map(item => ({
-          title: item.title,
-          href: item.href,
-          icon: item.icon
-        }))
-      }));
-    }
-  }
 
   function buildMainItems(items: NavItem[]): ProcessedItem[] {
     return items.flatMap((item): ProcessedItem => {
@@ -567,23 +541,34 @@ A unified navigation component that provides responsive navigation with server a
       checkingInstances = false;
 
       // Check for stored instance and validate it has mutual guilds
+      // BUT don't auto-select if we're on a forms page (forms handle their own instance selection)
       if (browser) {
-        const storedInstance = localStorage.getItem("selectedInstance");
-        if (storedInstance) {
-          try {
-            const parsedInstance = JSON.parse(storedInstance);
-            const instance = visibleInstances.find(i => i.botId === parsedInstance.botId);
-            if (instance) {
-              currentInstance.set(instance);
-              setTimeout(fetchGuildsIfReady, 100);
+        const isFormsPage = page.url.pathname.startsWith("/forms/");
+
+        if (!isFormsPage) {
+          const storedInstance = localStorage.getItem("selectedInstance");
+          if (storedInstance) {
+            try {
+              const parsedInstance = JSON.parse(storedInstance);
+              const instance = visibleInstances.find(i => i.botId === parsedInstance.botId);
+              if (instance) {
+                currentInstance.set(instance);
+                setTimeout(fetchGuildsIfReady, 100);
+              }
+            } catch (err) {
+              logger.error("Error parsing stored instance:", err);
             }
-          } catch (err) {
-            logger.error("Error parsing stored instance:", err);
+          } else if (visibleInstances.length === 1) {
+            // Auto-select if there's only one visible instance
+            currentInstance.set(visibleInstances[0]);
+            setTimeout(fetchGuildsIfReady, 100);
           }
-        } else if (visibleInstances.length === 1) {
-          // Auto-select if there's only one visible instance
-          currentInstance.set(visibleInstances[0]);
-          setTimeout(fetchGuildsIfReady, 100);
+        } else {
+          // On forms pages, only fetch guilds if an instance is already set
+          const currentInst = get(currentInstance);
+          if (currentInst) {
+            setTimeout(fetchGuildsIfReady, 100);
+          }
         }
       }
     } catch (err) {
@@ -671,6 +656,9 @@ A unified navigation component that provides responsive navigation with server a
     if (browser) {
       window.removeEventListener("resize", debouncedResize);
       window.removeEventListener("keydown", handleKeyDown);
+      if (booTimer) {
+        clearTimeout(booTimer);
+      }
     }
   });
 
@@ -725,22 +713,70 @@ A unified navigation component that provides responsive navigation with server a
 
     <!-- Center section (nav items) - Hidden in minimal mode -->
     {#if !isMinimalMode}
-        <div class="grow flex justify-center z-20">
+      <div class="grow flex justify-center z-20 relative"
+           onmousemove={handleNavContainerMouseMove}
+           onmouseenter={handleNavContainerEnter}
+           onmouseleave={handleNavContainerLeave}>
         <div
-                class="hidden md:flex flex-row p-2 space-x-2 lg:space-x-4 text-[15px] font-medium"
+          class="pointer-events-none absolute rounded-full"
+          style="width: 120px;
+                     height: 120px;
+                     background: radial-gradient(circle at center, {$colorStore.primary}40, transparent 60%);
+                     left: {navMouseX}px;
+                     top: {navMouseY}px;
+                     transform: translate(-50%, -50%);
+                     filter: blur(20px);
+                     opacity: {isNavHovered ? 0.3 : 0};
+                     transition: opacity 300ms ease-out;
+                     z-index: 0;"
+        ></div>
+        <!-- Halloween Easter Egg 🎃 -->
+        {#if showBoo}
+          <div
+            class="pointer-events-none absolute font-bold animate-pulse"
+            style="left: {navMouseX}px;
+                       top: {navMouseY - 30}px;
+                       transform: translate(-50%, -50%) scale({showBoo ? 1 : 0});
+                       color: {$colorStore.primary};
+                       text-shadow: 0 0 20px {$colorStore.primary}80, 0 0 40px {$colorStore.primary}40;
+                       font-size: 24px;
+                       opacity: {showBoo ? 0.7 : 0};
+                       transition: all 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                       z-index: 1000;"
+          >
+            BOO! 👻
+          </div>
+        {/if}
+        <div
+          class="hidden md:flex flex-row p-2 space-x-2 lg:space-x-4 text-[15px] font-medium relative z-10"
           role="navigation"
         >
           {#each computedItems as item, i}
             {#if item.wrapped}
               <div class="relative group" in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}>
                 <button
-                        class="ripple-effect flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-in-out min-h-[36px]"
+                  class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
                   style="color: {$colorStore.text};"
                   aria-expanded="false"
                   aria-haspopup="true"
+                  onmousemove={(e) => handleNavMouseMove(e, `dropdown-${i}`)}
+                  onmouseleave={() => handleNavMouseLeave(`dropdown-${i}`)}
                 >
-                  <span>{item.title}</span>
-                  <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  {#if navItemMousePositions[`dropdown-${i}`]}
+                    <div
+                      class="pointer-events-none absolute w-16 h-16 rounded-full opacity-25"
+                      style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
+                             left: {navItemMousePositions[`dropdown-${i}`].x}px;
+                             top: {navItemMousePositions[`dropdown-${i}`].y}px;
+                             transform: translate(-50%, -50%);
+                             filter: blur(10px);"
+                    ></div>
+                  {/if}
+                  <div class="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-200"
+                       style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}08);"></div>
+                  <span class="relative z-10">{item.title}</span>
+                  <svg class="relative z-10 w-4 h-4 transition-transform group-hover:rotate-180 duration-200"
+                       viewBox="0 0 20 20" fill="currentColor">
                     <path
                       fill-rule="evenodd"
                       d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -749,18 +785,22 @@ A unified navigation component that provides responsive navigation with server a
                   </svg>
                 </button>
                 <div
-                  class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 backdrop-blur-md border"
-                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientEnd}95);"
+                  class="absolute left-0 mt-2 w-48 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 backdrop-blur-md border"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientEnd}95);
+                         border-color: {$colorStore.primary}30;
+                         z-index: 100;"
                   role="menu"
                 >
-                  {#each item.children || [] as child (child.href)}
+                  {#each item.children || [] as child, childIdx (child.href)}
                     <a
                       href={child.href || '#'}
                       data-sveltekit-preload-data="hover"
                       data-sveltekit-noscroll
-                      class="ripple-effect flex items-center p-2 transition-colors hover:bg-(--hover-bg-color)"
-                      style="--hover-bg-color: {$colorStore.primary}20; color: {$colorStore.text};"
+                      class="relative overflow-hidden flex items-center p-2 transition-all duration-200 hover:scale-[1.01]"
+                      style="color: {$colorStore.text};"
                       role="menuitem"
+                      onmousemove={(e) => handleNavMouseMove(e, `dropdown-child-${i}-${childIdx}`)}
+                      onmouseleave={() => handleNavMouseLeave(`dropdown-child-${i}-${childIdx}`)}
                       onclick={(e) => {
         e.preventDefault();
         if ($currentGuild) {
@@ -768,7 +808,7 @@ A unified navigation component that provides responsive navigation with server a
             try {
               const currentInst = $currentInstance;
               const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
-              
+
               localStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
@@ -785,12 +825,24 @@ A unified navigation component that provides responsive navigation with server a
         goto(child.href || '/');
       }}
                     >
+                      {#if navItemMousePositions[`dropdown-child-${i}-${childIdx}`]}
+                        <div
+                          class="pointer-events-none absolute w-14 h-14 rounded-full opacity-20"
+                          style="background: radial-gradient(circle at center, {$colorStore.primary}40, transparent 70%);
+                                 left: {navItemMousePositions[`dropdown-child-${i}-${childIdx}`].x}px;
+                                 top: {navItemMousePositions[`dropdown-child-${i}-${childIdx}`].y}px;
+                                 transform: translate(-50%, -50%);
+                                 filter: blur(8px);"
+                        ></div>
+                      {/if}
+                      <div class="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150"
+                           style="background: {$colorStore.primary}10;"></div>
                       {#if child.icon}
-                        <i class="fa-utility-duo fa-regular {child.icon} mr-2 text-base"
+                        <i class="relative z-10 fa-utility-duo fa-regular {child.icon} mr-2 text-base"
                            aria-hidden="true"
                            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                       {/if}
-                      {child.title}
+                      <span class="relative z-10">{child.title}</span>
                     </a>
                   {/each}
                 </div>
@@ -800,10 +852,12 @@ A unified navigation component that provides responsive navigation with server a
                 href={item.href || '#'}
                 data-sveltekit-preload-data="hover"
                 data-sveltekit-noscroll
-                class="ripple-effect flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-in-out min-h-[36px] hover:bg-(--hover-bg-color)"
+                class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
                 in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}
-                style:--hover-bg-color="{$colorStore.primary}20"
-                style:background-color={current === item.href ? `${$colorStore.primary}30` : 'transparent'}
+                style="background: {current === item.href ? `${$colorStore.primary}25` : 'transparent'};
+                       z-index: 10;"
+                onmousemove={(e) => handleNavMouseMove(e, `nav-${i}`)}
+                onmouseleave={() => handleNavMouseLeave(`nav-${i}`)}
                 onclick={(e) => {
         e.preventDefault();
         if ($currentGuild) {
@@ -811,7 +865,7 @@ A unified navigation component that provides responsive navigation with server a
             try {
               const currentInst = $currentInstance;
               const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
-              
+
               localStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
@@ -828,12 +882,24 @@ A unified navigation component that provides responsive navigation with server a
         goto(item.href || '/');
       }}
               >
+                {#if navItemMousePositions[`nav-${i}`]}
+                  <div
+                    class="pointer-events-none absolute w-16 h-16 rounded-full opacity-25"
+                    style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
+                           left: {navItemMousePositions[`nav-${i}`].x}px;
+                           top: {navItemMousePositions[`nav-${i}`].y}px;
+                           transform: translate(-50%, -50%);
+                           filter: blur(10px);"
+                  ></div>
+                {/if}
+                <div class="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-200"
+                     style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}08);"></div>
                 {#if item.icon}
-                  <i class="fa-utility-duo fa-regular {item.icon} mr-2 text-base"
+                  <i class="relative z-10 fa-utility-duo fa-regular {item.icon} mr-2 text-base"
                      aria-hidden="true"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 {/if}
-                <span>{item.title}</span>
+                <span class="relative z-10">{item.title}</span>
               </a>
             {/if}
           {/each}
@@ -876,7 +942,7 @@ A unified navigation component that provides responsive navigation with server a
       {#if !currentUser}
         <a href="/api/discord/login"
            data-sveltekit-reload
-           class="ripple-effect rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg  border inline-block"
+           class=" rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg  border inline-block"
            style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80);
                   color: {$colorStore.text};
                   border-color: {$colorStore.primary}50;
@@ -887,7 +953,7 @@ A unified navigation component that provides responsive navigation with server a
         <!-- Desktop User & Instance Display -->
         <div class="hidden md:flex relative" use:clickOutside onclickoutside={closeDropdown}>
           <button
-            class="ripple-effect flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out  border hover:scale-[1.02] shadow-lg hover:shadow-xl"
+            class=" flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-lg transition-all duration-200 ease-in-out  border hover:scale-[1.02] shadow-lg hover:shadow-xl"
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    border-color: {$colorStore.primary}40;
                    box-shadow: 0 2px 8px {$colorStore.primary}15;"
@@ -1021,7 +1087,7 @@ A unified navigation component that provides responsive navigation with server a
                     {:else}
                       {#each visibleInstances as instance (instance.botId)}
                         <button
-                                class="ripple-effect w-full text-left p-2 rounded-lg flex items-center space-x-2 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
+                          class=" w-full text-left p-2 rounded-lg flex items-center space-x-2 transition-all duration-200 ease-in-out hover:bg-opacity-30 border border-transparent"
                           style="color: {$colorStore.text};
                                  background: {$currentInstance?.botId === instance.botId ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)` : 'transparent'};
                                  border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '50' : 'transparent'};
@@ -1058,7 +1124,7 @@ A unified navigation component that provides responsive navigation with server a
                 <div class="mb-3">
                 <a
                   href="/me"
-                  class="ripple-effect flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium w-full group"
+                  class=" flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium w-full group"
                   style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
                          color: {$colorStore.text};
                          border-color: {$colorStore.primary}50;
@@ -1088,7 +1154,7 @@ A unified navigation component that provides responsive navigation with server a
                 >
                   <button
                     type="submit"
-                    class="ripple-effect block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium"
+                    class=" block w-full text-center px-3 py-2 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border text-sm font-medium"
                     style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}20);
                            color: {$colorStore.text};
                            border-color: {$colorStore.accent}30;
@@ -1180,21 +1246,28 @@ A unified navigation component that provides responsive navigation with server a
           <div id="mobile-menu-title" class="sr-only">Mobile Navigation Menu</div>
           {#if currentUser}
             <div class="flex items-center space-x-3">
-              <img
-                src={currentUser.avatar
-                  ? (currentUser.avatar.startsWith("a_")
-                    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
-                    : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
-                  : `https://cdn.discordapp.com/embed/avatars/0.png`}
-                alt={currentUser.username}
-                class="w-10 h-10 rounded-full"
-                style="background: {$colorStore.primary}20;"
-              >
-              <div>
-                <div class="font-medium" style="color: {$colorStore.text};">{currentUser.username}</div>
-                {#if currentUser.discriminator !== "0"}
-                  <div style="color: {$colorStore.muted};" class="text-sm">#{currentUser.discriminator}</div>
-                {/if}
+              <div class="relative">
+                <img
+                  src={currentUser.avatar
+                    ? (currentUser.avatar.startsWith("a_")
+                      ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                      : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`)
+                    : `https://cdn.discordapp.com/embed/avatars/0.png`}
+                  alt={currentUser.username}
+                  class="w-10 h-10 rounded-lg border-2"
+                  style="border-color: {$colorStore.primary}50;"
+                >
+                <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black"
+                     style="background: #10b981;"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-1">
+                  <h2 class="font-semibold text-base truncate"
+                      style="color: {$colorStore.text};">{currentUser.username}</h2>
+                  {#if currentUser.discriminator !== "0"}
+                    <span class="text-sm" style="color: {$colorStore.muted};">#{currentUser.discriminator}</span>
+                  {/if}
+                </div>
               </div>
             </div>
           {/if}
@@ -1230,7 +1303,7 @@ A unified navigation component that provides responsive navigation with server a
             {:else}
               {#each visibleInstances as instance}
                 <button
-                        class="ripple-effect w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out border hover:bg-white/5"
+                  class=" w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-all duration-200 ease-in-out border hover:bg-white/5"
                         style="color: {$colorStore.text};
                          background: {$currentInstance?.botId === instance.botId ? `${$colorStore.primary}20` : 'transparent'};
                          border-color: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '30' : 'transparent'};"
@@ -1263,6 +1336,31 @@ A unified navigation component that provides responsive navigation with server a
           </div>
         </div>
 
+        <!-- My Settings Link -->
+        <div class="p-4 border-b border-opacity-30" style="border-color: {$colorStore.primary};">
+          <a
+            href="/me"
+            class=" flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium w-full group"
+            style="background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}25);
+                   color: {$colorStore.text};
+                   border-color: {$colorStore.primary}50;
+                   box-shadow: 0 2px 8px {$colorStore.primary}15;"
+            onclick={closeMobileMenu}
+          >
+            <div class="p-2 rounded transition-all group-hover:scale-110"
+                 style="background: {$colorStore.primary}30;">
+              <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold">My Settings</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">Profile, privacy & preferences</div>
+            </div>
+            <div class="text-base opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+              →
+            </div>
+          </a>
+        </div>
+
         <!-- Only show navigation items on non-dashboard pages for mobile -->
         {#if !isDashboard}
           <nav class="p-4 space-y-1">
@@ -1273,7 +1371,7 @@ A unified navigation component that provides responsive navigation with server a
                   {#each item.children || [] as child (child.href)}
                     <a
                       href={child.href || '#'}
-                      class="ripple-effect flex items-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
+                      class=" flex items-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                       style="color: {$colorStore.text};
                              background: {current === child.href ? `${$colorStore.primary}20` : 'transparent'};
                              border-color: {current === child.href ? $colorStore.primary + '30' : 'transparent'};"
@@ -1291,7 +1389,7 @@ A unified navigation component that provides responsive navigation with server a
               {:else}
                 <a
                   href={item.href || '#'}
-                  class="ripple-effect flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
+                  class=" flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                   style="color: {$colorStore.text};
                          background: {current === item.href ? `${$colorStore.primary}20` : 'transparent'};
                          border-color: {current === item.href ? $colorStore.primary + '30' : 'transparent'};"
@@ -1319,7 +1417,7 @@ A unified navigation component that provides responsive navigation with server a
         >
           <button
             type="submit"
-            class="ripple-effect block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium"
+            class=" block w-full text-center px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.02] border font-medium"
             style="background: linear-gradient(135deg, {$colorStore.accent}15, {$colorStore.accent}20);
                    color: {$colorStore.text};
                    border-color: {$colorStore.accent}30;
@@ -1334,59 +1432,10 @@ A unified navigation component that provides responsive navigation with server a
 </nav>
 
 <style lang="postcss">
-    @reference '../../../app.css'; /* Ripple effect styles */
-    .ripple-effect {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .ripple-effect::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
-        transform: translate(-50%, -50%);
-        transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
-        opacity: 0;
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .ripple-effect:hover::before {
-        width: 100%;
-        height: 100%;
-        opacity: 1;
-        animation: ripple-pulse 0.4s ease-out;
-    }
-
-    @keyframes ripple-pulse {
-        0% {
-            width: 0;
-            height: 0;
-            opacity: 0.6;
-        }
-        50% {
-            opacity: 0.3;
-        }
-        100% {
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-        }
-    }
-
-    /* Ensure text stays on top */
-    .ripple-effect > * {
-        position: relative;
-        z-index: 2;
-    }
+    @reference '../../../app.css';
 
     /* Ensure dropdowns appear above other content */
-    .group:hover .absolute {
-        z-index: 50;
+    .group:hover .group-hover\:visible {
+        z-index: 100;
     }
 </style>

@@ -101,4 +101,12 @@
     .scrollbar-thumb-white\/20 {
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     }
+
+    /* Halloween color transition */
+    body.halloween-color-transition * {
+        transition: background-color 1.5s ease-in-out,
+        color 1.5s ease-in-out,
+        border-color 1.5s ease-in-out,
+        box-shadow 1.5s ease-in-out !important;
+    }
 }

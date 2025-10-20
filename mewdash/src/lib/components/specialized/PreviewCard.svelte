@@ -1,5 +1,3 @@
-<!-- @migration-task Error while migrating Svelte code: Expected a valid CSS identifier
-https://svelte.dev/e/css_expected_identifier -->
 <!-- PreviewCard.svelte -->
 <script lang="ts">
   import { marked } from "marked";
@@ -46,7 +44,8 @@ https://svelte.dev/e/css_expected_identifier -->
       case 2: return 'bg-[#4F545C] hover:bg-[#5D6269] text-white';
       case 3: return 'bg-[#3BA55D] hover:bg-[#2D7D32] text-white';
       case 4: return 'bg-[#ED4245] hover:bg-[#C62828] text-white';
-      case 5: return 'bg-transparent hover:bg-[#5865F2]/10 text-[#00AFF4] border-0';
+      case 5:
+        return "bg-[#4F545C] hover:bg-[#5D6269] text-white";
       default: return 'bg-[#5865F2] hover:bg-[#4752C4] text-white';
     }
   }
@@ -89,10 +88,10 @@ https://svelte.dev/e/css_expected_identifier -->
             <!-- Author -->
             {#if embed.author?.name}
               <div class="flex items-center gap-2 text-xs opacity-80">
-                {#if embed.author.icon_url}
+                {#if embed.author.icon_url && !embed.author.icon_url.includes('%')}
                   <img src={embed.author.icon_url} alt="Author icon" class="w-5 h-5 rounded-full">
                 {/if}
-                {#if embed.author.url}
+                {#if embed.author.url && !embed.author.url.includes('%')}
                   <a href={embed.author.url} class="font-medium hover:underline text-blue-400">
                     {embed.author.name}
                   </a>
@@ -105,7 +104,7 @@ https://svelte.dev/e/css_expected_identifier -->
             <!-- Title -->
             {#if embed.title}
               <div class="font-semibold text-white">
-                {#if embed.url}
+                {#if embed.url && !embed.url.includes('%')}
                   <a href={embed.url} class="hover:underline text-blue-400">
                     {embed.title}
                   </a>
@@ -124,10 +123,10 @@ https://svelte.dev/e/css_expected_identifier -->
 
             <!-- Fields -->
             {#if embed.fields?.length > 0}
-              <div class="grid gap-2 grid-cols-1">
+              <div class="discord-fields-grid">
                 {#each embed.fields as field}
                   {#if field.name || field.value}
-                    <div class="space-y-1" class:inline-field={field.inline}>
+                    <div class="discord-field" data-inline={field.inline}>
                       {#if field.name}
                         <div class="font-semibold text-white text-sm">{field.name}</div>
                       {/if}
@@ -143,14 +142,14 @@ https://svelte.dev/e/css_expected_identifier -->
             {/if}
 
             <!-- Thumbnail -->
-            {#if embed.thumbnail?.url}
+            {#if embed.thumbnail?.url && !embed.thumbnail.url.includes('%')}
               <div class="absolute top-4 right-4 w-20 h-20">
                 <img src={embed.thumbnail.url} alt="Thumbnail" class="w-full h-full object-cover rounded-lg">
               </div>
             {/if}
 
             <!-- Image -->
-            {#if embed.image?.url}
+            {#if embed.image?.url && !embed.image.url.includes('%')}
               <div class="mt-4">
                 <img src={embed.image.url} alt="" class="max-w-full rounded-lg">
               </div>
@@ -159,7 +158,7 @@ https://svelte.dev/e/css_expected_identifier -->
             <!-- Footer -->
             {#if embed.footer?.text || embed.footer?.icon_url}
               <div class="flex items-center mt-4 text-gray-400 text-xs">
-                {#if embed.footer.icon_url}
+                {#if embed.footer.icon_url && !embed.footer.icon_url.includes('%')}
                   <img src={embed.footer.icon_url} alt="Footer icon" class="w-5 h-5 rounded-full mr-2">
                 {/if}
                 <span>{embed.footer.text}</span>
@@ -239,7 +238,7 @@ https://svelte.dev/e/css_expected_identifier -->
               {:else}
                 <!-- Button -->
                 <button
-                        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+                  class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
                   disabled
                   aria-label={component.displayName}
                 >
@@ -287,17 +286,37 @@ https://svelte.dev/e/css_expected_identifier -->
     transform: translateY(-1px);
   }
 
-  /* Inline field layout for desktop */
-  .inline-field {
+  /* Discord-like fields grid */
+  .discord-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+  }
+
+  .discord-field {
+      min-width: 0;
+      word-break: break-word;
+  }
+
+  /* Inline fields - up to 3 per row */
+  .discord-field[data-inline="true"] {
     display: inline-block;
-    width: calc(33.333% - 8px);
+      width: calc(33.333% - 5.33px);
     margin-right: 8px;
     vertical-align: top;
   }
 
+  .discord-field[data-inline="true"]:nth-child(3n) {
+      margin-right: 0;
+  }
+
   /* Stack fields on mobile */
   @media (max-width: 768px) {
-    .inline-field {
+      .discord-fields-grid {
+          grid-template-columns: 1fr;
+      }
+
+      .discord-field[data-inline="true"] {
       display: block;
       width: 100%;
       margin-right: 0;
@@ -316,7 +335,7 @@ https://svelte.dev/e/css_expected_identifier -->
     color: #00AFF4;
     text-decoration: none;
   }
-  
+
   a:hover {
     text-decoration: underline;
   }

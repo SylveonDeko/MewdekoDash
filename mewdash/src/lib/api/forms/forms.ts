@@ -1,19 +1,19 @@
 // lib/api/forms/forms.ts
 import { apiRequest } from "../core";
 import type {
+  ApprovalResponse,
+  EligibilityCheckResponse,
   Form,
   FormQuestion,
-  FormQuestionOption,
   FormQuestionCondition,
+  FormQuestionOption,
   FormResponse,
   FormSubmissionRequest,
   FormSubmissionResponse,
   PaginatedResponses,
   ResponseStatus,
-  ResponseWithWorkflow,
-  EligibilityCheckResponse,
-  ApprovalResponse,
   ResponseStatusResponse,
+  ResponseWithWorkflow
 } from "./models";
 
 /**
@@ -104,11 +104,9 @@ export const formsApi = {
    * @returns Share code
    */
   generateShareLink: (formId: number, instanceIdentifier: string) =>
-    apiRequest<{ shareCode: string }>(
-      `forms/${formId}/share-link`,
-      "POST",
+    apiRequest<{ shareCode: string }>(`forms/${formId}/share-link`, "POST", {
       instanceIdentifier,
-    ),
+    }),
 
   /**
    * Resolves a share code to get form and instance info

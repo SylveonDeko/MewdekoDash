@@ -825,9 +825,10 @@
       <button
         type="button"
         onclick={handleDone}
-        class="w-full py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-[1.02]"
-        style="background: {$colorStore.primary}; color: {$colorStore.text};"
+        class="w-full py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.02]"
+        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
+        <i class="fa-solid fa-check inline mr-2" style="font-size: 14px;"></i>
         Done{selectedArray.length > 0 ? ` (${selectedArray.length} selected)` : ''}
       </button>
     </div>

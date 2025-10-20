@@ -41,6 +41,7 @@
   // Panel data
   let panels: any[] = $state([]);
   let panelStatuses = $state(new Map<bigint, number>()); // Map<panelId, status>
+  let checkingPanelStatus = $state(false);
   let selectedPanel: any = $state(null);
   let panelButtons: any[] = $state([]);
   let panelSelectMenus: any[] = $state([]);
@@ -250,15 +251,18 @@
   }
 
   async function checkPanelStatus(panelId: bigint) {
-    if (!$currentGuild?.id || panelStatuses.has(panelId)) return;
+    if (!$currentGuild?.id) return;
 
     try {
+      checkingPanelStatus = true;
       const result = await ticketApi.getSinglePanelStatus($currentGuild.id, panelId);
       panelStatuses.set(result.panelId, result.status);
       // Trigger reactivity
       panelStatuses = new Map(panelStatuses);
     } catch (err) {
       logger.error("Failed to check panel status:", err);
+    } finally {
+      checkingPanelStatus = false;
     }
   }
 
@@ -1029,6 +1033,7 @@
       <PanelsTab
         {panels}
         {panelStatuses}
+        {checkingPanelStatus}
         bind:selectedPanel
         {panelButtons}
         {panelSelectMenus}
