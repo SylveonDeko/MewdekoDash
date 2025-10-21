@@ -7,7 +7,6 @@
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import ModalBuilder from "../editors/ModalBuilder.svelte";
-  import OpenMessageEditor from "../editors/OpenMessageEditor.svelte";
   import { onMount } from "svelte";
 
   interface Props {
@@ -186,7 +185,7 @@
   ];
 
   onMount(() => {
-    console.log(panels);
+    // Component mounted
   });
 
   // Status helper functions removed - status now only checked on-demand via Troubleshoot button
@@ -216,8 +215,6 @@
     const fullButton = await loadFullButton(buttonId);
     if (!fullButton) return;
 
-    console.log("Loading FULL button for editing:", fullButton);
-
     editingButtonData = {
       ...fullButton,
       categoryId: fullButton.categoryId?.toString() || null,
@@ -245,8 +242,6 @@
       removeCreatorOnArchive: fullButton.removeCreatorOnArchive ?? false,
       autoArchiveOnClose: fullButton.autoArchiveOnClose ?? false
     };
-
-    console.log("Prepared editingButtonData:", editingButtonData);
 
     editingButtonId = buttonId;
     buttonEditSection = "basic";
@@ -334,8 +329,6 @@
     const fullOption = await loadFullSelectOption(optionId);
     if (!fullOption) return;
 
-    console.log("Loading FULL select option for editing:", fullOption);
-
     editingOptionData = {
       ...fullOption,
       categoryId: fullOption.categoryId?.toString() || null,
@@ -362,8 +355,6 @@
       removeCreatorOnArchive: fullOption.removeCreatorOnArchive ?? false,
       autoArchiveOnClose: fullOption.autoArchiveOnClose ?? false
     };
-
-    console.log("Prepared editingOptionData:", editingOptionData);
 
     editingOptionId = optionId;
     optionEditSection = "basic";
@@ -897,9 +888,22 @@
                 <ModalBuilder bind:modalJson={newButton.modalJson} />
 
               {:else if buttonCreatorSection === 'message'}
-                <OpenMessageEditor
-                  bind:openMessageJson={newButton.openMessageJson}
-                  modalJson={newButton.modalJson}
+                <FullscreenEmbedBuilder
+                  bind:value={newButton.openMessageJson}
+                  previewTitle="Ticket Open Message"
+                  previewDescription="Message sent when ticket is opened"
+                  icon="fa-ticket"
+                  allowContent={true}
+                  allowMultipleEmbeds={true}
+                  maxEmbeds={10}
+                  allowComponents={false}
+                  additionalPlaceholders={[
+                    { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
+                    { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                  ]}
+                  guildId={$currentGuild?.id}
+                  user={data.user}
+                  placeholder="Configure ticket open message"
                 />
               {/if}
             </div>
@@ -1133,9 +1137,22 @@
                       <ModalBuilder bind:modalJson={editingButtonData.modalJson} />
 
                     {:else if buttonEditSection === 'message'}
-                      <OpenMessageEditor
-                        bind:openMessageJson={editingButtonData.openMessageJson}
-                        modalJson={editingButtonData.modalJson}
+                      <FullscreenEmbedBuilder
+                        bind:value={editingButtonData.openMessageJson}
+                        previewTitle="Ticket Open Message"
+                        previewDescription="Message sent when ticket is opened"
+                        icon="fa-ticket"
+                        allowContent={true}
+                        allowMultipleEmbeds={true}
+                        maxEmbeds={10}
+                        allowComponents={false}
+                        additionalPlaceholders={[
+                          { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
+                          { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                        ]}
+                        guildId={$currentGuild?.id}
+                        user={data.user}
+                        placeholder="Configure ticket open message"
                       />
                     {/if}
                   </div>
@@ -1621,9 +1638,22 @@
                               <ModalBuilder bind:modalJson={editingOptionData.modalJson} />
 
                             {:else if optionEditSection === 'message'}
-                              <OpenMessageEditor
-                                bind:openMessageJson={editingOptionData.openMessageJson}
-                                modalJson={editingOptionData.modalJson}
+                              <FullscreenEmbedBuilder
+                                bind:value={editingOptionData.openMessageJson}
+                                previewTitle="Ticket Open Message"
+                                previewDescription="Message sent when ticket is opened"
+                                icon="fa-ticket"
+                                allowContent={true}
+                                allowMultipleEmbeds={true}
+                                maxEmbeds={10}
+                                allowComponents={false}
+                                additionalPlaceholders={[
+                                  { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
+                                  { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                                ]}
+                                guildId={$currentGuild?.id}
+                                user={data.user}
+                                placeholder="Configure ticket open message"
                               />
                             {/if}
                           </div>
@@ -1919,9 +1949,22 @@
                       <ModalBuilder bind:modalJson={newOption.modalJson} />
 
                     {:else if optionCreatorSection === 'message'}
-                      <OpenMessageEditor
-                        bind:openMessageJson={newOption.openMessageJson}
-                        modalJson={newOption.modalJson}
+                      <FullscreenEmbedBuilder
+                        bind:value={newOption.openMessageJson}
+                        previewTitle="Ticket Open Message"
+                        previewDescription="Message sent when ticket is opened"
+                        icon="fa-ticket"
+                        allowContent={true}
+                        allowMultipleEmbeds={true}
+                        maxEmbeds={10}
+                        allowComponents={false}
+                        additionalPlaceholders={[
+                          { category: "Ticket", name: "%ticket.id%", description: "Ticket ID" },
+                          { category: "Ticket", name: "%ticket.user.mention%", description: "Mention ticket creator" }
+                        ]}
+                        guildId={$currentGuild?.id}
+                        user={data.user}
+                        placeholder="Configure ticket open message"
                       />
                     {/if}
                   </div>

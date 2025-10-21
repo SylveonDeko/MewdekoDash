@@ -385,8 +385,8 @@
   // Clean output for export
   function cleanOutput() {
     const cleanedEmbeds = embeds
-      .filter(embed => embed.title || embed.description || embed.fields?.length > 0)
-      .map(cleanEmbed);
+      .map(cleanEmbed)
+      .filter(cleaned => Object.keys(cleaned).length > 0); // Filter AFTER cleaning to remove truly empty embeds
 
     const exportData: any = {};
 

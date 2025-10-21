@@ -318,8 +318,8 @@
     try {
       saving = true;
 
-      // Build embed JSON from the editor
-      const embedJson = JSON.stringify({ embeds: [cleanEmbed(panelEmbed)] });
+      // panelEmbed is already a message object from FullscreenEmbedBuilder
+      const embedJson = Object.keys(panelEmbed).length > 0 ? JSON.stringify(panelEmbed) : "";
 
       await ticketApi.createTicketPanel($currentGuild.id, {
         channelId: BigInt(newPanel.channelId),
@@ -338,15 +338,11 @@
         color: null
       };
       panelEmbed = {
-        title: "Support Tickets",
-        description: "Click a button below to create a ticket",
-        color: "#5865F2",
-        url: "",
-        author: { name: "", url: "", icon_url: "" },
-        thumbnail: { url: "" },
-        image: { url: "" },
-        footer: { text: "", icon_url: "" },
-        fields: []
+        embeds: [{
+          title: "Support Tickets",
+          description: "Click a button below to create a ticket",
+          color: "#5865F2"
+        }]
       };
       await fetchAllData();
     } catch (err) {
@@ -383,24 +379,15 @@
 
   // Panel editing state (now inline, not modal)
   let editingPanelEmbed = $state(false);
-  let tempPanelEmbed = $state({
-    title: "",
-    description: "",
-    color: "#5865F2",
-    url: "",
-    author: { name: "", url: "", icon_url: "" },
-    thumbnail: { url: "" },
-    image: { url: "" },
-    footer: { text: "", icon_url: "" },
-    fields: []
-  });
+  let tempPanelEmbed: any = $state({});
 
   async function savePanelEmbed(embedData: any) {
     if (!$currentGuild?.id || !selectedPanel) return;
 
     try {
       saving = true;
-      const embedJson = JSON.stringify({ embeds: [cleanEmbed(embedData)] });
+      // embedData is already a message object from FullscreenEmbedBuilder
+      const embedJson = Object.keys(embedData).length > 0 ? JSON.stringify(embedData) : "";
       await ticketApi.updateTicketPanelEmbed($currentGuild.id, selectedPanel.messageId, { embedJson });
 
       editingPanelEmbed = false;
