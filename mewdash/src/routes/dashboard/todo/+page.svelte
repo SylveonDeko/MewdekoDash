@@ -2,17 +2,21 @@
 <script lang="ts">
 
   import { onMount } from "svelte";
-    import {fly, scale} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {userStore} from "$lib/stores/userStore";
+  import { fly, scale } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { userStore } from "$lib/stores/userStore";
   import {
-    todoApi,
     type AddTodoItemRequest,
     type CreateTodoListRequest,
+    todoApi,
     type TodoItem,
     type TodoList
   } from "$lib/api/index.ts";
+  import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
+  import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
   // Local interfaces for UI state (not from backend)
   interface TodoFilterOptions {
@@ -39,12 +43,6 @@
     canDelete: boolean;
     canManage: boolean;
   }
-
-    import TodoPermissionManager from "$lib/components/specialized/TodoPermissionManager.svelte";
-    import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-
 
 
   // State
@@ -741,8 +739,9 @@
                   
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button
-                      class="w-full sm:flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
-                      style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
+                      aria-label="Add todo item"
+                      class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                       onclick={async () => {
                         if (newItemTitle.trim() && selectedListId && $userStore?.id) {
                           await handleAddTodoItem({
@@ -764,7 +763,7 @@
                       }}
                       disabled={!newItemTitle.trim()}
                     >
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                      <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
                       <span>Add Item</span>
                     </button>
                     <button
@@ -959,11 +958,13 @@
 
             <div class="flex flex-col sm:flex-row gap-3 pt-4">
               <button
-                class="w-full sm:flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center min-h-[44px]"
-                style="background: linear-gradient(135deg, {$colorStore.primary}80, {$colorStore.secondary}80); color: white;"
+                aria-label="Create todo list"
+                class="w-full sm:flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                 onclick={handleCreateList}
                 disabled={!newListName.trim()}
               >
+                <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
                 Create List
               </button>
               <button

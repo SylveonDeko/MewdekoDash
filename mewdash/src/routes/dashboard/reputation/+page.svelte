@@ -1,17 +1,17 @@
 <!-- routes/dashboard/reputation/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { reputationApi, clientApi } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { clientApi, reputationApi } from "$lib/api/index.ts";
+  import { logger } from "$lib/logger";
 
-    import StatCard from "$lib/components/monitoring/StatCard.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
 
-    // Component state
+  // Component state
     let loading = $state(false);
     let saving = $state(false);
     let message = $state("");
@@ -538,13 +538,14 @@
                         </div>
                     </div>
 
-                  <button aria-label="Button action"
-                          class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
+                <button aria-label="Save reputation configuration"
+                        aria-busy={saving}
+                        class="mt-6 flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                             onclick={saveConfig}
                             disabled={saving}
                     >
-                    <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
+                  <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
                         {saving ? "Saving..." : "Save Configuration"}
                     </button>
                 </div>
@@ -642,13 +643,15 @@
                 </div>
 
                 <button
-                  class="flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                        style="background: {$colorStore.primary}; color: white;"
+                  aria-label="Add role reward"
+                  aria-busy={saving}
+                  class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                         onclick={addRoleReward}
                         disabled={saving || !newRoleReward.roleId}
                 >
-                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                    Add Role Reward
+                  <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
+                  {saving ? "Adding..." : "Add Role Reward"}
                 </button>
             </div>
 

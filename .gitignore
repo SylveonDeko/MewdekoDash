@@ -218,3 +218,6 @@ package
 node_modules
 out
 mewdash/mewdash.zip
+.npmrc
+sitemap.xml
+package-lock.json

@@ -151,36 +151,128 @@
   let notificationType: "success" | "error" = $state("success");
   let showMobilePreview = $state(false);
 
-  // Default placeholders
+  // Default placeholders - comprehensive list from backend ReplacementBuilder
   const defaultPlaceholders: Placeholder[] = [
     // User placeholders
-    { category: "User", name: "%user%", description: "Username of the user" },
+    { category: "User", name: "%user%", description: "User mention" },
     { category: "User", name: "%user.mention%", description: "Mention the user" },
     { category: "User", name: "%user.id%", description: "User ID" },
+    { category: "User", name: "%user.name%", description: "Username" },
+    { category: "User", name: "%user.fullname%", description: "Full username" },
     { category: "User", name: "%user.avatar%", description: "User's avatar URL" },
-    { category: "User", name: "%user.name%", description: "User's display name" },
-    { category: "User", name: "%user.nick%", description: "User's nickname in the server" },
+    { category: "User", name: "%user.banner%", description: "User's banner URL" },
+    { category: "User", name: "%user.created_time%", description: "Account creation time (HH:mm)" },
+    { category: "User", name: "%user.created_date%", description: "Account creation date (dd.MM.yyyy)" },
+    { category: "User", name: "%user.joined_time%", description: "Server join time (HH:mm)" },
+    { category: "User", name: "%user.joined_date%", description: "Server join date (dd.MM.yyyy)" },
 
     // Server placeholders
     { category: "Server", name: "%server%", description: "Server name" },
+    { category: "Server", name: "%server.name%", description: "Server name" },
     { category: "Server", name: "%server.id%", description: "Server ID" },
-    { category: "Server", name: "%server.members%", description: "Number of server members" },
-    { category: "Server", name: "%server.owner%", description: "Server owner username" },
     { category: "Server", name: "%server.icon%", description: "Server icon URL" },
+    { category: "Server", name: "%server.banner%", description: "Server banner URL" },
+    { category: "Server", name: "%server.members%", description: "Total member count" },
+    { category: "Server", name: "%server.members.online%", description: "Online members count" },
+    { category: "Server", name: "%server.members.offline%", description: "Offline members count" },
+    { category: "Server", name: "%server.members.dnd%", description: "Do Not Disturb members count" },
+    { category: "Server", name: "%server.members.idle%", description: "Idle members count" },
+    { category: "Server", name: "%server.boostlevel%", description: "Server boost level" },
+    { category: "Server", name: "%server.boostcount%", description: "Server boost count" },
+    { category: "Server", name: "%server.time%", description: "Current server time with timezone" },
+    { category: "Server", name: "%server.timestamp.longdatetime%", description: "Discord long date/time timestamp" },
+    { category: "Server", name: "%server.timestamp.longtime%", description: "Discord long time timestamp" },
+    { category: "Server", name: "%server.timestamp.longdate%", description: "Discord long date timestamp" },
+    { category: "Server", name: "%server.timestamp.shortdatetime%", description: "Discord short date/time timestamp" },
+
+    // Channel placeholders
+    { category: "Channel", name: "%channel%", description: "Channel mention" },
+    { category: "Channel", name: "%channel.mention%", description: "Channel mention" },
+    { category: "Channel", name: "%channel.name%", description: "Channel name" },
+    { category: "Channel", name: "%channel.id%", description: "Channel ID" },
+    { category: "Channel", name: "%channel.created%", description: "Channel creation date/time" },
+    { category: "Channel", name: "%channel.nsfw%", description: "Whether channel is NSFW" },
+    { category: "Channel", name: "%channel.topic%", description: "Channel topic" },
+
+    // Bot placeholders
+    { category: "Bot", name: "%bot.status%", description: "Bot's current status" },
+    { category: "Bot", name: "%bot.latency%", description: "Bot's latency in ms" },
+    { category: "Bot", name: "%bot.name%", description: "Bot's username" },
+    { category: "Bot", name: "%bot.fullname%", description: "Bot's full username" },
+    { category: "Bot", name: "%bot.id%", description: "Bot's user ID" },
+    { category: "Bot", name: "%bot.avatar%", description: "Bot's avatar URL" },
+    { category: "Bot", name: "%bot.time%", description: "Current time with timezone" },
+
+    // Shard/Stats placeholders
+    { category: "Stats", name: "%shard.servercount%", description: "Number of servers on this shard" },
+    { category: "Stats", name: "%shard.usercount%", description: "Number of users on this shard" },
+
+    // Time/Date placeholders
+    { category: "Time", name: "%time.month%", description: "Current month name" },
+    { category: "Time", name: "%time.day%", description: "Current day name" },
+    { category: "Time", name: "%time.year%", description: "Current year" },
 
     // Random placeholders
-    { category: "Random", name: "%rng%", description: "Random number" },
-    { category: "Random", name: "%rng(1,10)%", description: "Random number between 1 and 10" },
-    { category: "Random", name: "%choose(a|b|c)%", description: "Choose randomly from options" },
-    { category: "Random", name: "%target%", description: "Returns anything the user has written after the trigger" }
+    { category: "Random", name: "%rng%", description: "Random number (0-10)" },
+    { category: "Random", name: "%rng(1,100)%", description: "Random number between specified range" },
+    { category: "Random", name: "%choose(a|b|c)%", description: "Choose randomly from pipe-separated options" },
+    { category: "Random", name: "%target%", description: "Text after the trigger" },
+    { category: "Random", name: "%img:query%", description: "Imgur search for 'query'" },
+
+    // GIF placeholders (nekos.best API)
+    { category: "GIFs", name: "%bakagif%", description: "Random baka reaction GIF" },
+    { category: "GIFs", name: "%bitegif%", description: "Random bite reaction GIF" },
+    { category: "GIFs", name: "%blushgif%", description: "Random blush reaction GIF" },
+    { category: "GIFs", name: "%boredgif%", description: "Random bored reaction GIF" },
+    { category: "GIFs", name: "%crygif%", description: "Random cry reaction GIF" },
+    { category: "GIFs", name: "%cuddlegif%", description: "Random cuddle reaction GIF" },
+    { category: "GIFs", name: "%dancegif%", description: "Random dance reaction GIF" },
+    { category: "GIFs", name: "%facepalmgif%", description: "Random facepalm reaction GIF" },
+    { category: "GIFs", name: "%feedgif%", description: "Random feed reaction GIF" },
+    { category: "GIFs", name: "%handholdgif%", description: "Random handhold reaction GIF" },
+    { category: "GIFs", name: "%happygif%", description: "Random happy reaction GIF" },
+    { category: "GIFs", name: "%highfivegif%", description: "Random highfive reaction GIF" },
+    { category: "GIFs", name: "%huggif%", description: "Random hug reaction GIF" },
+    { category: "GIFs", name: "%kickgif%", description: "Random kick reaction GIF" },
+    { category: "GIFs", name: "%kissgif%", description: "Random kiss reaction GIF" },
+    { category: "GIFs", name: "%laughgif%", description: "Random laugh reaction GIF" },
+    { category: "GIFs", name: "%patgif%", description: "Random pat reaction GIF" },
+    { category: "GIFs", name: "%pokegif%", description: "Random poke reaction GIF" },
+    { category: "GIFs", name: "%poutgif%", description: "Random pout reaction GIF" },
+    { category: "GIFs", name: "%punchgif%", description: "Random punch reaction GIF" },
+    { category: "GIFs", name: "%shootgif%", description: "Random shoot reaction GIF" },
+    { category: "GIFs", name: "%shruggif%", description: "Random shrug reaction GIF" },
+    { category: "GIFs", name: "%slapgif%", description: "Random slap reaction GIF" },
+    { category: "GIFs", name: "%sleepgif%", description: "Random sleep reaction GIF" },
+    { category: "GIFs", name: "%smilegif%", description: "Random smile reaction GIF" },
+    { category: "GIFs", name: "%smuggif%", description: "Random smug reaction GIF" },
+    { category: "GIFs", name: "%staregif%", description: "Random stare reaction GIF" },
+    { category: "GIFs", name: "%thinkgif%", description: "Random think reaction GIF" },
+    { category: "GIFs", name: "%thumbsupgif%", description: "Random thumbsup reaction GIF" },
+    { category: "GIFs", name: "%ticklegif%", description: "Random tickle reaction GIF" },
+    { category: "GIFs", name: "%wavegif%", description: "Random wave reaction GIF" },
+    { category: "GIFs", name: "%winkgif%", description: "Random wink reaction GIF" }
   ];
 
-  // Combine all placeholders
-  let allPlaceholders = $derived([
-    ...defaultPlaceholders,
-    ...placeholders,
-    ...additionalPlaceholders
-  ]);
+  // Combine all placeholders and filter duplicates by name
+  let allPlaceholders = $derived((() => {
+    const combined = [
+      ...defaultPlaceholders,
+      ...placeholders,
+      ...additionalPlaceholders
+    ];
+
+    // Deduplicate by placeholder name (case-insensitive)
+    const seen = new Map<string, Placeholder>();
+    combined.forEach(placeholder => {
+      const key = placeholder.name.toLowerCase();
+      if (!seen.has(key)) {
+        seen.set(key, placeholder);
+      }
+    });
+
+    return Array.from(seen.values());
+  })());
 
   // Initialize from value
   $effect(() => {
@@ -670,6 +762,8 @@
               {content}
               {embeds}
               {componentRows}
+              {user}
+              {guildId}
               showEmpty={false}
             />
           </div>
@@ -741,9 +835,9 @@
         </div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+        <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
           <!-- Editor Side -->
-          <div class="flex-1 overflow-y-auto p-4 md:p-6">
+          <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:w-1/2">
             <!-- Tabs -->
             <div class="flex gap-2 mb-4 flex-wrap">
               {#if allowContent || embeds.length > 0}
@@ -948,7 +1042,7 @@
           </div>
 
           <!-- Preview Side (Desktop only) -->
-          <div class="hidden md:block w-full md:w-[400px] lg:w-[500px] border-l overflow-y-auto"
+          <div class="hidden lg:block lg:w-1/2 border-l overflow-y-auto"
                style="background: {$colorStore.primary}03; border-color: {$colorStore.primary}30;">
             <div class="sticky top-0 p-4 border-b"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
@@ -974,6 +1068,8 @@
                 {content}
                 {embeds}
                 {componentRows}
+                {user}
+                {guildId}
                 emptyMessage="Your embed preview will appear here"
               />
             </div>
@@ -1052,6 +1148,8 @@
               {content}
               {embeds}
               {componentRows}
+              {user}
+              {guildId}
               emptyMessage="Your embed preview will appear here"
             />
           </div>

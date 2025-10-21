@@ -1,4 +1,5 @@
 @import '../tailwind.config.css';
+@import 'discord.css/dist/css/discord.min.css';
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,

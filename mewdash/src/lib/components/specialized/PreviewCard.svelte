@@ -2,6 +2,9 @@
 <script lang="ts">
   import { marked } from "marked";
   import DOMPurify from "dompurify";
+  import { currentInstance } from "$lib/stores/instanceStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { get } from "svelte/store";
 
   // Props
     interface Props {
@@ -10,6 +13,9 @@
       componentRows?: any[];
       showEmpty?: boolean;
       emptyMessage?: string;
+      user?: any;
+      guild?: any;
+      guildId?: string | bigint;
     }
 
     let {
@@ -17,12 +23,214 @@
       embeds = [],
       componentRows = [],
       showEmpty = true,
-      emptyMessage = "Your embed preview will appear here"
+      emptyMessage = "Your embed preview will appear here",
+      user = null,
+      guild = null,
+      guildId = null
     }: Props = $props();
+
+  // Get real data from stores
+  const instance = get(currentInstance);
+  const currentGuildData = get(currentGuild);
+  const actualGuild = guild || currentGuildData;
+  const actualGuildId = guildId || currentGuildData?.id;
+
+  // Extract user data for use in all functions
+  const userName = user?.username || user?.globalName || "ExampleUser";
+  const userId = user?.id || "123456789012345678";
+
+  // Placeholder replacement function
+  function replacePlaceholders(text: string): string {
+    if (!text) return text;
+
+    let replaced = text;
+
+    // User placeholders
+
+    // Construct avatar URL from hash
+    const userAvatarHash = user?.avatar;
+    const userAvatar = userAvatarHash
+      ? `https://cdn.discordapp.com/avatars/${userId}/${userAvatarHash}.${userAvatarHash.startsWith("a_") ? "gif" : "png"}?size=256`
+      : "https://cdn.discordapp.com/embed/avatars/0.png";
+
+    // Construct banner URL from hash
+    const userBannerHash = user?.banner;
+    const userBanner = userBannerHash
+      ? `https://cdn.discordapp.com/banners/${userId}/${userBannerHash}.${userBannerHash.startsWith("a_") ? "gif" : "png"}?size=512`
+      : "";
+
+    replaced = replaced.replace(/%user%/g, `<@${userId}>`);
+    replaced = replaced.replace(/%user\.mention%/g, `<@${userId}>`);
+    replaced = replaced.replace(/%user\.name%/g, userName);
+    replaced = replaced.replace(/%user\.fullname%/g, userName);
+    replaced = replaced.replace(/%user\.id%/g, userId);
+    replaced = replaced.replace(/%user\.avatar%/g, userAvatar);
+    replaced = replaced.replace(/%user\.banner%/g, userBanner);
+    replaced = replaced.replace(/%user\.created_time%/g, "14:30");
+    replaced = replaced.replace(/%user\.created_date%/g, "15.06.2020");
+    replaced = replaced.replace(/%user\.joined_time%/g, "09:45");
+    replaced = replaced.replace(/%user\.joined_date%/g, "22.03.2023");
+
+    // Server/Guild placeholders - use real data if available
+    const guildName = actualGuild?.name || "Example Server";
+    const guildIdStr = typeof actualGuildId === "bigint" ? actualGuildId.toString() : (actualGuildId?.toString() || "987654321098765432");
+    replaced = replaced.replace(/%server%/g, guildName);
+    replaced = replaced.replace(/%server\.name%/g, guildName);
+    replaced = replaced.replace(/%server\.id%/g, guildIdStr);
+    replaced = replaced.replace(/%server\.members%/g, actualGuild?.memberCount?.toString() || "1,234");
+    replaced = replaced.replace(/%server\.members\.online%/g, "523");
+    replaced = replaced.replace(/%server\.members\.offline%/g, "711");
+    replaced = replaced.replace(/%server\.members\.dnd%/g, "45");
+    replaced = replaced.replace(/%server\.members\.idle%/g, "89");
+    replaced = replaced.replace(/%server\.boostlevel%/g, actualGuild?.premiumTier?.toString() || "2");
+    replaced = replaced.replace(/%server\.boostcount%/g, actualGuild?.premiumSubscriptionCount?.toString() || "14");
+    replaced = replaced.replace(/%server\.icon%/g, actualGuild?.icon ? `https://cdn.discordapp.com/icons/${guildIdStr}/${actualGuild.icon}.${actualGuild.icon.startsWith("a_") ? "gif" : "png"}?size=256` : "");
+    replaced = replaced.replace(/%server\.banner%/g, actualGuild?.banner ? `https://cdn.discordapp.com/banners/${guildIdStr}/${actualGuild.banner}.png?size=512` : "");
+
+    const nowTimestamp = Math.floor(Date.now() / 1000);
+    replaced = replaced.replace(/%server\.time%/g, new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short"
+    }));
+    replaced = replaced.replace(/%server\.timestamp\.longdatetime%/g, `<t:${nowTimestamp}:F>`);
+    replaced = replaced.replace(/%server\.timestamp\.longtime%/g, `<t:${nowTimestamp}:T>`);
+    replaced = replaced.replace(/%server\.timestamp\.longdate%/g, `<t:${nowTimestamp}:D>`);
+    replaced = replaced.replace(/%server\.timestamp\.shortdatetime%/g, `<t:${nowTimestamp}>`);
+
+    // Channel placeholders (use Discord mention format)
+    replaced = replaced.replace(/%channel%/g, "<#123456789012345678>");
+    replaced = replaced.replace(/%channel\.mention%/g, "<#123456789012345678>");
+    replaced = replaced.replace(/%channel\.name%/g, "general");
+    replaced = replaced.replace(/%channel\.id%/g, "123456789012345678");
+    replaced = replaced.replace(/%channel\.created%/g, "14:30 15.06.2020");
+    replaced = replaced.replace(/%channel\.nsfw%/g, "False");
+    replaced = replaced.replace(/%channel\.topic%/g, "Welcome to the chat!");
+
+    // Bot placeholders - use real instance data if available
+    const botName = instance?.botName || "Mewdeko";
+    const botId = instance?.botId || "752236274261426994";
+    const botAvatar = instance?.botAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
+    replaced = replaced.replace(/%bot\.status%/g, "Online");
+    replaced = replaced.replace(/%bot\.latency%/g, "45");
+    replaced = replaced.replace(/%bot\.name%/g, botName);
+    replaced = replaced.replace(/%bot\.fullname%/g, botName);
+    replaced = replaced.replace(/%bot\.id%/g, botId.toString());
+    replaced = replaced.replace(/%bot\.avatar%/g, botAvatar);
+    replaced = replaced.replace(/%bot\.time%/g, new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short"
+    }));
+
+    // Stats placeholders
+    replaced = replaced.replace(/%shard\.servercount%/g, "1,234");
+    replaced = replaced.replace(/%shard\.usercount%/g, "456,789");
+
+    // Time placeholders
+    const now = new Date();
+    replaced = replaced.replace(/%time\.month%/g, now.toLocaleString("en", { month: "long" }));
+    replaced = replaced.replace(/%time\.day%/g, now.toLocaleString("en", { weekday: "long" }));
+    replaced = replaced.replace(/%time\.year%/g, now.getFullYear().toString());
+
+    // Random placeholders (use static examples for preview)
+    replaced = replaced.replace(/%rng%/g, "7");
+    replaced = replaced.replace(/%rng\((\d+),(\d+)\)%/g, "42");
+    replaced = replaced.replace(/%choose\([^)]+\)%/g, "[random option]");
+    replaced = replaced.replace(/%target%/g, "example text");
+    replaced = replaced.replace(/%img:([^%]+)%/g, "https://i.imgur.com/example.png");
+
+    // GIF placeholders (use placeholder URL)
+    const gifPlaceholders = [
+      "baka", "bite", "blush", "bored", "cry", "cuddle", "dance", "facepalm", "feed",
+      "handhold", "happy", "highfive", "hug", "kick", "kiss", "laugh", "pat", "poke",
+      "pout", "punch", "shoot", "shrug", "slap", "sleep", "smile", "smug", "stare",
+      "think", "thumbsup", "tickle", "wave", "wink"
+    ];
+    gifPlaceholders.forEach(gif => {
+      replaced = replaced.replace(new RegExp(`%${gif}gif%`, "g"), `https://nekos.best/api/v2/${gif}/001.gif`);
+    });
+
+    return replaced;
+  }
 
   // Helper functions
   function parseMarkdown(text: string): string {
-    return DOMPurify.sanitize(marked.parse(text) as string);
+    // Step 1: Replace placeholders (%user% → <@id>)
+    const withPlaceholders = replacePlaceholders(text);
+
+    // Step 2: Parse markdown (this escapes HTML: <@id> → &lt;@id&gt;)
+    const markdown = marked.parse(withPlaceholders) as string;
+
+    // Step 3: Format Discord mentions AFTER markdown escaping
+    const withMentions = formatDiscordMentions(markdown);
+
+    // Step 4: Sanitize but preserve our mention spans
+    const sanitized = DOMPurify.sanitize(withMentions, {
+      ADD_TAGS: ["span"],
+      ADD_ATTR: ["class"]
+    });
+
+    return sanitized;
+  }
+
+  // Apply placeholder replacement to simple text (non-markdown)
+  function processText(text: string): string {
+    const withPlaceholders = replacePlaceholders(text);
+    // For simple text, return raw HTML with mentions
+    return withPlaceholders;
+  }
+
+  // Helper to escape HTML
+  function escapeHtml(text: string): string {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Process and format text with mentions (for {@html} rendering)
+  function processTextWithMentions(text: string): string {
+    if (!text) return "";
+
+    // Step 1: Replace placeholders (these are safe, controlled by us)
+    const withPlaceholders = replacePlaceholders(text);
+
+    // Step 2: Escape all HTML to prevent injection
+    const escaped = escapeHtml(withPlaceholders);
+
+    // Step 3: Format Discord mentions (safe, we control the HTML)
+    const withMentions = formatDiscordMentions(escaped);
+
+    return withMentions;
+  }
+
+  // Format Discord mentions using discord.css classes
+  // This function receives escaped HTML, so mentions are &lt;@id&gt;
+  function formatDiscordMentions(text: string): string {
+    if (!text) return text;
+
+    let result = text;
+
+    // User mentions: &lt;@userId&gt; or &lt;@!userId&gt;
+    result = result.replace(/&lt;@!?(\d+)&gt;/g, (match, id) => {
+      const displayName = id === userId ? escapeHtml(userName) : "User";
+      return `<span class="dc-mention">@${displayName}</span>`;
+    });
+
+    // Channel mentions: &lt;#channelId&gt;
+    result = result.replace(/&lt;#(\d+)&gt;/g, (match, id) => {
+      return `<span class="dc-mention">#general</span>`;
+    });
+
+    // Role mentions: &lt;@&amp;roleId&gt; or &lt;@&roleId&gt;
+    result = result.replace(/&lt;@&amp;(\d+)&gt;/g, (match, id) => {
+      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@Role</span>`;
+    });
+    result = result.replace(/&lt;@&(\d+)&gt;/g, (match, id) => {
+      return `<span class="dc-mention dc-mention-role" style="--dc-mention-color-rgb: 114 137 218">@Role</span>`;
+    });
+
+    return result;
   }
 
     // Parse Discord emoji format for rendering
@@ -40,13 +248,18 @@
 
   function getButtonColorClass(style: number): string {
     switch (style) {
-      case 1: return 'bg-[#5865F2] hover:bg-[#4752C4] text-white';
-      case 2: return 'bg-[#4F545C] hover:bg-[#5D6269] text-white';
-      case 3: return 'bg-[#3BA55D] hover:bg-[#2D7D32] text-white';
-      case 4: return 'bg-[#ED4245] hover:bg-[#C62828] text-white';
+      case 1:
+        return "dc-btn dc-btn-blurple"; // Primary/Blurple
+      case 2:
+        return "dc-btn"; // Secondary/Grey (default)
+      case 3:
+        return "dc-btn dc-btn-success"; // Success/Green
+      case 4:
+        return "dc-btn dc-btn-danger"; // Danger/Red
       case 5:
-        return "bg-[#4F545C] hover:bg-[#5D6269] text-white";
-      default: return 'bg-[#5865F2] hover:bg-[#4752C4] text-white';
+        return "dc-btn dc-btn-link"; // Link
+      default:
+        return "dc-btn dc-btn-blurple";
     }
   }
 
@@ -69,11 +282,12 @@
     }
 </script>
 
-<div class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px] preview-content">
+<div
+  class="bg-[#36393f] rounded-lg p-4 space-y-4 text-white font-mono text-sm min-h-[200px] preview-content overflow-hidden">
   {#if hasContent}
     <!-- Message Content -->
     {#if content.trim()}
-      <div class="text-gray-100">
+      <div class="text-gray-100 break-words">
         {@html parseMarkdown(content)}
       </div>
     {/if}
@@ -81,57 +295,69 @@
     <!-- Embeds Preview -->
     {#each embeds as embed, index}
       {#if embed.title || embed.description || embed.fields?.length > 0}
-        <div class="flex">
-          <div class="w-1 rounded-l-md mr-3" style="background: {embed.color || '#5865F2'};"></div>
-          <div class="flex-1 space-y-2 relative">
-            
+        <div class="dc-embed" style="--dc-embed-color: {embed.color || '#5865F2'};">
             <!-- Author -->
             {#if embed.author?.name}
-              <div class="flex items-center gap-2 text-xs opacity-80">
-                {#if embed.author.icon_url && !embed.author.icon_url.includes('%')}
-                  <img src={embed.author.icon_url} alt="Author icon" class="w-5 h-5 rounded-full">
+              {@const processedAuthorUrl = processText(embed.author.url || "")}
+              {@const processedAuthorName = processTextWithMentions(embed.author.name)}
+              {@const processedAuthorIcon = processText(embed.author.icon_url || "")}
+              <div class="dc-embed-author">
+                {#if processedAuthorIcon && !processedAuthorIcon.includes('%')}
+                  <img src={processedAuthorIcon} alt="Author icon">
                 {/if}
-                {#if embed.author.url && !embed.author.url.includes('%')}
-                  <a href={embed.author.url} class="font-medium hover:underline text-blue-400">
-                    {embed.author.name}
+                {#if processedAuthorUrl && !processedAuthorUrl.includes('%')}
+                  <a href={processedAuthorUrl}>
+                    {@html processedAuthorName}
                   </a>
                 {:else}
-                  <span class="font-medium">{embed.author.name}</span>
+                  <span>{@html processedAuthorName}</span>
                 {/if}
               </div>
             {/if}
 
+          <!-- Thumbnail (comes BEFORE title in discord.css) -->
+          {#if embed.thumbnail?.url}
+            {@const processedThumbnail = processText(embed.thumbnail.url)}
+            {#if processedThumbnail && !processedThumbnail.includes('%')}
+              <div class="dc-embed-thumbnail">
+                <img src={processedThumbnail} alt="Thumbnail">
+              </div>
+            {/if}
+            {/if}
+
             <!-- Title -->
             {#if embed.title}
-              <div class="font-semibold text-white">
-                {#if embed.url && !embed.url.includes('%')}
-                  <a href={embed.url} class="hover:underline text-blue-400">
-                    {embed.title}
+              {@const processedTitle = processTextWithMentions(embed.title)}
+              {@const processedUrl = processText(embed.url || "")}
+              <div class="dc-embed-title">
+                {#if processedUrl && !processedUrl.includes('%')}
+                  <a href={processedUrl}>
+                    {@html processedTitle}
                   </a>
                 {:else}
-                  {embed.title}
+                  {@html processedTitle}
                 {/if}
               </div>
             {/if}
 
             <!-- Description -->
             {#if embed.description}
-              <div class="text-gray-300 text-sm leading-relaxed">
+              <div class="dc-embed-description">
                 {@html parseMarkdown(embed.description)}
               </div>
             {/if}
 
             <!-- Fields -->
             {#if embed.fields?.length > 0}
-              <div class="discord-fields-grid">
+              <div class="dc-embed-fields">
                 {#each embed.fields as field}
                   {#if field.name || field.value}
-                    <div class="discord-field" data-inline={field.inline}>
+                    <div class="dc-embed-field{field.inline ? '-inline' : ''}">
                       {#if field.name}
-                        <div class="font-semibold text-white text-sm">{field.name}</div>
+                        <div class="dc-embed-field-name">{@html processTextWithMentions(field.name)}</div>
                       {/if}
                       {#if field.value}
-                        <div class="text-gray-300 text-sm">
+                        <div class="dc-embed-field-value">
                           {@html parseMarkdown(field.value)}
                         </div>
                       {/if}
@@ -141,40 +367,37 @@
               </div>
             {/if}
 
-            <!-- Thumbnail -->
-            {#if embed.thumbnail?.url && !embed.thumbnail.url.includes('%')}
-              <div class="absolute top-4 right-4 w-20 h-20">
-                <img src={embed.thumbnail.url} alt="Thumbnail" class="w-full h-full object-cover rounded-lg">
+          <!-- Image -->
+          {#if embed.image?.url}
+            {@const processedImage = processText(embed.image.url)}
+            {#if processedImage && !processedImage.includes('%')}
+              <div class="dc-embed-image">
+                <img src={processedImage} alt="">
               </div>
             {/if}
-
-            <!-- Image -->
-            {#if embed.image?.url && !embed.image.url.includes('%')}
-              <div class="mt-4">
-                <img src={embed.image.url} alt="" class="max-w-full rounded-lg">
-              </div>
             {/if}
 
             <!-- Footer -->
             {#if embed.footer?.text || embed.footer?.icon_url}
-              <div class="flex items-center mt-4 text-gray-400 text-xs">
-                {#if embed.footer.icon_url && !embed.footer.icon_url.includes('%')}
-                  <img src={embed.footer.icon_url} alt="Footer icon" class="w-5 h-5 rounded-full mr-2">
+              {@const processedFooterIcon = processText(embed.footer.icon_url || "")}
+              {@const processedFooterText = processTextWithMentions(embed.footer.text || "")}
+              <div class="dc-embed-footer">
+                {#if processedFooterIcon && !processedFooterIcon.includes('%')}
+                  <img src={processedFooterIcon} alt="Footer icon">
                 {/if}
-                <span>{embed.footer.text}</span>
+                <span>{@html processedFooterText}</span>
               </div>
             {/if}
-          </div>
         </div>
       {/if}
     {/each}
 
     <!-- Components Preview -->
     {#if componentRows.length > 0}
-      <div class="mt-4 space-y-2">
+      <div class="dc-msg-components">
         {#each componentRows as row, rowIndex (row.rowKey)}
           {#if row.components && row.components.length > 0}
-            <div class="flex flex-wrap justify-start gap-2">
+            <div class="dc-msg-components-btn-row">
               {#each row.components as component, compIndex (component.componentKey)}
               {#if component.isSelect}
                 <!-- Select Menu -->
@@ -238,27 +461,20 @@
               {:else}
                 <!-- Button -->
                 <button
-                  class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-4 py-[2px] min-h-[32px] text-sm font-medium leading-[16px] transition-colors duration-200 select-none"
+                  class="{getButtonColorClass(component.style)}"
                   disabled
                   aria-label={component.displayName}
+                  style="display: inline-flex; align-items: center; gap: 0.5rem;"
                 >
-                  <div class="flex items-center justify-center">
-                    <div class="flex items-center gap-2">
-                      {#if component.emoji}
-                        {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
-                        {#if parsedEmoji}
-                          <img src={parsedEmoji.url} alt={parsedEmoji.name}
-                               class="w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]" />
-                        {:else}
-                          <span
-                            class="emoji w-[1.2em] h-[1.2em] inline-flex items-center justify-center align-[-0.1em]">
-                            {component.emoji}
-                          </span>
-                        {/if}
-                      {/if}
-                      <span class="truncate">{component.displayName}</span>
-                    </div>
-                  </div>
+                  {#if component.emoji}
+                    {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
+                    {#if parsedEmoji}
+                      <img src={parsedEmoji.url} alt={parsedEmoji.name} style="width: 1.2em; height: 1.2em;" />
+                    {:else}
+                      <span>{component.emoji}</span>
+                    {/if}
+                  {/if}
+                  <span>{@html processTextWithMentions(component.displayName)}</span>
                 </button>
               {/if}
               {/each}
@@ -278,51 +494,7 @@
 </div>
 
 <style>
-  .discord-button {
-    transition: transform 0.1s ease;
-  }
-  
-  .discord-button:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
 
-  /* Discord-like fields grid */
-  .discord-fields-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 8px;
-  }
-
-  .discord-field {
-      min-width: 0;
-      word-break: break-word;
-  }
-
-  /* Inline fields - up to 3 per row */
-  .discord-field[data-inline="true"] {
-    display: inline-block;
-      width: calc(33.333% - 5.33px);
-    margin-right: 8px;
-    vertical-align: top;
-  }
-
-  .discord-field[data-inline="true"]:nth-child(3n) {
-      margin-right: 0;
-  }
-
-  /* Stack fields on mobile */
-  @media (max-width: 768px) {
-      .discord-fields-grid {
-          grid-template-columns: 1fr;
-      }
-
-      .discord-field[data-inline="true"] {
-      display: block;
-      width: 100%;
-      margin-right: 0;
-      margin-bottom: 8px;
-    }
-  }
 
   /* Style adjustments for embedded images */
   img {
@@ -341,6 +513,12 @@
   }
 
   /* Discord-like markdown styles */
+  :global(.preview-content) {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+  }
+
   :global(.preview-content) strong {
     font-weight: 600;
   }
@@ -354,6 +532,7 @@
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
+      word-break: break-all;
   }
 
   :global(.preview-content) pre {
@@ -361,6 +540,11 @@
     padding: 8px;
     border-radius: 4px;
     overflow-x: auto;
+      max-width: 100%;
+  }
+
+  :global(.preview-content) pre code {
+      word-break: normal;
   }
 
   :global(.preview-content) blockquote {
@@ -368,4 +552,10 @@
     padding-left: 8px;
     margin: 4px 0;
   }
+
+  :global(.preview-content) p {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+  }
+
 </style>

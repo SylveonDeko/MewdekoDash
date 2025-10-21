@@ -1,11 +1,14 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
   let {
     banMessage = $bindable(),
     saving,
-    saveBanMessage
+    saveBanMessage,
+    guildId = null,
+    user = null
   } = $props();
 </script>
 
@@ -25,28 +28,36 @@
 
   <div class="space-y-4">
     <div>
-      <label class="block text-sm font-medium mb-2" for="ban-message-textarea" style="color: {$colorStore.text}">
+      <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
+        <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
         Custom Ban Message
       </label>
-      <textarea
+
+      <FullscreenEmbedBuilder
         bind:value={banMessage}
-        class="w-full px-3 py-2 rounded-lg border transition-colors resize-none"
-        id="ban-message-textarea"
-        placeholder="Enter custom ban message..."
-        rows="3"
-        style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-      ></textarea>
-      <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-        This message will be sent to users when they are banned
+        allowComponents={true}
+        allowContent={true}
+        allowMultipleEmbeds={true}
+        guildId={guildId}
+        icon="fa-comment"
+        maxEmbeds={10}
+        placeholder="Click to configure ban message with rich embeds"
+        previewDescription="Message sent to users when they are banned"
+        previewTitle="Ban Message"
+        user={user}
+      />
+
+      <p class="text-xs mt-3" style="color: {$colorStore.muted}">
+        This message will be sent to users when they are banned. Supports rich embeds and Discord formatting.
       </p>
     </div>
 
     <div class="flex justify-end">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px]"
+        class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
         disabled={saving}
         onclick={saveBanMessage}
-        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
       >
         <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
         Save Message

@@ -3,15 +3,23 @@
 
 
   import { onMount } from "svelte";
-  import { roleGreetApi, clientApi, type RoleGreet } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {fade} from "svelte/transition";
-    import {goto} from "$app/navigation";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger.ts";
+  import { clientApi, type RoleGreet, roleGreetApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { fade } from "svelte/transition";
+  import { goto } from "$app/navigation";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger.ts";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import type { PageData } from "./$types";
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
   // State management
     let showNotification = $state(false);
@@ -38,7 +46,7 @@
 
   // Edit states
     let editingGreetId: number | null = $state(null);
-    let editGreetMessage = $state("");
+  let editGreetMessage: any = $state({});
     let editGreetDeleteTime = $state(0);
     let editGreetWebhook: string | null = $state(null);
     let editGreetBots = $state(false);
@@ -115,11 +123,12 @@
     }
   }
 
-  async function updateRoleGreetMessage(greetId: number, message: string) {
+  async function updateRoleGreetMessage(greetId: number, message: any) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await roleGreetApi.updateRoleGreetMessage($currentGuild.id, greetId, message);
+      const messageToSend = typeof message === "string" ? message : (Object.keys(message).length > 0 ? JSON.stringify(message) : "");
+      await roleGreetApi.updateRoleGreetMessage($currentGuild.id, greetId, messageToSend);
       showNotificationMessage("Message updated successfully", "success");
       editingGreetId = null;
       await fetchRoleGreets();
@@ -185,7 +194,20 @@
 
   function startEditing(greet: any) {
     editingGreetId = greet.id;
-    editGreetMessage = greet.message;
+
+    // Parse message if it's a JSON string
+    try {
+      if (typeof greet.message === "string" && greet.message.trim().startsWith("{")) {
+        editGreetMessage = JSON.parse(greet.message);
+      } else if (typeof greet.message === "string" && greet.message) {
+        editGreetMessage = { content: greet.message };
+      } else {
+        editGreetMessage = greet.message || {};
+      }
+    } catch {
+      editGreetMessage = greet.message ? { content: greet.message } : {};
+    }
+
     editGreetDeleteTime = greet.deleteTime;
     editGreetWebhook = greet.webhookUrl;
     editGreetBots = greet.greetBots;
@@ -282,12 +304,10 @@
         </div>
 
         <button
-          class="px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
+          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           disabled={!selectedRoleId || !selectedChannelId}
           onclick={addRoleGreet}
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                 color: {$colorStore.text};
-                 opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary}; opacity: {!selectedRoleId || !selectedChannelId ? '0.5' : '1'};"
         >
           <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
           <span>Add Role Greet</span>
@@ -380,19 +400,30 @@
                 <div class="space-y-4">
                   <!-- Message -->
                   <div>
-                    <label for="greet-message" class="block text-sm mb-2" style="color: {$colorStore.muted}">
+                    <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
+                      <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                       Greeting Message
                     </label>
-                    <textarea
-                      id="greet-message"
+
+                    <FullscreenEmbedBuilder
                       bind:value={editGreetMessage}
-                      class="w-full p-3 rounded-lg bg-gray-900/50 border transition-all duration-200 min-h-[100px]"
-                      style="border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder='Hello %username%, welcome to the %role% role!'
-                    ></textarea>
-                    <p class="text-xs mt-1" style="color: {$colorStore.muted}">
-                      Available variables: %user.username%, %user.mention%, %server.name%, %role.name%
-                    </p>
+                      previewTitle="Role Greeting Message"
+                      previewDescription="Message sent when users receive this role"
+                      icon="fa-envelope"
+                      allowContent={true}
+                      allowMultipleEmbeds={true}
+                      maxEmbeds={10}
+                      allowComponents={true}
+                      additionalPlaceholders={[
+                        { category: "User", name: "%user.username%", description: "User's username" },
+                        { category: "User", name: "%user.mention%", description: "Mention the user" },
+                        { category: "Server", name: "%server.name%", description: "Server name" },
+                        { category: "Role", name: "%role.name%", description: "Role name" }
+                      ]}
+                      guildId={$currentGuild?.id}
+                      user={data.user}
+                      placeholder="Click to configure role greeting message"
+                    />
                   </div>
 
                   <!-- Delete Time -->
@@ -459,37 +490,33 @@
                     </button>
 
                     <button
-                      class="px-4 py-2 rounded-lg transition-all duration-200"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       onclick={() => updateRoleGreetMessage(greet.id, editGreetMessage)}
-                      style="background: {$colorStore.primary}20;
-                             color: {$colorStore.text};"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     >
                       Update Message
                     </button>
 
                     <button
-                      class="px-4 py-2 rounded-lg transition-all duration-200"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       onclick={() => updateRoleGreetDeleteTime(greet.id, editGreetDeleteTime)}
-                      style="background: {$colorStore.primary}20;
-                             color: {$colorStore.text};"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     >
                       Update Delete Time
                     </button>
 
                     <button
-                      class="px-4 py-2 rounded-lg transition-all duration-200"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       onclick={() => updateRoleGreetWebhook(greet.id, editGreetWebhook)}
-                      style="background: {$colorStore.primary}20;
-                             color: {$colorStore.text};"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     >
                       Update Webhook
                     </button>
 
                     <button
-                      class="px-4 py-2 rounded-lg transition-all duration-200"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                       onclick={() => updateRoleGreetBots(greet.id, editGreetBots)}
-                      style="background: {$colorStore.primary}20;
-                             color: {$colorStore.text};"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     >
                       Update Bot Settings
                     </button>

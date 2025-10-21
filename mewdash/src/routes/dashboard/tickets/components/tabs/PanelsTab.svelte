@@ -1,9 +1,9 @@
 <!-- components/tabs/PanelsTab.svelte -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
-  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import TabNavigation from "$lib/components/specialized/TabNavigation.svelte";
   import ModalBuilder from "../editors/ModalBuilder.svelte";
@@ -11,6 +11,7 @@
   import { onMount } from "svelte";
 
   interface Props {
+    data: any;
     panels: any[];
     panelStatuses: Map<bigint, number>;
     checkingPanelStatus: boolean;
@@ -57,6 +58,7 @@
   }
 
   let {
+    data,
     panels,
     panelStatuses,
     checkingPanelStatus,
@@ -186,9 +188,6 @@
   onMount(() => {
     console.log(panels);
   });
-  function handleEmbedUpdate(detail: { embed: any; index: number }) {
-    panelEmbed = detail.embed;
-  }
 
   // Status helper functions removed - status now only checked on-demand via Troubleshoot button
 
@@ -482,22 +481,20 @@
         <div class="p-4 rounded-xl"
              style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15;">
           <h4 class="font-semibold mb-4" style="color: {$colorStore.text}">Panel Embed</h4>
-          <EmbedEditor
-            bind:embed={panelEmbed}
-            index={0}
-            placeholders={[]}
-            onupdate={handleEmbedUpdate}
+          <FullscreenEmbedBuilder
+            bind:value={panelEmbed}
+            previewTitle="Panel Embed"
+            previewDescription="Embed shown in the ticket panel"
+            icon="fa-window-maximize"
+            allowContent={false}
+            allowMultipleEmbeds={false}
+            maxEmbeds={10}
+            allowComponents={false}
+            guildId={$currentGuild?.id}
+            user={data.user}
+            placeholder="Click to configure panel embed"
           />
         </div>
-      </div>
-      <div>
-        <h4 class="font-semibold mb-4" style="color: {$colorStore.text}">Preview</h4>
-        <PreviewCard
-          content=""
-          embeds={[panelEmbed]}
-          componentRows={[]}
-          emptyMessage="Panel preview"
-        />
       </div>
     </div>
 
@@ -2004,25 +2001,21 @@
         </div>
 
         {#if editingPanelEmbed}
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="p-4 rounded-xl"
-                 style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15;">
-              <EmbedEditor
-                bind:embed={tempPanelEmbed}
-                index={0}
-                placeholders={[]}
-                onupdate={(detail) => tempPanelEmbed = detail.embed}
-              />
-            </div>
-            <div>
-              <h5 class="font-semibold mb-3" style="color: {$colorStore.text}">Preview</h5>
-              <PreviewCard
-                content=""
-                embeds={[tempPanelEmbed]}
-                componentRows={[]}
-                emptyMessage="Panel preview"
-              />
-            </div>
+          <div class="p-4 rounded-xl"
+               style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}15;">
+            <FullscreenEmbedBuilder
+              bind:value={tempPanelEmbed}
+              previewTitle="Panel Embed"
+              previewDescription="Embed shown in the ticket panel"
+              icon="fa-window-maximize"
+              allowContent={false}
+              allowMultipleEmbeds={false}
+              maxEmbeds={10}
+              allowComponents={false}
+              guildId={$currentGuild?.id}
+              user={data.user}
+              placeholder="Click to configure panel embed"
+            />
           </div>
           <div class="flex justify-end gap-3">
             <button

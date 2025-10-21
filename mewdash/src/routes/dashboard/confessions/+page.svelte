@@ -1,11 +1,11 @@
 <!-- routes/dashboard/confessions/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { confessionsApi, clientApi, type Confession, type ConfessionStats } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+    import { onMount } from "svelte";
+    import { fade, fly } from "svelte/transition";
+    import { colorStore } from "$lib/stores/colorStore";
+    import { currentGuild } from "$lib/stores/currentGuild";
+    import { clientApi, type Confession, confessionsApi, type ConfessionStats } from "$lib/api/index.ts";
+    import { logger } from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -302,13 +302,14 @@
                         </div>
                     </div>
 
-                    <button aria-label="Button action"
-                            class="mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
+                  <button aria-label="Save confession configuration"
+                          aria-busy={saving}
+                          class="mt-6 flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                             onclick={saveConfig}
                             disabled={saving}
                     >
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
+                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
                         {saving ? "Saving..." : "Save Configuration"}
                     </button>
                 </div>

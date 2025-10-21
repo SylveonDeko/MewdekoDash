@@ -3,20 +3,21 @@
 
 
   import { onDestroy, onMount } from "svelte";
-  import { chatTriggersApi, clientApi, type ChatTrigger } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {fade, slide} from "svelte/transition";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import Tooltip from "$lib/components/ui/Tooltip.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import {goto} from "$app/navigation";
-    import {get} from "svelte/store";
-    import type {PageData} from "./$types";
-    import {browser} from "$app/environment";
-    import {logger} from "$lib/logger.ts";
-    import {colorStore} from "$lib/stores/colorStore.ts";
+  import { type ChatTrigger, chatTriggersApi, clientApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { fade, slide } from "svelte/transition";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Tooltip from "$lib/components/ui/Tooltip.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { goto } from "$app/navigation";
+  import { get } from "svelte/store";
+  import type { PageData } from "./$types";
+  import { browser } from "$app/environment";
+  import { logger } from "$lib/logger.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
@@ -68,7 +69,7 @@
     validTriggerTypesReactions: boolean;
   } = $state({
     trigger: "",
-    response: "",
+    response: {} as any,
     grantedRoles: "" as any,
     removedRoles: "" as any,
     isRegex: false,
@@ -105,7 +106,7 @@
   
   // Simple mode state
     let quickTriggerText = $state("");
-    let quickResponseText = $state("");
+  let quickResponseText: any = $state({});
     let showAdvancedOptions = $state(false);
   
   // Advanced mode state
@@ -131,18 +132,37 @@
         throw new Error("No guild selected");
       }
       triggers = await chatTriggersApi.getChatTriggers(guild.id);
-      triggers = triggers.map((trigger) => ({
-        ...trigger,
-        grantedRoles: roleStringToArray(trigger.grantedRoles),
-        removedRoles: roleStringToArray(trigger.removedRoles),
-        isRegex: trigger.isRegex || false,
-        isValidRegex: trigger.isRegex && trigger.trigger ? validateRegex(trigger.trigger) : true,
-        // Add frontend-only boolean properties for trigger types
-        validTriggerTypesMessage: !!(trigger.validTriggerTypes & ChatTriggerType.Message),
-        validTriggerTypesInteraction: !!(trigger.validTriggerTypes & ChatTriggerType.Interaction),
-        validTriggerTypesButton: !!(trigger.validTriggerTypes & ChatTriggerType.Button),
-        validTriggerTypesReactions: !!(trigger.validTriggerTypes & ChatTriggerType.Reactions),
-      } as any));
+      triggers = triggers.map((trigger) => {
+        // Try to parse response as JSON object, fallback to wrapping plain text
+        let parsedResponse = trigger.response;
+        try {
+          if (typeof trigger.response === "string" && trigger.response.trim().startsWith("{")) {
+            parsedResponse = JSON.parse(trigger.response);
+          } else if (typeof trigger.response === "string" && trigger.response) {
+            // Wrap plain text in content object
+            parsedResponse = { content: trigger.response };
+          } else if (!trigger.response) {
+            parsedResponse = {};
+          }
+        } catch {
+          // If JSON parse fails, wrap as content
+          parsedResponse = trigger.response ? { content: trigger.response } : {};
+        }
+
+        return {
+          ...trigger,
+          response: parsedResponse,
+          grantedRoles: roleStringToArray(trigger.grantedRoles),
+          removedRoles: roleStringToArray(trigger.removedRoles),
+          isRegex: trigger.isRegex || false,
+          isValidRegex: trigger.isRegex && trigger.trigger ? validateRegex(trigger.trigger) : true,
+          // Add frontend-only boolean properties for trigger types
+          validTriggerTypesMessage: !!(trigger.validTriggerTypes & ChatTriggerType.Message),
+          validTriggerTypesInteraction: !!(trigger.validTriggerTypes & ChatTriggerType.Interaction),
+          validTriggerTypesButton: !!(trigger.validTriggerTypes & ChatTriggerType.Button),
+          validTriggerTypesReactions: !!(trigger.validTriggerTypes & ChatTriggerType.Reactions)
+        } as any;
+      });
     } catch (err: any) {
       logger.error("Failed to fetch chat triggers:", err);
       error = err.message || "Failed to fetch chat triggers";
@@ -166,7 +186,11 @@
 
   // Function to add a new trigger
   async function addTrigger() {
-    if (!newTrigger.trigger?.trim() || !newTrigger.response?.trim()) {
+    const hasResponse = typeof newTrigger.response === "object"
+      ? Object.keys(newTrigger.response).length > 0
+      : newTrigger.response?.trim();
+
+    if (!newTrigger.trigger?.trim() || !hasResponse) {
       showNotificationMessage("Trigger and Response are required", "error");
       return;
     }
@@ -188,9 +212,15 @@
       if (newTrigger.validTriggerTypesInteraction) validTriggerTypes |= ChatTriggerType.Interaction;
       if (newTrigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
       if (newTrigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
-      
+
+      // Serialize response if it's an object
+      const responseText = typeof newTrigger.response === "object" && Object.keys(newTrigger.response).length > 0
+        ? JSON.stringify(newTrigger.response)
+        : (typeof newTrigger.response === "string" ? newTrigger.response : "");
+
       const triggerData = {
         ...newTrigger,
+        response: responseText,
         validTriggerTypes,
         guildId: guild.id,
         grantedRoles: roleArrayToString(newTrigger.grantedRoles),
@@ -206,7 +236,7 @@
       newTrigger = {
         guildId: guild.id,
         trigger: "",
-        response: "",
+        response: {} as any,
         grantedRoles: "" as any,
         removedRoles: "" as any,
         isRegex: false,
@@ -239,7 +269,11 @@
 
   // Function to update a trigger
   async function updateTrigger(trigger: any) {
-    if (!trigger.trigger?.trim() || !trigger.response?.trim()) {
+    const hasResponse = typeof trigger.response === "object"
+      ? Object.keys(trigger.response).length > 0
+      : trigger.response?.trim();
+
+    if (!trigger.trigger?.trim() || !hasResponse) {
       showNotificationMessage("Trigger and Response are required", "error");
       return;
     }
@@ -263,9 +297,15 @@
         if (trigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
         if (trigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
       }
-      
+
+      // Serialize response if it's an object
+      const responseText = typeof trigger.response === "object" && Object.keys(trigger.response).length > 0
+        ? JSON.stringify(trigger.response)
+        : (typeof trigger.response === "string" ? trigger.response : "");
+
       const updatedTrigger = {
         ...trigger,
+        response: responseText,
         validTriggerTypes,
         grantedRoles: roleArrayToString(trigger.grantedRoles),
         removedRoles: roleArrayToString(trigger.removedRoles),
@@ -646,7 +686,11 @@
   
   // Quick trigger creation for Simple Mode
   async function createQuickTrigger() {
-    if (!quickTriggerText.trim() || !quickResponseText.trim()) {
+    const hasResponse = typeof quickResponseText === "object"
+      ? Object.keys(quickResponseText).length > 0
+      : quickResponseText?.trim();
+
+    if (!quickTriggerText.trim() || !hasResponse) {
       showNotificationMessage("Both trigger text and response are required", "error");
       announceError("Both trigger text and response are required");
       return;
@@ -657,10 +701,14 @@
       if (!guild?.id) {
         throw new Error("No guild selected");
       }
-      
+
+      const responseText = typeof quickResponseText === "object" && Object.keys(quickResponseText).length > 0
+        ? JSON.stringify(quickResponseText)
+        : (typeof quickResponseText === "string" ? quickResponseText.trim() : "");
+
       const triggerData = {
         trigger: quickTriggerText.trim(),
-        response: quickResponseText.trim(),
+        response: responseText,
         isRegex: false,
         guildId: guild.id,
         validTriggerTypes: ChatTriggerType.Message, // Use integer, not array
@@ -671,8 +719,8 @@
       
       // Reset form
       quickTriggerText = "";
-      quickResponseText = "";
-      
+      quickResponseText = {};
+
       showNotificationMessage("Trigger created successfully!", "success");
       announceAction("Trigger created successfully");
     } catch (error: any) {
@@ -686,12 +734,12 @@
     switch (templateType) {
       case 'simple':
         quickTriggerText = "hello";
-        quickResponseText = "Hello there! 👋";
+        quickResponseText = { content: "Hello there! 👋" };
         break;
       case 'role':
         activeTab = "advanced";
         newTrigger.trigger = "getrole";
-        newTrigger.response = "Role assigned!";
+        newTrigger.response = { content: "Role assigned!" };
         newTrigger.validTriggerTypesMessage = true;
         newTrigger.validTriggerTypesInteraction = false;
         newTrigger.validTriggerTypesButton = false;
@@ -700,7 +748,7 @@
       case 'slash':
         activeTab = "advanced";
         newTrigger.trigger = "info";
-        newTrigger.response = "Server information: %server.name%";
+        newTrigger.response = { content: "Server information: %server.name%" };
         newTrigger.validTriggerTypesMessage = false;
         newTrigger.validTriggerTypesInteraction = true;
         newTrigger.validTriggerTypesButton = false;
@@ -713,20 +761,20 @@
       case 'embed':
         activeTab = "advanced";
         newTrigger.trigger = "welcome";
-        newTrigger.response = JSON.stringify({
-          "content": "Welcome to the server!",
-          "embed": {
-            "title": "Welcome!",
-            "description": "Thanks for joining %server.name%!",
-            "color": "0x5865F2",
-            "thumbnail": {
-              "url": "%user.avatar%"
+        newTrigger.response = {
+          content: "Welcome to the server!",
+          embeds: [{
+            title: "Welcome!",
+            description: "Thanks for joining %server.name%!",
+            color: "0x5865F2",
+            thumbnail: {
+              url: "%user.avatar%"
             },
-            "footer": {
-              "text": "Enjoy your stay!"
+            footer: {
+              text: "Enjoy your stay!"
             }
-          }
-        }, null, 2);
+          }]
+        };
         newTrigger.validTriggerTypesMessage = true;
         break;
     }
@@ -929,31 +977,38 @@
 
             <!-- Response Input -->
             <div>
-              <label for="quick-response" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+              <label class="block text-sm font-medium mb-3" style="color: {colors.text}">
+                <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                 Bot responds with:
                 <abbr title="required" aria-label="required">*</abbr>
               </label>
-              <textarea 
-                id="quick-response"
-                class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
-                placeholder="Hello there! 👋 (Supports plain text, embeds, and interactive components)"
-                rows="3"
+
+              <FullscreenEmbedBuilder
                 bind:value={quickResponseText}
-                aria-required="true"
-              ></textarea>
-              <div class="text-xs mt-1" style="color: {colors.muted}">
-                💡 Tip: For rich embeds and interactive components, try the "Rich Embeds" template or use Advanced Mode
+                previewTitle="Quick Response"
+                previewDescription="Bot's response to the trigger"
+                icon="fa-comment"
+                allowContent={true}
+                allowMultipleEmbeds={true}
+                maxEmbeds={10}
+                allowComponents={true}
+                guildId={$currentGuild?.id}
+                user={data.user}
+                placeholder="Click to configure response message with rich embeds and components"
+              />
+
+              <div class="text-xs mt-2" style="color: {colors.muted}">
+                💡 Supports rich embeds, interactive buttons, select menus, and Discord formatting
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-3">
-              <button 
+              <button
                 class="flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-200 min-h-[52px] disabled:opacity-50 hover:brightness-110"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={createQuickTrigger}
-                disabled={!quickTriggerText.trim() || !quickResponseText.trim()}
+                disabled={!quickTriggerText.trim() || (typeof quickResponseText === 'object' ? Object.keys(quickResponseText).length === 0 : !quickResponseText?.trim())}
                 aria-describedby="create-help"
               >
                 <div class="flex items-center justify-center gap-2">
@@ -1133,16 +1188,28 @@
                         </div>
 
                         <div>
-                          <label for="edit-response-{trigger.id}" class="block text-sm font-medium mb-2" style="color: {colors.text}">
+                          <label class="block text-sm font-medium mb-3" style="color: {colors.text}">
+                            <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                             Response Message
                           </label>
-                          <textarea
-                            id="edit-response-{trigger.id}"
-                            class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                            style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
-                            bind:value={trigger.response}
-                            rows="2"
-                          ></textarea>
+
+                          <FullscreenEmbedBuilder
+                            value={trigger.response}
+                            previewTitle="Trigger Response"
+                            previewDescription="Bot's response to this trigger"
+                            icon="fa-comment"
+                            allowContent={true}
+                            allowMultipleEmbeds={true}
+                            maxEmbeds={10}
+                            allowComponents={true}
+                            guildId={$currentGuild?.id}
+                            user={data.user}
+                            placeholder="Click to configure response message"
+                            onchange={(newValue) => {
+                              trigger.response = newValue;
+                              triggers = [...triggers];
+                            }}
+                          />
                         </div>
                       </div>
 
@@ -1286,22 +1353,28 @@
 
               <!-- Response Message -->
               <div>
-                <label for="new-response" class="flex items-center gap-2 text-sm font-medium mb-2" style="color: {colors.text}">
+                <label class="flex items-center gap-2 text-sm font-medium mb-3" style="color: {colors.text}">
+                  <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                   Response Message
                   <abbr title="required" aria-label="required">*</abbr>
                   <Tooltip
                     placement="bottom"
                     text="Supports rich content including plain text, JSON embeds with images/fields/colors, interactive components, and placeholders like %user.name%. Try the Rich Embeds template!" />
                 </label>
-                <textarea
-                  id="new-response"
-                  class="w-full p-3 rounded-lg border transition-all duration-200 resize-none"
-                  style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
+
+                <FullscreenEmbedBuilder
                   bind:value={newTrigger.response}
-                  placeholder="Bot's response message or JSON for rich embeds/components"
-                  rows="3"
-                  aria-required="true"
-                ></textarea>
+                  previewTitle="Trigger Response"
+                  previewDescription="Bot's response to this trigger"
+                  icon="fa-comment"
+                  allowContent={true}
+                  allowMultipleEmbeds={true}
+                  maxEmbeds={10}
+                  allowComponents={true}
+                  guildId={$currentGuild?.id}
+                  user={data.user}
+                  placeholder="Click to configure response message with embeds/components"
+                />
               </div>
             </div>
 
@@ -1706,7 +1779,7 @@
                 class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={addTrigger}
-                disabled={!newTrigger.trigger?.trim() || !newTrigger.response?.trim() || (newTrigger.isRegex && !newTrigger.isValidRegex)}
+                disabled={!newTrigger.trigger?.trim() || (typeof newTrigger.response === 'object' ? Object.keys(newTrigger.response).length === 0 : !newTrigger.response?.trim()) || (newTrigger.isRegex && !newTrigger.isValidRegex)}
                 aria-describedby="create-help"
               >
                 <div class="flex items-center gap-2">

@@ -1,11 +1,11 @@
 <!-- routes/dashboard/highlights/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { highlightsApi, type Highlight as HighlightType } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+    import { onMount } from "svelte";
+    import { fade, fly } from "svelte/transition";
+    import { colorStore } from "$lib/stores/colorStore";
+    import { currentGuild } from "$lib/stores/currentGuild";
+    import { type Highlight as HighlightType, highlightsApi } from "$lib/api/index.ts";
+    import { logger } from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
@@ -287,12 +287,12 @@
                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                 onkeydown={(e) => e.key === 'Enter' && searchHighlights()}
                         >
-                      <button aria-label="Button action"
-                              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-                                style="background: {$colorStore.primary}; color: white;"
+                      <button aria-label="Search highlights"
+                              class="flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                 onclick={searchHighlights}
                         >
-                            <i class="fa-solid fa-magnifying-glass" style="font-size: 20px;"></i>
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 18px;"></i>
                         </button>
                     </div>
                 </div>

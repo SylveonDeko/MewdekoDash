@@ -9,7 +9,9 @@
     saving,
     saveBanMessage,
     showConfirm,
-    fetchAllData
+    fetchAllData,
+    guildId = null,
+    user = null
   } = $props();
 </script>
 
@@ -18,6 +20,8 @@
     bind:banMessage
     {saveBanMessage}
     {saving}
+    {guildId}
+    {user}
   />
 
   <MassOperationsCard

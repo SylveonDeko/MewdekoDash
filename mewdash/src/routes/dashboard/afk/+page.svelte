@@ -16,6 +16,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
 
   interface Props {
@@ -37,7 +38,7 @@
   let afkMaxLength = $state(0);
   let afkType = $state(1);
   let afkTimeout = $state("0s");
-  let customAfkMessage = $state("");
+  let customAfkMessage: any = $state({});
   let changedSettings = $state(new Set());
 
   // Channel management
@@ -175,7 +176,10 @@
         settingsUpdated.push("AFK timeout");
       }
       if (changedSettings.has("customMessage")) {
-        updatePromises.push(afkApi.setCustomAfkMessage($currentGuild.id, customAfkMessage));
+        const messageToSend = typeof customAfkMessage === "object" && Object.keys(customAfkMessage).length > 0
+          ? JSON.stringify(customAfkMessage)
+          : (typeof customAfkMessage === "string" ? customAfkMessage : "");
+        updatePromises.push(afkApi.setCustomAfkMessage($currentGuild.id, messageToSend));
         settingsUpdated.push("custom message");
       }
       if (changedSettings.has("disabledChannels")) {
@@ -315,7 +319,13 @@
           : [];
         selectedDisabledChannels = disabledChannelIds;
 
-        customAfkMessage = customMsg || "";
+        // Parse custom message - could be JSON string or plain text
+        const customMsgStr = customMsg || "";
+        try {
+          customAfkMessage = customMsgStr && customMsgStr.trim().startsWith("{") ? JSON.parse(customMsgStr) : (customMsgStr ? { content: customMsgStr } : {});
+        } catch {
+          customAfkMessage = customMsgStr ? { content: customMsgStr } : {};
+        }
         availableChannels = channels;
 
         // Ensure the disabled channels are set after available channels are loaded
@@ -588,11 +598,10 @@
       <!-- Save Button -->
       <div class="mt-6 flex justify-end">
         <button
-          class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           disabled={changedSettings.size === 0}
           onclick={updateAllAfkSettings}
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                 color: {$colorStore.text};"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
         >
           Save Changes
         </button>
@@ -685,26 +694,27 @@
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Custom AFK Embed Message</h3>
           </div>
-          <label for="custom-afk-message" class="sr-only">Custom AFK Message</label>
-          <textarea
-            id="custom-afk-message"
+
+          <FullscreenEmbedBuilder
             bind:value={customAfkMessage}
-            class="w-full p-3 rounded-lg border transition-all duration-200 min-h-[120px] resize-vertical"
-            oninput={() => markAsChanged("customMessage")}
-            placeholder="Enter custom AFK embed message... Use '-' to reset to default."
-            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
-                   color: {$colorStore.text};
-                   focus-visible:outline: none;
-                   focus-visible:ring: 2px;
-                   focus-visible:ring-color: {$colorStore.primary}50;"
-            aria-label="Custom embed message to display when a user is AFK"
-          ></textarea>
-          <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-            Custom embed message template for AFK notifications. Use "-" to reset to default. Check
-            <a href="/dashboard/embedbuilder" style="color: {$colorStore.primary}; text-decoration: underline;">embed
-              builder</a>
-            and <a href="http://mewdeko.tech/placeholders" target="_blank" rel="noopener"
-                   style="color: {$colorStore.primary}; text-decoration: underline;">placeholders</a> for help.
+            previewTitle="AFK Message"
+            previewDescription="Message shown when users are AFK"
+            icon="fa-comment"
+            allowContent={true}
+            allowMultipleEmbeds={true}
+            maxEmbeds={10}
+            allowComponents={true}
+            guildId={$currentGuild?.id}
+            user={data.user}
+            placeholder="Click to configure AFK message with rich embeds"
+            onchange={() => markAsChanged("customMessage")}
+          />
+
+          <p class="mt-3 text-sm" style="color: {$colorStore.muted}">
+            Custom embed message template for AFK notifications. Use "-" to reset to default.
+            Visit <a href="http://mewdeko.tech/placeholders" target="_blank" rel="noopener"
+                     style="color: {$colorStore.primary}; text-decoration: underline;">placeholders documentation</a>
+            for available variables.
           </p>
         </div>
       </div>
@@ -712,11 +722,10 @@
       <!-- Save Button -->
       <div class="mt-6 flex justify-end">
         <button
-          class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
           disabled={changedSettings.size === 0}
           onclick={updateAllAfkSettings}
-          style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                 color: {$colorStore.text};"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
         >
           Save Changes
         </button>

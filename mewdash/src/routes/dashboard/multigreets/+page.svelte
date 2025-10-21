@@ -3,19 +3,20 @@
 
 
   import { onMount } from "svelte";
-  import { multiGreetApi, clientApi, type MultiGreet, MultiGreetType } from "$lib/api/index.ts";
-    import type {PageData} from "./$types";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {fade} from "svelte/transition";
-    import {goto} from "$app/navigation";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
-    import {colorStore} from "$lib/stores/colorStore.ts"; // Import the global colorStore
-    import {logger} from "$lib/logger.ts";
+  import { clientApi, type MultiGreet, multiGreetApi, MultiGreetType } from "$lib/api/index.ts";
+  import type { PageData } from "./$types";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { fade } from "svelte/transition";
+  import { goto } from "$app/navigation";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore.ts"; // Import the global colorStore
+  import { logger } from "$lib/logger.ts";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
@@ -62,7 +63,29 @@
         throw new Error("No guild selected");
       }
       const guildId = BigInt($currentGuild.id);
-      greets = await multiGreetApi.getMultiGreets(guildId);
+      const fetchedGreets = await multiGreetApi.getMultiGreets(guildId);
+
+      // Parse messages - convert string to object if JSON
+      greets = fetchedGreets.map(greet => {
+        let parsedMessage = greet.message;
+        try {
+          if (typeof greet.message === "string" && greet.message.trim().startsWith("{")) {
+            parsedMessage = JSON.parse(greet.message);
+          } else if (typeof greet.message === "string" && greet.message) {
+            parsedMessage = { content: greet.message };
+          } else if (!greet.message) {
+            parsedMessage = {};
+          }
+        } catch {
+          parsedMessage = greet.message ? { content: greet.message } : {};
+        }
+
+        return {
+          ...greet,
+          message: parsedMessage
+        };
+      });
+
       greetType = await multiGreetApi.getMultiGreetType(guildId);
     } catch (err) {
       logger.error("Failed to fetch greets:", err);
@@ -116,12 +139,13 @@
     }
   }
 
-  async function updateMessage(id: number, message: string) {
+  async function updateMessage(id: number, message: any) {
     try {
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, message);
+      const messageToSend = typeof message === "string" ? message : (Object.keys(message).length > 0 ? JSON.stringify(message) : "");
+      await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, messageToSend);
       showNotificationMessage("Message updated successfully");
       editMessage = null;
       await fetchGreets();
@@ -394,67 +418,34 @@
               <div class="p-4 space-y-6">
                 <!-- Message Section -->
                 <div class="space-y-3">
-                  {#if editMessage?.id === greet.id}
-                    <div class="space-y-3">
-                      <label for="edit-greeting-message-{greet.id}" class="sr-only">Edit Greeting Message</label>
-                      <textarea
-                        id="edit-greeting-message-{greet.id}"
-                        bind:value={editMessage.message}
-                        class="w-full min-h-[120px] p-3 rounded-lg border resize-none focus:ring-2"
-                        style="background: {$colorStore.primary}10;
-                               border-color: {$colorStore.primary}30;
-                               color: {$colorStore.text}"
-                        placeholder="Enter greeting message..."
-                        aria-label="Edit greeting message for greet {greet.id}"
-                      ></textarea>
-                      <div class="flex gap-2">
-                        <button
-                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
-                          onclick={() => editMessage && updateMessage(greet.id, editMessage.message)}
-                        >
-                          <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                          Save
-                        </button>
-                        <button
-                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
-                          style="background: {$colorStore.primary}20; color: {$colorStore.text}"
-                          onclick={() => editMessage = null}
-                        >
-                          <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  {:else}
-                    <div class="flex justify-between items-start gap-4">
-                        <div class="grow">
-                        <h4 class="text-sm font-medium mb-2 flex items-center gap-2"
-                            style="color: {$colorStore.text}">
-                          <i class="fa-solid fa-comment" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                          Message
-                        </h4>
-                        <div
-                          class="text-sm break-words p-3 rounded-lg"
-                          style="background: {$colorStore.primary}10;"
-                        >
-                          {#if greet.message}
-                            <p class="whitespace-pre-wrap" style="color: {$colorStore.text}">{greet.message}</p>
-                          {:else}
-                            <p style="color: {$colorStore.muted}">No message set</p>
-                          {/if}
-                        </div>
-                      </div>
-                      <button aria-label="Edit message"
-                        class="p-2 rounded-lg transition-all duration-200"
-                        style="background: {$colorStore.primary}10;
-                               color: {$colorStore.muted}"
-                        onclick={() => editMessage = { id: greet.id, message: greet.message ?? "" }}
-                      >
-                        <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
-                      </button>
-                    </div>
-                  {/if}
+                  <h4 class="text-sm font-medium flex items-center gap-2"
+                      style="color: {$colorStore.text}">
+                    <i class="fa-solid fa-comment" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                    Greeting Message
+                  </h4>
+
+                  <FullscreenEmbedBuilder
+                    value={greet.message}
+                    previewTitle="Greeting Message #{greet.id}"
+                    previewDescription="Message sent when users join"
+                    icon="fa-comment"
+                    allowContent={true}
+                    allowMultipleEmbeds={true}
+                    maxEmbeds={10}
+                    allowComponents={true}
+                    additionalPlaceholders={[
+                      { category: "Join", name: "%user%", description: "Username" },
+                      { category: "Join", name: "%user.mention%", description: "Mention the user" },
+                      { category: "Join", name: "%user.id%", description: "User ID" },
+                      { category: "Join", name: "%user.avatar%", description: "User's avatar URL" },
+                      { category: "Server", name: "%server%", description: "Server name" },
+                      { category: "Server", name: "%server.members%", description: "Member count" }
+                    ]}
+                    guildId={$currentGuild?.id}
+                    user={data.user}
+                    placeholder="Click to configure greeting message"
+                    onchange={(newValue) => updateMessage(greet.id, newValue)}
+                  />
                 </div>
 
                 <!-- Delete Time Section -->
@@ -475,8 +466,8 @@
                       </div>
                       <div class="flex gap-2">
                         <button
-                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[44px]"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                           onclick={() => editDeleteTime && updateDeleteTime(greet.id, editDeleteTime.time)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>
@@ -556,8 +547,8 @@
                       </div>
                       <div class="flex gap-2">
                         <button
-                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2"
-                          style="background: {$colorStore.primary}; color: {$colorStore.text}"
+                          class="flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2 min-h-[44px]"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                           onclick={() => updateWebhook(greet.id)}
                         >
                           <i class="fa-solid fa-check" style="font-size: 16px;"></i>

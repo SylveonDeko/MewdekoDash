@@ -1,11 +1,11 @@
 <!-- routes/dashboard/feeds/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { feedsApi, clientApi, type FeedSub } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+    import { onMount } from "svelte";
+    import { fade, fly } from "svelte/transition";
+    import { colorStore } from "$lib/stores/colorStore";
+    import { currentGuild } from "$lib/stores/currentGuild";
+    import { clientApi, feedsApi, type FeedSub } from "$lib/api/index.ts";
+    import { logger } from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -278,15 +278,20 @@
                                         ></textarea>
                                         <div class="flex gap-2">
                                             <button
-                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                                                    style="background: {$colorStore.primary}; color: white;"
+                                              aria-label="Save feed message"
+                                              aria-busy={saving}
+                                              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                               onclick={() => updateFeedMessage(feed.id)}
                                                     disabled={saving}
                                             >
-                                                Save
+                                              <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}"
+                                                 style="font-size: 16px;"></i>
+                                              {saving ? "Saving..." : "Save"}
                                             </button>
                                             <button
-                                              class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                                              aria-label="Cancel editing"
+                                              class="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
                                                     style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                                     onclick={() => editingFeed = null}
                                             >
@@ -365,13 +370,14 @@
                         </p>
                     </div>
 
-                    <button aria-label="Add"
-                            class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
+                  <button aria-label="Add RSS Feed"
+                          aria-busy={saving}
+                          class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                             onclick={addFeed}
                             disabled={saving || !newFeed.channelId || !newFeed.url.trim()}
                     >
-                        <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
+                    <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"></i>
                         {saving ? "Adding..." : "Add RSS Feed"}
                     </button>
                 </div>

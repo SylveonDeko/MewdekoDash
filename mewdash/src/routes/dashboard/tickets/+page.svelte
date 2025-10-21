@@ -1031,6 +1031,7 @@
 
     {#if activeTab === 'panels'}
       <PanelsTab
+        {data}
         {panels}
         {panelStatuses}
         {checkingPanelStatus}

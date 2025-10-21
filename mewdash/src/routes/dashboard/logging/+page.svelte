@@ -237,7 +237,7 @@
             label: "Save Configuration",
             icon: "fa-floppy-disk",
             action: saveConfiguration,
-            style: `background: ${$colorStore.primary}; color: white; box-shadow: 0 4px 12px ${$colorStore.primary}30;`
+          style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30; box-shadow: 0 4px 12px ${$colorStore.primary}15;`
         }
     ] : []);
     // Reactive: Separate ignored and active channels for better UX

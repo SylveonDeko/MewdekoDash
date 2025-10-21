@@ -1,15 +1,23 @@
 <!-- routes/dashboard/statusroles/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import { statusRolesApi, clientApi, type StatusRole } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+  import { onMount } from "svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { clientApi, type StatusRole, statusRolesApi } from "$lib/api/index.ts";
+  import { logger } from "$lib/logger";
 
-    import StatCard from "$lib/components/monitoring/StatCard.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import StatCard from "$lib/components/monitoring/StatCard.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import type { PageData } from "./$types";
+
+  interface Props {
+      data: PageData;
+    }
+
+    let { data }: Props = $props();
 
     // Component state
     let loading = $state(false);
@@ -31,7 +39,7 @@
         addRoles: "",
         removeRoles: "",
         channelId: null as string | null,
-        embedText: ""
+      embedText: {} as any
     });
 
     // UI state
@@ -137,14 +145,17 @@
               promises.push(statusRolesApi.setStatusChannel($currentGuild.id, id, BigInt(editForm.channelId)));
             }
 
-            if (editForm.embedText) {
-              promises.push(statusRolesApi.setStatusEmbed($currentGuild.id, id, editForm.embedText));
+          if (editForm.embedText && Object.keys(editForm.embedText).length > 0) {
+            const embedTextToSend = typeof editForm.embedText === "object"
+              ? JSON.stringify(editForm.embedText)
+              : editForm.embedText;
+            promises.push(statusRolesApi.setStatusEmbed($currentGuild.id, id, embedTextToSend));
             }
 
             await Promise.all(promises);
             showMessage("Status role settings updated!", "success");
             editingRole = null;
-            editForm = { addRoles: "", removeRoles: "", channelId: null, embedText: "" };
+          editForm = { addRoles: "", removeRoles: "", channelId: null, embedText: {} as any };
             await loadAllStatusRoleData();
         } catch (err) {
             logger.error("Failed to update status role:", err);
@@ -189,11 +200,26 @@
     // Start editing a role
     function startEditing(role: typeof statusRoles[0]) {
         editingRole = role.id;
+
+      // Parse embedText if it's a JSON string
+      let parsedEmbedText: any = role.statusEmbed || {};
+      try {
+        if (typeof parsedEmbedText === "string" && parsedEmbedText.trim().startsWith("{")) {
+          parsedEmbedText = JSON.parse(parsedEmbedText);
+        } else if (typeof parsedEmbedText === "string" && parsedEmbedText) {
+          parsedEmbedText = { content: parsedEmbedText };
+        } else if (!parsedEmbedText) {
+          parsedEmbedText = {};
+        }
+      } catch {
+        parsedEmbedText = parsedEmbedText ? { content: parsedEmbedText } : {};
+      }
+
         editForm = {
             addRoles: role.toAdd || "",
             removeRoles: role.toRemove || "",
             channelId: role.statusChannelId ? role.statusChannelId.toString() : null,
-            embedText: role.statusEmbed || ""
+          embedText: parsedEmbedText
         };
     }
 
@@ -393,27 +419,45 @@
                                                 </div>
 
                                                 <div>
-                                                  <label for="input-1942" class="block text-sm font-medium mb-2"
+                                                  <label class="block text-sm font-medium mb-3"
                                                          style="color: {$colorStore.text}">
-                                                        Embed Text
-                                                    </label>
-                                                    <textarea
-                                                            bind:value={editForm.embedText}
-                                                            placeholder="Custom embed text..."
-                                                            rows="2"
-                                                            class="w-full p-3 rounded-xl border resize-none"
-                                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                                    ></textarea>
+                                                    <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
+                                                    Notification Message
+                                                  </label>
+
+                                                  <FullscreenEmbedBuilder
+                                                    bind:value={editForm.embedText}
+                                                    previewTitle="Status Role Notification"
+                                                    previewDescription="Message sent when status is detected"
+                                                    icon="fa-user-check"
+                                                    allowContent={true}
+                                                    allowMultipleEmbeds={true}
+                                                    maxEmbeds={10}
+                                                    allowComponents={true}
+                                                    additionalPlaceholders={[
+                                                      { category: "User", name: "%user%", description: "Username" },
+                                                      { category: "User", name: "%user.mention%", description: "Mention the user" },
+                                                      { category: "Status", name: "%status%", description: "The detected status text" },
+                                                      { category: "Server", name: "%server%", description: "Server name" }
+                                                    ]}
+                                                    guildId={$currentGuild?.id}
+                                                    user={data.user}
+                                                    placeholder="Click to configure notification message"
+                                                  />
                                                 </div>
 
                                                 <div class="flex gap-2">
                                                     <button
-                                                      class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
-                                                            style="background: {$colorStore.primary}; color: white;"
-                                                            onclick={() => updateStatusRoleSettings(role.id)}
-                                                            disabled={saving}
+                                                      class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                                                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
+                                                      onclick={() => updateStatusRoleSettings(role.id)}
+                                                      disabled={saving}
+                                                      aria-busy={saving}
+                                                      aria-label="Save Status Role Settings"
                                                     >
-                                                        Save
+                                                      <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}"
+                                                         style="font-size: 18px;" aria-hidden="true"></i>
+                                                      <span class="text-sm sm:text-base">Save</span>
                                                     </button>
                                                     <button
                                                       class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02]"
@@ -500,15 +544,18 @@
                         </p>
                     </div>
 
-                  <button aria-label="Add"
-                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
-                            onclick={addStatusRole}
-                            disabled={saving || !newStatusRole.status.trim()}
-                    >
-                    <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-                        {saving ? "Adding..." : "Add Status Role"}
-                    </button>
+                  <button
+                    class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
+                    onclick={addStatusRole}
+                    disabled={saving || !newStatusRole.status.trim()}
+                    aria-busy={saving}
+                    aria-label="Add Status Role"
+                  >
+                    <i class="fa-solid fa-plus {saving ? 'fa-spin' : ''}" style="font-size: 18px;"
+                       aria-hidden="true"></i>
+                    <span class="text-sm sm:text-base">{saving ? "Adding..." : "Add Status Role"}</span>
+                  </button>
 
                     <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;">
                         <p class="text-sm" style="color: {$colorStore.text}">

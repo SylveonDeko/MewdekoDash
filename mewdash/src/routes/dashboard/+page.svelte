@@ -1234,16 +1234,19 @@
                                                 {/if}
 
                                                 <button
+                                                  aria-label="View Server on Discord"
                                                         in:fade={{ duration: 200, delay: 200 }}
                                                         out:fade={{ duration: 200 }}
-                                                        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-[1.02] hover:shadow-lg transform"
+                                                  class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                                                         class:!px-3={compactMode}
                                                         class:!py-1.5={compactMode}
                                                         class:!text-sm={compactMode}
-                                                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                                                  class:!min-h-[36px]={compactMode}
+                                                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                                         onclick={() => window.open(`https://discord.com/channels/${$currentGuild.id}`, '_blank')}
                                                 >
-                                                    <i class="fa-utility-duo fa-regular fa-link {compactMode ? 'text-sm' : ''}"
+                                                  <i
+                                                    class="fa-utility-duo fa-regular fa-link {compactMode ? 'text-sm' : 'text-base'}"
                                                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                                                     <span class="hidden sm:inline">View Server</span>
                                                 </button>
@@ -1472,8 +1475,9 @@
 
                         <div class="mt-3 flex gap-2">
                             <button
-                              class="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                                    style="background: {$colorStore.primary}; color: white;"
+                              aria-label="Open Music Player"
+                              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                                     onclick={() => {
                 showMusicNotification = false;
                 goto('/dashboard/music');
@@ -1482,8 +1486,9 @@
                                 Open Music Player
                             </button>
                             <button
-                              class="px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
-                                    style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                              aria-label="Dismiss notification"
+                              class="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                                     onclick={() => showMusicNotification = false}
                             >
                                 Dismiss

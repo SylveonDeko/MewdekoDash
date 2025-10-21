@@ -3,23 +3,31 @@
 
 
     import { onMount } from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
+    import { fade, fly } from "svelte/transition";
+    import { colorStore } from "$lib/stores/colorStore";
+    import { currentGuild } from "$lib/stores/currentGuild";
     import {
         birthdayApi,
-        clientApi,
-        BirthdayFeatures,
         type BirthdayConfig,
         type BirthdayConfigRequest,
+        BirthdayFeatures,
+        type BirthdayStats,
         type BirthdayUser,
-        type BirthdayStats
+        clientApi
     } from "$lib/api/index.ts";
-    import {logger} from "$lib/logger";
+    import { logger } from "$lib/logger";
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+    import type { PageData } from "./$types";
+
+    interface Props {
+      data: PageData;
+    }
+
+    let { data }: Props = $props();
 
     // Helper functions for birthday features
     function hasBirthdayFeature(enabledFeatures: number, feature: BirthdayFeatures): boolean {
@@ -70,7 +78,7 @@
     let configForm: BirthdayConfigRequest = $state({
         birthdayChannelId: null,
         birthdayRoleId: null,
-        birthdayMessage: null,
+      birthdayMessage: {} as any,
         birthdayPingRoleId: null,
         birthdayReminderDays: 1,
         defaultTimezone: "UTC"
@@ -85,10 +93,24 @@
     // Initialize data
     $effect(() => {
         if (birthdayConfig) {
+          // Parse birthdayMessage if it's a JSON string
+          let parsedMessage = birthdayConfig.birthdayMessage;
+          try {
+            if (typeof parsedMessage === "string" && parsedMessage.trim().startsWith("{")) {
+              parsedMessage = JSON.parse(parsedMessage);
+            } else if (typeof parsedMessage === "string" && parsedMessage) {
+              parsedMessage = { content: parsedMessage };
+            } else if (!parsedMessage) {
+              parsedMessage = {};
+            }
+          } catch {
+            parsedMessage = parsedMessage ? { content: parsedMessage } : {};
+          }
+
             configForm = {
                 birthdayChannelId: birthdayConfig.birthdayChannelId,
                 birthdayRoleId: birthdayConfig.birthdayRoleId,
-                birthdayMessage: birthdayConfig.birthdayMessage,
+              birthdayMessage: parsedMessage as any,
                 birthdayPingRoleId: birthdayConfig.birthdayPingRoleId,
                 birthdayReminderDays: birthdayConfig.birthdayReminderDays,
                 defaultTimezone: birthdayConfig.defaultTimezone
@@ -178,7 +200,17 @@
 
         saving = true;
         try {
-            await birthdayApi.updateBirthdayConfig($currentGuild.id, configForm);
+          // Serialize birthdayMessage if it's an object
+          const messageToSend = typeof configForm.birthdayMessage === "object" && Object.keys(configForm.birthdayMessage).length > 0
+            ? JSON.stringify(configForm.birthdayMessage)
+            : (typeof configForm.birthdayMessage === "string" ? configForm.birthdayMessage : null);
+
+          const configToSave = {
+            ...configForm,
+            birthdayMessage: messageToSend
+          };
+
+          await birthdayApi.updateBirthdayConfig($currentGuild.id, configToSave);
             showMessage("Birthday configuration saved successfully!", "success");
             // Reload to get updated config
             await loadAllBirthdayData();
@@ -471,39 +503,59 @@
                     </div>
 
                     <div>
-                      <label for="birthday-message" class="block text-sm font-medium mb-2"
+                      <label class="block text-sm font-medium mb-3"
                              style="color: {$colorStore.text}">
-                            Custom Birthday Announcement
-                        </label>
-                      <textarea id="birthday-message"
-                                bind:value={configForm.birthdayMessage}
-                                placeholder="🎉 Happy Birthday %user.mention%! 🎂 Hope you have a wonderful day!"
-                                rows="3"
-                                class="w-full p-3 rounded-xl border transition-all resize-none min-h-[100px] text-base"
-                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                        ></textarea>
-                        <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                            Available placeholders: %user.mention%, %user.name%, %user.displayname%, %birthday.age%, %server.name%,
-                            %server.time%. Leave empty for default message.
-                        </p>
+                        <i class="fa-solid fa-gift" style="font-size: 14px;"></i>
+                        Custom Birthday Announcement
+                      </label>
+
+                      <FullscreenEmbedBuilder
+                        bind:value={configForm.birthdayMessage}
+                        previewTitle="Birthday Message"
+                        previewDescription="Message sent when it's someone's birthday"
+                        icon="fa-gift"
+                        allowContent={true}
+                        allowMultipleEmbeds={true}
+                        maxEmbeds={10}
+                        allowComponents={true}
+                        additionalPlaceholders={[
+                          { category: "Birthday", name: "%user.mention%", description: "Mention the birthday user" },
+                          { category: "Birthday", name: "%user.name%", description: "Birthday user's name" },
+                          { category: "Birthday", name: "%user.displayname%", description: "Birthday user's display name" },
+                          { category: "Birthday", name: "%birthday.age%", description: "User's new age" },
+                          { category: "Server", name: "%server.name%", description: "Server name" },
+                          { category: "Server", name: "%server.time%", description: "Current server time" }
+                        ]}
+                        guildId={$currentGuild?.id}
+                        user={data.user}
+                        placeholder="Click to configure birthday message with rich embeds"
+                      />
+
+                      <p class="text-xs mt-3" style="color: {$colorStore.muted}">
+                        Leave empty for default birthday message. Supports rich embeds and placeholders for
+                        personalization.
+                      </p>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4">
-                  <button aria-label="Button action"
-                          class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.primary}; color: white;"
-                            onclick={saveConfig}
-                            disabled={saving}
-                    >
-                        <i class="fa-solid fa-floppy-disk" style="font-size: 20px;"></i>
-                        {saving ? "Saving..." : "Save Configuration"}
-                    </button>
+                  <button
+                    class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
+                    onclick={saveConfig}
+                    disabled={saving}
+                    aria-busy={saving}
+                    aria-label="Save Configuration"
+                  >
+                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 18px;"
+                       aria-hidden="true"></i>
+                    <span class="text-sm sm:text-base">{saving ? "Saving..." : "Save Configuration"}</span>
+                  </button>
 
                     <button
-                      class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                            style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                      class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+                      style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
                             onclick={resetConfig}
                             disabled={saving}
                     >

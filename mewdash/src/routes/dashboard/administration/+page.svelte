@@ -169,7 +169,7 @@
   let commandCooldowns: Array<{ command: string; cooldown: number }> = $state([]);
 
   // Advanced Operations
-  let banMessage: string = $state("");
+  let banMessage: any = $state({});
 
   // Available data
   let availableRoles: any[] = $state([]);
@@ -334,8 +334,13 @@
         // Command Cooldowns
         commandCooldowns = (commandCooldownsData as any) || [];
 
-        // Advanced Operations
-        banMessage = typeof banMessageData === "string" ? banMessageData : ((banMessageData as any)?.message || "");
+        // Advanced Operations - parse JSON string into object if present
+        const banMessageStr = typeof banMessageData === "string" ? banMessageData : ((banMessageData as any)?.message || "");
+        try {
+          banMessage = banMessageStr && banMessageStr.trim().startsWith("{") ? JSON.parse(banMessageStr) : (banMessageStr ? { content: banMessageStr } : {});
+        } catch {
+          banMessage = banMessageStr ? { content: banMessageStr } : {};
+        }
 
         // Process commands and modules data
         if (commandsAndModulesData) {
@@ -881,7 +886,10 @@
 
     try {
       saving = true;
-      await administrationApi.setBanMessage($currentGuild.id, { message: banMessage });
+      const messageToSend = typeof banMessage === "object" && Object.keys(banMessage).length > 0
+        ? JSON.stringify(banMessage)
+        : (typeof banMessage === "string" ? banMessage : "");
+      await administrationApi.setBanMessage($currentGuild.id, { message: messageToSend });
       await fetchAllData();
     } catch (err) {
       logger.error("Failed to save ban message:", err);
@@ -1090,6 +1098,8 @@
         {saveBanMessage}
         {showConfirm}
         {fetchAllData}
+        guildId={$currentGuild?.id}
+        user={data.user}
       />
     {/if}
   {/if}

@@ -154,18 +154,20 @@
             </div>
 
             <div>
-              <label for="channel-state" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">State</label>
-              <select
-                id="channel-state"
-                bind:value={channelState}
-                class="w-full px-3 py-2 rounded-lg border transition-colors"
-                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              >
-                <option value="enable">Enable (Always delete)</option>
-                <option value="disable">Disable (Never delete)</option>
-                <option value="inherit">Inherit (Use global setting)</option>
-              </select>
+              <span class="block text-sm font-medium mb-2"
+                    style="color: {$colorStore.text}">State</span>
+              <DiscordSelector
+                type="custom"
+                customIcon="fa-gear"
+                options={[
+                  { id: "enable", name: "Enable (Always delete)" },
+                  { id: "disable", name: "Disable (Never delete)" },
+                  { id: "inherit", name: "Inherit (Use global setting)" }
+                ]}
+                bind:selected={channelState}
+                placeholder="Select state..."
+                searchable={false}
+              />
             </div>
           </div>
 

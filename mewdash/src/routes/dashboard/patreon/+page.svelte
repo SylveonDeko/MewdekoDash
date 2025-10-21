@@ -1,25 +1,26 @@
 <!-- routes/dashboard/patreon/+page.svelte -->
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {
-      patreonApi,
-      clientApi,
-      type PatreonConfigUpdateRequest,
-      type PatreonOAuthStatusResponse
-    } from "$lib/api/index.ts";
-    import type {PageData} from "./$types";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {fade, fly} from "svelte/transition";
-    import {goto, invalidateAll} from "$app/navigation";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import {browser} from "$app/environment";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger";
-    import {userStore} from "$lib/stores/userStore";
+  import { onMount } from "svelte";
+  import {
+    clientApi,
+    patreonApi,
+    type PatreonConfigUpdateRequest,
+    type PatreonOAuthStatusResponse
+  } from "$lib/api/index.ts";
+  import type { PageData } from "./$types";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { fade, fly } from "svelte/transition";
+  import { goto, invalidateAll } from "$app/navigation";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import Notification from "$lib/components/ui/Notification.svelte";
+  import { browser } from "$app/environment";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
+  import { userStore } from "$lib/stores/userStore";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
 
-    interface Props {
+  interface Props {
         data: PageData;
     }
 
@@ -52,7 +53,7 @@
   // Config form state
     let configForm: PatreonConfigUpdateRequest = $state({
     channelId: undefined,
-    message: undefined,
+      message: {} as any,
     announcementDay: undefined,
     toggleAnnouncements: undefined,
     toggleRoleSync: undefined
@@ -173,10 +174,27 @@
     if (!$currentGuild) return;
     try {
       patreonConfig = await patreonApi.getPatreonConfig(BigInt($currentGuild.id));
+
+      // Parse message if it's a JSON string
+      let parsedMessage: any = patreonConfig.patreonMessage || undefined;
+      if (parsedMessage && typeof parsedMessage === "string") {
+        try {
+          if (parsedMessage.trim().startsWith("{")) {
+            parsedMessage = JSON.parse(parsedMessage);
+          } else {
+            parsedMessage = { content: parsedMessage };
+          }
+        } catch {
+          parsedMessage = { content: parsedMessage };
+        }
+      } else if (!parsedMessage) {
+        parsedMessage = {};
+      }
+
       // Populate form with current config
       configForm = {
         channelId: patreonConfig.patreonChannelId || undefined,
-        message: patreonConfig.patreonMessage || undefined,
+        message: parsedMessage,
         announcementDay: patreonConfig.patreonAnnouncementDay || undefined,
         toggleAnnouncements: patreonConfig.patreonEnabled,
         toggleRoleSync: patreonConfig.patreonRoleSync
@@ -306,7 +324,18 @@
 
     try {
       isUpdatingConfig = true;
-      patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configForm);
+
+      // Serialize message if it's an object
+      const messageToSend = typeof configForm.message === "object" && Object.keys(configForm.message).length > 0
+        ? JSON.stringify(configForm.message)
+        : (typeof configForm.message === "string" ? configForm.message : undefined);
+
+      const configToSave = {
+        ...configForm,
+        message: messageToSend
+      };
+
+      patreonConfig = await patreonApi.updatePatreonConfig(BigInt($currentGuild.id), configToSave);
       showNotificationMessage("Configuration updated successfully!", "success");
     } catch (err) {
       logger.error("Failed to update config:", err);
@@ -923,16 +952,29 @@
                 </div>
 
                 <div>
-                  <label for="custom-message" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">Custom
-                    Message</label>
-                  <textarea
-                    id="custom-message"
+                  <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
+                    <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
+                    Custom Announcement Message
+                  </label>
+
+                  <FullscreenEmbedBuilder
                     bind:value={configForm.message}
-                    rows="3"
-                    class="w-full px-3 py-2 rounded-lg border"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.text}; border-color: {$colorStore.primary}30;"
-                    placeholder="Custom announcement message..."
-                  ></textarea>
+                    previewTitle="Patreon Announcement"
+                    previewDescription="Message sent for Patreon announcements"
+                    icon="fa-heart"
+                    allowContent={true}
+                    allowMultipleEmbeds={true}
+                    maxEmbeds={10}
+                    allowComponents={true}
+                    additionalPlaceholders={[
+                      { category: "Patreon", name: "%patron.name%", description: "Patron's name" },
+                      { category: "Patreon", name: "%patron.tier%", description: "Patron's tier" },
+                      { category: "Patreon", name: "%patron.amount%", description: "Pledge amount" }
+                    ]}
+                    guildId={$currentGuild?.id}
+                    user={data.user}
+                    placeholder="Click to configure announcement message with rich embeds"
+                  />
                 </div>
 
                 <div class="flex items-center gap-4">

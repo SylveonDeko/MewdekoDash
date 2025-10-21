@@ -3,11 +3,11 @@
 
 
   import { onDestroy, onMount } from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
-    let mounted = $state(false);
+  let mounted = $state(false);
     let searchQuery = $state("");
     let selectedCategory = $state("all");
     let copiedPlaceholder = $state("");
@@ -16,22 +16,205 @@
   // Category options for DiscordSelector
   const categoryOptions = [
     { id: "all", name: "All Categories", icon: "fa-globe" },
-    { id: "afk", name: "AFK", icon: "fa-moon" },
-    { id: "suggest", name: "Suggestions", icon: "fa-lightbulb" },
     { id: "user", name: "User", icon: "fa-user" },
     { id: "server", name: "Server", icon: "fa-server" },
+    { id: "channel", name: "Channel", icon: "fa-hashtag" },
+    { id: "bot", name: "Bot", icon: "fa-robot" },
+    { id: "time", name: "Time/Date", icon: "fa-clock" },
+    { id: "stats", name: "Stats/Shard", icon: "fa-chart-bar" },
+    { id: "random", name: "Random", icon: "fa-dice" },
+    { id: "gifs", name: "Reaction GIFs", icon: "fa-image" },
+    { id: "afk", name: "AFK", icon: "fa-moon" },
+    { id: "suggest", name: "Suggestions", icon: "fa-lightbulb" },
     { id: "stream", name: "Stream", icon: "fa-video" },
     { id: "birthday", name: "Birthday", icon: "fa-cake-candles" },
     { id: "chat-trigger", name: "Chat Triggers", icon: "fa-bolt" },
     { id: "giveaway", name: "Giveaway", icon: "fa-gift" },
     { id: "ban", name: "Moderation/Ban", icon: "fa-gavel" },
     { id: "inviter", name: "Inviter", icon: "fa-envelope" },
-    { id: "xp", name: "XP System", icon: "fa-star" },
-    { id: "random", name: "Random", icon: "fa-dice" }
+    { id: "xp", name: "XP System", icon: "fa-star" }
   ];
 
   // Placeholder data structure
   const placeholderCategories = [
+    {
+      id: "user",
+      name: "User",
+      description: "User-related placeholders",
+      placeholders: [
+        { code: "%user%", description: "User mention", example: "@Username" },
+        { code: "%user.mention%", description: "Mention the user", example: "@Username" },
+        { code: "%user.id%", description: "User ID", example: "123456789012345678" },
+        { code: "%user.name%", description: "Username", example: "Username" },
+        { code: "%user.fullname%", description: "Username#discriminator", example: "Username#1234" },
+        { code: "%user.discrim%", description: "User discriminator", example: "1234" },
+        { code: "%user.avatar%", description: "User's avatar URL", example: "https://cdn.discordapp.com/avatars/..." },
+        { code: "%user.banner%", description: "User's banner URL", example: "https://cdn.discordapp.com/banners/..." },
+        { code: "%user.created_time%", description: "Account creation time (HH:mm)", example: "14:30" },
+        { code: "%user.created_date%", description: "Account creation date (dd.MM.yyyy)", example: "15.06.2020" },
+        { code: "%user.joined_time%", description: "Server join time (HH:mm)", example: "09:45" },
+        { code: "%user.joined_date%", description: "Server join date (dd.MM.yyyy)", example: "22.03.2023" }
+      ]
+    },
+    {
+      id: "server",
+      name: "Server",
+      description: "Server-related placeholders",
+      placeholders: [
+        { code: "%server%", description: "Server name", example: "My Cool Server" },
+        { code: "%server.name%", description: "Server name", example: "My Cool Server" },
+        { code: "%server.id%", description: "Server ID", example: "987654321098765432" },
+        { code: "%server.icon%", description: "Server icon URL", example: "https://cdn.discordapp.com/icons/..." },
+        {
+          code: "%server.banner%",
+          description: "Server banner URL",
+          example: "https://cdn.discordapp.com/banners/..."
+        },
+        { code: "%server.members%", description: "Total member count", example: "1,234" },
+        { code: "%server.members.online%", description: "Online members count", example: "523" },
+        { code: "%server.members.offline%", description: "Offline members count", example: "711" },
+        { code: "%server.members.dnd%", description: "Do Not Disturb members count", example: "45" },
+        { code: "%server.members.idle%", description: "Idle members count", example: "89" },
+        { code: "%server.boostlevel%", description: "Server boost level (0-3)", example: "2" },
+        { code: "%server.boostcount%", description: "Server boost count", example: "14" },
+        { code: "%server.time%", description: "Current server time with timezone", example: "14:30 PST" },
+        {
+          code: "%server.timestamp.longdatetime%",
+          description: "Discord long date/time timestamp",
+          example: "<t:1234567890:F>"
+        },
+        {
+          code: "%server.timestamp.longtime%",
+          description: "Discord long time timestamp",
+          example: "<t:1234567890:T>"
+        },
+        {
+          code: "%server.timestamp.longdate%",
+          description: "Discord long date timestamp",
+          example: "<t:1234567890:D>"
+        },
+        {
+          code: "%server.timestamp.shortdatetime%",
+          description: "Discord short date/time timestamp",
+          example: "<t:1234567890>"
+        }
+      ]
+    },
+    {
+      id: "channel",
+      name: "Channel",
+      description: "Channel-related placeholders",
+      placeholders: [
+        { code: "%channel%", description: "Channel mention", example: "#general" },
+        { code: "%channel.mention%", description: "Channel mention", example: "#general" },
+        { code: "%channel.name%", description: "Channel name", example: "general" },
+        { code: "%channel.id%", description: "Channel ID", example: "123456789012345678" },
+        { code: "%channel.created%", description: "Channel creation date/time", example: "14:30 15.06.2020" },
+        { code: "%channel.nsfw%", description: "Whether channel is NSFW", example: "True" },
+        { code: "%channel.topic%", description: "Channel topic", example: "Welcome to the general chat!" }
+      ]
+    },
+    {
+      id: "bot",
+      name: "Bot",
+      description: "Bot-related placeholders",
+      placeholders: [
+        { code: "%bot.status%", description: "Bot's current status", example: "Online" },
+        { code: "%bot.latency%", description: "Bot's latency in ms", example: "45" },
+        { code: "%bot.name%", description: "Bot's username", example: "Mewdeko" },
+        { code: "%bot.fullname%", description: "Bot's username#discriminator", example: "Mewdeko#0000" },
+        { code: "%bot.discrim%", description: "Bot's discriminator", example: "0000" },
+        { code: "%bot.id%", description: "Bot's user ID", example: "752236274261426994" },
+        { code: "%bot.avatar%", description: "Bot's avatar URL", example: "https://cdn.discordapp.com/avatars/..." },
+        { code: "%bot.time%", description: "Current time with timezone", example: "14:30 PST" }
+      ]
+    },
+    {
+      id: "time",
+      name: "Time/Date",
+      description: "Time and date placeholders",
+      placeholders: [
+        { code: "%time.month%", description: "Current month name", example: "December" },
+        { code: "%time.day%", description: "Current day name", example: "Monday" },
+        { code: "%time.year%", description: "Current year", example: "2025" }
+      ]
+    },
+    {
+      id: "stats",
+      name: "Stats/Shard",
+      description: "Bot statistics and shard information",
+      placeholders: [
+        { code: "%shard.servercount%", description: "Number of servers on this shard", example: "1,234" },
+        { code: "%shard.usercount%", description: "Number of users on this shard", example: "456,789" }
+      ]
+    },
+    {
+      id: "random",
+      name: "Random",
+      description: "Random generation placeholders",
+      placeholders: [
+        { code: "%rng%", description: "Random number (0-10)", example: "7" },
+        { code: "%rng(1,100)%", description: "Random number between specified range", example: "42" },
+        { code: "%choose(a|b|c)%", description: "Choose randomly from pipe-separated options", example: "b" },
+        { code: "%target%", description: "Text after the trigger", example: "user input text" },
+        { code: "%img:query%", description: "Imgur search for 'query'", example: "https://imgur.com/..." }
+      ]
+    },
+    {
+      id: "gifs",
+      name: "Reaction GIFs",
+      description: "Animated reaction GIFs from nekos.best API",
+      placeholders: [
+        { code: "%bakagif%", description: "Random baka reaction GIF", example: "https://nekos.best/api/v2/baka" },
+        { code: "%bitegif%", description: "Random bite reaction GIF", example: "https://nekos.best/api/v2/bite" },
+        { code: "%blushgif%", description: "Random blush reaction GIF", example: "https://nekos.best/api/v2/blush" },
+        { code: "%boredgif%", description: "Random bored reaction GIF", example: "https://nekos.best/api/v2/bored" },
+        { code: "%crygif%", description: "Random cry reaction GIF", example: "https://nekos.best/api/v2/cry" },
+        { code: "%cuddlegif%", description: "Random cuddle reaction GIF", example: "https://nekos.best/api/v2/cuddle" },
+        { code: "%dancegif%", description: "Random dance reaction GIF", example: "https://nekos.best/api/v2/dance" },
+        {
+          code: "%facepalmgif%",
+          description: "Random facepalm reaction GIF",
+          example: "https://nekos.best/api/v2/facepalm"
+        },
+        { code: "%feedgif%", description: "Random feed reaction GIF", example: "https://nekos.best/api/v2/feed" },
+        {
+          code: "%handholdgif%",
+          description: "Random handhold reaction GIF",
+          example: "https://nekos.best/api/v2/handhold"
+        },
+        { code: "%happygif%", description: "Random happy reaction GIF", example: "https://nekos.best/api/v2/happy" },
+        {
+          code: "%highfivegif%",
+          description: "Random highfive reaction GIF",
+          example: "https://nekos.best/api/v2/highfive"
+        },
+        { code: "%huggif%", description: "Random hug reaction GIF", example: "https://nekos.best/api/v2/hug" },
+        { code: "%kickgif%", description: "Random kick reaction GIF", example: "https://nekos.best/api/v2/kick" },
+        { code: "%kissgif%", description: "Random kiss reaction GIF", example: "https://nekos.best/api/v2/kiss" },
+        { code: "%laughgif%", description: "Random laugh reaction GIF", example: "https://nekos.best/api/v2/laugh" },
+        { code: "%patgif%", description: "Random pat reaction GIF", example: "https://nekos.best/api/v2/pat" },
+        { code: "%pokegif%", description: "Random poke reaction GIF", example: "https://nekos.best/api/v2/poke" },
+        { code: "%poutgif%", description: "Random pout reaction GIF", example: "https://nekos.best/api/v2/pout" },
+        { code: "%punchgif%", description: "Random punch reaction GIF", example: "https://nekos.best/api/v2/punch" },
+        { code: "%shootgif%", description: "Random shoot reaction GIF", example: "https://nekos.best/api/v2/shoot" },
+        { code: "%shruggif%", description: "Random shrug reaction GIF", example: "https://nekos.best/api/v2/shrug" },
+        { code: "%slapgif%", description: "Random slap reaction GIF", example: "https://nekos.best/api/v2/slap" },
+        { code: "%sleepgif%", description: "Random sleep reaction GIF", example: "https://nekos.best/api/v2/sleep" },
+        { code: "%smilegif%", description: "Random smile reaction GIF", example: "https://nekos.best/api/v2/smile" },
+        { code: "%smuggif%", description: "Random smug reaction GIF", example: "https://nekos.best/api/v2/smug" },
+        { code: "%staregif%", description: "Random stare reaction GIF", example: "https://nekos.best/api/v2/stare" },
+        { code: "%thinkgif%", description: "Random think reaction GIF", example: "https://nekos.best/api/v2/think" },
+        {
+          code: "%thumbsupgif%",
+          description: "Random thumbsup reaction GIF",
+          example: "https://nekos.best/api/v2/thumbsup"
+        },
+        { code: "%ticklegif%", description: "Random tickle reaction GIF", example: "https://nekos.best/api/v2/tickle" },
+        { code: "%wavegif%", description: "Random wave reaction GIF", example: "https://nekos.best/api/v2/wave" },
+        { code: "%winkgif%", description: "Random wink reaction GIF", example: "https://nekos.best/api/v2/wink" }
+      ]
+    },
     {
       id: "afk",
       name: "AFK",
@@ -70,31 +253,6 @@
         { code: "%suggest.emote3count%", description: "Count of reactions for emote 3" },
         { code: "%suggest.emote4count%", description: "Count of reactions for emote 4" },
         { code: "%suggest.emote5count%", description: "Count of reactions for emote 5" }
-      ]
-    },
-    {
-      id: "user",
-      name: "User",
-      description: "User-related placeholders",
-      placeholders: [
-        { code: "%user%", description: "Username of the user" },
-        { code: "%user.mention%", description: "Mention the user" },
-        { code: "%user.id%", description: "User ID" },
-        { code: "%user.avatar%", description: "User's avatar URL" },
-        { code: "%user.name%", description: "User's display name" },
-        { code: "%user.nick%", description: "User's nickname in the server" }
-      ]
-    },
-    {
-      id: "server",
-      name: "Server",
-      description: "Server-related placeholders",
-      placeholders: [
-        { code: "%server%", description: "Server name" },
-        { code: "%server.id%", description: "Server ID" },
-        { code: "%server.members%", description: "Number of server members" },
-        { code: "%server.owner%", description: "Server owner username" },
-        { code: "%server.icon%", description: "Server icon URL" }
       ]
     },
     {
@@ -219,17 +377,6 @@
         { code: "%xp.date%", description: "Current date (dd/MM/yyyy format)" },
         { code: "%xp.timestamp%", description: "Discord timestamp for current time" },
         { code: "%xp.timestamp.relative%", description: "Discord relative timestamp for current time" }
-      ]
-    },
-    {
-      id: "random",
-      name: "Random",
-      description: "Random generation placeholders",
-      placeholders: [
-        { code: "%rng%", description: "Random number" },
-        { code: "%rng(1,10)%", description: "Random number between 1 and 10" },
-        { code: "%choose(a|b|c)%", description: "Choose randomly from options" },
-        { code: "%img:stuff%", description: "Returns an imgur.com search for 'stuff' (custom reactions only)" }
       ]
     }
   ];

@@ -3,29 +3,36 @@
 
 
   import { onMount } from "svelte";
-    import {fade, fly} from "svelte/transition";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {
-      repeatersApi,
-      clientApi,
-      type CreateRepeaterRequest,
-      type RepeaterResponse,
-      type UpdateRepeaterRequest,
-        formatInterval,
-        formatTimeUntilNext,
-        getTriggerModeDescription,
-        getTriggerModeLabel,
-        StickyTriggerMode,
-        TIME_SCHEDULE_PRESETS
-    } from "$lib/api/index.ts";
+  import { fade, fly } from "svelte/transition";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import {
+    clientApi,
+    type CreateRepeaterRequest,
+    formatInterval,
+    formatTimeUntilNext,
+    getTriggerModeDescription,
+    getTriggerModeLabel,
+    type RepeaterResponse,
+    repeatersApi,
+    StickyTriggerMode,
+    TIME_SCHEDULE_PRESETS,
+    type UpdateRepeaterRequest
+  } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
 
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
-  import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
+  import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import type { PageData } from "./$types";
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
     // Component state
     let loading = $state(false);
@@ -47,17 +54,13 @@
     let selectedChannelType: 'text' | 'forum' | null = $state(null);
     let selectedForumTags: { required: bigint[], excluded: bigint[] } = $state({required: [], excluded: []});
 
-    let messageContent = $state(""); // Plain text content
-  let messageEmbeds: Array<any> = $state([]);
-  let messageComponents: Array<any> = $state([]);
+  let repeaterMessage: any = $state({}); // Unified message object for FullscreenEmbedBuilder
 
   // UI state
     let activeTab = $state("overview");
     let selectedRepeater: RepeaterResponse | null = $state(null);
     let editingRepeaterId: number | null = $state(null);
     let isEditMode = $state(false);
-  let showEmbedBuilder = $state(false);
-  let showComponentBuilder = $state(false);
   let showAdvancedOptions = $state(false);
   let showForumTagEditor = $state(false);
 
@@ -244,14 +247,7 @@
         forumTagConditionsJson = JSON.stringify(conditions);
       }
 
-      let fullMessage = messageContent;
-      if (messageEmbeds.length > 0 || messageComponents.length > 0) {
-        const messageJson: any = {};
-        if (messageContent.trim()) messageJson.content = messageContent;
-        if (messageEmbeds.length > 0) messageJson.embeds = messageEmbeds;
-        if (messageComponents.length > 0) messageJson.components = messageComponents;
-        fullMessage = JSON.stringify(messageJson);
-      }
+      const fullMessage = Object.keys(repeaterMessage).length > 0 ? JSON.stringify(repeaterMessage) : "";
 
       const request: CreateRepeaterRequest = {
         channelId: BigInt(formData.channelId!),
@@ -317,14 +313,7 @@
         forumTagConditionsJson = JSON.stringify(conditions);
       }
 
-      let fullMessage = messageContent;
-      if (messageEmbeds.length > 0 || messageComponents.length > 0) {
-        const messageJson: any = {};
-        if (messageContent.trim()) messageJson.content = messageContent;
-        if (messageEmbeds.length > 0) messageJson.embeds = messageEmbeds;
-        if (messageComponents.length > 0) messageJson.components = messageComponents;
-        fullMessage = JSON.stringify(messageJson);
-      }
+      const fullMessage = Object.keys(repeaterMessage).length > 0 ? JSON.stringify(repeaterMessage) : "";
 
       const request: UpdateRepeaterRequest = {
         message: fullMessage,
@@ -418,22 +407,16 @@
     selectedRepeater = repeater;
     editingRepeaterId = repeater.id;
     isEditMode = true;
-    
+
     // Parse message content if it's JSON
-    let parsedMessage = "";
-    let parsedEmbeds = [];
-    let parsedComponents = [];
-    
     try {
       const messageJson = JSON.parse(repeater.message);
-      parsedMessage = messageJson.content || "";
-      parsedEmbeds = messageJson.embeds || [];
-      parsedComponents = messageJson.components || [];
+      repeaterMessage = messageJson;
     } catch {
-      // Not JSON, treat as plain text
-      parsedMessage = repeater.message;
+      // Not JSON, treat as plain text - convert to message object
+      repeaterMessage = { content: repeater.message };
     }
-    
+
     // Parse forum tag conditions if present
     let parsedForumTags: any = { required: [], excluded: [] };
     if (repeater.forumTagConditions) {
@@ -445,10 +428,10 @@
         // Invalid JSON, use defaults
       }
     }
-    
+
     formData = {
       channelId: repeater.channelId.toString(),
-      message: parsedMessage,
+      message: "",
       interval: repeater.interval,
       startTimeOfDay: repeater.startTimeOfDay || "",
       triggerMode: repeater.triggerMode,
@@ -468,13 +451,9 @@
       threadOnlyMode: repeater.threadOnlyMode,
       forumTagConditions: null
     };
-    
-    // Set parsed content
-    messageContent = parsedMessage;
-    messageEmbeds = parsedEmbeds;
-    messageComponents = parsedComponents;
+
     selectedForumTags = parsedForumTags;
-    
+
     // Switch to create tab
     activeTab = "create";
   }
@@ -509,9 +488,7 @@
     selectedChannelType = null;
     selectedForumTags = {required: [], excluded: []};
 
-    messageContent = "";
-    messageEmbeds = [];
-    messageComponents = [];
+    repeaterMessage = {};
     isEditMode = false;
     editingRepeaterId = null;
     selectedRepeater = null;
@@ -757,12 +734,6 @@
     }
   }
 
-  // Embed update handler
-  function handleEmbedUpdate(embedIndex: number, detail: any) {
-    messageEmbeds[embedIndex] = detail.embed;
-    messageEmbeds = [...messageEmbeds];
-  }
-
   // Trigger mode change handler
   function handleTriggerModeChange(detail: any) {
     if (detail.selected && typeof detail.selected === "string") {
@@ -949,8 +920,8 @@
             Create your first repeater to start sending automated messages.
           </p>
           <button
-            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
-            style="background: {$colorStore.primary}; color: white;"
+            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={() => activeTab = 'create'}
           >
             <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
@@ -1579,299 +1550,35 @@
             </div>
           {/if}
 
-          <!-- Message Content with Live Preview -->
+            <!-- Message Content -->
           <div class="mt-6">
-              <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
-              <!-- Message Input Side -->
-              <div>
-                <label for="input-9921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  <i class="fa-solid fa-message" style="font-size: 16px;"></i>
-                  Message Content
-                </label>
-                
-                <div class="space-y-4">
-                  <div>
-                    <textarea
-                      bind:value={messageContent}
-                      placeholder="Enter your repeater message here..."
-                      rows="4"
-                      class="w-full p-3 rounded-xl border transition-all resize-none"
-                      style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                    ></textarea>
-                    
-                    <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-                      Supports Discord markdown: **bold**, *italic*, `code`, etc.
-                    </p>
-                  </div>
-                  
-                  <!-- Message Builder Options -->
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                      onclick={() => showEmbedBuilder = !showEmbedBuilder}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      {messageEmbeds.length > 0 ? `${messageEmbeds.length} Embeds` : 'Add Embed'}
-                    </button>
-                    
-                    <button
-                      type="button"
-                      class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                      onclick={() => showComponentBuilder = !showComponentBuilder}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      {messageComponents.length > 0 ? `${messageComponents.length} Components` : 'Add Components'}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
+              <i class="fa-solid fa-message" style="font-size: 16px;"></i>
+              Repeater Message
+            </label>
 
-              <!-- Live Discord Preview -->
-              <div class="lg:sticky lg:top-4 lg:self-start">
-                <label for="input-9921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                  <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
-                  Live Preview
-                </label>
-                <div class="border rounded-xl overflow-hidden" style="border-color: {$colorStore.primary}30;">
-                  <PreviewCard 
-                    content={messageContent}
-                    embeds={messageEmbeds}
-                    components={messageComponents}
-                    showEmpty={true}
-                    emptyMessage="Start typing to see your message preview..."
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+            <FullscreenEmbedBuilder
+              bind:value={repeaterMessage}
+              previewTitle="Repeater Message"
+              previewDescription="Message that will be repeated in the channel"
+              icon="fa-clock"
+              allowContent={true}
+              allowMultipleEmbeds={true}
+              maxEmbeds={10}
+              allowComponents={true}
+              additionalPlaceholders={[
+                { category: "Server", name: "%server%", description: "Server name" },
+                { category: "Server", name: "%server.members%", description: "Member count" },
+                { category: "Server", name: "%server.id%", description: "Server ID" }
+              ]}
+              guildId={$currentGuild?.id}
+              user={data.user}
+              placeholder="Click to configure repeater message with rich embeds and components"
+            />
 
-          <!-- Advanced Embed Builder -->
-          {#if showEmbedBuilder}
-            <div class="mt-6 space-y-4" in:fly={{ y: 20, duration: 300 }}>
-                <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-                    <h4 class="text-lg font-semibold" style="color: {$colorStore.text}">Message Embeds ({messageEmbeds.length}/10)</h4>
-                  </div>
-                  
-                  <div class="flex gap-2">
-                    <button
-                      type="button"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
-                      style="background: {$colorStore.primary}; color: white;"
-                      onclick={() => {
-                        if (messageEmbeds.length < 10) {
-                          messageEmbeds = [...messageEmbeds, {
-                            title: '',
-                            description: '',
-                            color: '#5865F2',
-                            url: '',
-                            author: { name: '', url: '', icon_url: '' },
-                            thumbnail: { url: '' },
-                            image: { url: '' },
-                            footer: { text: '', icon_url: '' },
-                            fields: []
-                          }];
-                        }
-                      }}
-                      disabled={messageEmbeds.length >= 10}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                      Add Embed
-                    </button>
-                    
-                    <button
-                      type="button"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
-                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      onclick={() => showEmbedBuilder = false}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Spacer for preview alignment -->
-                <div class="hidden lg:block"></div>
-              </div>
-              
-              <!-- Mobile-friendly Embed List -->
-                <div class="space-y-6">
-                  {#each messageEmbeds as embed, embedIndex}
-                    <div class="border rounded-xl overflow-hidden" 
-                         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                      
-                      <!-- Embed Header -->
-                      <div class="flex items-center justify-between p-4 border-b" style="border-color: {$colorStore.primary}20;">
-                        <span class="font-medium" style="color: {$colorStore.text}">
-                          Embed {embedIndex + 1}
-                        </span>
-                        <div class="flex gap-2">
-                          <button
-                            type="button"
-                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
-                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                            onclick={() => {
-                              const duplicated = JSON.parse(JSON.stringify(embed));
-                              messageEmbeds.splice(embedIndex + 1, 0, duplicated);
-                              messageEmbeds = [...messageEmbeds];
-                            }}
-                          >
-                            <i class="fa-solid fa-copy" style="font-size: 12px;"></i>
-                            Copy
-                          </button>
-                          <button
-                            type="button"
-                            class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
-                            style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                            onclick={() => messageEmbeds = messageEmbeds.filter((_, i) => i !== embedIndex)}
-                          >
-                            <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <!-- Use the full EmbedEditor component -->
-                      <div class="p-4">
-                        <EmbedEditor
-                          bind:embed={messageEmbeds[embedIndex]}
-                          index={embedIndex}
-                          placeholders={[
-                            { category: "User", name: "%user%", description: "Username of the user" },
-                            { category: "User", name: "%user.mention%", description: "Mention the user" },
-                            { category: "Server", name: "%server%", description: "Server name" },
-                            { category: "Server", name: "%server.members%", description: "Number of server members" }
-                          ]}
-                          onupdate={(detail) => handleEmbedUpdate(embedIndex, detail)}
-                        />
-                      </div>
-                    </div>
-                  {/each}
-                  
-                  {#if messageEmbeds.length === 0}
-                    <div class="text-center py-12 rounded-xl border-2 border-dashed" 
-                         style="border-color: {$colorStore.primary}30;">
-                      <i class="fa-utility-duo fa-regular fa-envelope"
-                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">No embeds yet</h4>
-                      <p class="text-sm mb-4" style="color: {$colorStore.muted}">
-                        Click "Add Embed" to create rich embedded messages
-                      </p>
-                    </div>
-                  {/if}
-                </div>
-              </div>
-            {/if}
-            
-            <!-- Component Builder Section (appears directly under message content) -->
-            {#if showComponentBuilder}
-              <div class="p-6 rounded-2xl border" 
-                   style="background: {$colorStore.secondary}08; border-color: {$colorStore.secondary}30;"
-                   in:fly={{ y: 20, duration: 300 }}>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-bolt" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-                    <h4 class="text-lg font-semibold" style="color: {$colorStore.text}">Interactive Components</h4>
-                  </div>
-                  
-                  <div class="flex gap-2">
-                    <button
-                      type="button"
-                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
-                      style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
-                      onclick={() => {
-                        messageComponents = [...messageComponents, {
-                          componentKey: `btn-${Date.now()}`,
-                          id: null,
-                          displayName: 'New Button',
-                          style: 1,
-                          url: '',
-                          emoji: '',
-                          isSelect: false,
-                          maxOptions: 1,
-                          minOptions: 1,
-                          options: []
-                        }];
-                      }}
-                      disabled={messageComponents.length >= 25}
-                    >
-                      <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
-                      Add Button
-                    </button>
-                    
-                    <button
-                      type="button"
-                      class="px-3 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
-                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                      onclick={() => showComponentBuilder = false}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Component List -->
-                <div class="space-y-4">
-                  {#each messageComponents as component, index}
-                    <div class="p-4 rounded-xl border" style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;">
-                      <div class="flex items-center justify-between mb-3">
-                        <span class="text-sm font-medium" style="color: {$colorStore.text}">
-                          Button: {component.displayName}
-                        </span>
-                        <button
-                          type="button"
-                          class="px-2 py-1 rounded-sm text-xs transition-all hover:scale-[1.02]"
-                          style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
-                          onclick={() => messageComponents = messageComponents.filter((_, i) => i !== index)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      
-                      <!-- Basic component fields -->
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label for="input-9921" class="block text-xs font-medium mb-1"
-                                 style="color: {$colorStore.text}">Button Text</label>
-                          <input id="input-9921"
-                            type="text"
-                            bind:value={component.displayName}
-                            placeholder="Button label..."
-                            class="w-full p-2 rounded-sm border text-sm"
-                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          >
-                        </div>
-                        
-                        <div>
-                          <label for="input-2408" class="block text-xs font-medium mb-1"
-                                 style="color: {$colorStore.text}">URL (optional)</label>
-                          <input id="input-2408"
-                            type="url"
-                            bind:value={component.url}
-                            placeholder="https://..."
-                            class="w-full p-2 rounded-sm border text-sm"
-                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                          >
-                        </div>
-                      </div>
-                    </div>
-                  {/each}
-                  
-                  {#if messageComponents.length === 0}
-                    <div class="text-center py-6" style="color: {$colorStore.muted}">
-                      <i class="fa-solid fa-bolt" style="font-size: 32px;"></i>
-                      <p class="text-sm">Click "Add Button" to create interactive components</p>
-                    </div>
-                  {/if}
-                </div>
-              </div>
-            {/if}
-
+            <p class="text-xs mt-3" style="color: {$colorStore.muted}">
+              Create rich messages with embeds, buttons, and select menus. Supports Discord markdown and placeholders.
+            </p>
           </div>
 
 
@@ -2185,9 +1892,9 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
             <button
               type="submit"
-              class="flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-[1.02] min-h-[52px] shadow-lg"
-              style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary}); color: white;"
-              disabled={saving || !formData.channelId || (!messageContent.trim() && messageEmbeds.length === 0)}
+              class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
+              disabled={saving || !formData.channelId || Object.keys(repeaterMessage).length === 0}
             >
               {#if saving}
                 <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 20px;"></i>
