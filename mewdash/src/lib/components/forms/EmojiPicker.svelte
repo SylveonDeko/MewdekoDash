@@ -173,20 +173,21 @@
     return Array.from(groups.values());
   });
 
-  let selectedArray = $derived(
-    multiple
-      ? (Array.isArray(selectedIds()) ? selectedIds() as string[] : [])
-      : []
-  );
+  // Get count of all selected items (both Discord and Unicode emojis)
+  let selectedArray = $derived(() => {
+    if (!multiple) return [];
+    if (!Array.isArray(selected)) return [];
+    return selected; // This includes both Discord format strings and Unicode strings
+  });
 
   let hasSelection = $derived(
     multiple
-      ? selectedArray.length > 0
+      ? selectedArray().length > 0
       : selectedIds() !== null
   );
 
   let isMaxReached = $derived(
-    multiple && maxSelection ? selectedArray.length >= maxSelection : false
+    multiple && maxSelection ? selectedArray().length >= maxSelection : false
   );
 
   // Type guard to check if emoji is Unicode
@@ -245,7 +246,8 @@
       const formattedEmoji = `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`;
 
       // Check if already selected (by ID)
-      const index = selectedArray.indexOf(emojiId);
+      const currentArray = selectedArray();
+      const index = currentArray.findIndex(s => getEmojiId(s) === emojiId);
 
       if (index === -1) {
         // Check if we can add more
@@ -260,7 +262,7 @@
       }
 
       // Get selected emoji objects for the callback
-      const selectedEmojis = allEmojis.filter(e => selectedArray.includes(e.id));
+      const selectedEmojis = allEmojis.filter(e => currentArray.some(s => getEmojiId(s) === e.id));
       onchange?.({ selected, emoji: selectedEmojis });
 
       // Don't close on mobile for multiple selection
@@ -286,7 +288,8 @@
     event.stopPropagation();
     if (multiple && Array.isArray(selected)) {
       selected = selected.filter(s => getEmojiId(s) !== emojiId);
-      const selectedEmojis = allEmojis.filter(e => selectedArray.includes(e.id));
+      const currentArray = selectedArray();
+      const selectedEmojis = allEmojis.filter(e => currentArray.some(s => getEmojiId(s) === e.id));
       onchange?.({ selected, emoji: selectedEmojis });
     }
   }
@@ -294,7 +297,7 @@
   // Calculate dropdown position based on available space
   function calculateDropdownPosition() {
     if (!containerRef || isMobile) {
-      dropdownPosition = "above"; // Default to above
+      dropdownPosition = "below"; // Default to below for mobile
       return;
     }
 
@@ -304,8 +307,27 @@
     const spaceAbove = rect.top;
     const dropdownHeight = 600; // Approximate dropdown height
 
-    // Prefer above, only go below if not enough space above
-    dropdownPosition = spaceAbove >= dropdownHeight ? "above" : "below";
+    // Check if dropdown would go above viewport when positioned "above"
+    const wouldGoAboveViewport = rect.top - dropdownHeight < 0;
+
+    // Check if dropdown would go below viewport when positioned "below"
+    const wouldGoBelowViewport = rect.bottom + dropdownHeight > viewportHeight;
+
+    // Decision logic:
+    // 1. If it would go above viewport when "above", force "below"
+    // 2. If it would go below viewport when "below", force "above"
+    // 3. Otherwise, prefer "above" if there's enough space, else "below"
+    if (wouldGoAboveViewport && !wouldGoBelowViewport) {
+      dropdownPosition = "below";
+    } else if (wouldGoBelowViewport && !wouldGoAboveViewport) {
+      dropdownPosition = "above";
+    } else if (wouldGoAboveViewport && wouldGoBelowViewport) {
+      // Not enough space either way, choose the one with more space
+      dropdownPosition = spaceAbove > spaceBelow ? "above" : "below";
+    } else {
+      // Enough space both ways, prefer above
+      dropdownPosition = spaceAbove >= dropdownHeight ? "above" : "below";
+    }
   }
 
   // Dropdown control
@@ -463,7 +485,8 @@
         customEmojis = [...customEmojis, parsedEmoji];
       }
 
-      const selectedEmojis = allEmojis.filter(e => selectedArray.includes(e.id));
+      const currentArray = selectedArray();
+      const selectedEmojis = allEmojis.filter(e => currentArray.some(s => getEmojiId(s) === e.id));
       onchange?.({ selected, emoji: selectedEmojis });
     } else {
       // Add to customEmojis if not already there
@@ -492,43 +515,57 @@
 
   // Get selected emoji objects for display
   let selectedEmojis = $derived(() => {
-    const discordEmojis = allEmojis.filter(e => {
-      if (multiple) {
-        return selectedArray.includes(e.id);
-      }
+    if (!multiple) {
+      // Single selection - just return the one emoji
       const currentId = selectedIds();
-      return currentId !== null && e.id === currentId;
-    });
+      if (currentId !== null) {
+        const discordEmoji = allEmojis.find(e => e.id === currentId);
+        if (discordEmoji) return [discordEmoji];
+      }
 
-    // Also check for Unicode emojis in selection
-    const unicodeSelected: UnicodeEmojiOption[] = [];
+      // Check for Unicode emoji
+      if (selected && typeof selected === "string" && !selected.startsWith("<")) {
+        const match = unicodeEmojiStore.getByUnicode(selected);
+        if (match) {
+          return [{ ...match, isUnicode: true }];
+        }
+      }
 
-    if (multiple && Array.isArray(selected)) {
-      for (const sel of selected) {
-        // Check if it's a Unicode emoji (not Discord format)
-        if (!sel.startsWith("<")) {
-          const match = unicodeEmojiStore.getByUnicode(sel);
-          if (match) {
-            unicodeSelected.push({ ...match, isUnicode: true });
+      return [];
+    }
+
+    // Multiple selection - preserve the order from `selected` array
+    if (!Array.isArray(selected)) return [];
+
+    const result: AnyEmojiOption[] = [];
+
+    for (const sel of selected) {
+      if (!sel.startsWith("<")) {
+        // Unicode emoji
+        const match = unicodeEmojiStore.getByUnicode(sel);
+        if (match) {
+          result.push({ ...match, isUnicode: true });
+        }
+      } else {
+        // Discord custom emoji - extract ID and find in allEmojis
+        const emojiId = getEmojiId(sel);
+        if (emojiId) {
+          const discordEmoji = allEmojis.find(e => e.id === emojiId);
+          if (discordEmoji) {
+            result.push(discordEmoji);
           }
         }
       }
-    } else if (selected && typeof selected === "string" && !selected.startsWith("<")) {
-      // Single Unicode emoji selected
-      const match = unicodeEmojiStore.getByUnicode(selected);
-      if (match) {
-        unicodeSelected.push({ ...match, isUnicode: true });
-      }
     }
 
-    return [...discordEmojis, ...unicodeSelected];
+    return result;
   });
 
   let selectedDisplayText = $derived(() => {
     if (!hasSelection) return placeholder;
 
     if (multiple) {
-      const count = selectedArray.length;
+      const count = selectedArray().length;
       if (count === 0) return placeholder;
       return `${count} emoji${count !== 1 ? "s" : ""} selected`;
     } else {
@@ -721,7 +758,7 @@
         {searchTerm ? 'No matching emojis found' : 'No emojis available'}
       </div>
     {:else if groupByGuild && groupedEmojis()}
-      {#each groupedEmojis() as group}
+        {#each groupedEmojis() || [] as group}
         <div class="mb-4">
           <!-- Guild header -->
           <div class="text-xs font-semibold mb-2 px-1" style="color: {$colorStore.muted}">
@@ -731,7 +768,8 @@
           <!-- Emoji grid -->
           <div class="grid gap-2" class:grid-cols-6={isMobile} class:grid-cols-12={!isMobile}>
             {#each group.emojis as emoji (emoji.id)}
-              {@const isSelected = multiple ? selectedArray.includes(emoji.id) : selectedIds() === emoji.id}
+              {@const
+                isSelected = multiple ? selectedArray().some(s => getEmojiId(s) === emoji.id) : selectedIds() === emoji.id}
               {@const canSelect = !isSelected && (!isMaxReached || !multiple)}
 
               <button
@@ -776,7 +814,8 @@
       <!-- Ungrouped grid -->
       <div class="grid gap-2" class:grid-cols-6={isMobile} class:grid-cols-12={!isMobile}>
         {#each filteredEmojis as emoji (emoji.id)}
-          {@const isSelected = multiple ? selectedArray.includes(emoji.id) : selectedIds() === emoji.id}
+          {@const
+            isSelected = multiple ? selectedArray().some(s => getEmojiId(s) === emoji.id) : selectedIds() === emoji.id}
           {@const canSelect = !isSelected && (!isMaxReached || !multiple)}
 
           <button
@@ -829,7 +868,7 @@
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
       >
         <i class="fa-solid fa-check inline mr-2" style="font-size: 14px;"></i>
-        Done{selectedArray.length > 0 ? ` (${selectedArray.length} selected)` : ''}
+        Done{selectedArray().length > 0 ? ` (${selectedArray().length} selected)` : ''}
       </button>
     </div>
   {/if}
@@ -889,7 +928,7 @@
 
       <!-- Selected content -->
       <div class="flex-1 min-w-0 pr-2 flex items-center h-[28px]">
-        {#if multiple && selectedArray.length > 0}
+        {#if multiple && selectedArray().length > 0}
           <div class="flex flex-nowrap gap-1 overflow-x-auto scrollbar-hide w-full">
             {#each selectedEmojis().slice(0, 5) as emoji}
               <span
@@ -943,12 +982,12 @@
                 {/if}
               </span>
             {/each}
-            {#if selectedArray.length > 5}
+            {#if selectedArray().length > 5}
               <span
                 class="px-2 py-0.5 rounded-lg text-sm flex-shrink-0"
                 style="background: {$colorStore.primary}20; color: {$colorStore.text};"
               >
-                +{selectedArray.length - 5}
+                +{selectedArray().length - 5}
               </span>
             {/if}
           </div>
@@ -965,7 +1004,7 @@
       {#if multiple && maxSelection}
         <span class="text-xs px-2 py-1 rounded"
               style="background: {$colorStore.primary}15; color: {isMaxReached ? '#ef4444' : $colorStore.text};">
-          {selectedArray.length}/{maxSelection}
+          {selectedArray().length}/{maxSelection}
         </span>
       {/if}
 

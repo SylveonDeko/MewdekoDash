@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
-  import { clientApi, guildApi, meApi, xpApi } from "$lib/api/index.ts";
+  import { clientApi, guildApi, lastfmApi, meApi, xpApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import { clickOutside } from "$lib/clickOutside";
   import Notification from "$lib/components/ui/Notification.svelte";
@@ -26,6 +26,13 @@
   let userPreferences: any = $state({});
   let editingProfile = $state(false);
   let profileForm: any = $state({});
+  let lastFmStatus: any = $state({ linked: false, username: null, scrobblingEnabled: false });
+  let lastFmUserInfo: any = $state(null);
+  let lastFmRecentTracks: any[] = $state([]);
+  let lastFmTopArtists: any[] = $state([]);
+  let lastFmTopAlbums: any[] = $state([]);
+  let lastFmPeriod = $state("7day");
+  let loadingLastFmStats = $state(false);
 
   // Server selection for per-server settings
   let availableGuilds: any[] = $state([]);
@@ -62,13 +69,24 @@
     loading = true;
     try {
       const dummyGuildId = BigInt("0");
-      const [profile, preferences] = await Promise.all([
+      const [profile, preferences, lastfm] = await Promise.all([
         meApi.getUserProfile(dummyGuildId, userId).catch(() => ({})),
-        meApi.getUserPreferences(dummyGuildId, userId).catch(() => ({}))
+        meApi.getUserPreferences(dummyGuildId, userId).catch(() => ({})),
+        lastfmApi.getStatus(dummyGuildId, userId).catch(() => ({
+          linked: false,
+          username: null,
+          scrobblingEnabled: false
+        }))
       ]);
 
       userProfile = profile;
       userPreferences = preferences;
+      lastFmStatus = lastfm;
+
+      // Load Last.fm stats if linked
+      if (lastfm.linked) {
+        await loadLastFmStats();
+      }
 
       profileForm = {
         bio: (profile as any).bio || "",
@@ -399,6 +417,31 @@
     setTimeout(() => {
       selectedGuild = null;
     }, 200);
+  }
+
+  // Load Last.fm statistics
+  async function loadLastFmStats() {
+    if (!userId || !lastFmStatus?.linked) return;
+
+    loadingLastFmStats = true;
+    try {
+      const dummyGuildId = BigInt("0");
+      const [userInfo, recentTracks, topArtists, topAlbums] = await Promise.all([
+        lastfmApi.getUserInfo(dummyGuildId, userId).catch(() => null),
+        lastfmApi.getRecentTracks(dummyGuildId, userId, 5).catch(() => []),
+        lastfmApi.getTopArtists(dummyGuildId, userId, lastFmPeriod, 5).catch(() => []),
+        lastfmApi.getTopAlbums(dummyGuildId, userId, lastFmPeriod, 5).catch(() => [])
+      ]);
+
+      lastFmUserInfo = userInfo;
+      lastFmRecentTracks = recentTracks;
+      lastFmTopArtists = topArtists;
+      lastFmTopAlbums = topAlbums;
+    } catch (err) {
+      logger.error("Failed to load Last.fm stats:", err);
+    } finally {
+      loadingLastFmStats = false;
+    }
   }
 
   // Show notification
@@ -839,8 +882,269 @@
             {/if}
           </div>
         </div>
+
+        <!-- Last.fm Integration -->
+        <div class="md:col-span-2 rounded-2xl p-6 border"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+                    border-color: {$colorStore.primary}30;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+            <i class="fa-brands fa-lastfm text-xl" style="color: #d51007;"></i>
+            Last.fm Scrobbling
+          </h3>
+
+          {#if lastFmStatus?.linked}
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">
+                  Connected as: <strong>{lastFmStatus?.username}</strong>
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">
+                  Scrobbling: {lastFmStatus?.scrobblingEnabled ? 'Enabled' : 'Disabled'}
+                </div>
+              </div>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button
+                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
+                  style="background: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary}20;
+                         color: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary};
+                         border-color: {lastFmStatus?.scrobblingEnabled ? $colorStore.accent : $colorStore.primary}30;"
+                  onclick={async () => {
+                    saving = true;
+                    try {
+                      await lastfmApi.toggleScrobbling(BigInt("0"), userId, !lastFmStatus?.scrobblingEnabled);
+                      await loadGlobalData();
+                      showMessage(lastFmStatus?.scrobblingEnabled ? 'Scrobbling disabled' : 'Scrobbling enabled', 'success');
+                    } catch (err) {
+                      showMessage('Failed to toggle scrobbling', 'error');
+                    } finally {
+                      saving = false;
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  {lastFmStatus?.scrobblingEnabled ? 'Disable' : 'Enable'}
+                </button>
+                <button
+                  class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
+                  style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
+                  onclick={async () => {
+                    if (confirm('Are you sure you want to unlink your Last.fm account?')) {
+                      saving = true;
+                      try {
+                        await lastfmApi.unlink(BigInt("0"), userId);
+                        await loadGlobalData();
+                        showMessage('Last.fm account unlinked', 'success');
+                      } catch (err) {
+                        showMessage('Failed to unlink Last.fm', 'error');
+                      } finally {
+                        saving = false;
+                      }
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  Unlink
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="text-center p-2">
+              <p class="text-sm mb-3" style="color: {$colorStore.muted}">
+                Link your Last.fm account to automatically scrobble music
+              </p>
+              <button
+                class="w-full sm:w-auto px-4 py-2 rounded-lg transition-all hover:scale-[1.02]"
+                style="background: #d51007; color: white;"
+                onclick={async () => {
+                  try {
+                    const { authUrl } = await lastfmApi.getAuthUrl(BigInt("0"), userId);
+                    window.open(authUrl, '_blank');
+                    showMessage('Complete authentication in the opened window', 'success');
+                  } catch (err) {
+                    showMessage('Failed to get Last.fm auth URL', 'error');
+                  }
+                }}
+                disabled={saving}
+              >
+                <i class="fa-brands fa-lastfm mr-2"></i>
+                Connect Last.fm
+              </button>
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
+
+    <!-- Last.fm Statistics (if linked) -->
+    {#if lastFmStatus?.linked}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Recent Tracks -->
+        <div class="rounded-2xl p-6 border"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+                        border-color: {$colorStore.primary}30;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+            <i class="fa-utility-duo fa-regular fa-music text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+            Recent Tracks
+          </h3>
+
+          {#if loadingLastFmStats}
+            <div class="space-y-3 animate-pulse">
+              {#each Array(3) as _, i}
+                <div class="flex items-center gap-3 p-2 rounded-lg" style="background: {$colorStore.primary}08;">
+                  <div class="w-12 h-12 rounded" style="background: {$colorStore.primary}20;"></div>
+                  <div class="flex-1 space-y-2">
+                    <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 70%;"></div>
+                    <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 50%;"></div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else if lastFmRecentTracks.length > 0}
+            <div class="space-y-3">
+              {#each lastFmRecentTracks.slice(0, 5) as track}
+                <div class="flex items-center gap-3 p-2 rounded-lg" style="background: {$colorStore.primary}08;">
+                  {#if track.image}
+                    <img src={track.image} alt="" class="w-12 h-12 rounded" />
+                  {/if}
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">
+                      {track.name}
+                    </div>
+                    <div class="text-xs truncate" style="color: {$colorStore.muted}">
+                      {track.artist}
+                    </div>
+                    {#if track.isNowPlaying}
+                      <div class="text-xs flex items-center gap-1" style="color: #10b981;">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Now Playing
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
+              No recent tracks
+            </p>
+          {/if}
+        </div>
+
+        <!-- Top Artists -->
+        <div class="rounded-2xl p-6 border"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+                        border-color: {$colorStore.primary}30;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold flex items-center gap-2" style="color: {$colorStore.text}">
+              <i class="fa-utility-duo fa-regular fa-headphones text-xl"
+                 style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+              Top Artists
+            </h3>
+            <select
+              bind:value={lastFmPeriod}
+              onchange={() => loadLastFmStats()}
+              class="px-2 py-1 rounded text-xs border"
+              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+            >
+              <option value="7day">Week</option>
+              <option value="1month">Month</option>
+              <option value="3month">3 Months</option>
+              <option value="6month">6 Months</option>
+              <option value="12month">Year</option>
+              <option value="overall">All Time</option>
+            </select>
+          </div>
+
+          {#if loadingLastFmStats}
+            <div class="space-y-2 animate-pulse">
+              {#each Array(5) as _, i}
+                <div class="flex items-center gap-2 p-2 rounded-lg" style="background: {$colorStore.primary}08;">
+                  <span class="text-sm font-bold w-6" style="color: {$colorStore.muted}">#{i + 1}</span>
+                  <div class="flex-1 space-y-2">
+                    <div class="h-4 rounded" style="background: {$colorStore.primary}20; width: 60%;"></div>
+                    <div class="h-3 rounded" style="background: {$colorStore.primary}15; width: 40%;"></div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else if lastFmTopArtists.length > 0}
+            <div class="space-y-2">
+              {#each lastFmTopArtists.slice(0, 5) as artist, i}
+                <div class="flex items-center gap-2 p-2 rounded-lg" style="background: {$colorStore.primary}08;">
+                  <span class="text-sm font-bold w-6" style="color: {$colorStore.muted}">#{i + 1}</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">
+                      {artist.name}
+                    </div>
+                    <div class="text-xs" style="color: {$colorStore.muted}">
+                      {artist.playcount} plays
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">
+              No data for this period
+            </p>
+          {/if}
+        </div>
+
+        <!-- Last.fm Profile Stats -->
+        <div class="rounded-2xl p-6 border md:col-span-2"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20);
+                        border-color: {$colorStore.primary}30;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+            <i class="fa-utility-duo fa-regular fa-star text-xl"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+            Listening Stats
+          </h3>
+
+          {#if loadingLastFmStats}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center animate-pulse">
+              {#each Array(4) as _}
+                <div>
+                  <div class="h-8 rounded mx-auto mb-2" style="background: {$colorStore.primary}20; width: 60%;"></div>
+                  <div class="h-3 rounded mx-auto" style="background: {$colorStore.primary}15; width: 50%;"></div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+                  {lastFmUserInfo?.playcount?.toLocaleString() || '0'}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Total Scrobbles</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+                  {lastFmTopArtists.length}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Top Artists</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+                  {lastFmTopAlbums.length}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Top Albums</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold" style="color: {$colorStore.text}">
+                  {lastFmUserInfo?.country || 'Unknown'}
+                </div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Country</div>
+              </div>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
 
     <!-- SERVER SETTINGS SECTION -->
     <div class="border-t pt-8" style="border-color: {$colorStore.primary}20;">
