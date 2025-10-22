@@ -1211,7 +1211,6 @@
                 bind:value={suggestionMessage}
                 previewTitle="Suggestion Message"
                 previewDescription="Message sent when a new suggestion is created"
-                allowMultipleEmbeds={false}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
@@ -1234,7 +1233,6 @@
                 bind:value={acceptMessage}
                 previewTitle="Accept Message"
                 previewDescription="Message sent when a suggestion is accepted"
-                allowMultipleEmbeds={false}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
@@ -1257,7 +1255,6 @@
                 bind:value={denyMessage}
                 previewTitle="Deny Message"
                 previewDescription="Message sent when a suggestion is denied"
-                allowMultipleEmbeds={false}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
@@ -1280,7 +1277,6 @@
                 bind:value={considerMessage}
                 previewTitle="Consider Message"
                 previewDescription="Message sent when a suggestion is being considered"
-                allowMultipleEmbeds={false}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
@@ -1303,7 +1299,6 @@
                 bind:value={implementMessage}
                 previewTitle="Implement Message"
                 previewDescription="Message sent when a suggestion is implemented"
-                allowMultipleEmbeds={false}
                 allowComponents={false}
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
@@ -1565,8 +1560,6 @@
                 previewDescription="Configure the message sent when users click the suggestion button"
                 icon="fa-comment-dots"
                 allowContent={true}
-                allowMultipleEmbeds={false}
-                maxEmbeds={1}
                 allowComponents={false}
                 additionalPlaceholders={suggestionPlaceholders}
                 user={currentUser}

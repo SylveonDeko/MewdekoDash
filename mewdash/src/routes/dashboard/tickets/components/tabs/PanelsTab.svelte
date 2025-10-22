@@ -478,7 +478,6 @@
             previewDescription="Embed shown in the ticket panel"
             icon="fa-window-maximize"
             allowContent={false}
-            allowMultipleEmbeds={false}
             maxEmbeds={10}
             allowComponents={false}
             guildId={$currentGuild?.id}
@@ -2052,7 +2051,7 @@
               previewDescription="Embed shown in the ticket panel"
               icon="fa-window-maximize"
               allowContent={false}
-              allowMultipleEmbeds={false}
+
               maxEmbeds={10}
               allowComponents={false}
               guildId={$currentGuild?.id}

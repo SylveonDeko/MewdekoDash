@@ -1174,24 +1174,3 @@
     {/if}
   </Portal>
 {/if}
-
-<style>
-    /* Custom scrollbar for preview */
-    :global(.preview-scrollbar) {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    }
-
-    :global(.preview-scrollbar::-webkit-scrollbar) {
-        width: 6px;
-    }
-
-    :global(.preview-scrollbar::-webkit-scrollbar-track) {
-        background: transparent;
-    }
-
-    :global(.preview-scrollbar::-webkit-scrollbar-thumb) {
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-    }
-</style>
