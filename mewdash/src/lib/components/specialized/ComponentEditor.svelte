@@ -214,6 +214,17 @@
              title="{isValid ? 'Valid' : 'Has validation errors'}">
         </div>
 
+        <!-- Done/Close Button -->
+        <button
+          aria-label="Done editing"
+          class="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-md sm:rounded-lg transition-all hover:scale-[1.02] font-medium"
+          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+          onclick={() => onedit?.({ component })}
+        >
+          <i class="fa-solid fa-check" style="font-size: 10px;"></i>
+          <span class="hidden sm:inline">Done</span>
+        </button>
+
         <!-- Duplicate Button -->
         <button
           aria-label="Duplicate component"
@@ -585,45 +596,63 @@
   </div>
 
 {:else}
-  <!-- Display Mode -->
-  {#if component.isSelect}
-    <!-- Select Menu Preview (full width) -->
-    <button aria-label="Toggle"
-            class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left pointer-events-none"
-            disabled
-    >
-      <span class="placeholder px-2 sm:px-3 py-1 sm:py-2">
-        {component.displayName || "Select an option..."}
-      </span>
-      <span class="icon-container px-1.5 sm:px-2">
-        <i class="fa-solid fa-chevron-down text-xs sm:text-base"></i>
-      </span>
-    </button>
-  {:else}
-    <!-- Button Preview -->
-    <button
-      class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2 pointer-events-none"
-      disabled
-      aria-label={component.displayName}
-    >
-      {#if component.emoji}
-        {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
-        {#if parsedEmoji}
-          <img src={parsedEmoji.url} alt={parsedEmoji.name}
-               class="w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em]" />
-        {:else}
-          <span
-            class="emoji w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em] text-[10px] sm:text-xs">
-            {component.emoji}
-          </span>
+  <!-- Display Mode - Clickable to Edit -->
+  <div class="group relative cursor-pointer transition-all hover:scale-[1.02]"
+       onclick={() => onedit?.({ component })}
+       role="button"
+       tabindex="0"
+       onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onedit?.({ component }); } }}>
+
+    {#if component.isSelect}
+      <!-- Select Menu Preview (full width) -->
+      <button aria-label="Click to edit select menu"
+              class="border border-transparent bg-[#2F3136] text-white text-xs sm:text-sm font-medium rounded-sm cursor-pointer box-border grid grid-cols-[1fr_auto] items-center w-full text-left"
+              disabled
+      >
+        <span class="placeholder px-2 sm:px-3 py-1 sm:py-2">
+          {component.displayName || "Select an option..."}
+        </span>
+        <span class="icon-container px-1.5 sm:px-2">
+          <i class="fa-solid fa-chevron-down text-xs sm:text-base"></i>
+        </span>
+      </button>
+    {:else}
+      <!-- Button Preview -->
+      <button
+        class="{getButtonColorClass(component.style)} relative discord-button button-content flex justify-center grow-0 items-center box-border border-0 rounded-sm px-2 sm:px-4 py-[1px] sm:py-[2px] min-h-[24px] sm:min-h-[32px] text-[11px] sm:text-sm font-medium leading-[14px] sm:leading-[16px] transition-colors duration-200 select-none gap-1 sm:gap-2"
+        disabled
+        aria-label="Click to edit button"
+      >
+        {#if component.emoji}
+          {@const parsedEmoji = parseEmojiForDisplay(component.emoji)}
+          {#if parsedEmoji}
+            <img src={parsedEmoji.url} alt={parsedEmoji.name}
+                 class="w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em]" />
+          {:else}
+            <span
+              class="emoji w-[1em] sm:w-[1.2em] h-[1em] sm:h-[1.2em] inline-flex items-center justify-center align-[-0.1em] text-[10px] sm:text-xs">
+              {component.emoji}
+            </span>
+          {/if}
         {/if}
-      {/if}
-      <span class="truncate">{component.displayName}</span>
-      {#if component.style === 5}
-        <i class="fa-solid fa-arrow-up-right-from-square text-[9px] sm:text-xs"></i>
-      {/if}
-    </button>
-  {/if}
+        <span class="truncate">{component.displayName}</span>
+        {#if component.style === 5}
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] sm:text-xs"></i>
+        {/if}
+      </button>
+    {/if}
+
+    <!-- Edit Indicator on Hover -->
+    <div
+      class="absolute inset-0 rounded-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+      style="background: {$colorStore.primary}20;">
+      <span class="text-xs font-medium px-2 py-1 rounded-sm"
+            style="background: {$colorStore.primary}40; color: {$colorStore.text};">
+        <i class="fa-solid fa-pen-to-square mr-1"></i>
+        Click to edit
+      </span>
+    </div>
+  </div>
 {/if}
 
 <style>

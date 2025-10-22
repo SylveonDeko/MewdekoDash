@@ -121,7 +121,7 @@
     value = $bindable({}),
     previewTitle = "Embed Builder",
     previewDescription = "Click to edit",
-    allowMultipleEmbeds = false,
+    allowMultipleEmbeds = true,
     maxEmbeds = 10,
     allowComponents = true,
     allowContent = true,
@@ -150,6 +150,8 @@
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");
   let showMobilePreview = $state(false);
+  let hasInitialized = $state(false);
+  let editingComponentKey = $state<string | null>(null);
 
   // Default placeholders - comprehensive list from backend ReplacementBuilder
   const defaultPlaceholders: Placeholder[] = [
@@ -276,69 +278,74 @@
 
   // Initialize from value
   $effect(() => {
-    if (value && typeof value === "object" && Object.keys(value).length > 0) {
-      // Parse the value into our internal state
-      content = value.content || "";
+    // Parse content
+    content = value?.content || "";
 
-      if (value.embeds && Array.isArray(value.embeds) && value.embeds.length > 0) {
-        embeds = value.embeds.map(e => ({
-          title: e.title || "",
-          description: e.description || "",
-          color: e.color || "#5865F2",
-          url: e.url || "",
-          author: e.author || { name: "", url: "", icon_url: "" },
-          thumbnail: e.thumbnail || { url: "" },
-          image: e.image || { url: "" },
-          footer: e.footer || { text: "", icon_url: "" },
-          fields: e.fields || []
-        }));
-      } else if (!value.embeds && !value.content && !value.components) {
-        // Only create default empty embed if truly empty
-        embeds = [{
-          title: "",
-          description: "",
-          color: "#5865F2",
-          url: "",
-          author: { name: "", url: "", icon_url: "" },
-          thumbnail: { url: "" },
-          image: { url: "" },
-          footer: { text: "", icon_url: "" },
-          fields: []
-        }];
-      }
+    // Parse embeds
+    if (value?.embeds && Array.isArray(value.embeds) && value.embeds.length > 0) {
+      embeds = value.embeds.map(e => ({
+        title: e.title || "",
+        description: e.description || "",
+        color: e.color || "#5865F2",
+        url: e.url || "",
+        author: e.author || { name: "", url: "", icon_url: "" },
+        thumbnail: e.thumbnail || { url: "" },
+        image: e.image || { url: "" },
+        footer: e.footer || { text: "", icon_url: "" },
+        fields: e.fields || []
+      }));
+      hasInitialized = true;
+    } else if (value === "" || value === null || value === undefined) {
+      // Completely empty - don't auto-create embeds
+      embeds = [];
+    } else if (!hasInitialized) {
+      // First time initialization with empty object - create one embed for editing
+      embeds = [{
+        title: "",
+        description: "",
+        color: "#5865F2",
+        url: "",
+        author: { name: "", url: "", icon_url: "" },
+        thumbnail: { url: "" },
+        image: { url: "" },
+        footer: { text: "", icon_url: "" },
+        fields: []
+      }];
+      hasInitialized = true;
+    }
 
-      if (value.components && Array.isArray(value.components)) {
-        // Group components by row
-        const rowsMap = new Map<number, NewEmbedComponent[]>();
-        value.components.forEach((comp: any) => {
-          const rowIndex = comp.row || 0;
-          if (!rowsMap.has(rowIndex)) {
-            rowsMap.set(rowIndex, []);
-          }
-          rowsMap.get(rowIndex)!.push({
-            componentKey: `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            id: comp.id || null,
-            rowIndex,
-            displayName: comp.displayName || "",
-            style: comp.style || 1,
-            url: comp.url || "",
-            emoji: comp.emoji || "",
-            isSelect: comp.isSelect || false,
-            maxOptions: comp.maxOptions || 1,
-            minOptions: comp.minOptions || 1,
-            options: comp.options || []
-          });
+    // Parse components
+    if (value?.components && Array.isArray(value.components)) {
+      // Group components by row
+      const rowsMap = new Map<number, NewEmbedComponent[]>();
+      value.components.forEach((comp: any) => {
+        const rowIndex = comp.row || 0;
+        if (!rowsMap.has(rowIndex)) {
+          rowsMap.set(rowIndex, []);
+        }
+        rowsMap.get(rowIndex)!.push({
+          componentKey: `component-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: comp.id || null,
+          rowIndex,
+          displayName: comp.displayName || "",
+          style: comp.style || 1,
+          url: comp.url || "",
+          emoji: comp.emoji || "",
+          isSelect: comp.isSelect || false,
+          maxOptions: comp.maxOptions || 1,
+          minOptions: comp.minOptions || 1,
+          options: comp.options || []
         });
+      });
 
-        // Convert to ComponentRow array
-        componentRows = Array.from(rowsMap.entries()).map(([rowIndex, components]) => ({
-          componentKey: `row-${rowIndex}-${Date.now()}`,
-          rowKey: `row-${rowIndex}-${Date.now()}`,
-          components
-        }));
-      } else {
-        componentRows = [];
-      }
+      // Convert to ComponentRow array
+      componentRows = Array.from(rowsMap.entries()).map(([rowIndex, components]) => ({
+        componentKey: `row-${rowIndex}-${Date.now()}`,
+        rowKey: `row-${rowIndex}-${Date.now()}`,
+        components
+      }));
+    } else {
+      componentRows = [];
     }
   });
 
@@ -412,6 +419,11 @@
       if (cleanedComponents.length > 0) {
         exportData.components = cleanedComponents;
       }
+    }
+
+    // If nothing was added, return empty string instead of empty object
+    if (Object.keys(exportData).length === 0) {
+      return "";
     }
 
     return exportData;
@@ -521,6 +533,24 @@
     }
   }
 
+  function clearAllEmbeds() {
+    embeds = [];
+    showNotificationMessage("All embeds cleared");
+  }
+
+  function clearAll() {
+    // Clear everything
+    content = "";
+    embeds = [];
+    componentRows = [];
+
+    // Set the bound value to empty string
+    value = "";
+    onchange?.("");
+
+    showNotificationMessage("Everything cleared");
+  }
+
   function duplicateEmbed(index: number) {
     if (embeds.length >= maxEmbeds) return;
 
@@ -600,6 +630,8 @@
 
     row.components = [...row.components, newComponent];
     componentRows = [...componentRows];
+    // Automatically open edit mode for the new component
+    editingComponentKey = componentKey;
     showNotificationMessage(`${type === "button" ? "Button" : "Select menu"} added`);
   }
 
@@ -640,7 +672,42 @@
 
       if (row.components.length !== initialLength) {
         componentRows = [...componentRows];
+        // Clear editing state if we're removing the component being edited
+        if (editingComponentKey === componentKey) {
+          editingComponentKey = null;
+        }
         showNotificationMessage("Component removed");
+        return;
+      }
+    }
+  }
+
+  function handleComponentEdit(detail: { component: NewEmbedComponent }) {
+    const { component } = detail;
+    // Toggle edit mode: if already editing this component, close it; otherwise open it
+    if (editingComponentKey === component.componentKey) {
+      editingComponentKey = null;
+    } else {
+      editingComponentKey = component.componentKey;
+    }
+  }
+
+  function handleComponentDuplicate(detail: { componentKey: string }) {
+    const { componentKey } = detail;
+
+    for (const row of componentRows) {
+      const componentIndex = row.components.findIndex(c => c.componentKey === componentKey);
+      if (componentIndex !== -1) {
+        const originalComponent = row.components[componentIndex];
+        const newComponent: NewEmbedComponent = {
+          ...originalComponent,
+          componentKey: `comp_${Date.now()}_${Math.random()}`,
+          id: null // Clear ID for duplicated component
+        };
+
+        row.components.splice(componentIndex + 1, 0, newComponent);
+        componentRows = [...componentRows];
+        showNotificationMessage("Component duplicated");
         return;
       }
     }
@@ -817,6 +884,16 @@
           <div class="flex items-center gap-2">
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
+              style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
+              onclick={clearAll}
+              type="button"
+              title="Clear everything"
+            >
+              <i class="fa-solid fa-eraser"></i>
+              <span class="hidden sm:inline ml-1">Clear All</span>
+            </button>
+            <button
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
               onclick={close}
               type="button"
@@ -888,34 +965,68 @@
 
                 <!-- Embeds -->
                 <div class="space-y-4">
-                  <div class="flex justify-between items-center">
+                  <div class="flex justify-between items-center flex-wrap gap-2">
                     <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">
                       Embeds ({embeds.length}/{maxEmbeds})
                     </h3>
-                    {#if allowMultipleEmbeds}
+                    <div class="flex gap-2">
+                      {#if embeds.length > 1}
+                        <button
+                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2"
+                          style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
+                          onclick={clearAllEmbeds}
+                          type="button"
+                        >
+                          <i class="fa-solid fa-eraser"></i>
+                          Clear All Embeds
+                        </button>
+                      {/if}
+                      {#if allowMultipleEmbeds}
+                        <button
+                          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
+                          style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                          disabled={embeds.length >= maxEmbeds}
+                          onclick={addEmbed}
+                          type="button"
+                        >
+                          <i class="fa-solid fa-plus"></i>
+                          Add Embed
+                        </button>
+                      {/if}
+                    </div>
+                  </div>
+
+                  {#if embeds.length === 0}
+                    <div class="text-center py-12 rounded-lg"
+                         style="background: {$colorStore.primary}05; border: 1px dashed {$colorStore.primary}20;">
+                      <i class="fa-solid fa-layer-group"
+                         style="font-size: 48px; opacity: 0.3; display: block; margin: 0 auto 16px; color: {$colorStore.muted};"></i>
+                      <h4 class="text-lg font-semibold mb-2" style="color: {$colorStore.text};">No embeds</h4>
+                      <p class="text-sm mb-4" style="color: {$colorStore.muted};">
+                        Click "Add Embed" to create one
+                      </p>
                       <button
-                        class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 disabled:opacity-50"
+                        class="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] flex items-center gap-2 mx-auto"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                        disabled={embeds.length >= maxEmbeds}
                         onclick={addEmbed}
                         type="button"
                       >
                         <i class="fa-solid fa-plus"></i>
                         Add Embed
                       </button>
-                    {/if}
-                  </div>
-
-                  {#each embeds as embed, index}
-                    <EmbedEditor
-                      {embed}
-                      {index}
-                      placeholders={allPlaceholders}
-                      onupdate={handleEmbedUpdate}
-                      onremove={(detail) => removeEmbed(detail.index)}
-                      onduplicate={(detail) => duplicateEmbed(detail.index)}
-                    />
-                  {/each}
+                    </div>
+                  {:else}
+                    {#each embeds as embed, index}
+                      <EmbedEditor
+                        {embed}
+                        {index}
+                        placeholders={allPlaceholders}
+                        onupdate={handleEmbedUpdate}
+                        onremove={(detail) => removeEmbed(detail.index)}
+                        onduplicate={(detail) => duplicateEmbed(detail.index)}
+                      />
+                    {/each}
+                  {/if}
                 </div>
 
               {:else if activeTab === 'components'}
@@ -1010,10 +1121,12 @@
                               <ComponentEditor
                                 {component}
                                 triggers={chatTriggers}
-                                isEditing={true}
+                                isEditing={editingComponentKey === component.componentKey}
                                 {user}
                                 onupdate={handleComponentUpdate}
                                 onremove={handleComponentRemove}
+                                onedit={handleComponentEdit}
+                                onduplicate={handleComponentDuplicate}
                               />
                             {/each}
                           </div>

@@ -326,7 +326,7 @@
         // Role Management
         selfAssignableRoles = (selfAssignData as any) || { exclusive: false, roles: [], groups: {} };
         voiceChannelRoles = voiceChannelRolesData || [];
-        reactionRoles = { success: true, reactionRoles: (reactionRolesData as any) || [] };
+        reactionRoles = (reactionRolesData as any) || { success: false, reactionRoles: [] };
 
         // Permissions
         permissionOverrides = permissionOverridesData || [];
@@ -1040,6 +1040,7 @@
         bind:newVoiceChannelRole
         {availableRoles}
         {voiceChannels}
+        {textChannels}
         {saving}
         {saveNormalRoles}
         {saveBotRoles}

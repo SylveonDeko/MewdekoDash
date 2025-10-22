@@ -35,6 +35,7 @@ export interface RepeaterResponse {
   maxTriggers: number | null;
   threadAutoSticky: boolean;
   threadOnlyMode: boolean;
+  suppressNotifications: boolean;
   forumTagConditions: string | null;
   displayCount: number;
   lastDisplayed: string | null;
@@ -68,6 +69,7 @@ export interface CreateRepeaterRequest {
   maxTriggers?: number | null;
   threadAutoSticky?: boolean;
   threadOnlyMode?: boolean;
+  suppressNotifications?: boolean;
   forumTagConditions?: string | null;
 }
 
@@ -94,6 +96,7 @@ export interface UpdateRepeaterRequest {
   maxTriggers?: number | null;
   threadAutoSticky?: boolean | null;
   threadOnlyMode?: boolean | null;
+  suppressNotifications?: boolean | null;
   forumTagConditions?: string | null;
 }
 
@@ -135,6 +138,7 @@ export interface RepeaterFormData {
   maxTriggers: number | null;
   threadAutoSticky: boolean;
   threadOnlyMode: boolean;
+  suppressNotifications: boolean;
   forumTagConditions: string | null;
 }
 

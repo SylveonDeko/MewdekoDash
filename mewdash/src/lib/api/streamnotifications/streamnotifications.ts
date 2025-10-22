@@ -22,14 +22,22 @@ export const streamNotificationsApi = {
       "DELETE",
     ),
 
-  setStreamOnlineMessage: (guildId: bigint, index: number, message: string) =>
+  setStreamOnlineMessage: (
+    guildId: bigint,
+    index: number,
+    message: string | null,
+  ) =>
     apiRequest<void>(
       `StreamNotifications/${guildId}/${index}/onlineMessage`,
       "PUT",
       message,
     ),
 
-  setStreamOfflineMessage: (guildId: bigint, index: number, message: string) =>
+  setStreamOfflineMessage: (
+    guildId: bigint,
+    index: number,
+    message: string | null,
+  ) =>
     apiRequest<void>(
       `StreamNotifications/${guildId}/${index}/offlineMessage`,
       "PUT",
@@ -39,7 +47,7 @@ export const streamNotificationsApi = {
   getCustomStreamMessage: (guildId: bigint) =>
     apiRequest<string>(`StreamNotifications/${guildId}/customMessage`),
 
-  setCustomStreamMessage: (guildId: bigint, message: string) =>
+  setCustomStreamMessage: (guildId: bigint, message: string | null) =>
     apiRequest<void>(
       `StreamNotifications/${guildId}/customMessage`,
       "POST",

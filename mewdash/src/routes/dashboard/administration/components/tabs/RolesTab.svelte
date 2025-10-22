@@ -21,6 +21,7 @@
     newVoiceChannelRole = $bindable(),
     availableRoles,
     voiceChannels,
+    textChannels,
     saving,
     saveNormalRoles,
     saveBotRoles,
@@ -81,12 +82,16 @@
 
   <AddReactionRoleCard
     {availableRoles}
+    {reactionRoles}
+    {textChannels}
     {fetchAllData}
   />
 
   <ReactionRolesCard
     {availableRoles}
+    {fetchAllData}
     {reactionRoles}
     {showConfirm}
+    {textChannels}
   />
 </div>

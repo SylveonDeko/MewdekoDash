@@ -9,6 +9,7 @@ export enum StreamType {
 }
 
 export interface FollowedStream {
+  index: number;
   id: number;
   channelId: bigint;
   username: string;
@@ -16,6 +17,7 @@ export interface FollowedStream {
   onlineMessage: string | null;
   offlineMessage: string | null;
   dateAdded: string | null;
+  channelName: string | null;
 }
 
 export interface FollowStreamRequest {

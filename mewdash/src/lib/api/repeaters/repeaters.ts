@@ -1,11 +1,11 @@
 // lib/api/repeaters/repeaters.ts
 import { apiRequest } from "../core";
 import type {
-  RepeaterResponse,
   CreateRepeaterRequest,
-  UpdateRepeaterRequest,
-  RepeaterStatsResponse,
   MessageCountingStatus,
+  RepeaterResponse,
+  RepeaterStatsResponse,
+  UpdateRepeaterRequest
 } from "./models";
 
 /**
@@ -49,7 +49,12 @@ export const repeatersApi = {
     guildId: bigint,
     repeaterId: number,
     request: UpdateRepeaterRequest,
-  ) => apiRequest<void>(`Repeaters/${guildId}/${repeaterId}`, "PUT", request),
+  ) =>
+    apiRequest<RepeaterResponse>(
+      `Repeaters/${guildId}/${repeaterId}`,
+      "PATCH",
+      request,
+    ),
 
   /**
    * Deletes a repeater

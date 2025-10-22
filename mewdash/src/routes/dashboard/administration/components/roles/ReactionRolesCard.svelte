@@ -7,12 +7,51 @@
   let {
     reactionRoles,
     availableRoles,
-    showConfirm
+    textChannels,
+    showConfirm,
+    fetchAllData
   } = $props();
 
   function getRoleName(roleId: bigint): string {
-    const role = availableRoles.find((r: any) => BigInt(r.id) === roleId);
+    const role = availableRoles.find((r: any) => r.id === roleId);
     return role ? role.name : `Role ${roleId.toString()}`;
+  }
+
+  function getChannelName(channelId: bigint): string {
+    const channel = textChannels?.find((c: any) => c.id === channelId.toString());
+    return channel ? `#${channel.name}` : `Channel ${channelId.toString()}`;
+  }
+
+  async function removeReactionRole(index: number) {
+    if (!$currentGuild) return;
+    try {
+      await administrationApi.removeReactionRoles($currentGuild.id, index);
+      await fetchAllData();
+    } catch (err) {
+      console.error("Failed to remove reaction role:", err);
+    }
+  }
+
+  // Parse Discord emoji format to get preview
+  function parseEmojiForPreview(emoji: string): { type: "unicode" | "custom" | null; display: string; url?: string } {
+    if (!emoji) return { type: null, display: "" };
+
+    // Check if it's Discord custom emoji format: <:name:id> or <a:name:id>
+    const customMatch = emoji.match(/<(a?):([^:]+):(\d+)>/);
+    if (customMatch) {
+      const [, animated, name, id] = customMatch;
+      return {
+        type: "custom",
+        display: name,
+        url: `https://cdn.discordapp.com/emojis/${id}.${animated === "a" ? "gif" : "webp"}?size=48`
+      };
+    }
+
+    // Otherwise treat as Unicode emoji
+    return {
+      type: "unicode",
+      display: emoji
+    };
   }
 </script>
 
@@ -44,14 +83,20 @@
       </div>
     {:else}
       <div class="space-y-4">
-        {#each reactionRoles.reactionRoles as rr (rr.messageId)}
+        {#each reactionRoles.reactionRoles as rr, index (`${rr.messageId}-${index}`)}
           <div
             class="p-4 rounded-lg transition-all duration-200 hover:shadow-lg  border"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
             <div class="flex items-center justify-between mb-3">
-              <p class="font-medium" style="color: {$colorStore.text}">
-                Message ID: {rr.messageId}
-              </p>
+              <div>
+                <p class="font-medium" style="color: {$colorStore.text}">
+                  Message ID: {rr.messageId.toString()}
+                </p>
+                <p class="text-xs mt-1" style="color: {$colorStore.muted}">
+                  {getChannelName(rr.channelId)} • {rr.reactionRoles.length}
+                  reaction{rr.reactionRoles.length !== 1 ? 's' : ''}
+                </p>
+              </div>
               <span class="text-xs px-2 py-1 rounded-full"
                     style="background: {rr.exclusive ? $colorStore.accent + '20' : $colorStore.secondary + '20'};
                            color: {rr.exclusive ? $colorStore.accent : $colorStore.secondary}">
@@ -61,10 +106,21 @@
 
             <div class="space-y-2">
               {#each rr.reactionRoles as reaction (`${reaction.emoteName}-${reaction.roleId}`)}
-                <div class="flex items-center gap-3 text-sm" style="color: {$colorStore.muted}">
-                  <span>{reaction.emoteName}</span>
-                  <span>→</span>
-                  <span>{getRoleName(reaction.roleId)}</span>
+                {@const emojiInfo = parseEmojiForPreview(reaction.emoteName)}
+                <div class="flex items-center gap-2 text-sm" style="color: {$colorStore.text}">
+                  {#if emojiInfo.type === 'custom' && emojiInfo.url}
+                    <img src={emojiInfo.url} alt={emojiInfo.display} class="w-5 h-5 object-contain" />
+                    <span class="font-mono text-xs" style="color: {$colorStore.muted}">{emojiInfo.display}</span>
+                  {:else if emojiInfo.type === 'unicode'}
+                    <span class="text-lg">{emojiInfo.display}</span>
+                  {:else}
+                    <span class="text-lg">{reaction.emoteName}</span>
+                  {/if}
+                  <i class="fa-solid fa-arrow-right text-xs" style="color: {$colorStore.muted}"></i>
+                  <span class="px-2 py-0.5 rounded-md text-xs font-medium"
+                        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                    {getRoleName(reaction.roleId)}
+                  </span>
                 </div>
               {/each}
             </div>
@@ -73,7 +129,7 @@
               <button
                 class="px-3 py-1 rounded-full text-sm transition-colors hover:opacity-80"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
-                onclick={() => $currentGuild && showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => administrationApi.removeReactionRoles($currentGuild.id, rr.index))}
+                onclick={() => showConfirm("Remove Reaction Role", "Remove this reaction role setup?", () => removeReactionRole(index))}
               >
                 Remove
               </button>

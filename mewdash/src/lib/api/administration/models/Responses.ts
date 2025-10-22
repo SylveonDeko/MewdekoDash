@@ -136,9 +136,23 @@ export interface AutoBanRole {
 }
 
 /**
+ * Reaction role (individual emoji-to-role mapping)
+ */
+export interface ReactionRole {
+  /** Emoji name or unicode */
+  emoteName: string;
+
+  /** Role ID to assign */
+  roleId: bigint;
+}
+
+/**
  * Reaction role message
  */
 export interface ReactionRoleMessage {
+  /** Database index (used for removal) */
+  index: number;
+
   /** Message ID */
   messageId: bigint;
 
@@ -149,10 +163,18 @@ export interface ReactionRoleMessage {
   exclusive: boolean;
 
   /** Reaction roles */
-  roles: Array<{
-    emoteName: string;
-    roleId: bigint;
-  }>;
+  reactionRoles: ReactionRole[];
+}
+
+/**
+ * Get reaction roles response
+ */
+export interface GetReactionRolesResponse {
+  /** Whether any reaction roles exist */
+  success: boolean;
+
+  /** List of reaction role messages */
+  reactionRoles: ReactionRoleMessage[];
 }
 
 /**

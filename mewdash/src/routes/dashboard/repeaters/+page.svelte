@@ -24,7 +24,6 @@
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import type { PageData } from "./$types";
 
@@ -61,6 +60,7 @@
     let selectedRepeater: RepeaterResponse | null = $state(null);
     let editingRepeaterId: number | null = $state(null);
     let isEditMode = $state(false);
+  let originalFormData: any = $state(null); // Track original values for comparison
   let showAdvancedOptions = $state(false);
   let showForumTagEditor = $state(false);
 
@@ -85,6 +85,7 @@
     maxTriggers: null,
     threadAutoSticky: false,
     threadOnlyMode: false,
+    suppressNotifications: false,
     forumTagConditions: null
     });
 
@@ -219,7 +220,6 @@
         }))
       }));
       
-      showMessage("Data loaded successfully", "success");
     } catch (err) {
       logger.error("Failed to load repeater data:", err);
       showMessage("Failed to load repeater data", "error");
@@ -268,6 +268,7 @@
         maxTriggers: formData.maxTriggers,
         threadAutoSticky: formData.threadAutoSticky,
         threadOnlyMode: formData.threadOnlyMode,
+        suppressNotifications: formData.suppressNotifications,
         forumTagConditions: forumTagConditionsJson
       };
 
@@ -283,7 +284,10 @@
 
       // Reset form
       resetForm();
-      
+
+      // Switch to manage tab after successful creation
+      activeTab = "manage";
+
       // Reload data
       await loadAllData();
     } catch (err) {
@@ -296,11 +300,95 @@
 
   // Update an existing repeater
   async function updateRepeater() {
-    if (!$currentGuild?.id || !editingRepeaterId || !selectedRepeater) return;
+    if (!$currentGuild?.id || !editingRepeaterId || !selectedRepeater || !originalFormData) return;
 
     saving = true;
     try {
-      // Prepare forum tag conditions if any are selected
+      // Build request with only changed fields
+      const request: UpdateRepeaterRequest = {};
+
+      // Check message changes
+      const fullMessage = Object.keys(repeaterMessage).length > 0 ? JSON.stringify(repeaterMessage) : "";
+      const originalMessage = selectedRepeater.message || "";
+      if (fullMessage !== originalMessage) {
+        request.message = fullMessage;
+      }
+
+      // Check channel changes
+      if (formData.channelId !== originalFormData.channelId) {
+        request.channelId = formData.channelId ? BigInt(formData.channelId) : null;
+      }
+
+      // Check interval changes
+      if (formData.interval !== originalFormData.interval) {
+        request.interval = formData.interval;
+      }
+
+      // Check trigger mode changes
+      if (formData.triggerMode !== originalFormData.triggerMode) {
+        request.triggerMode = formData.triggerMode;
+      }
+
+      // Check activity settings changes
+      if (formData.activityThreshold !== originalFormData.activityThreshold) {
+        request.activityThreshold = formData.activityThreshold;
+      }
+      if (formData.activityTimeWindow !== originalFormData.activityTimeWindow) {
+        request.activityTimeWindow = formData.activityTimeWindow;
+      }
+
+      // Check conversation detection - only send if CHANGED
+      if (formData.conversationDetection !== originalFormData.conversationDetection) {
+        request.conversationDetection = formData.conversationDetection;
+      }
+      if (formData.conversationThreshold !== originalFormData.conversationThreshold) {
+        request.conversationThreshold = formData.conversationThreshold;
+      }
+
+      // Check priority changes
+      if (formData.priority !== originalFormData.priority) {
+        request.priority = formData.priority;
+      }
+
+      // Check queue position changes
+      if (formData.queuePosition !== originalFormData.queuePosition) {
+        request.queuePosition = formData.queuePosition;
+      }
+
+      // Check noRedundant - only send if CHANGED
+      if (formData.noRedundant !== originalFormData.noRedundant) {
+        request.noRedundant = formData.noRedundant;
+      }
+
+      // Check time conditions changes
+      const timeConditions = formData.timeSchedulePreset === "custom" ? formData.timeConditions : null;
+      const originalTimeConditions = originalFormData.timeSchedulePreset === "custom" ? originalFormData.timeConditions : null;
+      if (timeConditions !== originalTimeConditions) {
+        request.timeConditions = timeConditions;
+      }
+
+      // Check max age/triggers changes
+      if (formData.maxAge !== originalFormData.maxAge) {
+        request.maxAge = formData.maxAge || null;
+      }
+      if (formData.maxTriggers !== originalFormData.maxTriggers) {
+        request.maxTriggers = formData.maxTriggers;
+      }
+
+      // Check thread settings changes
+      if (formData.threadAutoSticky !== originalFormData.threadAutoSticky) {
+        request.threadAutoSticky = formData.threadAutoSticky;
+      }
+      if (formData.threadOnlyMode !== originalFormData.threadOnlyMode) {
+        request.threadOnlyMode = formData.threadOnlyMode;
+      }
+
+      // Check suppressNotifications changes
+      if (formData.suppressNotifications !== originalFormData.suppressNotifications) {
+        request.suppressNotifications = formData.suppressNotifications;
+      }
+
+      // Check forum tag conditions
       let forumTagConditionsJson: string | null = null;
       if (selectedChannelType === 'forum' && (selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0)) {
         const conditions: any = {};
@@ -313,38 +401,32 @@
         forumTagConditionsJson = JSON.stringify(conditions);
       }
 
-      const fullMessage = Object.keys(repeaterMessage).length > 0 ? JSON.stringify(repeaterMessage) : "";
+      // Only send forum tag conditions if they changed
+      if (forumTagConditionsJson !== selectedRepeater.forumTagConditions) {
+        request.forumTagConditions = forumTagConditionsJson;
+      }
 
-      const request: UpdateRepeaterRequest = {
-        message: fullMessage,
-        channelId: formData.channelId ? BigInt(formData.channelId) : null,
-        interval: formData.interval,
-        triggerMode: formData.triggerMode,
-        activityThreshold: formData.activityThreshold,
-        activityTimeWindow: formData.activityTimeWindow,
-        conversationDetection: formData.conversationDetection,
-        conversationThreshold: formData.conversationThreshold,
-        priority: formData.priority,
-        queuePosition: formData.queuePosition,
-        noRedundant: formData.noRedundant,
-        isEnabled: true,
-        timeConditions: formData.timeSchedulePreset === 'custom' ? formData.timeConditions : null,
-        maxAge: formData.maxAge || null,
-        maxTriggers: formData.maxTriggers,
-        threadAutoSticky: formData.threadAutoSticky,
-        threadOnlyMode: formData.threadOnlyMode,
-        forumTagConditions: forumTagConditionsJson,
-        allowMentions: formData.allowMentions
-      };
+      // Check allowMentions changes
+      if (formData.allowMentions !== originalFormData.allowMentions) {
+        request.allowMentions = formData.allowMentions;
+      }
 
-      logger.info(`Updating repeater ${editingRepeaterId} for guild ${$currentGuild.id}`, request);
+      // Only make the request if something actually changed
+      if (Object.keys(request).length === 0) {
+        showMessage("No changes detected", "info");
+        resetForm();
+        activeTab = "manage";
+        return;
+      }
+
+      logger.info(`Updating repeater ${editingRepeaterId} for guild ${$currentGuild.id} with changes:`, request);
       await repeatersApi.updateRepeater($currentGuild.id, editingRepeaterId!, request);
       logger.info(`Successfully updated repeater ${editingRepeaterId}`);
       showMessage("Repeater updated successfully!", "success");
-      
-      // Reset form and switch back to overview
+
+      // Reset form and switch back to manage tab
       resetForm();
-      activeTab = "overview";
+      activeTab = "manage";
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update repeater:", err);
@@ -429,30 +511,39 @@
       }
     }
 
+    // Determine channel type for the selected channel
+    const channelIdString = repeater.channelId.toString();
+    const isForumChannel = forumChannels.some(ch => ch.id === channelIdString);
+    selectedChannelType = isForumChannel ? "forum" : "text";
+
     formData = {
-      channelId: repeater.channelId.toString(),
+      channelId: channelIdString,
       message: "",
       interval: repeater.interval,
       startTimeOfDay: repeater.startTimeOfDay || "",
       triggerMode: repeater.triggerMode,
       activityThreshold: repeater.activityThreshold,
       activityTimeWindow: repeater.activityTimeWindow,
-      conversationDetection: repeater.conversationDetection,
+      conversationDetection: repeater.conversationDetection || false,
       conversationThreshold: repeater.conversationThreshold,
       priority: repeater.priority,
       queuePosition: repeater.queuePosition,
-      noRedundant: repeater.noRedundant,
-      allowMentions: false, // This isn't stored, so default to false
+      noRedundant: repeater.noRedundant || false,
+      allowMentions: repeater.allowMentions || false,
       timeSchedulePreset: repeater.timeConditions ? "custom" : "none",
       timeConditions: repeater.timeConditions || "",
       maxAge: repeater.maxAge || "",
       maxTriggers: repeater.maxTriggers,
-      threadAutoSticky: repeater.threadAutoSticky,
-      threadOnlyMode: repeater.threadOnlyMode,
+      threadAutoSticky: repeater.threadAutoSticky || false,
+      threadOnlyMode: repeater.threadOnlyMode || false,
+      suppressNotifications: repeater.suppressNotifications || false,
       forumTagConditions: null
     };
 
     selectedForumTags = parsedForumTags;
+
+    // Store original form data for comparison during update
+    originalFormData = JSON.parse(JSON.stringify(formData));
 
     // Switch to create tab
     activeTab = "create";
@@ -480,6 +571,7 @@
       maxTriggers: null,
       threadAutoSticky: false,
       threadOnlyMode: false,
+      suppressNotifications: false,
       forumTagConditions: null
     };
 
@@ -492,6 +584,7 @@
     isEditMode = false;
     editingRepeaterId = null;
     selectedRepeater = null;
+    originalFormData = null;
   }
 
   // Auto-enable thread-only mode when immediate trigger is selected on forum channels
@@ -854,56 +947,54 @@
         {/if}
       </div>
 
-      <!-- Trigger Mode Distribution -->
-      {#if repeaterStats?.triggerModeDistribution}
-        <div class="rounded-2xl p-6 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-          <div class="flex items-center gap-3 mb-6">
-            <i class="fa-utility-duo fa-regular fa-gear"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Trigger Mode Distribution</h2>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each Object.entries(repeaterStats.triggerModeDistribution) as [mode, count] (mode)}
-              <div class="p-4 rounded-xl"
-                   style="background: {$colorStore.primary}08;">
-                <div class="flex items-center justify-between">
-                  <span class="font-medium" style="color: {$colorStore.text}">{mode}</span>
-                  <span class="text-lg font-bold" style="color: {$colorStore.primary}">{count}</span>
-                </div>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/if}
-
-      <!-- Most Active Repeater -->
-      {#if repeaterStats?.mostActiveRepeater}
-        <div class="rounded-2xl p-6 shadow-2xl"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-          <div class="flex items-center gap-3 mb-6">
-            <i class="fa-utility-duo fa-regular fa-star"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Most Active Repeater</h2>
-          </div>
-
-          <div class="p-4 rounded-xl"
-               style="background: {$colorStore.primary}08;">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-medium" style="color: {$colorStore.text}">
-                {getChannelName(repeaterStats.mostActiveRepeater.channelId)}
-              </span>
-              <span class="text-lg font-bold" style="color: {$colorStore.primary}">
-                {repeaterStats.mostActiveRepeater.displayCount} displays
-              </span>
+      <!-- Additional Stats in Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <!-- Trigger Mode Distribution -->
+        {#if repeaterStats?.triggerModeDistribution}
+          <div class="rounded-2xl p-4 md:p-6 shadow-lg"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Trigger Modes</h3>
             </div>
-            <p class="text-sm" style="color: {$colorStore.muted}">
-              {repeaterStats.mostActiveRepeater.message.substring(0, 100)}...
-            </p>
+
+            <div class="space-y-2">
+              {#each Object.entries(repeaterStats.triggerModeDistribution) as [mode, count] (mode)}
+                <div class="flex items-center justify-between p-3 rounded-lg"
+                     style="background: {$colorStore.primary}08;">
+                  <span class="text-sm" style="color: {$colorStore.text}">{mode}</span>
+                  <span class="font-bold" style="color: {$colorStore.primary}">{count}</span>
+                </div>
+              {/each}
+            </div>
           </div>
-        </div>
-      {/if}
+        {/if}
+
+        <!-- Most Active Repeater -->
+        {#if repeaterStats?.mostActiveRepeater}
+          <div class="rounded-2xl p-4 md:p-6 shadow-lg"
+               style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-star" style="color: {$colorStore.secondary}; font-size: 18px;"></i>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Most Active</h3>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium" style="color: {$colorStore.text}">
+                  {getChannelName(repeaterStats.mostActiveRepeater.channelId)}
+                </span>
+                <span class="font-bold" style="color: {$colorStore.secondary}">
+                  {repeaterStats.mostActiveRepeater.displayCount} displays
+                </span>
+              </div>
+              <p class="text-xs line-clamp-2" style="color: {$colorStore.muted}">
+                {repeaterStats.mostActiveRepeater.message.substring(0, 100)}...
+              </p>
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
 
   {:else if activeTab === 'manage'}
@@ -914,41 +1005,45 @@
         <div class="text-center py-12 rounded-2xl"
              style="background: {$colorStore.primary}08;">
           <i class="fa-utility-duo fa-regular fa-clock"
-             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Repeaters</h3>
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px; opacity: 0.5;"></i>
+          <h3 class="text-xl font-semibold mb-2 mt-4" style="color: {$colorStore.text}">No Repeaters</h3>
           <p class="mb-6" style="color: {$colorStore.muted}">
             Create your first repeater to start sending automated messages.
           </p>
-          <button
-            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-            onclick={() => activeTab = 'create'}
-          >
-            <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-            Create Repeater
-          </button>
+          <div class="flex justify-center">
+            <button
+              class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+              onclick={() => activeTab = 'create'}
+            >
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                <span>Create Repeater</span>
+              </div>
+            </button>
+          </div>
         </div>
       {:else}
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
+        <div class="flex flex-col gap-4 mb-6">
           <!-- Selection Controls -->
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-2">
             <button
-              class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+              class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={selectAllRepeaters}
               disabled={repeaters.length === 0}
             >
-              <i class="fa-solid fa-square-check" style="font-size: 16px;"></i>
+              <i class="fa-solid fa-square-check mr-1" style="font-size: 14px;"></i>
               Select All ({repeaters.length})
             </button>
-            
+
             {#if selectedRepeaterIds.length > 0}
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
                 onclick={clearSelection}
               >
-                <i class="fa-solid fa-square" style="font-size: 16px;"></i>
+                <i class="fa-solid fa-square mr-1" style="font-size: 14px;"></i>
                 Clear ({selectedRepeaterIds.length})
               </button>
             {/if}
@@ -956,27 +1051,27 @@
 
           <!-- Bulk Actions -->
           {#if selectedRepeaterIds.length > 0}
-            <div class="flex items-center gap-3" in:fly={{ x: 20, duration: 300 }}>
-              <span class="text-sm font-medium" style="color: {$colorStore.text}">
+            <div class="flex flex-wrap items-center gap-2" in:fly={{ x: 20, duration: 300 }}>
+              <span class="text-xs sm:text-sm font-medium" style="color: {$colorStore.text}">
                 {selectedRepeaterIds.length} selected:
               </span>
-              
+
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                 onclick={() => bulkToggleRepeaters(true)}
               >
-                <i class="fa-solid fa-check" style="font-size: 16px;"></i>
-                Enable All
+                <i class="fa-solid fa-check mr-1" style="font-size: 14px;"></i>
+                Enable
               </button>
-              
+
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                 onclick={() => bulkToggleRepeaters(false)}
               >
-                <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                Disable All
+                <i class="fa-solid fa-xmark mr-1" style="font-size: 14px;"></i>
+                Disable
               </button>
             </div>
           {/if}
@@ -986,53 +1081,55 @@
         <div class="space-y-4">
           {#each repeaters as repeater, index}
             {@const parsedMessage = parseRepeaterMessage(repeater.message)}
-            <div class="rounded-2xl p-6 shadow-lg border transition-all hover:scale-[1.01]"
+            <div class="rounded-2xl p-4 md:p-6 border shadow-lg transition-all duration-200 hover:scale-[1.01]"
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {repeater.isEnabled ? $colorStore.primary + '30' : $colorStore.muted + '20'};"
                  in:fly={{ y: 20, duration: 300, delay: index * 50 }}>
               
               <!-- Repeater Header -->
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
+              <div class="flex flex-col sm:flex-row items-start justify-between gap-3 mb-4">
+                <div class="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                   <!-- Selection Checkbox -->
-                  <label for="input-9921"
-                         class="flex items-center justify-center w-6 h-6 rounded-sm border-2 cursor-pointer transition-all hover:scale-110"
-                         style="border-color: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : $colorStore.muted}; 
+                  <label for="repeater-select-{repeater.id}"
+                         class="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-sm border-2 cursor-pointer transition-all duration-200 hover:scale-110 flex-shrink-0 mt-1"
+                         style="border-color: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : $colorStore.muted};
                                 background: {selectedRepeaterIds.includes(repeater.id) ? $colorStore.primary : 'transparent'};">
                     <input
+                      id="repeater-select-{repeater.id}"
                       type="checkbox"
                       class="sr-only"
                       checked={selectedRepeaterIds.includes(repeater.id)}
                       onchange={() => toggleRepeaterSelection(repeater.id)}
                     >
                     {#if selectedRepeaterIds.includes(repeater.id)}
-                      <i class="fa-solid fa-check" style="color: white; font-size: 16px;"></i>
+                      <i class="fa-solid fa-check" style="color: white; font-size: 12px;"></i>
                     {/if}
                   </label>
 
-                  <div class="p-2 rounded-lg"
+                  <div class="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
                        style="background: {repeater.isEnabled ? $colorStore.primary + '20' : $colorStore.muted + '20'};">
                     <i class="fa-solid fa-hashtag"
-                       style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}; font-size: 20px;"></i>
+                       style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}; font-size: 16px;"></i>
                   </div>
-                  <div>
-                    <h3 class="text-lg font-bold" style="color: {$colorStore.text}">
+                  <div class="min-w-0 flex-1">
+                    <h3 class="text-sm sm:text-lg font-bold truncate" style="color: {$colorStore.text}">
                       {getChannelName(repeater.channelId)}
                     </h3>
-                    <div class="flex items-center gap-4 text-sm" style="color: {$colorStore.muted}">
-                      <span>{getTriggerModeLabel(repeater.triggerMode)}</span>
-                      <span>Priority: {repeater.priority}</span>
-                      <span>Queue: #{repeater.queuePosition}</span>
-                      <span>{repeater.displayCount} displays</span>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm"
+                         style="color: {$colorStore.muted}">
+                      <span class="whitespace-nowrap">{getTriggerModeLabel(repeater.triggerMode)}</span>
+                      <span class="hidden sm:inline">Priority: {repeater.priority}</span>
+                      <span class="whitespace-nowrap">Queue: #{repeater.queuePosition}</span>
+                      <span class="whitespace-nowrap">{repeater.displayCount} displays</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Status indicator -->
-                <div class="flex items-center gap-2">
-                  <div class="w-3 h-3 rounded-full"
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <div class="w-2.5 h-2.5 rounded-full"
                        style="background: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted};"></div>
-                  <span class="text-sm font-medium"
+                  <span class="text-xs sm:text-sm font-medium whitespace-nowrap"
                         style="color: {repeater.isEnabled ? $colorStore.primary : $colorStore.muted}">
                     {repeater.isEnabled ? 'Active' : 'Disabled'}
                   </span>
@@ -1040,51 +1137,35 @@
               </div>
 
               <div class="mb-4">
-                {#if parsedMessage.hasRichContent}
-                   <div class="p-3 rounded-lg border" style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
-                    <div class="flex items-center gap-2 mb-2">
-                      <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                      <span class="text-xs font-medium" style="color: {$colorStore.primary}">Rich Message</span>
-                      {#if parsedMessage.embeds.length > 0}
-                        <span class="text-xs px-2 py-1 rounded-sm"
-                              style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                          {parsedMessage.embeds.length} embed{parsedMessage.embeds.length > 1 ? 's' : ''}
-                        </span>
-                      {/if}
-                      {#if parsedMessage.components.length > 0}
-                        <span class="text-xs px-2 py-1 rounded-sm"
-                              style="background: {$colorStore.accent}20; color: {$colorStore.accent}">
-                          {parsedMessage.components.length} component{parsedMessage.components.length > 1 ? 's' : ''}
-                        </span>
-                      {/if}
-                    </div>
-                    <!-- Compact preview using PreviewCard -->
-                    <div class="max-h-48 overflow-hidden">
-                      <PreviewCard
-                        content={parsedMessage.content}
-                        embeds={parsedMessage.embeds.slice(0, 2)}
-                        components={parsedMessage.components.slice(0, 1)}
-                        showEmpty={false}
-                      />
-                    </div>
-                    {#if parsedMessage.embeds.length > 2 || parsedMessage.components.length > 1}
-                      <div class="text-xs text-center mt-2 pt-2 border-t" style="color: {$colorStore.muted}; border-color: {$colorStore.primary}20;">
-                        + {Math.max(0, parsedMessage.embeds.length - 2) + Math.max(0, parsedMessage.components.length - 1)} more items
-                      </div>
-                    {/if}
+                {#if repeater.message}
+                  <!-- Use FullscreenEmbedBuilder as read-only preview -->
+                  <div class="[&_button]:pointer-events-none">
+                    <FullscreenEmbedBuilder
+                      value={JSON.parse(repeater.message)}
+                      previewTitle="Message Preview"
+                      previewDescription="Click Edit to modify"
+                      placeholder="No message content"
+                      icon="fa-message"
+                      allowContent={false}
+                      allowMultipleEmbeds={false}
+                      allowComponents={false}
+                      guildId={$currentGuild?.id}
+                      user={data.user}
+                      onchange={() => {}}
+                      onclose={() => {}}
+                    />
                   </div>
                 {:else}
-                  <!-- Simple text preview -->
-                  <div class="p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-                    <p class="text-sm" style="color: {$colorStore.text}">
-                      {parsedMessage.content.substring(0, 200)}
-                      {#if parsedMessage.content.length > 200}...{/if}
+                  <!-- Empty message -->
+                  <div class="p-3 rounded-lg text-center" style="background: {$colorStore.primary}08;">
+                    <p class="text-sm" style="color: {$colorStore.muted}">
+                      No message configured
                     </p>
                   </div>
                 {/if}
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4">
                 {#if repeater.triggerMode === StickyTriggerMode.Immediate}
                   <!-- Immediate Mode Info -->
                   <div>
@@ -1208,108 +1289,113 @@
 
               <div class="space-y-3">
                 <!-- Primary Actions -->
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     onclick={() => editRepeater(repeater)}
                   >
-                    <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
-                    Edit
+                    <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
+                    <span class="hidden sm:inline">Edit</span>
+                    <span class="sm:hidden">Edit</span>
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {repeater.isEnabled ? $colorStore.accent + '20' : $colorStore.primary + '20'};
                            color: {repeater.isEnabled ? $colorStore.accent : $colorStore.primary};"
                     onclick={() => toggleRepeater(repeater.id)}
                   >
-                    <i class="fa-solid fa-toggle-off" style="font-size: 16px;"></i>
+                    <i class="fa-solid fa-toggle-off" style="font-size: 12px;"></i>
                     {repeater.isEnabled ? 'Disable' : 'Enable'}
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                     onclick={() => triggerRepeater(repeater.id)}
                     disabled={!repeater.isEnabled}
                   >
-                    <i class="fa-solid fa-play" style="font-size: 16px;"></i>
-                    Trigger Now
+                    <i class="fa-solid fa-play" style="font-size: 12px;"></i>
+                    <span class="hidden sm:inline">Trigger Now</span>
+                    <span class="sm:hidden">Trigger</span>
                   </button>
 
                   <!-- Queue Position Controls -->
                   <div class="flex items-center">
-                    <button aria-label="Delete"
-                            class="flex items-center gap-1 px-2 py-2 rounded-l-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    <button aria-label="Move repeater up"
+                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-l-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterUp(repeater.id)}
                       disabled={repeater.queuePosition <= 1}
                     >
-                      <i class="fa-solid fa-arrow-up" style="font-size: 16px;"></i>
+                      <i class="fa-solid fa-arrow-up" style="font-size: 12px;"></i>
                     </button>
-                    <button aria-label="Edit"
-                            class="flex items-center gap-1 px-2 py-2 rounded-r-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    <button aria-label="Move repeater down"
+                            class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-r-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}20; color: {$colorStore.secondary};"
                       onclick={() => moveRepeaterDown(repeater.id)}
                     >
-                      <i class="fa-solid fa-arrow-down" style="font-size: 16px;"></i>
+                      <i class="fa-solid fa-arrow-down" style="font-size: 12px;"></i>
                     </button>
                   </div>
 
                   <button
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
                     onclick={() => deleteRepeater(repeater.id)}
                   >
-                    <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
-                    Delete
+                    <i class="fa-solid fa-trash" style="font-size: 12px;"></i>
+                    <span class="hidden sm:inline">Delete</span>
+                    <span class="sm:hidden">Del</span>
                   </button>
                 </div>
 
                 <!-- Advanced Controls -->
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <!-- Quick Property Updates -->
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newInterval = prompt('New interval (HH:MM:SS):', repeater.interval);
                       if (newInterval) updateRepeaterInterval(repeater.id, newInterval);
                     }}
                   >
-                    <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
-                    Interval
+                    <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
+                    <span class="hidden sm:inline">Interval</span>
+                    <span class="sm:hidden">Int</span>
                   </button>
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                     onclick={() => {
                       const newTime = prompt('Start time (HH:MM, leave empty to disable):', repeater.startTimeOfDay || '');
                       updateRepeaterStartTime(repeater.id, newTime || null);
                     }}
                   >
-                    <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
-                    Start Time
+                    <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
+                    <span class="hidden sm:inline">Start Time</span>
+                    <span class="sm:hidden">Start</span>
                   </button>
 
                   {#if repeater.conversationDetection}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         const newThreshold = prompt('Conversation threshold (messages/minute):', repeater.conversationThreshold.toString());
                         if (newThreshold) updateRepeaterConversationThreshold(repeater.id, parseInt(newThreshold));
                       }}
                     >
-                      <i class="fa-solid fa-users" style="font-size: 12px;"></i>
-                      Conv: {repeater.conversationThreshold}/min
+                      <i class="fa-solid fa-users" style="font-size: 10px;"></i>
+                      <span class="whitespace-nowrap">Conv: {repeater.conversationThreshold}/min</span>
                     </button>
                   {/if}
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                     onclick={() => {
                       const maxAge = prompt('Max age (e.g., 7.00:00:00 for 7 days, empty for no limit):', repeater.maxAge || '');
@@ -1324,7 +1410,7 @@
                   <!-- Advanced Features -->
                   {#if repeater.forumTagConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1339,7 +1425,7 @@
 
                   {#if repeater.timeConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
                       onclick={() => openAdvancedTimeEditor(repeater.id)}
                     >
@@ -1350,7 +1436,7 @@
 
                   {#if repeater.threadAutoSticky || repeater.threadOnlyMode}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
                       style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
                       onclick={() => {
                         selectedRepeater = repeater;
@@ -1370,241 +1456,262 @@
     </div>
 
   {:else if activeTab === 'create'}
-    <div class="w-full space-y-6" in:fade={{ duration: 200 }}>
+    <div class="w-full" in:fade={{ duration: 200 }}>
       <!-- Create Repeater Form -->
-      <div class="rounded-2xl p-6 shadow-2xl"
-           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);">
-        <div class="flex items-center gap-3 mb-6">
-          {#if isEditMode}
-            <i class="fa-solid fa-pen" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Edit Repeater #{editingRepeaterId}</h2>
-          {:else}
-            <i class="fa-solid fa-plus" style="color: {$colorStore.primary}; font-size: 20px;"></i>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Create New Repeater</h2>
-          {/if}
+      <div class="rounded-2xl border shadow-2xl"
+           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                  border-color: {$colorStore.primary}30;">
+
+        <!-- Header Section -->
+        <div class="p-4 sm:p-6 md:p-8 border-b" style="border-color: {$colorStore.primary}20;">
+          <div class="flex items-start sm:items-center gap-3">
+            {#if isEditMode}
+              <i class="fa-solid fa-pen flex-shrink-0" style="color: {$colorStore.secondary}; font-size: 20px;"></i>
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold truncate" style="color: {$colorStore.text}">Edit
+                  Repeater</h2>
+                <p class="text-xs sm:text-sm mt-1 break-words" style="color: {$colorStore.muted}">Modify settings for
+                  repeater #{editingRepeaterId}</p>
+              </div>
+            {:else}
+              <i class="fa-solid fa-plus flex-shrink-0" style="color: {$colorStore.primary}; font-size: 20px;"></i>
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold" style="color: {$colorStore.text}">Create New
+                  Repeater</h2>
+                <p class="text-xs sm:text-sm mt-1" style="color: {$colorStore.muted}">Set up automated messages for your
+                  server</p>
+              </div>
+            {/if}
+          </div>
         </div>
 
         <form onsubmit={(e) => { e.preventDefault(); isEditMode ? updateRepeater() : createRepeater(); }}
-              class="space-y-6">
-          <!-- ===== SIMPLIFIED ESSENTIAL SETTINGS ===== -->
-          
-          <!-- Channel Selection -->
-          <div>
-            <span id="target-channel-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-              <i class="fa-solid fa-hashtag" style="font-size: 16px;"></i>
-              Target Channel
-            </span>
-            <DiscordSelector
-              type="channel"
-              options={allChannels.map(ch => ({ id: ch.id, name: ch.name }))}
-              bind:selected={formData.channelId}
-              placeholder="Select channel..." />
+              class="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 md:space-y-10">
 
-          <!-- Forum Tag Filters (when forum channel selected) -->
-          {#if selectedChannelType === 'forum' && availableForumTags.length > 0}
-            <div class="p-4 rounded-xl border mt-4" 
-                 style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;"
-                 in:fly={{ y: 20, duration: 300 }}>
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-tags" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
-                  <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Forum Tag Filters</h4>
-                    <span class="text-xs px-2 py-1 rounded-sm"
-                          style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                    Optional
-                  </span>
-                </div>
-                
-                {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
-                  <button
-                    type="button"
-                    class="text-xs px-2 py-1 rounded-sm transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
-                    onclick={() => selectedForumTags = {required: [], excluded: []}}
-                  >
-                    Clear All
-                  </button>
-                {/if}
-              </div>
-              
-              <p class="text-xs mb-4" style="color: {$colorStore.muted}">
-                Configure which forum tags are required or excluded for this repeater.
-              </p>
+          <div class="space-y-4">
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-hashtag" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Target Channel</h3>
+            </div>
 
-              <!-- Required/Excluded Sections -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Required Tags Section -->
-                <div>
-                  <h5 class="text-sm font-medium mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
-                    <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                    Must Have These Tags
-                  </h5>
-                  <div class="space-y-2">
-                    {#each availableForumTags as tag}
-                      <label for="input-9921"
-                             class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
-                             style="background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '15' : $colorStore.primary + '05'};
-                                    border: 1px solid {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '40' : 'transparent'};">
-                        <input
-                          type="checkbox"
-                          class="sr-only"
-                          checked={selectedForumTags.required.includes(tag.id)}
-                          onchange={(e) => handleRequiredTagToggle(tag, e.currentTarget.checked)}
-                        >
-                        <span class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
+            <div class="pl-0 md:pl-7">
+              <DiscordSelector
+                type="channel"
+                options={allChannels.map(ch => ({ id: ch.id, name: ch.name }))}
+                bind:selected={formData.channelId}
+                placeholder="Select channel..." />
+              {#if selectedChannelType === 'forum' && availableForumTags.length > 0}
+                <div class="mt-6 p-5 md:p-6 rounded-xl border"
+                     style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;"
+                     in:fly={{ y: 20, duration: 300 }}>
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-tags" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
+                      <h4 class="text-base font-semibold" style="color: {$colorStore.text}">Forum Tag Filters</h4>
+                      <span class="text-xs px-2 py-1 rounded-sm"
+                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
+                          Optional
+                        </span>
+                    </div>
+
+                    {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
+                      <button
+                        type="button"
+                        class="text-sm px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02]"
+                        style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                        onclick={() => selectedForumTags = {required: [], excluded: []}}
+                      >
+                        Clear All
+                      </button>
+                    {/if}
+                  </div>
+
+                  <p class="text-sm mb-6" style="color: {$colorStore.muted}">
+                    Configure which forum tags are required or excluded for this repeater.
+                  </p>
+
+                  <!-- Required/Excluded Sections -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+
+                    <!-- Required Tags Section -->
+                    <div>
+                      <h5 class="text-sm font-medium mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+                        <i class="fa-solid fa-check" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                        Must Have These Tags
+                      </h5>
+                      <div class="space-y-2.5">
+                        {#each availableForumTags as tag}
+                          <label for="required-tag-{tag.id}"
+                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+                                 style="background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '15' : $colorStore.primary + '05'};
+                                          border: 1px solid {selectedForumTags.required.includes(tag.id) ? $colorStore.primary + '40' : 'transparent'};">
+                            <input
+                              id="required-tag-{tag.id}"
+                              type="checkbox"
+                              class="sr-only"
+                              checked={selectedForumTags.required.includes(tag.id)}
+                              onchange={(e) => handleRequiredTagToggle(tag, e.currentTarget.checked)}
+                            >
+                            <span
+                              class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0"
                               style="border-color: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : $colorStore.muted};
-                                    background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : 'transparent'};">
-                          {#if selectedForumTags.required.includes(tag.id)}
-                            <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                          {/if}
-                        </span>
-                        <span class="flex items-center gap-2">
-                          {#if tag.emoji}
-                            <span>{tag.emoji}</span>
-                          {/if}
-                          <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
-                        </span>
-                      </label>
-                    {/each}
-                    
-                    {#if selectedForumTags.required.length === 0}
-                      <div class="text-xs text-center py-3" style="color: {$colorStore.muted}">
-                        No tags required - will work on all threads
-                      </div>
-                    {/if}
-                  </div>
-                </div>
+                                          background: {selectedForumTags.required.includes(tag.id) ? $colorStore.primary : 'transparent'};">
+                                {#if selectedForumTags.required.includes(tag.id)}
+                                  <i class="fa-solid fa-check" style="color: white; font-size: 10px;"></i>
+                                {/if}
+                              </span>
+                            <span class="flex items-center gap-2">
+                                {#if tag.emoji}
+                                  <span class="text-base">{tag.emoji}</span>
+                                {/if}
+                              <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
+                              </span>
+                          </label>
+                        {/each}
 
-                <!-- Excluded Tags Section -->
-                <div>
-                  <h5 class="text-sm font-medium mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
-                    <i class="fa-solid fa-xmark" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                    Never Use These Tags
-                  </h5>
-                  <div class="space-y-2">
-                    {#each availableForumTags as tag}
-                      <label for="input-9921"
-                             class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
-                             style="background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '15' : $colorStore.accent + '05'};
-                                    border: 1px solid {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '40' : 'transparent'};">
-                        <input
-                          type="checkbox"
-                          class="sr-only"
-                          checked={selectedForumTags.excluded.includes(tag.id)}
-                          disabled={selectedForumTags.required.includes(tag.id)}
-                          onchange={(e) => handleExcludedTagToggle(tag, e.currentTarget.checked)}
-                        >
-                        <span class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
+                        {#if selectedForumTags.required.length === 0}
+                          <div class="text-sm text-center py-4 rounded-lg"
+                               style="background: {$colorStore.primary}05; color: {$colorStore.muted}">
+                            No tags required - will work on all threads
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+
+                    <!-- Excluded Tags Section -->
+                    <div>
+                      <h5 class="text-sm font-medium mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
+                        <i class="fa-solid fa-xmark" style="color: {$colorStore.accent}; font-size: 14px;"></i>
+                        Never Use These Tags
+                      </h5>
+                      <div class="space-y-2.5">
+                        {#each availableForumTags as tag}
+                          <label for="excluded-tag-{tag.id}"
+                                 class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+                                 style="background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '15' : $colorStore.accent + '05'};
+                                          border: 1px solid {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent + '40' : 'transparent'};">
+                            <input
+                              id="excluded-tag-{tag.id}"
+                              type="checkbox"
+                              class="sr-only"
+                              checked={selectedForumTags.excluded.includes(tag.id)}
+                              disabled={selectedForumTags.required.includes(tag.id)}
+                              onchange={(e) => handleExcludedTagToggle(tag, e.currentTarget.checked)}
+                            >
+                            <span
+                              class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0"
                               style="border-color: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : $colorStore.muted};
-                                    background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : 'transparent'};
-                                    opacity: {selectedForumTags.required.includes(tag.id) ? '0.3' : '1'};">
-                          {#if selectedForumTags.excluded.includes(tag.id)}
-                            <i class="fa-solid fa-xmark" style="color: white; font-size: 8px;"></i>
-                          {/if}
-                        </span>
-                        <span class="flex items-center gap-2"
-                             style="opacity: {selectedForumTags.required.includes(tag.id) ? '0.5' : '1'}">
-                          {#if tag.emoji}
-                            <span>{tag.emoji}</span>
-                          {/if}
-                          <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
-                          {#if selectedForumTags.required.includes(tag.id)}
-                              <span class="text-xs px-1 rounded-sm"
-                                    style="background: {$colorStore.primary}; color: white;">Required</span>
-                          {/if}
-                        </span>
-                      </label>
-                    {/each}
-                    
-                    {#if selectedForumTags.excluded.length === 0}
-                      <div class="text-xs text-center py-3" style="color: {$colorStore.muted}">
-                        No tags excluded - will work on all thread types
+                                          background: {selectedForumTags.excluded.includes(tag.id) ? $colorStore.accent : 'transparent'};
+                                          opacity: {selectedForumTags.required.includes(tag.id) ? '0.3' : '1'};">
+                                {#if selectedForumTags.excluded.includes(tag.id)}
+                                  <i class="fa-solid fa-xmark" style="color: white; font-size: 10px;"></i>
+                                {/if}
+                              </span>
+                            <span class="flex items-center gap-2"
+                                  style="opacity: {selectedForumTags.required.includes(tag.id) ? '0.5' : '1'}">
+                                {#if tag.emoji}
+                                  <span class="text-base">{tag.emoji}</span>
+                                {/if}
+                              <span class="text-sm" style="color: {$colorStore.text}">{tag.name}</span>
+                              {#if selectedForumTags.required.includes(tag.id)}
+                                  <span class="text-xs px-2 py-0.5 rounded-md"
+                                        style="background: {$colorStore.primary}; color: white;">Required</span>
+                                {/if}
+                              </span>
+                          </label>
+                        {/each}
+
+                        {#if selectedForumTags.excluded.length === 0}
+                          <div class="text-sm text-center py-4 rounded-lg"
+                               style="background: {$colorStore.accent}05; color: {$colorStore.muted}">
+                            No tags excluded - will work on all thread types
+                          </div>
+                        {/if}
                       </div>
-                    {/if}
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              <!-- Smart Summary -->
-              {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
-                <div class="mt-4 p-3 rounded-lg transition-all duration-300" 
-                     style="background: {$colorStore.primary}08;"
-                     in:fly={{ y: 10, duration: 200 }}>
-                  <div class="flex items-center gap-4 text-sm">
-                    {#if selectedForumTags.required.length > 0}
-                      <div class="flex items-center gap-1" style="color: {$colorStore.primary}">
-                        <i class="fa-solid fa-check" style="font-size: 12px;"></i>
-                        <span>{selectedForumTags.required.length} required</span>
+
+                  <!-- Smart Summary -->
+                  {#if selectedForumTags.required.length > 0 || selectedForumTags.excluded.length > 0}
+                    <div class="mt-6 p-4 rounded-lg transition-all duration-300"
+                         style="background: {$colorStore.primary}08;"
+                         in:fly={{ y: 10, duration: 200 }}>
+                      <div class="flex flex-wrap items-center gap-4 text-sm">
+                        {#if selectedForumTags.required.length > 0}
+                          <div class="flex items-center gap-2" style="color: {$colorStore.primary}">
+                            <i class="fa-solid fa-check" style="font-size: 12px;"></i>
+                            <span class="font-medium">{selectedForumTags.required.length}
+                              required tag{selectedForumTags.required.length > 1 ? 's' : ''}</span>
+                          </div>
+                        {/if}
+                        {#if selectedForumTags.excluded.length > 0}
+                          <div class="flex items-center gap-2" style="color: {$colorStore.accent}">
+                            <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
+                            <span class="font-medium">{selectedForumTags.excluded.length}
+                              excluded tag{selectedForumTags.excluded.length > 1 ? 's' : ''}</span>
+                          </div>
+                        {/if}
                       </div>
-                    {/if}
-                    {#if selectedForumTags.excluded.length > 0}
-                      <div class="flex items-center gap-1" style="color: {$colorStore.accent}">
-                        <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
-                        <span>{selectedForumTags.excluded.length} excluded</span>
-                      </div>
-                    {/if}
-                  </div>
+                    </div>
+                  {/if}
                 </div>
               {/if}
             </div>
-          {/if}
-
-            <!-- Message Content -->
-          <div class="mt-6">
-            <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
-              <i class="fa-solid fa-message" style="font-size: 16px;"></i>
-              Repeater Message
-            </label>
-
-            <FullscreenEmbedBuilder
-              bind:value={repeaterMessage}
-              previewTitle="Repeater Message"
-              previewDescription="Message that will be repeated in the channel"
-              icon="fa-clock"
-              allowContent={true}
-              allowMultipleEmbeds={true}
-              maxEmbeds={10}
-              allowComponents={true}
-              additionalPlaceholders={[
-                { category: "Server", name: "%server%", description: "Server name" },
-                { category: "Server", name: "%server.members%", description: "Member count" },
-                { category: "Server", name: "%server.id%", description: "Server ID" }
-              ]}
-              guildId={$currentGuild?.id}
-              user={data.user}
-              placeholder="Click to configure repeater message with rich embeds and components"
-            />
-
-            <p class="text-xs mt-3" style="color: {$colorStore.muted}">
-              Create rich messages with embeds, buttons, and select menus. Supports Discord markdown and placeholders.
-            </p>
           </div>
 
-
-          <!-- Trigger Mode Selection -->
           <div>
-            <span id="how-should-this-repeater-trigger-label" class="block text-sm font-medium mb-2"
-                  style="color: {$colorStore.text}">
-              <i class="fa-solid fa-bolt" style="font-size: 16px;"></i>
-              How should this repeater trigger?
-            </span>
-            <DiscordSelector
-              type="custom"
-              options={triggerModeOptions}
-              selected={formData.triggerMode.toString()}
-              placeholder="Select trigger mode..."
-              onchange={handleTriggerModeChange} />
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-message" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Message Content</h3>
+            </div>
+
+            <div class="pl-0 md:pl-7 space-y-3">
+              <FullscreenEmbedBuilder
+                bind:value={repeaterMessage}
+                previewTitle="Repeater Message"
+                previewDescription="Message that will be repeated in the channel"
+                icon="fa-clock"
+                allowContent={true}
+                allowMultipleEmbeds={true}
+                maxEmbeds={10}
+                allowComponents={true}
+                additionalPlaceholders={[
+                    { category: "Server", name: "%server%", description: "Server name" },
+                    { category: "Server", name: "%server.members%", description: "Member count" },
+                    { category: "Server", name: "%server.id%", description: "Server ID" }
+                  ]}
+                guildId={$currentGuild?.id}
+                user={data.user}
+                placeholder="Click to configure repeater message with rich embeds and components"
+              />
+
+              <p class="text-sm" style="color: {$colorStore.muted}">
+                Create rich messages with embeds, buttons, and select menus. Supports Discord markdown and placeholders.
+              </p>
+            </div>
           </div>
 
-          <!-- ===== CONTEXTUAL INTERVAL SELECTION (Only for TimeInterval mode) ===== -->
-          {#if formData.triggerMode === StickyTriggerMode.TimeInterval}
-            <div in:fly={{ y: 20, duration: 300 }}>
-              <label for="input-7328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
-                <i class="fa-solid fa-clock" style="font-size: 16px;"></i>
-                Repeat Every
-              </label>
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+              <h3 class="text-lg font-semibold" style="color: {$colorStore.text}">Trigger Settings</h3>
+            </div>
+
+            <div class="pl-0 md:pl-7 space-y-6">
+              <div>
+                <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">How should this repeater trigger?</span>
+                <DiscordSelector
+                  type="custom"
+                  options={triggerModeOptions}
+                  selected={formData.triggerMode.toString()}
+                  placeholder="Select trigger mode..."
+                  onchange={handleTriggerModeChange} />
+              </div>
+
+              {#if formData.triggerMode === StickyTriggerMode.TimeInterval}
+                <div in:fly={{ y: 20, duration: 300 }}>
+                  <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">Repeat Every</span>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
                 {#each [
                   { value: "00:01:00", label: "1 minute" },
                   { value: "00:05:00", label: "5 minutes" },
@@ -1613,73 +1720,39 @@
                   { value: "06:00:00", label: "6 hours" },
                   { value: "1.00:00:00", label: "Daily" }
                 ] as preset}
-                  <label for="input-7328"
-                         class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02]"
+                  <label for="interval-preset-{preset.value}"
+                         class="flex items-center justify-center rounded-lg p-2 sm:p-2.5 border cursor-pointer transition-all duration-200 hover:scale-[1.02] text-center"
                          style="background: {formData.interval === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                 border-color: {formData.interval === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                     <input
+                      id="interval-preset-{preset.value}"
                       type="radio"
                       bind:group={formData.interval}
                       value={preset.value}
                       class="sr-only"
                     >
-                    <span class="text-sm" style="color: {$colorStore.text}">{preset.label}</span>
+                    <span class="text-xs sm:text-sm" style="color: {$colorStore.text}">{preset.label}</span>
                   </label>
                 {/each}
               </div>
-              
+
               <!-- Custom interval input -->
               <input
+                id="interval-custom-input"
                 type="text"
                 bind:value={formData.interval}
                 placeholder="Custom: HH:MM:SS"
-                class="w-full p-2 rounded-lg border text-sm transition-all"
+                class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
               >
             </div>
           {/if}
 
-          <!-- Simple Feature Toggles -->
-          <div class="flex flex-wrap gap-4">
-            <label for="input-7328" class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                bind:checked={formData.noRedundant}
-                class="sr-only"
-              >
-                <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                   style="border-color: {formData.noRedundant ? $colorStore.primary : $colorStore.muted}; 
-                          background: {formData.noRedundant ? $colorStore.primary : 'transparent'};">
-                {#if formData.noRedundant}
-                  <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                {/if}
-              </div>
-              <span class="text-sm" style="color: {$colorStore.text}">Don't repeat if message is already last in channel</span>
-            </label>
-
-            <label for="input-7328" class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                bind:checked={formData.allowMentions}
-                class="sr-only"
-              >
-                <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                   style="border-color: {formData.allowMentions ? $colorStore.primary : $colorStore.muted}; 
-                          background: {formData.allowMentions ? $colorStore.primary : 'transparent'};">
-                {#if formData.allowMentions}
-                  <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                {/if}
-              </div>
-              <span class="text-sm" style="color: {$colorStore.text}">Allow @everyone and @here mentions</span>
-            </label>
-          </div>
-
-
           <!-- Collapsible Advanced Options -->
-          <div class="border rounded-xl" style="border-color: {$colorStore.primary}30;">
+              <div class="rounded-xl border" style="border-color: {$colorStore.primary}30;">
             <button
               type="button"
-              class="w-full flex items-center justify-between p-4 transition-all hover:opacity-50"
+              class="w-full flex items-center justify-between p-4 transition-all duration-200 hover:opacity-50"
               style="background: {$colorStore.primary}05;"
               onclick={() => showAdvancedOptions = !showAdvancedOptions}
             >
@@ -1699,40 +1772,67 @@
 
             {#if showAdvancedOptions}
               <div class="p-6 space-y-6" in:fly={{ y: -20, duration: 300 }}>
-                
+
+                <!-- Basic Toggles -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label for="no-redundant-check" class="flex items-start sm:items-center gap-3">
+                    <input
+                      id="no-redundant-check"
+                      type="checkbox"
+                      bind:checked={formData.noRedundant}
+                      class="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0"
+                    >
+                    <span class="text-sm" style="color: {$colorStore.text}">Don't repeat if message is already last in channel</span>
+                  </label>
+
+                  <label for="allow-mentions-check" class="flex items-start sm:items-center gap-3">
+                    <input
+                      id="allow-mentions-check"
+                      type="checkbox"
+                      bind:checked={formData.allowMentions}
+                      class="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0"
+                    >
+                    <span class="text-sm" style="color: {$colorStore.text}">Allow @everyone and @here mentions</span>
+                  </label>
+                </div>
+
                 <!-- Priority & Timing -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                   <div>
-                    <label for="input-7328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Priority
-                      (0-100)</label>
-                    <input id="input-7328"
+                    <label for="repeater-priority-input" class="block text-sm font-medium mb-2"
+                           style="color: {$colorStore.text}">Priority (0-100)</label>
+                    <input
+                      id="repeater-priority-input"
                       type="number"
                       bind:value={formData.priority}
-                      min="0" max="100"
-                      class="w-full p-2 rounded-lg border text-sm"
+                      min="0"
+                      max="100"
+                      class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
                   </div>
-                  
+
                   <div>
-                    <label for="input-3731" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Queue
-                      Position</label>
-                    <input id="input-3731"
+                    <label for="queue-position-input" class="block text-sm font-medium mb-2"
+                           style="color: {$colorStore.text}">Queue Position</label>
+                    <input
+                      id="queue-position-input"
                       type="number"
                       bind:value={formData.queuePosition}
                       min="0"
-                      class="w-full p-2 rounded-lg border text-sm"
+                      class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
                   </div>
-                  
+
                   <div>
-                    <label for="input-5720" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Start
-                      Time (HH:MM)</label>
-                    <input id="input-5720"
+                    <label for="start-time-input" class="block text-sm font-medium mb-2"
+                           style="color: {$colorStore.text}">Start Time (HH:MM)</label>
+                    <input
+                      id="start-time-input"
                       type="time"
                       bind:value={formData.startTimeOfDay}
-                      class="w-full p-2 rounded-lg border text-sm"
+                      class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
                   </div>
@@ -1740,41 +1840,45 @@
 
                 <!-- Advanced Toggles -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" bind:checked={formData.conversationDetection} class="sr-only">
-                      <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                         style="border-color: {formData.conversationDetection ? $colorStore.primary : $colorStore.muted}; 
-                                background: {formData.conversationDetection ? $colorStore.primary : 'transparent'};">
-                      {#if formData.conversationDetection}
-                        <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                      {/if}
-                    </div>
-                    <span class="text-sm" style="color: {$colorStore.text}">Conversation Detection</span>
+                  <label for="conversation-detection-check" class="flex items-center gap-3">
+                    <input
+                      id="conversation-detection-check"
+                      type="checkbox"
+                      bind:checked={formData.conversationDetection}
+                      class="w-4 h-4"
+                    >
+                    <span style="color: {$colorStore.text}">Conversation Detection</span>
+                  </label>
+
+                  <label for="suppress-notifications-check" class="flex items-center gap-3">
+                    <input
+                      id="suppress-notifications-check"
+                      type="checkbox"
+                      bind:checked={formData.suppressNotifications}
+                      class="w-4 h-4"
+                    >
+                    <span style="color: {$colorStore.text}">Suppress Notifications</span>
                   </label>
 
                   {#if selectedChannelType === 'forum'}
-                    <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" bind:checked={formData.threadAutoSticky} class="sr-only">
-                        <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                           style="border-color: {formData.threadAutoSticky ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {formData.threadAutoSticky ? $colorStore.primary : 'transparent'};">
-                        {#if formData.threadAutoSticky}
-                          <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                        {/if}
-                      </div>
-                      <span class="text-sm" style="color: {$colorStore.text}">Auto-create in new threads</span>
+                    <label for="thread-auto-sticky-check" class="flex items-center gap-3">
+                      <input
+                        id="thread-auto-sticky-check"
+                        type="checkbox"
+                        bind:checked={formData.threadAutoSticky}
+                        class="w-4 h-4"
+                      >
+                      <span style="color: {$colorStore.text}">Auto-create in new threads</span>
                     </label>
 
-                    <label for="input-9356" class="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" bind:checked={formData.threadOnlyMode} class="sr-only">
-                        <div class="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                           style="border-color: {formData.threadOnlyMode ? $colorStore.primary : $colorStore.muted}; 
-                                  background: {formData.threadOnlyMode ? $colorStore.primary : 'transparent'};">
-                        {#if formData.threadOnlyMode}
-                          <i class="fa-solid fa-check" style="color: white; font-size: 8px;"></i>
-                        {/if}
-                      </div>
-                      <span class="text-sm" style="color: {$colorStore.text}">Thread-only mode</span>
+                    <label for="thread-only-mode-check" class="flex items-center gap-3">
+                      <input
+                        id="thread-only-mode-check"
+                        type="checkbox"
+                        bind:checked={formData.threadOnlyMode}
+                        class="w-4 h-4"
+                      >
+                      <span style="color: {$colorStore.text}">Thread-only mode</span>
                     </label>
                   {/if}
                 </div>
@@ -1782,26 +1886,28 @@
                 <!-- Auto-Expiry (simplified) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label for="input-9356" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto-delete
+                    <label for="max-age-input" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto-delete
                       after (days)</label>
-                    <input id="input-9356"
+                    <input
+                      id="max-age-input"
                       type="text"
                       bind:value={formData.maxAge}
                       placeholder="7.00:00:00 (7 days)"
-                      class="w-full p-2 rounded-lg border text-sm"
+                      class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
                   </div>
-                  
+
                   <div>
-                    <label for="input-8121" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max
-                      displays</label>
-                    <input id="input-8121"
+                    <label for="max-triggers-input" class="block text-sm font-medium mb-2"
+                           style="color: {$colorStore.text}">Max displays</label>
+                    <input
+                      id="max-triggers-input"
                       type="number"
                       bind:value={formData.maxTriggers}
                       placeholder="Leave empty for unlimited"
                       min="1"
-                      class="w-full p-2 rounded-lg border text-sm"
+                      class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                     >
                   </div>
@@ -1809,15 +1915,15 @@
 
                 <!-- Time Scheduling (simplified) -->
                 <div>
-                  <label for="input-6736" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
-                    Schedule (Optional)</label>
+                  <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time Schedule (Optional)</span>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {#each TIME_SCHEDULE_PRESETS as preset}
-                      <label for="input-6736"
-                             class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:scale-[1.02] text-sm"
+                      <label for="time-schedule-{preset.value}"
+                             class="flex items-center gap-2 rounded-lg p-2 border cursor-pointer transition-all duration-200 hover:scale-[1.02] text-sm"
                              style="background: {formData.timeSchedulePreset === preset.value ? $colorStore.primary + '20' : $colorStore.primary + '08'};
                                     border-color: {formData.timeSchedulePreset === preset.value ? $colorStore.primary : $colorStore.primary + '30'};">
                         <input
+                          id="time-schedule-{preset.value}"
                           type="radio"
                           bind:group={formData.timeSchedulePreset}
                           value={preset.value}
@@ -1837,36 +1943,38 @@
 
           <!-- Activity-Based Settings -->
           {#if formData.triggerMode === StickyTriggerMode.OnActivity || formData.triggerMode === StickyTriggerMode.OnNoActivity || formData.triggerMode === StickyTriggerMode.AfterMessages}
-            <div class="p-4 rounded-xl border" 
+            <div class="rounded-xl p-4 border"
                  style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}20;"
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2 mb-3">
                 <i class="fa-solid fa-chart-line" style="color: {$colorStore.secondary}; font-size: 16px;"></i>
                 <h4 class="text-sm font-semibold" style="color: {$colorStore.text}">Activity Settings</h4>
               </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
-                  <label for="input-6736" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                  <label for="activity-threshold-input" class="block text-sm mb-2" style="color: {$colorStore.muted}">
                     {formData.triggerMode === StickyTriggerMode.AfterMessages ? 'Messages needed' : 'Activity threshold'}
                   </label>
-                  <input id="input-6736"
+                  <input
+                    id="activity-threshold-input"
                     type="number"
                     bind:value={formData.activityThreshold}
                     min="1"
-                    class="w-full p-2 rounded-lg border text-sm"
+                    class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                   >
                 </div>
-                
+
                 <div>
-                  <label for="input-9912" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Time
+                  <label for="activity-time-window-input" class="block text-sm mb-2" style="color: {$colorStore.muted}">Time
                     window</label>
-                  <input id="input-9912"
+                  <input
+                    id="activity-time-window-input"
                     type="text"
                     bind:value={formData.activityTimeWindow}
                     placeholder="00:05:00"
-                    class="w-full p-2 rounded-lg border text-sm"
+                    class="w-full rounded-lg p-3 border text-sm transition-all duration-200"
                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                   >
                 </div>
@@ -1876,7 +1984,7 @@
 
           <!-- Immediate Mode Info -->
           {#if formData.triggerMode === StickyTriggerMode.Immediate}
-            <div class="p-4 rounded-xl border" 
+            <div class="rounded-xl p-4 border"
                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
                  in:fly={{ y: 20, duration: 300 }}>
               <div class="flex items-center gap-2">
@@ -1889,30 +1997,12 @@
           {/if}
 
           <!-- Action Buttons -->
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
-            <button
-              type="submit"
-              class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-              disabled={saving || !formData.channelId || Object.keys(repeaterMessage).length === 0}
-            >
-              {#if saving}
-                <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 20px;"></i>
-                {isEditMode ? 'Updating...' : 'Creating...'}
-              {:else if isEditMode}
-                <i class="fa-solid fa-pen" style="font-size: 20px;"></i>
-                Update Repeater
-              {:else}
-                <i class="fa-solid fa-plus" style="font-size: 20px;"></i>
-                Create Repeater
-              {/if}
-            </button>
-
+              <div class="flex justify-end gap-3 pt-6">
             {#if isEditMode}
               <button
                 type="button"
-                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
+                class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
+                style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
                 onclick={() => {
                   isEditMode = false;
                   editingRepeaterId = null;
@@ -1921,20 +2011,32 @@
                   activeTab = 'overview';
                 }}
               >
-                <i class="fa-solid fa-xmark" style="font-size: 20px;"></i>
-                Cancel Edit
-              </button>
-            {:else}
-              <button
-                type="button"
-                class="flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all hover:scale-[1.02] min-h-[52px]"
-                style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
-                onclick={resetForm}
-              >
-                <i class="fa-solid fa-arrows-rotate" style="font-size: 20px;"></i>
-                Reset Form
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
+                  <span>Cancel</span>
+                </div>
               </button>
             {/if}
+
+                <button
+                  type="submit"
+                  class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50"
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                  disabled={saving || !formData.channelId || Object.keys(repeaterMessage).length === 0}
+                >
+                  <div class="flex items-center gap-2">
+                    {#if saving}
+                      <i class="fa-solid fa-arrows-rotate fa-spin" style="font-size: 16px;"></i>
+                      <span>{isEditMode ? 'Saving...' : 'Creating...'}</span>
+                    {:else if isEditMode}
+                      <i class="fa-solid fa-floppy-disk" style="font-size: 16px;"></i>
+                      <span>Save Changes</span>
+                    {:else}
+                      <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                      <span>Create Repeater</span>
+                    {/if}
+                  </div>
+                </button>
           </div>
         </form>
       </div>

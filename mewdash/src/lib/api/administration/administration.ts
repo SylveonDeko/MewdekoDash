@@ -1,39 +1,39 @@
 // lib/api/administration/administration.ts
 import { apiRequest } from "../core";
 import type {
-  AutoAssignRoles,
-  ProtectionStatus,
-  ProtectionStats,
-  AntiRaidConfig,
-  AntiSpamConfig,
+  AddReactionRolesRequest,
+  AddSelfAssignableRoleRequest,
   AntiAltConfig,
   AntiMassMentionConfig,
   AntiMassPostConfig,
   AntiPostChannelConfig,
-  SelfAssignableRole,
-  VoiceChannelRoleRequest,
-  VoiceChannelRole,
+  AntiRaidConfig,
+  AntiSpamConfig,
+  AutoAssignRoles,
   AutoBanRole,
-  ReactionRoleMessage,
-  AddReactionRolesRequest,
-  SetGroupRequest,
-  AddSelfAssignableRoleRequest,
-  TimezoneInfo,
-  SetTimezoneRequest,
+  CommandCooldown,
+  MassBanRequest,
+  MassRenameRequest,
+  Module,
+  MovePermissionRequest,
   PermissionOverride,
   PermissionOverrideRequest,
-  ToggleGameVoiceChannelRequest,
+  ProtectionStats,
+  ProtectionStatus,
+  PruneRequest,
+  PruneToMessageRequest,
+  ReactionRoleMessage,
+  SelfAssignableRole,
   ServerRecoveryRequest,
   ServerRecoveryStatus,
   SetBanMessageRequest,
-  MassBanRequest,
-  MassRenameRequest,
-  PruneRequest,
-  PruneToMessageRequest,
   SetChannelStateRequest,
-  Module,
-  CommandCooldown,
-  MovePermissionRequest,
+  SetGroupRequest,
+  SetTimezoneRequest,
+  TimezoneInfo,
+  ToggleGameVoiceChannelRequest,
+  VoiceChannelRole,
+  VoiceChannelRoleRequest
 } from "./models";
 
 /**
@@ -552,10 +552,10 @@ export const administrationApi = {
   /**
    * Gets all reaction role messages
    * @param guildId The guild ID
-   * @returns List of reaction role messages
+   * @returns Reaction role messages with success status
    */
   getReactionRoles: (guildId: bigint) =>
-    apiRequest<ReactionRoleMessage[]>(
+    apiRequest<{ success: boolean; reactionRoles: ReactionRoleMessage[] }>(
       `Administration/${guildId}/reaction-roles`,
     ),
 

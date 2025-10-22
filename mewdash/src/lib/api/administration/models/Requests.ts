@@ -53,8 +53,11 @@ export interface ReactionRoleData {
  * Maps to Mewdeko.Controllers.Common.Administration.AddReactionRolesRequest
  */
 export interface AddReactionRolesRequest {
-  /** The ID of the message to add reaction roles to (null for new message) */
-  messageId?: bigint | null;
+  /** The ID of the message to add reaction roles to (required) */
+  messageId: bigint;
+
+  /** The ID of the channel containing the message (required) */
+  channelId: bigint;
 
   /** Whether the reaction roles are mutually exclusive */
   exclusive: boolean;
