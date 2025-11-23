@@ -495,6 +495,19 @@
     try {
       saving = true;
 
+      // Helper to handle TimeSpan values - keep them in HH:mm:ss format if already a string, convert numbers to ISO 8601
+      const formatTimeSpan = (value: any, unit: "H" | "M" | "S"): string | null => {
+        if (!value) return null;
+
+        // If it's already a TimeSpan string like "01:30:00", keep it as-is
+        if (typeof value === "string" && value.includes(":")) {
+          return value;
+        }
+
+        // Otherwise it's a number, convert to ISO 8601
+        return `PT${value}${unit}`;
+      };
+
       // Prepare update request - only send properties that exist in UpdateButtonRequest model
       const updateRequest: any = {
         label: button.label || null,
@@ -504,8 +517,8 @@
         archiveCategoryId: button.archiveCategoryId ? BigInt(button.archiveCategoryId) : null,
         supportRoles: button.supportRoles?.length > 0 ? button.supportRoles.map((r: string) => BigInt(r)) : null,
         viewerRoles: button.viewerRoles?.length > 0 ? button.viewerRoles.map((r: string) => BigInt(r)) : null,
-        autoCloseTime: button.autoCloseTime || null,
-        requiredResponseTime: button.requiredResponseTime || null,
+        autoCloseTime: formatTimeSpan(button.autoCloseTime, "H"),
+        requiredResponseTime: formatTimeSpan(button.requiredResponseTime, "M"),
         maxActiveTickets: button.maxActiveTickets,
         allowedPriorities: button.allowedPriorities?.length > 0 ? button.allowedPriorities : null,
         defaultPriority: button.defaultPriority || null,
@@ -514,7 +527,7 @@
         lockOnClose: button.lockOnClose,
         renameOnClose: button.renameOnClose,
         removeCreatorOnClose: button.removeCreatorOnClose,
-        deleteDelay: button.deleteDelay || null,
+        deleteDelay: formatTimeSpan(button.deleteDelay, "S"),
         lockOnArchive: button.lockOnArchive,
         renameOnArchive: button.renameOnArchive,
         removeCreatorOnArchive: button.removeCreatorOnArchive,
@@ -670,6 +683,19 @@
     try {
       saving = true;
 
+      // Helper to handle TimeSpan values - keep them in HH:mm:ss format if already a string, convert numbers to ISO 8601
+      const formatTimeSpan = (value: any, unit: "H" | "M" | "S"): string | null => {
+        if (!value) return null;
+
+        // If it's already a TimeSpan string like "01:30:00", keep it as-is
+        if (typeof value === "string" && value.includes(":")) {
+          return value;
+        }
+
+        // Otherwise it's a number, convert to ISO 8601
+        return `PT${value}${unit}`;
+      };
+
       // Prepare update request
       const updateRequest: any = {
         label: option.label || null,
@@ -679,8 +705,8 @@
         archiveCategoryId: option.archiveCategoryId ? BigInt(option.archiveCategoryId) : null,
         supportRoles: option.supportRoles?.length > 0 ? option.supportRoles.map((r: string) => BigInt(r)) : null,
         viewerRoles: option.viewerRoles?.length > 0 ? option.viewerRoles.map((r: string) => BigInt(r)) : null,
-        autoCloseTime: option.autoCloseTime || null,
-        requiredResponseTime: option.requiredResponseTime || null,
+        autoCloseTime: formatTimeSpan(option.autoCloseTime, "H"),
+        requiredResponseTime: formatTimeSpan(option.requiredResponseTime, "M"),
         maxActiveTickets: option.maxActiveTickets,
         allowedPriorities: option.allowedPriorities?.length > 0 ? option.allowedPriorities : null,
         defaultPriority: option.defaultPriority || null,
@@ -689,7 +715,7 @@
         lockOnClose: option.lockOnClose,
         renameOnClose: option.renameOnClose,
         removeCreatorOnClose: option.removeCreatorOnClose,
-        deleteDelay: option.deleteDelay || null,
+        deleteDelay: formatTimeSpan(option.deleteDelay, "S"),
         lockOnArchive: option.lockOnArchive,
         renameOnArchive: option.renameOnArchive,
         removeCreatorOnArchive: option.removeCreatorOnArchive,

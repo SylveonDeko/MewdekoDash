@@ -34,7 +34,7 @@ export const handle: Handle = async ({ event, resolve }) => {
       "object-src 'none'", // Block plugins
       "base-uri 'self'", // Prevent base tag hijacking
       "form-action 'self'", // Restrict form submissions
-      "frame-ancestors 'none'", // Prevent clickjacking
+      "frame-ancestors 'self' https://top.gg", // Prevent clickjacking, allow top.gg
     ].join("; ");
 
     response.headers.set("Content-Security-Policy", cspDirectives);

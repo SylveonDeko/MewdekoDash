@@ -26,16 +26,22 @@ async function makeRequest(
 
       if (!response.ok) {
         if (data.errors || data.title || data.status) {
-          return json({
-            error: {
-              message: data.title || "API error",
-              status: data.status,
-              errors: data.errors,
-              type: data.type
-            }
-          }, { status: response.status });
+          return json(
+            {
+              error: {
+                message: data.title || "API error",
+                status: data.status,
+                errors: data.errors,
+                type: data.type,
+              },
+            },
+            { status: response.status },
+          );
         }
-        return json({ error: "API error", details: data }, { status: response.status });
+        return json(
+          { error: "API error", details: data },
+          { status: response.status },
+        );
       }
 
       return json(data);
@@ -122,8 +128,13 @@ export const PUT: RequestHandler = async ({ request, params }) => {
   let body;
   try {
     const text = await request.text();
+    console.log(
+      `[PUT ${path}] Received text (${text.length} chars):`,
+      text.substring(0, 500),
+    );
     if (text) {
       body = JSONbig.parse(text);
+      console.log(`[PUT ${path}] Parsed body:`, body);
     } else {
       console.log("Request body is empty");
       body = {};
@@ -132,6 +143,12 @@ export const PUT: RequestHandler = async ({ request, params }) => {
     logger.error("Error parsing request body:", error);
     body = {};
   }
+
+  const jsonBody = JSONbig.stringify(body);
+  console.log(
+    `[PUT ${path}] Stringified body (${jsonBody.length} chars):`,
+    jsonBody.substring(0, 500),
+  );
 
   const finalUrl = `${instanceUrl}/${path}${url.search || ''}`;
 
@@ -142,7 +159,7 @@ export const PUT: RequestHandler = async ({ request, params }) => {
       "X-API-Key": MEWDEKO_API_KEY,
       "Content-Type": "application/json",
     },
-    JSONbig.stringify(body)
+    jsonBody,
   );
 };
 
