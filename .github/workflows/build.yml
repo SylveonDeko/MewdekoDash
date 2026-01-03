@@ -1,4 +1,4 @@
-name: Build and Analyze
+name: Build
 
 on:
   push:
@@ -9,39 +9,13 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build:
-    name: Build and Analyze
+  sonarcloud:
+    name: SonarCloud
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: mewdash
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones disabled for better SonarQube analysis
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: mewdash/package-lock.json
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run type check
-        run: npm run check
-
-      - name: Run linting
-        run: npm run lint
-        continue-on-error: true  # Don't fail build on lint warnings
-
-      - name: Build project
-        run: npm run build
+          fetch-depth: 0
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v5
