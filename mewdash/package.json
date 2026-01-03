@@ -56,7 +56,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@awesome.me/kit-fe8cbf4c57": "^1.0.19",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "date-fns": "^4.1.0",
     "discord.css": "^0.4.0",
