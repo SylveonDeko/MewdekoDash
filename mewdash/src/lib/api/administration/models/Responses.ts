@@ -87,7 +87,7 @@ export interface TimezoneInfo {
   displayName: string;
 
   /** Current offset from UTC */
-  utcOffset: string;
+  offset: string;
 }
 
 /**

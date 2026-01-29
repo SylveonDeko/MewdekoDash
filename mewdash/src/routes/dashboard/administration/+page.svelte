@@ -1,7 +1,7 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { administrationApi, clientApi, protectionApi } from "$lib/api/index.ts";
+  import { administrationApi, clientApi, protectionApi, type TimezoneInfo } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
@@ -265,13 +265,13 @@
         // Handle timezone data
         guildTimezone = (timezoneData as any)?.data || timezoneData || "UTC";
         // Transform timezone data to match DiscordSelector's expected format
-        availableTimezones = (timezonesData || []).map((tz: any) => ({
+        availableTimezones = (timezonesData || []).map((tz: TimezoneInfo) => ({
           id: tz.id,
           displayName: tz.displayName,
           offset: tz.offset
         }));
         // Find the timezone ID from the available timezones that matches the current timezone
-        const currentTimezoneOption = availableTimezones.find((tz: any) =>
+        const currentTimezoneOption = availableTimezones.find((tz: TimezoneInfo) =>
           tz.id === guildTimezone ||
           (tz.displayName && tz.displayName.includes(guildTimezone)) ||
           tz.id.includes(guildTimezone)
