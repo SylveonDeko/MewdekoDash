@@ -252,6 +252,8 @@
           administrationApi.getBanMessage($currentGuild.id),
           protectionApi.getAntiPatternPatterns($currentGuild.id).catch(() => [])
         ]);
+        console.log(timezoneData);
+        console.log(timezonesData);
 
         // Server Management
         staffRole = staffRoleData && staffRoleData !== BigInt(0) ? staffRoleData : null;
