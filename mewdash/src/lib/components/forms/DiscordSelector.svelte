@@ -10,6 +10,7 @@
     value?: string;
     icon?: string; // For custom types
     emoji?: string; // For custom types with emoji
+    displayName: string; // For custom types with display name
   };
 </script>
 
@@ -94,7 +95,7 @@
       case "role":
         return `@${option.name}`;
       case "timezone":
-        return option.label || `${option.name} (${option.offset || ""})`;
+        return option.displayName;
       case "custom":
         return option.label || option.name;
       case "user":
