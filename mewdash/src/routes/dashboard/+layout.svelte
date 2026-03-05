@@ -1,19 +1,25 @@
-<!-- routes/dashboard/+layout.svelte -->
 <script lang="ts">
-
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
   import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
   import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { userStore } from "$lib/stores/userStore.ts";
-  import MobileNavBar from "$lib/components/layout/MobileNavBar.svelte";
+  import DashboardSidebar from "$lib/components/layout/DashboardSidebar.svelte";
   import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
   import { browser } from "$app/environment";
   import { wizardApi } from "$lib/api/index.ts";
+  import { musicStore } from "$lib/stores/musicStore.ts";
 
   let { data, children } = $props();
+
+  let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
+  let mobileSidebarOpen = $state(false);
+
+  function handleToggleMobileSidebar() {
+    mobileSidebarOpen = !mobileSidebarOpen;
+  }
 
   // Setup suggestion banner state
     let showSetupSuggestion = $state(false);
@@ -86,36 +92,53 @@
 
     // If no user, redirect to login with current URL
     if (browser && !data.user && !$userStore) {
-      // Capture current URL for redirect after login
       const currentUrl = window.location.pathname + window.location.search;
       const loginUrl = `/api/discord/login?redirect_to=${encodeURIComponent(currentUrl)}`;
       window.location.href = loginUrl;
       return;
     }
+
+    window.addEventListener('toggle-mobile-sidebar', handleToggleMobileSidebar);
+    return () => {
+      window.removeEventListener('toggle-mobile-sidebar', handleToggleMobileSidebar);
+    };
   });
 
   // Extract colors from server icon when guild changes, fallback to bot avatar
   $effect(() => {
         if ($currentGuild?.icon) {
-            // Use server icon for server-specific theming
             const iconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.png`;
             colorStore.extractFromServerIcon(iconUrl);
         } else if ($currentInstance?.botAvatar) {
-            // Fallback to bot avatar if no server icon
             colorStore.extractFromImage($currentInstance.botAvatar);
         }
     });
+
+  // Start music polling when user and guild are available
+  $effect(() => {
+    if ($userStore?.id && $currentGuild) {
+      musicStore.startPolling(BigInt($userStore.id));
+    }
+  });
+
+  onDestroy(() => {
+    musicStore.stopPolling();
+  });
 </script>
 
 <div class="flex w-full">
-  <!-- Main content -->
-  <div class="flex-1 w-full">
+  {#if $currentInstance}
+    <DashboardSidebar bind:collapsed={sidebarCollapsed} bind:mobileOpen={mobileSidebarOpen} />
+  {/if}
+
+  <div class="flex-1 w-full min-w-0 transition-all duration-300"
+       class:lg:ml-[280px]={$currentInstance && !sidebarCollapsed}
+       class:lg:ml-[68px]={$currentInstance && sidebarCollapsed}>
     {#if !$currentInstance}
         <InstanceSelector data={data}/>
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>
-        <!-- Setup suggestion banner (only show on dashboard pages with selected guild) -->
         {#if $currentGuild && showSetupSuggestion && setupSuggestionContext}
           <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
             <SetupSuggestionBanner
@@ -130,8 +153,6 @@
 
           {@render children?.()}
       </ErrorBoundary>
-      <!-- Always show mobile nav when we have an instance - it can handle both guild and instance selection -->
-      <MobileNavBar showInstanceSelector={!$currentGuild} data={data} />
     {/if}
   </div>
 </div>

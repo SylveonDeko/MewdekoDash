@@ -1,16 +1,15 @@
 <!-- lib/components/CompactMusicPlayer.svelte -->
 <script lang="ts">
 
-    import {onDestroy, onMount} from "svelte";
-    import {fly, slide} from "svelte/transition";
-    import type { SeekRequest } from "$lib/api/music/models";
-    import { musicApi } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild";
-    import {logger} from "$lib/logger";
-    import type { MusicStatus } from "$lib/api/music/models";
-    import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
+  import { onDestroy, onMount } from "svelte";
+  import { fly, slide } from "svelte/transition";
+  import type { MusicStatus, SeekRequest } from "$lib/api/music/models";
+  import { musicApi } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild";
+  import { logger } from "$lib/logger";
+  import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 
-    onMount(() => {
+  onMount(() => {
     setupSilentAudio();
     setupMediaSession();
   });
@@ -154,33 +153,33 @@
   }
 
   function getCurrentPosition(): number {
-    if (!musicStatus?.position) return 0;
+    if (!musicStatus?.Position) return 0;
 
       // If we're not playing, just return the relative position
-    if (musicStatus.state !== 2) {
-      return getSeconds(musicStatus.position.RelativePosition || "0:00");
+    if (musicStatus.State !== 2) {
+      return getSeconds(musicStatus.Position.RelativePosition || "0:00");
       }
 
       // Calculate actual position based on server time sync
       try {
-        const serverTime = new Date(musicStatus.position.SystemClock?.UtcNow).getTime();
+        const serverTime = new Date(musicStatus.Position.SystemClock?.UtcNow).getTime();
           const localTime = Date.now();
           const serverTimeDiff = serverTime - localTime;
 
-        const syncedAt = new Date(musicStatus.position.SyncedAt).getTime();
-        const basePosition = getSeconds(musicStatus.position.RelativePosition || "0:00");
+        const syncedAt = new Date(musicStatus.Position.SyncedAt).getTime();
+        const basePosition = getSeconds(musicStatus.Position.RelativePosition || "0:00");
 
           const timeSinceSync = (localTime + serverTimeDiff - syncedAt) / 1000;
           return Math.max(0, basePosition + timeSinceSync);
       } catch (err) {
           // Fallback to simple relative position if sync data is missing
-        return getSeconds(musicStatus.position.RelativePosition || "0:00");
+        return getSeconds(musicStatus.Position.RelativePosition || "0:00");
     }
   }
 
   function getProgressPercentage(): number {
-    if (!currentTrack?.track?.duration || !currentPosition) return 0;
-    const duration = getSeconds(currentTrack.track.duration);
+    if (!currentTrack?.Track?.Duration || !currentPosition) return 0;
+    const duration = getSeconds(currentTrack.Track.Duration);
     if (duration === 0) return 0;
     return Math.max(0, Math.min(100, (currentPosition / duration) * 100));
   }
@@ -193,7 +192,7 @@
 
       // Handle silent audio element for MediaSession API
         if (silentAudioElement && musicStatus) {
-          if (musicStatus.state !== 2) { // Will become playing
+          if (musicStatus.State !== 2) { // Will become playing
           if (!audioPlayPromisePending && silentAudioElement.paused) {
             audioPlayPromisePending = true;
 
@@ -275,11 +274,11 @@
         updateMediaSessionMetadata();
 
         navigator.mediaSession.setActionHandler("play", () => {
-          if (musicStatus?.state !== 2) togglePlayPause();
+          if (musicStatus?.State !== 2) togglePlayPause();
         });
 
         navigator.mediaSession.setActionHandler("pause", () => {
-          if (musicStatus?.state === 2) togglePlayPause();
+          if (musicStatus?.State === 2) togglePlayPause();
         });
 
         navigator.mediaSession.setActionHandler("previoustrack", () => {
@@ -292,11 +291,11 @@
 
         try {
           navigator.mediaSession.setActionHandler("seekto", (details) => {
-            if (!musicStatus?.currentTrack?.track?.duration) return;
+            if (!musicStatus?.CurrentTrack?.Track?.Duration) return;
 
-            const duration = getSeconds(musicStatus.currentTrack.track.duration);
+            const duration = getSeconds(musicStatus.CurrentTrack.Track.Duration);
             if (details.seekTime !== undefined && duration > 0) {
-              const seekRequest = new SeekRequest({ Position: details.seekTime });
+              const seekRequest: SeekRequest = { Position: details.seekTime };
               if ($currentGuild?.id) {
                 musicApi.seek($currentGuild.id, seekRequest)
                   .then(() => {
@@ -309,7 +308,7 @@
           });
 
           navigator.mediaSession.setPositionState({
-            duration: musicStatus?.currentTrack?.track ? getSeconds(musicStatus.currentTrack.track.duration) : 0,
+            duration: musicStatus?.CurrentTrack?.Track ? getSeconds(musicStatus.CurrentTrack.Track.Duration) : 0,
             position: currentPosition || 0,
             playbackRate: 1.0
           });
@@ -326,20 +325,20 @@
 
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: musicStatus.currentTrack?.track.title || "Unknown Title",
-        artist: musicStatus.currentTrack?.track.author || "Unknown Artist",
-        album: musicStatus.currentTrack?.track.provider || "",
+        title: musicStatus.CurrentTrack?.Track.Title || "Unknown Title",
+        artist: musicStatus.CurrentTrack?.Track.Author || "Unknown Artist",
+        album: musicStatus.CurrentTrack?.Track.Provider || "",
         artwork: [{
-          src: musicStatus.currentTrack?.track.artworkUri || "/default-album.png",
+          src: musicStatus.CurrentTrack?.Track.ArtworkUri || "/default-album.png",
           sizes: "512x512",
           type: "image/png"
         }]
       });
 
-      navigator.mediaSession.playbackState = musicStatus.state === 2 ? "playing" : "paused";
+      navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
 
       if ("setPositionState" in navigator.mediaSession) {
-        const duration = getSeconds(musicStatus.currentTrack?.track.duration) || 0;
+        const duration = getSeconds(musicStatus.CurrentTrack?.Track.Duration) || 0;
         let position = currentPosition || 0;
 
         if (position > duration && duration > 0) {
@@ -399,33 +398,33 @@
       } else {
         audioPlayPromisePending = false;
       }
-    } else if (musicStatus?.state !== 2 && !silentAudioElement.paused && !audioPlayPromisePending) {
+    } else if (musicStatus?.State !== 2 && !silentAudioElement.paused && !audioPlayPromisePending) {
       silentAudioElement.pause();
     }
   }
   // Derived state
-    let currentTrack = $derived(musicStatus?.currentTrack);
-    let isPlaying = $derived(musicStatus?.state === 2);
-    let hasTrack = $derived(currentTrack?.track?.title);
-    let botInChannel = $derived(musicStatus?.botInChannel);
-    let channelName = $derived(musicStatus?.channelName);
+    let currentTrack = $derived(musicStatus?.CurrentTrack);
+    let isPlaying = $derived(musicStatus?.State === 2);
+    let hasTrack = $derived(currentTrack?.Track?.Title);
+    let botInChannel = $derived(musicStatus?.BotInChannel);
+    let channelName = $derived(musicStatus?.ChannelName);
   let currentPosition = $derived(getCurrentPosition());
   let progressPercentage = $derived(getProgressPercentage());
   // Color store reactive values
   let colors = $derived($musicPlayerColors);
   // Update MediaSession metadata when track changes
   $effect(() => {
-    if (musicStatus?.currentTrack?.track) {
+    if (musicStatus?.CurrentTrack?.Track) {
       updateMediaSessionMetadata();
     }
   });
   // Update MediaSession playback state when playback state changes
   $effect(() => {
-    if (musicStatus?.state !== undefined) {
+    if (musicStatus?.State !== undefined) {
       ensureSilentAudioPlaying();
 
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.playbackState = musicStatus.state === 2 ? "playing" : "paused";
+        navigator.mediaSession.playbackState = musicStatus.State === 2 ? "playing" : "paused";
       }
     }
   });
@@ -449,9 +448,9 @@
             class="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-opacity-30"
             style="ring-color: {colors.accent};"
           >
-            {#if currentTrack?.track?.artworkUri}
+            {#if currentTrack?.Track?.ArtworkUri}
               <img
-                src={currentTrack.track.artworkUri}
+                src={currentTrack.Track.ArtworkUri}
                 alt="Album artwork"
                 class="w-full h-full object-cover"
               >
@@ -480,21 +479,21 @@
           <div
             class="font-semibold text-base md:text-lg truncate"
             style="color: {colors.text};"
-            title={currentTrack?.track?.title}
+            title={currentTrack?.Track?.Title}
           >
-            {formatTrackTitle(currentTrack?.track?.title || "", !isExpanded)}
+            {formatTrackTitle(currentTrack?.Track?.Title || "", !isExpanded)}
           </div>
           <div
             class="text-sm truncate opacity-80"
             style="color: {colors.text}80;"
-            title={currentTrack?.track?.author}
+            title={currentTrack?.Track?.Author}
           >
-            {formatArtist(currentTrack?.track?.author || "", !isExpanded)}
+            {formatArtist(currentTrack?.Track?.Author || "", !isExpanded)}
           </div>
           <!-- Desktop: Show time below artist -->
-          {#if currentTrack?.track?.duration && musicStatus?.position}
+          {#if currentTrack?.Track?.Duration && musicStatus?.Position}
             <div class="hidden md:block text-xs mt-1" style="color: {colors.text}60;">
-              {formatTime(musicStatus.position)} / {formatDuration(currentTrack.track.duration)}
+              {formatTime(musicStatus.Position)} / {formatDuration(currentTrack.Track.Duration)}
             </div>
           {/if}
         </div>
@@ -502,9 +501,9 @@
         <!-- Compact Controls -->
           <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 shrink-0">
           <!-- Mobile: Show time above controls -->
-            {#if currentTrack?.track?.duration && musicStatus?.position}
+            {#if currentTrack?.Track?.Duration && musicStatus?.Position}
             <div class="md:hidden text-xs mb-1 text-center order-first" style="color: {colors.text}60;">
-              {formatTime(musicStatus.position)} / {formatDuration(currentTrack.track.duration)}
+              {formatTime(musicStatus.Position)} / {formatDuration(currentTrack.Track.Duration)}
             </div>
           {/if}
 
@@ -556,10 +555,10 @@
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {#if isExpanded}
-                <i class="fa-utility-duo fa-regular fa-chevron-up"
+                <i class="fa-utility-duo fa-regular fa-angle-up"
                    style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               {:else}
-                <i class="fa-utility-duo fa-regular fa-chevron-down"
+                <i class="fa-utility-duo fa-regular fa-angle-down"
                    style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
               {/if}
             </button>
@@ -571,7 +570,7 @@
               onclick={openMusicDashboard}
 
             >
-              <i class="fa-utility-duo fa-regular fa-external-link-alt text-sm md:text-base"
+              <i class="fa-utility-duo fa-regular fa-arrow-up-right-from-square text-sm md:text-base"
                  style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
             </button>
           </div>
@@ -613,7 +612,7 @@
                             onclick={openMusicDashboard}
 
                   >
-                        <i class="fa-utility-duo fa-regular fa-external-link-alt text-base md:text-lg"
+                    <i class="fa-utility-duo fa-regular fa-arrow-up-right-from-square text-base md:text-lg"
                            style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary};"></i>
                     </button>
                 </div>
@@ -621,7 +620,7 @@
         {/if}
 
       <!-- Progress Bar -->
-      {#if hasTrack && currentTrack?.track?.duration}
+      {#if hasTrack && currentTrack?.Track?.Duration}
         <div class="mt-4">
           <div
             class="w-full h-2 rounded-full overflow-hidden"
@@ -646,34 +645,34 @@
         out:slide={{ duration: 300 }}
       >
         <!-- Queue Preview -->
-        {#if musicStatus?.queue && musicStatus.queue.length > 0}
+        {#if musicStatus?.Queue && musicStatus.Queue.length > 0}
           <div class="mt-4">
             <h4 class="text-sm font-medium mb-2" style="color: {colors.text};">
-              Up Next ({musicStatus.queue.length} tracks)
+              Up Next ({musicStatus.Queue.length} tracks)
             </h4>
             <div class="space-y-2 max-h-32 overflow-y-auto">
-              {#each musicStatus.queue.slice(0, 3) as track, index}
+              {#each musicStatus.Queue.slice(0, 3) as track, index}
                 <div class="flex items-center gap-3 p-2 rounded-lg" style="background: {colors.foreground}05;">
                   <div class="text-xs" style="color: {colors.text}60;">
                     {index + 1}
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-sm truncate" style="color: {colors.text};">
-                      {track.track?.title || "Unknown Track"}
+                      {track.Track?.Title || "Unknown Track"}
                     </div>
                     <div class="text-xs truncate" style="color: {colors.text}60;">
-                      {track.track?.author || "Unknown Artist"}
+                      {track.Track?.Author || "Unknown Artist"}
                     </div>
                   </div>
                   <div class="text-xs" style="color: {colors.text}60;">
-                    {formatDuration(track.track?.duration || 0)}
+                    {formatDuration(track.Track?.Duration || 0)}
                   </div>
                 </div>
               {/each}
-              {#if musicStatus.queue.length > 3}
+              {#if musicStatus.Queue.length > 3}
                 <div class="text-center py-2">
                   <span class="text-xs" style="color: {colors.text}60;">
-                    +{musicStatus.queue.length - 3} more tracks
+                    +{musicStatus.Queue.length - 3} more tracks
                   </span>
                 </div>
               {/if}
@@ -686,10 +685,10 @@
           <div class="flex items-center gap-3">
             <!-- Volume -->
             <div class="flex items-center gap-2">
-              <i class="fa-utility-duo fa-regular fa-volume-up"
+              <i class="fa-utility-duo fa-regular fa-volume"
                  style="--fa-primary-color: {colors.text}; --fa-secondary-color: {colors.text}; --fa-primary-opacity: 0.6; --fa-secondary-opacity: 0.4;"></i>
               <span class="text-sm" style="color: {colors.text}60;">
-                {Math.round((musicStatus?.volume || 0) * 100)}%
+                {Math.round((musicStatus?.Volume || 0) * 100)}%
               </span>
             </div>
           </div>

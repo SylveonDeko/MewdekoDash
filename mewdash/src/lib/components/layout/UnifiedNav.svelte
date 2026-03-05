@@ -100,6 +100,20 @@ A unified navigation component that provides responsive navigation with server a
   let isNavHovered = $state(false);
   let booTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   let showBoo = $state(false);
+  let navElement = $state<HTMLElement>();
+  let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
+
+  // Listen for sidebar collapse changes
+  function handleStorageChange(e: StorageEvent) {
+    if (e.key === "sidebar-collapsed") {
+      sidebarCollapsed = e.newValue === "true";
+    }
+  }
+
+  // Also listen for custom event from sidebar (same-tab updates)
+  function handleSidebarToggle(e: Event) {
+    sidebarCollapsed = (e as CustomEvent).detail;
+  }
 
   let instanceStates = $state<Record<string, {
     loading: boolean;
@@ -122,7 +136,7 @@ A unified navigation component that provides responsive navigation with server a
   ));
 
   // Check if we're on the main dashboard (no tabs or overview tab)
-  let isMainDashboard = $derived(browser && isDashboard && current === "/dashboard" && (!page.url.searchParams.get("tab") || page.url.searchParams.get("tab") === "overview"));
+
   
 
   // Filter instances to only show those with mutual guilds
@@ -201,25 +215,6 @@ A unified navigation component that provides responsive navigation with server a
     showBoo = false;
   }
 
-
-  // Back button handler
-  function handleBackButton() {
-    if (browser) {
-      const tabParam = page.url.searchParams.get("tab");
-
-      // If we're on a tabbed dashboard page (with tab parameter), go to main dashboard
-      if (tabParam && tabParam !== "overview") {
-        goto("/dashboard", { replaceState: false });
-      } else if (current !== "/dashboard") {
-        // For other subpages (/dashboard/music, /dashboard/settings, etc.), go to main dashboard
-        goto("/dashboard", { replaceState: false });
-      } else if (!get(currentGuild) && get(currentInstance)) {
-        // If we're on main dashboard but no guild selected, this might be helpful to show guild selection
-        // Don't navigate away, just stay on dashboard to allow guild selection
-        console.log("On main dashboard with instance but no guild - staying to allow guild selection");
-      }
-    }
-  }
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape" && (menuOpen || sidebarOpen || dropdownOpen)) {
@@ -634,6 +629,8 @@ A unified navigation component that provides responsive navigation with server a
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("resize", debouncedResize);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("sidebar-toggle", handleSidebarToggle);
 
     checkMobile();
     initialize();
@@ -649,6 +646,8 @@ A unified navigation component that provides responsive navigation with server a
       unsubscribe();
       window.removeEventListener("resize", debouncedResize);
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("sidebar-toggle", handleSidebarToggle);
     };
   });
 
@@ -666,36 +665,20 @@ A unified navigation component that provides responsive navigation with server a
 
 <nav
   aria-label="Main navigation"
-  class="py-2 lg:py-3 relative z-10 border-b"
+  bind:this={navElement}
+  class="py-2 lg:py-3 relative z-10 border-b transition-all duration-300"
   style="background: {$colorStore?.primary}05;
          border-color: {$colorStore?.primary}15;"
 >
     <div class="flex items-center mx-auto px-4 lg:px-8 xl:px-12 max-w-[1920px]">
-    <!-- Left section - Back button for dashboard or logo for main site -->
-        <div class="w-[140px] lg:w-[180px] xl:w-[200px] shrink-0" class:md:w-[180px]={isDashboard}>
-      {#if isDashboard}
-        <!-- Back button for dashboard (disabled on main dashboard) -->
-        <button
-                class="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-200"
-          class:opacity-30={isMainDashboard}
-          class:cursor-not-allowed={isMainDashboard}
-                class:hover:scale-[1.02]={!isMainDashboard}
-                style="background: {isMainDashboard ? $colorStore.primary + '10' : $colorStore.primary + '20'};
-                 color: {isMainDashboard ? $colorStore.muted : $colorStore.primary};
-                 border: 1px solid {isMainDashboard ? $colorStore.primary + '15' : $colorStore.primary + '30'};"
-                onclick={isMainDashboard ? undefined : handleBackButton}
-          disabled={isMainDashboard}
-          aria-label="Go back"
-        >
-            <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
-            <span class="hidden sm:inline text-xs font-medium">Back</span>
-        </button>
-      {:else}
-        <!-- Logo for main site only (not dashboard) -->
+    <!-- Left section - Logo (hidden on dashboard lg+ since sidebar has branding) -->
+        <div class="w-[140px] lg:w-[180px] xl:w-[200px] shrink-0"
+             class:md:w-[180px]={isDashboard}
+             class:lg:hidden={isDashboard}>
         <a
                 class="flex items-center py-1 justify-start"
-          href="/"
-          title="mewdeko-banner"
+          href={isDashboard ? "/dashboard" : "/"}
+          title="Mewdeko"
         >
           <img
             alt="Mewdeko's Avatar"
@@ -708,7 +691,6 @@ A unified navigation component that provides responsive navigation with server a
             Mewdeko
           </span>
         </a>
-      {/if}
     </div>
 
     <!-- Center section (nav items) - Hidden in minimal mode -->
@@ -906,26 +888,7 @@ A unified navigation component that provides responsive navigation with server a
         </div>
       </div>
     {:else}
-      <!-- Dashboard mode: centered logo with subpage name -->
         <div class="grow flex justify-center items-center relative">
-        <!-- Dashboard Logo (perfectly centered on all screen sizes) -->
-        <div class="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-          <a
-            href="/"
-            class="block transition-all duration-200 hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 rounded-lg"
-            style:focus:ring-color={$colorStore.primary}
-            title="Go to home page"
-            aria-label="Return to home page"
-          >
-            <img
-              alt="Mewdeko"
-              class="h-7 w-7 md:h-10 md:w-10 object-contain"
-              src="/img/Mewdeko.png"
-            >
-          </a>
-        </div>
-
-        <!-- Mini Music Player (positioned to the right of center, only on large screens) -->
         {#if showMiniPlayer}
             <div class="hidden xl:block absolute right-0 top-1/2 transform -translate-y-1/2"
                  in:fade={{ duration: 300, delay: 100 }}
@@ -1181,6 +1144,18 @@ A unified navigation component that provides responsive navigation with server a
             style:background="{$colorStore.primary}20"
           >
         </div>
+
+        <!-- Mobile menu button for dashboard - opens sidebar drawer -->
+        {#if isDashboard}
+          <button
+            aria-label="Open sidebar menu"
+            class="inline-flex items-center p-2 rounded-lg transition-all duration-200 ease-in-out lg:hidden min-h-[36px] min-w-[36px]"
+            style="color: {$colorStore.text};"
+            onclick={() => { if (browser) window.dispatchEvent(new CustomEvent('toggle-mobile-sidebar')); }}
+          >
+            <i class="fa-solid fa-bars text-lg" aria-hidden="true"></i>
+          </button>
+        {/if}
 
         <!-- Mobile menu button - hide in dashboard -->
         {#if !isDashboard}

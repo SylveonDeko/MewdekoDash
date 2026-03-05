@@ -1,12 +1,10 @@
-<!-- lib/components/TabbedDashboard.svelte -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { browser } from "$app/environment";
   import {pushState, replaceState} from "$app/navigation";
-  import { fly, fade } from "svelte/transition";
+  import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
 
-  // Import tab components
   import OverviewTab from "$lib/components/dashboard/OverviewTab.svelte";
   import CommunityTab from "$lib/components/dashboard/CommunityTab.svelte";
   import EntertainmentTab from "$lib/components/dashboard/EntertainmentTab.svelte";
@@ -14,17 +12,6 @@
   import SecurityTab from "$lib/components/dashboard/SecurityTab.svelte";
   import SettingsTab from "$lib/components/dashboard/SettingsTab.svelte";
 
-  // Import UI components
-  import Portal from "$lib/components/ui/Portal.svelte";
-
-  // Import navigation config
-  import { getFeaturesByCategory, categoryOrder } from "$lib/config/navigationItems";
-  import { ownershipApi } from "$lib/api/index";
-  import { userStore } from "$lib/stores/userStore";
-
-  
-
-  // Initialize activeTab from URL immediately when browser is available
   function getInitialTab(): string {
     if (browser) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -36,9 +23,7 @@
     return "overview";
   }
 
-  
   interface Props {
-    // Props from parent
     botStatus: any;
     guildMemberStats: any;
     roleStats: any;
@@ -47,9 +32,8 @@
     guildFeatures: any;
     onRefresh: () => void;
     refreshing?: boolean;
-    // Export activeTab so parent can access it
     activeTab?: any;
-      showMusicPlayer?: boolean;
+    showMusicPlayer?: boolean;
   }
 
   let {
@@ -61,71 +45,61 @@
     guildFeatures,
     onRefresh,
     refreshing = false,
-      activeTab = $bindable(getInitialTab()),
-      showMusicPlayer = false
+    activeTab = $bindable(getInitialTab()),
+    showMusicPlayer = false
   }: Props = $props();
 
-  // Log when showMusicPlayer changes
-
-  // Tab definitions with Font Awesome icons
   const tabs = [
     {
       id: "overview",
       label: "Overview",
-        icon: "fa-utility-duo fa-regular fa-home",
+      icon: "fa-utility-duo fa-regular fa-home",
       component: OverviewTab,
       description: "Server stats and bot status"
     },
     {
       id: "community",
       label: "Community",
-        icon: "fa-utility-duo fa-regular fa-users",
+      icon: "fa-utility-duo fa-regular fa-users",
       component: CommunityTab,
       description: "XP, suggestions, tickets"
     },
     {
       id: "entertainment",
       label: "Entertainment",
-        icon: "fa-utility-duo fa-regular fa-music",
+      icon: "fa-utility-duo fa-regular fa-music",
       component: EntertainmentTab,
       description: "Music, voice, giveaways"
     },
     {
       id: "actions",
       label: "Actions",
-        icon: "fa-utility-duo fa-regular fa-bolt",
+      icon: "fa-utility-duo fa-regular fa-bolt",
       component: ActionsTab,
       description: "Greets, triggers, embeds"
     },
     {
       id: "security",
       label: "Security",
-        icon: "fa-utility-duo fa-regular fa-shield",
+      icon: "fa-utility-duo fa-regular fa-shield",
       component: SecurityTab,
       description: "Moderation and protection"
     },
     {
       id: "settings",
       label: "Settings",
-        icon: "fa-utility-duo fa-regular fa-cog",
+      icon: "fa-utility-duo fa-regular fa-cog",
       component: SettingsTab,
       description: "Bot config and roles"
     }
   ];
 
-  // State management
   let isChangingTab = $state(false);
   let tabContainerElement: HTMLElement | undefined = $state();
   let tabElements: HTMLElement[] = $state([]);
   let showBounceStart = $state(false);
   let showBounceEnd = $state(false);
-  let showAllFeaturesModal = $state(false);
-  let isOwner = $state(false);
 
-  // Get features grouped by category
-  let featuresByCategory = $derived(getFeaturesByCategory(isOwner));
-
-  // Keyboard shortcuts
   const keyboardShortcuts: Record<string, string> = {
     "1": "overview",
     "2": "community",
@@ -135,7 +109,6 @@
     "6": "settings"
   };
 
-  // URL and state management
   function updateUrlTab(tabId: string, addToHistory: boolean = true) {
     if (browser) {
       const url = new URL(window.location.href);
@@ -147,12 +120,10 @@
         url.searchParams.set("tab", tabId);
       }
 
-      // Only add to history if the tab actually changed and we want to track it
       if (currentTab !== tabId && addToHistory) {
-          pushState(url.toString(), {tab: tabId});
+        pushState(url.toString(), {tab: tabId});
       } else if (currentTab !== tabId) {
-        // Still need to update the URL even when not adding to history
-          replaceState(url.toString(), {tab: tabId});
+        replaceState(url.toString(), {tab: tabId});
       }
     }
   }
@@ -168,27 +139,23 @@
     return "overview";
   }
 
-  // Tab switching
   async function switchTab(tabId: string, animate: boolean = true, addToHistory: boolean = true) {
     if (isChangingTab || activeTab === tabId) return;
 
     isChangingTab = true;
 
     if (animate) {
-      // Brief pause for visual feedback
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     activeTab = tabId;
     updateUrlTab(tabId, addToHistory);
 
-    // Reset flag after transition
     setTimeout(() => {
       isChangingTab = false;
     }, 300);
   }
 
-  // Navigation helpers
   function nextTab() {
     const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
     const nextIndex = (currentIndex + 1) % tabs.length;
@@ -201,20 +168,16 @@
     switchTab(tabs[prevIndex].id);
   }
 
-  // Keyboard event handler
   function handleKeyDown(event: KeyboardEvent) {
-    // Only process if no input element is focused
     const target = event.target as HTMLElement;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
-    // Handle number key shortcuts
     if (keyboardShortcuts[event.key]) {
       event.preventDefault();
       switchTab(keyboardShortcuts[event.key]);
       return;
     }
 
-    // Handle arrow keys for tab navigation
     if (event.key === "ArrowLeft" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       previousTab();
@@ -224,7 +187,6 @@
     }
   }
 
-  // Swipe handling for mobile
   let touchStartX = 0;
   let touchEndX = 0;
   let touchStartY = 0;
@@ -234,11 +196,7 @@
 
   function handleTouchStart(event: TouchEvent) {
     const target = event.target as HTMLElement;
-
-    // Don't handle swipes if we're interacting with scrollable content
-    if (isScrollableElement(target)) {
-      return;
-    }
+    if (isScrollableElement(target)) return;
 
     touchStartX = event.changedTouches[0].screenX;
     touchStartY = event.changedTouches[0].screenY;
@@ -254,13 +212,11 @@
     const diffX = Math.abs(currentX - touchStartX);
     const diffY = Math.abs(currentY - touchStartY);
 
-    // If vertical movement is greater than horizontal, it's likely a scroll
     if (diffY > diffX) {
-      touchStartX = 0; // Cancel horizontal swipe
+      touchStartX = 0;
       return;
     }
 
-    // Mark as dragging if moved significantly
     if (diffX > 10) {
       isDragging = true;
     }
@@ -273,7 +229,6 @@
     touchEndY = event.changedTouches[0].screenY;
     handleSwipe();
 
-    // Reset values
     touchStartX = 0;
     touchStartY = 0;
     isDragging = false;
@@ -282,13 +237,11 @@
   function isScrollableElement(element: HTMLElement): boolean {
     if (!element) return false;
 
-    // Check if element or any parent is scrollable
     let current: HTMLElement | null = element;
     while (current && current !== document.body) {
       const style = window.getComputedStyle(current);
       const overflow = style.overflow || style.overflowX || style.overflowY;
 
-      // Check for scrollable areas, queue lists, tab containers, input areas
       if (
         overflow.includes("auto") ||
         overflow.includes("scroll") ||
@@ -312,99 +265,56 @@
   }
 
   function handleSwipe() {
-    const swipeThreshold = 80; // Increased threshold to prevent accidental swipes
-    const maxSwipeTime = 300; // Maximum time for a valid swipe
+    const swipeThreshold = 80;
+    const maxSwipeTime = 300;
 
     const diffX = touchStartX - touchEndX;
     const diffY = Math.abs(touchStartY - touchEndY);
     const swipeTime = Date.now() - touchStartTime;
-      const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
 
-    // Stricter swipe detection
     if (
-      Math.abs(diffX) > swipeThreshold && // Horizontal distance
-      diffY < 60 && // Vertical threshold (prevent conflicts with vertical scrolls)
-      swipeTime < maxSwipeTime && // Fast enough to be intentional
-      isDragging // User actually dragged
+      Math.abs(diffX) > swipeThreshold &&
+      diffY < 60 &&
+      swipeTime < maxSwipeTime &&
+      isDragging
     ) {
       if (diffX > 0) {
-          // Swipe left -> try next tab
-          if (currentIndex === tabs.length - 1) {
-              // At the end, show bounce
-              showBounceEnd = true;
-              setTimeout(() => showBounceEnd = false, 400);
-          } else {
-              nextTab();
-          }
+        if (currentIndex === tabs.length - 1) {
+          showBounceEnd = true;
+          setTimeout(() => showBounceEnd = false, 400);
+        } else {
+          nextTab();
+        }
       } else {
-          // Swipe right -> try previous tab
-          if (currentIndex === 0) {
-              // At the start, show bounce
-              showBounceStart = true;
-              setTimeout(() => showBounceStart = false, 400);
-          } else {
-              previousTab();
-          }
+        if (currentIndex === 0) {
+          showBounceStart = true;
+          setTimeout(() => showBounceStart = false, 400);
+        } else {
+          previousTab();
+        }
       }
     }
   }
 
-  // Get current tab data
   let currentTabData = $derived(tabs.find(tab => tab.id === activeTab) || tabs[0]);
 
-  // Check if user is owner
-  async function checkOwnership() {
-    const userData = $userStore;
-    if (!userData?.id) return;
-
-    try {
-      isOwner = await ownershipApi.isOwner(BigInt(userData.id));
-    } catch (err) {
-      console.error("Error checking owner status:", err);
-      isOwner = false;
-    }
-  }
-
-  // Toggle all features modal
-  function toggleAllFeaturesModal() {
-    showAllFeaturesModal = !showAllFeaturesModal;
-  }
-
-  // Handle browser back/forward buttons
   function handlePopState() {
     const tabFromUrl = getTabFromUrl();
     if (tabFromUrl !== activeTab) {
-      // Don't add to history when handling popstate - this is already a navigation event
       switchTab(tabFromUrl, true, false);
     }
   }
 
-  // Keyboard handler for modal
-  function handleModalKeyDown(event: KeyboardEvent) {
-    if (showAllFeaturesModal && event.key === "Escape") {
-      event.preventDefault();
-      toggleAllFeaturesModal();
-    }
-  }
-
   onMount(() => {
-    // Set initial history state to ensure proper back button behavior
     if (browser && activeTab !== "overview") {
       updateUrlTab(activeTab, false);
     }
 
-    // Check if user is owner for feature filtering
-    checkOwnership();
-
     if (browser) {
-      // Add keyboard event listener
       window.addEventListener("keydown", handleKeyDown);
-      window.addEventListener("keydown", handleModalKeyDown);
-
-      // Add popstate listener for browser back/forward buttons
       window.addEventListener("popstate", handlePopState);
 
-      // Add touch event listeners for mobile swipe
       if (tabContainerElement) {
         tabContainerElement.addEventListener("touchstart", handleTouchStart, { passive: true });
         tabContainerElement.addEventListener("touchmove", handleTouchMove, { passive: true });
@@ -416,7 +326,6 @@
   onDestroy(() => {
     if (browser) {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keydown", handleModalKeyDown);
       window.removeEventListener("popstate", handlePopState);
 
       if (tabContainerElement) {
@@ -426,190 +335,71 @@
       }
     }
   });
-
-  // Prevent body scroll when modal is open
-  $effect(() => {
-    if (browser && showAllFeaturesModal) {
-      document.body.style.overflow = "hidden";
-    } else if (browser) {
-      document.body.style.overflow = "";
-    }
-  });
 </script>
 
 <div bind:this={tabContainerElement} class="w-full">
-  <!-- Tab Navigation -->
   <div class="sticky top-0 z-40 backdrop-blur-lg border-b mb-6"
        style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);
               border-color: {$colorStore.primary}30;">
     <div class="w-full px-4 md:px-6">
 
-      <!-- Desktop Tab Navigation -->
-        <div class="hidden md:block py-5">
-            <!-- Top Row: Centered Tab Navigation -->
-            <div class="flex items-center justify-between mb-6">
-                <!-- Left: Navigation Arrows -->
-                <div class="flex items-center gap-1 px-2 py-1 rounded-xl"
-                     style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}10;">
-                  <button aria-label="Previous tab"
-                            class="group p-1.5 rounded-lg btn-press hover:scale-110"
-                            onclick={previousTab}
-                            onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
-                            onmouseleave={(e) => e.currentTarget.querySelector('i')?.classList.remove('fa-bounce')}
-                            style="color: {$colorStore.muted};"
-                            title="Previous tab (Ctrl+←)"
-                    >
-                        <i class="fa-solid fa-chevron-left text-base"
-                           style="--fa-animation-duration: 0.8s;
-                        --fa-bounce-rebound: -0.3;
-                        --fa-bounce-height: -0.2;"></i>
-                    </button>
-                    <div class="w-px h-4 mx-1" style="background: {$colorStore.primary}20;"></div>
-                  <button aria-label="Next tab"
-                            class="group p-1.5 rounded-lg btn-press hover:scale-110"
-                            onclick={nextTab}
-                            onmouseenter={(e) => e.currentTarget.querySelector('i')?.classList.add('fa-bounce')}
-                            onmouseleave={(e) => e.currentTarget.querySelector('i')?.classList.remove('fa-bounce')}
-                            style="color: {$colorStore.muted};"
-                            title="Next tab (Ctrl+→)"
-                    >
-                        <i class="fa-solid fa-chevron-right text-base"
-                           style="--fa-animation-duration: 0.8s;
-                        --fa-bounce-rebound: -0.3;
-                        --fa-bounce-height: -0.2;"></i>
-                    </button>
-                </div>
+        <div class="hidden md:flex items-center justify-center py-3">
+            <div class="relative flex items-center p-1.5 rounded-2xl"
+                 style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
 
-                <!-- Center: Tab Pills -->
-                <div class="flex items-center justify-center flex-1 mx-8">
-                    <div class="relative flex items-center p-1.5 rounded-2xl"
-                         style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
-
-                        <!-- Sliding Background -->
-                        {#if activeTab && tabElements.length > 0}
-                            {@const activeIndex = tabs.findIndex(tab => tab.id === activeTab)}
-                            {@const activeElement = tabElements[activeIndex]}
-                            {#if activeElement}
-                                <div class="absolute h-[calc(100%-12px)] rounded-xl transition-all duration-300 ease-out pointer-events-none"
-                                     style="width: {activeElement.offsetWidth}px;
+                {#if activeTab && tabElements.length > 0}
+                    {@const activeIndex = tabs.findIndex(tab => tab.id === activeTab)}
+                    {@const activeElement = tabElements[activeIndex]}
+                    {#if activeElement}
+                        <div class="absolute h-[calc(100%-12px)] rounded-xl transition-all duration-300 ease-out pointer-events-none"
+                             style="width: {activeElement.offsetWidth}px;
                               transform: translateX({activeElement.offsetLeft - 6}px);
                               background: linear-gradient(135deg, {$colorStore.primary}25, {$colorStore.secondary}20);
                               border: 1px solid {$colorStore.primary}30;
                               box-shadow: 0 2px 8px {$colorStore.primary}15;">
-                                </div>
-                            {/if}
-                        {/if}
+                        </div>
+                    {/if}
+                {/if}
 
-                        <!-- Tab Buttons -->
-                        {#each tabs as tab, index}
-                            {@const isActive = activeTab === tab.id}
-                            <button
-                                    bind:this={tabElements[index]}
-                                    class="relative z-10 flex items-center gap-2.5 px-5 py-2.5 rounded-xl tab-press group"
-                                    class:opacity-60={isChangingTab && !isActive}
-                                    onclick={() => switchTab(tab.id)}
-                                    disabled={isChangingTab}
-                            >
-                                <i class="{tab.icon} text-lg transition-all duration-200 {isActive ? 'fa-beat' : ''}"
-                                   style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
+                {#each tabs as tab, index}
+                    {@const isActive = activeTab === tab.id}
+                    <button
+                            bind:this={tabElements[index]}
+                            class="relative z-10 flex items-center gap-2.5 px-5 py-2.5 rounded-xl tab-press group"
+                            class:opacity-60={isChangingTab && !isActive}
+                            onclick={() => switchTab(tab.id)}
+                            disabled={isChangingTab}
+                    >
+                        <i class="{tab.icon} text-lg transition-all duration-200 {isActive ? 'fa-beat' : ''}"
+                           style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
                             --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
                             --fa-secondary-opacity: {isActive ? 0.5 : 0.3};
                             opacity: {isActive ? 1 : 0.7};
                             --fa-animation-duration: 2s;
                             --fa-beat-scale: 1.1;"></i>
-                                <span class="font-medium text-sm transition-all duration-200"
-                                      style="color: {isActive ? $colorStore.text : $colorStore.muted};">
+                        <span class="font-medium text-sm transition-all duration-200"
+                              style="color: {isActive ? $colorStore.text : $colorStore.muted};">
                     {tab.label}
                   </span>
-                                {#if tab.id === 'entertainment' && showMusicPlayer}
+                        {#if tab.id === 'entertainment' && showMusicPlayer}
                     <span class="relative flex h-2 w-2 ml-1">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                             style="background: {$colorStore.primary};"></span>
                       <span class="relative inline-flex rounded-full h-2 w-2"
                             style="background: {$colorStore.primary};"></span>
                     </span>
-                                {/if}
-                            </button>
+                        {/if}
+                    </button>
 
-                            {#if index < tabs.length - 1}
-                                <div class="w-px h-5 opacity-20" style="background: {$colorStore.muted};"></div>
-                            {/if}
-                        {/each}
-                    </div>
-                </div>
-
-              <!-- Right: All Features -->
-                <div class="relative group">
-                  <button
-                    aria-label="View all dashboard features"
-                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 btn-press"
-                    onclick={toggleAllFeaturesModal}
-                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;"
-                    title="Browse all features"
-                  >
-                    <i aria-hidden="true"
-                       class="fa-solid fa-grid-2 text-base"
-                       style="color: {$colorStore.primary};"></i>
-                    <span class="text-sm font-medium" style="color: {$colorStore.text};">All Features</span>
-                  </button>
-                    <div class="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <div class="px-2 py-1 rounded text-xs whitespace-nowrap"
-                             style="background: {$colorStore.primary}15; color: {$colorStore.muted}; border: 1px solid {$colorStore.primary}20;">
-                          Browse all 34 modules
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Row: Tab Description and Keyboard Hints -->
-            <div class="flex items-center justify-between">
-                <!-- Current Tab Description -->
-                <div class="flex items-center gap-3">
-                    <div class="w-1 h-8 rounded-full"
-                         style="background: linear-gradient(180deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
-                    <div>
-                        <div class="text-xs uppercase tracking-wider opacity-60" style="color: {$colorStore.muted}">
-                            Current Section
-                        </div>
-                        <div class="relative h-5">
-                            {#key activeTab}
-                                <div class="text-sm font-medium absolute inset-0 whitespace-nowrap"
-                                     style="color: {$colorStore.text}"
-                                     in:fade={{ duration: 200, delay: 100 }}
-                                     out:fade={{ duration: 100 }}>
-                                    {currentTabData.description}
-                                </div>
-                            {/key}
-                        </div>
-                    </div>
-          </div>
-
-                <!-- Keyboard Shortcuts Hint -->
-                <div class="flex items-center gap-3 text-xs" style="color: {$colorStore.muted};">
-                    <div class="flex items-center gap-1.5">
-                        <kbd class="px-1.5 py-0.5 rounded"
-                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                            1-6
-                        </kbd>
-                        <span>Switch tabs</span>
-                    </div>
-                    <div class="w-px h-3" style="background: {$colorStore.primary}20;"></div>
-                    <div class="flex items-center gap-1.5">
-                        <kbd class="px-1.5 py-0.5 rounded"
-                             style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
-                          Ctrl+←/→
-                        </kbd>
-                      <span>Navigate</span>
-                    </div>
-                </div>
+                    {#if index < tabs.length - 1}
+                        <div class="w-px h-5 opacity-20" style="background: {$colorStore.muted};"></div>
+                    {/if}
+                {/each}
             </div>
         </div>
 
-        <!-- Mobile Tab Navigation -->
         <div class="md:hidden py-2">
-            <!-- Mobile Tab Pills -->
             <div class="relative">
-                <!-- Bounce Indicators -->
                 {#if showBounceStart}
                     <div class="absolute left-0 top-0 bottom-0 w-2 z-20 rounded-r-full animate-bounce-left"
                          style="background: linear-gradient(90deg, {$colorStore.primary}40, transparent);"></div>
@@ -619,13 +409,11 @@
                          style="background: linear-gradient(-90deg, {$colorStore.primary}40, transparent);"></div>
                 {/if}
 
-                <!-- Fade edges for scroll indication -->
                 <div class="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
                      style="background: linear-gradient(to right, {$colorStore.gradientStart}40, transparent);"></div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
                      style="background: linear-gradient(to left, {$colorStore.gradientEnd}40, transparent);"></div>
 
-                <!-- Scrollable Tab Container -->
                 <div class="flex gap-2 overflow-x-auto pb-2 pt-2 px-2 scrollbar-hide {showBounceStart ? 'animate-bounce-content-right' : ''} {showBounceEnd ? 'animate-bounce-content-left' : ''}"
                      style="-webkit-overflow-scrolling: touch;">
                   {#each tabs as tab}
@@ -641,7 +429,6 @@
                                 onclick={() => switchTab(tab.id)}
                                 disabled={isChangingTab}
                         >
-                            <!-- Icon with Animation -->
                             <i class="{tab.icon} text-sm {isActive ? 'fa-beat' : ''}"
                                style="--fa-primary-color: {isActive ? $colorStore.primary : $colorStore.muted};
                           --fa-secondary-color: {isActive ? $colorStore.secondary : $colorStore.muted};
@@ -649,7 +436,6 @@
                           --fa-animation-duration: 2s;
                           --fa-beat-scale: 1.05;"></i>
 
-                            <!-- Label -->
                             <span class="text-sm font-medium whitespace-nowrap">
                   {tab.label}
                 </span>
@@ -661,7 +447,6 @@
     </div>
   </div>
 
-  <!-- Tab Content -->
     <div class="w-full relative">
     {#if activeTab === 'overview'}
         <div in:fly={{ x: 20, duration: 300, delay: 100 }} class="relative z-10">
@@ -702,145 +487,16 @@
   </div>
 </div>
 
-<!-- All Features Modal -->
-{#if showAllFeaturesModal}
-  <Portal>
-    <!-- Backdrop -->
-    <div
-      class="fixed inset-0 backdrop-blur-sm"
-      style="z-index: 100000; background: {$colorStore.gradientStart}40;"
-      onclick={toggleAllFeaturesModal}
-      transition:fade={{ duration: 200 }}
-      role="button"
-      tabindex="0"
-      aria-label="Close modal"
-    ></div>
-
-    <!-- Modal -->
-    <div
-      class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
-      style="z-index: 100001;"
-      onclick={toggleAllFeaturesModal}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="all-features-title"
-    >
-      <div
-        class="w-full max-w-5xl max-h-[85vh] rounded-2xl shadow-2xl border pointer-events-auto backdrop-blur-xl overflow-hidden"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}95, {$colorStore.gradientMid}95, {$colorStore.gradientEnd}95);
-               border-color: {$colorStore.primary}30;"
-        onclick={(e) => e.stopPropagation()}
-        transition:fly={{ y: 20, duration: 300 }}
-        role="document"
-      >
-        <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b"
-             style="border-color: {$colorStore.primary}20;">
-          <div>
-            <h2 id="all-features-title" class="text-2xl font-bold" style="color: {$colorStore.text};">
-              All Dashboard Features
-            </h2>
-            <p class="text-sm mt-1" style="color: {$colorStore.muted};">
-              Quick access to all {Object.values(featuresByCategory).flat().length} dashboard modules
-            </p>
-          </div>
-          <button
-            aria-label="Close modal"
-            class="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-            onclick={toggleAllFeaturesModal}
-            style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
-          >
-            <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <!-- Content -->
-        <div class="overflow-y-auto p-6" style="max-height: calc(85vh - 100px);">
-          {#each categoryOrder as category}
-            {#if featuresByCategory[category] && featuresByCategory[category].length > 0}
-              <div class="mb-8 last:mb-0">
-                <!-- Category Header -->
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-1 h-6 rounded-full"
-                       style="background: linear-gradient(180deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
-                  <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">
-                    {category}
-                  </h3>
-                  <div class="flex-1 h-px" style="background: {$colorStore.primary}15;"></div>
-                  <span class="text-xs px-2 py-1 rounded-full"
-                        style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
-                  {featuresByCategory[category].length} {featuresByCategory[category].length === 1 ? 'module' : 'modules'}
-                </span>
-                </div>
-
-                <!-- Feature Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {#each featuresByCategory[category] as feature}
-                    <a
-                      href={feature.href}
-                      class="flex items-start gap-3 p-4 rounded-xl transition-all duration-200 hover:scale-[1.02] border group"
-                      style="background: {$colorStore.primary}12;
-                           border-color: {$colorStore.primary}15;
-                           hover:background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);
-                           hover:border-color: {$colorStore.primary}30;"
-                      onclick={toggleAllFeaturesModal}
-                    >
-                      <div
-                        class="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200"
-                        style="background: {$colorStore.primary}10;
-                                group-hover:background: {$colorStore.primary}20;">
-                        <i class="{feature.icon} text-lg transition-all duration-200"
-                           style="color: {$colorStore.primary};
-                                group-hover:transform: scale(1.1);"
-                           aria-hidden="true"></i>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium text-sm mb-0.5" style="color: {$colorStore.text};">
-                          {feature.label}
-                        </div>
-                        {#if feature.description}
-                          <div class="text-xs line-clamp-2" style="color: {$colorStore.muted}; opacity: 0.8;">
-                            {feature.description}
-                          </div>
-                        {/if}
-                      </div>
-                      <div class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <i class="fa-solid fa-arrow-right text-sm" style="color: {$colorStore.primary};"
-                           aria-hidden="true"></i>
-                      </div>
-                    </a>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          {/each}
-        </div>
-      </div>
-    </div>
-  </Portal>
-{/if}
-
 <style>
-    /* Jelly Duo icon color theming *//* Hide scrollbar for mobile tab navigation */
     .scrollbar-hide {
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* IE/Edge */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
 
     .scrollbar-hide::-webkit-scrollbar {
-        display: none; /* Chrome/Safari/Opera */
+        display: none;
     }
 
-    /* Button press animation - like a keyboard key */
-    .btn-press {
-        transition: transform 0.1s ease-out;
-    }
-
-    .btn-press:active {
-        transform: scale(0.92);
-    }
-
-    /* Enhanced press for tab buttons */
     .tab-press {
         transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -850,59 +506,30 @@
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Bounce animations for swipe boundaries */
     @keyframes bounceLeft {
-        0% {
-            transform: scaleX(0);
-        }
-        50% {
-            transform: scaleX(1.5);
-        }
-        100% {
-            transform: scaleX(0);
-        }
+        0% { transform: scaleX(0); }
+        50% { transform: scaleX(1.5); }
+        100% { transform: scaleX(0); }
     }
 
     @keyframes bounceRight {
-        0% {
-            transform: scaleX(0);
-        }
-        50% {
-            transform: scaleX(1.5);
-        }
-        100% {
-            transform: scaleX(0);
-        }
+        0% { transform: scaleX(0); }
+        50% { transform: scaleX(1.5); }
+        100% { transform: scaleX(0); }
     }
 
     @keyframes bounceContentLeft {
-        0% {
-            transform: translateX(0);
-        }
-        25% {
-            transform: translateX(-8px);
-        }
-        75% {
-            transform: translateX(-4px);
-        }
-        100% {
-            transform: translateX(0);
-        }
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-8px); }
+        75% { transform: translateX(-4px); }
+        100% { transform: translateX(0); }
     }
 
     @keyframes bounceContentRight {
-        0% {
-            transform: translateX(0);
-        }
-        25% {
-            transform: translateX(8px);
-        }
-        75% {
-            transform: translateX(4px);
-        }
-        100% {
-            transform: translateX(0);
-        }
+        0% { transform: translateX(0); }
+        25% { transform: translateX(8px); }
+        75% { transform: translateX(4px); }
+        100% { transform: translateX(0); }
     }
 
     .animate-bounce-left {
@@ -912,5 +539,4 @@
     .animate-bounce-right {
         animation: bounceRight 0.4s ease-out;
     }
-
 </style>
