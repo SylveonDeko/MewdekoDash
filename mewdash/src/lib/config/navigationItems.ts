@@ -75,7 +75,7 @@ export const allDashboardFeatures: NavigationItem[] = [
   },
   {
     label: "Forms",
-    icon: "fa-utility-duo fa-regular fa-clipboard-list",
+    icon: "fa-utility-duo fa-regular fa-clipboard",
     href: "/dashboard/forms",
     category: "Community",
     description: "Custom forms and surveys",

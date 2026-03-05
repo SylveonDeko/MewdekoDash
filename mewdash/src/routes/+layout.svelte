@@ -168,7 +168,9 @@
   <meta content="index, follow" name="robots" />
 </svelte:head>
 
-<UnifiedNav data={data} items={navItems} />
+{#if !page.url.pathname.startsWith("/dashboard")}
+  <UnifiedNav data={data} items={navItems} />
+{/if}
 
 <ErrorBoundary fallback="The page encountered an unexpected error. Please try refreshing." showDetails={true}>
   <main class="bg-mewd-dark-grey w-full">
