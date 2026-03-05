@@ -170,6 +170,10 @@
 
 {#if !page.url.pathname.startsWith("/dashboard")}
   <UnifiedNav data={data} items={navItems} />
+{:else}
+  <div class="lg:hidden">
+    <UnifiedNav data={data} items={navItems} />
+  </div>
 {/if}
 
 <ErrorBoundary fallback="The page encountered an unexpected error. Please try refreshing." showDetails={true}>
