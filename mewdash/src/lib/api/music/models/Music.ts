@@ -67,6 +67,60 @@ export interface QueueTrack {
 /**
  * Music player status
  */
+// TTS Types
+
+export interface TtsGuildSettings {
+  volume: number;
+  speed: number;
+  defaultVoice: string | null;
+  replyContext: boolean;
+  attachmentNarration: boolean;
+  consecutiveGrouping: boolean;
+  maxQueueSize: number;
+  roleId: bigint | null;
+  vcSettings: TtsVcSetting[];
+}
+
+export interface TtsVcSetting {
+  voiceChannelId: bigint;
+  enabled: boolean;
+  linkedTextChannelId: bigint | null;
+  announceJoinLeave: boolean;
+  joinFormat: string | null;
+  leaveFormat: string | null;
+}
+
+export interface TtsVcSettingRequest {
+  voiceChannelId: bigint;
+  enabled: boolean;
+  linkedTextChannelId: bigint | null;
+  announceJoinLeave: boolean;
+  joinFormat: string | null;
+  leaveFormat: string | null;
+}
+
+export interface TtsGuildSettingsRequest {
+  volume?: number;
+  speed?: number;
+  defaultVoice?: string;
+  replyContext?: boolean;
+  attachmentNarration?: boolean;
+  consecutiveGrouping?: boolean;
+  maxQueueSize?: number;
+  roleId?: bigint;
+}
+
+export interface TtsBlockedUser {
+  userId: bigint;
+  guildId: bigint;
+}
+
+export interface TtsVoice {
+  name: string;
+  source: string;
+  language: { name: string; code: string };
+}
+
 export interface MusicStatus {
   currentTrack: QueueTrack | null;
   queue: QueueTrack[];

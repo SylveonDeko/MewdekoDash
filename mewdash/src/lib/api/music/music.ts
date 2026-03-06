@@ -7,6 +7,11 @@ import type {
   MusicPlayerSetting,
   Track,
   QueueTrack,
+  TtsGuildSettings,
+  TtsGuildSettingsRequest,
+  TtsVcSettingRequest,
+  TtsBlockedUser,
+  TtsVoice,
 } from "./models";
 
 /**
@@ -192,4 +197,33 @@ export const musicApi = {
       "POST",
       enable,
     ),
+
+  // TTS endpoints
+
+  getTtsSettings: (guildId: bigint) =>
+    apiRequest<TtsGuildSettings>(`music/${guildId}/tts`),
+
+  updateTtsSettings: (guildId: bigint, settings: TtsGuildSettingsRequest) =>
+    apiRequest<void>(`music/${guildId}/tts/settings`, "POST", settings),
+
+  upsertTtsVcSetting: (guildId: bigint, setting: TtsVcSettingRequest) =>
+    apiRequest<void>(`music/${guildId}/tts/vc`, "POST", setting),
+
+  removeTtsVcSetting: (guildId: bigint, voiceChannelId: bigint) =>
+    apiRequest<void>(`music/${guildId}/tts/vc/${voiceChannelId}`, "DELETE"),
+
+  setTtsUserVoice: (guildId: bigint, userId: bigint, voice: string) =>
+    apiRequest<void>(`music/${guildId}/tts/user/${userId}/voice`, "POST", { voice }),
+
+  setTtsUserBlocked: (guildId: bigint, userId: bigint, blocked: boolean) =>
+    apiRequest<void>(`music/${guildId}/tts/user/${userId}/block/${blocked}`, "POST"),
+
+  getTtsUserSetting: (guildId: bigint, userId: bigint) =>
+    apiRequest<any>(`music/${guildId}/tts/user/${userId}`),
+
+  getTtsBlockedUsers: (guildId: bigint) =>
+    apiRequest<TtsBlockedUser[]>(`music/${guildId}/tts/blocked`),
+
+  searchTtsVoices: (guildId: bigint, search: string) =>
+    apiRequest<TtsVoice[]>(`music/${guildId}/tts/voices?search=${encodeURIComponent(search)}`),
 };
