@@ -34,6 +34,8 @@ export interface ChatLogEmbed {
 
   /** The embed author information */
   author: ChatLogEmbedAuthor | null;
+
+  fields?: { name: string; value: string; inline?: boolean }[];
 }
 
 /**

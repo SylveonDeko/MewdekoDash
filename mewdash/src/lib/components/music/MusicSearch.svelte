@@ -50,21 +50,14 @@ A modal music search component for finding and adding tracks to the music queue.
   let { colors, isOpen = $bindable(false), currentUser, onclose, ontrackAdded }: Props = $props();
 
   let searchQuery = $state("");
-  let searchResults: Array<{
-    title: string;
-    author: string;
-    duration: string;
-    uri: string;
-    artworkUri: string;
-    provider: string;
-  }> = $state([]);
+  let searchResults: Array<any> = $state([]);
   let isSearching = $state(false);
   let errorMessage = $state("");
   let selectedPlatform = $state("youtube");
   let debounceTimeout: NodeJS.Timeout | null = null;
   let isAdding = $state(false);
   let addedTrackMessage = $state("");
-  let searchInputElement: HTMLInputElement = $state();
+  let searchInputElement: HTMLInputElement | undefined = $state();
   let searchRetryCount = $state(0);
   let addRetryCount = $state(0);
   let lastSearchQuery = "";

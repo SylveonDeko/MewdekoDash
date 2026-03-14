@@ -4,7 +4,7 @@ export interface MultiGreet {
   id: number;
   guildId: bigint;
   channelId: bigint;
-  message: string | null;
+  message: string | Record<string, any> | null;
   greetBots: boolean;
   deleteTime: number;
   webhookUrl: string | null;

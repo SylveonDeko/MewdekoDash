@@ -11,7 +11,7 @@
   const maxBreaks = Object.keys($$slots).length;
 
   // Create an array of slot names
-  const slotNames = Array.from({ length: 12 }, (_, i) => `element-${i + 1}`);
+  const slotNames = Array.from({ length: 12 }, (_: unknown, i: number) => `element-${i + 1}`);
 </script>
 
 <div class="flex flex-wrap justify-center">

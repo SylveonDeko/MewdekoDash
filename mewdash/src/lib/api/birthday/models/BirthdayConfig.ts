@@ -36,7 +36,7 @@ export interface BirthdayConfig {
   birthdayRoleId: bigint | null;
 
   /** The birthday message template */
-  birthdayMessage: string;
+  birthdayMessage: string | Record<string, any>;
 
   /** The role ID to ping for birthday announcements */
   birthdayPingRoleId: bigint | null;

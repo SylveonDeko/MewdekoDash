@@ -198,6 +198,9 @@ export const musicApi = {
       enable,
     ),
 
+  moveQueueItem: (guildId: bigint, fromIndex: number, toIndex: number) =>
+    apiRequest<void>(`music/${guildId}/queue/move`, "POST", { fromIndex, toIndex }),
+
   // TTS endpoints
 
   getTtsSettings: (guildId: bigint) =>

@@ -11,8 +11,12 @@
   import { browser } from "$app/environment";
   import { wizardApi } from "$lib/api/index.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
+  import { userAdminGuilds } from "$lib/stores/adminGuildsStore";
+  import { switchingServer } from "$lib/stores/guildSwitchStore";
+  import { fade, fly } from "svelte/transition";
 
   let { data, children } = $props();
+  let guildSearchTerm = $state("");
 
   let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
   let mobileSidebarOpen = $state(false);
@@ -57,6 +61,35 @@
     showSetupSuggestion = false;
     setupSuggestionContext = null;
   }
+
+  function guildIconUrl(guild: any): string {
+    if (!guild.icon) return "https://cdn.discordapp.com/embed/avatars/0.png";
+    const ext = guild.icon.startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${ext}`;
+  }
+
+  async function selectGuild(guild: any) {
+    if ($switchingServer) return;
+    switchingServer.set(true);
+    currentGuild.set(guild);
+    if (browser) {
+      try {
+        localStorage.setItem("lastSelectedGuild", JSON.stringify({
+          id: guild.id.toString(),
+          name: guild.name,
+          icon: guild.icon
+        }));
+      } catch {}
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+    switchingServer.set(false);
+  }
+
+  let filteredGuilds = $derived(
+    ($userAdminGuilds || [])
+      .filter((g: any) => g.name.toLowerCase().includes(guildSearchTerm.toLowerCase()))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name))
+  );
 
   function startQuickSetup() {
     if ($currentGuild && browser) {
@@ -136,6 +169,82 @@
        class:lg:ml-[68px]={$currentInstance && sidebarCollapsed}>
     {#if !$currentInstance}
         <InstanceSelector data={data}/>
+    {:else if !$currentGuild}
+      <div
+        class="h-screen overflow-hidden p-4 md:p-6 w-full flex flex-col"
+        style="background: radial-gradient(circle at top,
+          {$colorStore.gradientStart}15 0%,
+          {$colorStore.gradientMid}10 50%,
+          {$colorStore.gradientEnd}05 100%);"
+      >
+        <div class="max-w-5xl mx-auto w-full flex flex-col min-h-0 gap-4 md:gap-6">
+          <div
+            class="text-center px-4 py-5 md:py-6 rounded-2xl border shrink-0"
+            in:fly={{ y: 20, duration: 300 }}
+            style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                   border-color: {$colorStore.primary}30;"
+          >
+            <h1 class="text-xl md:text-2xl font-bold mb-1" style="color: {$colorStore.text}">Select a Server</h1>
+            <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Choose a server to manage from the dashboard</p>
+          </div>
+
+          <div class="relative shrink-0">
+            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-xs"
+               style="color: {$colorStore.muted};"></i>
+            <input
+              type="text"
+              placeholder="Search servers..."
+              bind:value={guildSearchTerm}
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all duration-200"
+              style="border-color: {$colorStore.primary}20;
+                     color: {$colorStore.text};
+                     background: {$colorStore.primary}08;"
+            />
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-y-auto rounded-2xl px-1" in:fade={{ delay: 100 }}>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-1">
+              {#each filteredGuilds as guild (guild.id)}
+                <button
+                  onclick={() => selectGuild(guild)}
+                  class="flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] focus:outline-hidden text-left"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
+                         border-color: {$colorStore.primary}20;"
+                >
+                  <img
+                    src={guildIconUrl(guild)}
+                    alt=""
+                    class="w-10 h-10 rounded-full shrink-0 object-cover"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium truncate" style="color: {$colorStore.text}">{guild.name}</p>
+                    <p class="text-xs truncate" style="color: {$colorStore.muted}">
+                      {guild.owner ? 'Owner' : 'Admin'}
+                    </p>
+                  </div>
+                </button>
+              {:else}
+                <div class="col-span-full text-center py-12">
+                  <p class="text-sm" style="color: {$colorStore.text}">
+                    {#if guildSearchTerm}
+                      No servers match "{guildSearchTerm}"
+                    {:else}
+                      No servers available
+                    {/if}
+                  </p>
+                  <p class="text-xs mt-1" style="color: {$colorStore.muted}">
+                    {#if guildSearchTerm}
+                      Try a different search term
+                    {:else}
+                      Make sure the bot is in a server where you have admin permissions
+                    {/if}
+                  </p>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+      </div>
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>

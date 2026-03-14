@@ -54,8 +54,8 @@
 
   // Internal state
   let selectedIndex = $state(0);
-  let searchInputRef: HTMLInputElement = $state();
-  let containerRef: HTMLDivElement = $state();
+  let searchInputRef: HTMLInputElement | undefined = $state();
+  let containerRef: HTMLDivElement | undefined = $state();
   let filteredPlaceholders: Placeholder[] = $state([]);
 
   // Category icons mapping

@@ -80,6 +80,7 @@
   // Mobile full-screen question editor
   let showMobileQuestionEditor = $state(false);
   let mobileEditingQuestionIndex = $state<number | null>(null);
+  let mobileIdx = $derived(mobileEditingQuestionIndex ?? 0);
 
   // Accordion states for mobile
   let expandedSections = $state({
@@ -1584,7 +1585,7 @@
               <input
                 type="text"
                 value={question.questionText}
-                oninput={(e) => handleQuestionTextInput(e, mobileEditingQuestionIndex)}
+                oninput={(e) => handleQuestionTextInput(e, mobileIdx)}
                 placeholder="Enter your question..."
                 class="w-full p-3 rounded-lg"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1612,7 +1613,7 @@
               <input
                 type="text"
                 value={question.placeholder || ""}
-                oninput={(e) => updateQuestion(mobileEditingQuestionIndex, { placeholder: e.currentTarget.value })}
+                oninput={(e) => updateQuestion(mobileIdx, { placeholder: e.currentTarget.value })}
                 placeholder="e.g., Type your answer here..."
                 class="w-full p-3 rounded-lg"
                 style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1628,7 +1629,7 @@
                 type="checkbox"
                 id="mobile-required-{question.id}"
                 checked={question.isRequired}
-                onchange={(e) => updateQuestion(mobileEditingQuestionIndex, { isRequired: e.currentTarget.checked })}
+                onchange={(e) => updateQuestion(mobileIdx, { isRequired: e.currentTarget.checked })}
                 class="w-5 h-5 rounded"
                 style="accent-color: {$colorStore.primary};"
               />
@@ -1645,7 +1646,7 @@
                   <input
                     type="number"
                     value={question.minLength ?? ""}
-                    oninput={(e) => updateQuestion(mobileEditingQuestionIndex, { minLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
+                    oninput={(e) => updateQuestion(mobileIdx, { minLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     min="0"
                     placeholder="No minimum"
                     class="w-full p-3 rounded-lg"
@@ -1659,7 +1660,7 @@
                   <input
                     type="number"
                     value={question.maxLength ?? ""}
-                    oninput={(e) => updateQuestion(mobileEditingQuestionIndex, { maxLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
+                    oninput={(e) => updateQuestion(mobileIdx, { maxLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     min="1"
                     placeholder="No maximum"
                     class="w-full p-3 rounded-lg"
@@ -1679,7 +1680,7 @@
                   <input
                     type="number"
                     value={question.minValue ?? ""}
-                    oninput={(e) => updateQuestion(mobileEditingQuestionIndex, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
+                    oninput={(e) => updateQuestion(mobileIdx, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     placeholder="No minimum"
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1692,7 +1693,7 @@
                   <input
                     type="number"
                     value={question.maxValue ?? ""}
-                    oninput={(e) => updateQuestion(mobileEditingQuestionIndex, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
+                    oninput={(e) => updateQuestion(mobileIdx, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
                     placeholder="No maximum"
                     class="w-full p-3 rounded-lg"
                     style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
@@ -1707,7 +1708,7 @@
                 <div class="flex items-center justify-between">
                   <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Options</h4>
                   <button
-                    onclick={() => addOption(mobileEditingQuestionIndex)}
+                    onclick={() => addOption(mobileIdx)}
                     class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                     style="background: {$colorStore.primary}20; color: {$colorStore.text};"
                     type="button"
@@ -1723,13 +1724,13 @@
                         <input
                           type="text"
                           value={option.optionText || ""}
-                          oninput={(e) => handleOptionTextInput(e, mobileEditingQuestionIndex, optIndex)}
+                          oninput={(e) => handleOptionTextInput(e, mobileIdx, optIndex)}
                           placeholder="Option {optIndex + 1}"
                           class="flex-1 p-3 rounded-lg"
                           style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
                         />
                         <button
-                          onclick={() => deleteOption(mobileEditingQuestionIndex, optIndex)}
+                          onclick={() => deleteOption(mobileIdx, optIndex)}
                           class="px-3 py-2 rounded-lg transition-all"
                           style="background: #ef444420; color: #ef4444;"
                           aria-label="Delete option"
@@ -1759,7 +1760,7 @@
                 questionIndex={mobileEditingQuestionIndex}
                 allQuestions={questions}
                 roles={roles}
-                onUpdate={(updates) => updateQuestion(mobileEditingQuestionIndex, updates)}
+                onUpdate={(updates) => updateQuestion(mobileIdx, updates)}
               />
             </div>
           </div>

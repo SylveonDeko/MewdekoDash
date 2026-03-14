@@ -21,6 +21,7 @@ A comprehensive music player component for Discord bot music functionality.
     import {currentGuild} from "$lib/stores/currentGuild";
     import {logger} from "$lib/logger";
     import type {MusicStatus, Requester, TrackInfo} from "$lib/types/music";
+    import type {QueueTrack} from "$lib/api/music/models/Music";
     import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
     import MusicSearch from "$lib/components/music/MusicSearch.svelte";
 
@@ -39,7 +40,7 @@ A comprehensive music player component for Discord bot music functionality.
   let contextMenuX = $state(0);
   let contextMenuY = $state(0);
   let contextMenuTrackIndex = $state(-1);
-  let contextMenuElement: HTMLDivElement = $state();
+  let contextMenuElement: HTMLDivElement | undefined = $state();
 
   // Progress preview state
   let showProgressPreview = $state(false);
@@ -50,8 +51,8 @@ A comprehensive music player component for Discord bot music functionality.
   let currentProgress = $state(0);
   let serverTimeDiff = 0;
   let lastSyncedPosition = 0;
-  let progressBarElement: HTMLDivElement = $state();
-  let volumeSliderElement: HTMLInputElement = $state();
+  let progressBarElement: HTMLDivElement | undefined = $state();
+  let volumeSliderElement: HTMLInputElement | undefined = $state();
   let isTransitioning = $state(false);
   let lastAnimationTimestamp = $state(0);
   let smoothProgress = $state(0);
@@ -59,7 +60,7 @@ A comprehensive music player component for Discord bot music functionality.
   const UPDATE_DEBOUNCE_TIME = 250; // ms - prevents too frequent updates
 
   // Function to determine if a track is currently playing
-  function isCurrentlyPlaying(track: TrackInfo): boolean {
+  function isCurrentlyPlaying(track: QueueTrack): boolean {
     if (!musicStatus?.CurrentTrack?.Track) return false;
 
     // Compare by title and author to identify the same track
@@ -329,7 +330,7 @@ A comprehensive music player component for Discord bot music functionality.
     try {
       if (!$currentGuild?.id) return;
       const track = musicStatus.Queue[trackIndex];
-      await musicApi.removeFromQueue($currentGuild.id, track.Index);
+      await musicApi.removeTrack($currentGuild.id, track.Index);
       announceToScreenReader(`Removed ${track.Track.Title} from queue`);
     } catch (err) {
       logger.error("Failed to remove track from queue:", err);
@@ -479,11 +480,11 @@ A comprehensive music player component for Discord bot music functionality.
             if (details.seekTime !== undefined && duration > 0) {
               const seekRequest = { Position: details.seekTime };
               if ($currentGuild?.id) {
-                api.seek($currentGuild.id, seekRequest)
+                musicApi.seek($currentGuild.id, seekRequest)
                   .then(() => {
-                    currentProgress = details.seekTime;
+                    currentProgress = details.seekTime!;
                   })
-                  .catch(err => {
+                  .catch((err: any) => {
                     logger.error("Failed to seek via MediaSession:", err);
                   });
               }
@@ -636,7 +637,7 @@ A comprehensive music player component for Discord bot music functionality.
    * Handle music status updates with debouncing to prevent UI flicker
    * from frequent WebSocket updates (every second)
    */
-  function handleMusicStatusUpdate(status) {
+  function handleMusicStatusUpdate(status: any) {
     if (!status?.CurrentTrack?.Track) return;
 
     const now = performance.now();
@@ -735,7 +736,7 @@ A comprehensive music player component for Discord bot music functionality.
   }
 
   // Function to handle when a track is added through the search modal
-  function handleTrackAdded(event) {
+  function handleTrackAdded(event: any) {
     isSearchModalOpen = false;
     announceToScreenReader(`Added ${event.detail.track.title} to queue`);
   }
@@ -744,7 +745,7 @@ A comprehensive music player component for Discord bot music functionality.
   function getCurrentUser(): Requester {
     // This should be replaced with actual user information from your auth system
     return {
-      Id: musicStatus?.CurrentTrack?.Requester?.Id || 0,
+      Id: musicStatus?.CurrentTrack?.Requester?.Id || BigInt(0),
       Username: musicStatus?.CurrentTrack?.Requester?.Username || "Unknown User",
       AvatarUrl: musicStatus?.CurrentTrack?.Requester?.AvatarUrl || "/default-avatar.png"
     };
@@ -765,14 +766,14 @@ A comprehensive music player component for Discord bot music functionality.
     if (silentAudioElement) {
       silentAudioElement.pause();
       silentAudioElement.src = "";
-      silentAudioElement = null;
+      silentAudioElement = null as any;
     }
 
     // Clear MediaSession if supported
     if ("mediaSession" in navigator) {
       // Clear action handlers
       const actions = ["play", "pause", "previoustrack", "nexttrack", "seekto"];
-      actions.forEach(action => {
+      actions.forEach((action: any) => {
         try {
           navigator.mediaSession.setActionHandler(action, null);
         } catch (e) {
@@ -1465,8 +1466,8 @@ A comprehensive music player component for Discord bot music functionality.
     bind:isOpen={isSearchModalOpen}
     colors={colors}
     currentUser={getCurrentUser()}
-    on:close={() => isSearchModalOpen = false}
-    on:trackAdded={handleTrackAdded}
+    onclose={() => isSearchModalOpen = false}
+    ontrackAdded={handleTrackAdded}
   />
 </div>
 

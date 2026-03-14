@@ -4,7 +4,7 @@
 
   import { onDestroy, onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
-  import type { GraphStatsResponse } from "$lib/types/models.ts";
+  import type { GraphStatsResponse } from "$lib/api/joinleave/models/GraphStats";
 
   interface Props {
     data: GraphStatsResponse;
@@ -13,7 +13,7 @@
 
   let { data, type = "join" }: Props = $props();
 
-  let canvas: HTMLCanvasElement = $state();
+  let canvas: HTMLCanvasElement | undefined = $state();
   let width = $state(0);
   let height = $state(0);
   let resizeObserver: ResizeObserver;

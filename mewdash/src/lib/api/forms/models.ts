@@ -244,7 +244,7 @@ export interface RejectionRequest {
 }
 
 export interface ResponseStatusResponse {
-  status: string;
+  status: ResponseStatus;
   reviewedAt?: string;
   reviewNotes?: string;
   inviteCode?: string;

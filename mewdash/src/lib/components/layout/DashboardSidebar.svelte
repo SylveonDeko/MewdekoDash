@@ -46,6 +46,7 @@
   let isDashboardHome = $derived(currentPath === "/dashboard" || currentPath === "/dashboard/");
   let musicStatus = $derived($musicStore.status);
   let showMusicPlayer = $derived(musicStatus?.CurrentTrack && currentPath !== "/dashboard/music");
+  let noGuild = $derived(!$currentGuild);
   let showUserMenu = $state(false);
 
   let userAvatarUrl = $derived.by(() => {
@@ -586,12 +587,15 @@
     {#if !isDashboardHome}
       <div class="px-2 mb-1">
         <a
-          href="/dashboard"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.01] group"
+          href={noGuild ? undefined : "/dashboard"}
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+          class:hover:scale-[1.01]={!noGuild}
+          class:opacity-40={noGuild}
+          class:pointer-events-none={noGuild}
           style="background: transparent;
                  color: {$colorStore.muted};
                  border: 1px solid transparent;"
-          onmouseenter={(e) => showTooltip(e, 'Dashboard Home')}
+          onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : 'Dashboard Home')}
           onmouseleave={hideTooltip}
         >
           <i class="fa-utility-duo fa-regular fa-home text-base shrink-0"
@@ -640,13 +644,17 @@
               {#each featuresByCategory[category] as feature}
                 {@const active = isActive(feature.href)}
                 <a
-                  href={feature.href}
-                  class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-all duration-200 hover:scale-[1.01] group relative"
+                  href={noGuild ? undefined : feature.href}
+                  class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-all duration-200 group relative"
+                  class:hover:scale-[1.01]={!noGuild}
+                  class:opacity-40={noGuild}
+                  class:pointer-events-none={noGuild}
                   style="background: {active ? $colorStore.primary + '12' : 'transparent'};
                          color: {active ? $colorStore.text : $colorStore.muted};
                          border: 1px solid {active ? $colorStore.primary + '20' : 'transparent'};"
                   aria-current={active ? 'page' : undefined}
-                  onmouseenter={(e) => showTooltip(e, feature.label)}
+                  aria-disabled={noGuild}
+                  onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : feature.label)}
                   onmouseleave={hideTooltip}
                 >
                   {#if active}

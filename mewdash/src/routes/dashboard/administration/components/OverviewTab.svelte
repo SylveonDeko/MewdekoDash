@@ -225,7 +225,8 @@
       </div>
 
       <div class="space-y-3">
-        {#each Object.entries(protectionStatus) as [key, status]}
+        {#each Object.entries(protectionStatus) as [key, status] (key)}
+          {@const s = status as any}
           <div class="flex justify-between items-center">
             <span style="color: {$colorStore.muted}">
               {key === 'antiRaid' ? 'Anti-Raid' :
@@ -238,9 +239,9 @@
             </span>
             <span class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full"
-                   style="background: {status?.enabled ? $colorStore.primary : $colorStore.muted}40;"></div>
-              <span style="color: {status?.enabled ? $colorStore.primary : $colorStore.muted}">
-                {status?.enabled ? 'Active' : 'Disabled'}
+                   style="background: {s?.enabled ? $colorStore.primary : $colorStore.muted}40;"></div>
+              <span style="color: {s?.enabled ? $colorStore.primary : $colorStore.muted}">
+                {s?.enabled ? 'Active' : 'Disabled'}
               </span>
             </span>
           </div>

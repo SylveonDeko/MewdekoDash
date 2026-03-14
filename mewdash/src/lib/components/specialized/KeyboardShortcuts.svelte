@@ -60,7 +60,7 @@
   ];
 
   // State
-  let isVisible = $state(false);
+  let { isVisible = $bindable(false) }: { isVisible?: boolean } = $props();
   let activeContext = $state("Global");
 
   // Contexts extracted from shortcuts

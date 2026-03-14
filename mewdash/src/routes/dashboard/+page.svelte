@@ -3,7 +3,7 @@
     import { onDestroy, onMount } from "svelte";
     import {
         botStatusApi,
-        type BotStatusModel,
+        type BotStatus,
         clientApi,
         type GraphStatsResponse,
         guildApi,
@@ -38,7 +38,7 @@
 
     // State management
     let currentUser = data.user;
-    let botStatus: BotStatusModel | null = $state(null);
+    let botStatus: BotStatus | null = $state(null);
     let loading = $state(true);
     let error: string | null = $state(null);
     let refreshing = $state(false);
@@ -70,7 +70,7 @@
     let switchingServer = $derived($switchingServerStore);
 
     // Guild detailed information
-    let guildInfo = $state(null);
+    let guildInfo = $state<any>(null);
 
     // Role statistics
     let roleStats = $state({
@@ -208,10 +208,10 @@
                 roleStates: roleStateSettings?.enabled || false,
                 roleGreets: (roleGreets?.length || 0) > 0,
                 multiGreets: (guildSettingsResponse?.multiGreetType || 0) > 0,
-                starboard: !!guildSettingsResponse?.starboardChannel,
+                starboard: false,
                 suggestions: !!(guildSettingsResponse?.sugchan || guildSettingsResponse?.sugchan),
-                musicEnabled: true, // Assuming always enabled
-                giveawaysEnabled: !!guildSettingsResponse?.GiveawayEndMessage
+                musicEnabled: true,
+                giveawaysEnabled: !!guildSettingsResponse?.giveawayEndMessage
             };
         } catch (err) {
             logger.error("Failed to fetch features:", err);
@@ -262,7 +262,7 @@
 
             dashboardStore.setLastUpdated(new Date());
         } catch (err) {
-            error = err.message || "An error occurred while fetching data";
+            error = (err as any).message || "An error occurred while fetching data";
             logger.error("Dashboard data fetch error:", err);
         } finally {
             fetchingData = false;
@@ -529,53 +529,35 @@
         }
     });
 
+    // Fetch data when instance changes
     $effect(() => {
         if ($currentInstance) {
-            // Extract colors from server icon if available, otherwise use user avatar, then bot avatar as fallback
-          // (Halloween swap will be applied automatically if active)
-            if (guildInfo?.iconUrl) {
-                colorStore.extractFromServerIcon(guildInfo.iconUrl);
-            } else if ($currentGuild?.icon) {
-                const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-                colorStore.extractFromServerIcon(serverIconUrl);
-            } else if (currentUser?.avatar) {
-                // Use user avatar when no server is selected
-                const userAvatarUrl = currentUser.avatar.startsWith("a_")
-                    ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
-                    : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
-                colorStore.extractFromImage(userAvatarUrl);
-            } else if ($currentInstance?.botAvatar) {
-                // Fall back to bot avatar
-                colorStore.extractFromImage($currentInstance.botAvatar);
-            }
-
             fetchAllData();
         }
     });
 
+    // Fetch data when guild changes
     $effect(() => {
         if ($currentGuild) {
-            // When guild changes, update colors based on server icon
-          // (Halloween swap will be applied automatically if active)
-            if (guildInfo?.iconUrl) {
-                colorStore.extractFromServerIcon(guildInfo.iconUrl);
-            } else if ($currentGuild.icon) {
-                const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-                colorStore.extractFromServerIcon(serverIconUrl);
-            }
-
             fetchAllData();
-        } else if (!$currentGuild) {
-          if (currentUser?.avatar) {
-            // No guild selected - use user avatar colors
+        }
+    });
+
+    // Separate effect for color extraction - reacts to guildInfo/guild/instance changes
+    // without triggering data fetches (guildInfo is updated by fetchAllData)
+    $effect(() => {
+        if (guildInfo?.iconUrl) {
+            colorStore.extractFromServerIcon(guildInfo.iconUrl);
+        } else if ($currentGuild?.icon) {
+            const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
+            colorStore.extractFromServerIcon(serverIconUrl);
+        } else if (currentUser?.avatar) {
             const userAvatarUrl = currentUser.avatar.startsWith("a_")
-              ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
-              : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
+                : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
             colorStore.extractFromImage(userAvatarUrl);
-          } else if ($currentInstance?.botAvatar) {
-            // No guild and no user avatar - fall back to bot avatar
+        } else if ($currentInstance?.botAvatar) {
             colorStore.extractFromImage($currentInstance.botAvatar);
-          }
         }
     });
 

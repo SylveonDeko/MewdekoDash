@@ -21,7 +21,7 @@ export interface ChatTrigger {
   guildId: bigint | null;
 
   /** The response text */
-  response: string | null;
+  response: string | Record<string, any> | null;
 
   /** The trigger text or pattern */
   trigger: string | null;

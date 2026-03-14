@@ -6,7 +6,7 @@
  */
 export interface GuildEmojiInfo {
   /** The guild these emojis belong to */
-  guild: GuildInfo;
+  guild: ClientGuildInfo;
 
   /** List of emojis in this guild */
   emojis: EmojiInfo[];
@@ -14,9 +14,9 @@ export interface GuildEmojiInfo {
 
 /**
  * Basic guild information
- * Maps to Mewdeko.Controllers.Common.ClientOperations.GuildInfo
+ * Maps to Mewdeko.Controllers.Common.ClientOperations.ClientGuildInfo
  */
-export interface GuildInfo {
+export interface ClientGuildInfo {
   /** The guild ID */
   id: string;
 

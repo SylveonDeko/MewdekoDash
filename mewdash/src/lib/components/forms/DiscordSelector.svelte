@@ -10,7 +10,7 @@
     value?: string;
     icon?: string; // For custom types
     emoji?: string; // For custom types with emoji
-    displayName: string; // For custom types with display name
+    displayName?: string; // For custom types with display name
   };
 </script>
 
@@ -46,9 +46,9 @@
   // Internal state
   let isOpen = $state(false);
   let searchTerm = $state("");
-  let dropdownRef: HTMLDivElement = $state();
-  let searchInputRef: HTMLInputElement = $state();
-  let containerRef: HTMLDivElement = $state();
+  let dropdownRef: HTMLDivElement | undefined = $state();
+  let searchInputRef: HTMLInputElement | undefined = $state();
+  let containerRef: HTMLDivElement | undefined = $state();
   let focusedIndex = $state(-1);
   let dropdownId = `dropdown-${Math.random().toString(36).substring(2, 9)}`;
   let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});

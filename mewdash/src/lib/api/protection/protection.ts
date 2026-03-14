@@ -11,7 +11,6 @@ import type {
   AntiSpamConfig,
   AntiAltConfig,
   AntiMassMentionConfig,
-  AntiPatternConfigRequest,
 } from "../administration/models";
 
 export const protectionApi = {

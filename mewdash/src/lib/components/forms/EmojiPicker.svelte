@@ -10,7 +10,8 @@
     name: string;
     unicode: string;
     searchTerms: string[];
-    isUnicode: true;
+    isUnicode: boolean;
+    id?: string;
   };
 
   export type AnyEmojiOption = EmojiOption | UnicodeEmojiOption;

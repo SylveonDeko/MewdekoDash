@@ -21,9 +21,12 @@ export interface MusicPlayerSetting {
  * Partial user for track requester
  */
 export interface PartialUser {
-  id: bigint;
-  username: string;
-  avatarUrl: string;
+  id?: bigint;
+  username?: string;
+  avatarUrl?: string;
+  Id?: bigint;
+  Username?: string;
+  AvatarUrl?: string;
 }
 
 /**
@@ -40,33 +43,29 @@ export interface PlayRequest {
  * Maps to Mewdeko.Controllers.Common.Music.SeekRequest
  */
 export interface SeekRequest {
-  position: number;
+  position?: number;
+  Position?: number;
 }
 
 /**
  * Track information
  */
 export interface Track {
-  title: string;
-  author: string;
-  duration: string;
-  uri: string;
-  artworkUri: string;
-  provider: string;
+  Title: string;
+  Author: string;
+  Duration: string;
+  Uri: string;
+  ArtworkUri: string;
+  Provider: string;
+  SourceName?: string;
 }
 
-/**
- * Track in queue
- */
 export interface QueueTrack {
-  index: number;
-  track: Track;
-  requester: PartialUser;
+  Index: number;
+  Track: Track;
+  Requester: PartialUser;
 }
 
-/**
- * Music player status
- */
 // TTS Types
 
 export interface TtsGuildSettings {
@@ -122,26 +121,26 @@ export interface TtsVoice {
 }
 
 export interface MusicStatus {
-  currentTrack: QueueTrack | null;
-  queue: QueueTrack[];
-  state: number;
-  volume: number;
-  position: any;
-  repeatMode: number;
-  filters: {
-    bassBoost: boolean;
-    nightcore: boolean;
-    vaporwave: boolean;
-    karaoke: boolean;
-    tremolo: boolean;
-    vibrato: boolean;
-    rotation: boolean;
-    distortion: boolean;
-    channelMix: boolean;
+  CurrentTrack: QueueTrack | null;
+  Queue: QueueTrack[];
+  State: number;
+  Volume: number;
+  Position: any;
+  RepeatMode: number;
+  Filters: {
+    BassBoost: boolean;
+    Nightcore: boolean;
+    Vaporwave: boolean;
+    Karaoke: boolean;
+    Tremolo: boolean;
+    Vibrato: boolean;
+    Rotation: boolean;
+    Distortion: boolean;
+    ChannelMix: boolean;
   };
-  isInVoiceChannel: boolean;
-  botInChannel?: boolean;
-  channelId?: bigint;
-  channelName?: string;
-  disconnected?: boolean;
+  IsInVoiceChannel: boolean;
+  BotInChannel?: boolean;
+  ChannelId?: bigint;
+  ChannelName?: string;
+  Disconnected?: boolean;
 }

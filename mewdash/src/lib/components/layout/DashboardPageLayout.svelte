@@ -271,7 +271,7 @@
   }
   
   // Scroll navigation for mobile
-  function scrollTabs(direction: 'left' | 'right', container: HTMLDivElement) {
+  function scrollTabs(direction: 'left' | 'right', container: HTMLDivElement | undefined) {
     if (!container) return;
     const scrollAmount = 200;
     container.scrollBy({

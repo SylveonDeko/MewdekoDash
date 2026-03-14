@@ -76,7 +76,7 @@
   let suggestionCount = $derived(localSuggestions.length);
 
   // Get the most severe issue type for overall styling
-  let severityLevel = $derived(errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'info');
+  let severityLevel = $derived<'error' | 'warning' | 'suggestion'>(errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'suggestion');
 
   // Dismiss an individual issue
   function dismissIssue(type: 'error' | 'warning' | 'suggestion', id: string) {

@@ -9,7 +9,7 @@
 
   let { target = 'body', children }: Props = $props();
   
-  let portal: HTMLDivElement = $state();
+  let portal: HTMLDivElement | undefined = $state();
   let targetElement: HTMLElement;
   
   onMount(() => {

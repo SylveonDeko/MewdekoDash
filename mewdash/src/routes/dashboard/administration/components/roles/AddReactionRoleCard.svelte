@@ -59,7 +59,7 @@
   // Get role name from ID
   function getRoleName(roleId: string | null): string {
     if (!roleId) return "Select role...";
-    const role = availableRoles.find(r => r.id === roleId);
+    const role = availableRoles.find((r: any) => r.id === roleId);
     return role ? role.name : `Role ${roleId}`;
   }
 
@@ -90,10 +90,10 @@
     // If messageId matches an existing reaction role message, add those emojis
     if (messageId.trim() && reactionRoles?.success && Array.isArray(reactionRoles?.reactionRoles)) {
       const existingMessage = reactionRoles.reactionRoles.find(
-        rr => rr.messageId.toString() === messageId.trim()
+        (rr: any) => rr.messageId.toString() === messageId.trim()
       );
       if (existingMessage) {
-        existingMessage.reactionRoles.forEach(r => currentEmojis.add(r.emoteName));
+        existingMessage.reactionRoles.forEach((r: any) => currentEmojis.add(r.emoteName));
       }
     }
 
@@ -104,7 +104,7 @@
   let existingMessage = $derived(() => {
     if (!messageId.trim() || !reactionRoles?.success || !Array.isArray(reactionRoles?.reactionRoles)) return null;
     return reactionRoles.reactionRoles.find(
-      rr => rr.messageId.toString() === messageId.trim()
+      (rr: any) => rr.messageId.toString() === messageId.trim()
     );
   });
 

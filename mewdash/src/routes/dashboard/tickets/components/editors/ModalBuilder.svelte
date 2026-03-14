@@ -42,7 +42,7 @@
     // Sanitize fields by removing empty/null Placeholder and Value
     const sanitizedFields: any = {};
 
-    for (const [fieldId, field] of Object.entries(modalConfig.fields)) {
+    for (const [fieldId, field] of Object.entries(modalConfig.fields) as [string, any][]) {
       const sanitizedField: any = {
         Label: field.Label,
         Style: field.Style,
@@ -108,7 +108,7 @@
     expandedFieldId = expandedFieldId === fieldId ? null : fieldId;
   }
 
-  let fieldEntries = $derived(Object.entries(modalConfig.fields));
+  let fieldEntries = $derived(Object.entries(modalConfig.fields) as [string, any][]);
 </script>
 
 <div class="space-y-4">

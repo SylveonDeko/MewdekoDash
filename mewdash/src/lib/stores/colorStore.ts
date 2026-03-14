@@ -12,6 +12,7 @@ interface ColorPalette {
   accent: string;
   text: string;
   muted: string;
+  background: string;
   gradientStart: string;
   gradientMid: string;
   gradientEnd: string;
@@ -23,6 +24,7 @@ const DEFAULT_PALETTE: ColorPalette = {
   accent: "#ec4899",
   text: "#ffffff",
   muted: "#9ca3af",
+  background: "#121828",
   gradientStart: "#3a86ff",
   gradientMid: "#8338ec",
   gradientEnd: "#ff006e",
@@ -516,6 +518,7 @@ function createColorStore() {
           accent: rgbToHex(...adjustedAccent),
           text: textColor,
           muted: muted,
+          background: "#121828",
           gradientStart,
           gradientMid,
           gradientEnd,
@@ -574,6 +577,7 @@ function createColorStore() {
         accent: rgbToHex(...adjustedAccent),
         text: textColor,
         muted: createMutedColor(adjustedPrimary, textColor),
+        background: "#121828",
         gradientStart,
         gradientMid,
         gradientEnd,

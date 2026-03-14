@@ -185,7 +185,7 @@
       document.body.style.overflow = "";
       document.body.style.touchAction = "";
       document.body.style.webkitUserSelect = "";
-      document.body.style.webkitTouchCallout = "";
+      (document.body.style as any).webkitTouchCallout = "";
       document.body.classList.remove("dragging-active");
     }
   });
@@ -598,7 +598,7 @@
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     document.body.style.webkitUserSelect = "none";
-    document.body.style.webkitTouchCallout = "none";
+    (document.body.style as any).webkitTouchCallout = "none";
     document.body.classList.add("dragging-active");
 
     // Add global touch move listener to prevent scrolling
@@ -643,7 +643,7 @@
     document.body.style.overflow = "";
     document.body.style.touchAction = "";
     document.body.style.webkitUserSelect = "";
-    document.body.style.webkitTouchCallout = "";
+    (document.body.style as any).webkitTouchCallout = "";
     document.body.classList.remove("dragging-active");
 
     // Restore scroll position
@@ -695,7 +695,7 @@
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     document.body.style.webkitUserSelect = "none";
-    document.body.style.webkitTouchCallout = "none";
+    (document.body.style as any).webkitTouchCallout = "none";
     document.body.classList.add("dragging-active");
 
     // Add global touch move listener to prevent scrolling
@@ -762,7 +762,7 @@
     document.body.style.overflow = "";
     document.body.style.touchAction = "";
     document.body.style.webkitUserSelect = "";
-    document.body.style.webkitTouchCallout = "";
+    (document.body.style as any).webkitTouchCallout = "";
     document.body.classList.remove("dragging-active");
 
     // Restore scroll position

@@ -14,7 +14,7 @@
   // No props needed - using store state
 
   // State
-  let searchInput: HTMLInputElement = $state();
+  let searchInput: HTMLInputElement | undefined = $state();
   let query = $state('');
   let results: SearchableItem[] = $state([]);
   let selectedIndex = $state(0);
