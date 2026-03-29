@@ -53,6 +53,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Counting game channel",
   },
   {
+    label: "Minecraft",
+    icon: "fa-utility-duo fa-regular fa-server",
+    href: "/dashboard/minecraft",
+    category: "Entertainment",
+    description: "Minecraft server monitoring and status",
+  },
+  {
     label: "Custom Voice",
     icon: "fa-utility-duo fa-regular fa-microphone",
     href: "/dashboard/customvoice",

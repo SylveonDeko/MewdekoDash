@@ -838,6 +838,13 @@
     loadAllData();
   });
 
+  // Reload data when guild changes (e.g. restored from localStorage after mount)
+  $effect(() => {
+    if ($currentGuild?.id) {
+      loadAllData();
+    }
+  });
+
   // Tabs configuration
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-chart-bar" },

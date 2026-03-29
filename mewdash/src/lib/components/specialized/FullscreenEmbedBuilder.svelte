@@ -279,7 +279,7 @@
   // Initialize from value
   $effect(() => {
     // Parse content
-    content = value?.content || "";
+    content = typeof value?.content === "string" ? value.content : "";
 
     // Parse embeds
     if (value?.embeds && Array.isArray(value.embeds) && value.embeds.length > 0) {
@@ -789,7 +789,7 @@
 
   // Check if has content
   let hasContent = $derived(
-    (allowContent && content.trim()) ||
+    (allowContent && typeof content === "string" && content.trim()) ||
     embeds.some(e => e.title || e.description || e.fields?.length > 0) ||
     (allowComponents && componentRows.some(row => row.components && row.components.length > 0))
   );

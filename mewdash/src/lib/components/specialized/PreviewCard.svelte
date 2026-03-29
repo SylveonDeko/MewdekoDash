@@ -160,7 +160,8 @@
     const withPlaceholders = replacePlaceholders(text);
 
     // Step 2: Parse markdown (this escapes HTML: <@id> → &lt;@id&gt;)
-    const markdown = marked.parse(withPlaceholders) as string;
+    // Use breaks: true to match Discord's newline behavior (single \n = <br>)
+    const markdown = marked.parse(withPlaceholders, { breaks: true }) as string;
 
     // Step 3: Format Discord mentions AFTER markdown escaping
     const withMentions = formatDiscordMentions(markdown);

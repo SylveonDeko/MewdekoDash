@@ -52,6 +52,7 @@ export { meApi } from "./me/me";
 export { pollApi } from "./poll/poll";
 export { ticketApi } from "./ticket/ticket";
 export { formsApi } from "./forms/forms";
+export { minecraftApi } from "./minecraft/minecraft";
 
 // Re-export all models
 export * from "./client/models";
@@ -102,3 +103,4 @@ export * from "./me/models";
 export * from "./poll/models";
 export * from "./ticket/models";
 export * from "./forms/models";
+export * from "./minecraft/models";
