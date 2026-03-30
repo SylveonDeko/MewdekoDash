@@ -16,6 +16,12 @@ export interface MinecraftServer {
   watchMessageId: bigint | null;
   watchInterval: number;
   watchMode: number;
+  customOnlineMessage: string | null;
+  customOfflineMessage: string | null;
+  rconEnabled: boolean;
+  rconPort: number;
+  hasRconPassword: boolean;
+  hasPluginKey: boolean;
   customEmbedTemplate: string | null;
   lastOnline: boolean | null;
   dateAdded: string | null;
@@ -31,6 +37,7 @@ export interface MinecraftStatus {
   playersOnline: number;
   playersMax: number;
   playerList: string[];
+  playerUuids: Record<string, string>;
   version: string;
   latency: number;
   map: string | null;
@@ -85,6 +92,31 @@ export interface SetCustomEmbedRequest {
 /**
  * A historical status snapshot for a Minecraft server
  */
+/**
+ * Request to configure RCON
+ */
+export interface SetRconConfigRequest {
+  enabled: boolean;
+  port: number;
+  password?: string;
+}
+
+/**
+ * Request to send an RCON command
+ */
+export interface RconCommandRequest {
+  command: string;
+}
+
+/**
+ * Response from an RCON command
+ */
+export interface RconCommandResponse {
+  success: boolean;
+  response: string;
+  rawResponse: string | null;
+}
+
 export interface MinecraftSnapshot {
   isOnline: boolean;
   playersOnline: number;

@@ -8,6 +8,9 @@ import type {
   UpdateMinecraftServerRequest,
   SetWatchRequest,
   SetCustomEmbedRequest,
+  SetRconConfigRequest,
+  RconCommandRequest,
+  RconCommandResponse,
 } from "./models";
 
 /**
@@ -105,4 +108,46 @@ export const minecraftApi = {
    */
   getHistory: (guildId: bigint, name: string, hours: number = 24) =>
     apiRequest<MinecraftSnapshot[]>(`Minecraft/${guildId}/servers/${name}/history?hours=${hours}`),
+
+  /**
+   * Sets the custom online alert message
+   */
+  setOnlineMessage: (guildId: bigint, name: string, template: string | null) =>
+    apiRequest<MinecraftServer>(`Minecraft/${guildId}/servers/${name}/online-message`, "PUT", { template }),
+
+  /**
+   * Sets the custom offline alert message
+   */
+  setOfflineMessage: (guildId: bigint, name: string, template: string | null) =>
+    apiRequest<MinecraftServer>(`Minecraft/${guildId}/servers/${name}/offline-message`, "PUT", { template }),
+
+  /**
+   * Generates a new plugin API key for a server
+   */
+  generatePluginKey: (guildId: bigint, name: string) =>
+    apiRequest<{ key: string }>(`Minecraft/${guildId}/servers/${name}/plugin-key`, "POST"),
+
+  /**
+   * Revokes the plugin API key for a server
+   */
+  revokePluginKey: (guildId: bigint, name: string) =>
+    apiRequest<void>(`Minecraft/${guildId}/servers/${name}/plugin-key`, "DELETE"),
+
+  /**
+   * Configures RCON settings for a server
+   * @param guildId The guild ID
+   * @param name The server name
+   * @param request The RCON configuration
+   */
+  setRconConfig: (guildId: bigint, name: string, request: SetRconConfigRequest) =>
+    apiRequest<MinecraftServer>(`Minecraft/${guildId}/servers/${name}/rcon`, "PUT", request),
+
+  /**
+   * Sends an RCON command to a server
+   * @param guildId The guild ID
+   * @param name The server name
+   * @param command The command to execute
+   */
+  sendRconCommand: (guildId: bigint, name: string, command: string) =>
+    apiRequest<RconCommandResponse>(`Minecraft/${guildId}/servers/${name}/rcon`, "POST", { command }),
 };

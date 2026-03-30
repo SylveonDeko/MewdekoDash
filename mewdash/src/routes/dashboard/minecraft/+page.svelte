@@ -1,8 +1,12 @@
 <!-- routes/dashboard/minecraft/+page.svelte -->
 <script lang="ts">
     import { onDestroy, tick } from "svelte";
+    import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, TimeScale, Filler, Tooltip, Legend } from "chart.js";
+
+    Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
     import { fade, fly } from "svelte/transition";
     import { colorStore } from "$lib/stores/colorStore";
+    import { currentInstance } from "$lib/stores/instanceStore";
     import { currentGuild } from "$lib/stores/currentGuild";
     import { clientApi, minecraftApi, type MinecraftServer, type MinecraftStatus, type MinecraftSnapshot } from "$lib/api/index.ts";
     import { logger } from "$lib/logger";
@@ -29,6 +33,17 @@
 
     let activeTab = $state("servers");
     let editingServer: string | null = $state(null);
+    let selectedServer: MinecraftServer | null = $state(null);
+    let whitelistPlayers: string[] = $state([]);
+    let whitelistLoading = $state(false);
+    let whitelistAddName = $state("");
+    let pluginKey: string | null = $state(null);
+    let showPluginKey = $state(false);
+    let pluginWsUrl = $derived.by(() => {
+        if (!$currentInstance?.port) return "ws://localhost:5001/botapi/mc-bridge/ws";
+        const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+        return `ws://${host}:${$currentInstance.port}/botapi/mc-bridge/ws`;
+    });
     let showAddForm = $state(false);
 
     let addForm = $state({
@@ -52,11 +67,37 @@
         watchInterval: 5,
         watchMode: 0,
         customEmbedTemplate: "",
+        customOnlineMessage: "",
+        customOfflineMessage: "",
+        rconEnabled: false,
+        rconPort: 25575,
+        rconPassword: "",
     });
 
     const serverTypeOptions = [
         { id: "0", name: "Java Edition", icon: "fa-coffee" },
         { id: "1", name: "Bedrock Edition", icon: "fa-mobile-screen" },
+        { id: "2", name: "Geyser (Java + Bedrock)", icon: "fa-shuffle" },
+    ];
+
+    const mcPlaceholders = [
+        { category: "Server", name: "%mc.server.name%", description: "Server label" },
+        { category: "Server", name: "%mc.server.address%", description: "Server address" },
+        { category: "Server", name: "%mc.server.port%", description: "Server port" },
+        { category: "Server", name: "%mc.online%", description: "Online/Offline" },
+        { category: "Server", name: "%mc.version%", description: "Server version" },
+        { category: "Server", name: "%mc.latency%", description: "Ping latency" },
+        { category: "Server", name: "%mc.motd%", description: "Message of the Day" },
+        { category: "Server", name: "%mc.favicon%", description: "Server icon URL" },
+        { category: "Server", name: "%mc.geyser%", description: "Whether Geyser is enabled" },
+        { category: "Players", name: "%mc.players.online%", description: "Online player count" },
+        { category: "Players", name: "%mc.players.max%", description: "Max player count" },
+        { category: "Players", name: "%mc.player.list%", description: "List of online players" },
+        { category: "Query", name: "%mc.map%", description: "Current map name" },
+        { category: "Query", name: "%mc.gamemode%", description: "Game mode" },
+        { category: "Query", name: "%mc.software%", description: "Server software" },
+        { category: "Query", name: "%mc.plugins%", description: "Plugin list" },
+        { category: "Query", name: "%mc.query%", description: "Whether Query protocol was used" },
     ];
 
     const watchModeOptions = [
@@ -68,15 +109,23 @@
     let selectedHistoryServer: string | null = $state(null);
     let historyHours = $state(24);
     let snapshots: MinecraftSnapshot[] = $state<MinecraftSnapshot[]>([]);
-    let historyCanvas: HTMLCanvasElement | undefined = $state();
+    let playersCanvas: HTMLCanvasElement | undefined = $state();
     let latencyCanvas: HTMLCanvasElement | undefined = $state();
-    let resizeObservers: ResizeObserver[] = [];
+    let playersChart: Chart | null = null;
+    let latencyChart: Chart | null = null;
 
-    const tabs = [
+    let rconServer: string | null = $state(null);
+    let rconCommand = $state("");
+    let rconHistory: Array<{ command: string; response: string; rawResponse: string | null; success: boolean; time: Date }> = $state([]);
+    let rconSending = $state(false);
+
+    let tabs = $derived([
         { id: "servers", label: "Servers", icon: "fa-server" },
-        { id: "history", label: "History", icon: "fa-chart-column" },
+        ...(selectedServer ? [{ id: "manage", label: selectedServer.name, icon: "fa-sliders" }] : []),
+        { id: "history", label: "History", icon: "fa-chart-simple" },
+        { id: "console", label: "Console", icon: "fa-terminal" },
         { id: "add", label: "Add Server", icon: "fa-plus" },
-    ];
+    ]);
 
     let actionButtons = $derived([
         {
@@ -213,6 +262,11 @@
             watchInterval: server.watchInterval,
             watchMode: server.watchMode,
             customEmbedTemplate: server.customEmbedTemplate || "",
+            customOnlineMessage: server.customOnlineMessage || "",
+            customOfflineMessage: server.customOfflineMessage || "",
+            rconEnabled: server.rconEnabled,
+            rconPort: server.rconPort || 25575,
+            rconPassword: "",
         };
     }
 
@@ -221,7 +275,7 @@
     }
 
     async function saveEditing(server: MinecraftServer) {
-        if (!$currentGuild?.id || !editingServer) return;
+        if (!$currentGuild?.id) return;
         saving = true;
         try {
             const updateReq: any = {};
@@ -249,9 +303,31 @@
                 await minecraftApi.setCustomEmbed($currentGuild.id, server.name, { template: newTemplate });
             }
 
+            const newOnlineMsg = editForm.customOnlineMessage.trim() || null;
+            if (newOnlineMsg !== server.customOnlineMessage) {
+                await minecraftApi.setOnlineMessage($currentGuild.id, server.name, newOnlineMsg);
+            }
+
+            const newOfflineMsg = editForm.customOfflineMessage.trim() || null;
+            if (newOfflineMsg !== server.customOfflineMessage) {
+                await minecraftApi.setOfflineMessage($currentGuild.id, server.name, newOfflineMsg);
+            }
+
+            if (editForm.rconEnabled !== server.rconEnabled || editForm.rconPort !== (server.rconPort || 25575) || editForm.rconPassword) {
+                await minecraftApi.setRconConfig($currentGuild.id, server.name, {
+                    enabled: editForm.rconEnabled,
+                    port: editForm.rconPort,
+                    password: editForm.rconPassword || undefined,
+                });
+            }
+
             showMessage(`Server "${server.name}" updated!`, "success");
             editingServer = null;
             await loadAllData();
+            if (selectedServer?.name === server.name) {
+                const updated = await minecraftApi.getServer($currentGuild.id, server.name);
+                if (updated) selectedServer = updated;
+            }
         } catch (err) {
             logger.error("Failed to update server:", err);
             showMessage("Failed to update server", "error");
@@ -298,144 +374,290 @@
         try {
             snapshots = (await minecraftApi.getHistory($currentGuild.id, serverName, historyHours)) ?? [];
             await tick();
-            drawGraphs();
+            createCharts();
         } catch (err) {
             logger.error("Failed to load history:", err);
             showMessage("Failed to load history", "error");
         }
     }
 
-    function drawGraphs() {
+    function createCharts() {
         if (!snapshots || snapshots.length < 2) return;
 
-        resizeObservers.forEach(o => o.disconnect());
-        resizeObservers = [];
-
-        setupResizableGraph(historyCanvas, snapshots, s => s.playersOnline, "Players");
-        setupResizableGraph(latencyCanvas, snapshots, s => s.latency, "Latency (ms)");
-    }
-
-    function setupResizableGraph(canvas: HTMLCanvasElement | undefined, data: MinecraftSnapshot[], getValue: (s: MinecraftSnapshot) => number, label: string) {
-        if (!canvas?.parentElement) return;
-        drawGraph(canvas, data, getValue, label);
-        const observer = new ResizeObserver(() => drawGraph(canvas, data, getValue, label));
-        observer.observe(canvas.parentElement);
-        resizeObservers.push(observer);
-    }
-
-    function drawGraph(canvas: HTMLCanvasElement | undefined, data: MinecraftSnapshot[], getValue: (s: MinecraftSnapshot) => number, label: string) {
-        if (!canvas || data.length < 2) return;
-        const parent = canvas.parentElement;
-        if (!parent) return;
-
-        const dpr = window.devicePixelRatio || 1;
-        const width = parent.clientWidth;
-        const height = parent.clientHeight;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.scale(dpr, dpr);
-
-        const isMobile = width < 400;
-        const fontSize = isMobile ? 9 : 11;
-        const smallFontSize = isMobile ? 8 : 10;
-        const padding = {
-            top: 24,
-            right: 20,
-            bottom: 50,
-            left: isMobile ? 35 : 50
-        };
-        const chartWidth = width - padding.left - padding.right;
-        const chartHeight = height - padding.top - padding.bottom;
-
-        ctx.clearRect(0, 0, width, height);
-
-        const values = data.map(getValue);
-        const maxVal = Math.max(...values, 1);
-        const yScale = chartHeight / maxVal;
-        const xScale = chartWidth / (data.length - 1);
-
-        ctx.strokeStyle = `${$colorStore.primary}20`;
-        ctx.lineWidth = 1;
-
-        const yStep = maxVal <= 10 ? 1 : Math.ceil(maxVal / (isMobile ? 3 : 5));
-        for (let i = 0; i <= maxVal; i += yStep) {
-            const y = height - padding.bottom - (i * yScale);
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(width - padding.right, y);
-            ctx.stroke();
-            ctx.fillStyle = $colorStore.muted;
-            ctx.font = `${fontSize}px system-ui`;
-            ctx.textAlign = "right";
-            ctx.fillText(i.toString(), padding.left - 6, y + 4);
-        }
-
-        const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-        gradient.addColorStop(0, `${$colorStore.primary}25`);
-        gradient.addColorStop(1, `${$colorStore.primary}05`);
-
-        ctx.beginPath();
-        data.forEach((point, i) => {
-            const x = padding.left + (i * xScale);
-            const y = height - padding.bottom - (getValue(point) * yScale);
-            if (i === 0) ctx.moveTo(x, y);
-            else {
-                const prevX = padding.left + ((i - 1) * xScale);
-                const prevY = height - padding.bottom - (getValue(data[i - 1]) * yScale);
-                const cp1x = prevX + (x - prevX) * 0.5;
-                ctx.bezierCurveTo(cp1x, prevY, cp1x, y, x, y);
-            }
-        });
-        ctx.lineTo(padding.left + ((data.length - 1) * xScale), height - padding.bottom);
-        ctx.lineTo(padding.left, height - padding.bottom);
-        ctx.closePath();
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        ctx.beginPath();
-        data.forEach((point, i) => {
-            const x = padding.left + (i * xScale);
-            const y = height - padding.bottom - (getValue(point) * yScale);
-            if (i === 0) ctx.moveTo(x, y);
-            else {
-                const prevX = padding.left + ((i - 1) * xScale);
-                const prevY = height - padding.bottom - (getValue(data[i - 1]) * yScale);
-                const cp1x = prevX + (x - prevX) * 0.5;
-                ctx.bezierCurveTo(cp1x, prevY, cp1x, y, x, y);
-            }
-        });
-        ctx.strokeStyle = $colorStore.primary;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        const maxLabels = isMobile ? 4 : 8;
-        const labelStep = Math.max(1, Math.floor(data.length / maxLabels));
-        data.forEach((point, i) => {
-            if (i % labelStep !== 0 && i !== data.length - 1) return;
-            const x = padding.left + (i * xScale);
-            ctx.save();
-            ctx.fillStyle = $colorStore.muted;
-            ctx.font = `${smallFontSize}px system-ui`;
-            ctx.textAlign = "center";
-            const date = new Date(point.timestamp);
-            const timeStr = historyHours <= 48
+        const labels = snapshots.map(s => {
+            const date = new Date(s.timestamp);
+            return historyHours <= 48
                 ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                 : date.toLocaleDateString([], { month: "short", day: "numeric" });
-            ctx.translate(x, height - padding.bottom + 16);
-            ctx.rotate(Math.PI / 4);
-            ctx.fillText(timeStr, 0, 0);
-            ctx.restore();
         });
 
-        ctx.fillStyle = $colorStore.muted;
-        ctx.font = `${fontSize}px system-ui`;
-        ctx.textAlign = "left";
-        ctx.fillText(label, padding.left, padding.top - 6);
+        const primary = $colorStore.primary;
+        const muted = $colorStore.muted;
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: "#1a1a2e",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: primary + "40",
+                    borderWidth: 1,
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: muted, maxRotation: 45, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } },
+                    grid: { color: primary + "10" }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: muted, precision: 0, font: { size: 11 } },
+                    grid: { color: primary + "10" }
+                }
+            }
+        };
+
+        playersChart?.destroy();
+        if (playersCanvas) {
+            playersChart = new Chart(playersCanvas, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        data: snapshots.map(s => s.playersOnline),
+                        borderColor: primary,
+                        backgroundColor: primary + "20",
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: snapshots.length > 50 ? 0 : 3,
+                        pointBackgroundColor: primary,
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        tooltip: {
+                            ...commonOptions.plugins.tooltip,
+                            callbacks: { label: (item: any) => `Players: ${item.raw}` }
+                        }
+                    }
+                }
+            });
+        }
+
+        latencyChart?.destroy();
+        if (latencyCanvas) {
+            latencyChart = new Chart(latencyCanvas, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        data: snapshots.map(s => s.latency),
+                        borderColor: "#f59e0b",
+                        backgroundColor: "#f59e0b20",
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: snapshots.length > 50 ? 0 : 3,
+                        pointBackgroundColor: "#f59e0b",
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        tooltip: {
+                            ...commonOptions.plugins.tooltip,
+                            callbacks: { label: (item: any) => `Latency: ${item.raw}ms` }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    async function openServerDetail(server: MinecraftServer) {
+        selectedServer = server;
+        pluginKey = null;
+        showPluginKey = false;
+        editForm = {
+            address: server.address,
+            port: server.port,
+            serverType: server.serverType,
+            queryPort: server.queryPort,
+            watchChannelId: server.watchChannelId?.toString() || null,
+            watchInterval: server.watchInterval,
+            watchMode: server.watchMode,
+            customEmbedTemplate: server.customEmbedTemplate || "",
+            customOnlineMessage: server.customOnlineMessage || "",
+            customOfflineMessage: server.customOfflineMessage || "",
+            rconEnabled: server.rconEnabled,
+            rconPort: server.rconPort || 25575,
+            rconPassword: "",
+        };
+        activeTab = "manage";
+        if (!serverStatuses.has(server.name)) {
+            await queryServerStatus(server.name);
+        }
+        if (server.rconEnabled) {
+            await loadWhitelist(server.name);
+        }
+    }
+
+    async function loadWhitelist(serverName: string) {
+        if (!$currentGuild?.id) return;
+        whitelistLoading = true;
+        whitelistPlayers = [];
+        try {
+            const result = await minecraftApi.sendRconCommand($currentGuild.id, serverName, "whitelist list");
+            if (result.success && result.response) {
+                const match = result.response.match(/:\s*(.*)/);
+                if (match && match[1]) {
+                    whitelistPlayers = match[1].split(",").map(p => p.trim()).filter(p => p.length > 0);
+                }
+            }
+        } catch {
+            // whitelist not available
+        } finally {
+            whitelistLoading = false;
+        }
+    }
+
+    async function generatePluginKey() {
+        if (!$currentGuild?.id || !selectedServer) return;
+        if (selectedServer.hasPluginKey && !confirm("This will replace the existing key. The old key will stop working. Continue?")) return;
+        try {
+            const result = await minecraftApi.generatePluginKey($currentGuild.id, selectedServer.name);
+            pluginKey = result.key;
+            showPluginKey = true;
+            selectedServer.hasPluginKey = true;
+            showMessage("Plugin API key generated. Copy it now, it won't be shown again.", "success");
+        } catch {
+            showMessage("Failed to generate key", "error");
+        }
+    }
+
+    async function revokePluginKey() {
+        if (!$currentGuild?.id || !selectedServer) return;
+        if (!confirm("This will revoke the plugin API key. The companion plugin will disconnect. Continue?")) return;
+        try {
+            await minecraftApi.revokePluginKey($currentGuild.id, selectedServer.name);
+            pluginKey = null;
+            showPluginKey = false;
+            selectedServer.hasPluginKey = false;
+            showMessage("Plugin API key revoked", "success");
+        } catch {
+            showMessage("Failed to revoke key", "error");
+        }
+    }
+
+    async function whitelistAdd() {
+        if (!$currentGuild?.id || !selectedServer || !whitelistAddName.trim()) return;
+        whitelistLoading = true;
+        try {
+            await minecraftApi.sendRconCommand($currentGuild.id, selectedServer.name, `whitelist add ${whitelistAddName.trim()}`);
+            whitelistAddName = "";
+            await loadWhitelist(selectedServer.name);
+            showMessage("Player added to whitelist", "success");
+        } catch {
+            showMessage("Failed to add player", "error");
+        } finally {
+            whitelistLoading = false;
+        }
+    }
+
+    async function whitelistRemove(player: string) {
+        if (!$currentGuild?.id || !selectedServer) return;
+        whitelistLoading = true;
+        try {
+            await minecraftApi.sendRconCommand($currentGuild.id, selectedServer.name, `whitelist remove ${player}`);
+            await loadWhitelist(selectedServer.name);
+            showMessage(`${player} removed from whitelist`, "success");
+        } catch {
+            showMessage("Failed to remove player", "error");
+        } finally {
+            whitelistLoading = false;
+        }
+    }
+
+    const mcColors: Record<string, string> = {
+        "0": "#000000", "1": "#0000AA", "2": "#00AA00", "3": "#00AAAA",
+        "4": "#AA0000", "5": "#AA00AA", "6": "#FFAA00", "7": "#AAAAAA",
+        "8": "#555555", "9": "#5555FF", "a": "#55FF55", "b": "#55FFFF",
+        "c": "#FF5555", "d": "#FF55FF", "e": "#FFFF55", "f": "#FFFFFF",
+    };
+
+    function mcToHtml(raw: string): string {
+        let result = "";
+        let currentColor = "#AAAAAA";
+        let bold = false;
+        let italic = false;
+        let underline = false;
+        let strikethrough = false;
+
+        const chars = [...raw];
+        let i = 0;
+        while (i < chars.length) {
+            if (chars[i] === "§" && i + 1 < chars.length) {
+                const code = chars[i + 1].toLowerCase();
+                if (code === "x" && i + 13 < chars.length) {
+                    let hex = "#";
+                    for (let j = 0; j < 6; j++) {
+                        const ci = i + 2 + j * 2 + 1;
+                        if (ci < chars.length) hex += chars[ci];
+                    }
+                    if (hex.length === 7) currentColor = hex;
+                    i += 14;
+                    continue;
+                }
+                if (mcColors[code]) { currentColor = mcColors[code]; i += 2; continue; }
+                if (code === "l") { bold = true; i += 2; continue; }
+                if (code === "o") { italic = true; i += 2; continue; }
+                if (code === "n") { underline = true; i += 2; continue; }
+                if (code === "m") { strikethrough = true; i += 2; continue; }
+                if (code === "r") { currentColor = "#AAAAAA"; bold = false; italic = false; underline = false; strikethrough = false; i += 2; continue; }
+                if (code === "k") { i += 2; continue; }
+                i += 2;
+                continue;
+            }
+
+            let styles = `color:${currentColor};`;
+            if (bold) styles += "font-weight:bold;";
+            if (italic) styles += "font-style:italic;";
+            if (underline) styles += "text-decoration:underline;";
+            if (strikethrough) styles += "text-decoration:line-through;";
+
+            const ch = chars[i] === "<" ? "&lt;" : chars[i] === ">" ? "&gt;" : chars[i] === "&" ? "&amp;" : chars[i];
+            result += `<span style="${styles}">${ch}</span>`;
+            i++;
+        }
+        return result;
+    }
+
+    async function sendRconCommand() {
+        if (!$currentGuild?.id || !rconServer || !rconCommand.trim()) return;
+
+        const rconServerEntry = servers.find(s => s.name === rconServer);
+        if (!rconServerEntry?.rconEnabled) {
+            showMessage("RCON is not enabled for this server. Configure it in the edit panel.", "error");
+            return;
+        }
+
+        rconSending = true;
+        const cmd = rconCommand.trim();
+        rconCommand = "";
+        try {
+            const result = await minecraftApi.sendRconCommand($currentGuild.id, rconServer, cmd);
+            rconHistory = [...rconHistory, { command: cmd, response: result.response, rawResponse: result.rawResponse, success: result.success, time: new Date() }];
+        } catch (err) {
+            logger.error("RCON failed:", err);
+            rconHistory = [...rconHistory, { command: cmd, response: "Failed to send command", rawResponse: null, success: false, time: new Date() }];
+        } finally {
+            rconSending = false;
+        }
     }
 
     function showMessage(text: string, type: "success" | "error" | "info") {
@@ -444,8 +666,14 @@
         setTimeout(() => { message = ""; }, 5000);
     }
 
+    function getAvatarUrl(player: string, size: number = 32): string {
+        return `https://minotar.net/avatar/${player}/${size}`;
+    }
+
     function getServerTypeLabel(type: number): string {
-        return type === 1 ? "Bedrock" : "Java";
+        if (type === 1) return "Bedrock";
+        if (type === 2) return "Geyser";
+        return "Java";
     }
 
     function getChannelName(channelId: bigint | null): string {
@@ -455,7 +683,8 @@
     }
 
     onDestroy(() => {
-        resizeObservers.forEach(o => o.disconnect());
+        playersChart?.destroy();
+        latencyChart?.destroy();
     });
 
     $effect(() => {
@@ -465,6 +694,12 @@
             selectedHistoryServer = null;
             snapshots = [];
             loadAllData();
+        }
+    });
+
+    $effect(() => {
+        if (activeTab === "history" && selectedHistoryServer && snapshots && snapshots.length > 1) {
+            tick().then(() => createCharts());
         }
     });
 </script>
@@ -615,6 +850,75 @@
                                 />
                             </div>
 
+                            <div>
+                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                                <FullscreenEmbedBuilder
+                                    value={editForm.customOnlineMessage}
+                                    previewTitle="Online Alert"
+                                    previewDescription="Sent when the server comes back online"
+                                    icon="fa-circle-check"
+                                    allowContent={true}
+                                    allowMultipleEmbeds={false}
+                                    allowComponents={true}
+                                    additionalPlaceholders={mcPlaceholders}
+                                    guildId={$currentGuild?.id}
+                                    user={data.user}
+                                    placeholder="Click to configure online alert (leave empty for default)"
+                                    onchange={(newValue) => { editForm.customOnlineMessage = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                                <FullscreenEmbedBuilder
+                                    value={editForm.customOfflineMessage}
+                                    previewTitle="Offline Alert"
+                                    previewDescription="Sent when the server goes offline"
+                                    icon="fa-circle-xmark"
+                                    allowContent={true}
+                                    allowMultipleEmbeds={false}
+                                    allowComponents={true}
+                                    additionalPlaceholders={mcPlaceholders}
+                                    guildId={$currentGuild?.id}
+                                    user={data.user}
+                                    placeholder="Click to configure offline alert (leave empty for default)"
+                                    onchange={(newValue) => { editForm.customOfflineMessage = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                                />
+                            </div>
+
+                            <div class="rounded-xl border p-4 mt-2" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                                    <span class="text-sm font-medium" style="color: {$colorStore.text}">RCON Settings</span>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <label class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                                        <button
+                                          class="w-10 h-6 rounded-full transition-all relative"
+                                          style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
+                                          onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}
+                                        >
+                                            <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
+                                                 style="left: {editForm.rconEnabled ? '22px' : '4px'};"></div>
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                                        <input type="number" bind:value={editForm.rconPort}
+                                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                                        <input type="password" bind:value={editForm.rconPassword}
+                                               placeholder={server.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
+                                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="flex gap-3">
                                 <button
                                   class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
@@ -637,15 +941,16 @@
                         </div>
                     {:else}
                         <!-- View Mode -->
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-4">
+                            <!-- Server Header -->
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center"
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                                      style="background: {$colorStore.primary}20;">
                                     <i class="fa-utility-duo fa-regular fa-server"
                                        style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 22px;"></i>
                                 </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <h3 class="text-lg font-bold" style="color: {$colorStore.text}">{server.name}</h3>
                                         {#if server.isDefault}
                                             <span class="px-2 py-0.5 rounded-full text-xs font-medium"
@@ -653,123 +958,85 @@
                                         {/if}
                                         <span class="px-2 py-0.5 rounded-full text-xs font-medium"
                                               style="background: {$colorStore.primary}10; color: {$colorStore.muted};">{getServerTypeLabel(server.serverType)}</span>
+                                        {#if serverStatuses.has(server.name)}
+                                            {@const status = serverStatuses.get(server.name)!}
+                                            {#if status.isOnline}
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;">
+                                                    {status.playersOnline}/{status.playersMax} online
+                                                </span>
+                                            {:else}
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
+                                                    Offline
+                                                </span>
+                                            {/if}
+                                        {/if}
                                     </div>
                                     <p class="text-sm" style="color: {$colorStore.muted}">
                                         {server.address}:{server.port}
                                         {#if server.watchChannelId}
                                             &middot; Watching in {getChannelName(server.watchChannelId)} every {server.watchInterval}m
                                         {/if}
+                                        {#if server.rconEnabled}
+                                            &middot; RCON enabled
+                                        {/if}
                                     </p>
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <!-- Status Badge -->
-                                {#if serverStatuses.has(server.name)}
-                                    {@const status = serverStatuses.get(server.name)!}
-                                    {#if status.isOnline}
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium" style="background: #10b98120; color: #10b981; border: 1px solid #10b98130;">
-                                            {status.playersOnline}/{status.playersMax} online &middot; {status.latency}ms
-                                        </span>
-                                    {:else}
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium" style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
-                                            Offline
-                                        </span>
-                                    {/if}
-                                {/if}
-
-                                <button
-                                  class="p-2 rounded-lg transition-all hover:scale-110"
-                                  style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-                                  onclick={() => queryServerStatus(server.name)}
-                                  title="Query status"
-                                >
-                                    <i class="fa-solid fa-satellite-dish" style="font-size: 14px;"></i>
-                                </button>
-                                {#if !server.isDefault}
-                                    <button
-                                      class="p-2 rounded-lg transition-all hover:scale-110"
-                                      style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-                                      onclick={() => setDefault(server.name)}
-                                      title="Set as default"
-                                    >
-                                        <i class="fa-solid fa-star" style="font-size: 14px;"></i>
-                                    </button>
-                                {/if}
-                                <button
-                                  class="p-2 rounded-lg transition-all hover:scale-110"
-                                  style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-                                  onclick={() => startEditing(server)}
-                                  title="Edit"
-                                >
-                                    <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
-                                </button>
-                                <button
-                                  class="p-2 rounded-lg transition-all hover:scale-110"
-                                  style="background: #ef444410; color: #ef4444;"
-                                  onclick={() => removeServer(server.name)}
-                                  title="Remove"
-                                >
-                                    <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Extended Status Info -->
-                        {#if serverStatuses.has(server.name)}
-                            {@const status = serverStatuses.get(server.name)!}
-                            {#if status.isOnline}
-                                <div class="mt-4 pt-4" style="border-top: 1px solid {$colorStore.primary}15;">
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                        <div>
-                                            <span style="color: {$colorStore.muted}">Version</span>
-                                            <p style="color: {$colorStore.text}">{status.version}</p>
+                            <!-- Status Details -->
+                            {#if serverStatuses.has(server.name)}
+                                {@const status = serverStatuses.get(server.name)!}
+                                {#if status.isOnline}
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
+                                            <div class="text-xs" style="color: {$colorStore.muted}">Version</div>
+                                            <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.version}</div>
                                         </div>
-                                        {#if status.motd}
-                                            <div>
-                                                <span style="color: {$colorStore.muted}">MOTD</span>
-                                                <p style="color: {$colorStore.text}" class="truncate">{status.motd}</p>
-                                            </div>
-                                        {/if}
-                                        {#if status.map}
-                                            <div>
-                                                <span style="color: {$colorStore.muted}">Map</span>
-                                                <p style="color: {$colorStore.text}">{status.map}</p>
-                                            </div>
-                                        {/if}
+                                        <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
+                                            <div class="text-xs" style="color: {$colorStore.muted}">Latency</div>
+                                            <div class="text-sm font-medium" style="color: {$colorStore.text}">{status.latency}ms</div>
+                                        </div>
                                         {#if status.software}
-                                            <div>
-                                                <span style="color: {$colorStore.muted}">Software</span>
-                                                <p style="color: {$colorStore.text}">{status.software}</p>
+                                            <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
+                                                <div class="text-xs" style="color: {$colorStore.muted}">Software</div>
+                                                <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.software}</div>
+                                            </div>
+                                        {/if}
+                                        {#if status.motd}
+                                            <div class="p-2.5 rounded-lg" style="background: {$colorStore.primary}08;">
+                                                <div class="text-xs" style="color: {$colorStore.muted}">MOTD</div>
+                                                <div class="text-sm font-medium truncate" style="color: {$colorStore.text}">{status.motd}</div>
                                             </div>
                                         {/if}
                                     </div>
+
                                     {#if status.playerList.length > 0}
-                                        <div class="mt-3">
-                                            <span class="text-sm" style="color: {$colorStore.muted}">Players:</span>
-                                            <div class="flex flex-wrap gap-1 mt-1">
-                                                {#each status.playerList as player}
-                                                    <span class="px-2 py-0.5 rounded-md text-xs"
-                                                          style="background: {$colorStore.primary}15; color: {$colorStore.text};">{player}</span>
-                                                {/each}
-                                            </div>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            {#each status.playerList.slice(0, 10) as player}
+                                                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs"
+                                                     style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}10;">
+                                                    <img src={getAvatarUrl(player, 24)}
+                                                         alt={player} class="w-5 h-5 rounded"
+                                                         onerror={(e) => { (e.target as HTMLImageElement).src = `https://minotar.net/avatar/MHF_Steve/24`; }} />
+                                                    <span style="color: {$colorStore.text}">{player}</span>
+                                                </div>
+                                            {/each}
+                                            {#if status.playerList.length > 10}
+                                                <span class="px-2 py-1 text-xs" style="color: {$colorStore.muted}">+{status.playerList.length - 10} more</span>
+                                            {/if}
                                         </div>
                                     {/if}
-                                    {#if status.plugins.length > 0}
-                                        <div class="mt-3">
-                                            <span class="text-sm" style="color: {$colorStore.muted}">Plugins ({status.plugins.length}):</span>
-                                            <p class="text-xs mt-1 truncate" style="color: {$colorStore.text}">{status.plugins.join(", ")}</p>
-                                        </div>
-                                    {/if}
-                                    {#if status.isQueryResponse}
-                                        <span class="inline-block mt-2 px-2 py-0.5 rounded-full text-xs"
-                                              style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
-                                            via Query protocol
-                                        </span>
-                                    {/if}
-                                </div>
+                                {/if}
                             {/if}
-                        {/if}
+
+                            <!-- Manage Button -->
+                            <button class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.01]"
+                                    style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
+                                    onclick={() => openServerDetail(server)}>
+                                <i class="fa-solid fa-sliders" style="font-size: 14px;"></i>
+                                Manage Server
+                            </button>
+                        </div>
                     {/if}
                 </div>
             {:else}
@@ -789,6 +1056,413 @@
                     </button>
                 </div>
             {/each}
+        </div>
+
+    {:else if activeTab === 'manage' && selectedServer}
+        {@const status = serverStatuses.get(selectedServer.name)}
+        <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
+            <!-- Header -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <button class="p-2 rounded-lg transition-all hover:scale-110 shrink-0"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                            onclick={() => { activeTab = 'servers'; }}>
+                        <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">{selectedServer.name}</h2>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style="background: {$colorStore.primary}10; color: {$colorStore.muted};">{getServerTypeLabel(selectedServer.serverType)}</span>
+                        </div>
+                        <p class="text-sm truncate" style="color: {$colorStore.muted}">{selectedServer.address}:{selectedServer.port}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:inline-flex md:items-center gap-2 md:flex-wrap w-full md:w-auto">
+                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm {selectedServer.isDefault ? 'col-span-2 md:col-span-1' : ''}"
+                            style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                            onclick={() => queryServerStatus(selectedServer!.name)}>
+                        <i class="fa-solid fa-satellite-dish" style="font-size: 13px;"></i> Refresh
+                    </button>
+                    {#if !selectedServer.isDefault}
+                        <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm"
+                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                onclick={() => setDefault(selectedServer!.name)}>
+                            <i class="fa-solid fa-star" style="font-size: 13px;"></i> Default
+                        </button>
+                    {/if}
+                    <button class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02] text-sm col-span-2 md:col-span-1"
+                            style="background: #ef444410; color: #ef4444;"
+                            onclick={() => { removeServer(selectedServer!.name); activeTab = 'servers'; selectedServer = null; }}>
+                        <i class="fa-solid fa-trash" style="font-size: 13px;"></i> Remove
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Overview -->
+            {#if status}
+                <div class="rounded-2xl border p-6 shadow-2xl"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                            border-color: {$colorStore.primary}30;">
+                    {#if status.isOnline}
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                <div class="text-xs" style="color: {$colorStore.muted}">Status</div>
+                                <div class="font-semibold" style="color: #10b981;">Online</div>
+                            </div>
+                            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                <div class="text-xs" style="color: {$colorStore.muted}">Players</div>
+                                <div class="font-semibold" style="color: {$colorStore.text}">{status.playersOnline}/{status.playersMax}</div>
+                            </div>
+                            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                <div class="text-xs" style="color: {$colorStore.muted}">Version</div>
+                                <div class="font-semibold" style="color: {$colorStore.text}">{status.version}</div>
+                            </div>
+                            <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                <div class="text-xs" style="color: {$colorStore.muted}">Latency</div>
+                                <div class="font-semibold" style="color: {$colorStore.text}">{status.latency}ms</div>
+                            </div>
+                            {#if status.motd}
+                                <div class="p-3 rounded-xl col-span-2" style="background: {$colorStore.primary}10;">
+                                    <div class="text-xs" style="color: {$colorStore.muted}">MOTD</div>
+                                    <div class="text-sm" style="color: {$colorStore.text}">{status.motd}</div>
+                                </div>
+                            {/if}
+                            {#if status.software}
+                                <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                    <div class="text-xs" style="color: {$colorStore.muted}">Software</div>
+                                    <div class="text-sm" style="color: {$colorStore.text}">{status.software}</div>
+                                </div>
+                            {/if}
+                            {#if status.map}
+                                <div class="p-3 rounded-xl" style="background: {$colorStore.primary}10;">
+                                    <div class="text-xs" style="color: {$colorStore.muted}">Map</div>
+                                    <div class="text-sm" style="color: {$colorStore.text}">{status.map}</div>
+                                </div>
+                            {/if}
+                        </div>
+                    {:else}
+                        <div class="p-4 rounded-xl text-center" style="background: #ef444410;">
+                            <span class="font-semibold" style="color: #ef4444;">Server is offline or unreachable</span>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+
+            <!-- Player List with Avatars -->
+            {#if status?.isOnline && status.playerList.length > 0}
+                <div class="rounded-2xl border p-6 shadow-2xl"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                            border-color: {$colorStore.primary}30;">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-users" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                        <h3 class="font-semibold" style="color: {$colorStore.text}">Online Players ({status.playerList.length})</h3>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {#each status.playerList as player}
+                            <div class="flex items-center gap-3 p-3 rounded-xl group relative"
+                                 style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+                                <img src={getAvatarUrl(player, 48)}
+                                     alt={player}
+                                     class="w-10 h-10 rounded-lg"
+                                     onerror={(e) => { (e.target as HTMLImageElement).src = `https://minotar.net/avatar/MHF_Steve/48`; }} />
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-sm font-medium truncate block" style="color: {$colorStore.text}">{player}</span>
+                                    <span class="text-xs" style="color: {$colorStore.muted}">Online</span>
+                                </div>
+                                {#if selectedServer?.rconEnabled}
+                                    <div class="absolute right-2 top-2 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                        {#if whitelistPlayers.includes(player)}
+                                            <button class="p-1.5 rounded-lg text-xs"
+                                                    style="background: #ef444420; color: #ef4444;"
+                                                    onclick={() => whitelistRemove(player)}
+                                                    title="Remove from whitelist">
+                                                <i class="fa-solid fa-user-minus" style="font-size: 11px;"></i>
+                                            </button>
+                                        {:else}
+                                            <button class="p-1.5 rounded-lg text-xs"
+                                                    style="background: #10b98120; color: #10b981;"
+                                                    onclick={() => { whitelistAddName = player; whitelistAdd(); }}
+                                                    title="Add to whitelist">
+                                                <i class="fa-solid fa-user-plus" style="font-size: 11px;"></i>
+                                            </button>
+                                        {/if}
+                                    </div>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+
+            <!-- Whitelist Management (if RCON enabled) -->
+            {#if selectedServer.rconEnabled}
+                <div class="rounded-2xl border p-6 shadow-2xl"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                            border-color: {$colorStore.primary}30;">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-list-check" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">Whitelist</h3>
+                        </div>
+                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                                style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                onclick={() => loadWhitelist(selectedServer!.name)}
+                                disabled={whitelistLoading}>
+                            <i class="fa-solid fa-arrows-rotate {whitelistLoading ? 'fa-spin' : ''}" style="font-size: 12px;"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <!-- Add player -->
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" bind:value={whitelistAddName}
+                               placeholder="Player name..."
+                               class="flex-1 p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;"
+                               onkeydown={(e) => { if (e.key === 'Enter') whitelistAdd(); }} />
+                        <button class="flex items-center gap-2 px-4 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                                onclick={whitelistAdd}
+                                disabled={whitelistLoading || !whitelistAddName.trim()}>
+                            <i class="fa-solid fa-plus" style="font-size: 13px;"></i> Add
+                        </button>
+                    </div>
+
+                    <!-- Player list -->
+                    {#if whitelistPlayers.length > 0}
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {#each whitelistPlayers as player}
+                                <div class="flex items-center gap-3 p-3 rounded-xl group relative"
+                                     style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
+                                    <img src={getAvatarUrl(player, 48)}
+                                         alt={player}
+                                         class="w-10 h-10 rounded-lg"
+                                         onerror={(e) => { (e.target as HTMLImageElement).src = `https://minotar.net/avatar/MHF_Steve/48`; }} />
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-sm font-medium truncate block" style="color: {$colorStore.text}">{player}</span>
+                                        <span class="text-xs" style="color: {$colorStore.muted}">Whitelisted</span>
+                                    </div>
+                                    <button class="absolute right-2 top-2 p-1.5 rounded-lg md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                            style="background: #ef444420; color: #ef4444;"
+                                            onclick={() => whitelistRemove(player)}
+                                            title="Remove from whitelist">
+                                        <i class="fa-solid fa-user-minus" style="font-size: 11px;"></i>
+                                    </button>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else if !whitelistLoading}
+                        <p class="text-sm text-center py-4" style="color: {$colorStore.muted}">No players on whitelist, or whitelist is disabled on the server.</p>
+                    {/if}
+                </div>
+            {/if}
+
+            <!-- Plugins -->
+            {#if status?.isOnline && status.plugins.length > 0}
+                <div class="rounded-2xl border p-6 shadow-2xl"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                            border-color: {$colorStore.primary}30;">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-puzzle-piece" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                        <h3 class="font-semibold" style="color: {$colorStore.text}">Plugins ({status.plugins.length})</h3>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        {#each status.plugins as plugin}
+                            <span class="px-3 py-1 rounded-lg text-sm"
+                                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}15;">
+                                {plugin}
+                            </span>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+
+            <!-- Server Configuration -->
+            <div class="rounded-2xl border p-6 shadow-2xl"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                        border-color: {$colorStore.primary}30;">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-gear" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+                    <h3 class="font-semibold" style="color: {$colorStore.text}">Configuration</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
+                        <input type="text" bind:value={editForm.address}
+                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
+                        <input type="number" bind:value={editForm.port}
+                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
+                        <DiscordSelector type="custom" options={serverTypeOptions}
+                            selected={editForm.serverType.toString()} placeholder="Select type"
+                            onchange={(detail) => { editForm.serverType = detail.selected ? parseInt(detail.selected as string) : 0; }} />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
+                        <input type="number" bind:value={editForm.queryPort}
+                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
+                        <DiscordSelector type="channel" options={guildChannels}
+                            selected={editForm.watchChannelId} placeholder="No watch channel"
+                            onchange={(detail) => { editForm.watchChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
+                        <input type="number" min="1" max="60" bind:value={editForm.watchInterval}
+                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
+                        <DiscordSelector type="custom" options={watchModeOptions}
+                            selected={editForm.watchMode.toString()} placeholder="Select watch mode"
+                            onchange={(detail) => { editForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0; }} />
+                    </div>
+                </div>
+
+                <!-- Embeds -->
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
+                        <FullscreenEmbedBuilder value={editForm.customEmbedTemplate}
+                            previewTitle="Server Status Embed" previewDescription="Displayed in the watch channel" icon="fa-server"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Click to configure watch embed (leave empty for default)"
+                            onchange={(v) => { editForm.customEmbedTemplate = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                        <FullscreenEmbedBuilder value={editForm.customOnlineMessage}
+                            previewTitle="Online Alert" previewDescription="Sent when the server comes back online" icon="fa-circle-check"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Click to configure online alert (leave empty for default)"
+                            onchange={(v) => { editForm.customOnlineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                        <FullscreenEmbedBuilder value={editForm.customOfflineMessage}
+                            previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-xmark"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Click to configure offline alert (leave empty for default)"
+                            onchange={(v) => { editForm.customOfflineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                </div>
+
+                <!-- RCON -->
+                <div class="mt-6 rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                        <span class="text-sm font-medium" style="color: {$colorStore.text}">RCON Settings</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex items-center gap-3">
+                            <label class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                            <button class="w-10 h-6 rounded-full transition-all relative"
+                                    style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
+                                    onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}>
+                                <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
+                                     style="left: {editForm.rconEnabled ? '22px' : '4px'};"></div>
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                            <input type="number" bind:value={editForm.rconPort}
+                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                            <input type="password" bind:value={editForm.rconPassword}
+                                   placeholder={selectedServer.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
+                                   class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Companion Plugin -->
+                <div class="mt-6 rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-plug" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                        <span class="text-sm font-medium" style="color: {$colorStore.text}">Companion Plugin</span>
+                    </div>
+                    <p class="text-xs mb-3" style="color: {$colorStore.muted}">
+                        Generate an API key for the Mewdeko companion Minecraft plugin. Each server gets its own key.
+                    </p>
+
+                    {#if showPluginKey && pluginKey}
+                        <div class="mb-3 p-3 rounded-lg space-y-3" style="background: #10b98110; border: 1px solid #10b98130;">
+                            <p class="text-xs" style="color: #10b981;">Copy these values into your plugin's config.yml. The key will not be shown again.</p>
+                            <div>
+                                <span class="text-xs font-medium block mb-1" style="color: {$colorStore.muted}">api-key:</span>
+                                <div class="flex items-center gap-2">
+                                    <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginKey}</code>
+                                    <button class="p-2 rounded-lg shrink-0"
+                                            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                            onclick={() => { navigator.clipboard.writeText(pluginKey!); showMessage("Key copied!", "success"); }}>
+                                        <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium block mb-1" style="color: {$colorStore.muted}">api-url:</span>
+                                <div class="flex items-center gap-2">
+                                    <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginWsUrl}</code>
+                                    <button class="p-2 rounded-lg shrink-0"
+                                            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                            onclick={() => { navigator.clipboard.writeText(pluginWsUrl); showMessage("URL copied!", "success"); }}>
+                                        <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                                style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}25;"
+                                onclick={generatePluginKey}>
+                            <i class="fa-solid fa-key" style="font-size: 12px;"></i>
+                            {selectedServer.hasPluginKey ? "Regenerate Key" : "Generate Key"}
+                        </button>
+                        {#if selectedServer.hasPluginKey}
+                            <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                                    style="background: #ef444415; color: #ef4444; border: 1px solid #ef444425;"
+                                    onclick={revokePluginKey}>
+                                <i class="fa-solid fa-ban" style="font-size: 12px;"></i>
+                                Revoke Key
+                            </button>
+                        {/if}
+                        <span class="text-xs" style="color: {$colorStore.muted}">
+                            {selectedServer.hasPluginKey ? "Key active" : "No key configured"}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <button class="mt-6 flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                        onclick={() => saveEditing(selectedServer!)}
+                        disabled={saving}>
+                    <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}" style="font-size: 16px;"></i>
+                    {saving ? "Saving..." : "Save Configuration"}
+                </button>
+            </div>
         </div>
 
     {:else if activeTab === 'history'}
@@ -845,10 +1519,8 @@
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                             <h3 class="font-semibold" style="color: {$colorStore.text}">Players Online — {selectedHistoryServer}</h3>
                         </div>
-                        <div class="w-full overflow-x-auto">
-                            <div class="h-[250px] min-w-[500px] relative">
-                                <canvas bind:this={historyCanvas}></canvas>
-                            </div>
+                        <div class="w-full h-[250px] relative">
+                            <canvas bind:this={playersCanvas}></canvas>
                         </div>
                     </div>
 
@@ -860,10 +1532,8 @@
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                             <h3 class="font-semibold" style="color: {$colorStore.text}">Latency — {selectedHistoryServer}</h3>
                         </div>
-                        <div class="w-full overflow-x-auto">
-                            <div class="h-[250px] min-w-[500px] relative">
-                                <canvas bind:this={latencyCanvas}></canvas>
-                            </div>
+                        <div class="w-full h-[250px] relative">
+                            <canvas bind:this={latencyCanvas}></canvas>
                         </div>
                     </div>
 
@@ -898,6 +1568,90 @@
                          style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
                         <p style="color: {$colorStore.muted}">Not enough data yet. Snapshots are recorded each time the watch timer runs.</p>
+                    </div>
+                {/if}
+            {/if}
+        </div>
+
+    {:else if activeTab === 'console'}
+        <div class="w-full space-y-4" in:fade={{ duration: 200 }}>
+            {#if servers.filter(s => s.rconEnabled).length === 0}
+                <div class="rounded-2xl border p-12 text-center"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                            border-color: {$colorStore.primary}30;">
+                    <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 48px; opacity: 0.5;"></i>
+                    <p class="mt-4 text-lg font-medium" style="color: {$colorStore.text}">No servers have RCON enabled</p>
+                    <p class="text-sm mt-1" style="color: {$colorStore.muted}">Edit a server and configure RCON settings to use the console</p>
+                </div>
+            {:else}
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                    {#each servers.filter(s => s.rconEnabled) as server}
+                        <button
+                          class="px-4 py-2 rounded-xl font-medium transition-all hover:scale-[1.02]"
+                          style="background: {rconServer === server.name ? $colorStore.primary + '30' : $colorStore.primary + '10'};
+                                 color: {rconServer === server.name ? $colorStore.primary : $colorStore.muted};
+                                 border: 1px solid {rconServer === server.name ? $colorStore.primary : $colorStore.primary + '20'};"
+                          onclick={() => { rconServer = server.name; rconHistory = []; }}
+                        >
+                            {server.name}
+                        </button>
+                    {/each}
+                </div>
+
+                {#if !rconServer}
+                    <div class="rounded-2xl border p-8 text-center"
+                         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
+                                border-color: {$colorStore.primary}30;">
+                        <p style="color: {$colorStore.muted}">Select a server to open the console</p>
+                    </div>
+                {:else}
+                    <div class="rounded-2xl border shadow-2xl overflow-hidden"
+                         style="background: #0d1117; border-color: {$colorStore.primary}30;">
+                        <div class="p-3 flex items-center gap-2" style="background: {$colorStore.primary}10; border-bottom: 1px solid {$colorStore.primary}20;">
+                            <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                            <span class="text-sm font-mono font-medium" style="color: {$colorStore.text}">RCON — {rconServer}</span>
+                        </div>
+
+                        <div class="p-4 font-mono text-sm space-y-2 max-h-[400px] overflow-y-auto" style="color: #c9d1d9;">
+                            {#if rconHistory.length === 0}
+                                <p style="color: #484f58;">Type a command below and press Enter...</p>
+                            {/if}
+                            {#each rconHistory as entry}
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span style="color: {$colorStore.primary};">$</span>
+                                        <span style="color: #e6edf3;">{entry.command}</span>
+                                        <span class="text-xs" style="color: #484f58;">{entry.time.toLocaleTimeString()}</span>
+                                    </div>
+                                    {#if entry.success && entry.rawResponse}
+                                        <pre class="mt-1 whitespace-pre-wrap text-xs pl-4 font-mono">{@html mcToHtml(entry.rawResponse)}</pre>
+                                    {:else}
+                                        <pre class="mt-1 whitespace-pre-wrap text-xs pl-4" style="color: {entry.success ? '#7ee787' : '#f85149'};">{entry.response}</pre>
+                                    {/if}
+                                </div>
+                            {/each}
+                        </div>
+
+                        <div class="p-3 flex items-center gap-2" style="border-top: 1px solid {$colorStore.primary}20;">
+                            <span class="font-mono" style="color: {$colorStore.primary};">$</span>
+                            <input
+                              type="text"
+                              bind:value={rconCommand}
+                              placeholder="Enter command..."
+                              class="flex-1 bg-transparent font-mono text-sm focus:outline-none"
+                              style="color: #e6edf3;"
+                              disabled={rconSending}
+                              onkeydown={(e) => { if (e.key === 'Enter') sendRconCommand(); }}
+                            />
+                            <button
+                              class="px-3 py-1 rounded-lg font-medium text-sm transition-all"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                              onclick={sendRconCommand}
+                              disabled={rconSending || !rconCommand.trim()}
+                            >
+                                {rconSending ? "..." : "Send"}
+                            </button>
+                        </div>
                     </div>
                 {/if}
             {/if}
@@ -1021,24 +1775,7 @@
                         allowContent={true}
                         allowMultipleEmbeds={false}
                         allowComponents={true}
-                        additionalPlaceholders={[
-                            { category: "Server", name: "%mc.server.name%", description: "Server label" },
-                            { category: "Server", name: "%mc.server.address%", description: "Server address" },
-                            { category: "Server", name: "%mc.server.port%", description: "Server port" },
-                            { category: "Server", name: "%mc.online%", description: "Online/Offline" },
-                            { category: "Server", name: "%mc.version%", description: "Server version" },
-                            { category: "Server", name: "%mc.latency%", description: "Ping latency" },
-                            { category: "Server", name: "%mc.motd%", description: "Message of the Day" },
-                            { category: "Server", name: "%mc.favicon%", description: "Server icon URL" },
-                            { category: "Players", name: "%mc.players.online%", description: "Online player count" },
-                            { category: "Players", name: "%mc.players.max%", description: "Max player count" },
-                            { category: "Players", name: "%mc.player.list%", description: "List of online players" },
-                            { category: "Query", name: "%mc.map%", description: "Current map name" },
-                            { category: "Query", name: "%mc.gamemode%", description: "Game mode" },
-                            { category: "Query", name: "%mc.software%", description: "Server software" },
-                            { category: "Query", name: "%mc.plugins%", description: "Plugin list" },
-                            { category: "Query", name: "%mc.query%", description: "Whether Query protocol was used" },
-                        ]}
+                        additionalPlaceholders={mcPlaceholders}
                         guildId={$currentGuild?.id}
                         user={data.user}
                         placeholder="Click to configure watch embed (leave empty for default)"
