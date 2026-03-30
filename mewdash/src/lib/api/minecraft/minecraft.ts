@@ -122,6 +122,12 @@ export const minecraftApi = {
     apiRequest<MinecraftServer>(`Minecraft/${guildId}/servers/${name}/offline-message`, "PUT", { template }),
 
   /**
+   * Updates event templates for a server
+   */
+  setEventTemplates: (guildId: bigint, name: string, templates: string | null) =>
+    apiRequest<MinecraftServer>(`Minecraft/${guildId}/servers/${name}/event-templates`, "PUT", { template: templates }),
+
+  /**
    * Generates a new plugin API key for a server
    */
   generatePluginKey: (guildId: bigint, name: string) =>

@@ -71,6 +71,14 @@
         joinLeaveChannelId: null as string | null,
         deathChannelId: null as string | null,
         advancementChannelId: null as string | null,
+        eventTemplates: {
+            joinDiscord: "",
+            leaveDiscord: "",
+            chatDiscord: "",
+            chatIngame: "",
+            deathDiscord: "",
+            advancementDiscord: "",
+        } as Record<string, string>,
         customOnlineMessage: "",
         customOfflineMessage: "",
         rconEnabled: false,
@@ -330,6 +338,12 @@
                 await minecraftApi.setOfflineMessage($currentGuild.id, server.name, newOfflineMsg);
             }
 
+            const hasTemplateValues = Object.values(editForm.eventTemplates).some(v => v && v.trim());
+            const newTemplatesJson = hasTemplateValues ? JSON.stringify(editForm.eventTemplates) : null;
+            if (newTemplatesJson !== server.eventTemplates) {
+                await minecraftApi.setEventTemplates($currentGuild.id, server.name, newTemplatesJson);
+            }
+
             if (editForm.rconEnabled !== server.rconEnabled || editForm.rconPort !== (server.rconPort || 25575) || editForm.rconPassword) {
                 await minecraftApi.setRconConfig($currentGuild.id, server.name, {
                     enabled: editForm.rconEnabled,
@@ -513,6 +527,10 @@
             joinLeaveChannelId: server.joinLeaveChannelId?.toString() || null,
             deathChannelId: server.deathChannelId?.toString() || null,
             advancementChannelId: server.advancementChannelId?.toString() || null,
+            eventTemplates: (() => {
+                try { return server.eventTemplates ? JSON.parse(server.eventTemplates) : {}; }
+                catch { return {}; }
+            })(),
             customOnlineMessage: server.customOnlineMessage || "",
             customOfflineMessage: server.customOfflineMessage || "",
             rconEnabled: server.rconEnabled,
@@ -1412,6 +1430,72 @@
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Click to configure offline alert (leave empty for default)"
                             onchange={(v) => { editForm.customOfflineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                </div>
+
+                <!-- Event Templates -->
+                <div class="mt-6 space-y-4">
+                    <h4 class="text-sm font-medium" style="color: {$colorStore.text}">Bridge Event Templates</h4>
+                    <p class="text-xs" style="color: {$colorStore.muted}">
+                        Customize how events from the companion plugin appear in Discord and in-game. Leave empty for defaults.
+                        Placeholders: %mc.player%, %mc.avatar%, %mc.uuid%, %mc.message%, %mc.death.message%, %mc.advancement%
+                    </p>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
+                        <FullscreenEmbedBuilder value={editForm.eventTemplates.joinDiscord || ""}
+                            previewTitle="Join Event" previewDescription="When a player joins" icon="fa-right-to-bracket"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Default: green embed with player name"
+                            onchange={(v) => { editForm.eventTemplates.joinDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
+                        <FullscreenEmbedBuilder value={editForm.eventTemplates.leaveDiscord || ""}
+                            previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-right-from-bracket"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Default: red embed with player name"
+                            onchange={(v) => { editForm.eventTemplates.leaveDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat Message (Discord)</label>
+                        <FullscreenEmbedBuilder value={editForm.eventTemplates.chatDiscord || ""}
+                            previewTitle="Chat Relay" previewDescription="MC chat relayed to Discord" icon="fa-comment"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={[...mcPlaceholders, { category: "Chat", name: "%mc.message%", description: "Chat message content" }]}
+                            guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Default: **player**: message"
+                            onchange={(v) => { editForm.eventTemplates.chatDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat from Discord (In-game format)</label>
+                        <input type="text" bind:value={editForm.eventTemplates.chatIngame}
+                               placeholder="Default: [Discord] %user%: %message%  |  Use §-codes for MC colors"
+                               class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted}">Placeholders: %user%, %message%, %channel%</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Death Message (Discord)</label>
+                        <FullscreenEmbedBuilder value={editForm.eventTemplates.deathDiscord || ""}
+                            previewTitle="Death Event" previewDescription="When a player dies" icon="fa-skull"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={[...mcPlaceholders, { category: "Death", name: "%mc.death.message%", description: "Full death message" }]}
+                            guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Default: gray embed with skull emoji"
+                            onchange={(v) => { editForm.eventTemplates.deathDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Advancement (Discord)</label>
+                        <FullscreenEmbedBuilder value={editForm.eventTemplates.advancementDiscord || ""}
+                            previewTitle="Advancement" previewDescription="When a player earns an advancement" icon="fa-trophy"
+                            allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
+                            additionalPlaceholders={[...mcPlaceholders, { category: "Advancement", name: "%mc.advancement%", description: "Advancement title" }]}
+                            guildId={$currentGuild?.id} user={data.user}
+                            placeholder="Default: green embed with trophy emoji"
+                            onchange={(v) => { editForm.eventTemplates.advancementDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                 </div>
 

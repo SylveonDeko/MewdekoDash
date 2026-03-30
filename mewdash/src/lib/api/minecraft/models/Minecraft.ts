@@ -20,6 +20,7 @@ export interface MinecraftServer {
   joinLeaveChannelId: bigint | null;
   deathChannelId: bigint | null;
   advancementChannelId: bigint | null;
+  eventTemplates: string | null;
   customOnlineMessage: string | null;
   customOfflineMessage: string | null;
   rconEnabled: boolean;
