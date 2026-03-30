@@ -67,6 +67,10 @@
         watchInterval: 5,
         watchMode: 0,
         customEmbedTemplate: "",
+        chatChannelId: null as string | null,
+        joinLeaveChannelId: null as string | null,
+        deathChannelId: null as string | null,
+        advancementChannelId: null as string | null,
         customOnlineMessage: "",
         customOfflineMessage: "",
         rconEnabled: false,
@@ -262,6 +266,10 @@
             watchInterval: server.watchInterval,
             watchMode: server.watchMode,
             customEmbedTemplate: server.customEmbedTemplate || "",
+            chatChannelId: server.chatChannelId?.toString() || null,
+            joinLeaveChannelId: server.joinLeaveChannelId?.toString() || null,
+            deathChannelId: server.deathChannelId?.toString() || null,
+            advancementChannelId: server.advancementChannelId?.toString() || null,
             customOnlineMessage: server.customOnlineMessage || "",
             customOfflineMessage: server.customOfflineMessage || "",
             rconEnabled: server.rconEnabled,
@@ -283,6 +291,15 @@
             if (editForm.port !== server.port) updateReq.port = editForm.port;
             if (editForm.serverType !== server.serverType) updateReq.serverType = editForm.serverType;
             if (editForm.queryPort !== server.queryPort) updateReq.queryPort = editForm.queryPort;
+
+            const chatCh = editForm.chatChannelId ? BigInt(editForm.chatChannelId) : BigInt(0);
+            const joinLeaveCh = editForm.joinLeaveChannelId ? BigInt(editForm.joinLeaveChannelId) : BigInt(0);
+            const deathCh = editForm.deathChannelId ? BigInt(editForm.deathChannelId) : BigInt(0);
+            const advCh = editForm.advancementChannelId ? BigInt(editForm.advancementChannelId) : BigInt(0);
+            if (chatCh.toString() !== (server.chatChannelId?.toString() || "0")) updateReq.chatChannelId = chatCh;
+            if (joinLeaveCh.toString() !== (server.joinLeaveChannelId?.toString() || "0")) updateReq.joinLeaveChannelId = joinLeaveCh;
+            if (deathCh.toString() !== (server.deathChannelId?.toString() || "0")) updateReq.deathChannelId = deathCh;
+            if (advCh.toString() !== (server.advancementChannelId?.toString() || "0")) updateReq.advancementChannelId = advCh;
 
             if (Object.keys(updateReq).length > 0) {
                 await minecraftApi.updateServer($currentGuild.id, server.name, updateReq);
@@ -492,6 +509,10 @@
             watchInterval: server.watchInterval,
             watchMode: server.watchMode,
             customEmbedTemplate: server.customEmbedTemplate || "",
+            chatChannelId: server.chatChannelId?.toString() || null,
+            joinLeaveChannelId: server.joinLeaveChannelId?.toString() || null,
+            deathChannelId: server.deathChannelId?.toString() || null,
+            advancementChannelId: server.advancementChannelId?.toString() || null,
             customOnlineMessage: server.customOnlineMessage || "",
             customOfflineMessage: server.customOfflineMessage || "",
             rconEnabled: server.rconEnabled,
@@ -1329,6 +1350,37 @@
                         <DiscordSelector type="custom" options={watchModeOptions}
                             selected={editForm.watchMode.toString()} placeholder="Select watch mode"
                             onchange={(detail) => { editForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0; }} />
+                    </div>
+                </div>
+
+                <!-- Event Channels -->
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">Event Channels (leave empty to use Watch Channel)</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Chat Bridge</label>
+                            <DiscordSelector type="channel" options={guildChannels}
+                                selected={editForm.chatChannelId} placeholder="Use watch channel"
+                                onchange={(detail) => { editForm.chatChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Join/Leave</label>
+                            <DiscordSelector type="channel" options={guildChannels}
+                                selected={editForm.joinLeaveChannelId} placeholder="Use watch channel"
+                                onchange={(detail) => { editForm.joinLeaveChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Deaths</label>
+                            <DiscordSelector type="channel" options={guildChannels}
+                                selected={editForm.deathChannelId} placeholder="Use watch channel"
+                                onchange={(detail) => { editForm.deathChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Advancements</label>
+                            <DiscordSelector type="channel" options={guildChannels}
+                                selected={editForm.advancementChannelId} placeholder="Use watch channel"
+                                onchange={(detail) => { editForm.advancementChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
+                        </div>
                     </div>
                 </div>
 

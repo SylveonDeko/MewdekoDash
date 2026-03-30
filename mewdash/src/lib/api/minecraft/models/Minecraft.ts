@@ -16,6 +16,10 @@ export interface MinecraftServer {
   watchMessageId: bigint | null;
   watchInterval: number;
   watchMode: number;
+  chatChannelId: bigint | null;
+  joinLeaveChannelId: bigint | null;
+  deathChannelId: bigint | null;
+  advancementChannelId: bigint | null;
   customOnlineMessage: string | null;
   customOfflineMessage: string | null;
   rconEnabled: boolean;
