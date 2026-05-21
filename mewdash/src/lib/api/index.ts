@@ -53,6 +53,8 @@ export { pollApi } from "./poll/poll";
 export { ticketApi } from "./ticket/ticket";
 export { formsApi } from "./forms/forms";
 export { minecraftApi } from "./minecraft/minecraft";
+export { statChannelsApi } from "./statchannels/statchannels";
+export { auditLogApi } from "./auditlog/auditlog";
 
 // Re-export all models
 export * from "./client/models";
@@ -104,3 +106,5 @@ export * from "./poll/models";
 export * from "./ticket/models";
 export * from "./forms/models";
 export * from "./minecraft/models";
+export * from "./statchannels/models";
+export * from "./auditlog/models";

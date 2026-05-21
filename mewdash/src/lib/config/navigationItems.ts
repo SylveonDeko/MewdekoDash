@@ -25,6 +25,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Away from keyboard notifications",
   },
   {
+    label: "Audit Log",
+    icon: "fa-utility-duo fa-regular fa-clipboard-list-check",
+    href: "/dashboard/auditlog",
+    category: "Security",
+    description: "Who accessed the dashboard, what they changed and viewed",
+  },
+  {
     label: "Birthdays",
     icon: "fa-utility-duo fa-regular fa-birthday-cake",
     href: "/dashboard/birthday",
@@ -58,6 +65,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/minecraft",
     category: "Entertainment",
     description: "Minecraft server monitoring and status",
+  },
+  {
+    label: "Stat Channels",
+    icon: "fa-utility-duo fa-regular fa-chart-simple",
+    href: "/dashboard/statchannels",
+    category: "Community",
+    description: "Voice channels displaying live server stats",
   },
   {
     label: "Custom Voice",
