@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.svelte-kit/
+out/
+build/
+dist/
+
+# Environment files (passed via docker-compose)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+
+# Temporary files
+*.tmp
+.cache/
+
+# Generated files
+sitemap.xml
