@@ -962,7 +962,7 @@
                     options={voiceChannels}
                     selected={newVcId}
                     placeholder="Select voice channel..."
-                    onchange={(d) => { if (d.selected) newVcId = d.selected; }}
+                    onchange={(d) => { if (typeof d.selected === "string") newVcId = d.selected; }}
                   />
                 </div>
                 <button
@@ -1027,7 +1027,7 @@
                         selected={vc.linkedTextChannelId === null ? 'null' : vc.linkedTextChannelId.toString()}
                         placeholder="Select channel..."
                         onchange={(d) => {
-                          if (d.selected) {
+                          if (typeof d.selected === "string") {
                             vc.linkedTextChannelId = d.selected === 'null' ? null : BigInt(d.selected);
                             updateVcSetting(vc);
                           }

@@ -37,7 +37,7 @@
     let { data } = $props();
 
     // State management
-    let currentUser = data.user;
+    let currentUser = $derived(data.user);
     let botStatus: BotStatus | null = $state(null);
     let loading = $state(true);
     let error: string | null = $state(null);
@@ -830,20 +830,6 @@
 
     .animate-spin {
         animation: spin 1s linear infinite;
-    }
-
-    /* Gradient animation for accent line */
-    @keyframes gradient-shift {
-        0% {
-            background-position: 0 50%;
-        }
-        100% {
-            background-position: 200% 50%;
-        }
-    }
-
-    .animate-gradient {
-        animation: gradient-shift 20s ease infinite;
     }
 
     /* Smooth loading transitions for better UX */

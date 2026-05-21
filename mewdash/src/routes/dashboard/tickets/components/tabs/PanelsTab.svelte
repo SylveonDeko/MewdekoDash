@@ -184,6 +184,25 @@
     { id: "message", label: "Message", icon: "fa-message" }
   ];
 
+  type NewOptionBoolKey = {
+    [K in keyof typeof newOption]: typeof newOption[K] extends boolean ? K : never
+  }[keyof typeof newOption];
+
+  const closeOptions: { key: NewOptionBoolKey; label: string; desc: string; danger?: boolean }[] = [
+    { key: 'saveTranscript', label: 'Save Transcript', desc: 'Save chat history' },
+    { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages' },
+    { key: 'renameOnClose', label: 'Rename on Close', desc: 'Add closed- prefix' },
+    { key: 'removeCreatorOnClose', label: 'Remove Creator', desc: 'Remove user permissions' },
+    { key: 'deleteOnClose', label: 'Delete on Close', desc: 'Permanently delete', danger: true }
+  ];
+
+  const archiveOptions: { key: NewOptionBoolKey; label: string; desc: string }[] = [
+    { key: 'autoArchiveOnClose', label: 'Auto Archive on Close', desc: 'Automatically archive' },
+    { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages' },
+    { key: 'renameOnArchive', label: 'Rename on Archive', desc: 'Add archived- prefix' },
+    { key: 'removeCreatorOnArchive', label: 'Remove Creator', desc: 'Remove user permissions' }
+  ];
+
   onMount(() => {
     // Component mounted
   });
@@ -287,7 +306,33 @@
       await addSelectOption(creatingOptionForMenu, newOption);
       showOptionCreator = false;
       creatingOptionForMenu = null;
-      newOption = { label: "", description: "", emoji: null };
+      newOption = {
+        label: "",
+        description: "",
+        emoji: null,
+        categoryId: null,
+        archiveCategoryId: null,
+        supportRoles: [],
+        viewerRoles: [],
+        channelNameFormat: "ticket-{username}-{id}",
+        maxActiveTickets: 1,
+        autoCloseTime: null,
+        requiredResponseTime: null,
+        deleteDelay: null,
+        saveTranscript: false,
+        deleteOnClose: false,
+        lockOnClose: true,
+        renameOnClose: true,
+        removeCreatorOnClose: true,
+        lockOnArchive: true,
+        renameOnArchive: true,
+        removeCreatorOnArchive: false,
+        autoArchiveOnClose: false,
+        allowedPriorities: [],
+        defaultPriority: null,
+        modalJson: null,
+        openMessageJson: null
+      };
     }
   }
 
@@ -458,9 +503,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Channel <span style="color: #ef4444;">*</span>
-          </label>
+          </span>
           <DiscordSelector
             type="channel"
             options={textChannels}
@@ -627,8 +672,8 @@
               {#if buttonCreatorSection === 'basic'}
                 <div class="space-y-4 max-w-xl">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label *</label>
-                    <input
+                    <label for="f-PanelsTab-label-675" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label *</label>
+                    <input id="f-PanelsTab-label-675"
                       type="text"
                       bind:value={newButton.label}
                       maxlength="80"
@@ -639,8 +684,8 @@
                     <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 80 characters</p>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
-                    <EmojiPicker
+                    <label for="f-PanelsTab-emoji-687" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                    <EmojiPicker id="f-PanelsTab-emoji-687"
                       {guildEmojis}
                       bind:selected={newButton.emoji}
                       multiple={false}
@@ -650,8 +695,8 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
-                    <DiscordSelector
+                    <label for="f-PanelsTab-style-698" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
+                    <DiscordSelector id="f-PanelsTab-style-698"
                       type="custom"
                       options={buttonStyleOptions}
                       bind:selected={newButton.style}
@@ -660,9 +705,9 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
+                    <label for="f-PanelsTab-channel-name-format-708" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
                       Format</label>
-                    <input
+                    <input id="f-PanelsTab-channel-name-format-708"
                       type="text"
                       bind:value={newButton.channelFormat}
                       maxlength="100"
@@ -679,9 +724,9 @@
               {:else if buttonCreatorSection === 'permissions'}
                 <div class="space-y-4 max-w-3xl">
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
+                    <label for="f-PanelsTab-ticket-category-727" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
                       Category</label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-PanelsTab-ticket-category-727"
                       type="channel"
                       options={categories}
                       bind:selected={newButton.categoryId}
@@ -690,9 +735,9 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
+                    <label for="f-PanelsTab-archive-category-738" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
                       Category</label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-PanelsTab-archive-category-738"
                       type="channel"
                       options={categories}
                       bind:selected={newButton.archiveCategoryId}
@@ -701,9 +746,9 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
+                    <label for="f-PanelsTab-support-roles-749" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
                       Roles</label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-PanelsTab-support-roles-749"
                       type="role"
                       options={availableRoles}
                       bind:selected={newButton.supportRoles}
@@ -712,8 +757,8 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer Roles</label>
-                    <DiscordSelector
+                    <label for="f-PanelsTab-viewer-roles-760" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer Roles</label>
+                    <DiscordSelector id="f-PanelsTab-viewer-roles-760"
                       type="role"
                       options={availableRoles}
                       bind:selected={newButton.viewerRoles}
@@ -727,9 +772,9 @@
                 <div class="space-y-4 max-w-3xl">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
+                      <label for="f-PanelsTab-max-active-tickets-775" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
                         Tickets</label>
-                      <input
+                      <input id="f-PanelsTab-max-active-tickets-775"
                         type="number"
                         bind:value={newButton.maxActiveTickets}
                         min="1"
@@ -738,9 +783,9 @@
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
+                      <label for="f-PanelsTab-auto-close-hours-786" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
                         (hours)</label>
-                      <input
+                      <input id="f-PanelsTab-auto-close-hours-786"
                         type="number"
                         bind:value={newButton.autoCloseTime}
                         min="1"
@@ -750,9 +795,9 @@
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required Response
+                      <label for="f-PanelsTab-required-response-time-minutes-798" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Required Response
                         Time (minutes)</label>
-                      <input
+                      <input id="f-PanelsTab-required-response-time-minutes-798"
                         type="number"
                         bind:value={newButton.requiredResponseTime}
                         min="1"
@@ -763,9 +808,9 @@
                     </div>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Allowed
+                    <label for="f-PanelsTab-allowed-priorities-811" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Allowed
                       Priorities</label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-PanelsTab-allowed-priorities-811"
                       type="custom"
                       options={priorities.map(p => ({ id: p.id, name: p.name, label: p.name }))}
                       bind:selected={newButton.allowedPriorities}
@@ -774,9 +819,9 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default
+                    <label for="f-PanelsTab-default-priority-822" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default
                       Priority</label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-PanelsTab-default-priority-822"
                       type="custom"
                       options={priorities.map(p => ({ id: p.id, name: p.name, label: p.name }))}
                       bind:selected={newButton.defaultPriority}
@@ -831,9 +876,9 @@
                     </label>
                   {/each}
                   <div>
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delete Delay
+                    <label for="f-PanelsTab-delete-delay-seconds-879" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delete Delay
                       (seconds)</label>
-                    <input
+                    <input id="f-PanelsTab-delete-delay-seconds-879"
                       type="number"
                       bind:value={newButton.deleteDelay}
                       min="0"
@@ -972,8 +1017,8 @@
                     {#if buttonEditSection === 'basic'}
                       <div class="space-y-4 max-w-xl">
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label</label>
-                          <input
+                          <label for="f-PanelsTab-label-1020" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label</label>
+                          <input id="f-PanelsTab-label-1020"
                             type="text"
                             bind:value={editingButtonData.label}
                             maxlength="80"
@@ -983,8 +1028,8 @@
                           <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 80 characters</p>
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
-                          <EmojiPicker
+                          <label for="f-PanelsTab-emoji-1031" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                          <EmojiPicker id="f-PanelsTab-emoji-1031"
                             {guildEmojis}
                             bind:selected={editingButtonData.emoji}
                             multiple={false}
@@ -994,8 +1039,8 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
-                          <DiscordSelector
+                          <label for="f-PanelsTab-style-1042" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Style</label>
+                          <DiscordSelector id="f-PanelsTab-style-1042"
                             type="custom"
                             options={buttonStyleOptions}
                             bind:selected={editingButtonData.style}
@@ -1008,9 +1053,9 @@
                     {:else if buttonEditSection === 'permissions'}
                       <div class="space-y-4 max-w-3xl">
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
+                          <label for="f-PanelsTab-ticket-category-1056" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
                             Category</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-ticket-category-1056"
                             type="channel"
                             options={categories}
                             bind:selected={editingButtonData.categoryId}
@@ -1019,9 +1064,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
+                          <label for="f-PanelsTab-archive-category-1067" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
                             Category</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-archive-category-1067"
                             type="channel"
                             options={categories}
                             bind:selected={editingButtonData.archiveCategoryId}
@@ -1030,9 +1075,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
+                          <label for="f-PanelsTab-support-roles-1078" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
                             Roles</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-support-roles-1078"
                             type="role"
                             options={availableRoles}
                             bind:selected={editingButtonData.supportRoles}
@@ -1041,9 +1086,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
+                          <label for="f-PanelsTab-viewer-roles-1089" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
                             Roles</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-viewer-roles-1089"
                             type="role"
                             options={availableRoles}
                             bind:selected={editingButtonData.viewerRoles}
@@ -1057,9 +1102,9 @@
                       <div class="space-y-4 max-w-3xl">
                         <div class="grid grid-cols-2 gap-4">
                           <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
+                            <label for="f-PanelsTab-max-active-tickets-1105" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
                               Tickets</label>
-                            <input
+                            <input id="f-PanelsTab-max-active-tickets-1105"
                               type="number"
                               bind:value={editingButtonData.maxActiveTickets}
                               min="1"
@@ -1068,9 +1113,9 @@
                             />
                           </div>
                           <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
+                            <label for="f-PanelsTab-auto-close-hours-1116" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
                               (hours)</label>
-                            <input
+                            <input id="f-PanelsTab-auto-close-hours-1116"
                               type="number"
                               bind:value={editingButtonData.autoCloseTime}
                               min="1"
@@ -1268,8 +1313,8 @@
             <h5 class="font-semibold mb-4" style="color: {$colorStore.text}">New Select Menu</h5>
             <div class="space-y-3 max-w-2xl">
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Placeholder *</label>
-                <input
+                <label for="f-PanelsTab-placeholder-1316" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Placeholder *</label>
+                <input id="f-PanelsTab-placeholder-1316"
                   type="text"
                   bind:value={newSelectMenu.placeholder}
                   maxlength="150"
@@ -1280,9 +1325,9 @@
                 <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 150 characters</p>
               </div>
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option Label
+                <label for="f-PanelsTab-first-option-label-1328" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option Label
                   *</label>
-                <input
+                <input id="f-PanelsTab-first-option-label-1328"
                   type="text"
                   bind:value={newSelectMenu.firstOptionLabel}
                   maxlength="100"
@@ -1293,9 +1338,9 @@
                 <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
               </div>
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
+                <label for="f-PanelsTab-first-option-description-1341" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
                   Description</label>
-                <input
+                <input id="f-PanelsTab-first-option-description-1341"
                   type="text"
                   bind:value={newSelectMenu.firstOptionDescription}
                   maxlength="100"
@@ -1306,9 +1351,9 @@
                 <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
               </div>
               <div>
-                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
+                <label for="f-PanelsTab-first-option-emoji-1354" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">First Option
                   Emoji</label>
-                <EmojiPicker
+                <EmojiPicker id="f-PanelsTab-first-option-emoji-1354"
                   {guildEmojis}
                   bind:selected={newSelectMenu.firstOptionEmoji}
                   multiple={false}
@@ -1367,6 +1412,7 @@
                       <button
                         class="px-3 py-2 rounded-lg min-h-[44px]"
                         style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                        aria-label="Save placeholder"
                         onclick={savePlaceholder}
                       >
                         <i class="fa-solid fa-check"></i>
@@ -1374,6 +1420,7 @@
                       <button
                         class="px-3 py-2 rounded-lg min-h-[44px]"
                         style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                        aria-label="Cancel editing placeholder"
                         onclick={cancelEditingPlaceholder}
                       >
                         <i class="fa-solid fa-xmark"></i>
@@ -1385,6 +1432,7 @@
                       <button
                         class="p-2 rounded hover:opacity-80 min-h-[44px] min-w-[44px]"
                         style="color: {$colorStore.muted};"
+                        aria-label="Edit placeholder"
                         onclick={() => startEditingPlaceholder(menu.id, menu.placeholder)}
                       >
                         <i class="fa-solid fa-pen text-xs"></i>
@@ -1436,9 +1484,9 @@
                             {#if optionEditSection === 'basic'}
                               <div class="space-y-4 max-w-xl">
                                 <div>
-                                  <label class="block text-sm font-medium mb-2"
+                                  <label for="f-PanelsTab-label-1487" class="block text-sm font-medium mb-2"
                                          style="color: {$colorStore.text}">Label</label>
-                                  <input
+                                  <input id="f-PanelsTab-label-1487"
                                     type="text"
                                     bind:value={editingOptionData.label}
                                     maxlength="100"
@@ -1448,9 +1496,9 @@
                                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description
+                                  <label for="f-PanelsTab-description-1499" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description
                                     *</label>
-                                  <input
+                                  <input id="f-PanelsTab-description-1499"
                                     type="text"
                                     bind:value={editingOptionData.description}
                                     maxlength="100"
@@ -1461,9 +1509,9 @@
                                   <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2"
+                                  <label for="f-PanelsTab-emoji-1512" class="block text-sm font-medium mb-2"
                                          style="color: {$colorStore.text}">Emoji</label>
-                                  <EmojiPicker
+                                  <EmojiPicker id="f-PanelsTab-emoji-1512"
                                     {guildEmojis}
                                     bind:selected={editingOptionData.emoji}
                                     multiple={false}
@@ -1473,9 +1521,9 @@
                                   />
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel
+                                  <label for="f-PanelsTab-channel-name-format-1524" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel
                                     Name Format</label>
-                                  <input
+                                  <input id="f-PanelsTab-channel-name-format-1524"
                                     type="text"
                                     bind:value={editingOptionData.channelNameFormat}
                                     maxlength="100"
@@ -1492,9 +1540,9 @@
                             {:else if optionEditSection === 'permissions'}
                               <div class="space-y-4 max-w-3xl">
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
+                                  <label for="f-PanelsTab-ticket-category-1543" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
                                     Category</label>
-                                  <DiscordSelector
+                                  <DiscordSelector id="f-PanelsTab-ticket-category-1543"
                                     type="channel"
                                     options={categories}
                                     bind:selected={editingOptionData.categoryId}
@@ -1503,9 +1551,9 @@
                                   />
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
+                                  <label for="f-PanelsTab-archive-category-1554" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
                                     Category</label>
-                                  <DiscordSelector
+                                  <DiscordSelector id="f-PanelsTab-archive-category-1554"
                                     type="channel"
                                     options={categories}
                                     bind:selected={editingOptionData.archiveCategoryId}
@@ -1514,9 +1562,9 @@
                                   />
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
+                                  <label for="f-PanelsTab-support-roles-1565" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
                                     Roles</label>
-                                  <DiscordSelector
+                                  <DiscordSelector id="f-PanelsTab-support-roles-1565"
                                     type="role"
                                     options={availableRoles}
                                     bind:selected={editingOptionData.supportRoles}
@@ -1525,9 +1573,9 @@
                                   />
                                 </div>
                                 <div>
-                                  <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
+                                  <label for="f-PanelsTab-viewer-roles-1576" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
                                     Roles</label>
-                                  <DiscordSelector
+                                  <DiscordSelector id="f-PanelsTab-viewer-roles-1576"
                                     type="role"
                                     options={availableRoles}
                                     bind:selected={editingOptionData.viewerRoles}
@@ -1541,9 +1589,9 @@
                               <div class="space-y-4 max-w-3xl">
                                 <div class="grid grid-cols-2 gap-4">
                                   <div>
-                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max
+                                    <label for="f-PanelsTab-max-active-tickets-1592" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max
                                       Active Tickets</label>
-                                    <input
+                                    <input id="f-PanelsTab-max-active-tickets-1592"
                                       type="number"
                                       bind:value={editingOptionData.maxActiveTickets}
                                       min="1"
@@ -1552,9 +1600,9 @@
                                     />
                                   </div>
                                   <div>
-                                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto
+                                    <label for="f-PanelsTab-auto-close-hours-1603" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto
                                       Close (hours)</label>
-                                    <input
+                                    <input id="f-PanelsTab-auto-close-hours-1603"
                                       type="number"
                                       bind:value={editingOptionData.autoCloseTime}
                                       min="1"
@@ -1748,6 +1796,7 @@
                     <button
                       class="px-2 py-1 rounded text-sm"
                       style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                      aria-label="Cancel option"
                       onclick={cancelCreatingOption}
                     >
                       <i class="fa-solid fa-xmark"></i>
@@ -1764,9 +1813,9 @@
                     {#if optionCreatorSection === 'basic'}
                       <div class="space-y-4 max-w-xl">
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label
+                          <label for="f-PanelsTab-label-1816" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Label
                             *</label>
-                          <input
+                          <input id="f-PanelsTab-label-1816"
                             type="text"
                             bind:value={newOption.label}
                             maxlength="100"
@@ -1777,9 +1826,9 @@
                           <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2"
+                          <label for="f-PanelsTab-description-1829" class="block text-sm font-medium mb-2"
                                  style="color: {$colorStore.text}">Description *</label>
-                          <input
+                          <input id="f-PanelsTab-description-1829"
                             type="text"
                             bind:value={newOption.description}
                             maxlength="100"
@@ -1790,8 +1839,8 @@
                           <p class="text-xs mt-1" style="color: {$colorStore.muted}">Max 100 characters</p>
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
-                          <EmojiPicker
+                          <label for="f-PanelsTab-emoji-1842" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Emoji</label>
+                          <EmojiPicker id="f-PanelsTab-emoji-1842"
                             {guildEmojis}
                             bind:selected={newOption.emoji}
                             multiple={false}
@@ -1801,9 +1850,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
+                          <label for="f-PanelsTab-channel-name-format-1853" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Channel Name
                             Format</label>
-                          <input
+                          <input id="f-PanelsTab-channel-name-format-1853"
                             type="text"
                             bind:value={newOption.channelNameFormat}
                             maxlength="100"
@@ -1820,9 +1869,9 @@
                     {:else if optionCreatorSection === 'permissions'}
                       <div class="space-y-4 max-w-3xl">
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
+                          <label for="f-PanelsTab-ticket-category-1872" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Ticket
                             Category</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-ticket-category-1872"
                             type="channel"
                             options={categories}
                             bind:selected={newOption.categoryId}
@@ -1831,9 +1880,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
+                          <label for="f-PanelsTab-archive-category-1883" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Archive
                             Category</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-archive-category-1883"
                             type="channel"
                             options={categories}
                             bind:selected={newOption.archiveCategoryId}
@@ -1842,9 +1891,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
+                          <label for="f-PanelsTab-support-roles-1894" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Support
                             Roles</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-support-roles-1894"
                             type="role"
                             options={availableRoles}
                             bind:selected={newOption.supportRoles}
@@ -1853,9 +1902,9 @@
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
+                          <label for="f-PanelsTab-viewer-roles-1905" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Viewer
                             Roles</label>
-                          <DiscordSelector
+                          <DiscordSelector id="f-PanelsTab-viewer-roles-1905"
                             type="role"
                             options={availableRoles}
                             bind:selected={newOption.viewerRoles}
@@ -1869,9 +1918,9 @@
                       <div class="space-y-4 max-w-3xl">
                         <div class="grid grid-cols-2 gap-4">
                           <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
+                            <label for="f-PanelsTab-max-active-tickets-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max Active
                               Tickets</label>
-                            <input
+                            <input id="f-PanelsTab-max-active-tickets-1921"
                               type="number"
                               bind:value={newOption.maxActiveTickets}
                               min="1"
@@ -1880,9 +1929,9 @@
                             />
                           </div>
                           <div>
-                            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
+                            <label for="f-PanelsTab-auto-close-hours-1932" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Auto Close
                               (hours)</label>
-                            <input
+                            <input id="f-PanelsTab-auto-close-hours-1932"
                               type="number"
                               bind:value={newOption.autoCloseTime}
                               min="1"
@@ -1896,13 +1945,7 @@
 
                     {:else if optionCreatorSection === 'close'}
                       <div class="space-y-3 max-w-xl">
-                        {#each [
-                          { key: 'saveTranscript', label: 'Save Transcript', desc: 'Save chat history' },
-                          { key: 'lockOnClose', label: 'Lock on Close', desc: 'Prevent messages' },
-                          { key: 'renameOnClose', label: 'Rename on Close', desc: 'Add closed- prefix' },
-                          { key: 'removeCreatorOnClose', label: 'Remove Creator', desc: 'Remove user permissions' },
-                          { key: 'deleteOnClose', label: 'Delete on Close', desc: 'Permanently delete', danger: true }
-                        ] as opt}
+                        {#each closeOptions as opt}
                           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
                                  style="background: {opt.danger ? '#ef444410' : $colorStore.primary + '08'};">
                             <input
@@ -1922,12 +1965,7 @@
 
                     {:else if optionCreatorSection === 'archive'}
                       <div class="space-y-3 max-w-xl">
-                        {#each [
-                          { key: 'autoArchiveOnClose', label: 'Auto Archive on Close', desc: 'Automatically archive' },
-                          { key: 'lockOnArchive', label: 'Lock on Archive', desc: 'Prevent messages' },
-                          { key: 'renameOnArchive', label: 'Rename on Archive', desc: 'Add archived- prefix' },
-                          { key: 'removeCreatorOnArchive', label: 'Remove Creator', desc: 'Remove user permissions' }
-                        ] as opt}
+                        {#each archiveOptions as opt}
                           <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer"
                                  style="background: {$colorStore.primary}08;">
                             <input

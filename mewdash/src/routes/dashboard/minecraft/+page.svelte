@@ -131,13 +131,18 @@
     let rconHistory: Array<{ command: string; response: string; rawResponse: string | null; success: boolean; time: Date }> = $state([]);
     let rconSending = $state(false);
 
-    let tabs = $derived([
-        { id: "servers", label: "Servers", icon: "fa-server" },
-        ...(selectedServer ? [{ id: "manage", label: selectedServer.name, icon: "fa-sliders" }] : []),
-        { id: "history", label: "History", icon: "fa-chart-simple" },
-        { id: "console", label: "Console", icon: "fa-terminal" },
-        { id: "add", label: "Add Server", icon: "fa-plus" },
-    ]);
+    let tabs = $derived.by(() => {
+        const base = [{ id: "servers", label: "Servers", icon: "fa-server" }];
+        if (selectedServer) {
+            base.push({ id: "manage", label: selectedServer.name, icon: "fa-sliders" });
+        }
+        base.push(
+            { id: "history", label: "History", icon: "fa-chart-simple" },
+            { id: "console", label: "Console", icon: "fa-terminal" },
+            { id: "add", label: "Add Server", icon: "fa-plus" },
+        );
+        return base;
+    });
 
     let actionButtons = $derived([
         {
@@ -201,7 +206,7 @@
         } catch (err) {
             logger.error(`Failed to query status for ${name}:`, err);
             const updated = new Map(serverStatuses);
-            updated.set(name, { isOnline: false, motd: "", playersOnline: 0, playersMax: 0, playerList: [], version: "", latency: 0, map: null, gameMode: null, software: null, plugins: [], isQueryResponse: false });
+            updated.set(name, { isOnline: false, motd: "", playersOnline: 0, playersMax: 0, playerList: [], playerUuids: {}, version: "", latency: 0, map: null, gameMode: null, software: null, plugins: [], isQueryResponse: false });
             serverStatuses = updated;
         }
     }
@@ -278,6 +283,10 @@
             joinLeaveChannelId: server.joinLeaveChannelId?.toString() || null,
             deathChannelId: server.deathChannelId?.toString() || null,
             advancementChannelId: server.advancementChannelId?.toString() || null,
+            eventTemplates: (() => {
+                try { return server.eventTemplates ? JSON.parse(server.eventTemplates) : {}; }
+                catch { return {}; }
+            })(),
             customOnlineMessage: server.customOnlineMessage || "",
             customOfflineMessage: server.customOfflineMessage || "",
             rconEnabled: server.rconEnabled,
@@ -791,20 +800,20 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
-                                    <input type="text" bind:value={editForm.address}
+                                    <label for="f-+page-address-803" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
+                                    <input id="f-+page-address-803" type="text" bind:value={editForm.address}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
-                                    <input type="number" bind:value={editForm.port}
+                                    <label for="f-+page-port-809" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
+                                    <input id="f-+page-port-809" type="number" bind:value={editForm.port}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
-                                    <DiscordSelector
+                                    <label for="f-+page-type-815" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
+                                    <DiscordSelector id="f-+page-type-815"
                                         type="custom"
                                         options={serverTypeOptions}
                                         selected={editForm.serverType.toString()}
@@ -815,15 +824,16 @@
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
-                                    <input type="number" bind:value={editForm.queryPort}
+                                    <label for="f-+page-query-port-0-game-port-827" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
+                                    <input id="f-+page-query-port-0-game-port-827" type="number" bind:value={editForm.queryPort}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
+                                    <label for="mc-edit-watch-channel" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
                                     <div class="min-h-[44px]">
                                         <DiscordSelector
+                                          id="mc-edit-watch-channel"
                                           type="channel"
                                           options={guildChannels}
                                           selected={editForm.watchChannelId}
@@ -835,14 +845,14 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
-                                    <input type="number" min="1" max="60" bind:value={editForm.watchInterval}
+                                    <label for="f-+page-watch-interval-minutes-847" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
+                                    <input id="f-+page-watch-interval-minutes-847" type="number" min="1" max="60" bind:value={editForm.watchInterval}
                                            class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
-                                    <DiscordSelector
+                                    <label for="f-+page-watch-mode-853" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
+                                    <DiscordSelector id="f-+page-watch-mode-853"
                                         type="custom"
                                         options={watchModeOptions}
                                         selected={editForm.watchMode.toString()}
@@ -855,8 +865,8 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
-                                <FullscreenEmbedBuilder
+                                <label for="f-+page-custom-watch-embed-867" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
+                                <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-867"
                                     value={editForm.customEmbedTemplate}
                                     previewTitle="Server Status Embed"
                                     previewDescription="Displayed in the watch channel"
@@ -890,8 +900,8 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
-                                <FullscreenEmbedBuilder
+                                <label for="f-+page-server-online-alert-902" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                                <FullscreenEmbedBuilder id="f-+page-server-online-alert-902"
                                     value={editForm.customOnlineMessage}
                                     previewTitle="Online Alert"
                                     previewDescription="Sent when the server comes back online"
@@ -908,8 +918,8 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
-                                <FullscreenEmbedBuilder
+                                <label for="f-+page-server-offline-alert-920" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                                <FullscreenEmbedBuilder id="f-+page-server-offline-alert-920"
                                     value={editForm.customOfflineMessage}
                                     previewTitle="Offline Alert"
                                     previewDescription="Sent when the server goes offline"
@@ -932,10 +942,12 @@
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div class="flex items-center gap-3">
-                                        <label class="text-sm" style="color: {$colorStore.text}">Enabled</label>
-                                        <button
+                                        <label for="f-+page-enabled-944" class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                                        <button id="f-+page-enabled-944"
                                           class="w-10 h-6 rounded-full transition-all relative"
                                           style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
+                                          aria-label="Toggle RCON"
+                                          aria-pressed={editForm.rconEnabled}
                                           onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}
                                         >
                                             <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
@@ -943,14 +955,14 @@
                                         </button>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
-                                        <input type="number" bind:value={editForm.rconPort}
+                                        <label for="f-+page-rcon-port-957" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                                        <input id="f-+page-rcon-port-957" type="number" bind:value={editForm.rconPort}
                                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
-                                        <input type="password" bind:value={editForm.rconPassword}
+                                        <label for="f-+page-rcon-password-963" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                                        <input id="f-+page-rcon-password-963" type="password" bind:value={editForm.rconPassword}
                                                placeholder={server.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
                                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
@@ -1105,6 +1117,7 @@
                 <div class="flex items-center gap-3">
                     <button class="p-2 rounded-lg transition-all hover:scale-110 shrink-0"
                             style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                            aria-label="Back to servers list"
                             onclick={() => { activeTab = 'servers'; }}>
                         <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
                     </button>
@@ -1328,44 +1341,44 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
-                        <input type="text" bind:value={editForm.address}
+                        <label for="f-+page-address-1343" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Address</label>
+                        <input id="f-+page-address-1343" type="text" bind:value={editForm.address}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
-                        <input type="number" bind:value={editForm.port}
+                        <label for="f-+page-port-1349" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Port</label>
+                        <input id="f-+page-port-1349" type="number" bind:value={editForm.port}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
-                        <DiscordSelector type="custom" options={serverTypeOptions}
+                        <label for="f-+page-type-1355" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Type</label>
+                        <DiscordSelector id="f-+page-type-1355" type="custom" options={serverTypeOptions}
                             selected={editForm.serverType.toString()} placeholder="Select type"
                             onchange={(detail) => { editForm.serverType = detail.selected ? parseInt(detail.selected as string) : 0; }} />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
-                        <input type="number" bind:value={editForm.queryPort}
+                        <label for="f-+page-query-port-0-game-port-1361" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Query Port (0 = game port)</label>
+                        <input id="f-+page-query-port-0-game-port-1361" type="number" bind:value={editForm.queryPort}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
-                        <DiscordSelector type="channel" options={guildChannels}
+                        <label for="f-+page-watch-channel-1367" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Channel</label>
+                        <DiscordSelector id="f-+page-watch-channel-1367" type="channel" options={guildChannels}
                             selected={editForm.watchChannelId} placeholder="No watch channel"
                             onchange={(detail) => { editForm.watchChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
-                        <input type="number" min="1" max="60" bind:value={editForm.watchInterval}
+                        <label for="f-+page-watch-interval-minutes-1373" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Interval (minutes)</label>
+                        <input id="f-+page-watch-interval-minutes-1373" type="number" min="1" max="60" bind:value={editForm.watchInterval}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
-                        <DiscordSelector type="custom" options={watchModeOptions}
+                        <label for="f-+page-watch-mode-1379" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Watch Mode</label>
+                        <DiscordSelector id="f-+page-watch-mode-1379" type="custom" options={watchModeOptions}
                             selected={editForm.watchMode.toString()} placeholder="Select watch mode"
                             onchange={(detail) => { editForm.watchMode = detail.selected ? parseInt(detail.selected as string) : 0; }} />
                     </div>
@@ -1376,26 +1389,26 @@
                     <h4 class="text-sm font-medium mb-3" style="color: {$colorStore.text}">Event Channels (leave empty to use Watch Channel)</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Chat Bridge</label>
-                            <DiscordSelector type="channel" options={guildChannels}
+                            <label for="f-+page-chat-bridge-1391" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Chat Bridge</label>
+                            <DiscordSelector id="f-+page-chat-bridge-1391" type="channel" options={guildChannels}
                                 selected={editForm.chatChannelId} placeholder="Use watch channel"
                                 onchange={(detail) => { editForm.chatChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Join/Leave</label>
-                            <DiscordSelector type="channel" options={guildChannels}
+                            <label for="f-+page-join-leave-1397" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Join/Leave</label>
+                            <DiscordSelector id="f-+page-join-leave-1397" type="channel" options={guildChannels}
                                 selected={editForm.joinLeaveChannelId} placeholder="Use watch channel"
                                 onchange={(detail) => { editForm.joinLeaveChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Deaths</label>
-                            <DiscordSelector type="channel" options={guildChannels}
+                            <label for="f-+page-deaths-1403" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Deaths</label>
+                            <DiscordSelector id="f-+page-deaths-1403" type="channel" options={guildChannels}
                                 selected={editForm.deathChannelId} placeholder="Use watch channel"
                                 onchange={(detail) => { editForm.deathChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Advancements</label>
-                            <DiscordSelector type="channel" options={guildChannels}
+                            <label for="f-+page-advancements-1409" class="block text-xs font-medium mb-1" style="color: {$colorStore.muted}">Advancements</label>
+                            <DiscordSelector id="f-+page-advancements-1409" type="channel" options={guildChannels}
                                 selected={editForm.advancementChannelId} placeholder="Use watch channel"
                                 onchange={(detail) => { editForm.advancementChannelId = detail.selected && typeof detail.selected === 'string' ? detail.selected : null; }} />
                         </div>
@@ -1405,8 +1418,8 @@
                 <!-- Embeds -->
                 <div class="mt-6 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
-                        <FullscreenEmbedBuilder value={editForm.customEmbedTemplate}
+                        <label for="f-+page-custom-watch-embed-1420" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
+                        <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-1420" value={editForm.customEmbedTemplate}
                             previewTitle="Server Status Embed" previewDescription="Displayed in the watch channel" icon="fa-server"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
@@ -1414,8 +1427,8 @@
                             onchange={(v) => { editForm.customEmbedTemplate = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
-                        <FullscreenEmbedBuilder value={editForm.customOnlineMessage}
+                        <label for="f-+page-server-online-alert-1429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
+                        <FullscreenEmbedBuilder id="f-+page-server-online-alert-1429" value={editForm.customOnlineMessage}
                             previewTitle="Online Alert" previewDescription="Sent when the server comes back online" icon="fa-circle-check"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
@@ -1423,8 +1436,8 @@
                             onchange={(v) => { editForm.customOnlineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
-                        <FullscreenEmbedBuilder value={editForm.customOfflineMessage}
+                        <label for="f-+page-server-offline-alert-1438" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
+                        <FullscreenEmbedBuilder id="f-+page-server-offline-alert-1438" value={editForm.customOfflineMessage}
                             previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-xmark"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
@@ -1442,8 +1455,8 @@
                     </p>
 
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
-                        <FullscreenEmbedBuilder value={editForm.eventTemplates.joinDiscord || ""}
+                        <label for="f-+page-player-join-discord-1457" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
+                        <FullscreenEmbedBuilder id="f-+page-player-join-discord-1457" value={editForm.eventTemplates.joinDiscord || ""}
                             previewTitle="Join Event" previewDescription="When a player joins" icon="fa-right-to-bracket"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
@@ -1451,8 +1464,8 @@
                             onchange={(v) => { editForm.eventTemplates.joinDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
-                        <FullscreenEmbedBuilder value={editForm.eventTemplates.leaveDiscord || ""}
+                        <label for="f-+page-player-leave-discord-1466" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
+                        <FullscreenEmbedBuilder id="f-+page-player-leave-discord-1466" value={editForm.eventTemplates.leaveDiscord || ""}
                             previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-right-from-bracket"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
@@ -1460,8 +1473,8 @@
                             onchange={(v) => { editForm.eventTemplates.leaveDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat Message (Discord)</label>
-                        <FullscreenEmbedBuilder value={editForm.eventTemplates.chatDiscord || ""}
+                        <label for="f-+page-chat-message-discord-1475" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat Message (Discord)</label>
+                        <FullscreenEmbedBuilder id="f-+page-chat-message-discord-1475" value={editForm.eventTemplates.chatDiscord || ""}
                             previewTitle="Chat Relay" previewDescription="MC chat relayed to Discord" icon="fa-comment"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Chat", name: "%mc.message%", description: "Chat message content" }]}
@@ -1470,16 +1483,16 @@
                             onchange={(v) => { editForm.eventTemplates.chatDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat from Discord (In-game format)</label>
-                        <input type="text" bind:value={editForm.eventTemplates.chatIngame}
+                        <label for="f-+page-chat-from-discord-in-game-form-1485" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat from Discord (In-game format)</label>
+                        <input id="f-+page-chat-from-discord-in-game-form-1485" type="text" bind:value={editForm.eventTemplates.chatIngame}
                                placeholder="Default: [Discord] %user%: %message%  |  Use §-codes for MC colors"
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">Placeholders: %user%, %message%, %channel%</p>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Death Message (Discord)</label>
-                        <FullscreenEmbedBuilder value={editForm.eventTemplates.deathDiscord || ""}
+                        <label for="f-+page-death-message-discord-1493" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Death Message (Discord)</label>
+                        <FullscreenEmbedBuilder id="f-+page-death-message-discord-1493" value={editForm.eventTemplates.deathDiscord || ""}
                             previewTitle="Death Event" previewDescription="When a player dies" icon="fa-skull"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Death", name: "%mc.death.message%", description: "Full death message" }]}
@@ -1488,8 +1501,8 @@
                             onchange={(v) => { editForm.eventTemplates.deathDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Advancement (Discord)</label>
-                        <FullscreenEmbedBuilder value={editForm.eventTemplates.advancementDiscord || ""}
+                        <label for="f-+page-advancement-discord-1503" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Advancement (Discord)</label>
+                        <FullscreenEmbedBuilder id="f-+page-advancement-discord-1503" value={editForm.eventTemplates.advancementDiscord || ""}
                             previewTitle="Advancement" previewDescription="When a player earns an advancement" icon="fa-trophy"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Advancement", name: "%mc.advancement%", description: "Advancement title" }]}
@@ -1507,23 +1520,25 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center gap-3">
-                            <label class="text-sm" style="color: {$colorStore.text}">Enabled</label>
-                            <button class="w-10 h-6 rounded-full transition-all relative"
+                            <label for="f-+page-enabled-1522" class="text-sm" style="color: {$colorStore.text}">Enabled</label>
+                            <button id="f-+page-enabled-1522" class="w-10 h-6 rounded-full transition-all relative"
                                     style="background: {editForm.rconEnabled ? $colorStore.primary : $colorStore.primary + '30'};"
+                                    aria-label="Toggle RCON"
+                                    aria-pressed={editForm.rconEnabled}
                                     onclick={() => { editForm.rconEnabled = !editForm.rconEnabled; }}>
                                 <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
                                      style="left: {editForm.rconEnabled ? '22px' : '4px'};"></div>
                             </button>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
-                            <input type="number" bind:value={editForm.rconPort}
+                            <label for="f-+page-rcon-port-1533" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Port</label>
+                            <input id="f-+page-rcon-port-1533" type="number" bind:value={editForm.rconPort}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
-                            <input type="password" bind:value={editForm.rconPassword}
+                            <label for="f-+page-rcon-password-1539" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">RCON Password</label>
+                            <input id="f-+page-rcon-password-1539" type="password" bind:value={editForm.rconPassword}
                                    placeholder={selectedServer.hasRconPassword ? "••••••• (unchanged)" : "Enter password"}
                                    class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
@@ -1550,6 +1565,7 @@
                                     <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginKey}</code>
                                     <button class="p-2 rounded-lg shrink-0"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                            aria-label="Copy API key"
                                             onclick={() => { navigator.clipboard.writeText(pluginKey!); showMessage("Key copied!", "success"); }}>
                                         <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
                                     </button>
@@ -1561,6 +1577,7 @@
                                     <code class="flex-1 text-xs p-2 rounded" style="background: #00000040; color: {$colorStore.text}; word-break: break-all;">{pluginWsUrl}</code>
                                     <button class="p-2 rounded-lg shrink-0"
                                             style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                                            aria-label="Copy API URL"
                                             onclick={() => { navigator.clipboard.writeText(pluginWsUrl); showMessage("URL copied!", "success"); }}>
                                         <i class="fa-solid fa-copy" style="font-size: 13px;"></i>
                                     </button>
@@ -1805,40 +1822,40 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-server-name-1824" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-tag" style="font-size: 14px;"></i>
                             Server Name
                         </label>
-                        <input type="text" bind:value={addForm.name}
+                        <input id="f-+page-server-name-1824" type="text" bind:value={addForm.name}
                                placeholder="e.g. survival, creative, smp"
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-server-address-1834" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-globe" style="font-size: 14px;"></i>
                             Server Address
                         </label>
-                        <input type="text" bind:value={addForm.address}
+                        <input id="f-+page-server-address-1834" type="text" bind:value={addForm.address}
                                placeholder="e.g. play.example.com"
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-port-1844" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-ethernet" style="font-size: 14px;"></i>
                             Port
                         </label>
-                        <input type="number" bind:value={addForm.port}
+                        <input id="f-+page-port-1844" type="number" bind:value={addForm.port}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-server-type-1853" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-gamepad" style="font-size: 14px;"></i>
                             Server Type
                         </label>
-                        <DiscordSelector
+                        <DiscordSelector id="f-+page-server-type-1853"
                             type="custom"
                             options={serverTypeOptions}
                             selected={addForm.serverType.toString()}
@@ -1849,22 +1866,23 @@
                         />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-query-port-0-same-as-game-port-1868" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-terminal" style="font-size: 14px;"></i>
                             Query Port (0 = same as game port)
                         </label>
-                        <input type="number" bind:value={addForm.queryPort}
+                        <input id="f-+page-query-port-0-same-as-game-port-1868" type="number" bind:value={addForm.queryPort}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                         <p class="text-xs mt-1" style="color: {$colorStore.muted}">Requires enable-query=true in server.properties for extended info</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="mc-add-watch-channel" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-hashtag" style="font-size: 14px;"></i>
                             Watch Channel
                         </label>
                         <div class="min-h-[44px]">
                             <DiscordSelector
+                                id="mc-add-watch-channel"
                                 type="channel"
                                 options={guildChannels}
                                 selected={addForm.watchChannelId}
@@ -1876,20 +1894,20 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-watch-interval-minutes-1895" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-clock" style="font-size: 14px;"></i>
                             Watch Interval (minutes)
                         </label>
-                        <input type="number" min="1" max="60" bind:value={addForm.watchInterval}
+                        <input id="f-+page-watch-interval-minutes-1895" type="number" min="1" max="60" bind:value={addForm.watchInterval}
                                class="w-full p-2.5 rounded-xl border backdrop-blur-md focus:outline-none"
                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}; min-height: 50px;" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+                        <label for="f-+page-watch-mode-1904" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
                             <i class="fa-solid fa-display" style="font-size: 14px;"></i>
                             Watch Mode
                         </label>
-                        <DiscordSelector
+                        <DiscordSelector id="f-+page-watch-mode-1904"
                             type="custom"
                             options={watchModeOptions}
                             selected={addForm.watchMode.toString()}
@@ -1902,8 +1920,8 @@
                 </div>
 
                 <div class="mt-6">
-                    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed (optional)</label>
-                    <FullscreenEmbedBuilder
+                    <label for="f-+page-custom-watch-embed-optional-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed (optional)</label>
+                    <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-optional-1921"
                         value={addForm.customEmbedTemplate}
                         previewTitle="Server Status Embed"
                         previewDescription="Displayed in the watch channel"

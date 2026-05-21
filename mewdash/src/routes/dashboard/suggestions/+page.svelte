@@ -25,7 +25,7 @@
 
   let { data }: Props = $props();
 
-  let currentUser = data.user;
+  let currentUser = $derived(data.user);
 
   // States
   let activeTab = $state("suggestions");
@@ -799,14 +799,13 @@
   ]}
   title="Suggestions"
 >
-  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
+  {#snippet statusMessages()}
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
 
   <!-- Main Content -->
@@ -1505,8 +1504,8 @@
           </div>
 
           <div class="space-y-2">
-            <label class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
-            <EmojiPicker
+            <label for="f-+page-custom-emotes-1507" class="block text-sm" style="color: {$colorStore.muted}">Custom Emotes</label>
+            <EmojiPicker id="f-+page-custom-emotes-1507"
               guildEmojis={guildEmojis}
               bind:selected={suggestEmotes}
               multiple={true}
@@ -1538,8 +1537,8 @@
                 >
               </div>
               <div class="space-y-2">
-                <label class="block text-sm" style="color: {$colorStore.muted}">Button Emote</label>
-                <EmojiPicker
+                <label for="f-+page-button-emote-1540" class="block text-sm" style="color: {$colorStore.muted}">Button Emote</label>
+                <EmojiPicker id="f-+page-button-emote-1540"
                   guildEmojis={guildEmojis}
                   bind:selected={suggestButtonEmote}
                   placeholder="Select button emote..."

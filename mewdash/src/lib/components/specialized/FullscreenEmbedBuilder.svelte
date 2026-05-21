@@ -9,6 +9,7 @@
   import Notification from "$lib/components/ui/Notification.svelte";
   import { fade, slide } from "svelte/transition";
   import { chatTriggersApi } from "$lib/api/index.ts";
+  import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
   import { logger } from "$lib/logger.ts";
   import type { DiscordUser } from "$lib/types/discord";
 
@@ -33,8 +34,10 @@
     placeholder?: string; // Placeholder text when empty
     icon?: string; // Icon to show in preview
     // Guild/User context
-    guildId?: string | bigint;
-    user?: DiscordUser;
+    guildId?: string | bigint | null;
+    user?: DiscordUser | null;
+    id?: string;
+    ariaLabelledby?: string;
     // Events
     onchange?: (value: any) => void;
     onclose?: () => void;
@@ -111,11 +114,6 @@
     components: NewEmbedComponent[];
   }
 
-  interface ChatTrigger {
-    id: number;
-    trigger: string | null;
-    response: string | null;
-  }
 
   let {
     value = $bindable({}),
@@ -133,6 +131,8 @@
     icon = "fa-layer-group",
     guildId = null,
     user = null,
+    id,
+    ariaLabelledby,
     onchange,
     onclose
   }: Props = $props();
@@ -283,7 +283,7 @@
 
     // Parse embeds
     if (value?.embeds && Array.isArray(value.embeds) && value.embeds.length > 0) {
-      embeds = value.embeds.map(e => ({
+      embeds = value.embeds.map((e: any) => ({
         title: e.title || "",
         description: e.description || "",
         color: e.color || "#5865F2",
@@ -803,6 +803,8 @@
 
 <!-- Preview (clickable) -->
 <button
+  {id}
+  aria-labelledby={ariaLabelledby}
   class="w-full text-left rounded-xl border transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer p-4"
   onclick={open}
   style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
@@ -856,10 +858,12 @@
   <Portal>
     <div class="fixed inset-0 z-[9999] flex flex-col" transition:fade={{ duration: 200 }}>
       <!-- Backdrop -->
-      <div
+      <button
+        type="button"
         class="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        aria-label="Close editor"
         onclick={close}
-      ></div>
+      ></button>
 
       <!-- Modal Content -->
       <div
@@ -1215,10 +1219,12 @@
     {#if showMobilePreview}
       <div class="fixed inset-0 z-[10001] flex items-center justify-center p-4" transition:fade={{ duration: 200 }}>
         <!-- Backdrop -->
-        <div
+        <button
+          type="button"
           class="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          aria-label="Close preview"
           onclick={() => showMobilePreview = false}
-        ></div>
+        ></button>
 
         <!-- Preview Modal -->
         <div
@@ -1236,6 +1242,7 @@
               style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
               onclick={() => showMobilePreview = false}
               type="button"
+              aria-label="Close preview"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>

@@ -123,11 +123,11 @@
 
           <!-- Honeypot Channels -->
           <div class="col-span-full space-y-2">
-            <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+            <label for="f-AntiPostChannelCard-label-126" class="block text-sm font-medium" style="color: {$colorStore.text}">
               Honeypot Channels
               <span class="text-xs" style="color: {$colorStore.muted}">Channels that will auto-ban anyone who posts in them</span>
             </label>
-            <DiscordSelector
+            <DiscordSelector id="f-AntiPostChannelCard-label-126"
               type="channel"
               options={textChannels.map((c: any) => ({ id: c.id, name: c.name, type: 0 }))}
               bind:selected={selectedHoneypotChannels}
@@ -151,11 +151,11 @@
 
           <!-- Ignored Roles -->
           <div class="col-span-full space-y-2">
-            <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+            <label for="f-AntiPostChannelCard-label-154" class="block text-sm font-medium" style="color: {$colorStore.text}">
               Ignored Roles
               <span class="text-xs" style="color: {$colorStore.muted}">Users with these roles can post in honeypot channels</span>
             </label>
-            <DiscordSelector
+            <DiscordSelector id="f-AntiPostChannelCard-label-154"
               type="role"
               options={availableRoles}
               bind:selected={selectedIgnoredRoles}
@@ -179,13 +179,14 @@
 
           <!-- Ignored Users -->
           <div class="col-span-full space-y-2">
-            <label class="block text-sm font-medium" style="color: {$colorStore.text}">
+            <label for="apc-ignored-users" class="block text-sm font-medium" style="color: {$colorStore.text}">
               Ignored Users
               <span class="text-xs"
                     style="color: {$colorStore.muted}">Specific users who can post in honeypot channels</span>
             </label>
             <div class="flex gap-2">
               <input
+                id="apc-ignored-users"
                 type="text"
                 bind:value={selectedIgnoredUsers}
                 placeholder="Enter user ID..."
@@ -215,6 +216,7 @@
                     <button
                       class="px-2 py-1 rounded transition-all hover:scale-110"
                       style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                      aria-label="Remove ignored user"
                       onclick={() => $currentGuild && administrationApi.toggleAntiPostChannelIgnoredUser($currentGuild.id, userId).then(() => fetchAllData())}
                     >
                       <i class="fa-solid fa-xmark"></i>

@@ -214,6 +214,7 @@
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
+          tabindex="-1"
         >
           <!-- Modal Header -->
           <div
@@ -301,8 +302,8 @@
                           <div class="space-y-3">
                             <!-- Type Selector -->
                             <div>
-                              <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
-                              <DiscordSelector
+                              <label for="f-MultiConditionEditor-type-304" class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
+                              <DiscordSelector id="f-MultiConditionEditor-type-304"
                                 type="custom"
                                 options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: t.label }))}
                                 selected={String(condition.conditionType)}
@@ -326,8 +327,8 @@
                             <!-- Question: Answer-based -->
                             {#if condition.conditionType === 0}
                               <div>
-                                <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
-                                <DiscordSelector
+                                <label for="f-MultiConditionEditor-question-329" class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
+                                <DiscordSelector id="f-MultiConditionEditor-question-329"
                                   type="custom"
                                   options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: `Q${i + 1}` }))}
                                   selected={condition.targetQuestionId ? String(condition.targetQuestionId) : ""}
@@ -339,8 +340,8 @@
 
                               {#if condition.targetQuestionId}
                                 <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
-                                  <DiscordSelector
+                                  <label for="f-MultiConditionEditor-operator-342" class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
+                                  <DiscordSelector id="f-MultiConditionEditor-operator-342"
                                     type="custom"
                                     options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
                                     selected={condition.operator || "equals"}
@@ -351,8 +352,8 @@
                                 </div>
 
                                 <div>
-                                  <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
-                                  <input
+                                  <label for="f-MultiConditionEditor-value-354" class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
+                                  <input id="f-MultiConditionEditor-value-354"
                                     type="text"
                                     value={condition.expectedValue || ""}
                                     oninput={(e) => updateCondition(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}
@@ -367,9 +368,9 @@
                             <!-- Role: User roles -->
                             {#if condition.conditionType === 1}
                               <div>
-                                <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles
+                                <label for="f-MultiConditionEditor-roles-any-370" class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles
                                   (any)</label>
-                                <DiscordSelector
+                                <DiscordSelector id="f-MultiConditionEditor-roles-any-370"
                                   type="role"
                                   options={roles}
                                   selected={condition.targetRoleIds?.split(",").filter(x => x) || []}
@@ -383,8 +384,8 @@
                             <!-- Tenure: Days threshold -->
                             {#if condition.conditionType === 2}
                               <div>
-                                <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
-                                <input
+                                <label for="f-MultiConditionEditor-min-days-386" class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
+                                <input id="f-MultiConditionEditor-min-days-386"
                                   type="number"
                                   value={condition.daysThreshold || ""}
                                   oninput={(e) => updateCondition(groupIndex, conditionIndex, { daysThreshold: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -425,8 +426,8 @@
                             <!-- Permission: Dropdown -->
                             {#if condition.conditionType === 4}
                               <div>
-                                <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
-                                <DiscordSelector
+                                <label for="f-MultiConditionEditor-permission-428" class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
+                                <DiscordSelector id="f-MultiConditionEditor-permission-428"
                                   type="custom"
                                   options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: p.label }))}
                                   selected={condition.permissionFlags ? String(condition.permissionFlags) : ""}
@@ -552,8 +553,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <!-- Type Selector -->
                   <div class="md:col-span-1">
-                    <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
-                    <DiscordSelector
+                    <label for="f-MultiConditionEditor-type-555" class="block text-xs mb-1" style="color: {$colorStore.muted};">Type</label>
+                    <DiscordSelector id="f-MultiConditionEditor-type-555"
                       type="custom"
                       options={CONDITIONAL_TYPES.filter(t => t.value !== 5).map(t => ({ id: String(t.value), name: t.label }))}
                       selected={String(condition.conditionType)}
@@ -578,8 +579,8 @@
 
                     <!-- Question: Answer-based -->
                     {#if condition.conditionType === 0}
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
-                      <DiscordSelector
+                      <label for="f-MultiConditionEditor-question-581" class="block text-xs mb-1" style="color: {$colorStore.muted};">Question</label>
+                      <DiscordSelector id="f-MultiConditionEditor-question-581"
                         type="custom"
                         options={allQuestions.slice(0, questionIndex).filter(q => q.questionText).map((q, i) => ({ id: String(q.id), name: `Q${i + 1}` }))}
                         selected={condition.targetQuestionId ? String(condition.targetQuestionId) : ""}
@@ -591,8 +592,8 @@
 
                     <!-- Role: User roles -->
                     {#if condition.conditionType === 1}
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles (any)</label>
-                      <DiscordSelector
+                      <label for="f-MultiConditionEditor-roles-any-594" class="block text-xs mb-1" style="color: {$colorStore.muted};">Roles (any)</label>
+                      <DiscordSelector id="f-MultiConditionEditor-roles-any-594"
                         type="role"
                         options={roles}
                         selected={condition.targetRoleIds?.split(",").filter(x => x) || []}
@@ -604,8 +605,8 @@
 
                     <!-- Tenure: Days threshold -->
                     {#if condition.conditionType === 2}
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
-                      <input
+                      <label for="f-MultiConditionEditor-min-days-607" class="block text-xs mb-1" style="color: {$colorStore.muted};">Min days</label>
+                      <input id="f-MultiConditionEditor-min-days-607"
                         type="number"
                         value={condition.daysThreshold || ""}
                         oninput={(e) => updateCondition(groupIndex, conditionIndex, { daysThreshold: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -644,8 +645,8 @@
 
                     <!-- Permission: Dropdown -->
                     {#if condition.conditionType === 4}
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
-                      <DiscordSelector
+                      <label for="f-MultiConditionEditor-permission-647" class="block text-xs mb-1" style="color: {$colorStore.muted};">Permission</label>
+                      <DiscordSelector id="f-MultiConditionEditor-permission-647"
                         type="custom"
                         options={COMMON_PERMISSIONS.map(p => ({ id: String(p.value), name: p.label }))}
                         selected={condition.permissionFlags ? String(condition.permissionFlags) : ""}
@@ -661,8 +662,8 @@
                 {#if condition.conditionType === 0 && condition.targetQuestionId}
                   <div class="grid grid-cols-2 gap-2 pt-1">
                     <div>
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
-                      <DiscordSelector
+                      <label for="f-MultiConditionEditor-operator-664" class="block text-xs mb-1" style="color: {$colorStore.muted};">Operator</label>
+                      <DiscordSelector id="f-MultiConditionEditor-operator-664"
                         type="custom"
                         options={CONDITIONAL_OPERATORS.map(op => ({ id: op.value, name: op.label }))}
                         selected={condition.operator || "equals"}
@@ -672,8 +673,8 @@
                       />
                     </div>
                     <div>
-                      <label class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
-                      <input
+                      <label for="f-MultiConditionEditor-value-675" class="block text-xs mb-1" style="color: {$colorStore.muted};">Value</label>
+                      <input id="f-MultiConditionEditor-value-675"
                         type="text"
                         value={condition.expectedValue || ""}
                         oninput={(e) => updateCondition(groupIndex, conditionIndex, { expectedValue: e.currentTarget.value })}

@@ -21,7 +21,7 @@
   let error: string | null = $state(null);
   let refreshInterval: number;
   let refreshInProgress = $state(false);
-  let userId = data?.user?.id ? BigInt(data.user.id) : null;
+  let userId = $derived(data?.user?.id ? BigInt(data.user.id) : null);
 
   // Ensure performanceData is always an array
   let safePerformanceData = $derived(Array.isArray(performanceData) ? performanceData : []);

@@ -11,11 +11,11 @@
   let { data } = $props();
 
   // Authentication required
-  let currentUser = data.user;
-  let userId = currentUser ? BigInt(currentUser.id) : null;
+  let currentUser = $derived(data.user);
+  let userId = $derived(currentUser ? BigInt(currentUser.id) : null);
   
   // Get guild ID from URL params
-  let guildId = $derived(BigInt($page.params.guildId));
+  let guildId = $derived(BigInt($page.params.guildId ?? "0"));
   
   // Guild membership state
   let isMember = $state(false);

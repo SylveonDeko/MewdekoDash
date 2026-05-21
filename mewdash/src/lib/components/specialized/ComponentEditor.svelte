@@ -13,7 +13,7 @@
     component: any;
     triggers?: any[];
     isEditing?: boolean;
-      user?: DiscordUser;
+      user?: DiscordUser | null;
       onupdate?: (detail: { component: any }) => void;
       onremove?: (detail: { componentKey: string }) => void;
       onedit?: (detail: { component: any }) => void;

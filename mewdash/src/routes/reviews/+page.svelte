@@ -3,7 +3,7 @@
 
 <script lang="ts">
     import {onMount} from "svelte";
-    import { reviewsApi, type BotReviews } from "$lib/api/index.ts";
+    import { reviewsApi, type BotReview } from "$lib/api/index.ts";
     import type {PageData} from "./$types";
     import StarRating from "$lib/components/display/StarRating.svelte";
     import {marked} from "marked";
@@ -19,12 +19,12 @@
 
   let {data}: Props = $props();
 
-  let reviews: BotReviews[] = [];
-  let newReview: Partial<BotReviews> = $state({stars: 0, review: ""});
+  let reviews: BotReview[] = [];
+  let newReview: Partial<BotReview> = $state({stars: 0, review: ""});
   let loading = $state(true);
   let error: string | null = $state(null);
   let previewContent = $state("");
-  let reviewsWithParsedContent: (BotReviews & { parsedReview?: string })[] = $state([]);
+  let reviewsWithParsedContent: (BotReview & { parsedReview?: string })[] = $state([]);
 
   let user = $derived(data.user as DiscordUser | undefined);
   let userHasReviewed = $state(false);
@@ -316,7 +316,7 @@
                 {review.username}
               </h3>
               <p class="text-sm" style="color: {$colorStore.muted};">
-                {new Date(review.dateAdded).toLocaleDateString(undefined, {
+                {new Date(review.dateAdded ?? Date.now()).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

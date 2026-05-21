@@ -25,7 +25,7 @@
   let error: string | null = $state(null);
   let refreshInterval: number;
   let refreshInProgress = $state(false);
-  let userId = data?.user?.id ? BigInt(data.user.id) : null;
+  let userId = $derived(data?.user?.id ? BigInt(data.user.id) : null);
 
   const fetchSystemInfo = async () => {
     if (!userId || refreshInProgress) return;

@@ -14,7 +14,7 @@
 
   let { data }: Props = $props();
 
-  let formId = $derived(parseInt($page.params.formId));
+  let formId = $derived(parseInt($page.params.formId ?? ""));
   let showNotification = $state(false);
   let notificationMessage = $state("");
   let notificationType: "success" | "error" = $state("success");

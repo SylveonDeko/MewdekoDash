@@ -16,7 +16,7 @@
       onduplicate?: (detail: { index: number }) => void;
   }
 
-    let { embed, index = 0, placeholders = [], onupdate, onremove, onduplicate }: Props = $props();
+    let { embed = $bindable(), index = 0, placeholders = [], onupdate, onremove, onduplicate }: Props = $props();
 
   // Internal state
   let activeTab = $state('content');

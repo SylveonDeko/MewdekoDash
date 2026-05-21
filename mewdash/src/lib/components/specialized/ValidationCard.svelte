@@ -53,9 +53,9 @@
 
   // Internal state
   let collapsed = $state(false);
-  let localErrors = $state([...errors]);
-  let localWarnings = $state([...warnings]);
-  let localSuggestions = $state([...suggestions]);
+  let localErrors: ValidationError[] = $state([]);
+  let localWarnings: ValidationWarning[] = $state([]);
+  let localSuggestions: ValidationSuggestion[] = $state([]);
 
   // Update local arrays when props change
   $effect(() => {
@@ -247,7 +247,7 @@
                     <button
                             class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('error').text}; border: 1px solid {getColors('error').text}30;"
-                      onclick={() => executeAction('error', error.id, error.action.handler)}
+                      onclick={() => error.action && executeAction('error', error.id, error.action.handler)}
                     >
                       {error.action.label}
                       <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
@@ -303,7 +303,7 @@
                     <button
                             class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('warning').text}; border: 1px solid {getColors('warning').text}30;"
-                      onclick={() => executeAction('warning', warning.id, warning.action.handler)}
+                      onclick={() => warning.action && executeAction('warning', warning.id, warning.action.handler)}
                     >
                       {warning.action.label}
                       <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
@@ -354,7 +354,7 @@
                     <button
                             class="inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-sm text-xs font-medium transition-colors hover:bg-black/10"
                       style="color: {getColors('suggestion').text}; border: 1px solid {getColors('suggestion').text}30;"
-                      onclick={() => executeAction('suggestion', suggestion.id, suggestion.action.handler)}
+                      onclick={() => suggestion.action && executeAction('suggestion', suggestion.id, suggestion.action.handler)}
                     >
                       {suggestion.action.label}
                       <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>

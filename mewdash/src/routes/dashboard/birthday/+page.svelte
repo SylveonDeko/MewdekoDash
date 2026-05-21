@@ -74,11 +74,13 @@
     let guildChannels: Array<{ id: string; name: string; }> = $state([]);
     let guildRoles: Array<{ id: string; name: string; color: number }> = $state([]);
 
-    // Form data
-    let configForm: BirthdayConfigRequest = $state({
+    type BirthdayConfigForm = Omit<BirthdayConfigRequest, "birthdayMessage"> & {
+      birthdayMessage: string | Record<string, any> | null;
+    };
+    let configForm: BirthdayConfigForm = $state({
         birthdayChannelId: null,
         birthdayRoleId: null,
-      birthdayMessage: {} as any,
+      birthdayMessage: {},
         birthdayPingRoleId: null,
         birthdayReminderDays: 1,
         defaultTimezone: "UTC"
@@ -110,7 +112,7 @@
             configForm = {
                 birthdayChannelId: birthdayConfig.birthdayChannelId,
                 birthdayRoleId: birthdayConfig.birthdayRoleId,
-              birthdayMessage: parsedMessage as any,
+              birthdayMessage: parsedMessage,
                 birthdayPingRoleId: birthdayConfig.birthdayPingRoleId,
                 birthdayReminderDays: birthdayConfig.birthdayReminderDays,
                 defaultTimezone: birthdayConfig.defaultTimezone
@@ -200,8 +202,7 @@
 
         saving = true;
         try {
-          // Serialize birthdayMessage if it's an object
-          const messageToSend = typeof configForm.birthdayMessage === "object" && Object.keys(configForm.birthdayMessage).length > 0
+          const messageToSend = typeof configForm.birthdayMessage === "object" && configForm.birthdayMessage !== null && Object.keys(configForm.birthdayMessage).length > 0
             ? JSON.stringify(configForm.birthdayMessage)
             : (typeof configForm.birthdayMessage === "string" ? configForm.birthdayMessage : null);
 
@@ -503,13 +504,13 @@
                     </div>
 
                     <div>
-                      <label class="block text-sm font-medium mb-3"
+                      <label for="f-+page-custom-birthday-announcement-507" class="block text-sm font-medium mb-3"
                              style="color: {$colorStore.text}">
                         <i class="fa-solid fa-gift" style="font-size: 14px;"></i>
                         Custom Birthday Announcement
                       </label>
 
-                      <FullscreenEmbedBuilder
+                      <FullscreenEmbedBuilder id="f-+page-custom-birthday-announcement-507"
                         bind:value={configForm.birthdayMessage}
                         previewTitle="Birthday Message"
                         previewDescription="Message sent when it's someone's birthday"

@@ -8,10 +8,42 @@
   let currentStep = $state(0);
   let completedSteps: Set<number> = $state(new Set());
   let showAllSteps = $state(false);
-  let selectedOS = $state("linux"); // 'linux' or 'windows'
+  let selectedOS: "linux" | "windows" = $state("linux");
 
-  // Step-by-step wizard data
-  const steps = [
+  type StepBase = { title: string; icon: string; description: string; required: boolean; estimatedTime: string };
+  type Step =
+    | (StepBase & { id: "overview"; content: { intro: string; highlights: string[]; note: string } })
+    | (StepBase & { id: "bot-token"; content: { intro: string; steps: string[]; warning: string; example: string } })
+    | (StepBase & {
+        id: "database";
+        content: {
+          intro: string;
+          linuxSteps: { step: string; command: string; note?: string }[];
+          windowsSteps: { step: string; command: string; note?: string }[];
+          connectionExamples: { linux: string; windows: string };
+        };
+      })
+    | (StepBase & {
+        id: "owner-id";
+        content: { intro: string; steps: string[]; singleOwner: string; multipleOwners: string };
+      })
+    | (StepBase & {
+        id: "api-keys";
+        content: {
+          intro: string;
+          keys: { name: string; purpose: string; required: boolean; priority: string; steps: string[] }[];
+        };
+      })
+    | (StepBase & {
+        id: "final-config";
+        content: {
+          intro: string;
+          additionalSettings: { name: string; purpose: string; example: string }[];
+          finalExample: string;
+        };
+      });
+
+  const steps: Step[] = [
     {
       id: "overview",
       title: "Overview",
@@ -491,7 +523,7 @@
                     <div class="space-y-2">
                       <p style="color: {$colorStore.text};">Configure PostgreSQL for data storage</p>
                       <code class="block p-2 rounded-sm"
-                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.connectionString}</code>
+                            style="background: {$colorStore.primary}15; color: {$colorStore.text};">{step.content.connectionExamples.linux}</code>
                     </div>
                   {:else if step.id === 'owner-id'}
                     <div class="space-y-2">

@@ -56,46 +56,38 @@
     let settingsLoading = $state(false);
     let resetLoading = $state(false);
 
+  function toGraphStats(points: { label: string; count: number }[]) {
+    if (!points.length) return null;
+    const total = points.reduce((sum, p) => sum + p.count, 0);
+    const peak = points.reduce((best, p) => p.count > best.count ? p : best, points[0]);
+    return {
+      dailyStats: points.map(p => ({ date: p.label, count: p.count })),
+      summary: {
+        total,
+        average: total / points.length,
+        peakDate: peak.label,
+        peakCount: peak.count
+      }
+    };
+  }
+
   // Computed values
   let chartData = $derived.by(() => {
     const stats = messageStats as any;
-    if (!stats || !stats.hourlyStats) return null;
-
-    return {
-      labels: stats.hourlyStats.map((stat: any) => `${stat.hour}:00`),
-      datasets: [{
-        label: "Messages",
-        data: stats.hourlyStats.map((stat: any) => stat.messageCount),
-        borderColor: $colorStore.primary,
-        backgroundColor: `${$colorStore.primary}20`,
-        tension: 0.4,
-        fill: true
-      }, {
-        label: "Unique Users",
-        data: stats.hourlyStats.map((stat: any) => stat.uniqueUsers),
-        borderColor: $colorStore.secondary,
-        backgroundColor: `${$colorStore.secondary}20`,
-        tension: 0.4,
-        fill: false
-      }]
-    };
+    if (!stats?.hourlyStats?.length) return null;
+    return toGraphStats(stats.hourlyStats.map((s: any) => ({
+      label: `${s.hour}:00`,
+      count: s.messageCount
+    })));
   });
 
   let weeklyChartData = $derived.by(() => {
     const stats = messageStats as any;
-    if (!stats || !stats.weeklyTrend) return null;
-
-    return {
-      labels: stats.weeklyTrend.map((day: any) => new Date(day.date).toLocaleDateString()),
-      datasets: [{
-        label: "Daily Messages",
-        data: stats.weeklyTrend.map((day: any) => day.messageCount),
-        borderColor: $colorStore.accent,
-        backgroundColor: `${$colorStore.accent}20`,
-        tension: 0.4,
-        fill: true
-      }]
-    };
+    if (!stats?.weeklyTrend?.length) return null;
+    return toGraphStats(stats.weeklyTrend.map((d: any) => ({
+      label: d.date,
+      count: d.messageCount
+    })));
   });
 
   // Helper Functions

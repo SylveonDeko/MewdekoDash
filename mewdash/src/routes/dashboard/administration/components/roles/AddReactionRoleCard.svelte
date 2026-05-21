@@ -230,8 +230,8 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Channel</label>
-          <DiscordSelector
+          <label for="f-AddReactionRoleCard-channel-233" class="block text-sm font-medium mb-1" style="color: {$colorStore.text}">Channel</label>
+          <DiscordSelector id="f-AddReactionRoleCard-channel-233"
             type="channel"
             options={textChannels}
             bind:selected={channelId}
@@ -314,8 +314,8 @@
         {#each reactions as reaction, index (index)}
           <div class="grid grid-cols-[2fr,2fr,auto] gap-2 items-end">
             <div>
-              <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Emoji</label>
-              <EmojiPicker
+              <label for="f-AddReactionRoleCard-emoji-317" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Emoji</label>
+              <EmojiPicker id="f-AddReactionRoleCard-emoji-317"
                 {guildEmojis}
                 bind:selected={reaction.emoji}
                 multiple={false}
@@ -324,8 +324,8 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Role</label>
-              <DiscordSelector
+              <label for="f-AddReactionRoleCard-role-327" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">Role</label>
+              <DiscordSelector id="f-AddReactionRoleCard-role-327"
                 type="role"
                 options={availableRoles}
                 bind:selected={reaction.roleId}
@@ -336,6 +336,7 @@
             <button
               class="px-2 py-2 rounded-lg"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+              aria-label="Remove reaction"
               onclick={() => removeReaction(index)}
               disabled={reactions.length === 1}
             >

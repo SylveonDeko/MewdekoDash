@@ -81,9 +81,9 @@ Supports single, multiple, category-based, and pattern-based selection
 <div class="space-y-4">
   <!-- Label and Mode Toggle -->
   <div class="flex items-center justify-between">
-    <label class="text-sm font-medium" style="color: {$colorStore.text};">
+    <span class="text-sm font-medium" style="color: {$colorStore.text};">
       {label}
-    </label>
+    </span>
     <div class="flex items-center gap-2">
       <button
         class="px-3 py-1 rounded-sm text-xs font-medium transition-all"
@@ -163,12 +163,13 @@ Supports single, multiple, category-based, and pattern-based selection
       <!-- Category Selection -->
       {#if categories.length > 0}
         <div>
-          <label class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
+          <label for="cbs-category" class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
             Select All in Category
           </label>
           <div class="flex gap-2">
             <DiscordSelector
-              type="category"
+              id="cbs-category"
+              type="custom"
               options={categories}
               bind:selected={selectedCategory}
               placeholder="Choose a category..."
@@ -187,11 +188,12 @@ Supports single, multiple, category-based, and pattern-based selection
 
       <!-- Pattern Matching -->
       <div>
-        <label class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
+        <label for="cbs-pattern" class="text-xs font-medium mb-2 block" style="color: {$colorStore.text};">
           Select by Name Pattern
         </label>
         <div class="flex gap-2">
           <input
+            id="cbs-pattern"
             type="text"
             class="flex-1 px-3 py-2 rounded-lg border text-sm"
             style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"

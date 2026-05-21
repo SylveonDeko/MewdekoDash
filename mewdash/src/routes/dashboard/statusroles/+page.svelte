@@ -419,13 +419,13 @@
                                                 </div>
 
                                                 <div>
-                                                  <label class="block text-sm font-medium mb-3"
+                                                  <label for="f-+page-notification-message-422" class="block text-sm font-medium mb-3"
                                                          style="color: {$colorStore.text}">
                                                     <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                                                     Notification Message
                                                   </label>
 
-                                                  <FullscreenEmbedBuilder
+                                                  <FullscreenEmbedBuilder id="f-+page-notification-message-422"
                                                     bind:value={editForm.embedText}
                                                     previewTitle="Status Role Notification"
                                                     previewDescription="Message sent when status is detected"

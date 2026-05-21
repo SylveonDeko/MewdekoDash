@@ -113,6 +113,7 @@
               <button
                 class="px-2 py-1 rounded transition-all hover:scale-110 text-sm"
                 style="background: #ef444420; color: #ef4444;"
+                aria-label="Delete priority {priority.name}"
                 onclick={() => showConfirm(
                   "Delete Priority",
                   `Delete priority "${priority.name}"?`,
@@ -172,6 +173,7 @@
               <button
                 class="px-2 py-1 rounded transition-all hover:scale-110 text-sm"
                 style="background: #ef444420; color: #ef4444;"
+                aria-label="Delete tag {tag.name}"
                 onclick={() => showConfirm(
                   "Delete Tag",
                   `Delete tag "${tag.name}"?`,
@@ -249,10 +251,11 @@
 <!-- Priority Creator Modal -->
 {#if showPriorityCreator}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);"
-       onclick={() => showPriorityCreator = false}>
+       role="dialog" aria-modal="true" tabindex="-1"
+       onclick={(e) => { if (e.target === e.currentTarget) showPriorityCreator = false; }}
+       onkeydown={(e) => { if (e.key === 'Escape') showPriorityCreator = false; }}>
     <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
-         onclick={(e) => e.stopPropagation()}>
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
 
       <h3 class="text-xl font-bold mb-6 flex items-center gap-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-flag" style="color: {$colorStore.primary};"></i>
@@ -263,10 +266,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- ID -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-ConfigurationTab-label-272" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               ID <span style="color: #ef4444;">*</span>
             </label>
-            <input
+            <input id="f-ConfigurationTab-label-272"
               type="text"
               bind:value={newPriority.id}
               class="w-full px-3 py-2 rounded-lg border transition-colors"
@@ -277,10 +280,10 @@
 
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-ConfigurationTab-label-286" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               Name <span style="color: #ef4444;">*</span>
             </label>
-            <input
+            <input id="f-ConfigurationTab-label-286"
               type="text"
               bind:value={newPriority.name}
               class="w-full px-3 py-2 rounded-lg border transition-colors"
@@ -292,10 +295,10 @@
 
         <!-- Emoji -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-ConfigurationTab-emoji-optional-301" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Emoji (Optional)
           </label>
-          <EmojiPicker
+          <EmojiPicker id="f-ConfigurationTab-emoji-optional-301"
             {guildEmojis}
             bind:selected={newPriority.emoji}
             multiple={false}
@@ -308,10 +311,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Level -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-ConfigurationTab-level-317" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               Level
             </label>
-            <input
+            <input id="f-ConfigurationTab-level-317"
               type="number"
               bind:value={newPriority.level}
               min="1"
@@ -323,12 +326,13 @@
 
           <!-- Ping Staff -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="cfg-priority-ping-staff" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               Ping Staff
             </label>
             <div class="flex items-center h-[42px] px-3 rounded-lg border"
                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;">
               <input
+                id="cfg-priority-ping-staff"
                 type="checkbox"
                 bind:checked={newPriority.pingStaff}
                 class="rounded"
@@ -369,10 +373,11 @@
 <!-- Tag Creator Modal -->
 {#if showTagCreator}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);"
-       onclick={() => showTagCreator = false}>
+       role="dialog" aria-modal="true" tabindex="-1"
+       onclick={(e) => { if (e.target === e.currentTarget) showTagCreator = false; }}
+       onkeydown={(e) => { if (e.key === 'Escape') showTagCreator = false; }}>
     <div class="w-full max-w-2xl rounded-2xl border p-6 shadow-2xl"
-         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
-         onclick={(e) => e.stopPropagation()}>
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
 
       <h3 class="text-xl font-bold mb-6 flex items-center gap-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-tags" style="color: {$colorStore.accent};"></i>
@@ -383,10 +388,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- ID -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-ConfigurationTab-label-396" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               ID <span style="color: #ef4444;">*</span>
             </label>
-            <input
+            <input id="f-ConfigurationTab-label-396"
               type="text"
               bind:value={newTag.id}
               class="w-full px-3 py-2 rounded-lg border transition-colors"
@@ -397,10 +402,10 @@
 
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-ConfigurationTab-label-410" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               Name <span style="color: #ef4444;">*</span>
             </label>
-            <input
+            <input id="f-ConfigurationTab-label-410"
               type="text"
               bind:value={newTag.name}
               class="w-full px-3 py-2 rounded-lg border transition-colors"
@@ -412,10 +417,10 @@
 
         <!-- Description -->
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-ConfigurationTab-description-425" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Description
           </label>
-          <textarea
+          <textarea id="f-ConfigurationTab-description-425"
             bind:value={newTag.description}
             class="w-full px-3 py-2 rounded-lg border transition-colors resize-none"
             placeholder="Issues related to billing and payments"

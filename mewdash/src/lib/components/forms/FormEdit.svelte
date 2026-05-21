@@ -539,9 +539,9 @@
         <div class="space-y-4" transition:slide>
           <!-- Form Type (Read-only in edit mode) -->
           <div>
-            <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+            <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
               Form Type
-            </label>
+            </span>
             <div
               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg"
               style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30;"
@@ -904,11 +904,11 @@
 
                 <!-- Approval Action Type -->
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-action-type-907" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-cog mr-1"></i>
                     Action Type
                   </label>
-                  <DiscordSelector
+                  <DiscordSelector id="f-FormEdit-action-type-907"
                     type="custom"
                     options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
                     selected={String(approvalActionType)}
@@ -923,11 +923,11 @@
                 <!-- Approval Roles (only show if action type is not None) -->
                 {#if approvalActionType !== 0}
                   <div transition:slide>
-                    <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                    <label for="f-FormEdit-roles-to-approvalactiontype-1--926" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                       <i class="fa-solid fa-shield mr-1"></i>
                       Roles to {approvalActionType === 1 ? "Add" : "Remove"}
                     </label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-FormEdit-roles-to-approvalactiontype-1--926"
                       type="role"
                       options={roles}
                       selected={approvalRoleIds}
@@ -961,11 +961,11 @@
 
                 <!-- Rejection Action Type -->
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-action-type-964" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-cog mr-1"></i>
                     Action Type
                   </label>
-                  <DiscordSelector
+                  <DiscordSelector id="f-FormEdit-action-type-964"
                     type="custom"
                     options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
                     selected={String(rejectionActionType)}
@@ -980,11 +980,11 @@
                 <!-- Rejection Roles (only show if action type is not None) -->
                 {#if rejectionActionType !== 0}
                   <div transition:slide>
-                    <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                    <label for="f-FormEdit-roles-to-rejectionactiontype-1-983" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                       <i class="fa-solid fa-shield mr-1"></i>
                       Roles to {rejectionActionType === 1 ? "Add" : "Remove"}
                     </label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-FormEdit-roles-to-rejectionactiontype-1-983"
                       type="role"
                       options={roles}
                       selected={rejectionRoleIds}
@@ -1558,6 +1558,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="question-editor-title"
+        tabindex="-1"
       >
         <!-- Header -->
         <div
@@ -1591,10 +1592,10 @@
           <div class="space-y-4 max-w-2xl mx-auto">
             <!-- Question Text -->
             <div>
-              <label class="block text-sm mb-2 font-medium" style="color: {$colorStore.text};">
+              <label for="f-FormEdit-label-1594" class="block text-sm mb-2 font-medium" style="color: {$colorStore.text};">
                 Question Text <span style="color: #ef4444;">*</span>
               </label>
-              <input
+              <input id="f-FormEdit-label-1594"
                 type="text"
                 value={question.questionText}
                 oninput={(e) => handleQuestionTextInput(e, mobileIdx)}
@@ -1617,10 +1618,10 @@
 
             <!-- Placeholder -->
             <div>
-              <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+              <label for="f-FormEdit-placeholder-text-optional-1620" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                 Placeholder Text (Optional)
               </label>
-              <input
+              <input id="f-FormEdit-placeholder-text-optional-1620"
                 type="text"
                 value={question.placeholder || ""}
                 oninput={(e) => updateQuestion(mobileIdx, { placeholder: e.currentTarget.value })}
@@ -1650,10 +1651,10 @@
               <div class="space-y-3">
                 <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Text Validation</h4>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-minimum-length-1653" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Minimum Length
                   </label>
-                  <input
+                  <input id="f-FormEdit-minimum-length-1653"
                     type="number"
                     value={question.minLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1664,10 +1665,10 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-maximum-length-1667" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Maximum Length
                   </label>
-                  <input
+                  <input id="f-FormEdit-maximum-length-1667"
                     type="number"
                     value={question.maxLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1684,10 +1685,10 @@
               <div class="space-y-3">
                 <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Number Validation</h4>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-minimum-value-1687" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Minimum Value
                   </label>
-                  <input
+                  <input id="f-FormEdit-minimum-value-1687"
                     type="number"
                     value={question.minValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1697,10 +1698,10 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormEdit-maximum-value-1700" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Maximum Value
                   </label>
-                  <input
+                  <input id="f-FormEdit-maximum-value-1700"
                     type="number"
                     value={question.maxValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}

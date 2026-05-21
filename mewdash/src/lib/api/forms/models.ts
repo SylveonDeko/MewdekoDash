@@ -59,7 +59,7 @@ export interface Form {
   isActive: boolean;
   isDraft: boolean;
   allowAnonymous: boolean;
-  expiresAt?: string;
+  expiresAt?: string | null;
   requiredRoleId?: bigint;
   successMessage?: string;
   formType: number; // 0=Regular, 1=BanAppeal, 2=JoinApplication

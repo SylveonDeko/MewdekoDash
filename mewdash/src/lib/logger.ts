@@ -36,6 +36,11 @@ export class Logger {
     console.info(`[${timestamp}] [INFO]`, ...args);
   }
 
+  public warn(...args: unknown[]): void {
+    const timestamp = this.getTimestamp();
+    console.warn(`[${timestamp}] [WARN]`, ...args);
+  }
+
   public error(...args: unknown[]): void {
     const timestamp = this.getTimestamp();
     console.error(`[${timestamp}] [ERROR]`, ...args);

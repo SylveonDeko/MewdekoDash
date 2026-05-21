@@ -696,6 +696,7 @@ A unified navigation component that provides responsive navigation with server a
     <!-- Center section (nav items) - Hidden in minimal mode -->
     {#if !isMinimalMode}
       <div class="grow flex justify-center z-20 relative"
+           role="presentation"
            onmousemove={handleNavContainerMouseMove}
            onmouseenter={handleNavContainerEnter}
            onmouseleave={handleNavContainerLeave}>

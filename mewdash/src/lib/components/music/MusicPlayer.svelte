@@ -157,6 +157,7 @@ A comprehensive music player component for Discord bot music functionality.
       currentProgress = smoothProgress;
 
       // Handle looping if needed
+      if (!musicStatus.CurrentTrack) return;
       const duration = getSeconds(musicStatus.CurrentTrack.Track.Duration);
       if (musicStatus.RepeatMode === 2 && currentProgress > duration) {
         currentProgress = currentProgress % duration;

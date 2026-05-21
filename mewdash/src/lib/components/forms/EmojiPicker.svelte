@@ -36,6 +36,9 @@
     disabled?: boolean;
     groupByGuild?: boolean;
     showUnicodeEmojis?: boolean; // Enable Unicode emoji tab
+    id?: string;
+    ariaLabel?: string;
+    ariaLabelledby?: string;
     onchange?: (detail: {
       selected: string | string[] | null;
       emoji: AnyEmojiOption | AnyEmojiOption[] | null
@@ -52,6 +55,9 @@
     disabled = false,
     groupByGuild = true,
     showUnicodeEmojis = true,
+    id,
+    ariaLabel,
+    ariaLabelledby,
     onchange
   }: Props = $props();
 
@@ -671,6 +677,7 @@
       <button
         type="button"
         onclick={handleManualInput}
+        aria-label="Add emoji"
         class="px-4 py-2 rounded-lg transition-all duration-200 font-medium shrink-0"
         style="background: {$colorStore.primary}30; color: {$colorStore.text};"
       >
@@ -876,9 +883,12 @@
 {/snippet}
 
 <div
+  {id}
   aria-controls={dropdownId}
   aria-expanded={isOpen}
   aria-haspopup="listbox"
+  aria-label={ariaLabelledby ? undefined : (ariaLabel ?? placeholder)}
+  aria-labelledby={ariaLabelledby}
   bind:this={containerRef}
   class="relative"
   onkeydown={handleKeydown}

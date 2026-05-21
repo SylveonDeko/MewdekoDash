@@ -7,7 +7,7 @@
   import { fade, fly, slide } from "svelte/transition";
 
   interface Props {
-    token: string;
+    token: string | undefined;
   }
 
   let { token }: Props = $props();
@@ -19,11 +19,15 @@
   let refreshInterval: number | null = null;
 
   async function loadStatus() {
+    if (!token) {
+      error = "Missing token in URL.";
+      return;
+    }
     return await loadingStore.wrap("load-status", async () => {
       try {
         loading = true;
         error = null;
-        status = await formsApi.getResponseStatus(token);
+        status = await formsApi.getResponseStatus(token!);
       } catch (err) {
         error = err instanceof Error ? err.message : "Failed to load response status";
       } finally {
@@ -69,8 +73,8 @@
     }
   }
 
-  onMount(async () => {
-    await loadStatus();
+  onMount(() => {
+    loadStatus();
 
     // Cleanup on unmount
     return () => {

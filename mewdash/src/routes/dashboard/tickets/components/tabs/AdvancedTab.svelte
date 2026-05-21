@@ -56,10 +56,10 @@
         <h4 class="font-semibold mb-3" style="color: {$colorStore.text}">Close Inactive Tickets</h4>
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="flex-1">
-            <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+            <label for="f-AdvancedTab-inactive-for-hours-59" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
               Inactive for (hours)
             </label>
-            <input
+            <input id="f-AdvancedTab-inactive-for-hours-59"
               bind:value={inactiveHours}
               class="w-full px-3 py-2 rounded-lg border transition-colors"
               min="1"
@@ -111,10 +111,10 @@
       <h4 class="font-semibold mb-3" style="color: {$colorStore.text}">Add User to Blacklist</h4>
       <div class="space-y-3">
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-AdvancedTab-user-id-114" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             User ID
           </label>
-          <input
+          <input id="f-AdvancedTab-user-id-114"
             bind:value={newBlacklistUserId}
             class="w-full px-3 py-2 rounded-lg border transition-colors"
             placeholder="123456789012345678"
@@ -123,10 +123,10 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-AdvancedTab-reason-optional-126" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Reason (Optional)
           </label>
-          <input
+          <input id="f-AdvancedTab-reason-optional-126"
             bind:value={newBlacklistReason}
             class="w-full px-3 py-2 rounded-lg border transition-colors"
             placeholder="Spam / Abuse"

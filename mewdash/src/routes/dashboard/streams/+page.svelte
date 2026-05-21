@@ -600,13 +600,13 @@
 
         <div class="space-y-6">
           <div>
-            <label class="block text-sm font-medium mb-3"
+            <label for="f-+page-global-stream-message-603" class="block text-sm font-medium mb-3"
                    style="color: {$colorStore.text}">
               <i class="fa-solid fa-message inline mr-1" style="font-size: 14px;"></i>
               Global Stream Message
             </label>
 
-            <FullscreenEmbedBuilder
+            <FullscreenEmbedBuilder id="f-+page-global-stream-message-603"
               bind:value={globalMessage}
               previewTitle="Global Stream Message"
               previewDescription="Default message for all stream notifications"

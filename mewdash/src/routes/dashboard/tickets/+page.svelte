@@ -151,10 +151,15 @@
 
   // Case creation state
   let showCaseCreator = $state(false);
-  let newCase = $state({
+  let newCase = $state<{ title: string; description: string; creatorId: bigint }>({
     title: "",
     description: "",
-    creatorId: data?.user?.id ? BigInt(data.user.id) : BigInt(0)
+    creatorId: BigInt(0)
+  });
+  $effect(() => {
+    if (data?.user?.id && newCase.creatorId === BigInt(0)) {
+      newCase.creatorId = BigInt(data.user.id);
+    }
   });
 
   async function fetchAllData() {
@@ -182,7 +187,7 @@
           clientApi.getRoles($currentGuild.id),
           clientApi.getTextChannels($currentGuild.id),
           clientApi.getCategories($currentGuild.id),
-          clientApi.getEmojis(BigInt(data.user.id), false).catch(() => [])
+          clientApi.getEmojis(BigInt(data.user!.id), false).catch(() => [])
         ]);
 
         // Unpack the overview data
@@ -338,11 +343,15 @@
         color: null
       };
       panelEmbed = {
-        embeds: [{
-          title: "Support Tickets",
-          description: "Click a button below to create a ticket",
-          color: "#5865F2"
-        }]
+        title: "Support Tickets",
+        description: "Click a button below to create a ticket",
+        color: "#5865F2",
+        url: "",
+        author: { name: "", url: "", icon_url: "" },
+        thumbnail: { url: "" },
+        image: { url: "" },
+        footer: { text: "", icon_url: "" },
+        fields: []
       };
       await fetchAllData();
     } catch (err) {
@@ -444,17 +453,7 @@
         requiredResponseTime: newButton.requiredResponseTime ? `PT${newButton.requiredResponseTime}M` : null,
         maxActiveTickets: newButton.maxActiveTickets,
         allowedPriorities: newButton.allowedPriorities?.length > 0 ? newButton.allowedPriorities : null,
-        defaultPriority: newButton.defaultPriority || null,
-        saveTranscript: newButton.saveTranscript,
-        deleteOnClose: newButton.deleteOnClose,
-        lockOnClose: newButton.lockOnClose,
-        renameOnClose: newButton.renameOnClose,
-        removeCreatorOnClose: newButton.removeCreatorOnClose,
-        deleteDelay: newButton.deleteDelay || null,
-        lockOnArchive: newButton.lockOnArchive,
-        renameOnArchive: newButton.renameOnArchive,
-        removeCreatorOnArchive: newButton.removeCreatorOnArchive,
-        autoArchiveOnClose: newButton.autoArchiveOnClose
+        defaultPriority: newButton.defaultPriority || null
       });
 
       showButtonCreator = false;

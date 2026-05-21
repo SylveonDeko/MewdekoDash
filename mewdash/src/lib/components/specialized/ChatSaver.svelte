@@ -15,7 +15,7 @@
     import {loadingStore} from "$lib/stores/loadingStore";
 
     interface Props {
-        data: { user?: { id: string } };
+        data: { user?: { id: string | bigint } | null };
     }
 
     let {data}: Props = $props();

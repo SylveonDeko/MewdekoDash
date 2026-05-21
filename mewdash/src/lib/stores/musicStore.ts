@@ -368,8 +368,9 @@ function createMusicStore() {
         if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
           if (activeUserId) {
             // Small delay to ensure bot is fully connected
+            const userIdForReconnect = activeUserId;
             setTimeout(() => {
-              connectWebSocket(activeUserId);
+              connectWebSocket(userIdForReconnect);
             }, 500);
           }
         }

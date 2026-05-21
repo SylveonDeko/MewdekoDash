@@ -50,10 +50,12 @@
     let isUpdatingConfig = $state(false);
     let showNotification = $state(false);
 
-  // Config form state
-    let configForm: PatreonConfigUpdateRequest = $state({
+  type PatreonConfigForm = Omit<PatreonConfigUpdateRequest, "message"> & {
+    message: string | Record<string, any> | null | undefined;
+  };
+    let configForm: PatreonConfigForm = $state({
     channelId: undefined,
-      message: {} as any,
+      message: {},
     announcementDay: undefined,
     toggleAnnouncements: undefined,
     toggleRoleSync: undefined
@@ -326,7 +328,7 @@
       isUpdatingConfig = true;
 
       // Serialize message if it's an object
-      const messageToSend = typeof configForm.message === "object" && Object.keys(configForm.message).length > 0
+      const messageToSend = typeof configForm.message === "object" && configForm.message !== null && Object.keys(configForm.message).length > 0
         ? JSON.stringify(configForm.message)
         : (typeof configForm.message === "string" ? configForm.message : undefined);
 
@@ -952,12 +954,12 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
+                  <label for="f-+page-custom-announcement-message-957" class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
                     <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                     Custom Announcement Message
                   </label>
 
-                  <FullscreenEmbedBuilder
+                  <FullscreenEmbedBuilder id="f-+page-custom-announcement-message-957"
                     bind:value={configForm.message}
                     previewTitle="Patreon Announcement"
                     previewDescription="Message sent for Patreon announcements"

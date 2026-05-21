@@ -42,14 +42,15 @@
 
   async function exportResponses() {
     if (!selectedFormId) return;
+    const formId = selectedFormId;
 
     return await loadingStore.wrap("export-responses", async () => {
       try {
-        const blob = await formsApi.exportResponses(selectedFormId);
+        const blob = await formsApi.exportResponses(formId);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `form_${selectedFormId}_responses_${new Date().toISOString().split("T")[0]}.csv`;
+        a.download = `form_${formId}_responses_${new Date().toISOString().split("T")[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -321,7 +322,7 @@
         {
           label: "Edit Form",
           icon: "fa-edit",
-          action: () => handleEdit(selectedFormId)
+          action: () => selectedFormId !== null && handleEdit(selectedFormId)
         }
       ];
     } else {
@@ -372,14 +373,13 @@
   {tabs}
   title="Forms"
 >
-  <!-- @migration-task: migrate this slot by hand, `status-messages` is an invalid identifier -->
-  <svelte:fragment slot="status-messages">
+  {#snippet statusMessages()}
     {#if showNotification}
       <div class="fixed top-4 right-4 z-50" transition:fade>
         <Notification message={notificationMessage} type={notificationType} />
       </div>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
   <!-- Share Link Modal -->
   {#if showShareLinkModal}
@@ -425,10 +425,10 @@
         </div>
 
         <div class="mb-4">
-          <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+          <label for="f-+page-share-link-428" class="block text-sm mb-2" style="color: {$colorStore.muted};">
             Share Link
           </label>
-          <input
+          <input id="f-+page-share-link-428"
             type="text"
             readonly
             value={currentShareLink}

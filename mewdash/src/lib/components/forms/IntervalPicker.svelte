@@ -130,7 +130,7 @@
               inputmode="numeric"
               pattern="[0-9]*"
               value={value}
-              oninput={(e) => validateInput(e, unit)}
+              oninput={(e) => validateInput(e, unit as "days" | "hours" | "minutes" | "seconds")}
               class="w-full px-3 py-2.5 rounded-lg border-2 bg-transparent text-center text-lg font-medium
                      focus:outline-hidden transition-all duration-200"
               style="border-color: var(--color-primary)20;
@@ -180,7 +180,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
     @reference '../../../app.css';
 
   input[type="number"]::-webkit-inner-spin-button,
@@ -191,6 +191,7 @@
 
   input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
 
   [style*="background"],

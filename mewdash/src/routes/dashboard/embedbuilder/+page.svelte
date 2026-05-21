@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { chatTriggersApi } from "$lib/api/index.ts";
+  import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
   import { fade } from "svelte/transition";
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
@@ -88,11 +89,6 @@
     components: NewEmbedComponent[];
   }
 
-  interface ChatTrigger {
-    id: number;
-    trigger: string | null;
-    response: string | null;
-  }
 
   interface Placeholder {
     category: string;
@@ -459,6 +455,7 @@
     e.preventDefault();
 
     if (!draggedComponent || !draggedFromRow) return;
+    const dragged = draggedComponent;
 
     const targetRowIndex = componentRows.findIndex(r => r.rowKey === targetRowKey);
     const sourceRowIndex = componentRows.findIndex(r => r.rowKey === draggedFromRow);
@@ -468,7 +465,7 @@
     const targetRow = componentRows[targetRowIndex];
 
     // Validate constraints
-    const isSelect = draggedComponent.isSelect;
+    const isSelect = dragged.isSelect;
     const targetHasSelect = targetRow.components.some(c => c.isSelect);
     const targetButtonCount = targetRow.components.filter(c => !c.isSelect).length;
 
@@ -493,7 +490,7 @@
     // Remove from source row
     if (sourceRowIndex !== targetRowIndex) {
       componentRows[sourceRowIndex].components = componentRows[sourceRowIndex].components.filter(
-        c => c.componentKey !== draggedComponent.componentKey
+        c => c.componentKey !== dragged.componentKey
       );
     }
 
@@ -501,11 +498,11 @@
     const insertIndex = dragOverIndex >= 0 ? dragOverIndex : targetRow.components.length;
 
     // Update component's rowIndex
-    const updatedComponent = { ...draggedComponent, rowIndex: targetRowIndex };
+    const updatedComponent = { ...dragged, rowIndex: targetRowIndex };
 
     // If same row, remove first then insert
     if (sourceRowIndex === targetRowIndex) {
-      targetRow.components = targetRow.components.filter(c => c.componentKey !== draggedComponent.componentKey);
+      targetRow.components = targetRow.components.filter(c => c.componentKey !== dragged.componentKey);
     }
 
     targetRow.components.splice(insertIndex, 0, updatedComponent);
@@ -553,7 +550,7 @@
 
     if (!draggedRow || !isDraggingRow) return;
 
-    const sourceIndex = componentRows.findIndex(r => r.rowKey === draggedRow.rowKey);
+    const sourceIndex = componentRows.findIndex(r => draggedRow !== null && r.rowKey === draggedRow.rowKey);
 
     if (sourceIndex === -1 || sourceIndex === targetIndex) {
       handleRowDragEnd();
@@ -1326,10 +1323,10 @@
               </div>
               <div
                 class="space-y-4"
+                role="list"
                 ondragover={(e) => {
                   if (isDraggingRow) {
                     e.preventDefault();
-                    // Allow dropping at the end
                     handleRowDragOver(e, componentRows.length);
                   }
                 }}
@@ -1353,6 +1350,7 @@
                     class="relative p-2 sm:p-4 border rounded-lg transition-all"
                     class:opacity-50={isDraggingRow && draggedRow?.rowKey === row.rowKey}
                     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
+                    role="listitem"
                     aria-label="Row {rowIndex + 1}"
                     ondragover={(e) => handleRowDragOver(e, rowIndex)}
                     ondrop={(e) => handleRowDrop(e, rowIndex)}
@@ -1363,6 +1361,8 @@
                         <div
                           class="cursor-grab p-2 sm:p-1 -m-2 sm:-m-1 rounded-md hover:bg-white/5 active:bg-white/10 transition-all hover:scale-110 active:scale-95"
                           style="touch-action: none; background: {$colorStore.primary}10;"
+                          role="button"
+                          tabindex="0"
                           draggable="true"
                           ondragstart={(e) => handleRowDragStart(e, row)}
                           ondragend={handleRowDragEnd}
@@ -1448,7 +1448,7 @@
                       </div>
                     {:else}
                       <!-- Editing Mode (full width when editing) -->
-                      {#if editingComponent && row.components.some(c => c.componentKey === editingComponent.componentKey)}
+                      {#if editingComponent && row.components.some(c => c.componentKey === editingComponent!.componentKey)}
                         <div class="p-2 sm:p-3 border rounded-lg mb-2 sm:mb-3"
                              style="background: {$colorStore.secondary}05; border-color: {$colorStore.secondary}30;">
                           <ComponentEditor
@@ -1668,7 +1668,7 @@
   }
 
   .fa-grip-vertical:active,
-  .dragging-row .fa-grip-vertical {
+  :global(.dragging-row .fa-grip-vertical) {
       cursor: grabbing;
   }
 
@@ -1680,7 +1680,7 @@
   }
 
   /* Prevent text selection while dragging */
-  .dragging * {
+  :global(.dragging *) {
       user-select: none !important;
       -webkit-user-select: none !important;
   }
@@ -1693,6 +1693,7 @@
       overflow: hidden !important;
       touch-action: none !important;
       -webkit-touch-callout: none !important;
+      user-select: none !important;
       -webkit-user-select: none !important;
       -webkit-overflow-scrolling: touch !important;
   }
@@ -1700,6 +1701,7 @@
   :global(body.dragging-active *) {
       touch-action: none !important;
       -webkit-touch-callout: none !important;
+      user-select: none !important;
       -webkit-user-select: none !important;
   }
 
@@ -1710,12 +1712,6 @@
 
   /* Custom scrollbar for mobile */
   @media (max-width: 768px) {
-      /* Prevent iOS bounce scroll during drag */
-      body.no-scroll {
-          position: fixed;
-          overflow: hidden;
-          width: 100%;
-      }
 
       /* Prevent scrolling on drag containers */
       [data-drop-zone] {

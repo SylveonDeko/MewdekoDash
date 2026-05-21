@@ -1033,7 +1033,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         let parsedComponents = featureConfigs.multigreets.components;
         let parsedStyle = featureConfigs.multigreets.messageStyle;
 
-        if (existing.message && existing.message.startsWith("{")) {
+        if (typeof existing.message === "string" && existing.message.startsWith("{")) {
           try {
             const messageObj = JSON.parse(existing.message);
             parsedMessage = messageObj.content || "";
@@ -2368,8 +2368,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                               <button
                                 class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
                                 style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                                aria-label="Remove starboard {index + 1}"
                                 onclick={() => {
-                              config.starboards = config.starboards.filter((_, i) => i !== index);
+                              config.starboards = config.starboards.filter((_: unknown, i: number) => i !== index);
                             }}
                               >
                                 <i class="fa-solid fa-trash" style="font-size: 11px;"></i>
@@ -2379,10 +2380,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
                           <div class="space-y-3">
                             <div>
-                              <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                              <label for="f-+page-channel-2383" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                                 Channel
                               </label>
-                              <DiscordSelector
+                              <DiscordSelector id="f-+page-channel-2383"
                                 type="channel"
                                 options={availableChannels}
                                 bind:selected={starboard.channelId}
@@ -2392,10 +2393,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
                             <div class="grid grid-cols-2 gap-3">
                               <div>
-                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                                <label for="f-+page-threshold-2396" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                                   Threshold
                                 </label>
-                                <input
+                                <input id="f-+page-threshold-2396"
                                   type="number"
                                   min="1"
                                   max="20"
@@ -2408,10 +2409,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 </p>
                               </div>
                               <div>
-                                <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                                <label for="f-+page-emoji-2412" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
                                   Emoji
                                 </label>
-                                <input
+                                <input id="f-+page-emoji-2412"
                                   type="text"
                                   maxlength="4"
                                   class="w-full px-3 py-2 rounded-lg border text-center"

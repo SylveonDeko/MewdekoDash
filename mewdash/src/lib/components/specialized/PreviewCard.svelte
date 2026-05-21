@@ -15,7 +15,7 @@
       emptyMessage?: string;
       user?: any;
       guild?: any;
-      guildId?: string | bigint;
+      guildId?: string | bigint | null;
     }
 
     let {
@@ -32,12 +32,12 @@
   // Get real data from stores
   const instance = get(currentInstance);
   const currentGuildData = get(currentGuild);
-  const actualGuild = guild || currentGuildData;
-  const actualGuildId = guildId || currentGuildData?.id;
+  let actualGuild = $derived(guild || currentGuildData);
+  let actualGuildId = $derived(guildId || currentGuildData?.id);
 
   // Extract user data for use in all functions
-  const userName = user?.username || user?.globalName || "ExampleUser";
-  const userId = user?.id || "123456789012345678";
+  let userName = $derived(user?.username || user?.globalName || "ExampleUser");
+  let userId = $derived(user?.id || "123456789012345678");
 
   // Placeholder replacement function
   function replacePlaceholders(text: string): string {
@@ -520,15 +520,15 @@
       word-break: break-word;
   }
 
-  :global(.preview-content) strong {
+  :global(.preview-content strong) {
     font-weight: 600;
   }
 
-  :global(.preview-content) em {
+  :global(.preview-content em) {
     font-style: italic;
   }
 
-  :global(.preview-content) code {
+  :global(.preview-content code) {
     background: #2f3136;
     padding: 2px 4px;
     border-radius: 3px;
@@ -536,7 +536,7 @@
       word-break: break-all;
   }
 
-  :global(.preview-content) pre {
+  :global(.preview-content pre) {
     background: #2f3136;
     padding: 8px;
     border-radius: 4px;
@@ -544,11 +544,11 @@
       max-width: 100%;
   }
 
-  :global(.preview-content) pre code {
+  :global(.preview-content pre code) {
       word-break: normal;
   }
 
-  :global(.preview-content) blockquote {
+  :global(.preview-content blockquote) {
     border-left: 4px solid #4f545c;
     padding-left: 8px;
     margin: 4px 0;

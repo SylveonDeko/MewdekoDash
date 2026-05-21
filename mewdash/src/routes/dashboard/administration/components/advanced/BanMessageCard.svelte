@@ -28,12 +28,12 @@
 
   <div class="space-y-4">
     <div>
-      <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
+      <label for="f-BanMessageCard-custom-ban-message-31" class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
         <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
         Custom Ban Message
       </label>
 
-      <FullscreenEmbedBuilder
+      <FullscreenEmbedBuilder id="f-BanMessageCard-custom-ban-message-31"
         bind:value={banMessage}
         allowComponents={true}
         allowContent={true}

@@ -28,6 +28,9 @@
     searchable?: boolean;
     disabled?: boolean;
     customIcon?: any; // Custom icon component for custom type
+    id?: string;
+    ariaLabel?: string;
+    ariaLabelledby?: string;
     onchange?: (detail: { selected: string | string[] | null }) => void;
   }
 
@@ -40,6 +43,9 @@
     searchable = true,
     disabled = false,
     customIcon = null,
+    id,
+    ariaLabel,
+    ariaLabelledby,
     onchange
   }: Props = $props();
 
@@ -95,7 +101,7 @@
       case "role":
         return `@${option.name}`;
       case "timezone":
-        return option.displayName;
+        return option.displayName ?? option.name;
       case "custom":
         return option.label || option.name;
       case "user":
@@ -272,9 +278,12 @@
 </script>
 
 <div
+  {id}
   aria-controls={dropdownId}
   aria-expanded={isOpen}
   aria-haspopup="listbox"
+  aria-label={ariaLabelledby ? undefined : (ariaLabel ?? placeholder)}
+  aria-labelledby={ariaLabelledby}
   bind:this={containerRef}
   class="relative"
   onkeydown={handleKeydown}

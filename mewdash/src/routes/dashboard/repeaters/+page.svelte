@@ -529,7 +529,7 @@
       priority: repeater.priority,
       queuePosition: repeater.queuePosition,
       noRedundant: repeater.noRedundant || false,
-      allowMentions: repeater.allowMentions || false,
+      allowMentions: false,
       timeSchedulePreset: repeater.timeConditions ? "custom" : "none",
       timeConditions: repeater.timeConditions || "",
       maxAge: repeater.maxAge || "",
@@ -2002,6 +2002,8 @@
               </div>
             </div>
           {/if}
+            </div>
+          </div>
 
           <!-- Action Buttons -->
               <div class="flex justify-end gap-3 pt-6">

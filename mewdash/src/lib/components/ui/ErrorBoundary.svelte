@@ -65,6 +65,7 @@
         window.removeEventListener("unhandledrejection", handleUnhandledRejection);
       };
     }
+    return () => {};
   });
 
   function retry() {

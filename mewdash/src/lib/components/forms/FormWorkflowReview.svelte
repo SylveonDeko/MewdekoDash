@@ -109,10 +109,11 @@
   async function approveResponse() {
     if (!selectedResponse) return;
 
+    const response = selectedResponse;
     return await loadingStore.wrap("approve-response", async () => {
       try {
         const result = await formsApi.approveResponse(
-          selectedResponse.response.id,
+          response.response.id,
           userId,
           approvalNotes || undefined
         );
@@ -141,10 +142,11 @@
       return;
     }
 
+    const response = selectedResponse;
     return await loadingStore.wrap("reject-response", async () => {
       try {
         await formsApi.rejectResponse(
-          selectedResponse.response.id,
+          response.response.id,
           userId,
           rejectionNotes
         );

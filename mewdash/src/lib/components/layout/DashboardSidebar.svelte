@@ -162,7 +162,7 @@
   }
 
   // Close mobile sidebar on route change
-  let prevPath = $state(currentPath);
+  let prevPath = $state("");
   $effect(() => {
     if (currentPath !== prevPath) {
       prevPath = currentPath;
@@ -503,7 +503,8 @@
                background: linear-gradient(135deg, {$colorStore.background}f8, {$colorStore.background}f0);
                backdrop-filter: blur(12px);"
         transition:slide={{ duration: 200, axis: 'y' }}
-        use:clickOutside={() => { showServerPicker = false; serverSearchTerm = ''; }}
+        use:clickOutside
+        onclickoutside={() => { showServerPicker = false; serverSearchTerm = ''; }}
       >
         <div class="p-2 border-b" style="border-color: {$colorStore.primary}15;">
           <input

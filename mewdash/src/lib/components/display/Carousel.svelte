@@ -30,11 +30,11 @@
   }: Props = $props();
 
   //Bound to the carousel list
-  let carousel: HTMLElement = $state();
+  let carousel: HTMLElement | undefined = $state();
   //Bound to the carousel items ordered by their index
   let carouselElements: HTMLElement[] = $state([]);
   //Updated to the current scroll position of the carousel
-  let carouselScroll: number = $state();
+  let carouselScroll: number = $state(0);
 
   // Generate unique ID for ARIA labeling
   const carouselId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
@@ -109,9 +109,11 @@
           ? ''
           : 'scroll-smooth'}"
         bind:this={carousel}
-        onscroll={() => (carouselScroll = carousel.scrollLeft)}
+        onscroll={() => (carouselScroll = carousel?.scrollLeft ?? 0)}
         tabindex="-1"
         onkeydown={handleKeydown}
+        role="listbox"
+        aria-label="Carousel items"
       >
       {#each items as { props, component }, index}
         {@const SvelteComponent_1 = component}
@@ -120,6 +122,8 @@
           class="relative h-full w-full snap-center flex grow-0 shrink-0 basis-full"
           aria-current={index === currentIndex ? 'true' : 'false'}
           aria-label="Item {index + 1} of {itemCount}"
+          role="option"
+          aria-selected={index === currentIndex}
         >
           <SvelteComponent_1 {...props} />
         </li>

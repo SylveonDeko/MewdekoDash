@@ -198,7 +198,7 @@ Groups similar features together for efficient configuration with category suppo
                     options={channels}
                     selected={categoryChannelSelectors[category]}
                     placeholder="Choose channel..."
-                    onchange={(detail) => categoryChannelSelectors[category] = detail.selected}
+                    onchange={(detail) => categoryChannelSelectors[category] = typeof detail.selected === "string" ? detail.selected : null}
                   />
                 </div>
                 <button
@@ -258,7 +258,7 @@ Groups similar features together for efficient configuration with category suppo
                             options={channels}
                             selected={feature.channelId}
                             placeholder="Choose a channel..."
-                            onchange={(detail) => setChannel(feature.id, detail.selected)}
+                            onchange={(detail) => setChannel(feature.id, typeof detail.selected === "string" ? detail.selected : null)}
                           />
                         </div>
                       {/if}
@@ -314,7 +314,7 @@ Groups similar features together for efficient configuration with category suppo
                       options={channels}
                       selected={feature.channelId}
                       placeholder="Choose a channel..."
-                      onchange={(detail) => setChannel(feature.id, detail.selected)}
+                      onchange={(detail) => setChannel(feature.id, typeof detail.selected === "string" ? detail.selected : null)}
                     />
                   </div>
                 {/if}

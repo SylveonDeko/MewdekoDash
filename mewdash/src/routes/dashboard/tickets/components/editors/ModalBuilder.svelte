@@ -114,10 +114,10 @@
 <div class="space-y-4">
   <!-- Modal Title -->
   <div>
-    <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+    <label for="f-ModalBuilder-modal-title-117" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
       Modal Title
     </label>
-    <input
+    <input id="f-ModalBuilder-modal-title-117"
       bind:value={modalConfig.title}
       class="w-full px-3 py-2 rounded-lg border transition-colors"
       maxlength="45"
@@ -181,6 +181,7 @@
               <button
                 class="px-2 py-1 rounded transition-all hover:opacity-80 text-sm"
                 style="background: #ef444420; color: #ef4444;"
+                aria-label="Remove field"
                 onclick={() => removeField(fieldId)}
               >
                 <i class="fa-solid fa-trash"></i>
@@ -193,10 +194,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <!-- Label -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
+                    <label for="f-ModalBuilder-label-197" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
                       Label <span style="color: #ef4444;">*</span>
                     </label>
-                    <input
+                    <input id="f-ModalBuilder-label-197"
                       type="text"
                       value={field.Label}
                       oninput={(e) => updateField(fieldId, 'Label', e.currentTarget.value)}
@@ -209,10 +210,10 @@
 
                   <!-- Style -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
+                    <label for="f-ModalBuilder-style-213" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
                       Style
                     </label>
-                    <DiscordSelector
+                    <DiscordSelector id="f-ModalBuilder-style-213"
                       type="custom"
                       options={fieldStyleOptions}
                       selected={field.Style.toString()}
@@ -229,10 +230,10 @@
 
                   <!-- Placeholder -->
                   <div class="md:col-span-2">
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
+                    <label for="f-ModalBuilder-placeholder-233" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
                       Placeholder
                     </label>
-                    <input
+                    <input id="f-ModalBuilder-placeholder-233"
                       type="text"
                       value={field.Placeholder || ''}
                       oninput={(e) => updateField(fieldId, 'Placeholder', e.currentTarget.value)}
@@ -245,10 +246,10 @@
 
                   <!-- Min Length -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
+                    <label for="f-ModalBuilder-min-length-249" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
                       Min Length
                     </label>
-                    <input
+                    <input id="f-ModalBuilder-min-length-249"
                       type="number"
                       value={field.MinLength || 0}
                       oninput={(e) => updateField(fieldId, 'MinLength', parseInt(e.currentTarget.value) || 0)}
@@ -261,10 +262,10 @@
 
                   <!-- Max Length -->
                   <div>
-                    <label class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
+                    <label for="f-ModalBuilder-max-length-265" class="block text-xs font-medium mb-1" style="color: {$colorStore.text}">
                       Max Length
                     </label>
-                    <input
+                    <input id="f-ModalBuilder-max-length-265"
                       type="number"
                       value={field.MaxLength || 1000}
                       oninput={(e) => updateField(fieldId, 'MaxLength', parseInt(e.currentTarget.value) || 1000)}

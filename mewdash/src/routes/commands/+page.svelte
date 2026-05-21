@@ -3,7 +3,7 @@
 
 
   import { createSearchStore, searchHandler } from "$lib/stores/commandSearch";
-    import {onDestroy, onMount} from "svelte";
+    import {onDestroy, onMount, untrack} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
     import type {PageData} from "./$types";
@@ -14,7 +14,7 @@
 
     let {data}: Props = $props();
 
-  const searchStore = createSearchStore(data.modules);
+  const searchStore = createSearchStore(untrack(() => data.modules));
     let mounted = $state(false);
     let activeTabIndex = $state(0);
     let searchValue = $state("");
@@ -61,11 +61,11 @@
     } else if (event.key === "ArrowLeft" && index > 0) {
       event.preventDefault();
       activeTabIndex = index - 1;
-      (event.target as HTMLElement).previousElementSibling?.focus();
+      ((event.target as HTMLElement).previousElementSibling as HTMLElement | null)?.focus();
     } else if (event.key === "ArrowRight" && index < filteredModules.length - 1) {
       event.preventDefault();
       activeTabIndex = index + 1;
-      (event.target as HTMLElement).nextElementSibling?.focus();
+      ((event.target as HTMLElement).nextElementSibling as HTMLElement | null)?.focus();
     }
   }
 
@@ -516,7 +516,7 @@
       border-radius: 0.25rem;
     }
 
-    :global(.prose) strong {
+    :global(.prose strong) {
         color: var(--color-text);
         font-weight: 600;
     }

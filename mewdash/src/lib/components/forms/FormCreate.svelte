@@ -481,10 +481,10 @@
       <div class="space-y-4" transition:slide>
         <!-- Form Type Selector -->
         <div>
-          <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
+          <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
             Form Type <span style="color: #ef4444;">*</span>
-          </label>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          </span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Form Type">
             {#each FORM_TYPES as fType}
               <label
                 class="group relative flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-200"
@@ -838,11 +838,11 @@
 
               <!-- Approval Action Type -->
               <div>
-                <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                <label for="f-FormCreate-action-type-841" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                   <i class="fa-solid fa-cog mr-1"></i>
                   Action Type
                 </label>
-                <DiscordSelector
+                <DiscordSelector id="f-FormCreate-action-type-841"
                   type="custom"
                   options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
                   selected={String(approvalActionType)}
@@ -857,11 +857,11 @@
               <!-- Approval Roles (only show if action type is not None) -->
               {#if approvalActionType !== 0}
                 <div transition:slide>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-roles-to-approvalactiontype-1--860" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-shield mr-1"></i>
                     Roles to {approvalActionType === 1 ? "Add" : "Remove"}
                   </label>
-                  <DiscordSelector
+                  <DiscordSelector id="f-FormCreate-roles-to-approvalactiontype-1--860"
                     type="role"
                     options={roles}
                     selected={approvalRoleIds}
@@ -895,11 +895,11 @@
 
               <!-- Rejection Action Type -->
               <div>
-                <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                <label for="f-FormCreate-action-type-898" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                   <i class="fa-solid fa-cog mr-1"></i>
                   Action Type
                 </label>
-                <DiscordSelector
+                <DiscordSelector id="f-FormCreate-action-type-898"
                   type="custom"
                   options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
                   selected={String(rejectionActionType)}
@@ -914,11 +914,11 @@
               <!-- Rejection Roles (only show if action type is not None) -->
               {#if rejectionActionType !== 0}
                 <div transition:slide>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-roles-to-rejectionactiontype-1-917" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     <i class="fa-solid fa-shield mr-1"></i>
                     Roles to {rejectionActionType === 1 ? "Add" : "Remove"}
                   </label>
-                  <DiscordSelector
+                  <DiscordSelector id="f-FormCreate-roles-to-rejectionactiontype-1-917"
                     type="role"
                     options={roles}
                     selected={rejectionRoleIds}
@@ -1546,6 +1546,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="question-editor-title"
+        tabindex="-1"
       >
         <!-- Header -->
         <div
@@ -1579,10 +1580,10 @@
           <div class="space-y-4 max-w-2xl mx-auto">
             <!-- Question Text -->
             <div>
-              <label class="block text-sm mb-2 font-medium" style="color: {$colorStore.text};">
+              <label for="f-FormCreate-label-1582" class="block text-sm mb-2 font-medium" style="color: {$colorStore.text};">
                 Question Text <span style="color: #ef4444;">*</span>
               </label>
-              <input
+              <input id="f-FormCreate-label-1582"
                 type="text"
                 value={question.questionText}
                 oninput={(e) => handleQuestionTextInput(e, mobileIdx)}
@@ -1607,10 +1608,10 @@
 
             <!-- Placeholder -->
             <div>
-              <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+              <label for="f-FormCreate-placeholder-text-optional-1610" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                 Placeholder Text (Optional)
               </label>
-              <input
+              <input id="f-FormCreate-placeholder-text-optional-1610"
                 type="text"
                 value={question.placeholder || ""}
                 oninput={(e) => updateQuestion(mobileIdx, { placeholder: e.currentTarget.value })}
@@ -1640,10 +1641,10 @@
               <div class="space-y-3">
                 <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Text Validation</h4>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-minimum-length-1643" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Minimum Length
                   </label>
-                  <input
+                  <input id="f-FormCreate-minimum-length-1643"
                     type="number"
                     value={question.minLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1654,10 +1655,10 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-maximum-length-1657" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Maximum Length
                   </label>
-                  <input
+                  <input id="f-FormCreate-maximum-length-1657"
                     type="number"
                     value={question.maxLength ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxLength: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1674,10 +1675,10 @@
               <div class="space-y-3">
                 <h4 class="font-semibold text-sm" style="color: {$colorStore.text};">Number Validation</h4>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-minimum-value-1677" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Minimum Value
                   </label>
-                  <input
+                  <input id="f-FormCreate-minimum-value-1677"
                     type="number"
                     value={question.minValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { minValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}
@@ -1687,10 +1688,10 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                  <label for="f-FormCreate-maximum-value-1690" class="block text-sm mb-2" style="color: {$colorStore.muted};">
                     Maximum Value
                   </label>
-                  <input
+                  <input id="f-FormCreate-maximum-value-1690"
                     type="number"
                     value={question.maxValue ?? ""}
                     oninput={(e) => updateQuestion(mobileIdx, { maxValue: e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined })}

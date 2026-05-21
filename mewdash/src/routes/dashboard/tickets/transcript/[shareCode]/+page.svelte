@@ -235,9 +235,12 @@
       error = null;
 
       const shareCode = $page.params.shareCode;
+      if (!shareCode) {
+        error = "Missing share code in URL.";
+        return;
+      }
       logger.info("Loading transcript with share code:", shareCode);
 
-      // Decode share code to get chatLogId, guildId, and instance port
       const decoded = decodeShareCode(shareCode);
       if (!decoded) {
         error = `Invalid or expired transcript link. Share code: ${shareCode}. Check browser console for details.`;

@@ -18,8 +18,8 @@
   let showNotification = $state(false);
 
   // User data
-  let currentUser = data.user;
-  let userId = BigInt(currentUser?.id || "0");
+  let currentUser = $derived(data.user);
+  let userId = $derived(BigInt(currentUser?.id || "0"));
 
   // Global data (loads immediately)
   let userProfile: any = $state({});

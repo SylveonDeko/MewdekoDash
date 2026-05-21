@@ -79,7 +79,7 @@ Shows exactly what the message will look like in Discord
   <!-- Discord Preview -->
   <div class="p-4">
     <PreviewCard
-      {components}
+      componentRows={components}
       content={processedContent}
       embeds={processedEmbeds}
       emptyMessage="Your message will appear here as you configure it"

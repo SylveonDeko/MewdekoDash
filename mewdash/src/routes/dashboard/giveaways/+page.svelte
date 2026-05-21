@@ -436,7 +436,7 @@
                 bind:selected={newGiveaway.emote}
                 placeholder="Select an emoji..."
                 onchange={(detail) => {
-                  newGiveaway.emote = detail.selected; as; string || "";
+                  newGiveaway.emote = typeof detail.selected === "string" ? detail.selected : "";
                 }}
               />
               <p class="text-xs" style="color: {colors.muted}">
@@ -617,7 +617,7 @@
   {/if}
 </DashboardPageLayout>
 
-<style>
+<style lang="postcss">
     @reference '../../../app.css';
 
     /* Hide number input spinners */

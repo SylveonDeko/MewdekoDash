@@ -400,12 +400,12 @@
                 <div class="space-y-4">
                   <!-- Message -->
                   <div>
-                    <label class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
+                    <label for="f-+page-greeting-message-403" class="block text-sm font-medium mb-3" style="color: {$colorStore.text}">
                       <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                       Greeting Message
                     </label>
 
-                    <FullscreenEmbedBuilder
+                    <FullscreenEmbedBuilder id="f-+page-greeting-message-403"
                       bind:value={editGreetMessage}
                       previewTitle="Role Greeting Message"
                       previewDescription="Message sent when users receive this role"

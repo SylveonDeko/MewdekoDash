@@ -19,7 +19,7 @@
       targetElement = target;
     }
     
-    targetElement.appendChild(portal);
+    if (portal) targetElement.appendChild(portal);
   });
   
   onDestroy(() => {

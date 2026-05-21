@@ -176,10 +176,10 @@
       <!-- Case Details -->
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-CasesTab-label-179" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Title <span style="color: #ef4444;">*</span>
           </label>
-          <input
+          <input id="f-CasesTab-label-179"
             type="text"
             bind:value={newCase.title}
             class="w-full px-3 py-2 rounded-lg border"
@@ -189,10 +189,10 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+          <label for="f-CasesTab-description-192" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
             Description
           </label>
-          <textarea
+          <textarea id="f-CasesTab-description-192"
             bind:value={newCase.description}
             class="w-full px-3 py-2 rounded-lg border resize-none"
             placeholder="Describe the case..."
@@ -204,10 +204,10 @@
 
       <!-- Ticket Linking -->
       <div>
-        <label class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
           Link Tickets (Optional)
-        </label>
-        <div class="p-4 rounded-lg border max-h-[300px] overflow-y-auto"
+        </span>
+        <div class="p-4 rounded-lg border max-h-[300px] overflow-y-auto" role="group" aria-label="Link Tickets"
              style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
           {#if unlinkedTickets.length === 0}
             <p class="text-sm text-center py-8" style="color: {$colorStore.muted}">

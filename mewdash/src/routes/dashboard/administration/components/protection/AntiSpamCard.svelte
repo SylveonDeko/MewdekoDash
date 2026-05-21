@@ -203,6 +203,7 @@
                   <button
                     class="px-2 py-1 rounded transition-all hover:scale-110"
                     style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                    aria-label="Remove ignored channel"
                     onclick={() => $currentGuild && administrationApi.toggleAntiSpamIgnoredChannel($currentGuild.id, channelId).then(() => fetchAllData())}
                   >
                     <i class="fa-solid fa-xmark"></i>

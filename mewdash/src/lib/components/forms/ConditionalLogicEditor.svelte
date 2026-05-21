@@ -24,7 +24,10 @@
 
   let { question, questionIndex, allQuestions, roles, onUpdate }: Props = $props();
 
-  let conditionalType = $state(question.conditionalType || 0);
+  let conditionalType = $state(0);
+  $effect(() => {
+    conditionalType = question.conditionalType || 0;
+  });
   let multiConditionEditorRef: any = $state(null);
 
   // Expose method for parent to call when saving

@@ -186,9 +186,9 @@
 
   // Function to add a new trigger
   async function addTrigger() {
-    const hasResponse = typeof newTrigger.response === "object"
+    const hasResponse = typeof newTrigger.response === "object" && newTrigger.response !== null
       ? Object.keys(newTrigger.response).length > 0
-      : newTrigger.response?.trim();
+      : (typeof newTrigger.response === "string" ? newTrigger.response.trim() : false);
 
     if (!newTrigger.trigger?.trim() || !hasResponse) {
       showNotificationMessage("Trigger and Response are required", "error");
@@ -214,7 +214,7 @@
       if (newTrigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
 
       // Serialize response if it's an object
-      const responseText = typeof newTrigger.response === "object" && Object.keys(newTrigger.response).length > 0
+      const responseText = typeof newTrigger.response === "object" && newTrigger.response !== null && Object.keys(newTrigger.response).length > 0
         ? JSON.stringify(newTrigger.response)
         : (typeof newTrigger.response === "string" ? newTrigger.response : "");
 
@@ -977,13 +977,13 @@
 
             <!-- Response Input -->
             <div>
-              <label class="block text-sm font-medium mb-3" style="color: {colors.text}">
+              <label for="f-+page-label-980" class="block text-sm font-medium mb-3" style="color: {colors.text}">
                 <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                 Bot responds with:
                 <abbr title="required" aria-label="required">*</abbr>
               </label>
 
-              <FullscreenEmbedBuilder
+              <FullscreenEmbedBuilder id="f-+page-label-980"
                 bind:value={quickResponseText}
                 previewTitle="Quick Response"
                 previewDescription="Bot's response to the trigger"
@@ -1188,12 +1188,12 @@
                         </div>
 
                         <div>
-                          <label class="block text-sm font-medium mb-3" style="color: {colors.text}">
+                          <label for="f-+page-response-message-1191" class="block text-sm font-medium mb-3" style="color: {colors.text}">
                             <i class="fa-solid fa-comment" style="font-size: 14px;"></i>
                             Response Message
                           </label>
 
-                          <FullscreenEmbedBuilder
+                          <FullscreenEmbedBuilder id="f-+page-response-message-1191"
                             value={trigger.response}
                             previewTitle="Trigger Response"
                             previewDescription="Bot's response to this trigger"
@@ -1779,7 +1779,7 @@
                 class="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
                 style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                 onclick={addTrigger}
-                disabled={!newTrigger.trigger?.trim() || (typeof newTrigger.response === 'object' ? Object.keys(newTrigger.response).length === 0 : !newTrigger.response?.trim()) || (newTrigger.isRegex && !newTrigger.isValidRegex)}
+                disabled={!newTrigger.trigger?.trim() || (typeof newTrigger.response === 'object' && newTrigger.response !== null ? Object.keys(newTrigger.response).length === 0 : !(typeof newTrigger.response === 'string' && newTrigger.response.trim())) || (newTrigger.isRegex && !newTrigger.isValidRegex)}
                 aria-describedby="create-help"
               >
                 <div class="flex items-center gap-2">
