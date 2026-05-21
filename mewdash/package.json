@@ -57,6 +57,7 @@
   "type": "module",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@sentry/sveltekit": "^10.53.1",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "discord.css": "^0.4.0",

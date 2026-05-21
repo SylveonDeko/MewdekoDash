@@ -1,7 +1,19 @@
+import { env } from "$env/dynamic/public";
 import { authenticateUser } from "$lib/server/discordApi";
+import * as Sentry from "@sentry/sveltekit";
+import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
 
-export const handle: Handle = async ({ event, resolve }) => {
+const dsn = env.PUBLIC_SENTRY_DSN;
+
+Sentry.init({
+  dsn,
+  enabled: Boolean(dsn),
+  environment: env.PUBLIC_SENTRY_ENVIRONMENT ?? "production",
+  tracesSampleRate: 0.1,
+});
+
+const appHandle: Handle = async ({ event, resolve }) => {
   try {
     // Skip authentication for auth-related endpoints to prevent interference
     const pathname = event.url.pathname;
@@ -57,3 +69,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     return resolve(event);
   }
 };
+
+/** Sentry request tracing runs first, then the app's auth/CSP handler. */
+export const handle = sequence(Sentry.sentryHandle(), appHandle);
+
+/** Reports uncaught server-side errors to Sentry. */
+export const handleError = Sentry.handleErrorWithSentry();
