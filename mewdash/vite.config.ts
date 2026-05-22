@@ -37,6 +37,8 @@ export default defineConfig({
       sourceMapsUploadOptions: {
         org: "mewdeko-2i",
         project: "mewdash",
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        disable: !process.env.SENTRY_AUTH_TOKEN,
       },
     }),
     tailwindcss(),
