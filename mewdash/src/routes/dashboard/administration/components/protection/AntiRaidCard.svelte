@@ -85,12 +85,12 @@
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiRaid.action)}</div>
         <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
       </div>
-      {#if protectionStatus.antiRaid.action === 1}
+      {#if protectionStatus.antiRaid.punishDuration > 0}
         <div class="text-center">
           <div class="text-2xl font-bold"
                style="color: {$colorStore.primary}">{protectionStatus.antiRaid.punishDuration}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
         </div>
       {/if}
     </div>

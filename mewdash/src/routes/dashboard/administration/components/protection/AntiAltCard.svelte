@@ -81,12 +81,12 @@
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiAlt.action)}</div>
         <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
       </div>
-      {#if protectionStatus.antiAlt.action === 1 && protectionStatus.antiAlt.actionDurationMinutes > 0}
+      {#if protectionStatus.antiAlt.actionDurationMinutes > 0}
         <div class="text-center">
           <div class="text-2xl font-bold"
                style="color: {$colorStore.primary}">{protectionStatus.antiAlt.actionDurationMinutes}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
         </div>
       {/if}
     </div>

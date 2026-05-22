@@ -119,11 +119,11 @@
              style="color: {$colorStore.primary}">{formatAction(protectionStatus.antiSpam.action)}</div>
         <div class="text-sm" style="color: {$colorStore.muted}">Punishment</div>
       </div>
-      {#if protectionStatus.antiSpam.action === 1}
+      {#if protectionStatus.antiSpam.muteTime > 0}
         <div class="text-center">
           <div class="text-2xl font-bold" style="color: {$colorStore.primary}">{protectionStatus.antiSpam.muteTime}m
           </div>
-          <div class="text-sm" style="color: {$colorStore.muted}">Mute Duration</div>
+          <div class="text-sm" style="color: {$colorStore.muted}">Action Duration</div>
         </div>
       {/if}
     </div>

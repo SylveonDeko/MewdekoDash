@@ -179,10 +179,10 @@
   let availableCommands: Array<{ id: string; name: string; label?: string }> = $state([]);
   let availablePermissions: Array<{ id: string; name: string }> = $state([]);
   let actionOptions = [
-    { id: "0", name: "Warn", label: "Warn" },
-    { id: "1", name: "Mute", label: "Mute" },
-    { id: "2", name: "Kick", label: "Kick" },
-    { id: "3", name: "Ban", label: "Ban" }
+    { id: "9", name: "Warn", label: "Warn" },
+    { id: "0", name: "Mute", label: "Mute" },
+    { id: "1", name: "Kick", label: "Kick" },
+    { id: "2", name: "Ban", label: "Ban" }
   ];
 
   // UI State
@@ -937,7 +937,7 @@
   // Utility Functions
   function formatAction(action: string | number) {
     if (typeof action === 'number') {
-      const actions = ["Warn", "Mute", "Kick", "Ban", "AddRole", "RemoveRole"];
+      const actions = ["Mute", "Kick", "Ban", "Softban", "RemoveRoles", "ChatMute", "VoiceMute", "AddRole", "Delete", "Warn", "Timeout"];
       return actions[action] || "Unknown";
     }
     return action || "Unknown";
