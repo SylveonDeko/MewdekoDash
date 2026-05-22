@@ -357,9 +357,135 @@ function createColorStore() {
     );
   }
 
-  // Create optimized cartoon-friendly colors
+  /**
+   * Builds a colour palette tuned for cartoon/anime artwork, favouring vivid
+   * warm/cool accent contrast and prominent eye colours.
+   */
+  function buildCartoonPalette(palette: RGB[]): ColorPalette {
+    const colorAnalysis = palette.map((color) => {
+      const [h, s, l] = rgbToHsl(...color);
+      return { color, h, s, l, score: scoreColor(color) };
+    });
 
-  // Enhanced color extraction with improved accent handling for anime/cartoon avatars
+    const scoredColors = colorAnalysis.sort((a, b) => b.score - a.score);
+    const topColors = scoredColors.slice(0, 5);
+
+    const warmAccents = colorAnalysis
+      .filter(
+        ({ h, s }) => ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) && s > 50,
+      )
+      .sort((a, b) => b.score - a.score);
+
+    const coolAccents = colorAnalysis
+      .filter(({ h, s }) => h >= 180 && h <= 300 && s > 40)
+      .sort((a, b) => b.score - a.score);
+
+    let primary, secondary, accent;
+
+    if (warmAccents.length > 0 && coolAccents.length > 0) {
+      primary = coolAccents[0].color;
+      secondary = warmAccents[0].color;
+      accent = (warmAccents[1] || coolAccents[1] || scoredColors[2]).color;
+    } else {
+      primary = topColors[0].color;
+      secondary = topColors[1].color;
+      accent = topColors[2].color;
+
+      const [primaryHue] = rgbToHsl(...primary);
+
+      if (
+        (primaryHue >= 0 && primaryHue <= 60) ||
+        (primaryHue >= 300 && primaryHue <= 360)
+      ) {
+        secondary = hslToRgb((primaryHue + 180) % 360, 85, 60);
+      } else {
+        accent = hslToRgb((primaryHue + 180) % 360, 85, 60);
+      }
+    }
+
+    const eyeColorCandidates = colorAnalysis.filter(
+      ({ h, s, l }) =>
+        ((h >= 35 && h <= 55) || (h >= 0 && h <= 30 && s > 70)) &&
+        l > 40 &&
+        l < 75 &&
+        s > 50,
+    );
+
+    if (eyeColorCandidates.length > 0) {
+      accent = eyeColorCandidates[0].color;
+    }
+
+    const adjustedPrimary = adjustForContrast(primary, 4.5);
+    const adjustedSecondary = adjustForContrast(secondary, 4.5);
+    const adjustedAccent = adjustForContrast(accent, 4.5);
+
+    const textColor = "#ffffff";
+    const [primaryHsl, secondaryHsl, accentHsl] = [
+      rgbToHsl(...adjustedPrimary),
+      rgbToHsl(...adjustedSecondary),
+      rgbToHsl(...adjustedAccent),
+    ];
+
+    const gradientSaturation = 90;
+    const gradientLightness = 65;
+
+    return {
+      primary: rgbToHex(...adjustedPrimary),
+      secondary: rgbToHex(...adjustedSecondary),
+      accent: rgbToHex(...adjustedAccent),
+      text: textColor,
+      muted: createMutedColor(adjustedPrimary, textColor),
+      background: "#121828",
+      gradientStart: hslToString(primaryHsl[0], gradientSaturation, gradientLightness),
+      gradientMid: hslToString(secondaryHsl[0], gradientSaturation, gradientLightness),
+      gradientEnd: hslToString(accentHsl[0], gradientSaturation, gradientLightness),
+    };
+  }
+
+  /**
+   * Builds a colour palette for generic (non-cartoon) imagery from the
+   * highest-scoring extracted colours.
+   */
+  function buildGenericPalette(palette: RGB[]): ColorPalette {
+    const sortedColors = [...palette].sort(
+      (a, b) => scoreColor(b) - scoreColor(a),
+    );
+
+    const primary = sortedColors[0];
+    const secondary = sortedColors[1] || sortedColors[0];
+    const accent = sortedColors[2] || sortedColors[0];
+
+    const adjustedPrimary = adjustForContrast(primary);
+    const adjustedSecondary = adjustForContrast(secondary);
+    const adjustedAccent = adjustForContrast(accent);
+
+    const textColor = "#ffffff";
+    const [primaryHsl, secondaryHsl, accentHsl] = [
+      rgbToHsl(...adjustedPrimary),
+      rgbToHsl(...adjustedSecondary),
+      rgbToHsl(...adjustedAccent),
+    ];
+
+    const gradientSaturation = 80;
+    const gradientLightness = 60;
+
+    return {
+      primary: rgbToHex(...adjustedPrimary),
+      secondary: rgbToHex(...adjustedSecondary),
+      accent: rgbToHex(...adjustedAccent),
+      text: textColor,
+      muted: createMutedColor(adjustedPrimary, textColor),
+      background: "#121828",
+      gradientStart: hslToString(primaryHsl[0], gradientSaturation, gradientLightness),
+      gradientMid: hslToString(secondaryHsl[0], gradientSaturation, gradientLightness),
+      gradientEnd: hslToString(accentHsl[0], gradientSaturation, gradientLightness),
+    };
+  }
+
+  /**
+   * Loads an image and derives a colour palette from it, dispatching to the
+   * cartoon or generic builder. Returns the default palette on any failure.
+   */
   async function extractColors(imageUrl: string): Promise<ColorPalette> {
     if (typeof globalThis.window === "undefined") {
       return DEFAULT_PALETTE;
@@ -375,205 +501,23 @@ function createColorStore() {
         img.src = imageUrl;
       });
 
-      // Add timeout to prevent hanging
       const timeout = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error("Image loading timeout")), 5000);
       });
 
-      // Race between image loading and timeout
       await Promise.race([loadImage, timeout]);
 
       // @ts-ignore - ColorThief type issues
       const colorThief = new (ColorThief as any)();
-      // Extract more colors for better accent detection
-      const palette = colorThief.getPalette(img, 12) as RGB[]; // Increased from 8 to 12 colors
+      const palette = colorThief.getPalette(img, 12) as RGB[];
 
       if (!palette || palette.length < 3) {
         throw new Error("Could not extract enough colors from image");
       }
 
-      // Check if this is likely a cartoon/anime image
-      const isCartoonImage = isLikelyCartoon(palette);
-
-      // For cartoon images, we need special handling
-      if (isCartoonImage) {
-        // Analyze extracted colors
-        const colorAnalysis = palette.map((color) => {
-          const [h, s, l] = rgbToHsl(...color);
-          return { color, h, s, l, score: scoreColor(color) };
-        });
-
-        // Sort colors by score
-        const scoredColors = colorAnalysis.sort((a, b) => b.score - a.score);
-
-        // Get top colors (will include accent colors like eyes due to enhanced scoring)
-        const topColors = scoredColors.slice(0, 5); // Take top 5 colors for more diversity
-
-        // Find warm and cool accent colors
-        const warmAccents = colorAnalysis
-          .filter(
-            ({ h, s }) =>
-              ((h >= 0 && h <= 60) || (h >= 340 && h <= 360)) && s > 50,
-          )
-          .sort((a, b) => b.score - a.score);
-
-        const coolAccents = colorAnalysis
-          .filter(({ h, s }) => h >= 180 && h <= 300 && s > 40)
-          .sort((a, b) => b.score - a.score);
-
-        // Ensure we have both warm and cool colors
-        let primary, secondary, accent;
-
-        if (warmAccents.length > 0 && coolAccents.length > 0) {
-          // If we have both warm and cool colors, use them for contrast
-          primary = coolAccents[0].color;
-          secondary = warmAccents[0].color;
-          accent = (warmAccents[1] || coolAccents[1] || scoredColors[2]).color;
-        } else {
-          // Otherwise, use the top scored colors
-          primary = topColors[0].color;
-          secondary = topColors[1].color;
-          accent = topColors[2].color;
-
-          // Check if we have mostly warm or cool colors
-          const [primaryHue] = rgbToHsl(...primary);
-
-          // If palette is heavily skewed to one temperature, create better contrast
-          if (
-            (primaryHue >= 0 && primaryHue <= 60) ||
-            (primaryHue >= 300 && primaryHue <= 360)
-          ) {
-            // Primary is warm, make secondary cool
-            secondary = hslToRgb((primaryHue + 180) % 360, 85, 60);
-          } else {
-            // Primary is cool, make accent warm
-            accent = hslToRgb((primaryHue + 180) % 360, 85, 60);
-          }
-        }
-
-        // Special handling for anime eye colors - often golden/amber
-        const eyeColorCandidates = colorAnalysis.filter(
-          ({ h, s, l }) =>
-            // Yellow/golden hue range typical for anime eyes
-            ((h >= 35 && h <= 55) || (h >= 0 && h <= 30 && s > 70)) &&
-            // Not too dark or light
-            l > 40 &&
-            l < 75 &&
-            // Reasonably saturated
-            s > 50,
-        );
-
-        // If we found likely eye colors, prioritize them for accent
-        if (eyeColorCandidates.length > 0) {
-          accent = eyeColorCandidates[0].color;
-        }
-
-        // Adjust colors for better contrast with dark background
-        const adjustedPrimary = adjustForContrast(primary, 4.5);
-        const adjustedSecondary = adjustForContrast(secondary, 4.5);
-        const adjustedAccent = adjustForContrast(accent, 4.5);
-
-        // For dark UI, always use white text since text sits on dark backgrounds, not on the primary color
-        const textColor = "#ffffff";
-        const muted = createMutedColor(adjustedPrimary, textColor);
-
-        // Create gradient colors with intentional color separation
-        const [primaryHsl, secondaryHsl, accentHsl] = [
-          rgbToHsl(...adjustedPrimary),
-          rgbToHsl(...adjustedSecondary),
-          rgbToHsl(...adjustedAccent),
-        ];
-
-        // Use higher saturation for gradients to make them pop
-        const gradientSaturation = 90;
-        const gradientLightness = 65;
-
-        const gradientStart = hslToString(
-          primaryHsl[0],
-          gradientSaturation,
-          gradientLightness,
-        );
-        const gradientMid = hslToString(
-          secondaryHsl[0],
-          gradientSaturation,
-          gradientLightness,
-        );
-        const gradientEnd = hslToString(
-          accentHsl[0],
-          gradientSaturation,
-          gradientLightness,
-        );
-
-        return {
-          primary: rgbToHex(...adjustedPrimary),
-          secondary: rgbToHex(...adjustedSecondary),
-          accent: rgbToHex(...adjustedAccent),
-          text: textColor,
-          muted: muted,
-          background: "#121828",
-          gradientStart,
-          gradientMid,
-          gradientEnd,
-        };
-      }
-
-      // Generic image handling (non-cartoon)
-      // Sort colors by score
-      const sortedColors = [...palette].sort(
-        (a, b) => scoreColor(b) - scoreColor(a),
-      );
-
-      // Use the top colors for our palette
-      const primary = sortedColors[0];
-      const secondary = sortedColors[1] || sortedColors[0];
-      const accent = sortedColors[2] || sortedColors[0];
-
-      // Always adjust for contrast with dark background
-      const adjustedPrimary = adjustForContrast(primary);
-      const adjustedSecondary = adjustForContrast(secondary);
-      const adjustedAccent = adjustForContrast(accent);
-
-      // Determine text color based on contrast with our dark background
-      const textColor = "#ffffff"; // Almost always white for dark UI
-
-      // Extract HSL values for gradient creation
-      const [primaryHsl, secondaryHsl, accentHsl] = [
-        rgbToHsl(...adjustedPrimary),
-        rgbToHsl(...adjustedSecondary),
-        rgbToHsl(...adjustedAccent),
-      ];
-
-      // Create visually distinct gradients
-      const gradientSaturation = 80;
-      const gradientLightness = 60;
-
-      const gradientStart = hslToString(
-        primaryHsl[0],
-        gradientSaturation,
-        gradientLightness,
-      );
-      const gradientMid = hslToString(
-        secondaryHsl[0],
-        gradientSaturation,
-        gradientLightness,
-      );
-      const gradientEnd = hslToString(
-        accentHsl[0],
-        gradientSaturation,
-        gradientLightness,
-      );
-
-      return {
-        primary: rgbToHex(...adjustedPrimary),
-        secondary: rgbToHex(...adjustedSecondary),
-        accent: rgbToHex(...adjustedAccent),
-        text: textColor,
-        muted: createMutedColor(adjustedPrimary, textColor),
-        background: "#121828",
-        gradientStart,
-        gradientMid,
-        gradientEnd,
-      };
+      return isLikelyCartoon(palette)
+        ? buildCartoonPalette(palette)
+        : buildGenericPalette(palette);
     } catch (error) {
       return DEFAULT_PALETTE;
     }
