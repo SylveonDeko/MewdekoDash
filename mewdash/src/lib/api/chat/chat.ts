@@ -5,7 +5,6 @@ import type {
   ChatLogSummary,
   ChatLog,
   SaveChatLogRequest,
-  UpdateChatLogNameRequest,
 } from "./models";
 
 /**
@@ -60,7 +59,7 @@ export const chatApi = {
   updateChatLogName: (guildId: bigint, logId: string, name: string) =>
     apiRequest<void>(`Chat/${guildId}/logs/${logId}`, "PATCH", {
       name,
-    } as UpdateChatLogNameRequest),
+    }),
 
   /**
    * Deletes a chat log

@@ -615,10 +615,10 @@ export const ticketApi = {
    * @param activityDays Number of days to include in activity summary (default 30)
    * @returns Overview data with statistics and counts
    */
-  getTicketOverview: (guildId: bigint, activityDays?: number) =>
-    apiRequest<any>(
-      `ticket/${guildId}/overview${activityDays ? `?activityDays=${activityDays}` : ""}`,
-    ),
+  getTicketOverview: (guildId: bigint, activityDays?: number) => {
+    const daysQs = activityDays ? `?activityDays=${activityDays}` : "";
+    return apiRequest<any>(`ticket/${guildId}/overview${daysQs}`);
+  },
 
   /**
    * Gets ticket statistics for the guild
@@ -643,10 +643,12 @@ export const ticketApi = {
    * @param days Number of days to look back
    * @returns Activity data
    */
-  getTicketActivity: (guildId: bigint, days?: number) =>
-    apiRequest<TicketActivity[]>(
-      `ticket/${guildId}/statistics/activity${days ? `?days=${days}` : ""}`,
-    ),
+  getTicketActivity: (guildId: bigint, days?: number) => {
+    const daysQs = days ? `?days=${days}` : "";
+    return apiRequest<TicketActivity[]>(
+      `ticket/${guildId}/statistics/activity${daysQs}`,
+    );
+  },
 
   /**
    * Gets staff response statistics

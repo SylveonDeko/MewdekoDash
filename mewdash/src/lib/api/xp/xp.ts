@@ -2,7 +2,6 @@
 import { apiRequest } from "../core";
 import type {
   GuildXpSetting,
-  XpRoleReward,
   XpCurrencyReward,
   XpTemplate,
 } from "./models";

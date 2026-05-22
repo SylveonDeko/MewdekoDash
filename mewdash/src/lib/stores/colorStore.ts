@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { logger } from "$lib/logger";
 // @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
 
@@ -38,14 +39,14 @@ let currentPalette = DEFAULT_PALETTE;
 function createColorStore() {
   // Try to load colors from sessionStorage to prevent flash
   let initialPalette = DEFAULT_PALETTE;
-  if (typeof window !== "undefined" && window.sessionStorage) {
+  if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
     try {
-      const stored = window.sessionStorage.getItem("mewdeko-colors");
+      const stored = globalThis.sessionStorage.getItem("mewdeko-colors");
       if (stored) {
         initialPalette = JSON.parse(stored);
       }
     } catch (err) {
-      // Ignore errors, use default
+      logger.debug("Failed to read stored colors, using default", err);
     }
   }
 
@@ -55,11 +56,11 @@ function createColorStore() {
   store.subscribe((value) => {
     currentPalette = value;
     // Persist to session storage
-    if (typeof window !== "undefined" && window.sessionStorage) {
+    if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
       try {
-        window.sessionStorage.setItem("mewdeko-colors", JSON.stringify(value));
+        globalThis.sessionStorage.setItem("mewdeko-colors", JSON.stringify(value));
       } catch (err) {
-        // Ignore storage errors
+        logger.debug("Failed to persist colors to sessionStorage", err);
       }
     }
   });
@@ -299,15 +300,42 @@ function createColorStore() {
   }
 
   // Enhanced detection for anime/cartoon characters with better handling for light characters
-  function isLikelyCartoon(palette: RGB[]): boolean {
-    // Anime/cartoon images typically have:
-    // 1. Some very saturated colors (even if small areas like eyes)
-    // 2. Distinct color areas rather than gradual transitions
-    // 3. Often have skin tones in limited ranges
-    // 4. For anime specifically, eye colors are often distinctive
+  /**
+   * Whether an HSL color falls in the light peachy range typical of anime skin.
+   */
+  function isAnimeSkinTone(h: number, s: number, l: number): boolean {
+    return h >= 10 && h <= 40 && s < 40 && l > 70;
+  }
 
+  /**
+   * Whether an HSL color matches a distinctive anime eye colour (gold, amber,
+   * red, blue, green or purple at a reasonable saturation and lightness).
+   */
+  function isAnimeEyeColor(h: number, s: number, l: number): boolean {
+    const inEyeHueRange =
+      (h >= 35 && h <= 55) ||
+      (h >= 0 && h <= 10) ||
+      (h >= 200 && h <= 240) ||
+      (h >= 90 && h <= 150) ||
+      (h >= 250 && h <= 290);
+    return inEyeHueRange && s > 50 && l > 30 && l < 75;
+  }
+
+  /**
+   * Whether an HSL color matches a common anime palette band: light hair/skin,
+   * vibrant accessories, or mid-tone clothing.
+   */
+  function isAnimeColorBand(h: number, s: number, l: number): boolean {
+    return (
+      (l > 80 && s < 20) ||
+      (s > 70 && l > 50 && l < 65) ||
+      (s > 50 && l > 40 && l < 70)
+    );
+  }
+
+  function isLikelyCartoon(palette: RGB[]): boolean {
     let highSaturationCount = 0;
-    let distinctColorCount = new Set();
+    const distinctColorCount = new Set<number>();
     let hasSkinTones = false;
     let hasEyeColors = false;
     let hasAnimeColorPattern = false;
@@ -315,66 +343,30 @@ function createColorStore() {
     for (const color of palette) {
       const [h, s, l] = rgbToHsl(...color);
 
-      // Count high saturation colors - lower threshold to catch more anime images
-      if (s > 50) {
-        highSaturationCount++;
-      }
-
-      // Count distinct hue regions
-      const hueRegion = Math.floor(h / 30);
-      distinctColorCount.add(hueRegion);
-
-      // Check for typical anime skin tones (light peachy colors)
-      if (h >= 10 && h <= 40 && s < 40 && l > 70) {
-        hasSkinTones = true;
-      }
-
-      // Check for typical anime eye colors
-      // Yellow-gold, amber, red, blue, green, purple
-      if (
-        ((h >= 35 && h <= 55) || // Gold/amber
-          (h >= 0 && h <= 10) || // Red
-          (h >= 200 && h <= 240) || // Blue
-          (h >= 90 && h <= 150) || // Green
-          (h >= 250 && h <= 290)) && // Purple
-        s > 50 &&
-        l > 30 &&
-        l < 75
-      ) {
-        hasEyeColors = true;
-      }
-
-      // Check for common anime color patterns
-      // White/light hair + colorful eyes + clothing color
-      if (
-        (l > 80 && s < 20) || // White/light hair or skin
-        (s > 70 && l > 50 && l < 65) || // Vibrant eyes/accessories
-        (s > 50 && l > 40 && l < 70)
-      ) {
-        // Clothing colors
-        hasAnimeColorPattern = true;
-      }
+      if (s > 50) highSaturationCount++;
+      distinctColorCount.add(Math.floor(h / 30));
+      if (isAnimeSkinTone(h, s, l)) hasSkinTones = true;
+      if (isAnimeEyeColor(h, s, l)) hasEyeColors = true;
+      if (isAnimeColorBand(h, s, l)) hasAnimeColorPattern = true;
     }
 
-    // Enhanced cartoon detection logic
-    // Multiple conditions to catch different anime styles
     return (
-      (highSaturationCount >= 1 && distinctColorCount.size >= 3) || // Traditional detection
-      (hasSkinTones && hasEyeColors) || // Character face detection
+      (highSaturationCount >= 1 && distinctColorCount.size >= 3) ||
+      (hasSkinTones && hasEyeColors) ||
       (hasAnimeColorPattern && distinctColorCount.size >= 2)
-    ); // Simplified anime pattern
+    );
   }
 
   // Create optimized cartoon-friendly colors
 
   // Enhanced color extraction with improved accent handling for anime/cartoon avatars
   async function extractColors(imageUrl: string): Promise<ColorPalette> {
-    if (typeof window === "undefined") {
+    if (typeof globalThis.window === "undefined") {
       return DEFAULT_PALETTE;
     }
 
     try {
-      const img = new window.Image();
+      const img = new globalThis.Image();
       img.crossOrigin = "Anonymous";
 
       const loadImage = new Promise<void>((resolve, reject) => {
@@ -588,7 +580,6 @@ function createColorStore() {
   }
 
   // Halloween state management
-  let isHalloweenSwapped = false;
 
   return {
     subscribe: store.subscribe,
@@ -620,7 +611,7 @@ function createColorStore() {
       const current = { ...currentPalette };
 
       // Add transition class to body for smooth color change
-      if (typeof window !== "undefined" && document.body) {
+      if (typeof globalThis.window !== "undefined" && document.body) {
         document.body.classList.add("halloween-color-transition");
 
         // Remove the class after transition completes
@@ -640,17 +631,15 @@ function createColorStore() {
       };
 
       store.set(newPalette);
-      isHalloweenSwapped = true;
-
       // Mark that Halloween swap is active (to persist across server switches)
-      if (typeof window !== "undefined" && window.sessionStorage) {
+      if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
         sessionStorage.setItem("mewdeko-halloween-active", "true");
       }
     },
 
     // Check if Halloween swap is currently active
     isHalloweenActive(): boolean {
-      if (typeof window === "undefined" || !window.sessionStorage) return false;
+      if (typeof globalThis.window === "undefined" || !globalThis.sessionStorage) return false;
 
       // Auto-clear if it's no longer Halloween
       if (
@@ -660,7 +649,6 @@ function createColorStore() {
         // Clear the Halloween state
         sessionStorage.removeItem("mewdeko-halloween-active");
         sessionStorage.removeItem("mewdeko-halloween-triggered");
-        isHalloweenSwapped = false;
         return false;
       }
 
@@ -670,14 +658,14 @@ function createColorStore() {
     // Check if it's Halloween (October 31)
     isHalloween(): boolean {
       // Check for debug mode from localStorage or URL params
-      if (typeof window !== "undefined") {
+      if (typeof globalThis.window !== "undefined") {
         // Check localStorage for debug flag
         if (localStorage.getItem("mewdeko-halloween-debug") === "true") {
           return true;
         }
 
         // Check URL params for testing
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(globalThis.location.search);
         if (params.get("halloween") === "test") {
           return true;
         }
@@ -689,33 +677,32 @@ function createColorStore() {
 
     // Enable Halloween debug mode (for testing)
     enableHalloweenDebug(): void {
-      if (typeof window !== "undefined" && window.localStorage) {
+      if (typeof globalThis.window !== "undefined" && globalThis.localStorage) {
         localStorage.setItem("mewdeko-halloween-debug", "true");
       }
     },
 
     // Disable Halloween debug mode
     disableHalloweenDebug(): void {
-      if (typeof window !== "undefined") {
-        if (window.localStorage) {
+      if (typeof globalThis.window !== "undefined") {
+        if (globalThis.localStorage) {
           localStorage.removeItem("mewdeko-halloween-debug");
         }
-        if (window.sessionStorage) {
+        if (globalThis.sessionStorage) {
           sessionStorage.removeItem("mewdeko-halloween-active");
         }
       }
-      isHalloweenSwapped = false;
     },
 
     // Reset to default palette
     reset(): void {
       store.set(DEFAULT_PALETTE);
       // Also clear session storage
-      if (typeof window !== "undefined" && window.sessionStorage) {
+      if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
         try {
-          window.sessionStorage.removeItem("mewdeko-colors");
+          globalThis.sessionStorage.removeItem("mewdeko-colors");
         } catch (err) {
-          // Ignore storage errors
+          logger.debug("Failed to clear colors from sessionStorage", err);
         }
       }
     },
@@ -776,9 +763,7 @@ function createColorStore() {
         gradientEnd: current.gradientStart,
       };
 
-      store.set(newPalette);
-      isHalloweenSwapped = true;
-    },
+      store.set(newPalette);    },
   };
 }
 

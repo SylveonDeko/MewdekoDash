@@ -1,13 +1,13 @@
 // Wizard state management store
 import { writable, derived, type Writable } from 'svelte/store';
-import type {
-  WizardProgress,
-  WizardState,
-  PermissionCheckResponse,
-  WizardFeature,
+import {
+  WizardType,
+  DefaultWizardFeatures,
+  type WizardProgress,
+  type WizardState,
+  type PermissionCheckResponse,
+  type WizardFeature,
 } from "$lib/types/wizard";
-import { WizardType } from "$lib/types/wizard";
-import { DefaultWizardFeatures } from '$lib/types/wizard';
 import { browser } from '$app/environment';
 
 // Core wizard progress store

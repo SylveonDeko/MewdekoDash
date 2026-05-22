@@ -9,7 +9,6 @@ import type {
   SetWatchRequest,
   SetCustomEmbedRequest,
   SetRconConfigRequest,
-  RconCommandRequest,
   RconCommandResponse,
 } from "./models";
 

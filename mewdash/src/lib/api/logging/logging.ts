@@ -3,7 +3,6 @@ import { apiRequest } from "../core";
 import type {
   LoggingConfigurationResponse,
   LogType,
-  SetLogChannelRequest,
   SetIgnoredChannelsRequest,
   BulkUpdateLogChannelsRequest,
 } from "./models";
@@ -22,7 +21,7 @@ export const loggingApi = {
     apiRequest<{ success: boolean; logType: string; channelId: bigint | null }>(
       `logging/${guildId}/log-type/${logType}`,
       "PUT",
-      { channelId } as SetLogChannelRequest,
+      { channelId },
     ),
 
   setLogCategory: (
@@ -36,7 +35,7 @@ export const loggingApi = {
       channelId: bigint | null;
     }>(`logging/${guildId}/log-category/${category}`, "PUT", {
       channelId,
-    } as SetLogChannelRequest),
+    }),
 
   toggleIgnoredChannel: (guildId: bigint, channelId: bigint) =>
     apiRequest<{

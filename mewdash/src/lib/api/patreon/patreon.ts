@@ -34,10 +34,12 @@ export const patreonApi = {
    * @param error Optional error from OAuth
    * @returns Callback result
    */
-  handlePatreonOAuthCallback: (code: string, state: string, error?: string) =>
-    apiRequest<PatreonOAuthCallbackResponse>(
-      `patreon/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}${error ? `&error=${encodeURIComponent(error)}` : ""}`,
-    ),
+  handlePatreonOAuthCallback: (code: string, state: string, error?: string) => {
+    const errorQs = error ? `&error=${encodeURIComponent(error)}` : "";
+    return apiRequest<PatreonOAuthCallbackResponse>(
+      `patreon/oauth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}${errorQs}`,
+    );
+  },
 
   /**
    * Gets Patreon OAuth connection status

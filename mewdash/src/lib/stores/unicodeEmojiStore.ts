@@ -20,9 +20,9 @@ function processEmojis(): UnicodeEmoji[] {
     // Remove colons from key, e.g., ":100:" -> "100"
     const name = key.replace(/^:/, "").replace(/:$/, "");
 
-    if (emojiMap.has(value)) {
+    const existing = emojiMap.get(value);
+    if (existing) {
       // This emoji already exists, add this name as an alias
-      const existing = emojiMap.get(value)!;
       if (!existing.searchTerms.includes(name)) {
         existing.searchTerms.push(name);
       }

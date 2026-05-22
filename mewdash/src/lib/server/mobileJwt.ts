@@ -24,12 +24,12 @@ function getRedis(): Redis {
 const b64url = (buf: Buffer | string) =>
   (Buffer.isBuffer(buf) ? buf : Buffer.from(buf))
     .toString("base64")
-    .replace(/=+$/, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+    .replaceAll("=", "")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_");
 
 const b64urlDecode = (s: string) =>
-  Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+  Buffer.from(s.replaceAll("-", "+").replaceAll("_", "/"), "base64");
 
 function hmac(payload: string): string {
   return b64url(createHmac("sha256", MOBILE_JWT_SECRET).update(payload).digest());

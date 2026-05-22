@@ -13,10 +13,10 @@ export const suggestionsApi = {
    * @param userId Optional user ID to filter by
    * @returns List of suggestions
    */
-  getSuggestions: (guildId: bigint, userId?: bigint) =>
-    apiRequest<Suggestion[]>(
-      `suggestions/${guildId}${userId ? `/${userId}` : ""}`,
-    ),
+  getSuggestions: (guildId: bigint, userId?: bigint) => {
+    const userPath = userId ? `/${userId}` : "";
+    return apiRequest<Suggestion[]>(`suggestions/${guildId}${userPath}`);
+  },
 
   deleteSuggestion: (guildId: bigint, id: bigint) =>
     apiRequest<void>(`suggestions/${guildId}/${id}`, "DELETE"),

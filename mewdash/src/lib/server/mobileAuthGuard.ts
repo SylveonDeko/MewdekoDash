@@ -16,7 +16,7 @@ export type MobileAuthResult =
  */
 export function requireMobileAuth(request: Request): MobileAuthResult {
   const header = request.headers.get("authorization");
-  if (!header || !header.toLowerCase().startsWith("bearer ")) {
+  if (!header?.toLowerCase().startsWith("bearer ")) {
     return { error: json({ error: "missing_bearer" }, { status: 401 }) };
   }
   const token = header.slice("bearer ".length).trim();

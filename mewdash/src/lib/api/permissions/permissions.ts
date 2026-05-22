@@ -4,7 +4,6 @@ import type {
   PermissionCache,
   Permission,
   DpoRequest,
-  MovePermissionRequest,
   DiscordPermissionOverride,
 } from "./models";
 import type { Module } from "../administration/models";
@@ -89,7 +88,7 @@ export const permissionsApi = {
     apiRequest<void>(`Permissions/regular/${guildId}/move`, "POST", {
       from,
       to,
-    } as MovePermissionRequest),
+    }),
 
   /**
    * Resets all permissions for a guild

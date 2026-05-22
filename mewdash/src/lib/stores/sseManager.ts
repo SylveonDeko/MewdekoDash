@@ -1,18 +1,21 @@
 // lib/stores/sseManager.ts
 // Singleton manager for SSE connections to avoid duplicate subscriptions
+import { logger } from "$lib/logger";
 
 class SSEManager {
-  private connections: Map<string, EventSource> = new Map();
-  private listeners: Map<string, Set<(event: any) => void>> = new Map();
+  private readonly connections: Map<string, EventSource> = new Map();
+  private readonly listeners: Map<string, Set<(event: any) => void>> = new Map();
 
   subscribe(guildId: string, callback: (event: any) => void) {
     const key = `guild:${guildId}`;
 
     // Add listener
-    if (!this.listeners.has(key)) {
-      this.listeners.set(key, new Set());
+    let listeners = this.listeners.get(key);
+    if (!listeners) {
+      listeners = new Set();
+      this.listeners.set(key, listeners);
     }
-    this.listeners.get(key)!.add(callback);
+    listeners.add(callback);
 
     // Create connection if it doesn't exist
     if (!this.connections.has(key)) {
@@ -63,10 +66,12 @@ class SSEManager {
               try {
                 callback(data);
               } catch (err) {
+                logger.error("SSE listener callback failed", err);
               }
             });
           }
         } catch (err) {
+          logger.error("Failed to parse SSE message", err);
         }
       };
 
@@ -85,7 +90,7 @@ class SSEManager {
 
       this.connections.set(key, eventSource);
     } catch (err) {
-
+      logger.error("Failed to open SSE connection", err);
     }
   }
 

@@ -302,10 +302,12 @@ export const formsApi = {
    * @param status Optional status filter
    * @returns List of responses with workflow information
    */
-  getPendingResponses: (formId: number, status?: ResponseStatus) =>
-    apiRequest<ResponseWithWorkflow[]>(
-      `forms/${formId}/responses/pending${status ? `?status=${status}` : ""}`,
-    ),
+  getPendingResponses: (formId: number, status?: ResponseStatus) => {
+    const statusQs = status ? `?status=${status}` : "";
+    return apiRequest<ResponseWithWorkflow[]>(
+      `forms/${formId}/responses/pending${statusQs}`,
+    );
+  },
 
   /**
    * Approves a form response

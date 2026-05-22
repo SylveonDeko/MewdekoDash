@@ -1,7 +1,6 @@
 // lib/api/protection/protection.ts
 import { apiRequest } from "../core";
 import type {
-  AddPatternRequest,
   UpdateAntiPatternConfigRequest,
   AntiPatternPattern,
 } from "./models";
@@ -76,7 +75,7 @@ export const protectionApi = {
         name,
         checkUsername,
         checkDisplayName,
-      } as AddPatternRequest,
+      },
     ),
 
   removeAntiPatternPattern: (guildId: bigint, patternId: number) =>

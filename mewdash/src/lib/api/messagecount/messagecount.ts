@@ -38,9 +38,15 @@ export const messageCountApi = {
     guildId: bigint,
     userId?: bigint | null,
     channelId?: bigint | null,
-  ) =>
-    apiRequest<{ message: string }>(
-      `messagecount/${guildId}/reset${userId ? `?userId=${userId}` : ""}${channelId ? `${userId ? "&" : "?"}channelId=${channelId}` : ""}`,
+  ) => {
+    const params = new URLSearchParams();
+    if (userId) params.set("userId", userId.toString());
+    if (channelId) params.set("channelId", channelId.toString());
+    const qs = params.toString();
+    const suffix = qs ? `?${qs}` : "";
+    return apiRequest<{ message: string }>(
+      `messagecount/${guildId}/reset${suffix}`,
       "POST",
-    ),
+    );
+  },
 };

@@ -16,7 +16,7 @@ export function escapeHtml(str: string): string {
     "/": "&#x2F;",
   };
 
-  return str.replace(/[&<>"'\/]/g, (char) => htmlEscapes[char]);
+  return str.replace(/[&<>"'/]/g, (char) => htmlEscapes[char]);
 }
 
 /**
@@ -31,7 +31,7 @@ export function removeZalgoText(text: string, maxCombiningChars: number = 2): st
 
   // Unicode ranges for combining characters (diacritical marks)
   // NOTE: No 'g' flag - we test one character at a time
-  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/;
+  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/u;
 
   let result = "";
   let consecutiveCombining = 0;
@@ -66,7 +66,7 @@ export function containsZalgo(text: string, threshold: number = 2): boolean {
   if (!text) return false;
 
   // NOTE: No 'g' flag - we test one character at a time
-  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/;
+  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/u;
   let consecutiveCombining = 0;
 
   for (const char of text) {
@@ -223,10 +223,9 @@ export function isValidNumber(
   min?: number,
   max?: number,
 ): boolean {
-  if (isNaN(value)) return false;
+  if (Number.isNaN(value)) return false;
   if (min !== undefined && value < min) return false;
-  if (max !== undefined && value > max) return false;
-  return true;
+  return !(max !== undefined && value > max);
 }
 
 /**

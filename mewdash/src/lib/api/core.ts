@@ -1,6 +1,5 @@
 // lib/api/core.ts
 import JSONbig from "json-bigint";
-import { logger } from "$lib/logger";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import { get } from "svelte/store";
 import { currentInstance } from "$lib/stores/instanceStore";
@@ -42,6 +41,6 @@ export async function apiRequest<T>(
   try {
     return JSONbig.parse(responseText) as T;
   } catch (err) {
-    throw new Error("Failed to parse JSON response.");
+    throw new Error("Failed to parse JSON response.", { cause: err });
   }
 }

@@ -24,6 +24,7 @@ export const auditLogApi = {
     if (query.pageSize != null) params.set("pageSize", query.pageSize.toString());
 
     const qs = params.toString();
-    return apiRequest<AuditLogPage>(`AuditLog/${guildId}${qs ? `?${qs}` : ""}`);
+    const suffix = qs ? `?${qs}` : "";
+    return apiRequest<AuditLogPage>(`AuditLog/${guildId}${suffix}`);
   },
 };

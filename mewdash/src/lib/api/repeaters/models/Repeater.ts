@@ -200,8 +200,8 @@ export function formatInterval(interval: string): string {
 
   const parts = interval.split(":");
   if (parts.length >= 2) {
-    const hours = parseInt(parts[0]);
-    const minutes = parseInt(parts[1]);
+    const hours = Number.parseInt(parts[0]);
+    const minutes = Number.parseInt(parts[1]);
 
     if (hours > 0 && minutes > 0) {
       return `${hours}h ${minutes}m`;
