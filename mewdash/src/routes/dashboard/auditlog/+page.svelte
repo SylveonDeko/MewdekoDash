@@ -130,9 +130,27 @@
     return $colorStore.primary;
   }
 
+  /**
+   * Renders a UTC audit timestamp in the timezone of whoever is viewing the
+   * log. Older bot builds serialize the timestamp without a trailing `Z`, so a
+   * `Z` is appended when no timezone designator is present to stop the browser
+   * from misreading the instant as local time.
+   */
   function formatDate(value: string): string {
     if (!value) return "Unknown";
-    return new Date(value).toLocaleString();
+    const utc = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`;
+    return new Date(utc).toLocaleString();
+  }
+
+  /**
+   * The resource path a request hit, with the method prefix and `/botapi`
+   * stripped, so each row shows what was actually fetched or changed.
+   */
+  function describeEndpoint(entry: AuditLogEntry): string {
+    let path = entry.endpoint ?? "";
+    const space = path.indexOf(" ");
+    if (space !== -1) path = path.slice(space + 1);
+    return path.replace(/^\/?botapi\//i, "").replace(/^\//, "");
   }
 
   interface ChangeRow {
@@ -393,7 +411,15 @@
                   {actionMeta[entry.action].label}
                 </span>
               </td>
-              <td class="px-4 py-3" style="color: {$colorStore.text}">{sectionLabel(entry.section)}</td>
+              <td class="px-4 py-3" style="color: {$colorStore.text}">
+                <div class="font-medium">{sectionLabel(entry.section)}</div>
+                {#if describeEndpoint(entry)}
+                  <div class="text-xs mt-0.5 font-mono break-all" style="color: {$colorStore.muted}">
+                    {entry.httpMethod}
+                    {describeEndpoint(entry)}
+                  </div>
+                {/if}
+              </td>
               <td class="px-4 py-3 text-right">
                 {#if hasChangeDetail(entry)}
                   <button
@@ -455,6 +481,12 @@
           <div class="mt-1 text-sm">
             <span class="font-medium" style="color: {$colorStore.text}">{sectionLabel(entry.section)}</span>
           </div>
+          {#if describeEndpoint(entry)}
+            <div class="mt-0.5 text-xs font-mono break-all" style="color: {$colorStore.muted}">
+              {entry.httpMethod}
+              {describeEndpoint(entry)}
+            </div>
+          {/if}
 
           {#if hasChangeDetail(entry)}
             <button
