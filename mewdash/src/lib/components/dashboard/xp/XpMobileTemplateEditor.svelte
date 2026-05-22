@@ -1065,7 +1065,7 @@
     {#if bottomSheetOpen}
       <div
         class="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t shadow-2xl transition-all"
-        style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;
+        style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20), #0a0a0a; border-color: {$colorStore.primary}30;
              max-height: 70vh;"
         transition:fly={{ y: 100, duration: 300 }}
       >
