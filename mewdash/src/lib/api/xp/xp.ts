@@ -100,8 +100,8 @@ export const xpApi = {
   addXpRoleReward: (guildId: bigint, level: number, roleId: bigint) =>
     apiRequest<void>(`xp/${guildId}/rewards/roles`, "POST", { level, roleId }),
 
-  removeXpRoleReward: (guildId: bigint, rewardId: number) =>
-    apiRequest<void>(`xp/${guildId}/rewards/roles/${rewardId}`, "DELETE"),
+  removeXpRoleReward: (guildId: bigint, level: number) =>
+    apiRequest<void>(`xp/${guildId}/rewards/roles/${level}`, "DELETE"),
 
   getXpCurrencyRewards: (guildId: bigint) =>
     apiRequest<XpCurrencyReward[]>(`xp/${guildId}/rewards/currency`),
@@ -112,8 +112,8 @@ export const xpApi = {
       amount,
     }),
 
-  removeXpCurrencyReward: (guildId: bigint, rewardId: number) =>
-    apiRequest<void>(`xp/${guildId}/rewards/currency/${rewardId}`, "DELETE"),
+  removeXpCurrencyReward: (guildId: bigint, level: number) =>
+    apiRequest<void>(`xp/${guildId}/rewards/currency/${level}`, "DELETE"),
 
   getXpExcludedChannels: (guildId: bigint) =>
     apiRequest<bigint[]>(`xp/${guildId}/excluded/channels`),

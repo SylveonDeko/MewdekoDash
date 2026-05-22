@@ -9,9 +9,9 @@
     loading?: boolean;
     error?: string | null;
     onAddRoleReward: (level: number, roleId: string) => void;
-    onRemoveRoleReward: (rewardId: number) => void;
+    onRemoveRoleReward: (level: number) => void;
     onAddCurrencyReward: (level: number, amount: number) => void;
-    onRemoveCurrencyReward: (rewardId: number) => void;
+    onRemoveCurrencyReward: (level: number) => void;
   }
 
   let {
@@ -149,7 +149,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each roleRewards as reward (reward.id)}
+          {#each roleRewards as reward (reward.level)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.primary}15;"
@@ -165,10 +165,10 @@
                 <span class="truncate" style="color: {$colorStore.text}">{reward.roleName || `Role ID: ${reward.roleId}`}</span>
               </div>
               <button
-                      class="p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
+                      class="flex items-center justify-center p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                onclick={() => onRemoveRoleReward(reward.id)}
+                onclick={() => onRemoveRoleReward(reward.level)}
                 aria-label={`Remove role reward for level ${reward.level}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -238,7 +238,7 @@
         </div>
       {:else}
         <ul class="space-y-2">
-          {#each currencyRewards as reward (reward.id)}
+          {#each currencyRewards as reward (reward.level)}
             <li
               class="flex items-center justify-between p-3 rounded-lg"
               style="background: {$colorStore.secondary}15;"
@@ -254,10 +254,10 @@
                 <span class="truncate" style="color: {$colorStore.text}">{formatNumber(reward.amount)} currency</span>
               </div>
               <button
-                      class="p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
+                      class="flex items-center justify-center p-2 rounded-full transition-all duration-200 shrink-0 min-w-[44px] min-h-[44px]"
                 style="background: {$colorStore.accent}20;
                        color: {$colorStore.accent};"
-                onclick={() => onRemoveCurrencyReward(reward.id)}
+                onclick={() => onRemoveCurrencyReward(reward.level)}
                 aria-label={`Remove currency reward for level ${reward.level}`}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

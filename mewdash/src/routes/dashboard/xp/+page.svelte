@@ -499,11 +499,11 @@
     }
   }
 
-  async function removeRoleReward(rewardId: number) {
+  async function removeRoleReward(level: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await xpApi.removeXpRoleReward($currentGuild.id, rewardId);
+      await xpApi.removeXpRoleReward($currentGuild.id, level);
       showNotificationMessage("Role reward removed successfully", "success");
       await fetchRewards();
     } catch (err) {
@@ -527,11 +527,11 @@
     }
   }
 
-  async function removeCurrencyReward(rewardId: number) {
+  async function removeCurrencyReward(level: number) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await xpApi.removeXpCurrencyReward($currentGuild.id, rewardId);
+      await xpApi.removeXpCurrencyReward($currentGuild.id, level);
       showNotificationMessage("Currency reward removed successfully", "success");
       await fetchRewards();
     } catch (err) {
@@ -1068,16 +1068,16 @@
       {:else if template}
         {#if localTemplate}
             <!-- XP Card Preview -->
-            <div class="flex flex-col items-center gap-6 py-8">
-                <h3 class="text-xl font-semibold" style="color: {$colorStore.text}">XP Card Preview</h3>
+            <div class="flex flex-col items-center gap-4 sm:gap-6 py-4 sm:py-8">
+                <h3 class="text-lg sm:text-xl font-semibold" style="color: {$colorStore.text}">XP Card Preview</h3>
 
                 <!-- Preview Container -->
                 <div
                         class="relative rounded-2xl overflow-hidden shadow-2xl {isMobile ? 'max-w-full mx-4' : ''}"
                         style="width: {isMobile ? '100%' : Math.min(localTemplate.outputSizeX, 600) + 'px'};
                      max-width: {isMobile ? 'calc(100vw - 2rem)' : '600px'};
-                     height: {isMobile ? '200px' : 'auto'};
-                     aspect-ratio: {isMobile ? 'auto' : localTemplate.outputSizeX + ' / ' + localTemplate.outputSizeY};
+                     height: auto;
+                     aspect-ratio: {localTemplate.outputSizeX} / {localTemplate.outputSizeY};
                      background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
                      border: 2px solid {$colorStore.primary}30;"
                 >
@@ -1086,26 +1086,45 @@
                             id="xp-preview-canvas"
                             width={localTemplate.outputSizeX}
                             height={localTemplate.outputSizeY}
-                            style="width: 100%; height: 100%; object-fit: {isMobile ? 'cover' : 'contain'}; object-position: center; image-rendering: crisp-edges;"
+                            style="width: 100%; height: 100%; object-fit: contain; object-position: center; image-rendering: crisp-edges;"
                     ></canvas>
+
+                    {#if isMobile}
+                        <!-- Tap-to-edit overlay -->
+                        <button
+                                class="absolute inset-0 flex items-end justify-end p-3 transition-transform active:scale-[0.99]"
+                                onclick={() => { showTemplateEditor = true; }}
+                                aria-label="Edit XP card template"
+                        >
+                            <span
+                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium shadow-lg"
+                                    style="background: {$colorStore.primary}; color: white;"
+                            >
+                                <i class="fa-solid fa-pen" style="font-size: 14px;"></i>
+                                Edit
+                            </span>
+                        </button>
+                    {/if}
                 </div>
 
-                <!-- Edit Button -->
-                <button
-                  class="px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-sm sm:text-base"
-                        style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
-                     color: white;"
-                        onclick={() => { showTemplateEditor = true; }}
-                >
-                  <i class="fa-solid fa-image" style="font-size: 20px;"></i>
-                    Edit Template
-                </button>
+                {#if !isMobile}
+                    <!-- Edit Button -->
+                    <button
+                      class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 text-base"
+                            style="background: linear-gradient(135deg, {$colorStore.primary}, {$colorStore.secondary});
+                         color: white;"
+                            onclick={() => { showTemplateEditor = true; }}
+                    >
+                      <i class="fa-solid fa-image" style="font-size: 20px;"></i>
+                        Edit Template
+                    </button>
+                {/if}
 
                 <!-- Template Info -->
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm"
+                <div class="flex flex-row flex-wrap justify-center gap-x-3 gap-y-1 text-xs sm:text-sm"
                      style="color: {$colorStore.muted}">
                     <span>Size: {localTemplate.outputSizeX} × {localTemplate.outputSizeY}px</span>
-                    <span class="hidden sm:inline">•</span>
+                    <span>•</span>
                     <span>Background: {localTemplate.customXpImageUrl ? 'Custom Image' : 'Default'}</span>
                 </div>
             </div>
