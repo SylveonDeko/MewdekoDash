@@ -24,15 +24,14 @@ const AUDIENCE = "mewdeko-botapi";
 /** Must match `DashJwtConstants.BackendScope` on the bot. */
 const SCOPE = "botapi";
 
-const b64url = (buf: Buffer | string) =>
-  (Buffer.isBuffer(buf) ? buf : Buffer.from(buf))
-    .toString("base64")
-    .replaceAll("=", "")
-    .replaceAll("+", "-")
-    .replaceAll("/", "_");
+/** Encodes a UTF-8 string as unpadded, URL-safe base64 (base64url). */
+const b64url = (text: string): string =>
+  Buffer.from(text, "utf8").toString("base64url");
 
 function hmac(payload: string): string {
-  return b64url(createHmac("sha256", BOT_JWT_SECRET).update(payload).digest());
+  return createHmac("sha256", BOT_JWT_SECRET)
+    .update(payload)
+    .digest("base64url");
 }
 
 /**
@@ -60,7 +59,7 @@ export function mintBackendToken(user: DiscordUser): string {
   const payload: BackendClaims = {
     sub: user.id.toString(),
     name: user.username,
-    jti: b64url(randomBytes(12)),
+    jti: randomBytes(12).toString("base64url"),
     iat: now,
     exp: now + BACKEND_TTL,
     scope: SCOPE,
