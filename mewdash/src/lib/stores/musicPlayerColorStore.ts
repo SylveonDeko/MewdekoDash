@@ -32,6 +32,46 @@ const DEFAULT_COLORS: MusicPlayerColors = {
 // rgb(26, 26, 26) - music player background
 const DARK_BG_LUMINANCE = 0.05; // Pre-calculated luminance for performance
 
+/**
+ * Derives a harmonious primary/secondary/accent HSL trio from a base hue,
+ * using the requested colour scheme.
+ */
+function createHarmoniousColors(
+  baseHue: number,
+  scheme: "complementary" | "triadic" | "analogous" = "complementary",
+): {
+  primary: HSL;
+  secondary: HSL;
+  accent: HSL;
+} {
+  const baseSaturation = 85;
+  const baseLightness = 55;
+
+  let secondaryHue: number, accentHue: number;
+
+  switch (scheme) {
+    case "complementary":
+      secondaryHue = (baseHue + 180) % 360;
+      accentHue = (baseHue + 90) % 360;
+      break;
+    case "triadic":
+      secondaryHue = (baseHue + 120) % 360;
+      accentHue = (baseHue + 240) % 360;
+      break;
+    case "analogous":
+    default:
+      secondaryHue = (baseHue + 30) % 360;
+      accentHue = (baseHue + 60) % 360;
+      break;
+  }
+
+  return {
+    primary: [baseHue, baseSaturation, baseLightness],
+    secondary: [secondaryHue, baseSaturation - 5, baseLightness - 5],
+    accent: [accentHue, baseSaturation - 10, baseLightness + 5],
+  };
+}
+
 function createMusicPlayerColorStore() {
   // Set up the store
   const store = writable<MusicPlayerColors>(DEFAULT_COLORS);
@@ -182,9 +222,58 @@ function createMusicPlayerColorStore() {
     return isVeryLightBackground ? "#000000" : "#ffffff";
   }
 
+  interface EyeColorRange {
+    name: string;
+    hueRange: [number, number];
+    minSat: number;
+    minLight: number;
+    maxLight: number;
+  }
+
+  /**
+   * Scores how closely an HSL color matches a known anime eye-color range,
+   * returning null when the color falls outside that range.
+   */
+  function eyeColorScore(
+    h: number,
+    s: number,
+    l: number,
+    range: EyeColorRange,
+  ): number | null {
+    const inHueRange =
+      (h >= range.hueRange[0] && h <= range.hueRange[1]) ||
+      (range.name === "red/ruby" && (h >= 350 || h <= 10));
+
+    if (
+      !inHueRange ||
+      s < range.minSat ||
+      l < range.minLight ||
+      l > range.maxLight
+    ) {
+      return null;
+    }
+
+    const saturationScore = s / 100;
+    const lightnessScore =
+      1 -
+      Math.abs((range.minLight + range.maxLight) / 2 - l) /
+        ((range.maxLight - range.minLight) / 2);
+
+    const isCommonEyeHue =
+      (h >= 40 && h <= 50) ||
+      h >= 355 ||
+      h <= 5 ||
+      (h >= 220 && h <= 230) ||
+      (h >= 110 && h <= 130) ||
+      (h >= 270 && h <= 280);
+    const hueBonus = isCommonEyeHue ? 0.3 : 0;
+
+    return saturationScore * 0.4 + lightnessScore * 0.3 + hueBonus;
+  }
+
   function detectEyeColors(palette: RGB[]): RGB[] {
     // Common anime eye colors fall in these hue ranges
-    const eyeColorRanges = [
+    const eyeColorRanges: EyeColorRange[] = [
       {
         name: "amber/gold",
         hueRange: [35, 55],
@@ -227,43 +316,10 @@ function createMusicPlayerColorStore() {
     for (const color of palette) {
       const [h, s, l] = rgbToHsl(...color);
 
-      // Check each eye color range
       for (const range of eyeColorRanges) {
-        const inHueRange =
-          (h >= range.hueRange[0] && h <= range.hueRange[1]) ||
-          // Handle wrap-around for red hues
-          (range.name === "red/ruby" && (h >= 350 || h <= 10));
-
-        if (
-          inHueRange &&
-          s >= range.minSat &&
-          l >= range.minLight &&
-          l <= range.maxLight
-        ) {
-          // Calculate a score based on how closely it matches ideal eye color
-          const saturationScore = s / 100; // Higher saturation is better
-          const lightnessScore =
-            1 -
-            Math.abs((range.minLight + range.maxLight) / 2 - l) /
-              ((range.maxLight - range.minLight) / 2);
-
-          // Bonus for exact hue matches to common anime eye colors
-          let hueBonus = 0;
-          if (
-            (h >= 40 && h <= 50) || // Gold/amber
-            h >= 355 ||
-            h <= 5 || // Red
-            (h >= 220 && h <= 230) || // Blue
-            (h >= 110 && h <= 130) || // Green
-            (h >= 270 && h <= 280)
-          ) {
-            // Purple
-            hueBonus = 0.3;
-          }
-
-          const totalScore =
-            saturationScore * 0.4 + lightnessScore * 0.3 + hueBonus;
-          potentialEyeColors.push({ color, score: totalScore });
+        const score = eyeColorScore(h, s, l, range);
+        if (score !== null) {
+          potentialEyeColors.push({ color, score });
         }
       }
     }
@@ -272,42 +328,6 @@ function createMusicPlayerColorStore() {
     return potentialEyeColors
       .sort((a, b) => b.score - a.score)
       .map((item) => item.color);
-  }
-
-  function createHarmoniousColors(
-    baseHue: number,
-    scheme: "complementary" | "triadic" | "analogous" = "complementary",
-  ): {
-    primary: HSL;
-    secondary: HSL;
-    accent: HSL;
-  } {
-    const baseSaturation = 85;
-    const baseLightness = 55;
-
-    let secondaryHue: number, accentHue: number;
-
-    switch (scheme) {
-      case "complementary":
-        secondaryHue = (baseHue + 180) % 360;
-        accentHue = (baseHue + 90) % 360; // Split complementary
-        break;
-      case "triadic":
-        secondaryHue = (baseHue + 120) % 360;
-        accentHue = (baseHue + 240) % 360;
-        break;
-      case "analogous":
-      default:
-        secondaryHue = (baseHue + 30) % 360;
-        accentHue = (baseHue + 60) % 360;
-        break;
-    }
-
-    return {
-      primary: [baseHue, baseSaturation, baseLightness],
-      secondary: [secondaryHue, baseSaturation - 5, baseLightness - 5],
-      accent: [accentHue, baseSaturation - 10, baseLightness + 5],
-    };
   }
 
   function createVisualHierarchy(baseColor: RGB): {
@@ -509,8 +529,8 @@ function createMusicPlayerColorStore() {
         typeof palette2[key] === "string"
       ) {
         result[key] = interpolateHexColors(
-          palette1[key] as string,
-          palette2[key] as string,
+          palette1[key],
+          palette2[key],
           progress,
         );
       } else {

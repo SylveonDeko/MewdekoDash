@@ -1,5 +1,6 @@
 // stores/musicStore.ts
 import { get, writable } from "svelte/store";
+import { logger } from "$lib/logger";
 import { musicApi } from "$lib/api/index.ts";
 import { currentGuild } from "$lib/stores/currentGuild";
 import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
@@ -17,7 +18,6 @@ interface MusicStoreState {
 }
 
 function createMusicStore() {
-  //logger.info("Creating music store instance.");
   // Configuration
   const BASE_DELAY = 3000;
   const PAUSED_DELAY = 5000;
@@ -31,7 +31,7 @@ function createMusicStore() {
   let useWebSocket = true; // Try WebSocket first, fallback to polling
   let activeUserId: bigint | null = null;
   let lastKnownGuildId: bigint | undefined = undefined;
-  let heartbeatInterval: number | null = null;
+  let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   let heartbeatTimeout: number | null = null;
   let lastMessageTime: number = Date.now();
   let wasDestroyedDueToSilence: boolean = false; // Track if player was destroyed due to silence
@@ -50,13 +50,32 @@ function createMusicStore() {
     playerExists: false
   });
 
+  /**
+   * Dispatches a player lifecycle event on the window, when running in a browser.
+   */
+  function emitPlayerEvent(name: "playerCreated" | "playerDestroyed") {
+    if (typeof globalThis.window !== "undefined") {
+      globalThis.dispatchEvent(new CustomEvent(name, { bubbles: true }));
+    }
+  }
+
+  /**
+   * Whether a music status payload indicates an active player: the bot is in a
+   * voice channel or a current track is present.
+   */
+  function computePlayerExists(status: any): boolean {
+    return (
+      status?.BotInChannel === true ||
+      status?.IsInVoiceChannel === true ||
+      !!status?.CurrentTrack
+    );
+  }
+
   // Subscribe to guild changes to restart polling/websocket
   currentGuild.subscribe(guild => {
     const state = get({ subscribe });
-    //logger.info(`[Guild Subscription] Fired. Current guild: ${guild?.id}, Last known: ${lastKnownGuildId}, Polling: ${state.isPolling}`);
     // If polling is active and a user is set, check if the guild has actually changed.
     if (state.isPolling && activeUserId && lastKnownGuildId !== undefined && guild?.id && guild.id !== lastKnownGuildId) {
-      //logger.info(`[Guild Subscription] Guild changed from ${lastKnownGuildId} to ${guild?.id}. Restarting connection.`);
       startPolling(activeUserId);
     }
     // Always update the last known guild ID. This handles the initial load case.
@@ -68,9 +87,7 @@ function createMusicStore() {
 
   // WebSocket Connection
   function connectWebSocket(userId: bigint) {
-    //logger.info(`connectWebSocket called for user: ${userId}`);
     if (!useWebSocket) {
-      //logger.info("connectWebSocket skipped: useWebSocket is false.");
       return; // Skip if WebSockets are disabled
     }
 
@@ -78,17 +95,13 @@ function createMusicStore() {
     const instancePort = get(currentInstance)?.port;
 
     if (!guildId || !userId) {
-      //logger.error(`Missing guildId or userId for WebSocket connection. GuildId: ${guildId}, UserId: ${userId}`);
       useWebSocket = false;
-      //logger.info("Falling back to polling due to missing IDs.");
       startPolling(userId);
       return;
     }
 
     if (!instancePort) {
-      //logger.error("Missing instance port for WebSocket connection.");
       useWebSocket = false;
-      //logger.info("Falling back to polling due to missing instance port.");
       startPolling(userId);
       return;
     }
@@ -96,17 +109,15 @@ function createMusicStore() {
     try {
       // Close any existing connection
       if (webSocket) {
-        //logger.info("Closing existing WebSocket connection before creating a new one.");
         webSocket.close();
         webSocket = null;
       }
 
-      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsHost = window.location.host; // Will be "mewdeko.tech" in production (if its the main bot)
+      const wsProtocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsHost = globalThis.location.host; // Will be "mewdeko.tech" in production (if its the main bot)
 
       const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1") ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}` : `${wsProtocol}//127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
 
-      //logger.info(`Connecting to WebSocket: ${wsUrl}`);
       webSocket = new WebSocket(wsUrl);
 
       webSocket.onopen = () => {
@@ -128,12 +139,6 @@ function createMusicStore() {
 
         try {
           const data = JSON.parse(event.data);
-          //logger.info("WebSocket message received", { data });
-
-          // Log full data once to see structure
-          if (!(window as any)._musicDataLogged) {
-            (window as any)._musicDataLogged = true;
-          }
 
           // Get current state before any updates
           const currentState = get({ subscribe });
@@ -153,12 +158,7 @@ function createMusicStore() {
               error: null
             }));
 
-            // Emit player destroyed event
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('playerDestroyed', {
-                bubbles: true
-              }));
-            }
+            emitPlayerEvent("playerDestroyed");
 
             // Keep the WebSocket connection alive to detect when bot rejoins
             lastMessageTime = Date.now(); // Reset heartbeat to keep connection alive
@@ -172,32 +172,19 @@ function createMusicStore() {
           // Check if track has changed
           const trackChanged = newTrackId && newTrackId !== prevTrackId;
 
-          if (trackChanged) {
-            //logger.info(`Track changed from ${prevTrackId} to ${newTrackId}`);
-          }
 
           // Determine if player exists based on voice channel status
-          const playerExists = data.BotInChannel === true || data.IsInVoiceChannel === true || !!data.CurrentTrack;
+          const playerExists = computePlayerExists(data);
 
           // Check if we're receiving messages after a silence period, disconnection, or explicit disconnection
           if ((wasDestroyedDueToSilence || wasExplicitlyDisconnected || !currentState.playerExists) && playerExists) {
             wasDestroyedDueToSilence = false; // Reset flag
             wasExplicitlyDisconnected = false; // Reset explicit disconnection flag
 
-            // Emit player created event
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('playerCreated', {
-                bubbles: true
-              }));
-            }
+            emitPlayerEvent("playerCreated");
           } else if (currentState.playerExists && !playerExists) {
             wasDestroyedDueToSilence = false; // Not due to silence, actual leave
-            // Emit player destroyed event
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('playerDestroyed', {
-                bubbles: true
-              }));
-            }
+            emitPlayerEvent("playerDestroyed");
           }
 
           // Check for explicit disconnection (when bot leaves channel)
@@ -217,16 +204,14 @@ function createMusicStore() {
 
           // If track has changed, update the artwork colors
           if (trackChanged && data?.CurrentTrack?.Track?.ArtworkUri) {
-            //logger.info("Updating artwork colors due to track change.");
             musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
           }
         } catch (err) {
-          //logger.error("Error processing WebSocket message:", err);
+          logger.error("Error processing WebSocket music message", err);
         }
       };
 
       webSocket.onerror = () => {
-        //logger.error("WebSocket error:", error);
 
         // Track connection errors
         update(state => ({
@@ -236,7 +221,6 @@ function createMusicStore() {
 
         // If this is our first attempt, try again with polling
         if (useWebSocket) {
-          //logger.warn("WebSocket error occurred. Disabling WebSockets and falling back to polling.");
           useWebSocket = false;
           startPolling(userId);
         }
@@ -263,12 +247,7 @@ function createMusicStore() {
             error: null
           }));
 
-          // Emit player destroyed event
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('playerDestroyed', {
-              bubbles: true
-            }));
-          }
+          emitPlayerEvent("playerDestroyed");
         }
 
         // Always try to reconnect if we're still in polling mode
@@ -282,9 +261,7 @@ function createMusicStore() {
         }
       };
     } catch (err) {
-      //logger.error("Failed to establish WebSocket connection:", err);
       useWebSocket = false;
-      //logger.info("Falling back to polling due to exception in connectWebSocket.");
       startPolling(userId);
     }
   }
@@ -293,7 +270,7 @@ function createMusicStore() {
     stopHeartbeat();
     lastMessageTime = Date.now();
 
-    heartbeatInterval = window.setInterval(() => {
+    heartbeatInterval = globalThis.setInterval(() => {
       const timeSinceLastMessage = Date.now() - lastMessageTime;
 
       if (timeSinceLastMessage > HEARTBEAT_TIMEOUT) {
@@ -313,7 +290,7 @@ function createMusicStore() {
           wasDestroyedDueToSilence = true;
 
           // Close the WebSocket to force reconnection
-          if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+          if (webSocket?.readyState === WebSocket.OPEN) {
             webSocket.close(1000, "Heartbeat timeout");
           }
 
@@ -357,15 +334,10 @@ function createMusicStore() {
           playerExists: true
         }));
 
-        // Emit player created event
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('playerCreated', {
-            bubbles: true
-          }));
-        }
+        emitPlayerEvent("playerCreated");
 
         // If we don't have an active WebSocket, try to reconnect
-        if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+        if (webSocket?.readyState !== WebSocket.OPEN) {
           if (activeUserId) {
             // Small delay to ensure bot is fully connected
             const userIdForReconnect = activeUserId;
@@ -385,15 +357,10 @@ function createMusicStore() {
           error: null
         }));
 
-        // Emit player destroyed event
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('playerDestroyed', {
-            bubbles: true
-          }));
-        }
+        emitPlayerEvent("playerDestroyed");
 
         // Close WebSocket if it's still open
-        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        if (webSocket?.readyState === WebSocket.OPEN) {
           webSocket.close(1000, "Player destroyed");
         }
       }
@@ -409,7 +376,6 @@ function createMusicStore() {
 
   function scheduleReconnect(userId: bigint) {
     if (reconnectTimeout) {
-      //logger.info("Clearing existing reconnect timeout.");
       clearTimeout(reconnectTimeout);
     }
 
@@ -425,10 +391,8 @@ function createMusicStore() {
 
   // Fallback polling implementation
   async function fetchStatus(userId: bigint) {
-    //logger.info(`fetchStatus called for user: ${userId}`);
     const state = get({ subscribe });
     if (state.failedFetchCount >= MAX_RETRIES) {
-      //logger.error(`Max retries (${MAX_RETRIES}) exceeded, stopping polling.`);
       stopPolling();
       return;
     }
@@ -436,13 +400,10 @@ function createMusicStore() {
     try {
       const guildId = get(currentGuild)?.id;
       if (!guildId) {
-        //logger.error("Missing guildId for polling", { userId });
         return;
       }
 
-      //logger.info(`Fetching status for guild ${guildId}`);
       const status = await musicApi.getPlayerStatus(guildId, userId);
-      //logger.info("Successfully fetched status.", { status });
 
 
       // Get the new track ID
@@ -450,31 +411,18 @@ function createMusicStore() {
 
       // Check for track changes
       const trackChanged = newTrackId && newTrackId !== state.lastTrackId;
-      if (trackChanged) {
-        //logger.info(`Track changed (polling) from ${state.lastTrackId} to ${newTrackId}`);
-      }
 
       // Determine if player exists based on voice channel status
-      const playerExists = status?.BotInChannel === true || status?.IsInVoiceChannel === true || !!status?.CurrentTrack;
+      const playerExists = computePlayerExists(status);
 
       // Check if player was destroyed
       if (state.playerExists && !playerExists) {
         wasDestroyedDueToSilence = false; // Not due to silence, actual leave
-        // Emit player destroyed event
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('playerDestroyed', {
-            bubbles: true
-          }));
-        }
+        emitPlayerEvent("playerDestroyed");
       } else if ((!state.playerExists || wasDestroyedDueToSilence || wasExplicitlyDisconnected) && playerExists) {
         wasDestroyedDueToSilence = false; // Reset flag
         wasExplicitlyDisconnected = false; // Reset explicit disconnection flag
-        // Emit player created event
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('playerCreated', {
-            bubbles: true
-          }));
-        }
+        emitPlayerEvent("playerCreated");
       }
 
       // Update store
@@ -489,7 +437,6 @@ function createMusicStore() {
 
       // If track has changed, update the artwork colors
       if (trackChanged && status?.CurrentTrack?.Track?.ArtworkUri) {
-        //logger.info("Updating artwork colors due to track change (polling).");
         await musicPlayerColors.updateFromArtwork(status.CurrentTrack.Track.ArtworkUri);
       }
 
@@ -498,7 +445,6 @@ function createMusicStore() {
 
       // Only change interval if it's significantly different
       if (Math.abs(currentPollDelay - optimalDelay) > 500) {
-        //logger.info(`Adjusting poll delay from ${currentPollDelay} to ${optimalDelay}`);
         currentPollDelay = optimalDelay;
 
         // Reset interval with new delay
@@ -508,7 +454,6 @@ function createMusicStore() {
         }
       }
     } catch (err) {
-      //logger.error("Failed to fetch music status:", err);
 
       update(state => {
         const newCount = state.failedFetchCount + 1;
@@ -516,7 +461,6 @@ function createMusicStore() {
         const backoffDelay = Math.min(BASE_DELAY * Math.pow(2, newCount - 1), MAX_DELAY);
 
         if (newCount >= MAX_RETRIES) {
-          //logger.error(`Max retries (${MAX_RETRIES}) reached. Stopping polling.`);
           stopPolling();
           return {
             ...state,
@@ -527,13 +471,11 @@ function createMusicStore() {
 
         // Update interval with backoff delay
         if (pollInterval) {
-          //logger.warn(`Fetch failed. Applying backoff. Next poll in ${backoffDelay}ms.`);
           clearInterval(pollInterval);
           pollInterval = setInterval(() => fetchStatus(userId), backoffDelay);
           currentPollDelay = backoffDelay;
         }
 
-        //logger.info(`Failed fetch count: ${newCount}, next delay: ${backoffDelay}ms`);
 
         return {
           ...state,
@@ -545,7 +487,6 @@ function createMusicStore() {
   }
 
   function startPolling(userId: bigint) {
-    //logger.info(`startPolling called for user: ${userId}`);
 
     // Defer the execution of polling logic.
     // This solves a race condition where external UI components might call startPolling()
@@ -558,27 +499,22 @@ function createMusicStore() {
 
       // Idempotency Check: If we're already polling for the correct user/guild, abort.
       if (state.isPolling && state.userId === userId && lastKnownGuildId === currentGuildId) {
-        //logger.info(`(Deferred) startPolling call is redundant. Already polling for user ${userId} in guild ${currentGuildId}. Aborting.`);
         return;
       }
 
-      //logger.info("(Deferred) Proceeding with startPolling. Cleaning up any existing connections first.");
       stopPolling();
       activeUserId = userId;
       lastKnownGuildId = currentGuildId;
 
 
       if (!userId) {
-        //logger.error("(Deferred) Cannot start polling without userId. Aborting.");
         return;
       }
 
       if (!lastKnownGuildId) {
-        //logger.error("(Deferred) Cannot start polling without guildId. Aborting.");
         return;
       }
 
-      //logger.info(`(Deferred) Starting polling for user ${userId} in guild ${lastKnownGuildId}`);
       update(s => ({
         ...s,
         isPolling: true,
@@ -599,7 +535,6 @@ function createMusicStore() {
         connectWebSocket(userId);
       } else {
         // Fall back to traditional polling
-        //logger.info("(Deferred) Falling back to traditional HTTP polling.");
         currentPollDelay = BASE_DELAY;
         fetchStatus(userId);
         pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
@@ -608,7 +543,6 @@ function createMusicStore() {
   }
 
   function stopPolling() {
-    //logger.info("stopPolling called.");
     // Do not reset activeUserId here, as deferred calls might need it.
     // It will be reset by the next successful start polling call.
 
@@ -620,7 +554,6 @@ function createMusicStore() {
 
     // Clean up WebSocket
     if (webSocket) {
-      //logger.info("Cleaning up WebSocket.");
       if (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING) {
         // Remove event listeners to prevent onclose from triggering reconnection logic
         webSocket.onclose = null;
@@ -632,14 +565,12 @@ function createMusicStore() {
 
     // Clean up reconnection timer
     if (reconnectTimeout) {
-      //logger.info("Cleaning up reconnect timeout.");
       clearTimeout(reconnectTimeout);
       reconnectTimeout = null;
     }
 
     // Clean up polling interval
     if (pollInterval) {
-      //logger.info("Cleaning up polling interval.");
       clearInterval(pollInterval);
       pollInterval = null;
     }
@@ -647,12 +578,10 @@ function createMusicStore() {
     // Only update the polling status if it's currently true
     if (get({ subscribe }).isPolling) {
       update(state => ({ ...state, isPolling: false, playerExists: false }));
-      //logger.info("stopPolling finished. isPolling set to false.");
     }
   }
 
   function reset() {
-    //logger.warn("Resetting music store to initial state.");
     stopPolling();
     stopEventSource(); // Make sure SSE is cleaned up
     activeUserId = null;
@@ -673,7 +602,6 @@ function createMusicStore() {
   }
 
   function getDebugInfo() {
-    //logger.info("getDebugInfo called.");
     const state = get({ subscribe });
     return {
       state,

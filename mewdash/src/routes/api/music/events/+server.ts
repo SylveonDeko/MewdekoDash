@@ -105,6 +105,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
           try {
             controller.enqueue(encoder.encode(`: heartbeat\n\n`));
           } catch (err) {
+            logger.debug("SSE heartbeat enqueue failed, closing stream", err);
             clearInterval(heartbeatInterval);
             cleanup();
           }

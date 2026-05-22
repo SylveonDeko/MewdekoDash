@@ -101,47 +101,61 @@ async function makeRequest(
  * the `X-Instance-Url` header; the user comes from `locals.user`, populated
  * by the auth hook.
  */
+/**
+ * Resolves the backend target and dashboard user for a mobile (Bearer JWT)
+ * request, given the already-extracted token value.
+ */
+async function resolveMobileBackend(
+  bearer: string,
+  request: Request,
+): Promise<ResolvedBackend | Response> {
+  const claims = verifyAccessToken(bearer);
+  if (!claims) {
+    return json({ error: "invalid_token" }, { status: 401 });
+  }
+
+  const session = await getSession(claims.sid);
+  const user = session?.user ?? null;
+  const instanceId = request.headers.get("x-mobile-instance");
+
+  try {
+    if (instanceId) {
+      const resolved = await resolveInstanceURL(instanceId);
+      if (!resolved) {
+        return json({ error: "unknown_instance" }, { status: 404 });
+      }
+      return { backend: resolved, user };
+    }
+    const fallback = await defaultInstanceURL();
+    if (!fallback) {
+      return json(
+        {
+          error: "select_instance_required",
+          message: "Multiple bot instances are configured; specify X-Mobile-Instance.",
+        },
+        { status: 409 },
+      );
+    }
+    return { backend: fallback, user };
+  } catch (err) {
+    logger.error("Mobile instance resolution failed", err);
+    return json(
+      { error: err instanceof Error ? err.message : "instance_resolution_failed" },
+      { status: 503 },
+    );
+  }
+}
+
 async function resolveBackend(
   request: Request,
   locals: App.Locals,
 ): Promise<ResolvedBackend | Response> {
   const authHeader = request.headers.get("authorization");
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
-    const claims = verifyAccessToken(authHeader.slice("bearer ".length).trim());
-    if (!claims) {
-      return json({ error: "invalid_token" }, { status: 401 });
-    }
-
-    const session = await getSession(claims.sid);
-    const user = session?.user ?? null;
-
-    const instanceId = request.headers.get("x-mobile-instance");
-    try {
-      if (instanceId) {
-        const resolved = await resolveInstanceURL(instanceId);
-        if (!resolved) {
-          return json({ error: "unknown_instance" }, { status: 404 });
-        }
-        return { backend: resolved, user };
-      }
-      const fallback = await defaultInstanceURL();
-      if (!fallback) {
-        return json(
-          {
-            error: "select_instance_required",
-            message: "Multiple bot instances are configured; specify X-Mobile-Instance.",
-          },
-          { status: 409 },
-        );
-      }
-      return { backend: fallback, user };
-    } catch (err) {
-      logger.error("Mobile instance resolution failed", err);
-      return json(
-        { error: err instanceof Error ? err.message : "instance_resolution_failed" },
-        { status: 503 },
-      );
-    }
+    return resolveMobileBackend(
+      authHeader.slice("bearer ".length).trim(),
+      request,
+    );
   }
 
   const instanceUrl = request.headers.get("x-instance-url");

@@ -1,5 +1,5 @@
 // src/routes/api/discord/callback/+page.server.ts
-import { redirect } from "@sveltejs/kit";
+import { redirect, type Cookies } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import {
   buildSearchParams,
@@ -29,41 +29,39 @@ function isValidRedirect(url: string): boolean {
            url.startsWith('/reviews');
 }
 
+/**
+ * Resolves a safe in-app redirect target from the OAuth `state` parameter,
+ * falling back to the `auth_redirect_to` cookie and then `/dashboard`.
+ */
+function resolveRedirectTarget(state: string | null, cookies: Cookies): string {
+  const fromCookie = () => {
+    const cookieRedirect = cookies.get("auth_redirect_to") || "/dashboard";
+    return isValidRedirect(cookieRedirect) ? cookieRedirect : "/dashboard";
+  };
+
+  if (!state) return fromCookie();
+
+  // Parse state: timestamp_base64url
+  const parts = state.split("_");
+  if (parts.length < 2) return "/dashboard";
+
+  try {
+    const encodedRedirect = parts.slice(1).join("_"); // In case redirect has underscores
+    const decodedRedirect = Buffer.from(encodedRedirect, "base64").toString(
+      "utf-8",
+    );
+    return isValidRedirect(decodedRedirect) ? decodedRedirect : "/dashboard";
+  } catch {
+    return fromCookie();
+  }
+}
+
 // routes/api/discord/callback/+page.server.ts
 export const load: PageServerLoad = async ({ url, cookies, locals }) => {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
-  // Extract redirect URL from state parameter or fallback to cookie
-  let redirectTo = "/dashboard";
-  if (state) {
-    // Parse state: timestamp_base64url
-    const parts = state.split("_");
-    if (parts.length >= 2) {
-      try {
-        const encodedRedirect = parts.slice(1).join("_"); // In case redirect has underscores
-        const decodedRedirect = Buffer.from(encodedRedirect, "base64").toString(
-          "utf-8",
-        );
-        // Validate redirect URL for security
-        redirectTo = isValidRedirect(decodedRedirect)
-          ? decodedRedirect
-          : "/dashboard";
-      } catch (err) {
-        // Fallback to cookie if state parsing fails
-        const cookieRedirect = cookies.get("auth_redirect_to") || "/dashboard";
-        redirectTo = isValidRedirect(cookieRedirect)
-          ? cookieRedirect
-          : "/dashboard";
-      }
-    }
-  } else {
-    // Fallback to cookie if no state
-    const cookieRedirect = cookies.get("auth_redirect_to") || "/dashboard";
-    redirectTo = isValidRedirect(cookieRedirect)
-      ? cookieRedirect
-      : "/dashboard";
-  }
+  const redirectTo = resolveRedirectTarget(state, cookies);
 
   // Clean up the redirect cookie
   cookies.delete("auth_redirect_to", { path: "/" });
