@@ -32,6 +32,21 @@
   const THROTTLE_MS = 16;
   let dragAnimationFrameId: number | null = null;
 
+  function canvasHex(color: unknown, fallback = "#ffffff", alphaFirst = false): string {
+    if (typeof color !== "string") return fallback;
+
+    const raw = color.trim().replace(/^#/, "");
+    if (!/^([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(raw)) {
+      return fallback;
+    }
+
+    if (raw.length === 3 || raw.length === 4) {
+      return `#${raw.slice(0, 3).split("").map((char) => char + char).join("")}`;
+    }
+
+    return `#${raw.length === 8 && alphaFirst ? raw.slice(2, 8) : raw.slice(0, 6)}`;
+  }
+
     interface CurrentUserData {
       username: string;
       avatarUrl: string;
@@ -759,9 +774,9 @@
             // Default background with gradient (since default is transparent)
             // First draw gradient
             const gradient = ctx.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
-            gradient.addColorStop(0, `${$colorStore.primary}15`);
-            gradient.addColorStop(0.5, `${$colorStore.primary}20`);
-            gradient.addColorStop(1, `${$colorStore.secondary}15`);
+            gradient.addColorStop(0, `${canvasHex($colorStore.primary, "#3b82f6")}15`);
+            gradient.addColorStop(0.5, `${canvasHex($colorStore.primary, "#3b82f6")}20`);
+            gradient.addColorStop(1, `${canvasHex($colorStore.secondary, "#8b5cf6")}15`);
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
 
@@ -771,7 +786,7 @@
 
         // Draw username
         if (localTemplate.templateUser?.showText) {
-            ctx.fillStyle = `#${localTemplate.templateUser.textColor || 'FFFFFF'}`;
+            ctx.fillStyle = canvasHex(localTemplate.templateUser.textColor, "#ffffff");
             ctx.font = `${localTemplate.templateUser.fontSize || 24}px sans-serif`;
             ctx.fillText(
                 currentUserData?.username || sampleData.username,
@@ -825,11 +840,7 @@
 
             // Parse color - handle ARGB format (e.g., "FF000000")
             let barColor = localTemplate.templateBar.barColor || '4CAF50';
-            if (barColor.length === 8) {
-                // Skip alpha bytes for ARGB format
-                barColor = barColor.slice(2);
-            }
-            ctx.fillStyle = `#${barColor}`;
+            ctx.fillStyle = canvasHex(barColor, "#4caf50", true);
             ctx.globalAlpha = (localTemplate.templateBar.barTransparency || 255) / 255;
 
             ctx.beginPath();
@@ -845,7 +856,7 @@
 
         // Draw guild rank
         if (localTemplate.templateGuild?.showGuildRank) {
-            ctx.fillStyle = `#${localTemplate.templateGuild.guildRankColor || 'FFFFFF'}`;
+            ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildRankColor, "#ffffff");
             ctx.font = `${localTemplate.templateGuild.guildRankFontSize || 18}px sans-serif`;
             ctx.fillText(
                 `#${currentUserData?.rank || sampleData.rank}`,
@@ -856,7 +867,7 @@
 
         // Draw guild level
         if (localTemplate.templateGuild?.showGuildLevel) {
-            ctx.fillStyle = `#${localTemplate.templateGuild.guildLevelColor || 'FFFFFF'}`;
+            ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildLevelColor, "#ffffff");
             ctx.font = `${localTemplate.templateGuild.guildLevelFontSize || 18}px sans-serif`;
             ctx.fillText(
                 `Level ${currentUserData?.level || sampleData.level}`,
