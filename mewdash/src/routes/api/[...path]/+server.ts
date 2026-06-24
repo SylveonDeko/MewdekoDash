@@ -28,7 +28,8 @@ interface ResolvedBackend {
 function botHeaders(user: DiscordUser | null, includeContentType = false): HeadersInit {
   const headers: Record<string, string> = { "X-API-Key": MEWDEKO_API_KEY };
   if (includeContentType) headers["Content-Type"] = "application/json";
-  if (user) headers["Authorization"] = `Bearer ${mintBackendToken(user)}`;
+  const backendToken = user ? mintBackendToken(user) : null;
+  if (backendToken) headers["Authorization"] = `Bearer ${backendToken}`;
   return headers;
 }
 

@@ -1,5 +1,6 @@
 import { env } from "$env/dynamic/public";
 import { authenticateUser } from "$lib/server/discordApi";
+import { logBackendJwtInit } from "$lib/server/backendJwt";
 import * as Sentry from "@sentry/sveltekit";
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
@@ -12,6 +13,8 @@ Sentry.init({
   environment: env.PUBLIC_SENTRY_ENVIRONMENT ?? "production",
   tracesSampleRate: 0.1,
 });
+
+logBackendJwtInit();
 
 const appHandle: Handle = async ({ event, resolve }) => {
   try {

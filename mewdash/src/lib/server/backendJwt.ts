@@ -28,6 +28,10 @@ const SCOPE = "botapi";
 const b64url = (text: string): string =>
   Buffer.from(text, "utf8").toString("base64url");
 
+export function canMintBackendToken(): boolean {
+  return BOT_JWT_SECRET.length >= 32;
+}
+
 function hmac(payload: string): string {
   return createHmac("sha256", BOT_JWT_SECRET)
     .update(payload)
@@ -54,7 +58,9 @@ interface BackendClaims {
  * Attached as `Authorization: Bearer` on proxied bot API calls so the bot can
  * verify the user instead of trusting a forwarded header.
  */
-export function mintBackendToken(user: DiscordUser): string {
+export function mintBackendToken(user: DiscordUser): string | null {
+  if (!canMintBackendToken()) return null;
+
   const now = Math.floor(Date.now() / 1000);
   const payload: BackendClaims = {
     sub: user.id.toString(),
@@ -78,7 +84,7 @@ export function mintBackendToken(user: DiscordUser): string {
  * identity.
  */
 export function logBackendJwtInit(): void {
-  if (!BOT_JWT_SECRET || BOT_JWT_SECRET.length < 32) {
+  if (!canMintBackendToken()) {
     logger.warn(
       "BOT_JWT_SECRET is missing or shorter than 32 bytes. It must match each bot instance's JwtSecret.",
     );
