@@ -534,7 +534,14 @@
             <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">24-Hour Activity</h3>
-              <StatsGraph data={chartData} />
+              <StatsGraph
+                data={chartData}
+                totalLabel="Total Messages"
+                averageLabel="Average per Hour"
+                peakLabel="Peak Hour"
+                valueLabel="Messages"
+                formatLabelsAsDates={false}
+              />
             </div>
           {/if}
 
@@ -543,7 +550,14 @@
             <div class=" rounded-xl border p-6 transition-all"
                    style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
               <h3 class="text-xl font-bold mb-4" style="color: {$colorStore.text}">Weekly Trend</h3>
-              <StatsGraph data={weeklyChartData} />
+              <StatsGraph
+                data={weeklyChartData}
+                totalLabel="Total Messages"
+                averageLabel="Average per Day"
+                peakLabel="Peak Day"
+                valueLabel="Messages"
+                formatLabelsAsDates={false}
+              />
             </div>
           {/if}
         </div>

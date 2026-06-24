@@ -10,9 +10,22 @@
   interface Props {
     data: GraphStatsResponse;
     type?: "join" | "leave";
+    totalLabel?: string;
+    averageLabel?: string;
+    peakLabel?: string;
+    valueLabel?: string;
+    formatLabelsAsDates?: boolean;
   }
 
-  let { data, type = "join" }: Props = $props();
+  let {
+    data,
+    type = "join",
+    totalLabel,
+    averageLabel = "Average per Day",
+    peakLabel = "Peak Day",
+    valueLabel,
+    formatLabelsAsDates = true
+  }: Props = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
   let chart: Chart | null = null;
@@ -22,13 +35,24 @@
     return numValue.toFixed(2);
   }
 
+  function defaultValueLabel(): string {
+    return type === "join" ? "Joins" : "Leaves";
+  }
+
+  function formatLabel(label: string): string {
+    if (!formatLabelsAsDates) return label;
+
+    const date = new Date(label);
+    if (Number.isNaN(date.getTime())) return label;
+
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
   function createChart() {
     if (!canvas || !data?.dailyStats?.length) return;
     chart?.destroy();
 
-    const labels = data.dailyStats.map(d =>
-      new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    );
+    const labels = data.dailyStats.map(d => formatLabel(d.date));
     const values = data.dailyStats.map(d => d.count);
     const primary = $colorStore.primary;
     const muted = $colorStore.muted;
@@ -62,7 +86,7 @@
             borderWidth: 1,
             callbacks: {
               title: (items) => items[0]?.label || "",
-              label: (item) => `${type === "join" ? "Joins" : "Leaves"}: ${item.raw}`,
+              label: (item) => `${valueLabel || defaultValueLabel()}: ${item.raw}`,
             }
           }
         },
@@ -110,21 +134,21 @@
   <div class="space-y-6">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">Total {type === 'join' ? 'Joins' : 'Leaves'}</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{totalLabel || `Total ${defaultValueLabel()}`}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">{data.summary.total}</div>
       </div>
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">Average per Day</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{averageLabel}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">
           {formatAverage(data.summary.average)}
         </div>
       </div>
 
       <div class="p-4 rounded-xl" style="background: {$colorStore.primary}10">
-        <div class="text-sm" style="color: {$colorStore.muted}">Peak Day</div>
+        <div class="text-sm" style="color: {$colorStore.muted}">{peakLabel}</div>
         <div class="text-lg font-semibold" style="color: {$colorStore.text}">
-          {new Date(data.summary.peakDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          {formatLabel(data.summary.peakDate)}
           <span class="text-sm" style="color: {$colorStore.muted}">({data.summary.peakCount})</span>
         </div>
       </div>
