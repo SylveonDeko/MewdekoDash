@@ -2,6 +2,7 @@
 <script lang="ts">
 
 
+  import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import {
     messageCountApi,
@@ -40,6 +41,8 @@
     let messageStats: MessageStatsResponse | null = $state(null);
   let topUsers: any[] = $state([]);
   let topChannels: any[] = $state([]);
+  let leastActiveUser: any | null = $state(null);
+  let leastActiveChannel: any | null = $state(null);
 
   // Export settings
     let exportStartDate = $state("");
@@ -55,6 +58,8 @@
     let minMessageLength = $state(0);
     let settingsLoading = $state(false);
     let resetLoading = $state(false);
+    let activeLoadKey = "";
+    let loadRequestId = 0;
 
   function toGraphStats(points: { label: string; count: number }[]) {
     if (!points.length) return null;
@@ -74,8 +79,9 @@
   // Computed values
   let chartData = $derived.by(() => {
     const stats = messageStats as any;
-    if (!stats?.hourlyStats?.length) return null;
-    return toGraphStats(stats.hourlyStats.map((s: any) => ({
+    const hours = stats?.busiestHours || stats?.hourlyStats;
+    if (!hours?.length) return null;
+    return toGraphStats(hours.map((s: any) => ({
       label: `${s.hour}:00`,
       count: s.messageCount
     })));
@@ -83,9 +89,10 @@
 
   let weeklyChartData = $derived.by(() => {
     const stats = messageStats as any;
-    if (!stats?.weeklyTrend?.length) return null;
-    return toGraphStats(stats.weeklyTrend.map((d: any) => ({
-      label: d.date,
+    const days = stats?.busiestDays || stats?.weeklyTrend;
+    if (!days?.length) return null;
+    return toGraphStats(days.map((d: any) => ({
+      label: d.day || d.date,
       count: d.messageCount
     })));
   });
@@ -112,9 +119,81 @@
     return $colorStore.primary;
   }
 
+  function csvEscape(value: unknown): string {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  }
+
+  function toCsv(rows: Record<string, unknown>[]): string {
+    if (!rows.length) return "";
+    const headers = Object.keys(rows[0]);
+    return [
+      headers.map(csvEscape).join(","),
+      ...rows.map(row => headers.map(header => csvEscape(row[header])).join(","))
+    ].join("\n");
+  }
+
+  function downloadTextFile(content: string, filename: string, mimeType: string) {
+    if (!browser) return;
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function buildExportPayload() {
+    return {
+      guildId: $currentGuild?.id?.toString() ?? "",
+      guildName: $currentGuild?.name ?? "Unknown Guild",
+      exportedAt: new Date().toISOString(),
+      startDate: exportStartDate || null,
+      endDate: exportEndDate || null,
+      summary: messageStats
+        ? {
+            enabled: messageStats.enabled,
+            totalMessages: messageStats.totalMessages,
+            dailyMessages: messageStats.dailyMessages,
+            lastUpdated: messageStats.lastUpdated
+          }
+        : null,
+      users: includeUsers ? topUsers.map(user => ({
+        rank: user.rank,
+        userId: user.userId,
+        username: user.username,
+        totalMessages: user.totalMessages,
+        dailyMessages: user.dailyMessages,
+        percentage: user.percentage ?? 0
+      })) : [],
+      channels: includeChannels ? topChannels.map(channel => ({
+        channelId: channel.channelId,
+        channelName: channel.channelName,
+        totalMessages: channel.totalMessages,
+        dailyMessages: channel.dailyMessages,
+        percentage: channel.percentage ?? 0
+      })) : [],
+      leastActiveUser,
+      leastActiveChannel,
+      hourlyStats: includeHourly ? (((messageStats as any)?.busiestHours ?? (messageStats as any)?.hourlyStats) ?? []) : [],
+      busiestDays: includeHourly ? (((messageStats as any)?.busiestDays ?? (messageStats as any)?.weeklyTrend) ?? []) : []
+    };
+  }
+
   // API Functions
-  async function loadData() {
+  async function loadData(force = false) {
     if (!$currentGuild) return;
+
+    const loadKey = `${$currentInstance?.port ?? "default"}:${$currentGuild.id}`;
+    if (!force && loading && activeLoadKey === loadKey) return;
+
+    const requestId = ++loadRequestId;
+    activeLoadKey = loadKey;
     
     loading = true;
     error = null;
@@ -125,6 +204,8 @@
         messageCountApi.getMessageStats($currentGuild.id),
         clientApi.getMembers($currentGuild.id)
       ]);
+
+      if (requestId !== loadRequestId || activeLoadKey !== loadKey) return;
       
       messageStats = statsData;
       
@@ -144,6 +225,17 @@
       });
       
       topChannels = statsData?.topChannels || [];
+      if (statsData?.leastActiveUser) {
+        const member = guildMembers?.find(m => m?.id?.toString() === statsData.leastActiveUser?.userId);
+        leastActiveUser = {
+          ...statsData.leastActiveUser,
+          username: member?.username || 'Unknown User'
+        };
+      } else {
+        leastActiveUser = null;
+      }
+
+      leastActiveChannel = statsData?.leastActiveChannel || null;
       
       // Update enabled state for settings
       messageCountEnabled = statsData?.enabled || false;
@@ -159,10 +251,13 @@
       }
 
     } catch (err) {
+      if (requestId !== loadRequestId || activeLoadKey !== loadKey) return;
       error = err instanceof Error ? err.message : "Failed to load message stats";
       showNotificationMessage("Failed to load message stats", "error");
     } finally {
-      loading = false;
+      if (requestId === loadRequestId && activeLoadKey === loadKey) {
+        loading = false;
+      }
     }
   }
 
@@ -171,8 +266,61 @@
 
     isExporting = true;
     try {
-      // Note: exportMessageStats API method not yet implemented
-      showNotificationMessage("Export feature not yet implemented", "error");
+      if (!messageStats) {
+        await loadData(true);
+      }
+
+      if (!messageStats) {
+        throw new Error("No message stats loaded");
+      }
+
+      const payload = buildExportPayload();
+      const date = new Date().toISOString().split("T")[0];
+      const guildName = ($currentGuild.name || "guild").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+
+      if (exportFormat === "json") {
+        downloadTextFile(
+          JSON.stringify(payload, null, 2),
+          `${guildName}-message-stats-${date}.json`,
+          "application/json;charset=utf-8"
+        );
+      } else {
+        const sections = [
+          toCsv([payload.summary ? {
+            guildId: payload.guildId,
+            guildName: payload.guildName,
+            enabled: payload.summary.enabled,
+            totalMessages: payload.summary.totalMessages,
+            dailyMessages: payload.summary.dailyMessages,
+            lastUpdated: payload.summary.lastUpdated,
+            exportedAt: payload.exportedAt,
+            startDate: payload.startDate ?? "",
+            endDate: payload.endDate ?? ""
+          } : {
+            guildId: payload.guildId,
+            guildName: payload.guildName,
+            enabled: false,
+            totalMessages: 0,
+            dailyMessages: 0,
+            lastUpdated: "",
+            exportedAt: payload.exportedAt,
+            startDate: payload.startDate ?? "",
+            endDate: payload.endDate ?? ""
+          }]),
+          includeUsers && payload.users.length ? `\nTop Users\n${toCsv(payload.users)}` : "",
+          includeChannels && payload.channels.length ? `\nTop Channels\n${toCsv(payload.channels)}` : "",
+          includeHourly && payload.hourlyStats.length ? `\nBusiest Hours\n${toCsv(payload.hourlyStats)}` : "",
+          includeHourly && payload.busiestDays.length ? `\nBusiest Days\n${toCsv(payload.busiestDays)}` : ""
+        ].filter(Boolean).join("\n");
+
+        downloadTextFile(
+          sections,
+          `${guildName}-message-stats-${date}.csv`,
+          "text/csv;charset=utf-8"
+        );
+      }
+
+      showNotificationMessage("Message stats exported", "success");
     } catch (err) {
       showNotificationMessage("Failed to export stats", "error");
     } finally {
@@ -205,8 +353,11 @@
 
     settingsLoading = true;
     try {
-      showNotificationMessage("Toggle feature not yet implemented", "error");
-      // TODO: Implement toggleMessageCount API
+      const result = await messageCountApi.toggleMessageCount($currentGuild.id);
+      messageCountEnabled = result.enabled;
+      messageStats = messageStats ? { ...messageStats, enabled: result.enabled } : messageStats;
+      showNotificationMessage(result.message || "Message count setting updated", "success");
+      await loadData(true);
     } catch (err) {
       showNotificationMessage("Failed to update setting", "error");
     } finally {
@@ -235,8 +386,9 @@
 
     resetLoading = true;
     try {
-      showNotificationMessage("Reset feature not yet implemented", "error");
-      // TODO: Implement resetMessageCounts API
+      const result = await messageCountApi.resetMessageCounts($currentGuild.id);
+      showNotificationMessage(result.message || "Message counts reset", "success");
+      await loadData(true);
     } catch (err) {
       showNotificationMessage("Failed to reset counts", "error");
     } finally {
@@ -246,12 +398,12 @@
 
   // Event handlers
   onMount(() => {
-    loadData();
+    loadData(true);
     loadSettings();
   });
 
   $effect(() => {
-        if ($currentInstance) {
+        if ($currentInstance && $currentGuild) {
             loadData();
         }
     });
@@ -284,7 +436,7 @@
     {
       label: "Refresh",
       icon: "fa-arrows-rotate",
-      action: loadData,
+      action: () => loadData(true),
       loading: loading
     }
     ]);
@@ -361,6 +513,24 @@
               icon="fa-circle"
               iconColor={messageStats.enabled ? "primary" : "secondary"}
             />
+            {#if leastActiveUser}
+              <StatCard
+                label="Least Active User"
+                value={leastActiveUser.username}
+                subtitle={`${formatNumber(leastActiveUser.totalMessages)} messages`}
+                icon="fa-user-clock"
+                iconColor="secondary"
+              />
+            {/if}
+            {#if leastActiveChannel}
+              <StatCard
+                label="Least Active Channel"
+                value={`#${leastActiveChannel.channelName}`}
+                subtitle={`${formatNumber(leastActiveChannel.totalMessages)} messages`}
+                icon="fa-hashtag"
+                iconColor="secondary"
+              />
+            {/if}
           </div>
         {/if}
 
@@ -419,7 +589,7 @@
                       {user.username}
                     </div>
                     <div class="text-sm sm:hidden" style="color: {$colorStore.muted}">
-                      {formatNumber(user.totalMessages)} messages • Daily: {formatNumber(user.dailyMessages)}
+                      {formatNumber(user.totalMessages)} messages • {user.percentage ?? 0}% • Daily: {formatNumber(user.dailyMessages)}
                     </div>
                   </div>
                 </div>
@@ -430,7 +600,7 @@
                     {formatNumber(user.totalMessages)} messages
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    Daily: {formatNumber(user.dailyMessages)}
+                    {user.percentage ?? 0}% of total • Daily: {formatNumber(user.dailyMessages)}
                   </div>
                 </div>
               </div>
@@ -463,7 +633,7 @@
                       #{channel.channelName}
                     </div>
                     <div class="text-sm sm:hidden" style="color: {$colorStore.muted}">
-                      {formatNumber(channel.totalMessages)} messages • Daily: {formatNumber(channel.dailyMessages)}
+                      {formatNumber(channel.totalMessages)} messages • {channel.percentage ?? 0}% • Daily: {formatNumber(channel.dailyMessages)}
                     </div>
                   </div>
                 </div>
@@ -474,7 +644,7 @@
                     {formatNumber(channel.totalMessages)} messages
                   </div>
                   <div class="text-sm" style="color: {$colorStore.muted}">
-                    Daily: {formatNumber(channel.dailyMessages)}
+                    {channel.percentage ?? 0}% of total • Daily: {formatNumber(channel.dailyMessages)}
                   </div>
                 </div>
               </div>

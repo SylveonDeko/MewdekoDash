@@ -30,12 +30,35 @@ export interface MessageStatsResponse {
     userId: string;
     totalMessages: number;
     dailyMessages: number;
+    percentage?: number;
   }>;
   topChannels: Array<{
     channelId: string;
     channelName: string;
     totalMessages: number;
     dailyMessages: number;
+    percentage?: number;
+  }>;
+  leastActiveUser?: {
+    userId: string;
+    totalMessages: number;
+    dailyMessages: number;
+    percentage?: number;
+  } | null;
+  leastActiveChannel?: {
+    channelId: string;
+    channelName: string;
+    totalMessages: number;
+    dailyMessages: number;
+    percentage?: number;
+  } | null;
+  busiestHours?: Array<{
+    hour: number;
+    messageCount: number;
+  }>;
+  busiestDays?: Array<{
+    day: string;
+    messageCount: number;
   }>;
   dailyMessages: number;
   totalMessages: number;

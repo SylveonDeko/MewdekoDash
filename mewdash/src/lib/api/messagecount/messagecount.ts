@@ -44,7 +44,7 @@ export const messageCountApi = {
     if (channelId) params.set("channelId", channelId.toString());
     const qs = params.toString();
     const suffix = qs ? `?${qs}` : "";
-    return apiRequest<{ message: string }>(
+    return apiRequest<{ message: string; removedAny: boolean }>(
       `messagecount/${guildId}/reset${suffix}`,
       "POST",
     );
