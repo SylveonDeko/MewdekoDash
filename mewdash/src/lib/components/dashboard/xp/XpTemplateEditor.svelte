@@ -49,6 +49,8 @@
   let backgroundImage = $state<HTMLImageElement | null>(null);
   let backgroundImageLoading = $state(false);
   let defaultBgImage = $state<HTMLImageElement | null>(null);
+  const canvasImageCache = new Map<string, HTMLImageElement>();
+  const loadingCanvasImages = new Set<string>();
 
   // Panel states
   let panels = $state({
@@ -223,6 +225,130 @@
   function hex6(color: string): string {
     const raw = color.startsWith('#') ? color.slice(1) : color;
     return '#' + raw.slice(0, 6);
+  }
+
+  function getDisplayData() {
+    return useRealData && currentUserData ? currentUserData : sampleData;
+  }
+
+  function loadCanvasImage(url: string): HTMLImageElement | null {
+    if (!url) return null;
+
+    const cached = canvasImageCache.get(url);
+    if (cached) return cached;
+    if (loadingCanvasImages.has(url)) return null;
+
+    loadingCanvasImages.add(url);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      canvasImageCache.set(url, img);
+      loadingCanvasImages.delete(url);
+      redrawCanvas();
+    };
+    img.onerror = () => {
+      loadingCanvasImages.delete(url);
+      redrawCanvas();
+    };
+    img.src = url;
+
+    return null;
+  }
+
+  function getUserInitials(data: any): string {
+    const username = data?.username || "User";
+    return username
+      .split(/\s+/)
+      .map((part: string) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  function getBarPolygon(element: any, progressPercent?: number) {
+    const progress = Math.max(0, Math.min(100, progressPercent ?? getDisplayData()?.progress ?? sampleData.progress ?? 0)) / 100;
+    const direction = localTemplate?.templateBar?.barDirection ?? element.direction ?? 3;
+    const length = (localTemplate?.templateBar?.barLength || element.length || 452) * progress;
+    const { x1, y1, x2, y2 } = element;
+    let x3: number;
+    let x4: number;
+    let y3: number;
+    let y4: number;
+
+    switch (direction) {
+      case 1:
+        x3 = x1;
+        x4 = x2;
+        y3 = y1 + length;
+        y4 = y2 + length;
+        break;
+      case 0:
+        x3 = x1;
+        x4 = x2;
+        y3 = y1 - length;
+        y4 = y2 - length;
+        break;
+      case 2:
+        x3 = x1 - length;
+        x4 = x2 - length;
+        y3 = y1;
+        y4 = y2;
+        break;
+      default:
+        x3 = x1 + length;
+        x4 = x2 + length;
+        y3 = y1;
+        y4 = y2;
+        break;
+    }
+
+    return [
+      { x: x1, y: y1 },
+      { x: x3, y: y3 },
+      { x: x4, y: y4 },
+      { x: x2, y: y2 }
+    ];
+  }
+
+  function isPointInPolygon(x: number, y: number, polygon: Array<{ x: number; y: number }>) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const intersects = polygon[i].y > y !== polygon[j].y > y &&
+        x < ((polygon[j].x - polygon[i].x) * (y - polygon[i].y)) / (polygon[j].y - polygon[i].y) + polygon[i].x;
+      if (intersects) inside = !inside;
+    }
+
+    return inside;
+  }
+
+  function isPointNearSegment(
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    tolerance: number
+  ) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return Math.hypot(x - x1, y - y1) <= tolerance;
+
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lengthSquared));
+    const projectedX = x1 + t * dx;
+    const projectedY = y1 + t * dy;
+    return Math.hypot(x - projectedX, y - projectedY) <= tolerance;
+  }
+
+  function isPointOnBar(x: number, y: number, element: any, tolerance = 12) {
+    const fullPolygon = getBarPolygon(element, 100);
+    if (isPointInPolygon(x, y, fullPolygon)) return true;
+
+    return fullPolygon.some((point, index) => {
+      const next = fullPolygon[(index + 1) % fullPolygon.length];
+      return isPointNearSegment(x, y, point.x, point.y, next.x, next.y, tolerance);
+    });
   }
 
   // Save current state to undo stack
@@ -430,6 +556,7 @@
     }
 
     // Draw elements
+    const displayData = getDisplayData();
     elements.forEach(element => {
       if (!element.visible) return;
 
@@ -437,21 +564,57 @@
       const isHovered = hoveredElement === element.id;
 
       if (element.type === "image") {
-        // Draw placeholder image
+        context.save();
         context.fillStyle = `${$colorStore.primary}30`;
-        context.fillRect(element.x, element.y, element.width, element.height);
+
+        if (element.id === "user-icon") {
+          const avatarUrl = displayData?.avatarUrl;
+          const avatarImage = avatarUrl ? loadCanvasImage(avatarUrl) : null;
+          const centerX = element.x + element.width / 2;
+          const centerY = element.y + element.height / 2;
+          const radius = Math.min(element.width, element.height) / 2;
+
+          context.beginPath();
+          context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          context.clip();
+
+          if (avatarImage?.complete && avatarImage.naturalWidth > 0) {
+            context.drawImage(avatarImage, element.x, element.y, element.width, element.height);
+          } else {
+            context.fillRect(element.x, element.y, element.width, element.height);
+            context.fillStyle = $colorStore.text;
+            context.font = `${Math.max(14, Math.min(element.width, element.height) / 3)}px Inter`;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText(getUserInitials(displayData), centerX, centerY);
+          }
+        } else if (element.id === "club-icon") {
+          context.fillRect(element.x, element.y, element.width, element.height);
+          context.fillStyle = $colorStore.text;
+          context.font = `${Math.max(16, Math.min(element.width, element.height) * 0.55)}px Inter`;
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(displayData?.clubIcon || "🏆", element.x + element.width / 2, element.y + element.height / 2);
+        } else {
+          context.fillRect(element.x, element.y, element.width, element.height);
+        }
+
+        context.restore();
 
         // Draw image border
         context.strokeStyle = isSelected ? $colorStore.accent : isHovered ? $colorStore.primary : `${$colorStore.primary}40`;
         context.lineWidth = isSelected ? 2 : 1;
         context.strokeRect(element.x, element.y, element.width, element.height);
 
-        // Draw label
-        context.fillStyle = $colorStore.text;
-        context.font = "12px Inter";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText(element.label, element.x + element.width / 2, element.y + element.height / 2);
+        if (previewMode === "edit" && (isSelected || isHovered)) {
+          context.fillStyle = "rgba(0, 0, 0, 0.65)";
+          context.fillRect(element.x, element.y + element.height - 18, element.width, 18);
+          context.fillStyle = $colorStore.text;
+          context.font = "11px Inter";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(element.label, element.x + element.width / 2, element.y + element.height - 9);
+        }
       } else if (element.type === "text") {
         // Draw text
         context.fillStyle = element.color.startsWith("#") ? element.color : `#${element.color}`;
@@ -459,9 +622,7 @@
         context.textAlign = "left";
         context.textBaseline = "top";
 
-        const displayText = useRealData && currentUserData
-          ? getTextContent(element.id, currentUserData)
-          : getTextContent(element.id, sampleData);
+        const displayText = getTextContent(element.id, displayData);
 
         context.fillText(displayText, element.x, element.y);
 
@@ -481,48 +642,8 @@
         }
       } else if (element.type === "bar") {
         // Draw progress bar as a filled polygon (matching C# DrawXpBar method)
-        const percent = (useRealData && currentUserData?.progress ? currentUserData.progress : sampleData.progress) / 100;
-        const direction = localTemplate?.templateBar?.barDirection ?? 3; // C# enum: 0=Up, 1=Down, 2=Left, 3=Right (default)
-        const barLength = localTemplate?.templateBar?.barLength || 452;
         const transparency = localTemplate?.templateBar?.barTransparency || 255;
-
-        // Calculate progress length
-        const length = barLength * percent;
-
-        // Calculate the four corners of the progress bar based on C# XpTemplateDirection enum
-        // 0=Up, 1=Down, 2=Left, 3=Right
-        let x3, x4, y3, y4;
-        const x1 = element.x1;
-        const y1 = element.y1;
-        const x2 = element.x2;
-        const y2 = element.y2;
-
-        switch (direction) {
-          case 1: // Down
-            x3 = x1;
-            x4 = x2;
-            y3 = y1 + length;
-            y4 = y2 + length;
-            break;
-          case 0: // Up
-            x3 = x1;
-            x4 = x2;
-            y3 = y1 - length;
-            y4 = y2 - length;
-            break;
-          case 2: // Left
-            x3 = x1 - length;
-            x4 = x2 - length;
-            y3 = y1;
-            y4 = y2;
-            break;
-          default: // Right (3)
-            x3 = x1 + length;
-            x4 = x2 + length;
-            y3 = y1;
-            y4 = y2;
-            break;
-        }
+        const polygon = getBarPolygon(element, displayData?.progress);
 
         // Draw the progress bar as a filled path
         context.save();
@@ -543,10 +664,8 @@
 
         // Draw the path exactly as C# does
         context.beginPath();
-        context.moveTo(x1, y1);
-        context.lineTo(x3, y3);
-        context.lineTo(x4, y4);
-        context.lineTo(x2, y2);
+        context.moveTo(polygon[0].x, polygon[0].y);
+        polygon.slice(1).forEach(point => context.lineTo(point.x, point.y));
         context.closePath();
         context.fill();
 
@@ -556,10 +675,10 @@
         if (previewMode === "edit" && (isSelected || isHovered)) {
           context.fillStyle = isSelected ? $colorStore.accent : $colorStore.primary;
           context.beginPath();
-          context.arc(x1, y1, 5, 0, Math.PI * 2);
+          context.arc(element.x1, element.y1, 5, 0, Math.PI * 2);
           context.fill();
           context.beginPath();
-          context.arc(x2, y2, 5, 0, Math.PI * 2);
+          context.arc(element.x2, element.y2, 5, 0, Math.PI * 2);
           context.fill();
         }
       }
@@ -668,10 +787,7 @@
         return x >= element.x - 5 && x <= element.x + 100 &&
           y >= element.y - 5 && y <= element.y + element.fontSize + 5;
       } else if (element.type === "bar") {
-        // Check if near the line
-        const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
-        const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
-        return dist1 < 10 || dist2 < 10;
+        return isPointOnBar(x, y, element);
       }
       return false;
     });
@@ -736,9 +852,7 @@
           return x >= element.x - 5 && x <= element.x + 100 &&
             y >= element.y - 5 && y <= element.y + element.fontSize + 5;
         } else if (element.type === "bar") {
-          const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
-          const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
-          return dist1 < 10 || dist2 < 10;
+          return isPointOnBar(x, y, element);
         }
         return false;
       })?.id || null;

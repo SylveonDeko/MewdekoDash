@@ -221,6 +221,96 @@
     return '#' + raw.slice(0, 6);
   }
 
+  function getDisplayData() {
+    return useRealData && currentUserData ? currentUserData : sampleData;
+  }
+
+  function getBarPolygon(element: any, progressPercent?: number) {
+    const progress = Math.max(0, Math.min(100, progressPercent ?? getDisplayData()?.progress ?? sampleData.progress ?? 0)) / 100;
+    const direction = localTemplate?.templateBar?.barDirection ?? element.direction ?? 3;
+    const length = (localTemplate?.templateBar?.barLength || element.length || 452) * progress;
+    const { x1, y1, x2, y2 } = element;
+    let x3: number;
+    let x4: number;
+    let y3: number;
+    let y4: number;
+
+    switch (direction) {
+      case 1:
+        x3 = x1;
+        x4 = x2;
+        y3 = y1 + length;
+        y4 = y2 + length;
+        break;
+      case 0:
+        x3 = x1;
+        x4 = x2;
+        y3 = y1 - length;
+        y4 = y2 - length;
+        break;
+      case 2:
+        x3 = x1 - length;
+        x4 = x2 - length;
+        y3 = y1;
+        y4 = y2;
+        break;
+      default:
+        x3 = x1 + length;
+        x4 = x2 + length;
+        y3 = y1;
+        y4 = y2;
+        break;
+    }
+
+    return [
+      { x: x1, y: y1 },
+      { x: x3, y: y3 },
+      { x: x4, y: y4 },
+      { x: x2, y: y2 }
+    ];
+  }
+
+  function isPointInPolygon(x: number, y: number, polygon: Array<{ x: number; y: number }>) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const intersects = polygon[i].y > y !== polygon[j].y > y &&
+        x < ((polygon[j].x - polygon[i].x) * (y - polygon[i].y)) / (polygon[j].y - polygon[i].y) + polygon[i].x;
+      if (intersects) inside = !inside;
+    }
+
+    return inside;
+  }
+
+  function isPointNearSegment(
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    tolerance: number
+  ) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return Math.hypot(x - x1, y - y1) <= tolerance;
+
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lengthSquared));
+    const projectedX = x1 + t * dx;
+    const projectedY = y1 + t * dy;
+    return Math.hypot(x - projectedX, y - projectedY) <= tolerance;
+  }
+
+  function isPointOnBar(x: number, y: number, element: any, tolerance = 18) {
+    const fullPolygon = getBarPolygon(element, 100);
+    if (isPointInPolygon(x, y, fullPolygon)) return true;
+
+    return fullPolygon.some((point, index) => {
+      const next = fullPolygon[(index + 1) % fullPolygon.length];
+      return isPointNearSegment(x, y, point.x, point.y, next.x, next.y, tolerance);
+    });
+  }
+
   // Save undo state
   function saveUndoState() {
     const currentState = JSON.stringify(localTemplate);
@@ -627,9 +717,7 @@
         return x >= element.x - 10 && x <= element.x + 120 &&
           y >= element.y - 10 && y <= element.y + element.fontSize + 10;
       } else if (element.type === "bar") {
-        const dist1 = Math.sqrt((x - element.x1) ** 2 + (y - element.y1) ** 2);
-        const dist2 = Math.sqrt((x - element.x2) ** 2 + (y - element.y2) ** 2);
-        return dist1 < 15 || dist2 < 15;
+        return isPointOnBar(x, y, element);
       }
       return false;
     });
