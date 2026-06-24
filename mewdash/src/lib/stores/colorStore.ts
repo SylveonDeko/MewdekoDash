@@ -43,7 +43,11 @@ function createColorStore() {
     try {
       const stored = globalThis.sessionStorage.getItem("mewdeko-colors");
       if (stored) {
-        initialPalette = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        const hexFields = ["primary", "secondary", "accent", "text", "muted", "background"] as const;
+        const isValidHex6 = (v: unknown) => typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
+        const allValid = hexFields.every(k => !parsed[k] || isValidHex6(parsed[k]) || parsed[k].startsWith("hsl"));
+        initialPalette = allValid ? parsed : DEFAULT_PALETTE;
       }
     } catch (err) {
       logger.debug("Failed to read stored colors, using default", err);

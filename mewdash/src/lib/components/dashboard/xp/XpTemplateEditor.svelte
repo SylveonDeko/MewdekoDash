@@ -220,6 +220,11 @@
     }
   ]);
 
+  function hex6(color: string): string {
+    const raw = color.startsWith('#') ? color.slice(1) : color;
+    return '#' + raw.slice(0, 6);
+  }
+
   // Save current state to undo stack
   function saveUndoState() {
     const currentState = JSON.stringify(localTemplate);
@@ -391,9 +396,9 @@
       // Default background with gradient (since default is transparent)
       // First draw gradient
       const bgGradient = context.createLinearGradient(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
-      bgGradient.addColorStop(0, `${$colorStore.primary}15`);
-      bgGradient.addColorStop(0.5, `${$colorStore.primary}20`);
-      bgGradient.addColorStop(1, `${$colorStore.secondary}15`);
+      bgGradient.addColorStop(0, `${hex6($colorStore.primary)}15`);
+      bgGradient.addColorStop(0.5, `${hex6($colorStore.primary)}20`);
+      bgGradient.addColorStop(1, `${hex6($colorStore.secondary)}15`);
       context.fillStyle = bgGradient;
       context.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
 
