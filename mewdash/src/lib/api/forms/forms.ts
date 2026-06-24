@@ -103,10 +103,17 @@ export const formsApi = {
    * @param instanceIdentifier The instance identifier (port or name)
    * @returns Share code
    */
-  generateShareLink: (formId: number, instanceIdentifier: string) =>
-    apiRequest<{ shareCode: string }>(`forms/${formId}/share-link`, "POST", {
+  generateShareLink: async (formId: number, instanceIdentifier: string) => {
+    const response = await apiRequest<{ shareCode: string }>(`forms/${formId}/share-link`, "POST", {
       instanceIdentifier,
-    }),
+    });
+
+    if (!response?.shareCode) {
+      throw new Error("Share link response did not include a share code");
+    }
+
+    return response;
+  },
 
   /**
    * Resolves a share code to get form and instance info
