@@ -3,7 +3,7 @@
 
 
   import { browser } from "$app/environment";
-  import { onMount } from "svelte";
+  import { untrack } from "svelte";
   import {
     messageCountApi,
     clientApi,
@@ -59,6 +59,7 @@
     let settingsLoading = $state(false);
     let resetLoading = $state(false);
     let activeLoadKey = "";
+    let loadedContextKey = "";
     let loadRequestId = 0;
 
   function toGraphStats(points: { label: string; count: number }[]) {
@@ -334,10 +335,6 @@
 
     settingsLoading = true;
     try {
-      // Use the existing getMessageStats which includes enabled status
-      const statsData = await messageCountApi.getMessageStats($currentGuild.id);
-      messageCountEnabled = statsData?.enabled || false;
-
       // Load guild config for min message length
       const guildConfig = await guildApi.getGuildConfig($currentGuild.id);
       minMessageLength = guildConfig?.minMessageLength || 0;
@@ -396,23 +393,19 @@
     }
   }
 
-  // Event handlers
-  onMount(() => {
-    loadData(true);
-    loadSettings();
+  $effect(() => {
+    const guild = $currentGuild;
+    const instance = $currentInstance;
+    const contextKey = guild ? `${instance?.port ?? "default"}:${guild.id}` : "";
+
+    if (!contextKey || contextKey === loadedContextKey) return;
+    loadedContextKey = contextKey;
+
+    untrack(() => {
+      loadData(true);
+      loadSettings();
+    });
   });
-
-  $effect(() => {
-        if ($currentInstance && $currentGuild) {
-            loadData();
-        }
-    });
-
-  $effect(() => {
-        if ($currentGuild) {
-            loadData();
-        }
-    });
 
   // Tab configuration
   const tabs = [
