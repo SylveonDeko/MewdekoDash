@@ -106,7 +106,7 @@ export const clientApi = {
    * @param adminOnly Whether to only return guilds where the user has admin permissions
    * @param customFetch Custom fetch function (for SSR)
    * @param additionalHeaders Additional headers to include
-   * @returns List of mutual guilds or null if none found
+   * @returns List of mutual guilds, empty when none are found
    */
   getMutualGuilds: (
     userId: bigint,
@@ -114,7 +114,7 @@ export const clientApi = {
     customFetch: typeof fetch = fetch,
     additionalHeaders: HeadersInit = {},
   ) =>
-    apiRequest<MutualGuild[] | null>(
+    apiRequest<MutualGuild[]>(
       `ClientOperations/mutualguilds/${userId}?adminOnly=${adminOnly}`,
       "GET",
       undefined,
