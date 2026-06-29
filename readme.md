@@ -1,10 +1,28 @@
-The Official Dashboard Repo for Mewdeko
+The Official Dashboard for Mewdeko
 
 https://mewdeko.tech/
 
 ----
 
+MewdekoDash is the web dashboard for the [Mewdeko](https://github.com/SylveonDeko/Mewdeko) Discord bot. It lets server owners manage bot settings, view statistics, and configure features through a browser instead of Discord commands.
 
-This is a site created in Svelte for the owners of Mewdeko, primarily SylveonDeko. This site was made to create a forward push towards a greater future for Mewdeko and to help make it a standard for every Discord server. In the future we plan to have a dashboard similar to how some other bots function and have a documentation setup created for assistance. 
+## Self-Hosting
 
-For future updates, please reach out to SylveonDeko on discord for assistance.      
+See [SELFHOST.md](SELFHOST.md) for a complete guide to running the dashboard alongside your own Mewdeko instance.
+
+For a `.env` template, see [mewdash/.env.example](mewdash/.env.example).
+
+For Docker deployment (bot + dashboard together), see [DOCKER.md](../DOCKER.md).
+
+## Development
+
+```bash
+cd mewdash
+npm install
+npm run dev
+```
+
+
+## Support
+
+For help, reach out in the [Mewdeko Discord Server](https://discord.gg/nh9WWPvnde) or open an issue on GitHub.

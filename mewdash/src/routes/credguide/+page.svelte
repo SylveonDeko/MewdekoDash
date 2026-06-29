@@ -116,7 +116,7 @@
           },
           {
             step: "Create the database",
-            command: "createdb -O mewdeko mewdeko_db"
+            command: "createdb -O mewdeko mewdeko"
           },
           {
             step: "Exit postgres user",
@@ -124,7 +124,7 @@
           },
           {
             step: "Test the connection",
-            command: "psql -U mewdeko -d mewdeko_db -h localhost",
+            command: "psql -U mewdeko -d mewdeko -h localhost",
             note: "Enter the password you set earlier. Use \\q to exit psql."
           }
         ],
@@ -157,7 +157,7 @@
           },
           {
             step: "Create the database",
-            command: "CREATE DATABASE mewdeko_db OWNER mewdeko;"
+            command: "CREATE DATABASE mewdeko OWNER mewdeko;"
           },
           {
             step: "Exit psql",
@@ -165,13 +165,13 @@
           },
           {
             step: "Test the connection",
-            command: "psql -U mewdeko -d mewdeko_db -h localhost",
+            command: "psql -U mewdeko -d mewdeko -h localhost",
             note: "Enter your password when prompted. Use \\q to exit."
           }
         ],
         connectionExamples: {
-          linux: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko_db;Port=5432;UID=mewdeko;Password=your_secure_password\"",
-          windows: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko_db;Port=5432;UID=mewdeko;Password=your_secure_password\""
+          linux: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko;Port=5432;UID=mewdeko;Password=your_secure_password\"",
+          windows: "\"PsqlConnectionString\": \"Server=localhost;Database=mewdeko;Port=5432;UID=mewdeko;Password=your_secure_password\""
         }
       }
     },
@@ -191,8 +191,8 @@
           "Copy the numbers (YOUR_USER_ID)",
           "Add it to your credentials.json file"
         ],
-        singleOwner: "\"OwnerIds\": [\"YOUR_USER_ID\"]",
-        multipleOwners: "\"OwnerIds\": [\"USER_ID_1\", \"USER_ID_2\", \"USER_ID_3\"]"
+        singleOwner: "\"OwnerIds\": [123456789012345678]",
+        multipleOwners: "\"OwnerIds\": [123456789012345678, 987654321098765432]"
       }
     },
     {
@@ -207,15 +207,27 @@
         keys: [
           {
             name: "GoogleApiKey",
-            purpose: "YouTube search, playlist queuing",
-            required: true,
+            purpose: "YouTube search and playlist queuing",
+            required: false,
             priority: "high",
             steps: [
-              "Go to Google Console (https://console.developers.google.com/)",
+              "Go to https://console.developers.google.com/ and log in",
               "Create a new project",
-              "Go to Library → Enable YouTube Data API",
+              "Go to Library and enable the YouTube Data API v3",
               "Go to Credentials → Create Credentials → API Key",
               "Copy the key to your credentials.json"
+            ]
+          },
+          {
+            name: "SpotifyClientId & SpotifyClientSecret",
+            purpose: "Spotify track and playlist support",
+            required: false,
+            priority: "high",
+            steps: [
+              "Go to https://developer.spotify.com/dashboard and log in",
+              "Click 'Create app'",
+              "Fill in a name and description, set redirect URI to http://localhost",
+              "Copy the Client ID and Client Secret to your credentials.json"
             ]
           },
           {
@@ -224,22 +236,33 @@
             required: false,
             priority: "medium",
             steps: [
-              "Go to Twitch Developer Console",
-              "Create a new application",
+              "Go to https://dev.twitch.tv/console and log in",
+              "Click 'Register Your Application'",
               "Set OAuth redirect URL to http://localhost",
               "Select 'Chat Bot' category",
-              "Copy Client ID and Client Secret"
+              "Copy Client ID and Client Secret to your credentials.json"
             ]
           },
           {
-            name: "MashapeKey",
-            purpose: "Hearthstone cards",
+            name: "LastFmApiKey",
+            purpose: "Last.fm now-playing and scrobbling",
             required: false,
             priority: "low",
             steps: [
-              "Register at https://rapidapi.com",
-              "Go to MyApps → Add New App",
-              "Get Application key"
+              "Go to https://www.last.fm/api/account/create and log in",
+              "Fill in the application name and description",
+              "Copy the API key to your credentials.json"
+            ]
+          },
+          {
+            name: "OsuApiKey",
+            purpose: "osu! player stats lookup",
+            required: false,
+            priority: "low",
+            steps: [
+              "Go to https://osu.ppy.sh/home/account/edit and scroll to Legacy API",
+              "Click 'New Legacy API Key' and fill in the form",
+              "Copy the key to your credentials.json"
             ]
           }
         ]
@@ -257,26 +280,38 @@
         additionalSettings: [
           {
             name: "LavalinkUrl",
-            purpose: "Music playback",
-            example: "\"LavalinkUrl\": \"http://localhost:2333\""
+            purpose: "Music playback server address",
+            example: "\"LavalinkUrl\": \"http://localhost:2334\""
           },
           {
-            name: "ConfessionReportChannelId",
-            purpose: "Confession reporting",
-            example: "\"ConfessionReportChannelId\": \"YOUR_CHANNEL_ID\""
+            name: "RedisConnections",
+            purpose: "Redis connection string for caching",
+            example: "\"RedisConnections\": \"127.0.0.1:6379\""
           },
           {
-            name: "ChatSavePath",
-            purpose: "Chat log storage",
-            example: "\"ChatSavePath\": \"/path/to/chatlogs/\""
+            name: "IsApiEnabled / ApiPort / ApiKey",
+            purpose: "Enable the bot's HTTP API (required for the dashboard)",
+            example: "\"IsApiEnabled\": true, \"ApiPort\": 5001, \"ApiKey\": \"your-secure-key\""
+          },
+          {
+            name: "JwtSecret",
+            purpose: "Signs dashboard user tokens — must match BOT_JWT_SECRET in the dashboard .env",
+            example: "\"JwtSecret\": \"your-secret-here\""
           }
         ],
         finalExample: `{
   "Token": "YOUR_BOT_TOKEN_HERE",
-  "OwnerIds": ["YOUR_USER_ID"],
-  "PsqlConnectionString": "Server=localhost;Database=mydatabase;Port=5432;UID=username;Password=password",
+  "OwnerIds": [123456789012345678],
+  "PsqlConnectionString": "Server=localhost;Database=mewdeko;Port=5432;UID=mewdeko;Password=your_password",
+  "RedisConnections": "127.0.0.1:6379",
   "GoogleApiKey": "YOUR_GOOGLE_API_KEY",
-  "LavalinkUrl": "http://localhost:2333"
+  "SpotifyClientId": "YOUR_SPOTIFY_CLIENT_ID",
+  "SpotifyClientSecret": "YOUR_SPOTIFY_CLIENT_SECRET",
+  "LavalinkUrl": "http://localhost:2334",
+  "IsApiEnabled": true,
+  "ApiPort": 5001,
+  "ApiKey": "YOUR_API_KEY",
+  "JwtSecret": "YOUR_JWT_SECRET"
 }`
       }
     }
