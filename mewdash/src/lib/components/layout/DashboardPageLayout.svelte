@@ -297,8 +297,12 @@
     <div class="flex items-center gap-4">
       <div class="p-4 rounded-xl"
            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        <i class="fa-utility-duo fa-regular {icon} text-3xl"
-           style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+        {#if icon.includes("fa-brands")}
+          <i class="{icon} text-3xl" style="color: {$colorStore.primary};"></i>
+        {:else}
+          <i class="fa-utility-duo fa-regular {icon} text-3xl"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+        {/if}
       </div>
       <div>
         <h1 class="text-3xl font-bold" style="color: {$colorStore.text}">{title}</h1>

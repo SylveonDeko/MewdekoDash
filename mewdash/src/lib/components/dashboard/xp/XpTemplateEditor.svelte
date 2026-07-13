@@ -48,6 +48,7 @@
   let lockProportions = $state(false);
   let backgroundImage = $state<HTMLImageElement | null>(null);
   let backgroundImageLoading = $state(false);
+  let importInput = $state<HTMLInputElement>();
   let defaultBgImage = $state<HTMLImageElement | null>(null);
   const canvasImageCache = new Map<string, HTMLImageElement>();
   const loadingCanvasImages = new Set<string>();
@@ -80,6 +81,12 @@
       const img = new Image();
       img.onload = () => {
         defaultBgImage = img;
+        if (!localTemplate?.customXpImageUrl && (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
+          localTemplate.outputSizeX = img.naturalWidth;
+          localTemplate.outputSizeY = img.naturalHeight;
+          markAsChanged();
+          initCanvas();
+        }
         if (canvas && ctx) {
           redrawCanvas();
         }
@@ -99,6 +106,12 @@
       img.onload = () => {
         backgroundImage = img;
         backgroundImageLoading = false;
+        if (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight) {
+          localTemplate.outputSizeX = img.naturalWidth;
+          localTemplate.outputSizeY = img.naturalHeight;
+          markAsChanged();
+          initCanvas();
+        }
         redrawCanvas();
       };
       img.onerror = () => {
@@ -177,28 +190,6 @@
       color: localTemplate?.templateGuild?.guildLevelColor || "FFFFFF"
     },
     {
-      id: "club-icon",
-      type: "image",
-      label: "Club Icon",
-      visible: localTemplate?.templateClub?.showClubIcon,
-      locked: false,
-      x: localTemplate?.templateClub?.clubIconX || 300,
-      y: localTemplate?.templateClub?.clubIconY || 30,
-      width: localTemplate?.templateClub?.clubIconSizeX || 50,
-      height: localTemplate?.templateClub?.clubIconSizeY || 50
-    },
-    {
-      id: "club-name",
-      type: "text",
-      label: "Club Name",
-      visible: localTemplate?.templateClub?.showClubName,
-      locked: false,
-      x: localTemplate?.templateClub?.clubNameX || 360,
-      y: localTemplate?.templateClub?.clubNameY || 55,
-      fontSize: localTemplate?.templateClub?.clubNameFontSize || 16,
-      color: localTemplate?.templateClub?.clubNameColor || "FFFFFF"
-    },
-    {
       id: "time-on-level",
       type: "text",
       label: "Time on Level",
@@ -219,12 +210,196 @@
       y: localTemplate?.awardedY || 280,
       fontSize: localTemplate?.awardedFontSize || 14,
       color: localTemplate?.awardedColor || "FFD700"
-    }
+    },
+    ...(localTemplate?.customElements || []).map((element: any) => ({
+      ...element,
+      custom: true,
+      locked: false,
+      color: element.fill || "#5865F2"
+    }))
   ]);
+  const defaultBuiltInOrder = ["user-text", "guild-level", "progress-bar", "awarded", "guild-rank", "time-on-level", "user-icon"];
+  let builtInOrder = $derived([
+    ...(localTemplate?.builtInOrder || []).filter((id: string) => defaultBuiltInOrder.includes(id)),
+    ...defaultBuiltInOrder.filter(id => !(localTemplate?.builtInOrder || []).includes(id))
+  ]);
+  // This mirrors XpCardGenerator: built-ins draw in the order above and custom layers draw over them.
+  let renderElements = $derived([...elements].sort((a, b) =>
+    (a.custom ? 1000 + (a.zIndex || 0) : builtInOrder.indexOf(a.id)) -
+    (b.custom ? 1000 + (b.zIndex || 0) : builtInOrder.indexOf(b.id))));
+  // Drawing is back-to-front, while layer panels conventionally show the topmost layer first.
+  let layerElements = $derived([...renderElements].reverse());
+
+  function addCustomElement(type: "rectangle" | "ellipse" | "line" | "text" | "image" | "progress") {
+    saveUndoState();
+    const id = `custom-${crypto.randomUUID()}`;
+    const labels = { rectangle: "Rectangle", ellipse: "Ellipse", line: "Line", text: "Custom text", image: "Image", progress: "XP progress" };
+    const element = {
+      id, type, label: labels[type], visible: true,
+      zIndex: localTemplate.customElements?.length || 0,
+      x: 80, y: 80, width: type === "line" ? 180 : 140, height: type === "line" ? 0 : 64,
+      rotation: 0, opacity: 1, cornerRadius: type === "rectangle" ? 12 : 0,
+      fill: type === "text" ? "#FFFFFF" : "#5865F2", stroke: "#00000000", strokeWidth: type === "line" ? 4 : 0,
+      text: type === "text" ? "Level %xp.level.current% • Rank #%xp.rank%" : "", fontSize: 24, textAlign: "left", url: "",
+      gradientEnd: "", gradientAngle: 0, shadowColor: "#00000080", shadowBlur: 0, shadowX: 0, shadowY: 4,
+      progressStyle: "rounded", trackFill: "#FFFFFF30", segments: 10
+    };
+    localTemplate.customElements = [...(localTemplate.customElements || []), element];
+    selectedElement = id;
+    markAsChanged();
+    redrawCanvas();
+  }
+
+  function updateCustomElement(id: string, changes: Record<string, any>) {
+    localTemplate.customElements = (localTemplate.customElements || []).map((item: any) =>
+      item.id === id ? { ...item, ...changes } : item);
+    markAsChanged();
+    redrawCanvas();
+  }
+
+  function deleteCustomElement(id: string) {
+    saveUndoState();
+    localTemplate.customElements = (localTemplate.customElements || []).filter((item: any) => item.id !== id);
+    selectedElement = null;
+    markAsChanged();
+    redrawCanvas();
+  }
+
+  function moveCustomElement(id: string, direction: -1 | 1) {
+    const items = [...(localTemplate.customElements || [])];
+    const index = items.findIndex((item: any) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= items.length) return;
+    saveUndoState();
+    [items[index], items[target]] = [items[target], items[index]];
+    localTemplate.customElements = items.map((item: any, zIndex: number) => ({ ...item, zIndex }));
+    markAsChanged();
+    redrawCanvas();
+  }
+
+  function moveBuiltInElement(id: string, direction: -1 | 1) {
+    const items = [...builtInOrder];
+    const index = items.indexOf(id), target = index + direction;
+    if (index < 0 || target < 0 || target >= items.length) return;
+    saveUndoState();
+    [items[index], items[target]] = [items[target], items[index]];
+    localTemplate.builtInOrder = items;
+    markAsChanged(); redrawCanvas();
+  }
+
+  function moveElement(id: string, direction: -1 | 1) {
+    if (id.startsWith("custom-")) moveCustomElement(id, direction);
+    else moveBuiltInElement(id, direction);
+  }
+
+  function duplicateCustomElement(id: string) {
+    const source = localTemplate.customElements?.find((item: any) => item.id === id);
+    if (!source) return;
+    saveUndoState();
+    const copy = { ...source, id: `custom-${crypto.randomUUID()}`, label: `${source.label} copy`, x: source.x + 20, y: source.y + 20,
+      zIndex: localTemplate.customElements.length };
+    localTemplate.customElements = [...localTemplate.customElements, copy];
+    selectedElement = copy.id;
+    markAsChanged(); redrawCanvas();
+  }
+
+  function alignCustomElement(id: string, alignment: "left" | "center" | "right" | "top" | "middle" | "bottom") {
+    const element = localTemplate.customElements?.find((item: any) => item.id === id);
+    if (!element) return;
+    const changes: Record<string, number> = {};
+    if (alignment === "left") changes.x = 0;
+    if (alignment === "center") changes.x = (localTemplate.outputSizeX - element.width) / 2;
+    if (alignment === "right") changes.x = localTemplate.outputSizeX - element.width;
+    if (alignment === "top") changes.y = 0;
+    if (alignment === "middle") changes.y = (localTemplate.outputSizeY - element.height) / 2;
+    if (alignment === "bottom") changes.y = localTemplate.outputSizeY - element.height;
+    saveUndoState(); updateCustomElement(id, changes);
+  }
+
+  function exportTemplate() {
+    const payload = { version: 1, outputSizeX: localTemplate.outputSizeX, outputSizeY: localTemplate.outputSizeY,
+      customElements: localTemplate.customElements || [] };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob); link.download = "mewdeko-xp-card.json"; link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  async function importTemplate(event: Event) {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      if (!Array.isArray(payload.customElements)) throw new Error("Invalid template");
+      saveUndoState();
+      localTemplate.customElements = payload.customElements.map((item: any, index: number) => ({ ...item,
+        id: `custom-${crypto.randomUUID()}`, zIndex: index }));
+      if (Number.isFinite(payload.outputSizeX)) localTemplate.outputSizeX = payload.outputSizeX;
+      if (Number.isFinite(payload.outputSizeY)) localTemplate.outputSizeY = payload.outputSizeY;
+      selectedElement = null; markAsChanged(); initCanvas();
+    } finally { (event.currentTarget as HTMLInputElement).value = ""; }
+  }
+
+  function applyPreset(name: "minimal" | "glass" | "gaming") {
+    const presets: Record<string, any[]> = {
+      minimal: [
+        { type: "text", label: "Level and rank", x: 130, y: 90, width: 360, height: 36, fill: "#FFFFFF", text: "Level %xp.level.current%  •  Rank #%xp.rank%", fontSize: 26 },
+        { type: "progress", label: "XP progress", x: 130, y: 140, width: 540, height: 18, fill: "#5865F2", trackFill: "#FFFFFF30", cornerRadius: 9, progressStyle: "rounded" }
+      ],
+      glass: [
+        { type: "rectangle", label: "Glass panel", x: 110, y: 45, width: 610, height: 190, fill: "#111827B8", stroke: "#FFFFFF30", strokeWidth: 1, cornerRadius: 24, shadowBlur: 16, shadowY: 8 },
+        { type: "text", label: "Profile heading", x: 145, y: 76, width: 480, height: 40, fill: "#FFFFFF", text: "%xp.user.displayname%", fontSize: 30 },
+        { type: "progress", label: "XP progress", x: 145, y: 160, width: 520, height: 20, fill: "#7C3AED", gradientEnd: "#22D3EE", trackFill: "#FFFFFF25", cornerRadius: 10, progressStyle: "rounded" }
+      ],
+      gaming: [
+        { type: "rectangle", label: "Rank plate", x: 485, y: 38, width: 250, height: 72, fill: "#EF4444", gradientEnd: "#F59E0B", cornerRadius: 8, rotation: -2 },
+        { type: "text", label: "Rank", x: 505, y: 52, width: 210, height: 42, fill: "#FFFFFF", text: "RANK  #%xp.rank%", fontSize: 30, textAlign: "center" },
+        { type: "progress", label: "Segmented XP", x: 130, y: 205, width: 590, height: 22, fill: "#F59E0B", trackFill: "#FFFFFF25", progressStyle: "segmented", segments: 12, cornerRadius: 3 }
+      ]
+    };
+    saveUndoState();
+    localTemplate.customElements = presets[name].map((item, zIndex) => ({ visible: true, opacity: 1, rotation: 0,
+      stroke: "#00000000", strokeWidth: 0, shadowColor: "#00000080", shadowBlur: 0, shadowX: 0, shadowY: 4,
+      gradientEnd: "", gradientAngle: 0, text: "", fontSize: 24, textAlign: "left", url: "", trackFill: "#FFFFFF30",
+      segments: 10, width: 120, height: 60, x: 80, y: 80, cornerRadius: 0, ...item,
+      id: `custom-${crypto.randomUUID()}`, zIndex }));
+    selectedElement = null; markAsChanged(); redrawCanvas();
+  }
+
+  function resolveCustomText(value: string, data: any) {
+    return (value || "")
+      .replaceAll(/%xp\.user%/gi, data?.username || "Username")
+      .replaceAll(/%xp\.user\.name%/gi, data?.username || "Username")
+      .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || "Display name")
+      .replaceAll(/%xp\.level\.current%/gi, String(data?.level || 1))
+      .replaceAll(/%xp\.level\.next%/gi, String((data?.level || 1) + 1))
+      .replaceAll(/%xp\.rank%/gi, String(data?.rank || 1))
+      .replaceAll(/%xp\.current%/gi, String(data?.currentXp || data?.xp || 0))
+      .replaceAll(/%xp\.needed%/gi, String(data?.requiredXp || 100))
+      .replaceAll(/%xp\.total%/gi, String(data?.totalXp || 0))
+      .replaceAll(/%xp\.progress%/gi, `${Math.round(data?.progress || 0)}%`);
+  }
 
   function hex6(color: string): string {
     const raw = color.startsWith('#') ? color.slice(1) : color;
     return '#' + raw.slice(0, 6);
+  }
+
+  function applyCustomCanvasStyle(context: CanvasRenderingContext2D, element: any) {
+    context.globalAlpha = element.opacity ?? 1;
+    context.shadowColor = element.shadowColor || "transparent";
+    context.shadowBlur = element.shadowBlur || 0;
+    context.shadowOffsetX = element.shadowX || 0;
+    context.shadowOffsetY = element.shadowY || 0;
+    if (element.gradientEnd) {
+      const angle = (element.gradientAngle || 0) * Math.PI / 180;
+      const cx = element.x + element.width / 2, cy = element.y + element.height / 2;
+      const radius = Math.max(Math.abs(element.width), Math.abs(element.height)) / 2;
+      const gradient = context.createLinearGradient(cx - Math.cos(angle) * radius, cy - Math.sin(angle) * radius,
+        cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+      gradient.addColorStop(0, element.fill || "#5865F2"); gradient.addColorStop(1, element.gradientEnd);
+      context.fillStyle = gradient;
+    } else context.fillStyle = element.fill || "transparent";
   }
 
   function getDisplayData() {
@@ -399,6 +574,11 @@
       y = Math.round(y / gridSize) * gridSize;
     }
 
+    if (elementId.startsWith("custom-")) {
+      updateCustomElement(elementId, { x, y });
+      return;
+    }
+
     switch (elementId) {
       case "user-icon":
         localTemplate.templateUser.iconX = x;
@@ -454,6 +634,12 @@
   function toggleElementVisibility(elementId: string) {
     saveUndoState();
 
+    if (elementId.startsWith("custom-")) {
+      const element = localTemplate.customElements?.find((item: any) => item.id === elementId);
+      if (element) updateCustomElement(elementId, { visible: !element.visible });
+      return;
+    }
+
     switch (elementId) {
       case "user-icon":
         localTemplate.templateUser.showIcon = !localTemplate.templateUser.showIcon;
@@ -488,6 +674,13 @@
     redrawCanvas();
   }
 
+  function removeDefaultElement(elementId: string) {
+    const element = elements.find(item => item.id === elementId);
+    if (!element || element.custom || !element.visible) return;
+    toggleElementVisibility(elementId);
+    selectedElement = null;
+  }
+
   // Toggle panel visibility
   function togglePanel(panelId: keyof typeof panels) {
     panels[panelId].open = !panels[panelId].open;
@@ -517,7 +710,7 @@
     // Draw background
     if (backgroundImage && !backgroundImageLoading) {
       // Custom background image
-      context.drawImage(backgroundImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      context.drawImage(backgroundImage, 0, 0);
     } else if (defaultBgImage) {
       // Default background with gradient (since default is transparent)
       // First draw gradient
@@ -529,7 +722,7 @@
       context.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
 
       // Then draw transparent default image on top
-      context.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+      context.drawImage(defaultBgImage, 0, 0);
     }
 
     // Draw grid if enabled
@@ -557,14 +750,69 @@
 
     // Draw elements
     const displayData = getDisplayData();
-    elements.forEach(element => {
+    renderElements.forEach(element => {
       if (!element.visible) return;
 
       const isSelected = selectedElement === element.id;
       const isHovered = hoveredElement === element.id;
 
-      if (element.type === "image") {
+      if (element.custom && element.type !== "text" && element.type !== "image") {
         context.save();
+        applyCustomCanvasStyle(context, element);
+        context.translate(element.x + element.width / 2, element.y + element.height / 2);
+        context.rotate((element.rotation || 0) * Math.PI / 180);
+        context.translate(-(element.x + element.width / 2), -(element.y + element.height / 2));
+        context.strokeStyle = element.stroke || "transparent";
+        context.lineWidth = element.strokeWidth || 0;
+        context.beginPath();
+        if (element.type === "progress") {
+          const progress = Math.max(0, Math.min(100, displayData?.progress || 0)) / 100;
+          context.shadowColor = "transparent";
+          if (element.progressStyle === "radial") {
+            const radius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2 - Math.max(2, element.strokeWidth || 8) / 2;
+            context.lineWidth = Math.max(2, element.strokeWidth || 8); context.lineCap = "round";
+            context.strokeStyle = element.trackFill || "#FFFFFF30"; context.beginPath();
+            context.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, 1.5 * Math.PI); context.stroke();
+            context.strokeStyle = element.fill; context.beginPath();
+            context.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, (-.5 + progress * 2) * Math.PI); context.stroke();
+          } else if (element.progressStyle === "segmented") {
+            const count = Math.max(2, element.segments || 10), gap = 3, width = (element.width - gap * (count - 1)) / count;
+            for (let i = 0; i < count; i++) {
+              context.fillStyle = i < Math.ceil(progress * count) ? element.fill : element.trackFill;
+              context.beginPath(); context.roundRect(element.x + i * (width + gap), element.y, width, element.height, element.cornerRadius || 0); context.fill();
+            }
+          } else {
+            context.fillStyle = element.trackFill || "#FFFFFF30"; context.beginPath();
+            context.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0); context.fill();
+            applyCustomCanvasStyle(context, element); context.beginPath();
+            context.roundRect(element.x, element.y, element.width * progress, element.height, element.cornerRadius || 0); context.fill();
+          }
+        } else if (element.type === "ellipse") {
+          context.ellipse(element.x + element.width / 2, element.y + element.height / 2,
+            Math.abs(element.width / 2), Math.abs(element.height / 2), 0, 0, Math.PI * 2);
+        } else if (element.type === "line") {
+          context.moveTo(element.x, element.y);
+          context.lineTo(element.x + element.width, element.y + element.height);
+          context.strokeStyle = element.fill;
+          context.lineWidth = Math.max(1, element.strokeWidth || 1);
+        } else {
+          context.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0);
+        }
+        if (element.type !== "line" && element.type !== "progress") context.fill();
+        if (element.type !== "progress" && ((element.strokeWidth || 0) > 0 || element.type === "line")) context.stroke();
+        context.restore();
+        if (previewMode === "edit" && (isSelected || isHovered)) {
+          context.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
+          context.strokeRect(element.x - 3, element.y - 3, element.width + 6, Math.max(6, element.height + 6));
+        }
+      } else if (element.type === "image") {
+        context.save();
+        if (element.custom) {
+          applyCustomCanvasStyle(context, element);
+          context.translate(element.x + element.width / 2, element.y + element.height / 2);
+          context.rotate((element.rotation || 0) * Math.PI / 180);
+          context.translate(-(element.x + element.width / 2), -(element.y + element.height / 2));
+        }
         context.fillStyle = `${$colorStore.primary}30`;
 
         if (element.id === "user-icon") {
@@ -588,13 +836,10 @@
             context.textBaseline = "middle";
             context.fillText(getUserInitials(displayData), centerX, centerY);
           }
-        } else if (element.id === "club-icon") {
-          context.fillRect(element.x, element.y, element.width, element.height);
-          context.fillStyle = $colorStore.text;
-          context.font = `${Math.max(16, Math.min(element.width, element.height) * 0.55)}px Inter`;
-          context.textAlign = "center";
-          context.textBaseline = "middle";
-          context.fillText(displayData?.clubIcon || "🏆", element.x + element.width / 2, element.y + element.height / 2);
+        } else if (element.custom && element.url) {
+          const customImage = loadCanvasImage(element.url);
+          if (customImage?.complete) context.drawImage(customImage, element.x, element.y, element.width, element.height);
+          else context.fillRect(element.x, element.y, element.width, element.height);
         } else {
           context.fillRect(element.x, element.y, element.width, element.height);
         }
@@ -616,30 +861,48 @@
           context.fillText(element.label, element.x + element.width / 2, element.y + element.height - 9);
         }
       } else if (element.type === "text") {
+        context.save();
+        if (element.custom) {
+          applyCustomCanvasStyle(context, element);
+          context.translate(element.x + element.width / 2, element.y + element.height / 2);
+          context.rotate((element.rotation || 0) * Math.PI / 180);
+          context.translate(-(element.x + element.width / 2), -(element.y + element.height / 2));
+        }
         // Draw text
         context.fillStyle = element.color.startsWith("#") ? element.color : `#${element.color}`;
         context.font = `${element.fontSize}px Inter`;
-        context.textAlign = "left";
-        context.textBaseline = "top";
+        context.textAlign = element.custom ? (element.textAlign || "left") : "left";
+        // SkiaSharp's DrawText Y coordinate is the font baseline. Built-ins must use the same
+        // convention; custom text deliberately stores a top edge and is translated server-side.
+        context.textBaseline = element.custom ? "top" : "alphabetic";
 
-        const displayText = getTextContent(element.id, displayData);
+        const displayText = element.custom ? resolveCustomText(element.text, displayData) : getTextContent(element.id, displayData);
 
-        context.fillText(displayText, element.x, element.y);
+        const textX = element.custom && element.textAlign === "center" ? element.x + element.width / 2 :
+          element.custom && element.textAlign === "right" ? element.x + element.width : element.x;
+        context.fillText(displayText, textX, element.y);
 
         // Draw selection box in edit mode
         if (previewMode === "edit" && (isSelected || isHovered)) {
           const metrics = context.measureText(displayText);
+          const boxTop = element.custom ? element.y : element.y - metrics.actualBoundingBoxAscent;
+          const boxHeight = element.custom
+            ? Math.max(element.fontSize, metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+            : metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+          const boxLeft = element.custom && element.textAlign === "center" ? textX - metrics.width / 2 :
+            element.custom && element.textAlign === "right" ? textX - metrics.width : element.x;
           context.strokeStyle = isSelected ? $colorStore.accent : $colorStore.primary;
           context.lineWidth = isSelected ? 2 : 1;
           context.setLineDash(isSelected ? [] : [4, 4]);
           context.strokeRect(
-            element.x - 5,
-            element.y - 5,
+            boxLeft - 5,
+            boxTop - 5,
             metrics.width + 10,
-            element.fontSize + 10
+            boxHeight + 10
           );
           context.setLineDash([]);
         }
+        context.restore();
       } else if (element.type === "bar") {
         // Draw progress bar as a filled polygon (matching C# DrawXpBar method)
         const transparency = localTemplate?.templateBar?.barTransparency || 255;
@@ -753,9 +1016,9 @@
       case "user-text":
         return data?.username || "Username";
       case "guild-rank":
-        return `Rank #${data?.rank || 1}`;
+        return String(data?.rank || 1);
       case "guild-level":
-        return `Level ${data?.level || 1}`;
+        return String(data?.level || 1);
       case "club-name":
         return data?.clubName || "Club Name";
       case "time-on-level":
@@ -776,10 +1039,14 @@
     const y = (event.clientY - rect.top - panY) / zoom;
 
     // Check if clicking on an element
-    const clickedElement = elements.find(element => {
+    // Hit-test from front to back so overlapping layers select what the user can actually see.
+    const clickedElement = [...renderElements].reverse().find(element => {
       if (!element.visible) return false;
 
-      if (element.type === "image") {
+      if (element.custom && element.type !== "text" && element.type !== "image") {
+        return x >= Math.min(element.x, element.x + element.width) && x <= Math.max(element.x, element.x + element.width) &&
+          y >= Math.min(element.y, element.y + element.height) - 8 && y <= Math.max(element.y, element.y + element.height) + 8;
+      } else if (element.type === "image") {
         return x >= element.x && x <= element.x + element.width &&
           y >= element.y && y <= element.y + element.height;
       } else if (element.type === "text") {
@@ -842,10 +1109,13 @@
     } else {
       // Check hover
       const prevHovered = hoveredElement;
-      hoveredElement = elements.find(element => {
+      hoveredElement = [...renderElements].reverse().find(element => {
         if (!element.visible) return false;
 
-        if (element.type === "image") {
+        if (element.custom && element.type !== "text" && element.type !== "image") {
+          return x >= Math.min(element.x, element.x + element.width) && x <= Math.max(element.x, element.x + element.width) &&
+            y >= Math.min(element.y, element.y + element.height) - 8 && y <= Math.max(element.y, element.y + element.height) + 8;
+        } else if (element.type === "image") {
           return x >= element.x && x <= element.x + element.width &&
             y >= element.y && y <= element.y + element.height;
         } else if (element.type === "text") {
@@ -1029,7 +1299,22 @@
 
           {#if panels.layers.open}
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
-              {#each elements as element (element.id)}
+              <div class="grid grid-cols-6 gap-1 pb-2 mb-2 border-b" style="border-color: {$colorStore.primary}20;">
+                {#each [
+                  ["rectangle", "fa-square", "Rectangle"], ["ellipse", "fa-circle", "Ellipse"],
+                  ["line", "fa-minus", "Line"], ["text", "fa-font", "Text"], ["image", "fa-image", "Image"],
+                  ["progress", "fa-chart-simple", "XP progress"]
+                ] as tool}
+                  <button class="aspect-square rounded-lg transition-transform hover:scale-105"
+                          style="background: {$colorStore.primary}12; color: {$colorStore.primary};"
+                          aria-label={`Add ${tool[2]}`}
+                          title={`Add ${tool[2]}`}
+                          onclick={() => addCustomElement(tool[0] as any)}>
+                    <i class={`fa-solid ${tool[1]}`}></i>
+                  </button>
+                {/each}
+              </div>
+              {#each layerElements as element (element.id)}
                 <div
                   class="p-2 rounded-lg cursor-pointer transition-all hover:scale-[1.01]"
                   class:opacity-50={!element.visible}
@@ -1058,6 +1343,21 @@
                     </div>
                     {#if element.locked}
                       <i class="fa-solid fa-lock" style="color: {$colorStore.accent}; font-size: 12px;"></i>
+                    {:else}
+                      <div class="flex gap-1">
+                        <button aria-label="Move layer down" class="px-1" onclick={(e) => { e.stopPropagation(); moveElement(element.id, -1); }}>
+                          <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                        </button>
+                        <button aria-label="Move layer up" class="px-1" onclick={(e) => { e.stopPropagation(); moveElement(element.id, 1); }}>
+                          <i class="fa-solid fa-chevron-up text-[10px]"></i>
+                        </button>
+                        {#if element.custom || element.visible}
+                          <button aria-label={`Delete ${element.label}`} title="Remove from card" class="px-1" style="color: {$colorStore.accent};"
+                                  onclick={(e) => { e.stopPropagation(); element.custom ? deleteCustomElement(element.id) : removeDefaultElement(element.id); }}>
+                            <i class="fa-solid fa-trash text-[10px]"></i>
+                          </button>
+                        {/if}
+                      </div>
                     {/if}
                   </div>
                 </div>
@@ -1069,6 +1369,21 @@
         <!-- Tools Section -->
         <div class="border-t p-3 space-y-2" style="border-color: {$colorStore.primary}20;">
           {#if panels.layers.open}
+            <div class="grid grid-cols-3 gap-1">
+              {#each ["minimal", "glass", "gaming"] as preset}
+                <button class="px-2 py-1.5 rounded-lg text-[11px] capitalize" style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+                        onclick={() => applyPreset(preset as any)}>{preset}</button>
+              {/each}
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="p-2 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.primary};" onclick={exportTemplate}>
+                <i class="fa-solid fa-file-export mr-1"></i>Export
+              </button>
+              <button class="p-2 rounded-lg text-xs" style="background: {$colorStore.primary}10; color: {$colorStore.primary};" onclick={() => importInput?.click()}>
+                <i class="fa-solid fa-file-import mr-1"></i>Import
+              </button>
+              <input class="hidden" type="file" accept="application/json,.json" bind:this={importInput} onchange={importTemplate}>
+            </div>
             <div class="grid grid-cols-2 gap-2">
               <button
                 class="p-2 rounded-lg transition-all hover:scale-[1.02] flex items-center justify-center gap-1"
@@ -1238,22 +1553,6 @@
 
             <div class="w-px h-8" style="background: {$colorStore.primary}20;"></div>
 
-            <!-- Action Buttons -->
-            <button aria-label="Download"
-                    class="p-2 rounded-lg transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-            >
-              <i class="fa-solid fa-download" style="font-size: 16px;"></i>
-            </button>
-            <button aria-label="Upload"
-                    class="p-2 rounded-lg transition-all hover:scale-[1.02]"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
-            >
-              <i class="fa-solid fa-upload" style="font-size: 16px;"></i>
-            </button>
-
-            <div class="w-px h-8" style="background: {$colorStore.primary}20;"></div>
-
             <!-- Close Button -->
             <button aria-label="Close editor"
                     class="p-2 rounded-lg transition-all hover:scale-[1.02]"
@@ -1362,7 +1661,155 @@
                     {element.label}
                   </h3>
 
-                  {#if element.type === "image"}
+                  {#if element.custom}
+                    <div class="space-y-3">
+                      <div class="grid grid-cols-2 gap-2">
+                        {#each [["X", "x"], ["Y", "y"], ["Width", "width"], ["Height", "height"]] as field}
+                          <label class="text-xs" style="color: {$colorStore.muted}">{field[0]}
+                            <input type="number" class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                   value={element[field[1]]}
+                                   onchange={(e) => updateCustomElement(element.id, { [field[1]]: Number(e.currentTarget.value) })}>
+                          </label>
+                        {/each}
+                      </div>
+                      {#if element.type === "text"}
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Text and variables
+                          <textarea class="w-full px-3 py-2 rounded-lg border text-sm min-h-20"
+                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                    value={element.text}
+                                    onchange={(e) => updateCustomElement(element.id, { text: e.currentTarget.value })}></textarea>
+                        </label>
+                        <p class="text-[11px] leading-relaxed" style="color: {$colorStore.muted}">
+                          Variables: %xp.user.name%, %xp.user.displayname%, %xp.level.current%, %xp.rank%, %xp.current%, %xp.needed%, %xp.total%, %xp.progress%
+                        </p>
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Font size
+                          <input type="number" class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.fontSize}
+                                 onchange={(e) => updateCustomElement(element.id, { fontSize: Number(e.currentTarget.value) })}>
+                        </label>
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Text alignment
+                          <select class="w-full px-3 py-1.5 rounded-lg border text-sm" value={element.textAlign || "left"}
+                                  onchange={(e) => updateCustomElement(element.id, { textAlign: e.currentTarget.value })}>
+                            <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+                          </select>
+                        </label>
+                      {:else if element.type === "image"}
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Image URL
+                          <input type="url" class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.url}
+                                 onchange={(e) => updateCustomElement(element.id, { url: e.currentTarget.value })}>
+                        </label>
+                      {:else if element.type === "progress"}
+                        <div class="grid grid-cols-2 gap-2">
+                          <label class="text-xs" style="color: {$colorStore.muted}">Style
+                            <select class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                    value={element.progressStyle || "rounded"}
+                                    onchange={(e) => updateCustomElement(element.id, { progressStyle: e.currentTarget.value })}>
+                              <option value="rounded">Rounded</option><option value="segmented">Segmented</option><option value="radial">Radial</option>
+                            </select>
+                          </label>
+                          {#if element.progressStyle === "segmented"}
+                            <label class="text-xs" style="color: {$colorStore.muted}">Segments
+                              <input type="number" min="2" max="50" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     value={element.segments || 10}
+                                     onchange={(e) => updateCustomElement(element.id, { segments: Number(e.currentTarget.value) })}>
+                            </label>
+                          {/if}
+                        </div>
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Track color
+                          <input type="color" class="w-full h-9 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.trackFill?.slice(0, 7) || "#ffffff"}
+                                 onchange={(e) => updateCustomElement(element.id, { trackFill: e.currentTarget.value })}>
+                        </label>
+                      {/if}
+                      {#if element.type !== "image"}
+                        <label class="text-xs block" style="color: {$colorStore.muted}">Fill
+                          <input type="color" class="w-full h-9 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.fill?.slice(0, 7) || "#5865f2"}
+                                 onchange={(e) => updateCustomElement(element.id, { fill: e.currentTarget.value })}>
+                        </label>
+                      {/if}
+                      {#if element.type !== "image"}
+                        <div class="grid grid-cols-2 gap-2">
+                          <label class="text-xs" style="color: {$colorStore.muted}">Gradient end
+                            <input type="color" class="w-full h-9 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.gradientEnd?.slice(0, 7) || element.fill?.slice(0, 7) || "#5865f2"}
+                                   onchange={(e) => updateCustomElement(element.id, { gradientEnd: e.currentTarget.value })}>
+                          </label>
+                          <label class="text-xs" style="color: {$colorStore.muted}">Angle
+                            <input type="number" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                   value={element.gradientAngle || 0}
+                                   onchange={(e) => updateCustomElement(element.id, { gradientAngle: Number(e.currentTarget.value) })}>
+                          </label>
+                        </div>
+                        <button class="text-[11px]" style="color: {$colorStore.muted}" onclick={() => updateCustomElement(element.id, { gradientEnd: "" })}>Use solid fill</button>
+                      {/if}
+                      {#if element.type !== "text" && element.type !== "image" && element.type !== "progress"}
+                        <div class="grid grid-cols-3 gap-2">
+                          <label class="text-xs" style="color: {$colorStore.muted}">Border
+                            <input type="color" class="w-full h-9 rounded-lg border" style="border-color: {$colorStore.primary}30;" value={element.stroke?.slice(0, 7) || "#000000"}
+                                   onchange={(e) => updateCustomElement(element.id, { stroke: e.currentTarget.value })}>
+                          </label>
+                          <label class="text-xs col-span-2" style="color: {$colorStore.muted}">Border width
+                            <input type="number" min="0" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                   value={element.strokeWidth || 0}
+                                   onchange={(e) => updateCustomElement(element.id, { strokeWidth: Number(e.currentTarget.value) })}>
+                          </label>
+                        </div>
+                      {/if}
+                      <div class="grid grid-cols-3 gap-2">
+                        <label class="text-xs" style="color: {$colorStore.muted}">Shadow
+                          <input type="number" min="0" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.shadowBlur || 0}
+                                 onchange={(e) => updateCustomElement(element.id, { shadowBlur: Number(e.currentTarget.value) })}>
+                        </label>
+                        <label class="text-xs" style="color: {$colorStore.muted}">Offset X
+                          <input type="number" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.shadowX || 0}
+                                 onchange={(e) => updateCustomElement(element.id, { shadowX: Number(e.currentTarget.value) })}>
+                        </label>
+                        <label class="text-xs" style="color: {$colorStore.muted}">Offset Y
+                          <input type="number" class="w-full px-2 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.shadowY || 0}
+                                 onchange={(e) => updateCustomElement(element.id, { shadowY: Number(e.currentTarget.value) })}>
+                        </label>
+                      </div>
+                      <div class="grid grid-cols-2 gap-2">
+                        <label class="text-xs" style="color: {$colorStore.muted}">Rotation
+                          <input type="number" class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.rotation || 0}
+                                 onchange={(e) => updateCustomElement(element.id, { rotation: Number(e.currentTarget.value) })}>
+                        </label>
+                        <label class="text-xs" style="color: {$colorStore.muted}">Opacity
+                          <input type="number" min="0" max="1" step="0.05" class="w-full px-3 py-1.5 rounded-lg border text-sm"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 value={element.opacity ?? 1}
+                                 onchange={(e) => updateCustomElement(element.id, { opacity: Number(e.currentTarget.value) })}>
+                        </label>
+                      </div>
+                      <div class="grid grid-cols-6 gap-1">
+                        {#each [["left", "fa-align-left"], ["center", "fa-align-center"], ["right", "fa-align-right"], ["top", "fa-arrow-up"], ["middle", "fa-arrows-up-down"], ["bottom", "fa-arrow-down"]] as action}
+                          <button class="aspect-square rounded-lg" title={`Align ${action[0]}`} aria-label={`Align ${action[0]}`}
+                                  style="background: {$colorStore.primary}10; color: {$colorStore.primary};"
+                                  onclick={() => alignCustomElement(element.id, action[0] as any)}><i class={`fa-solid ${action[1]}`}></i></button>
+                        {/each}
+                      </div>
+                      <button class="w-full px-3 py-2 rounded-lg text-sm" style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
+                              onclick={() => duplicateCustomElement(element.id)}><i class="fa-solid fa-copy mr-2"></i>Duplicate layer</button>
+                      <button class="w-full px-3 py-2 rounded-lg text-sm" style="background: {$colorStore.accent}22; color: {$colorStore.accent};"
+                              onclick={() => deleteCustomElement(element.id)}>
+                        <i class="fa-solid fa-trash mr-2"></i>Delete layer
+                      </button>
+                    </div>
+                  {:else if element.type === "image"}
                     <div class="space-y-2">
                       <div class="grid grid-cols-2 gap-2">
                         <div>

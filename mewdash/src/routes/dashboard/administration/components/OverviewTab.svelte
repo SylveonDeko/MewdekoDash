@@ -235,7 +235,8 @@
                     key === 'antiMassMention' ? 'Anti-Mass Mention' :
                       key === 'antiPattern' ? 'Anti-Pattern' :
                         key === 'antiMassPost' ? 'Anti-Mass-Post' :
-                          key === 'antiPostChannel' ? 'Anti-Post-Channel' : key}:
+                          key === 'antiPostChannel' ? 'Anti-Post-Channel' :
+                            key === 'antiImageHash' ? 'Anti-Image-Hash' : key}:
             </span>
             <span class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full"

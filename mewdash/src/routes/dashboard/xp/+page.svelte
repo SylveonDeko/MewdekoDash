@@ -143,6 +143,10 @@
       outputSizeX: number;
       outputSizeY: number;
       customXpImageUrl?: string;
+      customElementsJson?: string;
+      customElements?: any[];
+      builtInOrderJson?: string;
+      builtInOrder?: string[];
       templateBar?: {
         barWidth?: number;
         barLength?: number;
@@ -156,6 +160,11 @@
         barPointBy: number;
       };
       templateUser?: {
+        showIcon?: boolean;
+        iconX?: number;
+        iconY?: number;
+        iconSizeX?: number;
+        iconSizeY?: number;
         showText?: boolean;
         textColor?: string;
         fontSize?: number;
@@ -183,6 +192,7 @@
     let previewCanvas: HTMLCanvasElement | null = $state(null);
     let previewBgImage = $state<HTMLImageElement | null>(null);
     let defaultBgImage = $state<HTMLImageElement | null>(null);
+    const customPreviewImages = new Map<string, HTMLImageElement>();
   let dragStartPos = { x: 0, y: 0 };
   let dragStartElementPos = { x: 0, y: 0 };
   let previewScale = 1;
@@ -356,6 +366,16 @@
 
         // Initialize missing properties with C# defaults
       if (localTemplate) {
+        try {
+          localTemplate.customElements = JSON.parse(localTemplate.customElementsJson || "[]");
+        } catch {
+          localTemplate.customElements = [];
+        }
+        try {
+          localTemplate.builtInOrder = JSON.parse(localTemplate.builtInOrderJson || "[]");
+        } catch {
+          localTemplate.builtInOrder = [];
+        }
         if (localTemplate.templateBar) {
           if (!localTemplate.templateBar.barWidth) {
             localTemplate.templateBar.barWidth = 20; // C# default
@@ -474,6 +494,11 @@
 
       const templateCopy = JSON.parse(JSON.stringify(localTemplate));
       const imageUrl = templateCopy.customXpImageUrl;
+
+      templateCopy.customElementsJson = JSON.stringify(templateCopy.customElements || []);
+      delete templateCopy.customElements;
+      templateCopy.builtInOrderJson = JSON.stringify(templateCopy.builtInOrder || []);
+      delete templateCopy.builtInOrder;
 
       delete templateCopy.customXpImageUrl;
 
@@ -733,6 +758,7 @@
       fetchServerStats(),
       fetchLeaderboard(),
       fetchXpTemplate(),
+      fetchCurrentUserData(),
       fetchRewards(),
       fetchExclusions(),
       fetchChannelsAndRoles()
@@ -756,9 +782,88 @@
     }
   });
 
+    function renderCustomPreviewElements(ctx: CanvasRenderingContext2D) {
+      if (!localTemplate) return;
+      const data: any = currentUserData || sampleData;
+      const resolveText = (text: string) => (text || "")
+        .replaceAll(/%xp\.user(%|\.name%)/gi, data?.username || "Username")
+        .replaceAll(/%xp\.user\.displayname%/gi, data?.displayName || data?.username || "Display name")
+        .replaceAll(/%xp\.level\.current%/gi, String(data?.level || 1))
+        .replaceAll(/%xp\.level\.next%/gi, String((data?.level || 1) + 1))
+        .replaceAll(/%xp\.rank%/gi, String(data?.rank || 1))
+        .replaceAll(/%xp\.current%/gi, String(data?.currentXp || data?.xp || 0))
+        .replaceAll(/%xp\.needed%/gi, String(data?.requiredXp || 100))
+        .replaceAll(/%xp\.total%/gi, String(data?.totalXp || 0))
+        .replaceAll(/%xp\.progress%/gi, `${Math.round(data?.progress || 0)}%`);
+
+      for (const element of [...(localTemplate.customElements || [])].filter((item: any) => item.visible !== false).sort((a: any, b: any) => a.zIndex - b.zIndex)) {
+        ctx.save();
+        ctx.globalAlpha = element.opacity ?? 1; ctx.shadowColor = element.shadowColor || "transparent";
+        ctx.shadowBlur = element.shadowBlur || 0; ctx.shadowOffsetX = element.shadowX || 0; ctx.shadowOffsetY = element.shadowY || 0;
+        ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
+        ctx.rotate((element.rotation || 0) * Math.PI / 180); ctx.translate(-(element.x + element.width / 2), -(element.y + element.height / 2));
+        let fill: string | CanvasGradient = element.fill || "#5865F2";
+        if (element.gradientEnd) {
+          const angle = (element.gradientAngle || 0) * Math.PI / 180, radius = Math.max(element.width, element.height) / 2;
+          const cx = element.x + element.width / 2, cy = element.y + element.height / 2;
+          const gradient = ctx.createLinearGradient(cx - Math.cos(angle) * radius, cy - Math.sin(angle) * radius, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+          gradient.addColorStop(0, element.fill); gradient.addColorStop(1, element.gradientEnd); fill = gradient;
+        }
+        ctx.fillStyle = fill; ctx.strokeStyle = element.stroke || "transparent"; ctx.lineWidth = element.strokeWidth || 0;
+        if (element.type === "text") {
+          ctx.font = `${element.fontSize || 24}px sans-serif`; ctx.textBaseline = "top"; ctx.textAlign = element.textAlign || "left";
+          const x = element.textAlign === "center" ? element.x + element.width / 2 : element.textAlign === "right" ? element.x + element.width : element.x;
+          ctx.fillText(resolveText(element.text), x, element.y);
+        } else if (element.type === "image") {
+          let image = customPreviewImages.get(element.url);
+          if (!image && element.url) {
+            image = new Image(); image.crossOrigin = "anonymous"; image.onload = renderPreview; image.src = element.url; customPreviewImages.set(element.url, image);
+          }
+          if (image?.complete) ctx.drawImage(image, element.x, element.y, element.width, element.height);
+        } else if (element.type === "progress") {
+          const progress = Math.max(0, Math.min(100, data?.progress || 0)) / 100;
+          if (element.progressStyle === "radial") {
+            const radius = Math.min(element.width, element.height) / 2 - Math.max(2, element.strokeWidth || 8) / 2;
+            ctx.lineWidth = Math.max(2, element.strokeWidth || 8); ctx.lineCap = "round"; ctx.strokeStyle = element.trackFill;
+            ctx.beginPath(); ctx.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, 1.5 * Math.PI); ctx.stroke();
+            ctx.strokeStyle = element.fill; ctx.beginPath(); ctx.arc(element.x + element.width / 2, element.y + element.height / 2, radius, -.5 * Math.PI, (-.5 + progress * 2) * Math.PI); ctx.stroke();
+          } else if (element.progressStyle === "segmented") {
+            const count = Math.max(2, element.segments || 10), gap = 3, width = (element.width - gap * (count - 1)) / count;
+            for (let i = 0; i < count; i++) { ctx.fillStyle = i < Math.ceil(progress * count) ? fill : element.trackFill; ctx.beginPath(); ctx.roundRect(element.x + i * (width + gap), element.y, width, element.height, element.cornerRadius || 0); ctx.fill(); }
+          } else {
+            ctx.fillStyle = element.trackFill; ctx.beginPath(); ctx.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0); ctx.fill();
+            ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(element.x, element.y, element.width * progress, element.height, element.cornerRadius || 0); ctx.fill();
+          }
+        } else {
+          ctx.beginPath();
+          if (element.type === "ellipse") ctx.ellipse(element.x + element.width / 2, element.y + element.height / 2, Math.abs(element.width / 2), Math.abs(element.height / 2), 0, 0, Math.PI * 2);
+          else if (element.type === "line") { ctx.moveTo(element.x, element.y); ctx.lineTo(element.x + element.width, element.y + element.height); ctx.strokeStyle = element.fill; ctx.lineWidth = Math.max(1, element.strokeWidth || 1); }
+          else ctx.roundRect(element.x, element.y, element.width, element.height, element.cornerRadius || 0);
+          if (element.type !== "line") ctx.fill(); if (element.type === "line" || element.strokeWidth > 0) ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
     // Render XP card preview
     function renderPreview() {
         if (!previewCanvas || !localTemplate) return;
+
+        const activeBackground = previewBgImage || defaultBgImage;
+        if (activeBackground?.naturalWidth && activeBackground?.naturalHeight) {
+            if (localTemplate.outputSizeX !== activeBackground.naturalWidth ||
+                localTemplate.outputSizeY !== activeBackground.naturalHeight) {
+                localTemplate.outputSizeX = activeBackground.naturalWidth;
+                localTemplate.outputSizeY = activeBackground.naturalHeight;
+                changedSettings = changedSettings.add("template");
+            }
+            // Set the backing bitmap directly. Waiting for Svelte to update width/height attributes
+            // can leave one frame rendered into the previous aspect ratio.
+            if (previewCanvas.width !== activeBackground.naturalWidth)
+                previewCanvas.width = activeBackground.naturalWidth;
+            if (previewCanvas.height !== activeBackground.naturalHeight)
+                previewCanvas.height = activeBackground.naturalHeight;
+        }
 
         const ctx = previewCanvas.getContext('2d');
         if (!ctx) return;
@@ -769,7 +874,7 @@
         // Draw background
         if (previewBgImage) {
             // Custom background image
-            ctx.drawImage(previewBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+            ctx.drawImage(previewBgImage, 0, 0);
         } else if (defaultBgImage) {
             // Default background with gradient (since default is transparent)
             // First draw gradient
@@ -781,7 +886,7 @@
             ctx.fillRect(0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
 
             // Then draw transparent default image on top
-            ctx.drawImage(defaultBgImage, 0, 0, localTemplate.outputSizeX, localTemplate.outputSizeY);
+            ctx.drawImage(defaultBgImage, 0, 0);
         }
 
         // Draw username
@@ -859,7 +964,7 @@
             ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildRankColor, "#ffffff");
             ctx.font = `${localTemplate.templateGuild.guildRankFontSize || 18}px sans-serif`;
             ctx.fillText(
-                `#${currentUserData?.rank || sampleData.rank}`,
+                String(currentUserData?.rank || sampleData.rank),
                 localTemplate.templateGuild.guildRankX || 50,
                 localTemplate.templateGuild.guildRankY || 150
             );
@@ -870,11 +975,40 @@
             ctx.fillStyle = canvasHex(localTemplate.templateGuild.guildLevelColor, "#ffffff");
             ctx.font = `${localTemplate.templateGuild.guildLevelFontSize || 18}px sans-serif`;
             ctx.fillText(
-                `Level ${currentUserData?.level || sampleData.level}`,
+                String(currentUserData?.level || sampleData.level),
                 localTemplate.templateGuild.guildLevelX || 350,
                 localTemplate.templateGuild.guildLevelY || 150
             );
         }
+
+        // Draw the built-in avatar with the same circular mask used by the bot renderer.
+        if (localTemplate.templateUser?.showIcon) {
+            const avatarUrl = currentUserData?.avatarUrl || sampleData.avatarUrl;
+            if (avatarUrl) {
+                let avatar = customPreviewImages.get(avatarUrl);
+                if (!avatar) {
+                    avatar = new Image();
+                    avatar.crossOrigin = "anonymous";
+                    avatar.onload = renderPreview;
+                    avatar.src = avatarUrl;
+                    customPreviewImages.set(avatarUrl, avatar);
+                }
+                if (avatar.complete && avatar.naturalWidth > 0) {
+                    const x = localTemplate.templateUser.iconX ?? 27;
+                    const y = localTemplate.templateUser.iconY ?? 24;
+                    const width = localTemplate.templateUser.iconSizeX ?? 73;
+                    const height = localTemplate.templateUser.iconSizeY ?? 74;
+                    const radius = Math.min(width, height) / 2;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x + width / 2, y + height / 2, radius, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(avatar, x, y, width, height);
+                    ctx.restore();
+                }
+            }
+        }
+        renderCustomPreviewElements(ctx);
     }
 
     // Load default background image once
@@ -882,6 +1016,12 @@
         const img = new Image();
         img.onload = () => {
             defaultBgImage = img;
+            if (localTemplate && !localTemplate.customXpImageUrl &&
+                (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
+                localTemplate.outputSizeX = img.naturalWidth;
+                localTemplate.outputSizeY = img.naturalHeight;
+                changedSettings = changedSettings.add("template");
+            }
             if (previewCanvas && localTemplate) {
                 renderPreview();
             }
@@ -900,6 +1040,11 @@
             if (localTemplate.customXpImageUrl) {
                 const img = new Image();
                 img.onload = () => {
+                    if (localTemplate && (localTemplate.outputSizeX !== img.naturalWidth || localTemplate.outputSizeY !== img.naturalHeight)) {
+                        localTemplate.outputSizeX = img.naturalWidth;
+                        localTemplate.outputSizeY = img.naturalHeight;
+                        changedSettings = changedSettings.add("template");
+                    }
                     previewBgImage = img;
                     renderPreview();
                 };
@@ -912,12 +1057,6 @@
                 previewBgImage = null;
                 renderPreview();
             }
-        }
-    });
-
-    $effect(() => {
-        if (activeTab === "template" && !currentUserData) {
-            fetchCurrentUserData();
         }
     });
 
@@ -1097,7 +1236,7 @@
                             id="xp-preview-canvas"
                             width={localTemplate.outputSizeX}
                             height={localTemplate.outputSizeY}
-                            style="width: 100%; height: 100%; object-fit: contain; object-position: center; image-rendering: crisp-edges;"
+                            style="display: block; width: 100%; height: auto; aspect-ratio: {localTemplate.outputSizeX} / {localTemplate.outputSizeY}; image-rendering: crisp-edges;"
                     ></canvas>
 
                     {#if isMobile}

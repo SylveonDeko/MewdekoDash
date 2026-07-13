@@ -1,6 +1,7 @@
 import { MEWDEKO_API_KEY } from "$env/static/private";
 import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
 import { logger } from "$lib/logger";
+import JSONbig from "json-bigint";
 
 const CACHE_TTL_MS = 15_000;
 
@@ -62,7 +63,7 @@ async function fetchInstances(): Promise<RawInstance[]> {
     logger.warn(`Mobile instance discovery failed (${response.status}) at ${primary}`);
     throw new Error("primary_unreachable");
   }
-  const raw = (await response.json()) as RawInstance[];
+  const raw = JSONbig.parse(await response.text()) as RawInstance[];
   cache = { fetchedAt: Date.now(), raw };
   return raw;
 }

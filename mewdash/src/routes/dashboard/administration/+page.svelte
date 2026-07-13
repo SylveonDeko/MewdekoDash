@@ -102,6 +102,26 @@
       ignoredRoles: [],
       ignoredUsers: [],
       counter: 0
+    },
+    antiImageHash: {
+      enabled: false,
+      action: 2,
+      punishDuration: 0,
+      roleId: null,
+      hashThreshold: 31,
+      deleteMessages: true,
+      notifyUser: true,
+      ignoreBots: true,
+      checkEmbeds: true,
+      checkBorders: true,
+      usePresetList: false,
+      presetCount: 0,
+      presetTriggers: 0,
+      maxImageSizeMb: 8,
+      hashCount: 0,
+      ignoredRoles: [],
+      ignoredChannels: [],
+      counter: 0
     }
   });
 
@@ -303,7 +323,8 @@
           antiMassMention: { enabled: false },
           antiPattern: { enabled: false },
           antiMassPost: { enabled: false },
-          antiPostChannel: { enabled: false }
+          antiPostChannel: { enabled: false },
+          antiImageHash: { enabled: false }
         };
 
         if (protectionStatus.antiPostChannel) {
@@ -609,6 +630,9 @@
         case "antiPostChannel":
           await administrationApi.configureAntiPostChannel($currentGuild.id, config);
           break;
+        case "antiImageHash":
+          await protectionApi.configureAntiImageHash($currentGuild.id, config);
+          break;
       }
       await fetchAllData();
     } catch (err) {
@@ -698,6 +722,20 @@
           deleteMessages: true,
           notifyUser: true,
           ignoreBots: true
+        },
+        antiImageHash: {
+          enabled: true,
+          action: 2, // Ban
+          punishDuration: 0,
+          roleId: null,
+          hashThreshold: 31,
+          deleteMessages: true,
+          notifyUser: true,
+          ignoreBots: true,
+          checkEmbeds: true,
+          checkBorders: true,
+          usePresetList: true,
+          maxImageSizeMb: 8
         }
       };
 

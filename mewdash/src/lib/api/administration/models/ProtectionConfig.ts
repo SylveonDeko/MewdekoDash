@@ -265,6 +265,31 @@ export interface ProtectionStatus {
     ignoredUsers: bigint[];
     counter: number;
   };
+  antiImageHash: {
+    enabled: boolean;
+    action: number;
+    punishDuration: number;
+    roleId: bigint;
+    /** Max hamming distance out of 256 PDQ bits. PDQ's standard "same image" threshold is 31. */
+    hashThreshold: number;
+    deleteMessages: boolean;
+    notifyUser: boolean;
+    ignoreBots: boolean;
+    checkEmbeds: boolean;
+    /** Strip a solid border from posted images before matching, catching bordered copies. */
+    checkBorders: boolean;
+    /** Also block the known scam images that ship with the bot. */
+    usePresetList: boolean;
+    /** How many known scam images the bot ships with. */
+    presetCount: number;
+    /** How many times a known scam image has been caught in this guild. */
+    presetTriggers: number;
+    maxImageSizeMb: number;
+    hashCount: number;
+    ignoredRoles: bigint[];
+    ignoredChannels: bigint[];
+    counter: number;
+  };
 }
 
 /**

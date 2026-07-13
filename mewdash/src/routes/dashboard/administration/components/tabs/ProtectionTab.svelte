@@ -6,6 +6,7 @@
   import AntiMassMentionCard from "../protection/AntiMassMentionCard.svelte";
   import AntiMassPostCard from "../protection/AntiMassPostCard.svelte";
   import AntiPostChannelCard from "../protection/AntiPostChannelCard.svelte";
+  import AntiImageHashCard from "../protection/AntiImageHashCard.svelte";
 
   let {
     protectionStatus,
@@ -137,6 +138,18 @@
     {saveProtectionConfig}
     {saving}
     {textChannels}
+    {toggleProtection}
+    {toggleProtectionCard}
+  />
+
+  <AntiImageHashCard
+    bind:expandedProtectionCard
+    bind:tempProtectionConfig
+    {cancelProtectionEdit}
+    {fetchAllData}
+    {protectionStatus}
+    {saveProtectionConfig}
+    {saving}
     {toggleProtection}
     {toggleProtectionCard}
   />

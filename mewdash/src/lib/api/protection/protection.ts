@@ -3,6 +3,10 @@ import { apiRequest } from "../core";
 import type {
   UpdateAntiPatternConfigRequest,
   AntiPatternPattern,
+  AntiImageHashConfig,
+  AddBannedImageHashRequest,
+  BannedImageHash,
+  ImageHashPreview,
 } from "./models";
 import type {
   ProtectionStatus,
@@ -97,5 +101,60 @@ export const protectionApi = {
   getAntiPatternPatterns: (guildId: bigint) =>
     apiRequest<AntiPatternPattern[]>(
       `Protection/${guildId}/anti-pattern/patterns`,
+    ),
+
+  configureAntiImageHash: (guildId: bigint, config: AntiImageHashConfig) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-image-hash`,
+      "PUT",
+      config,
+    ),
+
+  getBannedImageHashes: (guildId: bigint) =>
+    apiRequest<BannedImageHash[]>(`Protection/${guildId}/anti-image-hash/hashes`),
+
+  addBannedImageHash: (guildId: bigint, request: AddBannedImageHashRequest) =>
+    apiRequest<BannedImageHash>(
+      `Protection/${guildId}/anti-image-hash/hashes`,
+      "POST",
+      request,
+    ),
+
+  removeBannedImageHash: (guildId: bigint, hashId: number) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-image-hash/hashes/${hashId}`,
+      "DELETE",
+    ),
+
+  /**
+   * Hashes an image without blocking it, so the dashboard can preview the hash and its quality.
+   * Accepts either an image URL or the base64 bytes of an uploaded file.
+   */
+  computeImageHash: (guildId: bigint, request: AddBannedImageHashRequest) =>
+    apiRequest<ImageHashPreview>(
+      `Protection/${guildId}/anti-image-hash/compute`,
+      "POST",
+      request,
+    ),
+
+  /**
+   * Turns the bot's built-in list of known scam images on or off for the guild.
+   */
+  setPresetScamImages: (guildId: bigint, enabled: boolean) =>
+    apiRequest<{ success: boolean; presetCount: number }>(
+      `Protection/${guildId}/anti-image-hash/preset/${enabled}`,
+      "POST",
+    ),
+
+  toggleAntiImageHashIgnoredRole: (guildId: bigint, roleId: bigint) =>
+    apiRequest<{ added: boolean }>(
+      `Protection/${guildId}/anti-image-hash/ignored-roles/${roleId}`,
+      "POST",
+    ),
+
+  toggleAntiImageHashIgnoredChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<{ added: boolean }>(
+      `Protection/${guildId}/anti-image-hash/ignored-channels/${channelId}`,
+      "POST",
     ),
 };

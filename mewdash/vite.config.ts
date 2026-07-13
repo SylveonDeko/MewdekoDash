@@ -3,6 +3,7 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import type { Plugin, ViteDevServer } from "vite";
 import { defineConfig } from "vite";
+import mkcert from "vite-plugin-mkcert";
 
 const mobileMusicWsPlugin: Plugin = {
   name: "mobile-music-ws",
@@ -31,7 +32,7 @@ function attachUpgradeHandler(server: ViteDevServer) {
   });
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     sentrySvelteKit({
       sourceMapsUploadOptions: {
@@ -44,10 +45,11 @@ export default defineConfig({
     tailwindcss(),
     sveltekit(),
     mobileMusicWsPlugin,
+    ...(command === "serve" ? [mkcert()] : []),
   ],
   esbuild: {
     supported: {
       "top-level-await": true,
     },
   },
-});
+}));

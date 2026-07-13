@@ -229,6 +229,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Stream announcements",
   },
   {
+    label: "Twitch",
+    icon: "fa-brands fa-twitch",
+    href: "/dashboard/twitch",
+    category: "Community",
+    description: "Twitch chat bot and channel integration",
+  },
+  {
     label: "Suggestions",
     icon: "fa-utility-duo fa-regular fa-lightbulb",
     href: "/dashboard/suggestions",
