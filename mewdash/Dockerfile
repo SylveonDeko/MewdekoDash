@@ -40,9 +40,12 @@ COPY --from=build /app/static ./static
 RUN mkdir -p /app/logs
 
 # Set environment variables
+# BODY_SIZE_LIMIT is raised from the adapter-node default of 512K so image uploads
+# (base64 encoded, up to 8MB of source image) reach the bot API.
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOST=0.0.0.0
+    HOST=0.0.0.0 \
+    BODY_SIZE_LIMIT=12M
 
 # Expose port
 EXPOSE 3000
