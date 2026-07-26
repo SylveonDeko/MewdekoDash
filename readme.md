@@ -12,7 +12,7 @@ See [SELFHOST.md](SELFHOST.md) for a complete guide to running the dashboard alo
 
 For a `.env` template, see [mewdash/.env.example](mewdash/.env.example).
 
-For Docker deployment (bot + dashboard together), see [DOCKER.md](../DOCKER.md).
+For Docker deployment, see [DOCKER.md](DOCKER.md).
 
 ## Development
 

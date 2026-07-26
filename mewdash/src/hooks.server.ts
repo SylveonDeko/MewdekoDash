@@ -40,10 +40,10 @@ const appHandle: Handle = async ({ event, resolve }) => {
       "default-src 'self'",
       // Note: 'unsafe-inline' for scripts is needed for Svelte's generated hydration code
       // Consider implementing nonce-based CSP for stronger security in the future
-      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' challenges.cloudflare.com kit.fontawesome.com",
-      "style-src 'self' 'unsafe-inline' kit.fontawesome.com", // unsafe-inline needed for Svelte component styles
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' challenges.cloudflare.com",
+      "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Svelte component styles
       "img-src 'self' data: https: blob:", // Allow images from CDNs and data URLs
-      "font-src 'self' data: kit.fontawesome.com ka-p.fontawesome.com",
+      "font-src 'self' data:",
       "connect-src 'self' ws: wss: https:", // Allow WebSocket connections to bot API
       "frame-src 'self' challenges.cloudflare.com", // Allow Turnstile CAPTCHA
       "object-src 'none'", // Block plugins

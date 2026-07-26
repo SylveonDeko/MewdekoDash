@@ -149,11 +149,7 @@ Update `DISCORD_REDIRECT_URI` in `.env` to match your public domain, and add it 
 
 ## Docker
 
-If you prefer Docker, see `DOCKER.md` in the repository root. The Docker setup handles everything including the dashboard via:
-
-```bash
-docker-compose --profile dashboard up -d
-```
+See [DOCKER.md](DOCKER.md) for the dashboard image, its required credentials, and Docker Compose deployment alongside the bot.
 
 ## Troubleshooting
 
