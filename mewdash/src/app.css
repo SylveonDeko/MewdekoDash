@@ -1,5 +1,9 @@
 @import '../tailwind.config.css';
 @import 'discord.css/dist/css/discord.min.css';
+@import '@fontsource/opendyslexic/400.css';
+@import '@fontsource/opendyslexic/400-italic.css';
+@import '@fontsource/opendyslexic/700.css';
+@import '@fontsource/opendyslexic/700-italic.css';
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
@@ -101,6 +105,13 @@
 
     .scrollbar-thumb-white\/20 {
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    /* OpenDyslexic accessibility toggle. !important is required because
+       app.html sets an unlayered `body { font-family: Arial }` style, and
+       unlayered CSS always beats @layer rules regardless of specificity. */
+    html.dyslexic-font body {
+        font-family: 'OpenDyslexic', sans-serif !important;
     }
 
     /* Halloween color transition */

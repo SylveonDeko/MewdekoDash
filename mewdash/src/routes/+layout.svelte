@@ -12,6 +12,7 @@
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { userStore } from "$lib/stores/userStore.ts";
   import { initAuthRefresh } from "$lib/authRefresh";
+  import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
 
 
   interface Props {
@@ -51,6 +52,7 @@
     if (browser) {
       // Initialize auth refresh system
       initAuthRefresh();
+      dyslexicFontStore.init();
 
         // Initial color extraction is handled by the reactive statement
         // to avoid duplicate extraction

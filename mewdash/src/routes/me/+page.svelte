@@ -7,6 +7,7 @@
   import { logger } from "$lib/logger";
   import { clickOutside } from "$lib/clickOutside";
   import Notification from "$lib/components/ui/Notification.svelte";
+  import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
 
   let {data} = $props();
 
@@ -832,6 +833,29 @@
                     <span
                       class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                        class:translate-x-5={userPreferences.pronounsDisabled}>
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Dyslexia-friendly Font -->
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm font-medium" style="color: {$colorStore.text}">Dyslexia-friendly Font</div>
+                <div class="text-xs" style="color: {$colorStore.muted}">Use OpenDyslexic across the dashboard (this device only)</div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={$dyslexicFontStore}
+                  onchange={() => dyslexicFontStore.toggle()}
+                  class="sr-only"
+                >
+                <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
+                     style="background: {$dyslexicFontStore ? $colorStore.primary : '#374151'};">
+                    <span
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
+                       class:translate-x-5={$dyslexicFontStore}>
                   </span>
                 </span>
               </label>

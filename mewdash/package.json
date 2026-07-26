@@ -57,6 +57,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@fontsource/opendyslexic": "^5.3.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@sentry/sveltekit": "^10.53.1",
     "chart.js": "^4.5.1",

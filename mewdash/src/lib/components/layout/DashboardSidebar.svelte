@@ -14,6 +14,7 @@
   import { clickOutside } from "$lib/clickOutside";
   import { musicStore } from "$lib/stores/musicStore";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
+  import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
 
   interface Props {
     collapsed?: boolean;
@@ -587,8 +588,8 @@
   {/if}
 
   <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label="Feature navigation">
-    {#if !isDashboardHome}
-      <div class="px-2 mb-1">
+    <div class="px-2 mb-1">
+        {#if !isDashboardHome}
         <a
           href={noGuild ? undefined : "/dashboard"}
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
@@ -611,6 +612,7 @@
             <span class="text-[15px] font-medium" transition:fade={{ duration: 150 }}>Dashboard</span>
           {/if}
         </a>
+        {/if}
 
         <a
           href={noGuild ? undefined : "/dashboard/access"}
@@ -639,7 +641,6 @@
       </div>
 
       <div class="mx-3 my-2 h-px" style="background: {$colorStore.primary}10;"></div>
-    {/if}
 
     {#each categoryOrder as category}
       {#if featuresByCategory[category] && featuresByCategory[category].length > 0}
@@ -773,6 +774,25 @@
           <i class="fa-solid fa-gear text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
           <span class="text-sm">My Settings</span>
         </a>
+
+        <!-- Dyslexia-friendly font -->
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.01] group"
+          style="color: {$colorStore.text};"
+          onclick={() => dyslexicFontStore.toggle()}
+          aria-pressed={$dyslexicFontStore}
+        >
+          <i class="fa-solid fa-universal-access text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
+          <span class="text-sm flex-1 text-left">Dyslexia-friendly Font</span>
+          <span class="w-9 h-5 rounded-full transition-all relative shadow-inner block shrink-0"
+                style="background: {$dyslexicFontStore ? $colorStore.primary : '#374151'};">
+            <span
+              class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform block"
+              class:translate-x-4={$dyslexicFontStore}>
+            </span>
+          </span>
+        </button>
 
         <!-- Logout -->
         <form action="/api/discord/logout" method="GET" class="w-full">

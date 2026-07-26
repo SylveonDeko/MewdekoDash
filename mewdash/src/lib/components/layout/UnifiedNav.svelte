@@ -46,6 +46,7 @@ A unified navigation component that provides responsive navigation with server a
   import { userStore } from "$lib/stores/userStore.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
+  import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
 
   // Types
   type NavItem = {
@@ -903,6 +904,20 @@ A unified navigation component that provides responsive navigation with server a
     <!-- Right section -->
         <div class="flex items-center gap-2 w-[140px] lg:w-[180px] xl:w-[200px] justify-end"
              class:md:w-[180px]={isDashboard}>
+      <!-- Dyslexia-friendly font toggle - always visible, no login required -->
+      <button
+        type="button"
+        class="hidden md:flex relative z-30 items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.05] border shrink-0"
+        style="background: {$dyslexicFontStore ? `${$colorStore.primary}30` : 'transparent'};
+               border-color: {$colorStore.primary}40;
+               color: {$colorStore.text};"
+        onclick={() => dyslexicFontStore.toggle()}
+        aria-pressed={$dyslexicFontStore}
+        aria-label="Toggle dyslexia-friendly font"
+        title="Toggle dyslexia-friendly font"
+      >
+        <i class="fa-solid fa-universal-access text-sm"></i>
+      </button>
       {#if !currentUser}
         <a href="/api/discord/login"
            data-sveltekit-reload
@@ -1108,7 +1123,7 @@ A unified navigation component that provides responsive navigation with server a
                     </div>
                 </a>
               </div>
-              
+
               <!-- Logout -->
               <div class="pt-2 border-t border-opacity-30" style="border-color: {$colorStore.primary};">
                 <form
@@ -1335,6 +1350,30 @@ A unified navigation component that provides responsive navigation with server a
               →
             </div>
           </a>
+        </div>
+
+        <!-- OpenDyslexic toggle -->
+        <div class="px-4 py-3 border-b border-opacity-30 flex items-center justify-between"
+             style="border-color: {$colorStore.primary};">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-universal-access" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+            <span class="font-medium" style="color: {$colorStore.text};">Dyslexia-friendly font</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={$dyslexicFontStore}
+              onchange={() => dyslexicFontStore.toggle()}
+              class="sr-only"
+            >
+            <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
+                  style="background: {$dyslexicFontStore ? $colorStore.primary : '#374151'};">
+              <span
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
+                class:translate-x-5={$dyslexicFontStore}>
+              </span>
+            </span>
+          </label>
         </div>
 
         <!-- Only show navigation items on non-dashboard pages for mobile -->
