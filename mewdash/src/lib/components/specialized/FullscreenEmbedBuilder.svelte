@@ -8,10 +8,12 @@
   import ValidationCard from "./ValidationCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import { fade, slide } from "svelte/transition";
-  import { chatTriggersApi } from "$lib/api/index.ts";
+  import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
   import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
+  import type { SavedEmbed } from "$lib/api/embeds/models";
   import { logger } from "$lib/logger.ts";
   import type { DiscordUser } from "$lib/types/discord";
+  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
   interface Props {
     // Bound value - the JSON output
@@ -152,6 +154,25 @@
   let showMobilePreview = $state(false);
   let hasInitialized = $state(false);
   let editingComponentKey = $state<string | null>(null);
+
+  // JSON tab state
+  let jsonText = $state("");
+  let jsonParseError = $state("");
+
+  // Saved embeds state
+  let savedUserEmbeds: SavedEmbed[] = $state([]);
+  let savedGuildEmbeds: SavedEmbed[] = $state([]);
+  let loadingSavedEmbeds = $state(false);
+  let saveEmbedName = $state("");
+  let saveAsGuildShared = $state(false);
+  let savingEmbed = $state(false);
+  let showDeleteSavedConfirm = $state(false);
+  let embedPendingDelete: SavedEmbed | null = $state(null);
+
+  let guildIdBigInt = $derived.by(() => {
+    if (!guildId) return null;
+    return typeof guildId === "string" ? BigInt(guildId) : guildId;
+  });
 
   // Default placeholders - comprehensive list from backend ReplacementBuilder
   const defaultPlaceholders: Placeholder[] = [
@@ -364,6 +385,7 @@
   function open() {
     isOpen = true;
     loadChatTriggers();
+    loadSavedEmbeds();
     validateEmbeds();
     validateComponents();
     // Prevent body scrolling
@@ -504,6 +526,225 @@
     }
 
     return cleaned;
+  }
+
+  // Refreshes the editable JSON textarea from the current builder state
+  function refreshJsonPreview() {
+    const data = cleanOutput();
+    jsonText = typeof data === "string" ? "{}" : JSON.stringify(data, null, 2);
+    jsonParseError = "";
+  }
+
+  // Parses embed JSON (either { content, embeds, components } or a bare embed) and loads it into
+  // the builder. Respects the same restrictions manual editing is subject to: allowContent,
+  // allowMultipleEmbeds/maxEmbeds, and allowComponents/restrictedComponentTypes.
+  function applyImportedJson(text: string) {
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      jsonParseError = "That isn't valid JSON.";
+      showNotificationMessage("Invalid JSON", "error");
+      return;
+    }
+
+    const isFullPayload = "content" in parsed || "embeds" in parsed || "components" in parsed;
+    const parsedEmbeds = isFullPayload ? parsed.embeds : [parsed];
+
+    content = allowContent && isFullPayload && parsed.content ? String(parsed.content) : "";
+
+    if (Array.isArray(parsedEmbeds) && parsedEmbeds.length > 0) {
+      const limit = allowMultipleEmbeds ? maxEmbeds : 1;
+      embeds = parsedEmbeds.slice(0, limit).map((e: any) => ({
+        title: e.title ?? "",
+        description: e.description ?? "",
+        color: e.color ?? "#5865F2",
+        url: e.url ?? "",
+        author: { name: e.author?.name ?? "", url: e.author?.url ?? "", icon_url: e.author?.icon_url ?? "" },
+        thumbnail: { url: e.thumbnail?.url ?? "" },
+        image: { url: e.image?.url ?? "" },
+        footer: { text: e.footer?.text ?? "", icon_url: e.footer?.icon_url ?? "" },
+        fields: (e.fields ?? []).map((f: any, fieldIndex: number) => ({
+          name: f.name ?? "",
+          value: f.value ?? "",
+          inline: !!f.inline,
+          id: typeof f.id === "number" ? f.id : Date.now() + fieldIndex
+        }))
+      }));
+    } else {
+      embeds = [];
+    }
+    hasInitialized = true;
+
+    const hasImportedComponents = isFullPayload && Array.isArray(parsed.components) && parsed.components.length > 0;
+    let componentsSkipped = false;
+
+    if (allowComponents && !restrictedComponentTypes.includes("all") && hasImportedComponents) {
+      const rowsByIndex = new Map<number, ComponentRow>();
+      let totalAdded = 0;
+
+      parsed.components.forEach((c: any, componentIndex: number) => {
+        if (totalAdded >= 25) {
+          componentsSkipped = true;
+          return;
+        }
+
+        const type = c.isSelect ? "select" : "button";
+        if (restrictedComponentTypes.includes(type)) {
+          componentsSkipped = true;
+          return;
+        }
+
+        const rowIndex = typeof c.row === "number" ? c.row : 0;
+        let row = rowsByIndex.get(rowIndex);
+        if (!row) {
+          if (rowsByIndex.size >= 5) {
+            componentsSkipped = true;
+            return;
+          }
+          const rowKey = `row-${Date.now()}-${rowIndex}-${Math.random().toString(36).substr(2, 9)}`;
+          row = { componentKey: rowKey, rowKey, components: [] };
+          rowsByIndex.set(rowIndex, row);
+        }
+
+        if (type === "select" && row.components.length > 0) {
+          componentsSkipped = true;
+          return;
+        }
+        if (type === "button" && row.components.length >= 5) {
+          componentsSkipped = true;
+          return;
+        }
+        if (row.components.some(existing => existing.isSelect)) {
+          componentsSkipped = true;
+          return;
+        }
+
+        row.components.push({
+          componentKey: `comp-${Date.now()}-${componentIndex}-${Math.random().toString(36).substr(2, 9)}`,
+          id: c.id ?? null,
+          rowIndex,
+          displayName: c.displayName ?? "",
+          style: c.style ?? 1,
+          url: c.url ?? "",
+          emoji: c.emoji ?? "",
+          isSelect: !!c.isSelect,
+          maxOptions: c.maxOptions ?? 1,
+          minOptions: c.minOptions ?? 1,
+          options: (c.options ?? []).map((o: any) => ({
+            id: o.id ?? null,
+            name: o.name ?? "",
+            emoji: o.emoji ?? "",
+            description: o.description ?? ""
+          }))
+        });
+        totalAdded++;
+      });
+
+      componentRows = Array.from(rowsByIndex.keys())
+        .sort((a, b) => a - b)
+        .map(key => rowsByIndex.get(key)!);
+    } else {
+      if (hasImportedComponents) componentsSkipped = true;
+      componentRows = [];
+    }
+
+    jsonParseError = "";
+    validateEmbeds();
+    validateComponents();
+    showNotificationMessage(
+      componentsSkipped ? "JSON applied (components aren't allowed here and were skipped)" : "JSON applied to builder"
+    );
+    activeTab = "editor";
+  }
+
+  function applyJsonText() {
+    applyImportedJson(jsonText);
+  }
+
+  // Loads the personal and (if a guild is selected) guild-shared saved embed templates
+  async function loadSavedEmbeds() {
+    if (!user?.id) return;
+    loadingSavedEmbeds = true;
+    try {
+      savedUserEmbeds = await embedsApi.getUserEmbeds(user.id);
+      savedGuildEmbeds = guildIdBigInt ? await embedsApi.getGuildEmbeds(guildIdBigInt) : [];
+    } catch (error) {
+      logger.error("Failed to load saved embeds:", error);
+      showNotificationMessage("Failed to load saved embeds", "error");
+    } finally {
+      loadingSavedEmbeds = false;
+    }
+  }
+
+  // Saves the current builder state as a reusable embed template
+  async function saveCurrentEmbed() {
+    if (!user?.id) {
+      showNotificationMessage("You must be logged in to save embeds", "error");
+      return;
+    }
+
+    const name = saveEmbedName.trim();
+    if (!name) {
+      showNotificationMessage("Please enter a name for the embed", "error");
+      return;
+    }
+
+    const exportData = cleanOutput();
+    if (!exportData || (typeof exportData === "object" && Object.keys(exportData).length === 0)) {
+      showNotificationMessage("Nothing to save yet", "error");
+      return;
+    }
+
+    if (saveAsGuildShared && !guildIdBigInt) {
+      showNotificationMessage("A server must be selected to save a shared embed", "error");
+      return;
+    }
+
+    savingEmbed = true;
+    try {
+      await embedsApi.createEmbed({
+        userId: user.id,
+        guildId: saveAsGuildShared ? guildIdBigInt : undefined,
+        embedName: name,
+        jsonCode: JSON.stringify(exportData),
+        isGuildShared: saveAsGuildShared
+      });
+
+      showNotificationMessage(`Saved "${name}"`);
+      saveEmbedName = "";
+      await loadSavedEmbeds();
+    } catch (error) {
+      logger.error("Failed to save embed:", error);
+      showNotificationMessage("Failed to save embed. The name may already be in use.", "error");
+    } finally {
+      savingEmbed = false;
+    }
+  }
+
+  function loadSavedEmbed(saved: SavedEmbed) {
+    applyImportedJson(saved.jsonCode);
+    showNotificationMessage(`Loaded "${saved.embedName ?? "embed"}"`);
+  }
+
+  function requestDeleteSavedEmbed(saved: SavedEmbed) {
+    embedPendingDelete = saved;
+    showDeleteSavedConfirm = true;
+  }
+
+  async function confirmDeleteSavedEmbed() {
+    const saved = embedPendingDelete;
+    embedPendingDelete = null;
+    if (!saved || !user?.id) return;
+
+    try {
+      await embedsApi.deleteEmbed(saved.id, user.id);
+      showNotificationMessage(`Deleted "${saved.embedName ?? "embed"}"`);
+      await loadSavedEmbeds();
+    } catch (error) {
+      logger.error("Failed to delete embed:", error);
+      showNotificationMessage("Failed to delete embed", "error");
+    }
   }
 
   // Embed management
@@ -944,6 +1185,28 @@
                   Components
                 </button>
               {/if}
+
+              <button
+                class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'json' ? 'filter: brightness(0.9);' : ''}"
+                onclick={() => { activeTab = 'json'; refreshJsonPreview(); }}
+                type="button"
+              >
+                <i class="fa-solid fa-code mr-2"></i>
+                JSON
+              </button>
+
+              {#if user?.id}
+                <button
+                  class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; {activeTab === 'saved' ? 'filter: brightness(0.9);' : ''}"
+                  onclick={() => { activeTab = 'saved'; loadSavedEmbeds(); }}
+                  type="button"
+                >
+                  <i class="fa-solid fa-floppy-disk mr-2"></i>
+                  Saved
+                </button>
+              {/if}
             </div>
 
             <!-- Tab Content -->
@@ -1154,6 +1417,171 @@
                     {/each}
                   {/if}
                 </div>
+              {:else if activeTab === 'json'}
+                <!-- JSON Tab -->
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                      <h3 class="text-base md:text-lg font-semibold" style="color: {$colorStore.text};">Raw JSON</h3>
+                      <p class="text-xs md:text-sm" style="color: {$colorStore.muted};">
+                        View, edit, or paste embed JSON directly
+                      </p>
+                    </div>
+                    <div class="flex gap-2">
+                      <button
+                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                        onclick={refreshJsonPreview}
+                        type="button"
+                      >
+                        <i class="fa-solid fa-rotate"></i>
+                        Refresh
+                      </button>
+                      <button
+                        class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                        onclick={applyJsonText}
+                        type="button"
+                      >
+                        <i class="fa-solid fa-check"></i>
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows="16"
+                    spellcheck="false"
+                    class="w-full px-3 py-2 rounded-lg border font-mono text-xs resize-y"
+                    style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                    placeholder={'Paste embed JSON here, e.g. { "content": "...", "embeds": [...] }'}
+                    bind:value={jsonText}
+                  ></textarea>
+
+                  {#if jsonParseError}
+                    <p class="text-sm" style="color: #ED4245;">{jsonParseError}</p>
+                  {/if}
+
+                  {#if !allowComponents || restrictedComponentTypes.includes('all')}
+                    <p class="text-xs" style="color: {$colorStore.muted};">
+                      Components aren't supported here — any <code>components</code> in pasted JSON are ignored.
+                    </p>
+                  {/if}
+                </div>
+
+              {:else if activeTab === 'saved'}
+                <!-- Saved Embeds Tab -->
+                <div class="space-y-6">
+                  <div
+                    class="p-4 rounded-lg border space-y-3"
+                    style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
+                  >
+                    <h3 class="text-base font-semibold" style="color: {$colorStore.text};">Save Current Embed</h3>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        class="flex-1 px-3 py-2 rounded-lg border min-h-[44px]"
+                        style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        placeholder="Embed name"
+                        bind:value={saveEmbedName}
+                      />
+                      <button
+                        class="px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+                        style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                        disabled={savingEmbed || !saveEmbedName.trim()}
+                        onclick={saveCurrentEmbed}
+                        type="button"
+                      >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        {savingEmbed ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                    {#if guildIdBigInt}
+                      <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.muted};">
+                        <input type="checkbox" bind:checked={saveAsGuildShared} />
+                        Share with everyone on this server
+                      </label>
+                    {/if}
+                  </div>
+
+                  {#if guildIdBigInt}
+                    <div class="space-y-2">
+                      <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
+                        Shared on this server ({savedGuildEmbeds.length})
+                      </h3>
+                      {#if loadingSavedEmbeds}
+                        <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                      {:else if savedGuildEmbeds.length === 0}
+                        <p class="text-sm" style="color: {$colorStore.muted};">No shared embeds yet</p>
+                      {:else}
+                        {#each savedGuildEmbeds as saved (saved.id)}
+                          <div class="flex items-center justify-between gap-2 p-3 rounded-lg border"
+                               style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                            <span class="text-sm font-medium truncate" style="color: {$colorStore.text};">
+                              {saved.embedName}
+                            </span>
+                            <div class="flex gap-2 shrink-0">
+                              <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                                onclick={() => loadSavedEmbed(saved)}
+                                type="button"
+                              >
+                                Load
+                              </button>
+                              <button
+                                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                                style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
+                                onclick={() => requestDeleteSavedEmbed(saved)}
+                                type="button"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        {/each}
+                      {/if}
+                    </div>
+                  {/if}
+
+                  <div class="space-y-2">
+                    <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
+                      My Embeds ({savedUserEmbeds.length})
+                    </h3>
+                    {#if loadingSavedEmbeds}
+                      <p class="text-sm" style="color: {$colorStore.muted};">Loading...</p>
+                    {:else if savedUserEmbeds.length === 0}
+                      <p class="text-sm" style="color: {$colorStore.muted};">No saved embeds yet</p>
+                    {:else}
+                      {#each savedUserEmbeds as saved (saved.id)}
+                        <div class="flex items-center justify-between gap-2 p-3 rounded-lg border"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                          <span class="text-sm font-medium truncate" style="color: {$colorStore.text};">
+                            {saved.embedName}
+                          </span>
+                          <div class="flex gap-2 shrink-0">
+                            <button
+                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                              onclick={() => loadSavedEmbed(saved)}
+                              type="button"
+                            >
+                              Load
+                            </button>
+                            <button
+                              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                              style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
+                              onclick={() => requestDeleteSavedEmbed(saved)}
+                              type="button"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      {/each}
+                    {/if}
+                  </div>
+                </div>
               {/if}
             </div>
           </div>
@@ -1294,3 +1722,14 @@
     {/if}
   </Portal>
 {/if}
+
+<!-- Delete Saved Embed Confirmation -->
+<ConfirmationModal
+  bind:isOpen={showDeleteSavedConfirm}
+  title="Delete Embed"
+  message={`Are you sure you want to delete "${embedPendingDelete?.embedName ?? "this embed"}"? This cannot be undone.`}
+  confirmText="Delete"
+  variant="danger"
+  oncancel={() => embedPendingDelete = null}
+  onconfirm={confirmDeleteSavedEmbed}
+/>

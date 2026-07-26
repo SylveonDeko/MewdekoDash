@@ -46,6 +46,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Save and archive chat messages",
   },
   {
+    label: "Dashboard Access",
+    icon: "fa-utility-duo fa-regular fa-key",
+    href: "/dashboard/access",
+    category: "Security",
+    description: "Grant restricted dashboard access to specific users and roles",
+  },
+  {
     label: "Confessions",
     icon: "fa-utility-duo fa-regular fa-comment",
     href: "/dashboard/confessions",

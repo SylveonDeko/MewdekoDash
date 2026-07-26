@@ -57,7 +57,9 @@
   });
 
   let filteredFeatures = $derived.by(() => {
-    let features = allDashboardFeatures.filter(item => !item.ownerOnly || isOwner);
+    // Dashboard Access is pinned above the categorized list alongside the Dashboard Home link,
+    // not shown again inside its category.
+    let features = allDashboardFeatures.filter(item => (!item.ownerOnly || isOwner) && item.href !== "/dashboard/access");
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       features = features.filter(f =>
@@ -607,6 +609,31 @@
              aria-hidden="true"></i>
           {#if !collapsed}
             <span class="text-[15px] font-medium" transition:fade={{ duration: 150 }}>Dashboard</span>
+          {/if}
+        </a>
+
+        <a
+          href={noGuild ? undefined : "/dashboard/access"}
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+          class:hover:scale-[1.01]={!noGuild}
+          class:opacity-40={noGuild}
+          class:pointer-events-none={noGuild}
+          style="background: {isActive('/dashboard/access') ? $colorStore.primary + '12' : 'transparent'};
+                 color: {isActive('/dashboard/access') ? $colorStore.text : $colorStore.muted};
+                 border: 1px solid {isActive('/dashboard/access') ? $colorStore.primary + '20' : 'transparent'};"
+          aria-current={isActive('/dashboard/access') ? 'page' : undefined}
+          aria-disabled={noGuild}
+          onmouseenter={(e) => showTooltip(e, noGuild ? 'Select a server first' : 'Dashboard Access')}
+          onmouseleave={hideTooltip}
+        >
+          <i class="fa-utility-duo fa-regular fa-key text-base shrink-0"
+             style="--fa-primary-color: {isActive('/dashboard/access') ? $colorStore.primary : $colorStore.muted};
+                    --fa-secondary-color: {isActive('/dashboard/access') ? $colorStore.secondary : $colorStore.muted};
+                    --fa-secondary-opacity: 0.4;
+                    width: 20px; text-align: center;"
+             aria-hidden="true"></i>
+          {#if !collapsed}
+            <span class="text-[15px] font-medium" transition:fade={{ duration: 150 }}>Dashboard Access</span>
           {/if}
         </a>
       </div>
