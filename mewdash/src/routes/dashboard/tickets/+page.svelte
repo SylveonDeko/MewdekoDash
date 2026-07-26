@@ -433,6 +433,11 @@
     }
   }
 
+  function serializeTicketOpenMessage(value: unknown): string | null {
+    if (value === null || value === undefined || value === "") return null;
+    return typeof value === "string" ? value : JSON.stringify(value);
+  }
+
   async function addButton() {
     if (!$currentGuild?.id || !selectedPanel || !newButton.label) return;
 
@@ -442,7 +447,7 @@
         label: newButton.label,
         emoji: newButton.emoji || null,
         style: typeof newButton.style === "string" ? parseInt(newButton.style) : newButton.style,
-        openMessageJson: newButton.openMessageJson || null,
+        openMessageJson: serializeTicketOpenMessage(newButton.openMessageJson),
         modalJson: newButton.modalJson || null,
         channelFormat: newButton.channelFormat || null,
         categoryId: newButton.categoryId ? BigInt(newButton.categoryId) : null,
@@ -532,7 +537,7 @@
         removeCreatorOnArchive: button.removeCreatorOnArchive,
         autoArchiveOnClose: button.autoArchiveOnClose,
         modalJson: button.modalJson || null,
-        openMessageJson: button.openMessageJson || null
+        openMessageJson: serializeTicketOpenMessage(button.openMessageJson)
       };
 
       console.log("Sending update request:", updateRequest);
@@ -630,7 +635,10 @@
     if (!$currentGuild?.id) return;
 
     try {
-      await ticketApi.addSelectMenuOption($currentGuild.id, menuId, option);
+      await ticketApi.addSelectMenuOption($currentGuild.id, menuId, {
+        ...option,
+        openMessageJson: serializeTicketOpenMessage(option.openMessageJson)
+      });
       if (selectedPanel) {
         await loadPanelDetails(selectedPanel.messageId);
       }
@@ -720,7 +728,7 @@
         removeCreatorOnArchive: option.removeCreatorOnArchive,
         autoArchiveOnClose: option.autoArchiveOnClose,
         modalJson: option.modalJson || null,
-        openMessageJson: option.openMessageJson || null
+        openMessageJson: serializeTicketOpenMessage(option.openMessageJson)
       };
 
       console.log("Sending select option update request:", updateRequest);

@@ -229,6 +229,16 @@
     return { emoji: emojiString, isCustom: false };
   }
 
+  function parseTicketOpenMessage(value: unknown): any {
+    if (typeof value !== "string") return value ?? null;
+
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+
   async function startEditingButton(buttonId: number) {
     // Fetch FULL button details from backend
     const fullButton = await loadFullButton(buttonId);
@@ -245,7 +255,7 @@
       defaultPriority: fullButton.defaultPriority || null,
       emoji: fullButton.emoji || null,
       modalJson: fullButton.modalJson || null,
-      openMessageJson: fullButton.openMessageJson || null,
+      openMessageJson: parseTicketOpenMessage(fullButton.openMessageJson),
       channelNameFormat: fullButton.channelNameFormat || "ticket-{username}-{id}",
       maxActiveTickets: fullButton.maxActiveTickets || 1,
       autoCloseTime: fullButton.autoCloseTime || null,
@@ -384,7 +394,7 @@
       defaultPriority: fullOption.defaultPriority || null,
       emoji: fullOption.emoji || null,
       modalJson: fullOption.modalJson || null,
-      openMessageJson: fullOption.openMessageJson || null,
+      openMessageJson: parseTicketOpenMessage(fullOption.openMessageJson),
       channelNameFormat: fullOption.channelNameFormat || "ticket-{username}-{id}",
       maxActiveTickets: fullOption.maxActiveTickets || 1,
       autoCloseTime: fullOption.autoCloseTime || null,
