@@ -1,6 +1,6 @@
 // lib/api/core.ts
 import JSONbig from "json-bigint";
-import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
+import { env } from "$env/dynamic/public";
 import { get } from "svelte/store";
 import { currentInstance } from "$lib/stores/instanceStore";
 
@@ -24,7 +24,7 @@ export async function apiRequest<T>(
   const instance = get(currentInstance);
   let baseUrl = instance
     ? `http://localhost:${instance.port}/botapi`
-    : PUBLIC_MEWDEKO_API_URL;
+    : env.PUBLIC_MEWDEKO_API_URL;
 
   const response = await customFetch(`/api/${endpoint}`, {
     method,

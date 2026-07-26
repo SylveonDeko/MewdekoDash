@@ -1,4 +1,4 @@
-import { MEWDEKO_API_KEY } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import JSONbig from "json-bigint";
@@ -26,7 +26,7 @@ interface ResolvedBackend {
  * request to a Discord user for the dashboard audit log.
  */
 function botHeaders(user: DiscordUser | null, includeContentType = false): HeadersInit {
-  const headers: Record<string, string> = { "X-API-Key": MEWDEKO_API_KEY };
+  const headers: Record<string, string> = { "X-API-Key": env.MEWDEKO_API_KEY };
   if (includeContentType) headers["Content-Type"] = "application/json";
   const backendToken = user ? mintBackendToken(user) : null;
   if (backendToken) headers["Authorization"] = `Bearer ${backendToken}`;

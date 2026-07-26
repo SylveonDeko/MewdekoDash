@@ -1,5 +1,5 @@
-import { MEWDEKO_API_KEY } from "$env/static/private";
-import { PUBLIC_MEWDEKO_API_URL } from "$env/static/public";
+import { env } from "$env/dynamic/private";
+import { env as publicEnv } from "$env/dynamic/public";
 import { logger } from "$lib/logger";
 import JSONbig from "json-bigint";
 
@@ -40,7 +40,7 @@ let cache: CachedInstances | null = null;
  * default backend.
  */
 function primaryInstanceUrl(): string | null {
-  return PUBLIC_MEWDEKO_API_URL?.length ? PUBLIC_MEWDEKO_API_URL : null;
+  return publicEnv.PUBLIC_MEWDEKO_API_URL?.length ? publicEnv.PUBLIC_MEWDEKO_API_URL : null;
 }
 
 /**
@@ -57,7 +57,7 @@ async function fetchInstances(): Promise<RawInstance[]> {
   }
 
   const response = await fetch(`${primary}/InstanceManagement`, {
-    headers: { "X-API-Key": MEWDEKO_API_KEY },
+    headers: { "X-API-Key": env.MEWDEKO_API_KEY },
   });
   if (!response.ok) {
     logger.warn(`Mobile instance discovery failed (${response.status}) at ${primary}`);

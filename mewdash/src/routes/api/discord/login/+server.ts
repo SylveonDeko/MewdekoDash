@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { DISCORD_CLIENT_ID, DISCORD_REDIRECT_URI, DISCORD_SCOPES } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   // Capture the redirect destination from the referrer or redirect_to parameter
@@ -29,10 +29,10 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   }
 
   const authorizeUrl = new URL("https://discord.com/api/oauth2/authorize");
-  authorizeUrl.searchParams.append("client_id", DISCORD_CLIENT_ID);
-  authorizeUrl.searchParams.append("redirect_uri", DISCORD_REDIRECT_URI);
+  authorizeUrl.searchParams.append("client_id", env.DISCORD_CLIENT_ID);
+  authorizeUrl.searchParams.append("redirect_uri", env.DISCORD_REDIRECT_URI);
   authorizeUrl.searchParams.append("response_type", "code");
-  authorizeUrl.searchParams.append("scope", DISCORD_SCOPES);
+  authorizeUrl.searchParams.append("scope", env.DISCORD_SCOPES);
   authorizeUrl.searchParams.append("state", state);
 
   redirect(302, authorizeUrl.toString());

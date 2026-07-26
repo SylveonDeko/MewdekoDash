@@ -1,12 +1,5 @@
 // routes/api/discord/discordAuth.ts
-import {
-  COOKIE_ENCRYPTION_PASSWORD,
-  DISCORD_API_URL,
-  DISCORD_CLIENT_ID,
-  DISCORD_CLIENT_SECRET,
-  DISCORD_REDIRECT_URI,
-  DISCORD_SCOPES
-} from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import type { Cookies } from "@sveltejs/kit";
 import CryptoJS from "crypto-js";
 import { logger } from "$lib/logger";
@@ -24,7 +17,7 @@ export const requestDiscordToken = async (
   cookies?: Cookies, // Make cookies optional
 ): Promise<Tokens> => {
   // performing a Fetch request to Discord's token endpoint
-  const request = await fetch(`${DISCORD_API_URL}/oauth2/token`, {
+  const request = await fetch(`${env.DISCORD_API_URL}/oauth2/token`, {
     method: "POST",
     body: searchParams,
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -66,7 +59,7 @@ export const requestDiscordToken = async (
 };
 
 export async function getUserData(accessToken: string): Promise<any> {
-  const response = await fetch(`${DISCORD_API_URL}/users/@me`, {
+  const response = await fetch(`${env.DISCORD_API_URL}/users/@me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
@@ -84,15 +77,15 @@ export function buildSearchParams(
   code: string,
 ): URLSearchParams {
   const searchParams = new URLSearchParams();
-  searchParams.append("client_id", DISCORD_CLIENT_ID);
-  searchParams.append("client_secret", DISCORD_CLIENT_SECRET);
+  searchParams.append("client_id", env.DISCORD_CLIENT_ID);
+  searchParams.append("client_secret", env.DISCORD_CLIENT_SECRET);
   searchParams.append(
     "grant_type",
     type == "callback" ? "authorization_code" : "refresh_token",
   );
   searchParams.append(type == "callback" ? "code" : "refresh_token", code);
-  searchParams.append("redirect_uri", DISCORD_REDIRECT_URI);
-  searchParams.append("scope", DISCORD_SCOPES);
+  searchParams.append("redirect_uri", env.DISCORD_REDIRECT_URI);
+  searchParams.append("scope", env.DISCORD_SCOPES);
   return searchParams;
 }
 
@@ -100,11 +93,11 @@ export async function setCookies(tokens: Tokens, cookies: Cookies, user?: Discor
   try {
     const encryptedAccessToken = CryptoJS.AES.encrypt(
       tokens.access_token,
-      COOKIE_ENCRYPTION_PASSWORD,
+      env.COOKIE_ENCRYPTION_PASSWORD,
     ).toString();
     const encryptedRefreshToken = CryptoJS.AES.encrypt(
       tokens.refresh_token,
-      COOKIE_ENCRYPTION_PASSWORD,
+      env.COOKIE_ENCRYPTION_PASSWORD,
     ).toString();
 
     const accessMaxAge = Math.floor(

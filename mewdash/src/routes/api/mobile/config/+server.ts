@@ -1,9 +1,5 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import {
-  DISCORD_CLIENT_ID,
-  DISCORD_SCOPES,
-} from "$env/static/private";
 import { env } from "$env/dynamic/private";
 
 const DEFAULT_MOBILE_REDIRECT_URI = "mewdeko-mobile://oauth/callback";
@@ -21,9 +17,9 @@ const DEFAULT_MOBILE_REDIRECT_URI = "mewdeko-mobile://oauth/callback";
 export const GET: RequestHandler = async () => {
   return json({
     discord: {
-      clientId: DISCORD_CLIENT_ID,
+      clientId: env.DISCORD_CLIENT_ID,
       redirectUri: env.MOBILE_OAUTH_REDIRECT_URI ?? DEFAULT_MOBILE_REDIRECT_URI,
-      scopes: DISCORD_SCOPES,
+      scopes: env.DISCORD_SCOPES,
       authorizeUrl: "https://discord.com/api/oauth2/authorize",
     },
     instance: {

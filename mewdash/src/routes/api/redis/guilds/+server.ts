@@ -4,14 +4,14 @@ import Redis from "ioredis";
 import { error, json } from "@sveltejs/kit";
 import fs from "fs/promises";
 import path from "path";
-import { REDIS_URL, DISCORD_CLIENT_ID, USE_REDIS } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { logger } from "$lib/logger";
 
 export const GET: RequestHandler = async ({}) => {
-  if (USE_REDIS === "true") {
-    const redis = new Redis(REDIS_URL);
+  if (env.USE_REDIS === "true") {
+    const redis = new Redis(env.REDIS_URL);
     try {
-      const data = await redis.get(`${DISCORD_CLIENT_ID}_topguilds`);
+      const data = await redis.get(`${env.DISCORD_CLIENT_ID}_topguilds`);
       if (data) {
         redis.disconnect();
         const guilds = JSON.parse(data);

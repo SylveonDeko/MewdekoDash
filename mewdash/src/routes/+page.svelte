@@ -5,6 +5,8 @@
   import type { RedisGuild } from "$lib/types/redisGuild";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
+  import LatestProductUpdate from "$lib/components/home/LatestProductUpdate.svelte";
+  import { latestProductUpdate } from "$lib/content/productUpdates";
 
   let {data} = $props();
 
@@ -650,6 +652,8 @@
       </section>
     {/if}
   </header>
+
+  <LatestProductUpdate update={latestProductUpdate} />
 
   <!-- By The Numbers Section -->
   <section

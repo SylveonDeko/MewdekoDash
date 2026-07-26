@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ===== BUILD STAGE =====
-FROM --platform=$BUILDPLATFORM node:20-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 ARG TARGETARCH
 
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # ===== RUNTIME STAGE =====
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 
 # Install curl for healthchecks
 RUN apk add --no-cache curl

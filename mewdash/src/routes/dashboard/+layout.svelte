@@ -8,6 +8,8 @@
   import { userStore } from "$lib/stores/userStore.ts";
   import DashboardSidebar from "$lib/components/layout/DashboardSidebar.svelte";
   import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
+  import DashboardUpdateNotice from "$lib/components/dashboard/DashboardUpdateNotice.svelte";
+  import { latestProductUpdate } from "$lib/content/productUpdates";
   import { browser } from "$app/environment";
   import { wizardApi } from "$lib/api/index.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
@@ -26,8 +28,14 @@
   }
 
   // Setup suggestion banner state
-    let showSetupSuggestion = $state(false);
+  let showSetupSuggestion = $state(false);
   let setupSuggestionContext = $state<any>(null);
+  let showProductUpdate = $state(false);
+
+  function dismissProductUpdate() {
+    showProductUpdate = false;
+    localStorage.setItem(`dismissed-product-update:${latestProductUpdate.id}`, "true");
+  }
 
   // Check for wizard or setup suggestion when guild changes
   async function checkWizardOrSuggestion() {
@@ -122,6 +130,8 @@
     if (data.user) {
       userStore.set(data.user);
     }
+
+    showProductUpdate = localStorage.getItem(`dismissed-product-update:${latestProductUpdate.id}`) !== "true";
 
     // If no user, redirect to login with current URL
     if (browser && !data.user && !$userStore) {
@@ -248,6 +258,9 @@
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>
+        {#if showProductUpdate}
+          <DashboardUpdateNotice update={latestProductUpdate} ondismiss={dismissProductUpdate} />
+        {/if}
         {#if $currentGuild && showSetupSuggestion && setupSuggestionContext}
           <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
             <SetupSuggestionBanner

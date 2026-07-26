@@ -1,11 +1,6 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import {
-  DISCORD_API_URL,
-  DISCORD_CLIENT_ID,
-  DISCORD_CLIENT_SECRET,
-  DISCORD_SCOPES,
-} from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { logger } from "$lib/logger";
 import { createSession } from "$lib/server/mobileJwt";
 import { getUserData } from "../../../discord/discordAuth";
@@ -38,17 +33,17 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   const params = new URLSearchParams();
-  params.append("client_id", DISCORD_CLIENT_ID);
-  params.append("client_secret", DISCORD_CLIENT_SECRET);
+  params.append("client_id", env.DISCORD_CLIENT_ID);
+  params.append("client_secret", env.DISCORD_CLIENT_SECRET);
   params.append("grant_type", "authorization_code");
   params.append("code", code);
   params.append("redirect_uri", redirectUri);
-  params.append("scope", DISCORD_SCOPES);
+  params.append("scope", env.DISCORD_SCOPES);
   params.append("code_verifier", codeVerifier);
 
   let tokenResponse: Response;
   try {
-    tokenResponse = await fetch(`${DISCORD_API_URL}/oauth2/token`, {
+    tokenResponse = await fetch(`${env.DISCORD_API_URL}/oauth2/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params,

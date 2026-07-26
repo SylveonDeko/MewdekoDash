@@ -1,10 +1,5 @@
 import { createHmac, randomBytes } from "node:crypto";
 import Redis from "ioredis";
-import {
-  DISCORD_CLIENT_ID,
-  REDIS_URL,
-  USE_REDIS,
-} from "$env/static/private";
 import { env } from "$env/dynamic/private";
 import { logger } from "$lib/logger";
 import type { DiscordUser } from "$lib/types/discord";
@@ -16,8 +11,8 @@ const MOBILE_JWT_SECRET = env.MOBILE_JWT_SECRET ?? "";
 
 let redis: Redis | null = null;
 function getRedis(): Redis {
-  if (USE_REDIS !== "true") throw new Error("Mobile auth requires USE_REDIS=true");
-  if (!redis) redis = new Redis(REDIS_URL);
+  if (env.USE_REDIS !== "true") throw new Error("Mobile auth requires USE_REDIS=true");
+  if (!redis) redis = new Redis(env.REDIS_URL);
   return redis;
 }
 
@@ -94,9 +89,9 @@ export function verifyAccessToken(token: string): AccessClaims | null {
   return claims;
 }
 
-const sessionKey = (sid: string) => `${DISCORD_CLIENT_ID}_mobile_session:${sid}`;
-const refreshKey = (jti: string) => `${DISCORD_CLIENT_ID}_mobile_refresh:${jti}`;
-const familyKey = (fid: string) => `${DISCORD_CLIENT_ID}_mobile_family:${fid}`;
+const sessionKey = (sid: string) => `${env.DISCORD_CLIENT_ID}_mobile_session:${sid}`;
+const refreshKey = (jti: string) => `${env.DISCORD_CLIENT_ID}_mobile_refresh:${jti}`;
+const familyKey = (fid: string) => `${env.DISCORD_CLIENT_ID}_mobile_family:${fid}`;
 
 /**
  * Server-only mobile session record. Holds the user's Discord OAuth tokens

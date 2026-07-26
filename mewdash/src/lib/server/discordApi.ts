@@ -1,9 +1,6 @@
 // lib/server/discordApi.ts
 import type { Cookies, RequestEvent } from "@sveltejs/kit";
-import {
-  COOKIE_ENCRYPTION_PASSWORD,
-  DISCORD_API_URL,
-} from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import type { DiscordUser } from "../types/discord";
 import {
   buildSearchParams,
@@ -41,7 +38,7 @@ export async function authenticateUser(
       return null;
     }
 
-    const userResponse = await fetch(`${DISCORD_API_URL}/users/@me`, {
+    const userResponse = await fetch(`${env.DISCORD_API_URL}/users/@me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     
@@ -60,7 +57,7 @@ export async function authenticateUser(
       if (encryptedRefreshToken) {
         const bytes = CryptoJS.AES.decrypt(
           encryptedRefreshToken,
-          COOKIE_ENCRYPTION_PASSWORD,
+          env.COOKIE_ENCRYPTION_PASSWORD,
         );
         const refreshToken = bytes.toString(CryptoJS.enc.Utf8);
         const accessExpiry = cookies.get("discord_access_expiry");
@@ -108,7 +105,7 @@ export async function getOrRefreshToken(
   if (encryptedToken) {
     const bytes = CryptoJS.AES.decrypt(
       encryptedToken,
-      COOKIE_ENCRYPTION_PASSWORD,
+      env.COOKIE_ENCRYPTION_PASSWORD,
     );
     token = bytes.toString(CryptoJS.enc.Utf8);
   }
@@ -134,7 +131,7 @@ export async function getOrRefreshToken(
   if (encryptedRefreshToken) {
     const bytes = CryptoJS.AES.decrypt(
       encryptedRefreshToken,
-      COOKIE_ENCRYPTION_PASSWORD,
+      env.COOKIE_ENCRYPTION_PASSWORD,
     );
     refreshToken = bytes.toString(CryptoJS.enc.Utf8);
   }
@@ -156,7 +153,7 @@ async function tryRefreshToken(
   
   const bytes = CryptoJS.AES.decrypt(
     encryptedRefreshToken,
-    COOKIE_ENCRYPTION_PASSWORD,
+    env.COOKIE_ENCRYPTION_PASSWORD,
   );
   const refreshToken = bytes.toString(CryptoJS.enc.Utf8);
   

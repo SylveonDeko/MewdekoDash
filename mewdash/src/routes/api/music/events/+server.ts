@@ -1,7 +1,7 @@
 // routes/api/music/events/+server.ts
 import type { RequestHandler } from "@sveltejs/kit";
 import Redis from "ioredis";
-import { REDIS_KEY, REDIS_URL, USE_REDIS } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { logger } from "$lib/logger";
 
 export const GET: RequestHandler = async ({ url, setHeaders }) => {
@@ -11,11 +11,11 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
     return new Response("Missing guildId", { status: 400 });
   }
 
-  if (USE_REDIS !== "true") {
+  if (env.USE_REDIS !== "true") {
     return new Response("Redis not enabled", { status: 503 });
   }
 
-  if (!REDIS_KEY) {
+  if (!env.REDIS_KEY) {
     logger.error(
       "REDIS_KEY not configured - should be first 10 characters of bot token",
     );
@@ -36,8 +36,8 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-      const redis = new Redis(REDIS_URL);
-      const subscriber = new Redis(REDIS_URL);
+      const redis = new Redis(env.REDIS_URL);
+      const subscriber = new Redis(env.REDIS_URL);
       let isStreamClosed = false;
       let heartbeatInterval: NodeJS.Timeout;
 
@@ -46,8 +46,8 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 
       // Subscribe to player events for this guild
       // REDIS_KEY should be set to the first 10 characters of the bot token
-      const createdChannel = `${REDIS_KEY}:music:player:created:${guildId}`;
-      const destroyedChannel = `${REDIS_KEY}:music:player:destroyed:${guildId}`;
+      const createdChannel = `${env.REDIS_KEY}:music:player:created:${guildId}`;
+      const destroyedChannel = `${env.REDIS_KEY}:music:player:destroyed:${guildId}`;
 
       // Cleanup function
       const cleanup = () => {

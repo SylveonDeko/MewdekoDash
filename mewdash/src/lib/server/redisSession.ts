@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import { REDIS_URL, USE_REDIS, DISCORD_CLIENT_ID } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { logger } from "$lib/logger";
 import type { DiscordUser } from "$lib/types/discord";
 import { nanoid } from "nanoid";
@@ -12,10 +12,10 @@ export class RedisSessionManager {
   private enabled: boolean;
 
   constructor() {
-    this.enabled = USE_REDIS === "true";
+    this.enabled = env.USE_REDIS === "true";
     if (this.enabled) {
       try {
-        this.redis = new Redis(REDIS_URL);
+        this.redis = new Redis(env.REDIS_URL);
         logger.info("Redis session manager initialized");
       } catch (error) {
         logger.error("Failed to initialize Redis:", error);
@@ -25,7 +25,7 @@ export class RedisSessionManager {
   }
 
   private getSessionKey(sessionId: string): string {
-    return `${DISCORD_CLIENT_ID}_session:${sessionId}`;
+    return `${env.DISCORD_CLIENT_ID}_session:${sessionId}`;
   }
 
   async createSession(user: DiscordUser, tokens: {

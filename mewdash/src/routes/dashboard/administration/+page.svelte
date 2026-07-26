@@ -1,6 +1,7 @@
 <!-- routes/dashboard/administration/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import { administrationApi, clientApi, protectionApi, type TimezoneInfo } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { colorStore } from "$lib/stores/colorStore";
@@ -988,6 +989,13 @@
   $effect(() => {
     if ($currentGuild) {
       fetchAllData();
+    }
+  });
+
+  $effect(() => {
+    const requestedTab = page.url.searchParams.get("tab");
+    if (requestedTab && tabs.some(tab => tab.id === requestedTab)) {
+      activeTab = requestedTab;
     }
   });
 </script>
