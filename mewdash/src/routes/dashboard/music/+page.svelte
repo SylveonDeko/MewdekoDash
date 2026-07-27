@@ -74,6 +74,11 @@
   let newVcId = $state<string | null>(null);
   let blockUserId = $state("");
 
+  // Music link conversion channels
+  let linkChannels: bigint[] = $state([]);
+  let showAddLinkChannel = $state(false);
+  let newLinkChannelId = $state<string | null>(null);
+
   const AutoDisconnect = {
     None: 0,
     Voice: 1,
@@ -351,11 +356,42 @@
     return ch?.name ?? `Unknown (${chId})`;
   }
 
+  async function fetchLinkChannels() {
+    try {
+      if (!$currentGuild?.id) return;
+      linkChannels = await musicApi.getLinkChannels(BigInt($currentGuild.id));
+    } catch (err) {
+      logger.error("Failed to fetch music link channels:", err);
+    }
+  }
+
+  async function addLinkChannel() {
+    if (!$currentGuild?.id || !newLinkChannelId) return;
+    try {
+      linkChannels = await musicApi.enableLinkChannel(BigInt($currentGuild.id), BigInt(newLinkChannelId));
+      showAddLinkChannel = false;
+      newLinkChannelId = null;
+      showNotificationMessage("Music link conversion enabled for channel");
+    } catch (err) {
+      showNotificationMessage("Failed to enable music link conversion", "error");
+    }
+  }
+
+  async function removeLinkChannel(channelId: bigint) {
+    if (!$currentGuild?.id) return;
+    try {
+      linkChannels = await musicApi.disableLinkChannel(BigInt($currentGuild.id), channelId);
+      showNotificationMessage("Music link conversion disabled for channel");
+    } catch (err) {
+      showNotificationMessage("Failed to disable music link conversion", "error");
+    }
+  }
+
   onMount(async () => {
     if (!$currentGuild) await goto("/dashboard");
     loading = true;
     try {
-      await Promise.all([fetchSettings(), fetchChannels(), fetchVoiceChannels(), fetchRoles()]);
+      await Promise.all([fetchSettings(), fetchChannels(), fetchVoiceChannels(), fetchRoles(), fetchLinkChannels()]);
       musicInterval = setInterval(fetchPlaybackStatus, 5000);
     } catch (err) {
       error = "Failed to fetch data";
@@ -398,6 +434,7 @@
       fetchVoiceChannels();
       fetchRoles();
       fetchPlaybackStatus();
+      fetchLinkChannels();
       ttsLoaded = false;
     }
   });
@@ -686,6 +723,91 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Music Link Conversion Channels -->
+        <div
+          class="rounded-2xl border p-6 shadow-2xl transition-all mt-8"
+          style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
+                 border-color: {colors.primary}30;"
+        >
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+              <div
+                class="p-3 rounded-xl"
+                style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
+                       color: {colors.primary};"
+              >
+                <i class="fa-utility-duo fa-regular fa-link" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold" style="color: {colors.text}">Music Link Conversion</h2>
+                <p class="text-sm" style="color: {colors.muted}">
+                  Apple Music, Spotify, and YouTube links posted in these channels get replaced with a
+                  cross-platform embed showing links to every provider.
+                </p>
+              </div>
+            </div>
+            <button
+              onclick={() => showAddLinkChannel = !showAddLinkChannel}
+              class="px-4 py-2 rounded-lg font-medium transition-all"
+              style="background: {colors.primary}; color: {colors.text};"
+            >
+              <i class="fa-solid fa-plus mr-2"></i>Add Channel
+            </button>
+          </div>
+
+          {#if showAddLinkChannel}
+            <div class="mb-6 p-4 rounded-xl" style="background: {colors.gradientStart}20; border: 1px solid {colors.primary}20;">
+              <div class="flex gap-3 items-end">
+                <div class="grow">
+                  <span class="text-sm font-medium mb-1 block" style="color: {colors.text}">Channel</span>
+                  <DiscordSelector
+                    type="channel"
+                    options={channels}
+                    selected={newLinkChannelId}
+                    placeholder="Select channel..."
+                    onchange={(d) => { if (typeof d.selected === "string") newLinkChannelId = d.selected; }}
+                  />
+                </div>
+                <button
+                  onclick={addLinkChannel}
+                  disabled={!newLinkChannelId}
+                  class="px-4 py-2 rounded-lg font-medium transition-all"
+                  style="background: {colors.primary}; color: {colors.text}; opacity: {newLinkChannelId ? '1' : '0.5'};"
+                >
+                  Enable
+                </button>
+              </div>
+            </div>
+          {/if}
+
+          {#if linkChannels.length === 0}
+            <div class="text-center py-8" style="color: {colors.muted}">
+              <i class="fa-regular fa-link-slash text-3xl mb-3 block" style="color: {colors.primary}30;"></i>
+              <p>No channels have music link conversion enabled</p>
+              <p class="text-sm mt-1">Click "Add Channel" to enable it for a channel</p>
+            </div>
+          {:else}
+            <div class="space-y-2">
+              {#each linkChannels as channelId}
+                <div class="p-3 rounded-xl flex items-center justify-between" style="background: {colors.gradientStart}15; border: 1px solid {colors.primary}15;">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-hashtag" style="color: {colors.primary}; font-size: 14px;"></i>
+                    <span class="font-medium" style="color: {colors.text}">{getChannelName(channelId)}</span>
+                  </div>
+                  <button
+                    onclick={() => removeLinkChannel(channelId)}
+                    class="p-1.5 rounded-lg transition-all hover:opacity-80"
+                    style="color: {colors.accent};"
+                    title="Remove"
+                  >
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
         </div>
       {/if}
 

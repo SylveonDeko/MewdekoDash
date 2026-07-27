@@ -29,6 +29,8 @@
   let hoveringItem = $state<string | null>(null);
   let tooltipPosition = $state<{ top: number } | null>(null);
   let isMobile = $state(browser ? window.innerWidth < 1024 : false);
+  let isToggling = $state(false);
+  let toggleTimer: ReturnType<typeof setTimeout> | null = null;
 
   let showServerPicker = $state(false);
   let serverSearchTerm = $state("");
@@ -109,6 +111,14 @@
       localStorage.setItem("sidebar-collapsed", collapsed.toString());
       window.dispatchEvent(new CustomEvent("sidebar-toggle", { detail: collapsed }));
     }
+    isToggling = true;
+    if (toggleTimer) {
+      clearTimeout(toggleTimer);
+    }
+    toggleTimer = setTimeout(() => {
+      isToggling = false;
+      toggleTimer = null;
+    }, 320);
   }
 
   function toggleServerPicker() {
@@ -297,6 +307,10 @@
     showInstancePicker = false;
   }
 
+  function handleWindowResize() {
+    isMobile = window.innerWidth < 1024;
+  }
+
   onMount(() => {
     if (browser) {
       collapsed = localStorage.getItem("sidebar-collapsed") === "true";
@@ -311,7 +325,7 @@
       }
 
       window.addEventListener("keydown", handleGlobalKeydown);
-      window.addEventListener("resize", () => { isMobile = window.innerWidth < 1024; });
+      window.addEventListener("resize", handleWindowResize);
     }
 
     checkOwnership();
@@ -320,6 +334,10 @@
     return () => {
       if (browser) {
         window.removeEventListener("keydown", handleGlobalKeydown);
+        window.removeEventListener("resize", handleWindowResize);
+      }
+      if (toggleTimer) {
+        clearTimeout(toggleTimer);
       }
     };
   });
@@ -332,7 +350,7 @@
 </script>
 
 <aside
-  class="flex flex-col shrink-0 fixed top-0 z-40 transition-all duration-300 ease-out h-dvh lg:left-0 lg:border-r max-lg:right-0 max-lg:border-l"
+  class="flex flex-col shrink-0 fixed top-0 z-40 transition-[width,transform] duration-300 ease-out h-dvh overflow-hidden lg:left-0 lg:border-r max-lg:right-0 max-lg:border-l"
   class:max-lg:translate-x-0={mobileOpen}
   class:max-lg:translate-x-full={!mobileOpen}
   class:sidebar-switching={$switchingServer}
@@ -341,11 +359,13 @@
          border-color: {$colorStore.primary}15;"
   aria-label="Dashboard sidebar navigation"
 >
+<div class="flex flex-col h-full shrink-0" style="width: {isMobile ? 'min(85vw, 320px)' : collapsed ? '68px' : '280px'};">
   <!-- Bot instance branding -->
-  <div class="border-b shrink-0 flex items-center px-3 py-3"
+  <div class="border-b shrink-0 flex items-center px-3 py-3 gap-2"
        class:justify-center={collapsed}
        style="border-color: {$colorStore.primary}15;">
-    <a href="/dashboard" class="flex items-center gap-3 overflow-hidden"
+    <a href="/dashboard" class="flex items-center gap-3 overflow-hidden min-w-0"
+       class:flex-1={!collapsed}
        class:justify-center={collapsed}>
       <img
         src="/img/Mewdeko.png"
@@ -353,19 +373,29 @@
         class="w-9 h-9 object-contain shrink-0 rounded-lg"
       >
       {#if !collapsed}
-        <span class="text-lg font-semibold whitespace-nowrap" style="color: {$colorStore.text};"
-              transition:fade={{ duration: 150 }}>
+        <span class="text-lg font-semibold whitespace-nowrap" style="color: {$colorStore.text};">
           Mewdeko
         </span>
       {/if}
     </a>
+    {#if !collapsed}
+      <a
+        href="/"
+        class="flex items-center justify-center w-8 h-8 rounded-lg transition-transform duration-200 hover:scale-[1.05] shrink-0"
+        style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
+        title="Back to homepage"
+        aria-label="Back to homepage"
+      >
+        <i class="fa-solid fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+      </a>
+    {/if}
   </div>
 
   <!-- Mobile instance selector -->
   {#if visibleInstances.length > 1 || instancesLoading || stillCheckingInstances}
     <div class="lg:hidden border-b shrink-0 px-3 py-2" style="border-color: {$colorStore.primary}15;">
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors duration-200"
         style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15; color: {$colorStore.text};"
         onclick={() => showInstancePicker = !showInstancePicker}
       >
@@ -393,7 +423,7 @@
           {:else}
             {#each visibleInstances as instance (instance.botId)}
               <button
-                class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-left"
+                class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200 text-left"
                 style="background: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '15' : 'transparent'};
                        color: {$colorStore.text};"
                 onclick={() => handleInstanceSelect(instance)}
@@ -426,16 +456,16 @@
 
         <div class="relative z-10 p-3">
           <button
-            class="flex items-center gap-3 rounded-xl p-2 transition-all duration-200 hover:scale-[1.02] min-w-0 w-full overflow-hidden text-left"
+            class="flex items-center gap-3 rounded-xl p-2 transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.02] min-w-0 w-full overflow-hidden text-left"
             class:justify-center={collapsed}
             style="background: {bannerUrl && !collapsed ? 'rgba(0,0,0,0.3)' : $colorStore.primary + '08'};
                    border: 1px solid {bannerUrl && !collapsed ? 'rgba(255,255,255,0.15)' : $colorStore.primary + '15'};
-                   backdrop-filter: {bannerUrl && !collapsed ? 'blur(4px)' : 'none'};"
+                   backdrop-filter: {!isToggling && bannerUrl && !collapsed ? 'blur(4px)' : 'none'};"
             onclick={toggleServerPicker}
             in:fade={{ duration: 300, delay: 200 }}
             out:fade={{ duration: 150 }}
           >
-            <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 transition-all duration-200 ring-2 ring-opacity-30"
+            <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 transition-colors duration-200 ring-2 ring-opacity-30"
                  style="background: {$colorStore.primary}20; ring-color: {$colorStore.primary};">
               {#if serverIconUrl}
                 <img src={serverIconUrl} alt="" class="w-full h-full object-cover" loading="lazy">
@@ -446,7 +476,7 @@
               {/if}
             </div>
             {#if !collapsed}
-              <div class="min-w-0 flex-1" transition:fade={{ duration: 150 }}>
+              <div class="min-w-0 flex-1">
                 <div class="text-base font-semibold truncate" style="color: {$colorStore.text};">
                   {$currentGuild.name}
                 </div>
@@ -466,9 +496,9 @@
           </button>
 
           {#if !collapsed}
-            <div class="flex items-center gap-2 mt-2 px-1" transition:fade={{ duration: 150 }}>
+            <div class="flex items-center gap-2 mt-2 px-1">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.02] flex-1"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.02] flex-1"
                 style="background: {bannerUrl ? 'rgba(255,255,255,0.1)' : $colorStore.primary + '15'};
                        color: {$colorStore.primary};
                        border: 1px solid {bannerUrl ? 'rgba(255,255,255,0.1)' : $colorStore.primary + '20'};"
@@ -488,7 +518,7 @@
               <i class="fa-solid fa-server text-sm" style="color: {$colorStore.muted};"></i>
             </div>
             {#if !collapsed}
-              <div class="min-w-0 flex-1" transition:fade={{ duration: 150 }}>
+              <div class="min-w-0 flex-1">
                 <div class="text-sm font-medium" style="color: {$colorStore.muted};">
                   No server selected
                 </div>
@@ -558,33 +588,33 @@
   </div>
 
   {#if !collapsed}
-    <div class="px-3 pt-3 pb-1 shrink-0" transition:fade={{ duration: 150 }}>
-      <div class="relative">
-        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs"
-           style="color: {$colorStore.muted};" aria-hidden="true"></i>
-        <input
-          bind:this={searchInputRef}
-          type="text"
-          placeholder="Search features..."
-          bind:value={searchTerm}
-          onkeydown={handleSearchKeydown}
-          class="w-full pl-8 pr-3 py-2 rounded-lg text-sm border transition-all duration-200"
-          style="background: {$colorStore.primary}08;
-                 border-color: {$colorStore.primary}15;
-                 color: {$colorStore.text};"
+  <div class="px-3 pt-3 pb-1 shrink-0">
+    <div class="relative">
+      <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs"
+         style="color: {$colorStore.muted};" aria-hidden="true"></i>
+      <input
+        bind:this={searchInputRef}
+        type="text"
+        placeholder="Search features..."
+        bind:value={searchTerm}
+        onkeydown={handleSearchKeydown}
+        class="w-full pl-8 pr-3 py-2 rounded-lg text-sm border transition-colors duration-200"
+        style="background: {$colorStore.primary}08;
+               border-color: {$colorStore.primary}15;
+               color: {$colorStore.text};"
+      >
+      {#if searchTerm}
+        <button
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-[color,background-color,border-color,transform] hover:scale-110"
+          style="color: {$colorStore.muted};"
+          onclick={() => { searchTerm = ""; }}
+          aria-label="Clear search"
         >
-        {#if searchTerm}
-          <button
-            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-all hover:scale-110"
-            style="color: {$colorStore.muted};"
-            onclick={() => { searchTerm = ""; }}
-            aria-label="Clear search"
-          >
-            <i class="fa-solid fa-xmark text-xs"></i>
-          </button>
-        {/if}
-      </div>
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      {/if}
     </div>
+  </div>
   {/if}
 
   <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2 sidebar-scrollbar" aria-label="Feature navigation">
@@ -592,7 +622,7 @@
         {#if !isDashboardHome}
         <a
           href={noGuild ? undefined : "/dashboard"}
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           class:hover:scale-[1.01]={!noGuild}
           class:opacity-40={noGuild}
           class:pointer-events-none={noGuild}
@@ -609,14 +639,14 @@
                     width: 20px; text-align: center;"
              aria-hidden="true"></i>
           {#if !collapsed}
-            <span class="text-[15px] font-medium" transition:fade={{ duration: 150 }}>Dashboard</span>
+            <span class="text-[15px] font-medium">Dashboard</span>
           {/if}
         </a>
         {/if}
 
         <a
           href={noGuild ? undefined : "/dashboard/access"}
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group"
           class:hover:scale-[1.01]={!noGuild}
           class:opacity-40={noGuild}
           class:pointer-events-none={noGuild}
@@ -635,7 +665,7 @@
                     width: 20px; text-align: center;"
              aria-hidden="true"></i>
           {#if !collapsed}
-            <span class="text-[15px] font-medium" transition:fade={{ duration: 150 }}>Dashboard Access</span>
+            <span class="text-[15px] font-medium">Dashboard Access</span>
           {/if}
         </a>
       </div>
@@ -647,7 +677,7 @@
         <div class="mb-1">
           {#if !collapsed}
             <button
-              class="w-full flex items-center gap-2 px-4 py-1.5 text-[13px] font-semibold uppercase tracking-wider transition-all duration-200 hover:opacity-100 group"
+              class="w-full flex items-center gap-2 px-4 py-1.5 text-[13px] font-semibold uppercase tracking-wider transition-[color,opacity] duration-200 hover:opacity-100 group"
               style="color: {$colorStore.muted}; opacity: 0.7;"
               onclick={() => toggleCategory(category)}
               aria-expanded={!collapsedCategories[category]}
@@ -674,7 +704,8 @@
                 {@const active = isActive(feature.href)}
                 <a
                   href={noGuild ? undefined : feature.href}
-                  class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-all duration-200 group relative"
+                  class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group relative"
+                  class:justify-center={collapsed}
                   class:hover:scale-[1.01]={!noGuild}
                   class:opacity-40={noGuild}
                   class:pointer-events-none={noGuild}
@@ -692,7 +723,7 @@
                          transition:fade={{ duration: 150 }}></div>
                   {/if}
 
-                  <i class="{feature.icon} text-sm shrink-0 transition-all duration-200"
+                  <i class="{feature.icon} text-sm shrink-0 transition-colors duration-200"
                      style="--fa-primary-color: {active ? $colorStore.primary : $colorStore.muted};
                             --fa-secondary-color: {active ? $colorStore.secondary : $colorStore.muted};
                             --fa-secondary-opacity: {active ? 0.5 : 0.3};
@@ -700,9 +731,8 @@
                      aria-hidden="true"></i>
 
                   {#if !collapsed}
-                    <span class="text-[15px] max-lg:text-base truncate flex-1 transition-all duration-200"
-                          style="color: {active ? $colorStore.text : $colorStore.muted};"
-                          transition:fade={{ duration: 150 }}>
+                    <span class="text-[15px] max-lg:text-base truncate flex-1 transition-colors duration-200"
+                          style="color: {active ? $colorStore.text : $colorStore.muted};">
                       {feature.label}
                     </span>
                   {/if}
@@ -748,7 +778,7 @@
             {:else}
               {#each visibleInstances as instance (instance.botId)}
                 <button
-                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 text-left text-sm"
+                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors duration-200 text-left text-sm"
                   style="background: {$currentInstance?.botId === instance.botId ? $colorStore.primary + '15' : 'transparent'};
                          color: {$colorStore.text};"
                   onclick={() => handleInstanceSelect(instance)}
@@ -768,7 +798,7 @@
         <!-- My Settings -->
         <a
           href="/me"
-          class="flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.01] group"
+          class="flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
           style="color: {$colorStore.text};"
         >
           <i class="fa-solid fa-gear text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
@@ -778,14 +808,14 @@
         <!-- Dyslexia-friendly font -->
         <button
           type="button"
-          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.01] group"
+          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
           style="color: {$colorStore.text};"
           onclick={() => dyslexicFontStore.toggle()}
           aria-pressed={$dyslexicFontStore}
         >
           <i class="fa-solid fa-universal-access text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
           <span class="text-sm flex-1 text-left">Dyslexia-friendly Font</span>
-          <span class="w-9 h-5 rounded-full transition-all relative shadow-inner block shrink-0"
+          <span class="w-9 h-5 rounded-full transition-colors relative shadow-inner block shrink-0"
                 style="background: {$dyslexicFontStore ? $colorStore.primary : '#374151'};">
             <span
               class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform block"
@@ -798,7 +828,7 @@
         <form action="/api/discord/logout" method="GET" class="w-full">
           <button
             type="submit"
-            class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-all duration-200 hover:scale-[1.01] group"
+            class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
             style="color: {$colorStore.accent};"
           >
             <i class="fa-solid fa-right-from-bracket text-sm shrink-0" style="width: 20px; text-align: center;" aria-hidden="true"></i>
@@ -812,21 +842,33 @@
       <!-- User profile button -->
       {#if $userStore}
         <button
-          class="flex items-center gap-3 px-2 py-2 rounded-xl transition-all duration-200 hover:scale-[1.01] min-w-0"
+          class="flex items-center gap-3 px-2 py-2 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] min-w-0"
           class:flex-1={!collapsed}
           class:justify-center={collapsed}
           style="background: {showUserMenu ? $colorStore.primary + '10' : 'transparent'}; color: {$colorStore.text};"
           onclick={() => { if (collapsed) { toggleSidebar(); } else { showUserMenu = !showUserMenu; } }}
+          onmouseenter={(e) => collapsed && showTooltip(e, "Expand sidebar (Ctrl+B)")}
+          onmouseleave={hideTooltip}
           aria-label={collapsed ? "Expand sidebar" : "User menu"}
           aria-expanded={showUserMenu}
         >
-          <img
-            src={userAvatarUrl}
-            alt={$userStore.username}
-            class="w-9 h-9 rounded-full shrink-0"
-          >
+          <div class="relative shrink-0">
+            <img
+              src={userAvatarUrl}
+              alt={$userStore.username}
+              class="w-9 h-9 rounded-full shrink-0"
+            >
+            {#if collapsed}
+              <span
+                class="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full border-2"
+                style="background: {$colorStore.primary}; border-color: {$colorStore.gradientStart};"
+              >
+                <i class="fa-solid fa-angles-right text-[7px]" style="color: {$colorStore.text};" aria-hidden="true"></i>
+              </span>
+            {/if}
+          </div>
           {#if !collapsed}
-            <div class="flex-1 min-w-0 text-left" transition:fade={{ duration: 150 }}>
+            <div class="flex-1 min-w-0 text-left">
               <div class="text-sm font-medium truncate">{$userStore.username}</div>
               {#if $currentInstance}
                 <div class="flex items-center gap-1">
@@ -845,7 +887,7 @@
       {#if !collapsed}
         <!-- Collapse toggle (desktop only) -->
         <button
-          class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 hover:scale-[1.05] shrink-0"
+          class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={toggleSidebar}
           title="Collapse (Ctrl+B)"
@@ -856,7 +898,7 @@
 
         <!-- Close (mobile only) -->
         <button
-          class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 hover:scale-[1.05] shrink-0"
+          class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.05] shrink-0"
           style="color: {$colorStore.muted}; background: {$colorStore.primary}08;"
           onclick={closeMobile}
           aria-label="Close sidebar"
@@ -866,6 +908,7 @@
       {/if}
     </div>
   </div>
+</div>
 </aside>
 
 <!-- Mobile backdrop -->

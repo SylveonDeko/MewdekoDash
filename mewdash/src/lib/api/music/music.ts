@@ -201,6 +201,33 @@ export const musicApi = {
   moveQueueItem: (guildId: bigint, fromIndex: number, toIndex: number) =>
     apiRequest<void>(`music/${guildId}/queue/move`, "POST", { fromIndex, toIndex }),
 
+  /**
+   * Gets the channels configured for automatic music link conversion (Apple Music, Spotify,
+   * YouTube Music, etc. links get replaced with a cross-platform embed)
+   * @param guildId The guild ID
+   * @returns List of enabled channel IDs
+   */
+  getLinkChannels: (guildId: bigint) =>
+    apiRequest<bigint[]>(`music/${guildId}/linkchannels`),
+
+  /**
+   * Enables automatic music link conversion for a channel
+   * @param guildId The guild ID
+   * @param channelId The channel to enable
+   * @returns Updated list of enabled channel IDs
+   */
+  enableLinkChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<bigint[]>(`music/${guildId}/linkchannels/${channelId}`, "POST"),
+
+  /**
+   * Disables automatic music link conversion for a channel
+   * @param guildId The guild ID
+   * @param channelId The channel to disable
+   * @returns Updated list of enabled channel IDs
+   */
+  disableLinkChannel: (guildId: bigint, channelId: bigint) =>
+    apiRequest<bigint[]>(`music/${guildId}/linkchannels/${channelId}`, "DELETE"),
+
   // TTS endpoints
 
   getTtsSettings: (guildId: bigint) =>

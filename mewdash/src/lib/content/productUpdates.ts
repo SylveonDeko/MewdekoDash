@@ -11,6 +11,19 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "music-link-conversion",
+    label: "New in music",
+    title: "Music Link Conversion",
+    summary: "Drop an Apple Music, Spotify, or YouTube link and get every other platform back automatically.",
+    details: [
+      "Works with Apple Music, Spotify, YouTube, YouTube Music, Deezer, Tidal, and more.",
+      "Auto-searches Spotify and YouTube Music when a link doesn't already have a match.",
+      "Turn it on for any channel, not just the music channel."
+    ],
+    href: "/dashboard/music",
+    action: "Set up music links"
+  },
+  {
     id: "image-hash-bans",
     label: "New in protection",
     title: "Image Hash Bans",

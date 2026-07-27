@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
   import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
   import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
@@ -22,6 +22,39 @@
 
   let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
   let mobileSidebarOpen = $state(false);
+  let contentEl = $state<HTMLElement>();
+  let prevCollapsed = untrack(() => sidebarCollapsed);
+  let slideCleanup: (() => void) | null = null;
+
+  $effect(() => {
+    const now = sidebarCollapsed;
+    if (now === prevCollapsed) return;
+    const delta = now ? 212 : -212;
+    prevCollapsed = now;
+    const el = contentEl;
+    if (!browser || !el || window.innerWidth < 1024) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    slideCleanup?.();
+    el.style.transition = "none";
+    el.style.transform = `translateX(${delta}px)`;
+    el.style.willChange = "transform";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 300ms ease-out";
+        el.style.transform = "translateX(0)";
+      });
+    });
+    const done = (e?: TransitionEvent) => {
+      if (e && (e.target !== el || e.propertyName !== "transform")) return;
+      el.style.transition = "";
+      el.style.transform = "";
+      el.style.willChange = "";
+      el.removeEventListener("transitionend", done);
+      slideCleanup = null;
+    };
+    slideCleanup = done;
+    el.addEventListener("transitionend", done);
+  });
 
   function handleToggleMobileSidebar() {
     mobileSidebarOpen = !mobileSidebarOpen;
@@ -169,12 +202,12 @@
   });
 </script>
 
-<div class="flex w-full">
+<div class="flex w-full overflow-x-hidden">
   {#if $currentInstance}
     <DashboardSidebar bind:collapsed={sidebarCollapsed} bind:mobileOpen={mobileSidebarOpen} />
   {/if}
 
-  <div class="flex-1 w-full min-w-0 transition-all duration-300"
+  <div bind:this={contentEl} class="flex-1 w-full min-w-0"
        class:lg:ml-[280px]={$currentInstance && !sidebarCollapsed}
        class:lg:ml-[68px]={$currentInstance && sidebarCollapsed}>
     {#if !$currentInstance}
