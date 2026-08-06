@@ -4,7 +4,11 @@ import type { RequestHandler } from "./$types";
 import JSONbig from "json-bigint";
 import { logger } from "$lib/logger";
 import { getSession, verifyAccessToken } from "$lib/server/mobileJwt";
-import { defaultInstanceURL, resolveInstanceURL } from "$lib/server/mobileInstances";
+import {
+  defaultInstanceURL,
+  resolveInstanceURL,
+  resolveInstanceURLByPort,
+} from "$lib/server/instances";
 import { mintBackendToken } from "$lib/server/backendJwt";
 import type { DiscordUser } from "$lib/types/discord";
 
@@ -90,17 +94,16 @@ async function makeRequest(
  * request, and which dashboard user is behind it.
  *
  * Mobile clients (Bearer access JWT) supply an `X-Mobile-Instance` header
- * carrying a `botId`; the server resolves it against the primary bot's
- * instance list and routes to the matching `localhost:<port>` URL. The
- * client never controls the URL itself, so a tampered header cannot reach
- * arbitrary internal hosts. When no header is present, the singleton
- * instance is used; if multiple instances exist the request is rejected
- * so the iOS app can prompt the user to pick one. The user is loaded from
- * the server-only mobile session referenced by the token's `sid`.
- *
- * Browser clients (cookie session) continue to drive the destination via
- * the `X-Instance-Url` header; the user comes from `locals.user`, populated
- * by the auth hook.
+ * carrying a `botId`; browser clients (cookie session) supply an
+ * `X-Instance-Port` header carrying the selected instance's port. Either way
+ * the server resolves the identifier against the primary bot's instance list
+ * and builds the URL itself from the host that instance registered, so a
+ * tampered header cannot point this proxy (which attaches the bot API key) at
+ * an arbitrary internal host. When no header is present, the singleton
+ * instance is used; if multiple instances exist a mobile request is rejected
+ * so the iOS app can prompt the user to pick one. Mobile users are loaded from
+ * the server-only session referenced by the token's `sid`; browser users come
+ * from `locals.user`, populated by the auth hook.
  */
 /**
  * Resolves the backend target and dashboard user for a mobile (Bearer JWT)
@@ -159,11 +162,40 @@ async function resolveBackend(
     );
   }
 
-  const instanceUrl = request.headers.get("x-instance-url");
-  if (!instanceUrl) {
-    return json({ error: "No instance URL provided" }, { status: 400 });
+  const user = locals.user ?? null;
+  const portHeader = request.headers.get("x-instance-port");
+
+  if (!portHeader) {
+    const fallback = await defaultInstanceURL();
+    if (!fallback) {
+      return json(
+        {
+          error: "no_instance_available",
+          message: "No bot instance is registered; check the bot's IsMasterInstance setting.",
+        },
+        { status: 503 },
+      );
+    }
+    return { backend: fallback, user };
   }
-  return { backend: instanceUrl, user: locals.user ?? null };
+
+  const port = Number.parseInt(portHeader, 10);
+  if (!Number.isInteger(port)) {
+    return json({ error: "invalid_instance_port" }, { status: 400 });
+  }
+
+  const backend = await resolveInstanceURLByPort(port);
+  if (!backend) {
+    return json(
+      {
+        error: "unknown_instance",
+        message: `No active bot instance is registered on port ${port}.`,
+      },
+      { status: 404 },
+    );
+  }
+
+  return { backend, user };
 }
 
 export const GET: RequestHandler = async ({ url, params, request, locals }) => {

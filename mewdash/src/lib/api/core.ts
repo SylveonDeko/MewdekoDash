@@ -1,11 +1,15 @@
 // lib/api/core.ts
 import JSONbig from "json-bigint";
-import { env } from "$env/dynamic/public";
 import { get } from "svelte/store";
 import { currentInstance } from "$lib/stores/instanceStore";
 
 /**
- * Makes an API request to the Mewdeko backend
+ * Makes an API request to the Mewdeko backend.
+ *
+ * The destination is identified by the selected instance's port only; the
+ * `/api` proxy resolves that port to a URL server-side using the host the bot
+ * registered itself under. Omitting the header lets the proxy fall back to the
+ * single registered instance.
  * @template T The expected response type
  * @param endpoint The API endpoint (without /api/ prefix)
  * @param method The HTTP method (default: GET)
@@ -22,15 +26,12 @@ export async function apiRequest<T>(
   customFetch: typeof fetch = fetch,
 ): Promise<T> {
   const instance = get(currentInstance);
-  let baseUrl = instance
-    ? `http://localhost:${instance.port}/botapi`
-    : env.PUBLIC_MEWDEKO_API_URL;
 
   const response = await customFetch(`/api/${endpoint}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      "X-Instance-Url": baseUrl,
+      ...(instance ? { "X-Instance-Port": instance.port.toString() } : {}),
       ...headers,
     },
     body: body ? JSONbig.stringify(body) : null,

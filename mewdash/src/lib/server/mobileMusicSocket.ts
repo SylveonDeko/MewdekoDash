@@ -2,7 +2,7 @@ import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocketServer, WebSocket as NodeWebSocket } from "ws";
 import { verifyAccessToken } from "./mobileJwt";
-import { defaultInstanceURL, resolveInstanceURL } from "./mobileInstances";
+import { defaultInstanceURL, resolveInstanceURL } from "./instances";
 import { logger } from "$lib/logger";
 
 const wss = new WebSocketServer({ noServer: true });

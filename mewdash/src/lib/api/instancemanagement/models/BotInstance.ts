@@ -28,4 +28,10 @@ export interface BotInstance {
 
   /** The port number the instance is running on */
   port: number;
+
+  /**
+   * Hostname the instance's API is reachable on. Only used server-side by the
+   * `/api` proxy; older bot versions omit it and are treated as "localhost".
+   */
+  host?: string;
 }

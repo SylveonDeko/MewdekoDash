@@ -264,7 +264,7 @@
     instanceStates = { ...instanceStates };
     try {
       const guilds = await clientApi.getMutualGuilds(userData.id, true, fetch, {
-        "X-Instance-Url": `http://localhost:${instance.port}/botapi`
+        "X-Instance-Port": instance.port.toString()
       });
       instanceStates[id] = { loading: false, hasMutualGuild: !!(guilds?.length), checked: true };
     } catch {

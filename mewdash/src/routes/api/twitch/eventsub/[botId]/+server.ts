@@ -1,5 +1,5 @@
 import { logger } from "$lib/logger";
-import { resolveInstanceURL } from "$lib/server/mobileInstances";
+import { resolveInstanceURL } from "$lib/server/instances";
 import type { RequestHandler } from "./$types";
 
 const TWITCH_HEADERS = [

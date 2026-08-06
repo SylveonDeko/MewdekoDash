@@ -12,6 +12,8 @@ interface RawInstance {
   botId: number | bigint | string;
   isActive: boolean;
   port: number;
+  /** Hostname the instance's API is reachable on. Absent on pre-184 bot versions. */
+  host?: string | null;
 }
 
 /**
@@ -41,6 +43,17 @@ let cache: CachedInstances | null = null;
  */
 function primaryInstanceUrl(): string | null {
   return publicEnv.PUBLIC_MEWDEKO_API_URL?.length ? publicEnv.PUBLIC_MEWDEKO_API_URL : null;
+}
+
+/**
+ * Builds the `botapi` URL for an instance. The host comes from the bot's own
+ * registration, so it is correct whether the bot shares a machine with the
+ * dashboard or runs in a separate container. Bots that predate host tracking
+ * report no host, and keep the historical localhost behaviour.
+ */
+function instanceUrl(instance: RawInstance): string {
+  const host = instance.host?.trim().length ? instance.host.trim() : "localhost";
+  return `http://${host}:${instance.port}/botapi`;
 }
 
 /**
@@ -94,7 +107,20 @@ export async function resolveInstanceURL(botId: string): Promise<string | null> 
   const raw = await fetchInstances();
   const match = raw.find((i) => i.botId.toString() === botId && i.isActive);
   if (!match) return null;
-  return `http://localhost:${match.port}/botapi`;
+  return instanceUrl(match);
+}
+
+/**
+ * Resolves a browser-supplied instance port to the corresponding `botapi`
+ * URL. Like {@link resolveInstanceURL} this only ever returns a URL built
+ * from the registered instance list, so a tampered header cannot point the
+ * proxy (which attaches the bot API key) at an arbitrary host.
+ */
+export async function resolveInstanceURLByPort(port: number): Promise<string | null> {
+  const raw = await fetchInstances();
+  const match = raw.find((i) => i.port === port && i.isActive);
+  if (!match) return null;
+  return instanceUrl(match);
 }
 
 /**
@@ -106,6 +132,6 @@ export async function resolveInstanceURL(botId: string): Promise<string | null> 
 export async function defaultInstanceURL(): Promise<string | null> {
   const raw = await fetchInstances();
   const active = raw.filter((i) => i.isActive);
-  if (active.length === 1) return `http://localhost:${active[0].port}/botapi`;
+  if (active.length === 1) return instanceUrl(active[0]);
   return primaryInstanceUrl();
 }

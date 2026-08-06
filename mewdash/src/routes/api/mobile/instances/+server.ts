@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { requireMobileAuth } from "$lib/server/mobileAuthGuard";
-import { listMobileInstances } from "$lib/server/mobileInstances";
+import { listMobileInstances } from "$lib/server/instances";
 import { logger } from "$lib/logger";
 
 /**

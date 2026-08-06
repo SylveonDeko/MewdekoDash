@@ -653,12 +653,11 @@
     for (const instance of instances) {
       try {
         // Make a direct API call with specific instance headers instead of changing the global store
-        const baseUrl = `http://localhost:${instance.port}/botapi`;
         const response = await fetch(`/api/forms/share/${shareCode}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-Instance-Url": baseUrl
+            "X-Instance-Port": instance.port.toString()
           }
         });
 

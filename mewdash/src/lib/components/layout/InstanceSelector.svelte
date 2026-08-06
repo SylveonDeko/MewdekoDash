@@ -41,7 +41,7 @@
     instanceStates = { ...instanceStates }; // Trigger reactivity
 
     const customHeaders = {
-      "X-Instance-Url": `http://localhost:${instance.port}/botapi`
+      "X-Instance-Port": instance.port.toString()
     };
 
     try {
