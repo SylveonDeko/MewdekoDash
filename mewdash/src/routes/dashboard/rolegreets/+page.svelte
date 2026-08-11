@@ -13,6 +13,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -50,6 +51,60 @@
     let editGreetDeleteTime = $state(0);
     let editGreetWebhook: string | null = $state(null);
     let editGreetBots = $state(false);
+    let pendingDeleteId: number | null = $state(null);
+
+  /** Normalized editor fields, used for both dirty checks and saving. */
+  interface EditState {
+    message: string;
+    deleteTime: number;
+    webhookUrl: string | null;
+    greetBots: boolean;
+  }
+
+  /** What the user asked for while the editor held unsaved changes. */
+  type PendingEditAction = { type: "close" } | { type: "switch"; greet: RoleGreet };
+
+  let editBaseline: EditState = $state({ message: "", deleteTime: 0, webhookUrl: null, greetBots: false });
+  let pendingEditAction: PendingEditAction | null = $state(null);
+  let editingCardEl: HTMLElement | null = $state(null);
+
+  /**
+   * Keeps a reference to the card currently being edited so clicks can be told
+   * apart from clicks anywhere else on the page.
+   */
+  function trackEditingCard(node: HTMLElement, isEditing: boolean) {
+    if (isEditing) editingCardEl = node;
+
+    return {
+      update(nowEditing: boolean) {
+        if (nowEditing) editingCardEl = node;
+        else if (editingCardEl === node) editingCardEl = null;
+      },
+      destroy() {
+        if (editingCardEl === node) editingCardEl = null;
+      }
+    };
+  }
+
+  $effect(() => {
+    if (editingGreetId === null || pendingEditAction) return;
+
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (!target || !editingCardEl) return;
+      if (editingCardEl.contains(target)) return;
+      if (target.closest("[data-greet-edit]")) return;
+
+      /** Overlays such as the embed builder portal outside the app root, so a click there is not a click off the greet. */
+      const appRoot = editingCardEl.closest("body > *");
+      if (appRoot && !appRoot.contains(target)) return;
+
+      requestStopEditing();
+    };
+
+    document.addEventListener("click", onDocumentClick);
+    return () => document.removeEventListener("click", onDocumentClick);
+  });
 
   // Management
     let loading = $state(true);
@@ -123,59 +178,90 @@
     }
   }
 
-  async function updateRoleGreetMessage(greetId: number, message: any) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
+  /**
+   * Splits a stored greet message into the pieces PreviewCard renders. Messages
+   * are stored as the raw embed JSON the bot parses, so a plain string is
+   * treated as message content and anything unparseable falls back to itself.
+   */
+  function parseStoredMessage(message: string | null) {
+    const empty = { content: "", embeds: [] as any[], componentRows: [] as any[] };
+    if (!message) return empty;
+    if (!message.trim().startsWith("{")) return { ...empty, content: message };
 
-      const messageToSend = typeof message === "string" ? message : (Object.keys(message).length > 0 ? JSON.stringify(message) : "");
-      await roleGreetApi.updateRoleGreetMessage($currentGuild.id, greetId, messageToSend);
-      showNotificationMessage("Message updated successfully", "success");
-      editingGreetId = null;
-      await fetchRoleGreets();
-    } catch (err) {
-      logger.error("Failed to update message:", err);
-      showNotificationMessage("Failed to update message", "error");
+    try {
+      const parsed = JSON.parse(message);
+      const rows = new Map<number, any[]>();
+
+      if (Array.isArray(parsed.components)) {
+        for (const component of parsed.components) {
+          const rowIndex = component.row || 0;
+          if (!rows.has(rowIndex)) rows.set(rowIndex, []);
+          rows.get(rowIndex)!.push(component);
+        }
+      }
+
+      return {
+        content: typeof parsed.content === "string" ? parsed.content : "",
+        embeds: Array.isArray(parsed.embeds) ? parsed.embeds : parsed.embed ? [parsed.embed] : [],
+        componentRows: Array.from(rows.entries()).map(([rowIndex, components]) => ({
+          rowKey: `row-${rowIndex}`,
+          components
+        }))
+      };
+    } catch {
+      return { ...empty, content: message };
     }
   }
 
-  async function updateRoleGreetDeleteTime(greetId: number, seconds: number) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-
-      await roleGreetApi.updateRoleGreetDeleteTime($currentGuild.id, greetId, seconds);
-      showNotificationMessage("Delete time updated successfully", "success");
-      editingGreetId = null;
-      await fetchRoleGreets();
-    } catch (err) {
-      logger.error("Failed to update delete time:", err);
-      showNotificationMessage("Failed to update delete time", "error");
-    }
+  /**
+   * Serializes the embed builder value into the string the bot stores. Plain
+   * strings pass through; an empty builder becomes an empty message.
+   */
+  function serializeMessage(message: any): string {
+    if (typeof message === "string") return message;
+    return message && Object.keys(message).length > 0 ? JSON.stringify(message) : "";
   }
 
-  async function updateRoleGreetWebhook(greetId: number, webhookUrl: string | null) {
+  /**
+   * Saves every edited field of a greet in one action. The bot exposes one
+   * endpoint per field, so this sends only the fields that actually changed.
+   */
+  async function saveGreetChanges(greet: RoleGreet): Promise<boolean> {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
 
-      await roleGreetApi.updateRoleGreetWebhook($currentGuild.id, greetId, webhookUrl);
-      showNotificationMessage("Webhook updated successfully", "success");
+      const guildId = $currentGuild.id;
+      const current = currentEditState();
+      let changed = false;
+
+      if (current.message !== editBaseline.message) {
+        await roleGreetApi.updateRoleGreetMessage(guildId, greet.id, current.message);
+        changed = true;
+      }
+
+      if (current.deleteTime !== editBaseline.deleteTime) {
+        await roleGreetApi.updateRoleGreetDeleteTime(guildId, greet.id, current.deleteTime);
+        changed = true;
+      }
+
+      if (current.webhookUrl !== editBaseline.webhookUrl) {
+        await roleGreetApi.updateRoleGreetWebhook(guildId, greet.id, current.webhookUrl);
+        changed = true;
+      }
+
+      if (current.greetBots !== editBaseline.greetBots) {
+        await roleGreetApi.updateRoleGreetBots(guildId, greet.id, current.greetBots);
+        changed = true;
+      }
+
+      showNotificationMessage(changed ? "Role greet saved" : "No changes to save", "success");
       editingGreetId = null;
       await fetchRoleGreets();
+      return true;
     } catch (err) {
-      logger.error("Failed to update webhook:", err);
-      showNotificationMessage("Failed to update webhook", "error");
-    }
-  }
-
-  async function updateRoleGreetBots(greetId: number, enabled: boolean) {
-    try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-
-      await roleGreetApi.updateRoleGreetBots($currentGuild.id, greetId, enabled);
-      showNotificationMessage("Bot greeting setting updated", "success");
-      await fetchRoleGreets();
-    } catch (err) {
-      logger.error("Failed to update bot greeting setting:", err);
-      showNotificationMessage("Failed to update setting", "error");
+      logger.error("Failed to save role greet:", err);
+      showNotificationMessage("Failed to save role greet", "error");
+      return false;
     }
   }
 
@@ -189,6 +275,24 @@
     } catch (err) {
       logger.error("Failed to toggle role greet state:", err);
       showNotificationMessage("Failed to update role greet state", "error");
+    }
+  }
+
+  /**
+   * Deletes a role greet after the user has confirmed the pending delete.
+   */
+  async function deleteRoleGreet(greetId: number) {
+    try {
+      if (!$currentGuild?.id) throw new Error("No guild selected");
+
+      await roleGreetApi.deleteRoleGreet($currentGuild.id, greetId);
+      showNotificationMessage("Role greet deleted", "success");
+      pendingDeleteId = null;
+      if (editingGreetId === greetId) editingGreetId = null;
+      await fetchRoleGreets();
+    } catch (err) {
+      logger.error("Failed to delete role greet:", err);
+      showNotificationMessage("Failed to delete role greet", "error");
     }
   }
 
@@ -211,9 +315,85 @@
     editGreetDeleteTime = greet.deleteTime;
     editGreetWebhook = greet.webhookUrl;
     editGreetBots = greet.greetBots;
+    editBaseline = currentEditState();
   }
 
-  function cancelEditing() {
+  /**
+   * Snapshots the editor fields in the normalized form they are compared and
+   * saved in, so a round-tripped message never reads as an edit.
+   */
+  function currentEditState(): EditState {
+    return {
+      message: serializeMessage(editGreetMessage),
+      deleteTime: editGreetDeleteTime,
+      webhookUrl: editGreetWebhook || null,
+      greetBots: editGreetBots
+    };
+  }
+
+  function hasUnsavedChanges(): boolean {
+    if (editingGreetId === null) return false;
+    const current = currentEditState();
+    return current.message !== editBaseline.message
+      || current.deleteTime !== editBaseline.deleteTime
+      || current.webhookUrl !== editBaseline.webhookUrl
+      || current.greetBots !== editBaseline.greetBots;
+  }
+
+  /**
+   * Handles the pencil button. It toggles the editor for the greet it belongs
+   * to, and switching to a different greet with unsaved edits asks first.
+   */
+  function requestEdit(greet: RoleGreet) {
+    if (editingGreetId === greet.id) {
+      requestStopEditing();
+      return;
+    }
+
+    if (hasUnsavedChanges()) {
+      pendingEditAction = { type: "switch", greet };
+      return;
+    }
+
+    startEditing(greet);
+  }
+
+  /**
+   * Closes the editor, asking about unsaved edits first. Used by the pencil
+   * toggle, the Cancel button and clicks outside the greet being edited.
+   */
+  function requestStopEditing() {
+    if (hasUnsavedChanges()) {
+      pendingEditAction = { type: "close" };
+      return;
+    }
+
+    editingGreetId = null;
+  }
+
+  /**
+   * Resolves the unsaved-changes prompt, then carries out whatever the user was
+   * trying to do when it interrupted them.
+   */
+  async function resolveUnsavedChanges(choice: "save" | "discard" | "cancel") {
+    const action = pendingEditAction;
+    if (!action || choice === "cancel") {
+      pendingEditAction = null;
+      return;
+    }
+
+    pendingEditAction = null;
+
+    if (choice === "save") {
+      const greet = roleGreets.find(g => g.id === editingGreetId);
+      if (greet && !await saveGreetChanges(greet)) return;
+    }
+
+    if (action.type === "switch") {
+      startEditing(roleGreets.find(g => g.id === action.greet.id) ?? action.greet);
+      return;
+    }
+
     editingGreetId = null;
   }
 
@@ -352,6 +532,7 @@
         <div class="space-y-4">
           {#each roleGreets as greet}
             <div
+              use:trackEditingCard={editingGreetId === greet.id}
               class="rounded-xl p-4 transition-all duration-200 border"
               class:opacity-50={greet.disabled}
               style="background: {$colorStore.primary}10;
@@ -372,13 +553,15 @@
                 <div class="flex items-center gap-2">
                   <button
                     class="p-2 rounded-lg transition-all duration-200"
-                    style="background: {$colorStore.primary}20;
+                    style="background: {editingGreetId === greet.id ? $colorStore.primary + '40' : $colorStore.primary + '20'};
                            color: {$colorStore.text};"
-                    onclick={() => startEditing(greet)}
-                    aria-label="Edit"
-                    title="Edit"
+                    onclick={() => requestEdit(greet)}
+                    data-greet-edit
+                    aria-label={editingGreetId === greet.id ? "Close editor" : "Edit"}
+                    aria-pressed={editingGreetId === greet.id}
+                    title={editingGreetId === greet.id ? "Close editor" : "Edit"}
                   >
-                    <i class="fa-solid fa-pen" style="font-size: 16px;"></i>
+                    <i class="fa-solid {editingGreetId === greet.id ? 'fa-xmark' : 'fa-pen'}" style="font-size: 16px;"></i>
                   </button>
 
                   <button
@@ -391,6 +574,35 @@
                   >
                     <i class="fa-solid fa-power-off" style="font-size: 16px;"></i>
                   </button>
+
+                  {#if pendingDeleteId === greet.id}
+                    <button
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]"
+                      style="background: #ef444430; color: #ef4444;"
+                      onclick={() => deleteRoleGreet(greet.id)}
+                      title="Confirm delete"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      class="px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px]"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+                      onclick={() => (pendingDeleteId = null)}
+                      title="Cancel delete"
+                    >
+                      Cancel
+                    </button>
+                  {:else}
+                    <button
+                      class="p-2 rounded-lg transition-all duration-200"
+                      style="background: #ef444420; color: #ef4444;"
+                      onclick={() => (pendingDeleteId = greet.id)}
+                      aria-label="Delete"
+                      title="Delete"
+                    >
+                      <i class="fa-solid fa-trash" style="font-size: 16px;"></i>
+                    </button>
+                  {/if}
                 </div>
               </div>
 
@@ -482,7 +694,7 @@
                   <div class="flex justify-end gap-2 mt-4">
                     <button
                       class="px-4 py-2 rounded-lg transition-all duration-200"
-                      onclick={cancelEditing}
+                      onclick={requestStopEditing}
                       style="background: {$colorStore.accent}30;
                              color: {$colorStore.text};"
                     >
@@ -491,34 +703,11 @@
 
                     <button
                       class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      onclick={() => updateRoleGreetMessage(greet.id, editGreetMessage)}
+                      onclick={() => saveGreetChanges(greet)}
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
                     >
-                      Update Message
-                    </button>
-
-                    <button
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      onclick={() => updateRoleGreetDeleteTime(greet.id, editGreetDeleteTime)}
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                    >
-                      Update Delete Time
-                    </button>
-
-                    <button
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      onclick={() => updateRoleGreetWebhook(greet.id, editGreetWebhook)}
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                    >
-                      Update Webhook
-                    </button>
-
-                    <button
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-[1.02] min-h-[44px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
-                      onclick={() => updateRoleGreetBots(greet.id, editGreetBots)}
-                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                    >
-                      Update Bot Settings
+                      <i class="fa-solid fa-floppy-disk" style="font-size: 14px;"></i>
+                      Save Changes
                     </button>
                   </div>
                 </div>
@@ -526,8 +715,20 @@
                 <!-- View Mode -->
                 <div class="space-y-3">
                   <div class="p-3 rounded-lg" style="background: {$colorStore.primary}15;">
-                    <h4 class="text-sm font-medium mb-1" style="color: {$colorStore.muted}">Message</h4>
-                    <p style="color: {$colorStore.text}">{greet.message || 'No message set'}</p>
+                    <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.muted}">Message</h4>
+                    {#if greet.message}
+                      {@const preview = parseStoredMessage(greet.message)}
+                      <PreviewCard
+                        content={preview.content}
+                        embeds={preview.embeds}
+                        componentRows={preview.componentRows}
+                        user={data.user}
+                        guildId={$currentGuild?.id}
+                        showEmpty={false}
+                      />
+                    {:else}
+                      <p style="color: {$colorStore.text}">No message set</p>
+                    {/if}
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -566,6 +767,55 @@
         </div>
       {/if}
 </DashboardPageLayout>
+
+{#if pendingEditAction}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="background: rgba(0, 0, 0, 0.6);"
+    transition:fade={{ duration: 120 }}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="unsaved-changes-title"
+  >
+    <div
+      class="w-full max-w-md rounded-xl p-5 border"
+      style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}30; backdrop-filter: blur(12px);"
+    >
+      <h3 id="unsaved-changes-title" class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">
+        Unsaved changes
+      </h3>
+      <p class="text-sm mb-5" style="color: {$colorStore.muted}">
+        {pendingEditAction.type === "switch"
+          ? "You have unsaved changes to this greet. Save them before editing the other one?"
+          : "You have unsaved changes to this greet. Save them before closing?"}
+      </p>
+
+      <div class="flex flex-wrap justify-end gap-2">
+        <button
+          class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
+          style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+          onclick={() => resolveUnsavedChanges("cancel")}
+        >
+          Keep editing
+        </button>
+        <button
+          class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
+          style="background: #ef444420; color: #ef4444;"
+          onclick={() => resolveUnsavedChanges("discard")}
+        >
+          Discard
+        </button>
+        <button
+          class="px-4 py-2 rounded-lg font-medium transition-all duration-200 min-h-[44px]"
+          style="background: {$colorStore.primary}30; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}40;"
+          onclick={() => resolveUnsavedChanges("save")}
+        >
+          Save changes
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style lang="postcss">
     /* Improve touchable area on mobile */

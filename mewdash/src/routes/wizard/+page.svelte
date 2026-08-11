@@ -1354,21 +1354,21 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             try {
               await roleGreetApi.addRoleGreet(guildId, BigInt(config.roleId), BigInt(config.channelId));
               const roleGreets = await roleGreetApi.getAllRoleGreets(guildId);
-              const greetIndex = roleGreets.findIndex(rg =>
+              const greet = roleGreets.find(rg =>
                 rg.roleId.toString() === config.roleId &&
                 rg.channelId.toString() === config.channelId
               );
-              if (greetIndex !== -1) {
+              if (greet) {
                 const fullMessage = buildFullMessage(config);
-                await roleGreetApi.updateRoleGreetMessage(guildId, greetIndex + 1, fullMessage);
+                await roleGreetApi.updateRoleGreetMessage(guildId, greet.id, fullMessage);
               }
             } catch (err: any) {
               if (err.message && err.message.includes("Maximum number")) {
                 const roleGreets = await roleGreetApi.getAllRoleGreets(guildId);
-                const greetIndex = roleGreets.findIndex(rg => rg.roleId.toString() === config.roleId);
-                if (greetIndex !== -1) {
+                const greet = roleGreets.find(rg => rg.roleId.toString() === config.roleId);
+                if (greet) {
                   const fullMessage = buildFullMessage(config);
-                  await roleGreetApi.updateRoleGreetMessage(guildId, greetIndex + 1, fullMessage);
+                  await roleGreetApi.updateRoleGreetMessage(guildId, greet.id, fullMessage);
                 }
               }
             }

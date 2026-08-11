@@ -34,6 +34,14 @@ export const roleGreetApi = {
     apiRequest<void>(`RoleGreet/${guildId}/role/${roleId}`, "POST", channelId),
 
   /**
+   * Deletes a role greet
+   * @param guildId The guild ID
+   * @param greetId The greet ID
+   */
+  deleteRoleGreet: (guildId: bigint, greetId: number) =>
+    apiRequest<void>(`RoleGreet/${guildId}/${greetId}`, "DELETE"),
+
+  /**
    * Updates the message for a role greet
    * @param guildId The guild ID
    * @param greetId The greet ID
