@@ -15,6 +15,7 @@
   import { colorStore } from "$lib/stores/colorStore.ts"; // Import the global colorStore
   import { logger } from "$lib/logger.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import { serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
 
   interface Props {
         data: PageData;
@@ -144,7 +145,7 @@
       if (!$currentGuild?.id) {
         throw new Error("No guild selected");
       }
-      const messageToSend = typeof message === "string" ? message : (Object.keys(message).length > 0 ? JSON.stringify(message) : "");
+      const messageToSend = serializeMessage(message);
       await multiGreetApi.updateMultiGreetMessage(BigInt($currentGuild.id), id, messageToSend);
       showNotificationMessage("Message updated successfully");
       editMessage = null;
@@ -425,7 +426,7 @@
                   </h4>
 
                   <FullscreenEmbedBuilder
-                    value={greet.message}
+                    value={toBuilderValue(greet.message)}
                     previewTitle="Greeting Message #{greet.id}"
                     previewDescription="Message sent when users join"
                     icon="fa-comment"

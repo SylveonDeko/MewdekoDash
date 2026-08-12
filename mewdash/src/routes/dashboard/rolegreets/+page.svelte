@@ -14,6 +14,7 @@
   import { logger } from "$lib/logger.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import { parseStoredMessage, serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -179,50 +180,6 @@
   }
 
   /**
-   * Splits a stored greet message into the pieces PreviewCard renders. Messages
-   * are stored as the raw embed JSON the bot parses, so a plain string is
-   * treated as message content and anything unparseable falls back to itself.
-   */
-  function parseStoredMessage(message: string | null) {
-    const empty = { content: "", embeds: [] as any[], componentRows: [] as any[] };
-    if (!message) return empty;
-    if (!message.trim().startsWith("{")) return { ...empty, content: message };
-
-    try {
-      const parsed = JSON.parse(message);
-      const rows = new Map<number, any[]>();
-
-      if (Array.isArray(parsed.components)) {
-        for (const component of parsed.components) {
-          const rowIndex = component.row || 0;
-          if (!rows.has(rowIndex)) rows.set(rowIndex, []);
-          rows.get(rowIndex)!.push(component);
-        }
-      }
-
-      return {
-        content: typeof parsed.content === "string" ? parsed.content : "",
-        embeds: Array.isArray(parsed.embeds) ? parsed.embeds : parsed.embed ? [parsed.embed] : [],
-        componentRows: Array.from(rows.entries()).map(([rowIndex, components]) => ({
-          rowKey: `row-${rowIndex}`,
-          components
-        }))
-      };
-    } catch {
-      return { ...empty, content: message };
-    }
-  }
-
-  /**
-   * Serializes the embed builder value into the string the bot stores. Plain
-   * strings pass through; an empty builder becomes an empty message.
-   */
-  function serializeMessage(message: any): string {
-    if (typeof message === "string") return message;
-    return message && Object.keys(message).length > 0 ? JSON.stringify(message) : "";
-  }
-
-  /**
    * Saves every edited field of a greet in one action. The bot exposes one
    * endpoint per field, so this sends only the fields that actually changed.
    */
@@ -298,20 +255,7 @@
 
   function startEditing(greet: any) {
     editingGreetId = greet.id;
-
-    // Parse message if it's a JSON string
-    try {
-      if (typeof greet.message === "string" && greet.message.trim().startsWith("{")) {
-        editGreetMessage = JSON.parse(greet.message);
-      } else if (typeof greet.message === "string" && greet.message) {
-        editGreetMessage = { content: greet.message };
-      } else {
-        editGreetMessage = greet.message || {};
-      }
-    } catch {
-      editGreetMessage = greet.message ? { content: greet.message } : {};
-    }
-
+    editGreetMessage = toBuilderValue(greet.message);
     editGreetDeleteTime = greet.deleteTime;
     editGreetWebhook = greet.webhookUrl;
     editGreetBots = greet.greetBots;

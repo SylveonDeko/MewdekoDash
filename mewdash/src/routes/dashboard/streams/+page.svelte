@@ -11,6 +11,8 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+  import { parseStoredMessage, serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
 
   interface Props {
     data: PageData;
@@ -94,7 +96,7 @@
 
 
       streams = streamsData;
-      globalMessage = messageData || {};
+      globalMessage = toBuilderValue(messageData);
       offlineNotifications = offlineData;
       stats = statsData;
       streamers = streamersData;
@@ -176,11 +178,11 @@
     saving = true;
     try {
       if (type === "online") {
-        const messageToSend = Object.keys(streamOnlineMessage).length > 0 ? JSON.stringify(streamOnlineMessage) : null;
+        const messageToSend = serializeMessage(streamOnlineMessage) || null;
         await streamNotificationsApi.setStreamOnlineMessage($currentGuild.id, id, messageToSend);
         showMessage("Online message saved!", "success");
       } else {
-        const messageToSend = Object.keys(streamOfflineMessage).length > 0 ? JSON.stringify(streamOfflineMessage) : null;
+        const messageToSend = serializeMessage(streamOfflineMessage) || null;
         await streamNotificationsApi.setStreamOfflineMessage($currentGuild.id, id, messageToSend);
         showMessage("Offline message saved!", "success");
       }
@@ -200,7 +202,7 @@
 
     saving = true;
     try {
-      const messageToSend = Object.keys(globalMessage).length > 0 ? JSON.stringify(globalMessage) : null;
+      const messageToSend = serializeMessage(globalMessage) || null;
       await streamNotificationsApi.setCustomStreamMessage($currentGuild.id, messageToSend);
       showMessage("Custom message saved!", "success");
     } catch (err) {
@@ -232,11 +234,8 @@
     editingStream = stream.index;
     editingMessageType = "online";
 
-    // Parse online message
-    streamOnlineMessage = stream.onlineMessage || {};
-
-    // Parse offline message
-    streamOfflineMessage = stream.offlineMessage || {};
+    streamOnlineMessage = toBuilderValue(stream.onlineMessage);
+    streamOfflineMessage = toBuilderValue(stream.offlineMessage);
   }
 
   // Utility functions
@@ -497,19 +496,33 @@
                   {#if stream.onlineMessage || stream.offlineMessage}
                     <div class="border-t pt-3 space-y-2" style="border-color: {$colorStore.primary}20;">
                       {#if stream.onlineMessage}
+                        {@const onlinePreview = parseStoredMessage(stream.onlineMessage)}
                         <div class="text-sm p-2 rounded-lg"
                              style="background: {$colorStore.primary}10; color: {$colorStore.text}">
                           <i class="fa-solid fa-bell inline mr-1"
                              style="color: {$colorStore.primary}; font-size: 12px;"></i>
-                          {stream.onlineMessage}
+                          <PreviewCard
+                            content={onlinePreview.content}
+                            embeds={onlinePreview.embeds}
+                            componentRows={onlinePreview.componentRows}
+                            guildId={$currentGuild?.id}
+                            showEmpty={false}
+                          />
                         </div>
                       {/if}
                       {#if stream.offlineMessage}
+                        {@const offlinePreview = parseStoredMessage(stream.offlineMessage)}
                         <div class="text-sm p-2 rounded-lg"
                              style="background: {$colorStore.muted}10; color: {$colorStore.text}">
                           <i class="fa-solid fa-bell-slash inline mr-1"
                              style="color: {$colorStore.muted}; font-size: 12px;"></i>
-                          {stream.offlineMessage}
+                          <PreviewCard
+                            content={offlinePreview.content}
+                            embeds={offlinePreview.embeds}
+                            componentRows={offlinePreview.componentRows}
+                            guildId={$currentGuild?.id}
+                            showEmpty={false}
+                          />
                         </div>
                       {/if}
                     </div>

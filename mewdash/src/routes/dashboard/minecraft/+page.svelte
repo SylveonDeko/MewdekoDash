@@ -21,6 +21,7 @@
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+    import { serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
 
     let loading = $state(false);
     let saving = $state(false);
@@ -867,7 +868,7 @@
                             <div>
                                 <label for="f-+page-custom-watch-embed-867" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
                                 <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-867"
-                                    value={editForm.customEmbedTemplate}
+                                    value={toBuilderValue(editForm.customEmbedTemplate)}
                                     previewTitle="Server Status Embed"
                                     previewDescription="Displayed in the watch channel"
                                     icon="fa-server"
@@ -895,14 +896,14 @@
                                     guildId={$currentGuild?.id}
                                     user={data.user}
                                     placeholder="Click to configure watch embed (leave empty for default)"
-                                    onchange={(newValue) => { editForm.customEmbedTemplate = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                                    onchange={(newValue) => { editForm.customEmbedTemplate = serializeMessage(newValue); }}
                                 />
                             </div>
 
                             <div>
                                 <label for="f-+page-server-online-alert-902" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
                                 <FullscreenEmbedBuilder id="f-+page-server-online-alert-902"
-                                    value={editForm.customOnlineMessage}
+                                    value={toBuilderValue(editForm.customOnlineMessage)}
                                     previewTitle="Online Alert"
                                     previewDescription="Sent when the server comes back online"
                                     icon="fa-circle-check"
@@ -913,14 +914,14 @@
                                     guildId={$currentGuild?.id}
                                     user={data.user}
                                     placeholder="Click to configure online alert (leave empty for default)"
-                                    onchange={(newValue) => { editForm.customOnlineMessage = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                                    onchange={(newValue) => { editForm.customOnlineMessage = serializeMessage(newValue); }}
                                 />
                             </div>
 
                             <div>
                                 <label for="f-+page-server-offline-alert-920" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
                                 <FullscreenEmbedBuilder id="f-+page-server-offline-alert-920"
-                                    value={editForm.customOfflineMessage}
+                                    value={toBuilderValue(editForm.customOfflineMessage)}
                                     previewTitle="Offline Alert"
                                     previewDescription="Sent when the server goes offline"
                                     icon="fa-circle-xmark"
@@ -931,7 +932,7 @@
                                     guildId={$currentGuild?.id}
                                     user={data.user}
                                     placeholder="Click to configure offline alert (leave empty for default)"
-                                    onchange={(newValue) => { editForm.customOfflineMessage = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                                    onchange={(newValue) => { editForm.customOfflineMessage = serializeMessage(newValue); }}
                                 />
                             </div>
 
@@ -1419,30 +1420,30 @@
                 <div class="mt-6 space-y-4">
                     <div>
                         <label for="f-+page-custom-watch-embed-1420" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed</label>
-                        <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-1420" value={editForm.customEmbedTemplate}
+                        <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-1420" value={toBuilderValue(editForm.customEmbedTemplate)}
                             previewTitle="Server Status Embed" previewDescription="Displayed in the watch channel" icon="fa-server"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Click to configure watch embed (leave empty for default)"
-                            onchange={(v) => { editForm.customEmbedTemplate = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.customEmbedTemplate = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-server-online-alert-1429" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Online Alert</label>
-                        <FullscreenEmbedBuilder id="f-+page-server-online-alert-1429" value={editForm.customOnlineMessage}
+                        <FullscreenEmbedBuilder id="f-+page-server-online-alert-1429" value={toBuilderValue(editForm.customOnlineMessage)}
                             previewTitle="Online Alert" previewDescription="Sent when the server comes back online" icon="fa-circle-check"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Click to configure online alert (leave empty for default)"
-                            onchange={(v) => { editForm.customOnlineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.customOnlineMessage = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-server-offline-alert-1438" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
-                        <FullscreenEmbedBuilder id="f-+page-server-offline-alert-1438" value={editForm.customOfflineMessage}
+                        <FullscreenEmbedBuilder id="f-+page-server-offline-alert-1438" value={toBuilderValue(editForm.customOfflineMessage)}
                             previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-xmark"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Click to configure offline alert (leave empty for default)"
-                            onchange={(v) => { editForm.customOfflineMessage = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.customOfflineMessage = serializeMessage(v); }} />
                     </div>
                 </div>
 
@@ -1456,31 +1457,31 @@
 
                     <div>
                         <label for="f-+page-player-join-discord-1457" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
-                        <FullscreenEmbedBuilder id="f-+page-player-join-discord-1457" value={editForm.eventTemplates.joinDiscord || ""}
+                        <FullscreenEmbedBuilder id="f-+page-player-join-discord-1457" value={toBuilderValue(editForm.eventTemplates.joinDiscord)}
                             previewTitle="Join Event" previewDescription="When a player joins" icon="fa-right-to-bracket"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: green embed with player name"
-                            onchange={(v) => { editForm.eventTemplates.joinDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.eventTemplates.joinDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-player-leave-discord-1466" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
-                        <FullscreenEmbedBuilder id="f-+page-player-leave-discord-1466" value={editForm.eventTemplates.leaveDiscord || ""}
+                        <FullscreenEmbedBuilder id="f-+page-player-leave-discord-1466" value={toBuilderValue(editForm.eventTemplates.leaveDiscord)}
                             previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-right-from-bracket"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: red embed with player name"
-                            onchange={(v) => { editForm.eventTemplates.leaveDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.eventTemplates.leaveDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-chat-message-discord-1475" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat Message (Discord)</label>
-                        <FullscreenEmbedBuilder id="f-+page-chat-message-discord-1475" value={editForm.eventTemplates.chatDiscord || ""}
+                        <FullscreenEmbedBuilder id="f-+page-chat-message-discord-1475" value={toBuilderValue(editForm.eventTemplates.chatDiscord)}
                             previewTitle="Chat Relay" previewDescription="MC chat relayed to Discord" icon="fa-comment"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Chat", name: "%mc.message%", description: "Chat message content" }]}
                             guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: **player**: message"
-                            onchange={(v) => { editForm.eventTemplates.chatDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.eventTemplates.chatDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-chat-from-discord-in-game-form-1485" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Chat from Discord (In-game format)</label>
@@ -1492,23 +1493,23 @@
                     </div>
                     <div>
                         <label for="f-+page-death-message-discord-1493" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Death Message (Discord)</label>
-                        <FullscreenEmbedBuilder id="f-+page-death-message-discord-1493" value={editForm.eventTemplates.deathDiscord || ""}
+                        <FullscreenEmbedBuilder id="f-+page-death-message-discord-1493" value={toBuilderValue(editForm.eventTemplates.deathDiscord)}
                             previewTitle="Death Event" previewDescription="When a player dies" icon="fa-skull"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Death", name: "%mc.death.message%", description: "Full death message" }]}
                             guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: gray embed with skull emoji"
-                            onchange={(v) => { editForm.eventTemplates.deathDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.eventTemplates.deathDiscord = serializeMessage(v); }} />
                     </div>
                     <div>
                         <label for="f-+page-advancement-discord-1503" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Advancement (Discord)</label>
-                        <FullscreenEmbedBuilder id="f-+page-advancement-discord-1503" value={editForm.eventTemplates.advancementDiscord || ""}
+                        <FullscreenEmbedBuilder id="f-+page-advancement-discord-1503" value={toBuilderValue(editForm.eventTemplates.advancementDiscord)}
                             previewTitle="Advancement" previewDescription="When a player earns an advancement" icon="fa-trophy"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={[...mcPlaceholders, { category: "Advancement", name: "%mc.advancement%", description: "Advancement title" }]}
                             guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: green embed with trophy emoji"
-                            onchange={(v) => { editForm.eventTemplates.advancementDiscord = typeof v === 'string' ? v : JSON.stringify(v); }} />
+                            onchange={(v) => { editForm.eventTemplates.advancementDiscord = serializeMessage(v); }} />
                     </div>
                 </div>
 
@@ -1922,7 +1923,7 @@
                 <div class="mt-6">
                     <label for="f-+page-custom-watch-embed-optional-1921" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Custom Watch Embed (optional)</label>
                     <FullscreenEmbedBuilder id="f-+page-custom-watch-embed-optional-1921"
-                        value={addForm.customEmbedTemplate}
+                        value={toBuilderValue(addForm.customEmbedTemplate)}
                         previewTitle="Server Status Embed"
                         previewDescription="Displayed in the watch channel"
                         icon="fa-server"
@@ -1933,7 +1934,7 @@
                         guildId={$currentGuild?.id}
                         user={data.user}
                         placeholder="Click to configure watch embed (leave empty for default)"
-                        onchange={(newValue) => { addForm.customEmbedTemplate = typeof newValue === 'string' ? newValue : JSON.stringify(newValue); }}
+                        onchange={(newValue) => { addForm.customEmbedTemplate = serializeMessage(newValue); }}
                     />
                 </div>
 

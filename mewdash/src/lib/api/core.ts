@@ -4,6 +4,39 @@ import { get } from "svelte/store";
 import { currentInstance } from "$lib/stores/instanceStore";
 
 /**
+ * A non-2xx response from the bot API. Carries the status and the parsed error
+ * body alongside the message, so callers can branch on either.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+  readonly error: unknown;
+
+  constructor(message: string, status: number, body: unknown, error: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+    this.error = error;
+  }
+}
+
+/**
+ * Pulls a human-readable message out of the shapes the `/api` proxy produces for
+ * failed requests, falling back to the raw body and then to the status code.
+ */
+function errorMessageFrom(parsed: any, responseText: string, status: number): string {
+  const error = parsed?.error;
+
+  if (typeof error === "string" && error.trim()) return error;
+  if (typeof error?.message === "string" && error.message.trim()) return error.message;
+  if (typeof parsed?.message === "string" && parsed.message.trim()) return parsed.message;
+  if (responseText.trim()) return responseText.trim().slice(0, 500);
+
+  return `Request failed with status ${status}`;
+}
+
+/**
  * Makes an API request to the Mewdeko backend.
  *
  * The destination is identified by the selected instance's port only; the
@@ -39,9 +72,29 @@ export async function apiRequest<T>(
 
   const responseText = await response.text();
 
-  try {
-    return JSONbig.parse(responseText) as T;
-  } catch (err) {
-    throw new Error("Failed to parse JSON response.", { cause: err });
+  let parsed: any = null;
+  let parseError: unknown = null;
+
+  if (responseText) {
+    try {
+      parsed = JSONbig.parse(responseText);
+    } catch (err) {
+      parseError = err;
+    }
   }
+
+  if (!response.ok) {
+    throw new ApiError(
+      errorMessageFrom(parsed, responseText, response.status),
+      response.status,
+      parseError ? responseText : parsed,
+      parsed?.error,
+    );
+  }
+
+  if (parseError) {
+    throw new Error("Failed to parse JSON response.", { cause: parseError });
+  }
+
+  return parsed as T;
 }

@@ -16,6 +16,19 @@
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import { parseStoredMessage, toBuilderValue } from "$lib/utils/embedMessage";
+
+  /**
+   * One-line description of a trigger response for the collapsed row. Embed-only
+   * responses have no text content, so they get a label instead of raw JSON.
+   */
+  function summarizeResponse(response: string | Record<string, any> | null): string {
+    const parsed = parseStoredMessage(response);
+    if (parsed.content) return parsed.content;
+    if (parsed.embeds.length > 0) return `[${parsed.embeds.length} embed${parsed.embeds.length > 1 ? "s" : ""}]`;
+    if (parsed.componentRows.length > 0) return "[components]";
+    return "";
+  }
 
   interface Props {
         data: PageData;
@@ -1134,7 +1147,7 @@
                   <div class="flex items-center justify-between gap-4">
                     <div class="flex-1 min-w-0">
                       <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1" style="color: {colors.text}">
-                        "{trigger.trigger}" → "{trigger.response}"
+                        "{trigger.trigger}" → "{summarizeResponse(trigger.response)}"
                       </h3>
                       <div class="text-sm" style="color: {colors.muted}">
                         Used {trigger.useCount || 0} times
@@ -1194,7 +1207,7 @@
                           </label>
 
                           <FullscreenEmbedBuilder id="f-+page-response-message-1191"
-                            value={trigger.response}
+                            value={toBuilderValue(trigger.response)}
                             previewTitle="Trigger Response"
                             previewDescription="Bot's response to this trigger"
                             icon="fa-comment"

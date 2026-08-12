@@ -25,6 +25,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import { toBuilderValue } from "$lib/utils/embedMessage";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -1148,7 +1149,7 @@
                   <!-- Use FullscreenEmbedBuilder as read-only preview -->
                   <div class="[&_button]:pointer-events-none">
                     <FullscreenEmbedBuilder
-                      value={JSON.parse(repeater.message)}
+                      value={toBuilderValue(repeater.message)}
                       previewTitle="Message Preview"
                       previewDescription="Click Edit to modify"
                       placeholder="No message content"

@@ -10,6 +10,8 @@
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
+    import { parseStoredMessage } from "$lib/utils/embedMessage";
 
     // Component state
     let loading = $state(false);
@@ -261,7 +263,7 @@
                                     <button aria-label="Delete feed"
                                             class="p-2 rounded-lg transition-all hover:scale-110"
                                             style="background: #ef444420; color: #ef4444;"
-                                            onclick={() => removeFeed(feed.id)}
+                                            onclick={() => removeFeed(feed.index)}
                                     >
                                         <i class="fa-solid fa-circle-xmark" style="font-size: 16px;"></i>
                                     </button>
@@ -282,7 +284,7 @@
                                               aria-busy={saving}
                                               class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] focus:outline-hidden focus:ring-2 focus:ring-offset-2"
                                               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
-                                              onclick={() => updateFeedMessage(feed.id)}
+                                              onclick={() => updateFeedMessage(feed.index)}
                                                     disabled={saving}
                                             >
                                               <i class="fa-solid fa-floppy-disk {saving ? 'fa-spin' : ''}"
@@ -300,9 +302,16 @@
                                         </div>
                                     </div>
                                 {:else if feed.message}
+                                    {@const preview = parseStoredMessage(feed.message)}
                                     <div class="border-t pt-3" style="border-color: {$colorStore.primary}20;">
                                         <div class="text-sm p-2 rounded-lg" style="background: {$colorStore.primary}05; color: {$colorStore.text}">
-                                            {feed.message}
+                                            <PreviewCard
+                                                content={preview.content}
+                                                embeds={preview.embeds}
+                                                componentRows={preview.componentRows}
+                                                guildId={$currentGuild?.id}
+                                                showEmpty={false}
+                                            />
                                         </div>
                                     </div>
                                 {/if}
