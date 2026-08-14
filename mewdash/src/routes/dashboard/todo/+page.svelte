@@ -406,7 +406,7 @@
   {#if error}
     <div class="mb-8 p-4 rounded-2xl" style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;">
       <div class="flex items-center gap-2">
-        <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 16px;"></i>
         <span>{error}</span>
       </div>
@@ -429,7 +429,7 @@
         action: () => showFilters = !showFilters
       }
     ]}
-    icon="fa-list"
+    icon="fa-list-ul"
     subtitle="Organize and track your server's collaborative tasks"
     guildName={$currentGuild?.name || "Dashboard"}
     title="Todo Lists"
@@ -524,7 +524,7 @@
       <div class="text-center py-20">
         <div class="inline-flex p-6 rounded-3xl mb-6" 
              style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}15);">
-          <i class="fa-utility-duo fa-regular fa-list"
+          <i class="fa-utility-duo fa-regular fa-list-ul"
              style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 64px;"></i>
         </div>
         <h3 class="text-2xl font-bold mb-4" style="color: {$colorStore.text}">
@@ -783,7 +783,7 @@
           <div class="space-y-3">
             {#if filteredItems.length === 0}
               <div class="text-center py-12">
-                <i class="fa-utility-duo fa-regular fa-square-check"
+                <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                 <h3 class="text-lg font-semibold mb-2" style="color: {$colorStore.text}">
                   {todoItems.length === 0 ? "No Items Yet" : "No Items Match Filters"}

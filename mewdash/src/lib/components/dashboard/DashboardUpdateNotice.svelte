@@ -35,7 +35,7 @@
       New
     </span>
     <span class="text-sm" style="color: {$colorStore.text}">
-      <strong>{update.title}</strong> — {update.summary}
+      <strong>{update.title}</strong>: {update.summary}
     </span>
     <a class="ml-2 whitespace-nowrap text-sm font-semibold hover:opacity-70" href={update.href} style="color: {$colorStore.primary}">
       {update.action} →

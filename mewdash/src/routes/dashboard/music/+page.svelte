@@ -1061,7 +1061,7 @@
                 style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);
                        color: {colors.primary};"
               >
-                <i class="fa-utility-duo fa-regular fa-headset" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
+                <i class="fa-utility-duo fa-regular fa-headphones" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
               </div>
               <h2 class="text-xl font-bold" style="color: {colors.text}">Voice Channel TTS</h2>
             </div>
@@ -1224,7 +1224,7 @@
               style="background: linear-gradient(135deg, {colors.accent}20, {colors.primary}20);
                      color: {colors.accent};"
             >
-              <i class="fa-utility-duo fa-regular fa-user-slash" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-user-xmark" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">Blocked TTS Users</h2>
           </div>

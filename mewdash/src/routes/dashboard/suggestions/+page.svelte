@@ -824,7 +824,7 @@
         <div class=" rounded-xl border p-6 transition-all"
              style="background: #ef444410; border-color: #ef444430;">
           <div class="flex items-center gap-3">
-            <i class="fa-utility-duo fa-regular fa-triangle-exclamation"
+            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             <span style="color: #ef4444">{error}</span>
           </div>
@@ -1258,7 +1258,7 @@
                 allowContent={true}
                 additionalPlaceholders={suggestionPlaceholders}
                 placeholder="Click to configure the deny message"
-                icon="fa-times-circle"
+                icon="fa-close"
                 guildId={$currentGuild?.id}
                 user={data.user}
               />
@@ -1557,7 +1557,7 @@
                 bind:value={suggestButtonMessage}
                 previewTitle="Button Message"
                 previewDescription="Configure the message sent when users click the suggestion button"
-                icon="fa-comment-dots"
+                icon="fa-comments"
                 allowContent={true}
                 allowComponents={false}
                 additionalPlaceholders={suggestionPlaceholders}

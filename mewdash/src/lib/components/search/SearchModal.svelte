@@ -359,7 +359,7 @@
                 <!-- Keyboard hint -->
                 {#if index === selectedIndex}
                     <div class="hidden md:flex items-center gap-1 text-xs shrink-0" style="color: {$colorStore.muted};">
-                    <i class="fa-utility-duo fa-regular fa-arrow-turn-down-left text-sm"
+                    <i class="fa-utility-duo fa-regular fa-keyboard text-sm"
                        style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
                   </div>
                 {/if}
@@ -383,7 +383,7 @@
             <span>Navigate</span>
           </div>
           <div class="hidden md:flex items-center gap-2">
-            <i class="fa-utility-duo fa-regular fa-arrow-turn-down-left text-xs"
+            <i class="fa-utility-duo fa-regular fa-keyboard text-xs"
                style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
             <span>Select</span>
           </div>

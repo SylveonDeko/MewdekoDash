@@ -565,7 +565,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-file-spreadsheet"
+            <i class="fa-utility-duo fa-regular fa-chart-simple"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
                aria-hidden="true"></i>
           </div>
@@ -673,7 +673,7 @@
             style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
                    color: {$colorStore.primary};"
           >
-            <i class="fa-utility-duo fa-regular fa-award"
+            <i class="fa-utility-duo fa-regular fa-trophy"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
                aria-hidden="true"></i>
           </div>

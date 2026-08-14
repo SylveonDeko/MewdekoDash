@@ -63,7 +63,7 @@
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-      <i class="fa-utility-duo fa-regular fa-at"
+      <i class="fa-utility-duo fa-regular fa-face-smile"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reaction Roles</h2>
@@ -76,7 +76,7 @@
 
     {#if !reactionRoles.success || reactionRoles.reactionRoles.length === 0}
       <div class="text-center py-8">
-        <i class="fa-utility-duo fa-regular fa-at"
+        <i class="fa-utility-duo fa-regular fa-face-smile"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
         <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">No reaction roles configured</p>
         <p class="text-sm" style="color: {$colorStore.muted}">Set up reaction-based role assignment</p>

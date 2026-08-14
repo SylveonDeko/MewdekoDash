@@ -367,7 +367,7 @@
   {actionButtons}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
-  icon="fa-clipboard-list"
+  icon="fa-clipboard-check"
   ontabChange={handleTabChange}
   subtitle="Create and manage custom forms for your community"
   {tabs}

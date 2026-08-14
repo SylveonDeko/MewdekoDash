@@ -193,7 +193,7 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                    style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {:else}
                 <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -339,7 +339,7 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add RSS Feed</h2>
                 </div>
 
@@ -407,7 +407,7 @@
                     />
 
                     <StatCard
-                            icon="fa-hashtag"
+                            icon="fa-list-numeric"
                             label="Unique Feeds"
                             value={feedUrls.length}
                             subtitle="different sources"
@@ -461,7 +461,7 @@
                 {/if}
             {:else}
                 <div class="text-center py-12">
-                    <i class="fa-utility-duo fa-regular fa-chart-column" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                     <p style="color: {$colorStore.muted}">
                         Feed statistics will appear here once you add RSS feeds.

@@ -416,7 +416,7 @@
   ] : []}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
-  icon="fa-hashtag"
+  icon="fa-list-numeric"
   statusMessages={statusMessageContent}
   subtitle="Manage counting games and competitions in your server"
   tabs={[
@@ -496,7 +496,7 @@
       <!-- Existing Channels -->
       {#if countingChannels.length === 0}
         <div class="text-center py-12">
-          <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+          <i class="fa-utility-duo fa-regular fa-list-numeric" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
           <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">No counting channels</h3>
           <p style="color: {$colorStore.muted}">Setup your first counting channel to get started</p>
         </div>
@@ -527,7 +527,7 @@
                 <!-- Header Row -->
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-list-numeric" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h3 class="font-medium truncate" style="color: {$colorStore.text}">{channel.channelName}</h3>
                     <span class="px-2 py-1 rounded-full text-xs whitespace-nowrap" style="background: {getChannelStatus(channel).color}20; color: {getChannelStatus(channel).color};">
                       {getChannelStatus(channel).text}
@@ -778,7 +778,7 @@
               <p class="text-sm" style="color: {$colorStore.muted}">Current Number</p>
               <p class="text-2xl font-bold" style="color: {$colorStore.text}">{formatNumber(channelStats.channel.currentNumber)}</p>
             </div>
-            <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
+            <i class="fa-utility-duo fa-regular fa-list-numeric" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           </div>
         </div>
 
@@ -801,7 +801,7 @@
                 <p class="text-2xl font-bold"
                    style="color: {$colorStore.text}">{Number(channelStats.averageAccuracy || 0).toFixed(1)}%</p>
             </div>
-            <i class="fa-utility-duo fa-regular fa-bullseye" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+            <i class="fa-utility-duo fa-regular fa-gauge" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           </div>
         </div>
 

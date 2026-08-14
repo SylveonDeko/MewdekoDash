@@ -875,7 +875,7 @@
         <i class="fa-utility-duo fa-regular fa-circle-check"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
       {:else if messageType === 'error'}
-        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
       {:else}
         <i class="fa-utility-duo fa-regular fa-bell"
@@ -1153,7 +1153,7 @@
                       previewTitle="Message Preview"
                       previewDescription="Click Edit to modify"
                       placeholder="No message content"
-                      icon="fa-message"
+                      icon="fa-comment"
                       allowContent={false}
                       allowMultipleEmbeds={false}
                       allowComponents={false}

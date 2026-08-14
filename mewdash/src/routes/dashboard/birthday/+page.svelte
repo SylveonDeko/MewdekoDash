@@ -337,7 +337,7 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                    style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {:else}
                 <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -650,7 +650,7 @@
                             <div class="flex items-center justify-between p-3 rounded-xl"
                                  style="background: {$colorStore.primary}08;">
                                 <div class="flex items-center gap-3">
-                                    <i class="fa-utility-duo fa-regular fa-at" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                                    <i class="fa-utility-duo fa-regular fa-bell-ring" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                                     <div>
                                         <div class="font-medium" style="color: {$colorStore.text}">Ping Role</div>
                                         <div class="text-sm" style="color: {$colorStore.muted}">Ping specified role with announcements</div>
@@ -897,7 +897,7 @@
                     />
                 {:else}
                     <div class="col-span-full text-center py-12">
-                        <i class="fa-utility-duo fa-regular fa-chart-column" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5;"></i>
+                        <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5;"></i>
                         <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                         <p style="color: {$colorStore.muted}">
                             Birthday statistics will appear here once the system is configured.

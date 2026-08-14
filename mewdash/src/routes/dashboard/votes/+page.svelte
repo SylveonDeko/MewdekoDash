@@ -249,7 +249,7 @@
         <i class="fa-utility-duo fa-regular fa-circle-check"
            style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
       {:else if messageType === 'error'}
-        <i class="fa-utility-duo fa-regular fa-circle-xmark"
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation"
            style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
       {:else}
         <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -265,7 +265,7 @@
   {actionButtons}
   bind:activeTab
   guildName={$currentGuild?.name || "Dashboard"}
-  icon="fa-check-to-slot"
+  icon="fa-circle-check"
   statusMessages={statusMessageContent}
   subtitle="Configure voting rewards and tracking"
   {tabs}
@@ -341,7 +341,7 @@
                      style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
                     border-color: {$colorStore.primary}30;">
                     <div class="flex items-center gap-3 mb-6">
-                      <i class="fa-utility-duo fa-regular fa-message"
+                      <i class="fa-utility-duo fa-regular fa-comment"
                          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                         <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Message</h2>
                     </div>
@@ -386,7 +386,7 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                  <i class="fa-utility-duo fa-regular fa-plus"
+                  <i class="fa-utility-duo fa-regular fa-circle-plus"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Vote Role</h2>
                 </div>
@@ -503,7 +503,7 @@
         <div class="w-full" in:fade={{ duration: 200 }}>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
-                  icon="fa-check-to-slot"
+                  icon="fa-circle-check"
                         label="Total Votes"
                         value={votes.length}
                         subtitle="all time"
@@ -535,7 +535,7 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                  <i class="fa-utility-duo fa-regular fa-chart-line"
+                  <i class="fa-utility-duo fa-regular fa-chart-simple"
                      style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Vote Leaderboard</h2>
                 </div>

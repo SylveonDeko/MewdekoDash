@@ -694,7 +694,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           id: "counting",
           title: "Counting Game",
           description: "Count to infinity (or chaos ensues)",
-          icon: "fa-utility-duo fa-regular fa-hashtag",
+          icon: "fa-utility-duo fa-regular fa-list-numeric",
           recommended: false,
           difficulty: "easy" as const,
           setupTime: "1 min",

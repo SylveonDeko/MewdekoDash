@@ -38,7 +38,7 @@
 </script>
 
 <DashboardPageLayout
-  icon="fa-chart-bar"
+  icon="fa-chart-simple"
   subtitle="Monitor system resources, method performance, event processing, and module metrics"
   title="Performance"
   guildName="Bot Performance Dashboard"

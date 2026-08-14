@@ -50,7 +50,7 @@
     xpStats: null,
     reputation: { totalRep: 0, rank: 0, totalGiven: 0, totalReceived: 0 },
     suggestions: [],
-    currency: { balance: 0, recentTransactions: [] },
+    currency: { balance: 0, bank: 0, netWorth: 0, recentTransactions: [] },
     giveaways: [],
     reminders: [],
     invites: { inviteCount: 0, invitedUsers: [] },
@@ -143,7 +143,7 @@
           totalRep: 0, rank: 0, totalGiven: 0, totalReceived: 0
         })),
         meApi.getMySuggestions(selectedGuild.id, userId).catch(() => []),
-        meApi.getMyCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, recentTransactions: [] })),
+        meApi.getMyCurrency(selectedGuild.id, userId).catch(() => ({ balance: 0, bank: 0, netWorth: 0, recentTransactions: [] })),
         meApi.getMyGiveaways(selectedGuild.id, userId).catch(() => []),
         meApi.getMyReminders(selectedGuild.id, userId).catch(() => []),
         meApi.getMyInvites(selectedGuild.id, userId).catch(() => ({ inviteCount: 0, invitedUsers: [] })),
@@ -406,7 +406,7 @@
       xpStats: null,
       reputation: { totalRep: 0, rank: 0, totalGiven: 0, totalReceived: 0 },
       suggestions: [],
-      currency: { balance: 0, recentTransactions: [] },
+      currency: { balance: 0, bank: 0, netWorth: 0, recentTransactions: [] },
       giveaways: [],
       reminders: [],
       invites: { inviteCount: 0, invitedUsers: [] },
@@ -1341,7 +1341,7 @@
             <!-- Message Stats -->
             <div class="p-4 rounded-xl text-center border"
                  style="background: {$colorStore.accent}08; border-color: {$colorStore.accent}20;">
-              <i class="fa-utility-duo fa-regular fa-hashtag text-2xl mx-auto mb-2 block"
+              <i class="fa-utility-duo fa-regular fa-list-numeric text-2xl mx-auto mb-2 block"
                  style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
               <div class="text-xl font-bold" style="color: {$colorStore.text}">{serverData.messages.totalMessages?.toLocaleString() || '0'}</div>
               <div class="text-sm" style="color: {$colorStore.muted}">Messages</div>
@@ -1410,10 +1410,17 @@
                         border-color: {$colorStore.primary}30;
                         box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-hashtag text-xl"
+                <i class="fa-utility-duo fa-regular fa-list-numeric text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
                 Suggestions ({serverData.suggestions.length})
               </h3>
+
+              {#if serverData.currency.bank}
+                <div class="text-xs mb-3" style="color: {$colorStore.muted}">
+                  {serverData.currency.balance.toLocaleString()} in wallet ·
+                  {serverData.currency.bank.toLocaleString()} banked
+                </div>
+              {/if}
 
               <div class="space-y-2 max-h-32 overflow-y-auto">
                 {#each serverData.suggestions.slice(0, 5) as suggestion}
@@ -1450,7 +1457,7 @@
               <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
                 <i class="fa-utility-duo fa-regular fa-star text-xl"
                    style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                Currency: {serverData.currency.balance.toLocaleString()}
+                Currency: {(serverData.currency.netWorth ?? serverData.currency.balance).toLocaleString()}
               </h3>
 
               <div class="space-y-2 max-h-32 overflow-y-auto">

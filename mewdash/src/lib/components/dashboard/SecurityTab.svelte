@@ -181,7 +181,7 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="p-2 rounded-lg"
                style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <i class="fa-utility-duo fa-regular fa-chart-line text-xl"
+            <i class="fa-utility-duo fa-regular fa-chart-simple text-xl"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           </div>
           <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Recent Actions</h2>

@@ -539,7 +539,7 @@
         {:else}
           <div class="p-2 rounded-lg" style="background: {$colorStore.primary}08;">
             <div class="flex items-center gap-2 mb-2">
-              <i class="fa-utility-duo fa-regular fa-hashtag text-sm"
+              <i class="fa-utility-duo fa-regular fa-list-numeric text-sm"
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               <span class="text-sm font-medium" style="color: {$colorStore.text}">
                 #{topCountingChannel.channelName}

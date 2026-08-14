@@ -26,7 +26,7 @@ export const allDashboardFeatures: NavigationItem[] = [
   },
   {
     label: "Audit Log",
-    icon: "fa-utility-duo fa-regular fa-clipboard-list-check",
+    icon: "fa-utility-duo fa-regular fa-clipboard-check",
     href: "/dashboard/auditlog",
     category: "Security",
     description: "Who accessed the dashboard, what they changed and viewed",
@@ -61,10 +61,17 @@ export const allDashboardFeatures: NavigationItem[] = [
   },
   {
     label: "Counting",
-    icon: "fa-utility-duo fa-regular fa-hashtag",
+    icon: "fa-utility-duo fa-regular fa-list-numeric",
     href: "/dashboard/counting",
     category: "Community",
     description: "Counting game channel",
+  },
+  {
+    label: "Currency",
+    icon: "fa-utility-duo fa-regular fa-money-bill",
+    href: "/dashboard/currency",
+    category: "Entertainment",
+    description: "Economy tuning, shop, balances and payout analytics",
   },
   {
     label: "Minecraft",

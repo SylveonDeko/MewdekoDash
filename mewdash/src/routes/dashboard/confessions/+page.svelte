@@ -224,7 +224,7 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                    style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {:else}
                 <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -469,7 +469,7 @@
                     />
 
                     <StatCard
-                            icon="fa-hashtag"
+                            icon="fa-list-numeric"
                             label="Latest Number"
                             value={Number(stats.lastConfessionNumber)}
                             subtitle="confession ID"
@@ -479,7 +479,7 @@
                 </div>
             {:else}
                 <div class="text-center py-12">
-                    <i class="fa-utility-duo fa-regular fa-chart-column" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.primary}; font-size: 64px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
                     <h3 class="text-xl font-semibold mb-2" style="color: {$colorStore.text}">No Statistics Available</h3>
                     <p style="color: {$colorStore.muted}">
                         Confession statistics will appear here once the system is configured.

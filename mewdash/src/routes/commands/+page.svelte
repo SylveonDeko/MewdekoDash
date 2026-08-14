@@ -224,7 +224,7 @@
         <div class="flex items-center justify-center flex-1" in:fade={{ duration: 300 }}>
           <div class="text-center max-w-md">
             <div class="mb-6">
-              <i class="fa-utility-duo fa-regular fa-robot text-7xl mx-auto mb-4 block"
+              <i class="fa-utility-duo fa-regular fa-microchip text-7xl mx-auto mb-4 block"
                  style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             </div>
             <h3 class="text-2xl font-bold mb-3" style="color: {$colorStore.text};">

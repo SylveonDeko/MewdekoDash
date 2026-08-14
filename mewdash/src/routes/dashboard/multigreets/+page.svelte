@@ -337,7 +337,7 @@
         role="alert"
       >
         <div class="flex items-center gap-3">
-          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
           <div style="color: {$colorStore.accent}">
             <div class="font-semibold text-lg">Error Occurred</div>
             <div class="text-sm mt-1" style="color: {$colorStore.accent}90">{error}</div>
@@ -352,7 +352,7 @@
                border-color: {$colorStore.primary}30;"
       >
         <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" style="color: {$colorStore.text}">
-          <i class="fa-utility-duo fa-regular fa-plus h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
+          <i class="fa-utility-duo fa-regular fa-circle-plus h-5 w-5" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
           Add New Greet
         </h2>
         <div class="flex flex-col sm:flex-row gap-3">

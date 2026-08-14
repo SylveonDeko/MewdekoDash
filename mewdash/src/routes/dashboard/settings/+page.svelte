@@ -159,7 +159,7 @@
       style="background: {$colorStore.accent}10;"
       role="alert"
     >
-      <i class="fa-utility-duo fa-regular fa-circle-xmark"
+      <i class="fa-utility-duo fa-regular fa-circle-exclamation"
          style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
       <p style="color: {$colorStore.accent}">{error}</p>
     </div>

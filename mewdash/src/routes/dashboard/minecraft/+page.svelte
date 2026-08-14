@@ -763,7 +763,7 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                    style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {:else}
                 <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -924,7 +924,7 @@
                                     value={toBuilderValue(editForm.customOfflineMessage)}
                                     previewTitle="Offline Alert"
                                     previewDescription="Sent when the server goes offline"
-                                    icon="fa-circle-xmark"
+                                    icon="fa-circle-exclamation"
                                     allowContent={true}
                                     allowMultipleEmbeds={false}
                                     allowComponents={true}
@@ -1439,7 +1439,7 @@
                     <div>
                         <label for="f-+page-server-offline-alert-1438" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Server Offline Alert</label>
                         <FullscreenEmbedBuilder id="f-+page-server-offline-alert-1438" value={toBuilderValue(editForm.customOfflineMessage)}
-                            previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-xmark"
+                            previewTitle="Offline Alert" previewDescription="Sent when the server goes offline" icon="fa-circle-exclamation"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Click to configure offline alert (leave empty for default)"
@@ -1458,7 +1458,7 @@
                     <div>
                         <label for="f-+page-player-join-discord-1457" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Join (Discord)</label>
                         <FullscreenEmbedBuilder id="f-+page-player-join-discord-1457" value={toBuilderValue(editForm.eventTemplates.joinDiscord)}
-                            previewTitle="Join Event" previewDescription="When a player joins" icon="fa-right-to-bracket"
+                            previewTitle="Join Event" previewDescription="When a player joins" icon="fa-sign-in"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: green embed with player name"
@@ -1467,7 +1467,7 @@
                     <div>
                         <label for="f-+page-player-leave-discord-1466" class="block text-xs font-medium mb-2" style="color: {$colorStore.muted}">Player Leave (Discord)</label>
                         <FullscreenEmbedBuilder id="f-+page-player-leave-discord-1466" value={toBuilderValue(editForm.eventTemplates.leaveDiscord)}
-                            previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-right-from-bracket"
+                            previewTitle="Leave Event" previewDescription="When a player leaves" icon="fa-sign-out"
                             allowContent={true} allowMultipleEmbeds={false} allowComponents={true}
                             additionalPlaceholders={mcPlaceholders} guildId={$currentGuild?.id} user={data.user}
                             placeholder="Default: red embed with player name"
@@ -1817,7 +1817,7 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Minecraft Server</h2>
                 </div>
 

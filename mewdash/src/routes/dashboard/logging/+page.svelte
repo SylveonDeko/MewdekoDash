@@ -317,7 +317,7 @@
   {:else if error}
     <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
       <div class="flex items-center gap-3">
-        <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+        <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
         <span style="color: #ef4444">{error}</span>
       </div>
     </div>
@@ -463,7 +463,7 @@
         <div class="rounded-xl border p-4 sm:p-6 transition-all"
                style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
           <div class="flex items-center gap-3 mb-4">
-            <i class="fa-utility-duo fa-regular fa-hashtag"
+            <i class="fa-utility-duo fa-regular fa-square"
                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
             <h3 class="text-base sm:text-lg font-bold" style="color: {$colorStore.text}">Active Channels
               ({activeChannelList.length})</h3>

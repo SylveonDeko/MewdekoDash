@@ -584,7 +584,7 @@
         {#if totalResults === 0}
           <div class="text-center py-16" in:fade={{ duration: 300 }}>
             <div class="mb-6">
-              <i class="fa-utility-duo fa-regular fa-robot text-6xl mx-auto mb-4 block"
+              <i class="fa-utility-duo fa-regular fa-microchip text-6xl mx-auto mb-4 block"
                  style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; --fa-primary-opacity: 0.5; --fa-secondary-opacity: 0.3;"></i>
             </div>
             <h3 class="text-2xl font-bold mb-3" style="color: {$colorStore.text};">

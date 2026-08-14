@@ -311,7 +311,7 @@
 <DashboardPageLayout
   category="Security"
   guildName={$currentGuild?.name || "Dashboard"}
-  icon="fa-utility-duo fa-regular fa-clipboard-list-check"
+  icon="fa-clipboard-check"
   subtitle="Who accessed the dashboard, what they changed, and what they viewed"
   title="Audit Log"
 >
@@ -356,9 +356,9 @@
     <button
       onclick={fetchAuditLog}
       class="rounded-xl px-4 min-h-[44px] font-medium transition-all hover:translate-y-[-1px]"
-      style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
     >
-      <i class="fa-utility-duo fa-regular fa-rotate mr-2"
+      <i class="fa-utility-duo fa-regular fa-arrows-rotate mr-2"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
       Refresh
     </button>

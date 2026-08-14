@@ -926,7 +926,7 @@
             {#if notificationType === 'success'}
               <i class="fa-utility-duo fa-regular fa-circle-check" style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else}
-              <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+              <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {/if}
             <span style="color: {notificationType === 'success' ? '#10b981' : '#ef4444'}">{notificationMessage}</span>
           </div>
@@ -945,7 +945,7 @@
   {:else if error}
     <div class="rounded-xl p-4 flex items-center gap-3"
          style="background: {colors.accent}10;" role="alert">
-      <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
+      <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {colors.accent}; --fa-secondary-color: {colors.primary}; font-size: 20px;"></i>
       <p style="color: {colors.accent}">{error}</p>
     </div>
   {:else}
@@ -962,7 +962,7 @@
           <div class="flex items-center gap-3 mb-6">
             <div class="p-3 rounded-xl"
                  style="background: linear-gradient(135deg, {colors.primary}20, {colors.secondary}20);">
-              <i class="fa-utility-duo fa-regular fa-plus" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {colors.primary}; --fa-secondary-color: {colors.secondary}; font-size: 24px;"></i>
             </div>
             <h2 class="text-xl font-bold" style="color: {colors.text}">Quick Setup</h2>
           </div>

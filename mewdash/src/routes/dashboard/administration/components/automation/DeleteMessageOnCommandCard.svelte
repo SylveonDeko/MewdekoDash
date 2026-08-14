@@ -80,7 +80,7 @@
     <div class="flex items-center gap-4">
       <div class="p-3 rounded-xl"
            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-        <i class="fa-utility-duo fa-regular fa-message-slash"
+        <i class="fa-utility-duo fa-regular fa-comment-slash"
            style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
       </div>
       <div>
@@ -207,7 +207,7 @@
     {/if}
   {:else}
     <div class="text-center py-8">
-      <i class="fa-utility-duo fa-regular fa-message-slash"
+      <i class="fa-utility-duo fa-regular fa-comment-slash"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 48px; opacity: 0.5;"></i>
       <p class="text-lg font-medium mt-4" style="color: {$colorStore.text}">Delete Message on Command Disabled</p>
       <p class="text-sm" style="color: {$colorStore.muted}">Enable to auto-delete command messages</p>

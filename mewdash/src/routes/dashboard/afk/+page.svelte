@@ -665,7 +665,7 @@
           style="background: {$colorStore.primary}10;"
         >
           <div class="flex items-center gap-2 mb-3">
-            <i class="fa-utility-duo fa-regular fa-hashtag"
+            <i class="fa-utility-duo fa-regular fa-square"
                style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
             <h3 class="font-semibold" style="color: {$colorStore.text}">Disabled Channels</h3>
           </div>

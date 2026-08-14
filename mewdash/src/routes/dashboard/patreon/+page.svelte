@@ -483,7 +483,7 @@
         in:fade
       >
         <div class="flex items-center gap-3 mb-2">
-          <i class="fa-utility-duo fa-regular fa-circle-xmark"
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation"
              style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
           <h3 class="text-lg font-semibold" style="color: {$colorStore.text};">Error</h3>
         </div>

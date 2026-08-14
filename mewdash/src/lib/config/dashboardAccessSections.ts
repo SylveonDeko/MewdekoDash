@@ -17,6 +17,7 @@ const sectionsByHref: Record<string, string[]> = {
   "/dashboard/chatsaver": ["Chat"],
   "/dashboard/confessions": ["Confessions"],
   "/dashboard/counting": ["Counting"],
+  "/dashboard/currency": ["Currency"],
   "/dashboard/minecraft": ["Minecraft"],
   "/dashboard/statchannels": ["StatChannel"],
   "/dashboard/customvoice": ["CustomVoice"],

@@ -186,7 +186,7 @@
                 <i class="fa-utility-duo fa-regular fa-circle-check"
                    style="--fa-primary-color: #10b981; --fa-secondary-color: #059669; font-size: 20px;"></i>
             {:else if messageType === 'error'}
-                <i class="fa-utility-duo fa-regular fa-circle-xmark"
+                <i class="fa-utility-duo fa-regular fa-circle-exclamation"
                    style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
             {:else}
                 <i class="fa-utility-duo fa-regular fa-circle-exclamation"
@@ -297,7 +297,7 @@
                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                         border-color: {$colorStore.primary}30;">
                 <div class="flex items-center gap-3 mb-6">
-                    <i class="fa-utility-duo fa-regular fa-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-circle-plus" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Add Stat Channel</h2>
                 </div>
 

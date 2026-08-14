@@ -11,6 +11,19 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "currency-economy",
+    label: "New in currency",
+    title: "A Real Economy",
+    summary: "Currency now has somewhere to go, ways to earn it, and numbers telling you whether any of it is working.",
+    details: [
+      "Open a shop selling roles, collectibles, or one-off rewards, and give balances a purpose beyond the leaderboard.",
+      "Members can work, commit crimes, bank their savings out of reach of robbery, and pay each other.",
+      "Tune every payout rate, cooldown and bet limit yourself, then check the analytics to see which games are quietly printing money."
+    ],
+    href: "/dashboard/currency",
+    action: "Open economy settings"
+  },
+  {
     id: "music-link-conversion",
     label: "New in music",
     title: "Music Link Conversion",

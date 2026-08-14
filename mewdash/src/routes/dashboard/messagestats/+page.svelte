@@ -451,7 +451,7 @@
 <DashboardPageLayout 
   title="Message Statistics"
   subtitle="Analyze server message activity and user engagement"
-  icon="fa-chart-column"
+  icon="fa-chart-simple"
   {tabs}
   {subTabs}
   bind:activeTab
@@ -473,7 +473,7 @@
     {:else if error}
       <div class="rounded-xl border p-6" style="border-color: #ef4444; background: #ef444410;">
         <div class="flex items-center gap-3">
-          <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
           <span style="color: #ef4444">{error}</span>
         </div>
       </div>
@@ -511,7 +511,7 @@
                 label="Least Active User"
                 value={leastActiveUser.username}
                 subtitle={`${formatNumber(leastActiveUser.totalMessages)} messages`}
-                icon="fa-user-clock"
+                icon="fa-clock"
                 iconColor="secondary"
               />
             {/if}
@@ -520,7 +520,7 @@
                 label="Least Active Channel"
                 value={`#${leastActiveChannel.channelName}`}
                 subtitle={`${formatNumber(leastActiveChannel.totalMessages)} messages`}
-                icon="fa-hashtag"
+                icon="fa-square"
                 iconColor="secondary"
               />
             {/if}
@@ -632,7 +632,7 @@
                 <!-- Mobile: Top row with icon and channel info -->
                 <div class="flex items-center gap-3 flex-1">
                     <div class="shrink-0">
-                    <i class="fa-utility-duo fa-regular fa-hashtag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-square" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
                   </div>
                   
                   <div class="flex-1 min-w-0">

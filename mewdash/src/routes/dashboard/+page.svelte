@@ -658,7 +658,7 @@
                 <div class="p-6 rounded-xl mb-6 transition-all" role="alert"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}40;">
                     <div class="flex items-center gap-3">
-                        <i class="fa-utility-duo fa-regular fa-robot text-2xl"
+                        <i class="fa-utility-duo fa-regular fa-microchip text-2xl"
                            style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.accent};"></i>
                         <div style="color: {$colorStore.accent}">
                             <div class="font-semibold text-lg">Error Occurred</div>

@@ -531,7 +531,7 @@
             bind:value={panelEmbed}
             previewTitle="Panel Embed"
             previewDescription="Embed shown in the ticket panel"
-            icon="fa-window-maximize"
+            icon="fa-rectangle"
             allowContent={false}
             maxEmbeds={10}
             allowComponents={false}
@@ -2097,7 +2097,7 @@
               bind:value={tempPanelEmbed}
               previewTitle="Panel Embed"
               previewDescription="Embed shown in the ticket panel"
-              icon="fa-window-maximize"
+              icon="fa-rectangle"
               allowContent={false}
 
               maxEmbeds={10}

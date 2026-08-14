@@ -49,7 +49,7 @@
   <div class="flex items-center gap-4 mb-6">
     <div class="p-3 rounded-xl"
          style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-      <i class="fa-utility-duo fa-regular fa-chart-line"
+      <i class="fa-utility-duo fa-regular fa-chart-simple"
          style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"></i>
     </div>
     <div>

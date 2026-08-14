@@ -832,7 +832,7 @@
               <p class="text-xl font-bold mt-1 break-words" style="color: {$colorStore.text}">{status?.botDisplayName || status?.botUsername || "Missing"}</p>
             </div>
             <div class="p-3 rounded-xl shrink-0" style="background: {$colorStore.secondary}20;">
-              <i class="fa-utility-duo fa-regular fa-robot" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
+              <i class="fa-utility-duo fa-regular fa-microchip" style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 24px;"></i>
             </div>
           </div>
           <p class="mt-3 leading-relaxed text-sm" style="color: {$colorStore.muted}">{status?.hasBotAccount ? "Sends chat and owns chat subscriptions." : "Authorize the Twitch account Mewdeko should speak as."}</p>
@@ -902,7 +902,7 @@
 
           <section class="rounded-xl border p-4" style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30">
             <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
-              <i class="fa-utility-duo fa-regular fa-chart-line" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
+              <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
               Health
             </h2>
             <dl class="grid gap-2.5 mt-3">
@@ -916,7 +916,7 @@
                 <summary class="cursor-pointer font-bold text-sm" style="color: {$colorStore.muted}">Advanced diagnostics</summary>
                 <div class="mt-3 grid gap-1.5">
                   <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
-                    <i class="fa-utility-duo fa-regular fa-triangle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
+                    <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
                     Missing scopes
                   </h3>
                   <p class="leading-relaxed" style="color: {$colorStore.muted}">
@@ -1144,7 +1144,7 @@
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div>
               <h2 class="text-lg font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-rotate" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
+                <i class="fa-utility-duo fa-regular fa-arrows-rotate" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
                 Repeating messages
               </h2>
               <p class="mt-1.5 leading-relaxed" style="color: {$colorStore.muted}">Rotate chat reminders with online-only and chat-activity guards.</p>
@@ -1318,7 +1318,7 @@
                 bind:value={goLiveMessageValue}
                 previewTitle="Go-Live Message"
                 previewDescription="Sent to the go-live channel when the connected streamer goes live"
-                icon="fa-tower-broadcast"
+                icon="fa-signal"
                 allowContent={true}
                 allowMultipleEmbeds={true}
                 maxEmbeds={10}
@@ -1516,7 +1516,7 @@
 
             <div class="grid gap-2.5 p-3.5 border rounded-xl" style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08">
               <h3 class="text-base font-bold m-0 flex items-center gap-2" style="color: {$colorStore.text}">
-                <i class="fa-utility-duo fa-regular fa-chart-bar" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
+                <i class="fa-utility-duo fa-regular fa-chart-simple" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 16px;"></i>
                 Poll
               </h3>
               <input bind:value={operatorForm.pollTitle} placeholder="Poll title" class="w-full border rounded-lg p-3" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}" />
