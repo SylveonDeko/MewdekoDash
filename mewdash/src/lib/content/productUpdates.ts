@@ -11,6 +11,19 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "channel-access",
+    label: "New in server setup",
+    title: "Vote People Into Locked Channels",
+    summary: "Members apply for a private channel, and the people already inside vote on whether to let them in.",
+    details: [
+      "Post an apply button anywhere and ask up to five questions on the application form.",
+      "Approve at a threshold of votes, hand out a role or add the applicant to the channel directly, and set a deadline for the vote.",
+      "Hide the applicant's name until the vote closes, require a minimum account age, and block repeat applicants."
+    ],
+    href: "/dashboard/channel-access",
+    action: "Set up channel access"
+  },
+  {
     id: "currency-economy",
     label: "New in currency",
     title: "A Real Economy",

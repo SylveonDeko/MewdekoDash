@@ -6,7 +6,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import LatestProductUpdate from "$lib/components/home/LatestProductUpdate.svelte";
-  import { latestProductUpdate } from "$lib/content/productUpdates";
+  import { productUpdates } from "$lib/content/productUpdates";
 
   let {data} = $props();
 
@@ -653,7 +653,7 @@
     {/if}
   </header>
 
-  <LatestProductUpdate update={latestProductUpdate} />
+  <LatestProductUpdate updates={productUpdates} />
 
   <!-- By The Numbers Section -->
   <section
