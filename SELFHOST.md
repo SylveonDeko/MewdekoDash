@@ -147,6 +147,30 @@ server {
 
 Update `DISCORD_REDIRECT_URI` in `.env` to match your public domain, and add it to the redirect list in the Discord Developer Portal.
 
+## Image uploads
+
+Parts of the dashboard let you upload an image rather than link one, such as the embed builder's
+"send as" persona avatars. These need no configuration and no public URL. The image is uploaded to
+Discord through the API and stored on the webhook that posts as that persona, so it works the same on
+a laptop as it does on a public server.
+
+One consequence worth knowing: a persona with an uploaded avatar claims one webhook per channel it
+posts in, created the first time it is used there. Discord allows 15 webhooks per channel, so a
+channel used by more than a handful of upload-avatar personas can hit that ceiling. You get a clear
+error if it happens. Personas with an avatar **URL** share a single webhook and never count against it.
+
+The dashboard shows avatar thumbnails by serving the stored image itself, which your browser can
+always reach. If you already run a static file host, you can point the bot at it to serve those
+thumbnails instead:
+
+```json
+"CdnPath": "/usr/share/nginx/cdn/",
+"CdnUrl": "https://cdn.yourdomain.com"
+```
+
+That is purely an optimisation for the dashboard's own previews. If the bot cannot write to `CdnPath`
+it logs the reason once and serves them itself. What Discord displays is unaffected either way.
+
 ## Docker
 
 See [DOCKER.md](DOCKER.md) for the dashboard image, its required credentials, and Docker Compose deployment alongside the bot.

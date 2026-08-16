@@ -23,7 +23,10 @@ const appHandle: Handle = async ({ event, resolve }) => {
     if (
       pathname.startsWith("/api/discord/callback") ||
       pathname.startsWith("/api/discord/login") ||
-      pathname.startsWith("/api/discord/logout")
+      pathname.startsWith("/api/discord/logout") ||
+      // Public, cacheable assets Discord itself fetches. Running these through the auth hook would
+      // stamp them no-store, and they have no user context to authenticate anyway.
+      pathname.startsWith("/cdn/")
     ) {
       return resolve(event);
     }

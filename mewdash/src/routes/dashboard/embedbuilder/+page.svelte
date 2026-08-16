@@ -6,8 +6,13 @@
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
   import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
-  import type { SavedEmbed } from "$lib/api/embeds/models";
-  import { fade } from "svelte/transition";
+  import type {
+    EmbedPersona,
+    SavedEmbed,
+    SendableChannel,
+    SendEmbedResult
+  } from "$lib/api/embeds/models";
+  import { fade, fly } from "svelte/transition";
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
 
@@ -15,6 +20,8 @@
   import EmbedEditor from "$lib/components/specialized/EmbedEditor.svelte";
   import ComponentEditor from "$lib/components/specialized/ComponentEditor.svelte";
   import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import PersonaManager from "$lib/components/specialized/PersonaManager.svelte";
   import ValidationCard from "$lib/components/specialized/ValidationCard.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
@@ -166,13 +173,32 @@
   let showDeleteConfirm = $state(false);
   let embedPendingDelete: SavedEmbed | null = $state(null);
 
+  // Send tab state
+  let sendChannels: SendableChannel[] = $state([]);
+  let loadingSendChannels = $state(false);
+  let sendChannelsError = $state("");
+  let selectedSendChannelId: string | null = $state(null);
+  let sendAsWebhook = $state(false);
+  let webhookUsername = $state("");
+  let webhookAvatarUrl = $state("");
+
+  // Saved "send as" personas
+  let personas: EmbedPersona[] = $state([]);
+  let loadingPersonas = $state(false);
+  let selectedPersonaId: number | null = $state(null);
+  let showPersonaManager = $state(false);
+  let sending = $state(false);
+  let lastSendResult: SendEmbedResult | null = $state(null);
+  let showSendConfirm = $state(false);
+
   // Main tab configuration for DashboardPageLayout
   const mainTabs = [
     { id: "templates", label: "Templates", icon: "fa-sparkles" },
     { id: "editor", label: "Editor", icon: "fa-layer-group" },
     { id: "components", label: "Components", icon: "fa-comment" },
     { id: "json", label: "JSON", icon: "fa-code" },
-    { id: "saved", label: "Saved", icon: "fa-floppy-disk" }
+    { id: "saved", label: "Saved", icon: "fa-floppy-disk" },
+    { id: "send", label: "Send", icon: "fa-paper-plane" }
   ];
 
 
@@ -434,6 +460,113 @@
     } catch (error) {
       logger.error('Failed to delete embed:', error);
       showNotificationMessage("Failed to delete embed", "error");
+    }
+  }
+
+  /**
+   * Loads the channels the logged-in user can actually see in the current guild. The bot resolves the
+   * permissions, so a user who was granted dashboard access but lacks Discord permissions gets a
+   * filtered list rather than every channel in the server.
+   */
+  async function loadSendableChannels(guildId: bigint) {
+    if (!data.user?.id) {
+      sendChannels = [];
+      sendChannelsError = "Log in to send messages";
+      return;
+    }
+
+    loadingSendChannels = true;
+    sendChannelsError = "";
+    try {
+      sendChannels = await embedsApi.getSendableChannels(guildId, data.user.id);
+      if (selectedSendChannelId && !sendChannels.some(channel => channel.id.toString() === selectedSendChannelId)) {
+        selectedSendChannelId = null;
+      }
+    } catch (error) {
+      logger.error("Failed to load sendable channels:", error);
+      sendChannels = [];
+      sendChannelsError = "Could not load channels. You may not have access to this server.";
+    } finally {
+      loadingSendChannels = false;
+    }
+  }
+
+  /**
+   * Loads the personas available for the current context: the user's own, plus any shared with the guild.
+   */
+  async function loadPersonas(guildId?: bigint) {
+    loadingPersonas = true;
+    try {
+      const [mine, shared] = await Promise.all([
+        data.user?.id ? embedsApi.getUserPersonas(data.user.id) : Promise.resolve([]),
+        guildId ? embedsApi.getGuildPersonas(guildId) : Promise.resolve([])
+      ]);
+
+      personas = [...shared, ...mine];
+      if (selectedPersonaId !== null && !personas.some(persona => persona.id === selectedPersonaId)) {
+        selectedPersonaId = null;
+      }
+    } catch (error) {
+      logger.error("Failed to load personas:", error);
+      personas = [];
+    } finally {
+      loadingPersonas = false;
+    }
+  }
+
+  /**
+   * Sends the current builder state to the selected channel, either as the bot or through a webhook.
+   * The bot re-checks every permission, so a rejection here is authoritative.
+   */
+  async function sendCurrentEmbed() {
+    showSendConfirm = false;
+
+    const guild = get(currentGuild);
+    if (!guild) {
+      showNotificationMessage("Select a server first", "error");
+      return;
+    }
+
+    if (!data.user?.id) {
+      showNotificationMessage("You must be logged in to send messages", "error");
+      return;
+    }
+
+    if (!selectedSendChannelId) {
+      showNotificationMessage("Pick a channel to send to", "error");
+      return;
+    }
+
+    const exportData = buildExportData();
+    if (Object.keys(exportData).length === 0) {
+      showNotificationMessage("Nothing to send yet", "error");
+      return;
+    }
+
+    sending = true;
+    try {
+      lastSendResult = await embedsApi.sendEmbed(BigInt(guild.id), {
+        userId: data.user.id,
+        channelId: BigInt(selectedSendChannelId),
+        jsonCode: JSON.stringify(exportData),
+        useWebhook: sendAsWebhook,
+        personaId: sendAsWebhook ? selectedPersonaId : null,
+        webhookUsername:
+          sendAsWebhook && !selectedPersonaId && webhookUsername.trim() ? webhookUsername.trim() : null,
+        webhookAvatarUrl:
+          sendAsWebhook && !selectedPersonaId && webhookAvatarUrl.trim() ? webhookAvatarUrl.trim() : null
+      });
+
+      showNotificationMessage(
+        lastSendResult.mentionsSuppressed
+          ? `Sent to #${lastSendResult.channelName}. Everyone and role mentions were stripped because you lack Mention Everyone there.`
+          : `Sent to #${lastSendResult.channelName}`
+      );
+    } catch (error: any) {
+      logger.error("Failed to send embed:", error);
+      showNotificationMessage(error?.message || "Failed to send message", "error");
+    } finally {
+      sending = false;
     }
   }
 
@@ -1349,8 +1482,58 @@
     } else if (activeMainTab === "saved") {
       const guild = get(currentGuild);
       loadSavedEmbeds(guild ? BigInt(guild.id) : undefined);
+    } else if (activeMainTab === "send") {
+      const guild = get(currentGuild);
+      if (guild) loadSendableChannels(BigInt(guild.id));
+      loadPersonas(guild ? BigInt(guild.id) : undefined);
     }
   }
+
+  let selectedPersona = $derived(personas.find(persona => persona.id === selectedPersonaId) ?? null);
+
+  // Only channels both the user and the bot can post to are selectable
+  let sendableChannelOptions = $derived(
+    sendChannels
+      .filter(channel => !channel.restriction)
+      .map(channel => ({
+        id: channel.id.toString(),
+        name: channel.categoryName ? `${channel.categoryName} / ${channel.name}` : channel.name
+      }))
+  );
+
+  // Channels the user can see but nobody can post to, shown so the gap is explained rather than hidden
+  let blockedChannels = $derived(sendChannels.filter(channel => channel.restriction));
+
+  let selectedSendChannel = $derived(
+    sendChannels.find(channel => channel.id.toString() === selectedSendChannelId) ?? null
+  );
+
+  // Webhook delivery needs Manage Webhooks for the user and the bot in the target channel
+  let webhookAvailable = $derived(
+    !!selectedSendChannel && selectedSendChannel.canUseWebhooks && selectedSendChannel.botCanUseWebhooks
+  );
+
+  // Missing Embed Links only blocks a send when the message actually carries an embed
+  let hasEmbedContent = $derived(
+    embeds.some(embed => embed.title || embed.description || embed.fields.length > 0)
+  );
+
+  let embedPermissionBlock = $derived(
+    !hasEmbedContent || !selectedSendChannel
+      ? null
+      : !selectedSendChannel.canEmbed
+        ? "You do not have the Embed Links permission in this channel."
+        : !selectedSendChannel.botCanEmbed
+          ? "The bot does not have the Embed Links permission in this channel."
+          : null
+  );
+
+  // Switching to a channel without webhook permissions must not leave webhook delivery armed
+  $effect(() => {
+    if (!webhookAvailable && sendAsWebhook) {
+      sendAsWebhook = false;
+    }
+  });
 
 
   $effect(() => {
@@ -1358,6 +1541,9 @@
             if (guild) {
               loadChatTriggers(BigInt(guild.id));
               loadSavedEmbeds(BigInt(guild.id));
+              selectedSendChannelId = null;
+              loadSendableChannels(BigInt(guild.id));
+              loadPersonas(BigInt(guild.id));
             }
         });
     });
@@ -1986,6 +2172,240 @@
             </div>
           </div>
 
+        {:else if activeMainTab === "send"}
+          <!-- Send Tab -->
+          <div class="space-y-6">
+            {#if !$currentGuild}
+              <p class="text-sm" style="color: {$colorStore.muted};">
+                Select a server from the sidebar to send this message.
+              </p>
+            {:else}
+              <div class="space-y-2">
+                <h3 class="text-base font-semibold" style="color: {$colorStore.text};">
+                  Send to {$currentGuild.name}
+                </h3>
+                <p class="text-xs" style="color: {$colorStore.muted};">
+                  Sends are recorded in the audit log.
+                </p>
+              </div>
+
+              <!-- Channel picker -->
+              <div class="space-y-2">
+                <span class="block text-sm font-medium" style="color: {$colorStore.text};">Channel</span>
+                {#if loadingSendChannels}
+                  <p class="text-sm" style="color: {$colorStore.muted};">Loading channels...</p>
+                {:else if sendChannelsError}
+                  <p class="text-sm" style="color: #ED4245;">{sendChannelsError}</p>
+                {:else if sendableChannelOptions.length === 0}
+                  <p class="text-sm" style="color: #ED4245;">
+                    There are no channels you and the bot can both post in.
+                  </p>
+                {:else}
+                  <DiscordSelector
+                    type="channel"
+                    options={sendableChannelOptions}
+                    bind:selected={selectedSendChannelId}
+                    placeholder="Select a channel"
+                    ariaLabel="Channel to send the message to"
+                  />
+                {/if}
+              </div>
+
+              <!-- Permissions for the selected channel -->
+              {#if selectedSendChannel}
+                <div
+                  class="p-4 rounded-lg border space-y-2"
+                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
+                  transition:fly={{ y: -8, duration: 200 }}
+                >
+                  <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
+                    Your permissions in #{selectedSendChannel.name}
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs" style="color: {$colorStore.muted};">
+                    <span>{selectedSendChannel.canSend ? "✓" : "✕"} Send messages</span>
+                    <span>{selectedSendChannel.canEmbed ? "✓" : "✕"} Send embeds</span>
+                    <span>{selectedSendChannel.canMentionEveryone ? "✓" : "✕"} Mention everyone and roles</span>
+                    <span>{selectedSendChannel.canUseWebhooks ? "✓" : "✕"} Manage webhooks</span>
+                  </div>
+                  {#if !selectedSendChannel.canMentionEveryone}
+                    <p class="text-xs" style="color: {$colorStore.muted};">
+                      Everyone, here, and role mentions will be stripped from this message.
+                    </p>
+                  {/if}
+                  {#if embedPermissionBlock}
+                    <p class="text-xs" style="color: #ED4245;">{embedPermissionBlock}</p>
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Webhook options, revealed once a channel is chosen -->
+              {#if selectedSendChannel}
+                <div
+                  class="p-4 rounded-lg border space-y-3"
+                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30;"
+                  transition:fly={{ y: -8, duration: 200 }}
+                >
+                  <label class="flex items-center gap-2 text-sm min-h-[44px]" style="color: {$colorStore.text};">
+                    <input
+                      type="checkbox"
+                      bind:checked={sendAsWebhook}
+                      disabled={!webhookAvailable}
+                    />
+                    Send through a webhook with a custom name and avatar
+                  </label>
+
+                  {#if !webhookAvailable}
+                    <p class="text-xs" style="color: #ED4245;">
+                      {selectedSendChannel.canUseWebhooks
+                        ? "The bot needs the Manage Webhooks permission in this channel."
+                        : "You need the Manage Webhooks permission in this channel."}
+                    </p>
+                  {/if}
+
+                  {#if sendAsWebhook}
+                    <div class="space-y-2" transition:fly={{ y: -8, duration: 200 }}>
+                      <!-- Send as: a saved persona, or a one-off name and avatar -->
+                      <span class="block text-sm font-medium" style="color: {$colorStore.text};">Send as</span>
+
+                      <div class="flex flex-wrap items-center gap-2">
+                        <button
+                          aria-label="Use a one-off name and avatar"
+                          class="px-3 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
+                          style="background: {$colorStore.primary}{selectedPersonaId === null ? '30' : '10'};
+                                 color: {$colorStore.primary};
+                                 border: 1px solid {$colorStore.primary}{selectedPersonaId === null ? '60' : '30'};"
+                          onclick={() => (selectedPersonaId = null)}
+                        >
+                          Custom
+                        </button>
+                        {#each personas as persona (persona.id)}
+                          <button
+                            aria-label="Send as {persona.name}"
+                            class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
+                            style="background: {$colorStore.primary}{selectedPersonaId === persona.id ? '30' : '10'};
+                                   color: {$colorStore.primary};
+                                   border: 1px solid {$colorStore.primary}{selectedPersonaId === persona.id ? '60' : '30'};"
+                            onclick={() => (selectedPersonaId = persona.id)}
+                          >
+                            {#if persona.avatarUrl}
+                              <img alt="" class="w-5 h-5 rounded-full object-cover" src={persona.avatarUrl} />
+                            {/if}
+                            {persona.name}
+                            {#if persona.isGuildShared}
+                              <i class="fa-solid fa-users" style="font-size: 10px;"></i>
+                            {/if}
+                          </button>
+                        {/each}
+                        {#if loadingPersonas}
+                          <span class="text-xs" style="color: {$colorStore.muted};">Loading...</span>
+                        {/if}
+
+                        <!-- Trailing action, dashed so it does not read as another persona to pick -->
+                        <button
+                          aria-label="Manage saved personas"
+                          class="px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 min-h-[44px]"
+                          style="color: {$colorStore.muted}; border: 1px dashed {$colorStore.primary}40;"
+                          onclick={() => (showPersonaManager = true)}
+                        >
+                          <i class="fa-solid fa-gear" style="font-size: 12px;"></i>
+                          Manage
+                        </button>
+                      </div>
+
+                    </div>
+
+                    <!-- One-off name and avatar, used when no persona is picked -->
+                    {#if selectedPersonaId === null}
+                      <div class="space-y-2" transition:fly={{ y: -8, duration: 200 }}>
+                        <input
+                          type="text"
+                          class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                          style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                          placeholder="Webhook display name (optional)"
+                          maxlength="80"
+                          bind:value={webhookUsername}
+                        />
+
+                        <input
+                          type="url"
+                          class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                          style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                          placeholder="Webhook avatar URL (optional)"
+                          bind:value={webhookAvatarUrl}
+                        />
+
+                        <p class="text-xs" style="color: {$colorStore.muted};">
+                          Links only.
+                          <button
+                            class="underline"
+                            style="color: {$colorStore.primary};"
+                            onclick={() => (showPersonaManager = true)}
+                          >
+                            Save a persona
+                          </button>
+                          to upload an image.
+                        </p>
+                      </div>
+                    {/if}
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Send button -->
+              <button
+                aria-label="Send message"
+                class="w-full px-4 py-2 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                disabled={sending || !selectedSendChannelId || !canCopyJson || !!embedPermissionBlock}
+                onclick={() => (showSendConfirm = true)}
+              >
+                <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
+                {sending ? "Sending..." : "Send Message"}
+              </button>
+
+              {#if lastSendResult}
+                <div
+                  class="p-3 rounded-lg border text-sm"
+                  style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20; color: {$colorStore.text};"
+                >
+                  Sent to #{lastSendResult.channelName}
+                  {lastSendResult.personaName
+                    ? `as "${lastSendResult.personaName}"`
+                    : lastSendResult.sentViaWebhook
+                      ? "via webhook"
+                      : "as the bot"}.
+                  <a
+                    class="underline"
+                    href={lastSendResult.messageLink}
+                    rel="noopener noreferrer"
+                    style="color: {$colorStore.primary};"
+                    target="_blank"
+                  >
+                    Jump to message
+                  </a>
+                </div>
+              {/if}
+
+              <!-- Channels that exist but cannot be used -->
+              {#if blockedChannels.length > 0}
+                <div class="space-y-2">
+                  <h4 class="text-sm font-semibold" style="color: {$colorStore.text};">
+                    Unavailable channels ({blockedChannels.length})
+                  </h4>
+                  {#each blockedChannels as channel (channel.id)}
+                    <div
+                      class="flex items-center justify-between gap-2 p-2 rounded-lg border text-xs"
+                      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
+                    >
+                      <span class="truncate" style="color: {$colorStore.text};">#{channel.name}</span>
+                      <span class="shrink-0" style="color: {$colorStore.muted};">{channel.restriction}</span>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            {/if}
+          </div>
+
         {/if}
       </div>
     </section>
@@ -2043,6 +2463,25 @@
   variant="danger"
   oncancel={() => embedPendingDelete = null}
   onconfirm={confirmDeleteSavedEmbed}
+/>
+
+<ConfirmationModal
+  bind:isOpen={showSendConfirm}
+  title="Send Message"
+  message={`Send this message to #${selectedSendChannel?.name ?? "the selected channel"} in ${$currentGuild?.name ?? "this server"}${sendAsWebhook ? (selectedPersona ? ` as "${selectedPersona.name}"` : " through a webhook") : ""}? Everyone in the channel will see it, and the send is recorded in the audit log.`}
+  confirmText="Send"
+  variant="warning"
+  onconfirm={sendCurrentEmbed}
+/>
+
+<PersonaManager
+  bind:isOpen={showPersonaManager}
+  {personas}
+  userId={data.user?.id ?? null}
+  guildId={$currentGuild ? BigInt($currentGuild.id) : null}
+  guildName={$currentGuild?.name ?? null}
+  onchanged={() => loadPersonas($currentGuild ? BigInt($currentGuild.id) : undefined)}
+  onnotify={showNotificationMessage}
 />
 
 <style>

@@ -379,6 +379,17 @@ const staticSearchableFeatures: SearchableItem[] = [
     category: 'Entertainment'
   },
   {
+    id: 'channel-access',
+    title: 'Channel Access',
+    description: 'Applications and member votes for locked channels',
+    type: 'feature',
+    path: '/dashboard/channel-access',
+    tab: 'security',
+    icon: 'fa-lock',
+    keywords: ['channel access', 'applications', 'apply', 'vote', 'locked', 'gate', 'private'],
+    category: 'Security'
+  },
+  {
     id: 'todo',
     title: 'Todo Lists',
     description: 'Server todo list management',

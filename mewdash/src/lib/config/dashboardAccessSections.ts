@@ -44,6 +44,7 @@ const sectionsByHref: Record<string, string[]> = {
   "/dashboard/twitch": ["Twitch"],
   "/dashboard/suggestions": ["Suggestions"],
   "/dashboard/tickets": ["Ticket"],
+  "/dashboard/channel-access": ["ChannelAccess"],
   "/dashboard/todo": ["Todo"],
   "/dashboard/chat-triggers": ["ChatTriggers"],
   "/dashboard/votes": ["Votes"],

@@ -32,6 +32,13 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Who accessed the dashboard, what they changed and viewed",
   },
   {
+    label: "Channel Access",
+    icon: "fa-utility-duo fa-regular fa-lock",
+    href: "/dashboard/channel-access",
+    category: "Security",
+    description: "Applications and member votes for locked channels",
+  },
+  {
     label: "Birthdays",
     icon: "fa-utility-duo fa-regular fa-birthday-cake",
     href: "/dashboard/birthday",
