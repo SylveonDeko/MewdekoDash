@@ -105,11 +105,7 @@ export interface MobileSessionData {
     accessExpiry: string;
   };
   createdAt: string;
-  /**
-   * Marks a session minted by the demo endpoint rather than by a Discord
-   * login. The API proxy refuses anything but reads on these, so a store
-   * reviewer can tour the app without being able to change a live server.
-   */
+  /** Whether this session is restricted to reads. */
   demo?: boolean;
 }
 

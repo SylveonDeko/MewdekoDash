@@ -119,20 +119,18 @@ async function resolveMobileBackend(
   }
 
   const session = await getSession(claims.sid);
+  if (!session) {
+    return json({ error: "session_revoked" }, { status: 401 });
+  }
 
-  /*
-   * Demo sessions are minted from a redeemable code rather than a Discord
-   * login, so they are confined to reads. Without this an app store reviewer
-   * touring the app could change settings on a live guild.
-   */
-  if (session?.demo && request.method !== "GET") {
+  if (session.demo && request.method !== "GET") {
     return json(
       { error: "demo_read_only", message: "This demo session cannot make changes." },
       { status: 403 },
     );
   }
 
-  const user = session?.user ?? null;
+  const user = session.user;
   const instanceId = request.headers.get("x-mobile-instance");
 
   try {

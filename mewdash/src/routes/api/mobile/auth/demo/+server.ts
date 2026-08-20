@@ -11,10 +11,10 @@ import type { DiscordUser } from "$lib/types/discord";
 const DEMO_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 /**
- * Pulls the avatar hash out of a Discord CDN URL.
+ * Extracts the avatar hash from a Discord CDN URL.
  *
- * The bot hands back a rendered URL, but the app builds its own from the hash,
- * so only the hash travels. Default avatars carry no hash and yield null.
+ * @param url A rendered avatar URL, or null.
+ * @returns The hash, or null for default avatars.
  */
 function avatarHashFrom(url: string | null): string | null {
   if (!url) return null;
@@ -23,12 +23,10 @@ function avatarHashFrom(url: string | null): string | null {
 }
 
 /**
- * Looks up the demo account's real Discord profile through the bot.
+ * Resolves the demo account's Discord username and avatar through the bot.
  *
- * The dashboard holds no bot token, so it cannot query Discord directly. The
- * bot can, but only for a guild it shares with the user, so this resolves a
- * mutual guild first. Returns null if anything is unavailable, leaving the
- * caller to fall back to a placeholder name.
+ * @param userId The demo account's Discord id.
+ * @returns The profile, or null when it cannot be resolved.
  */
 async function lookupDemoProfile(
   userId: string,
@@ -65,8 +63,9 @@ async function lookupDemoProfile(
 }
 
 /**
- * Compares two secrets without leaking their common prefix through timing.
- * Lengths are compared first because `timingSafeEqual` throws on a mismatch.
+ * Compares two secrets in constant time.
+ *
+ * @returns Whether the values are identical.
  */
 function secretMatches(supplied: string, expected: string): boolean {
   const a = Buffer.from(supplied);
@@ -78,16 +77,12 @@ function secretMatches(supplied: string, expected: string): boolean {
 /**
  * Redeems a demo code for a read-only mobile session.
  *
- * This exists so app store reviewers can see the app without a Discord login:
- * an OAuth round trip from a reviewer's network reliably triggers Discord's
- * new-location verification, which they cannot clear. The code is bound to a
- * pre-existing Discord identity that is already a member of a guild the bot is
- * in, so no account credentials are ever shared.
+ * Responds 404 unless both `MOBILE_DEMO_CODE` and `MOBILE_DEMO_USER_ID` are
+ * configured.
  *
- * Disabled unless both `MOBILE_DEMO_CODE` and `MOBILE_DEMO_USER_ID` are set,
- * so a selfhosted dashboard never exposes it by accident.
+ * Body: `{ code }`.
  *
- * Body: `{ code }`. Returns the same shape as `/api/mobile/auth/login`.
+ * @returns An access token, refresh token, and the demo account's profile.
  */
 export const POST: RequestHandler = async ({ request }) => {
   const expected = env.MOBILE_DEMO_CODE;
@@ -130,11 +125,6 @@ export const POST: RequestHandler = async ({ request }) => {
     avatar_decoration: "",
   } as unknown as DiscordUser;
 
-  /*
-   * The Discord token fields stay empty: the mobile API path authorises from
-   * the session's user id and the server-side API key, and refresh rotates
-   * off its own Redis record, so neither reads these.
-   */
   const session = await createSession(
     user,
     { accessToken: "", refreshToken: "", accessExpiry: new Date(0) },

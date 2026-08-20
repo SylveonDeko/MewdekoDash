@@ -1,21 +1,24 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { requireMobileAuth } from "$lib/server/mobileAuthGuard";
-import { listMobileInstances } from "$lib/server/instances";
+import { filterInstancesForUser, listMobileInstances } from "$lib/server/instances";
 import { logger } from "$lib/logger";
 
 /**
- * Lists the bot instances this dashboard knows about. The iOS app calls
- * this after sign-in to populate its instance picker. Per-instance
- * routing is then driven by the `X-Mobile-Instance` header that the proxy
- * validates server-side.
+ * Lists the bot instances the signed-in user can administer.
+ *
+ * Instances the user shares no administered guild with are withheld, so the
+ * picker never offers a deployment that would show an empty server list.
+ *
+ * @returns `{ instances }`, ordered as registered.
  */
 export const GET: RequestHandler = async ({ request }) => {
   const auth = requireMobileAuth(request);
   if ("error" in auth) return auth.error;
 
   try {
-    const instances = await listMobileInstances();
+    const all = await listMobileInstances();
+    const instances = await filterInstancesForUser(all, auth.claims.sub);
     return json({ instances });
   } catch (err) {
     logger.error("Mobile instance discovery failed", err);

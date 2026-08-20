@@ -98,6 +98,42 @@ export async function listMobileInstances(): Promise<MobileInstance[]> {
 }
 
 /**
+ * Narrows a list of instances to those the user can administer.
+ *
+ * An instance qualifies when the user shares at least one guild with that bot
+ * and holds admin or explicit dashboard access there. Unreachable instances
+ * are dropped.
+ *
+ * @param instances The instances to consider.
+ * @param userId The Discord user whose access is being resolved.
+ * @returns The subset the user can administer.
+ */
+export async function filterInstancesForUser(
+  instances: MobileInstance[],
+  userId: string,
+): Promise<MobileInstance[]> {
+  const raw = await fetchInstances();
+  const checks = await Promise.all(
+    instances.map(async (instance) => {
+      const match = raw.find((i) => i.botId.toString() === instance.botId);
+      if (!match) return null;
+      try {
+        const response = await fetch(
+          `${instanceUrl(match)}/botapi/ClientOperations/mutualguilds/${userId}?adminOnly=true`,
+          { headers: { "X-API-Key": env.MEWDEKO_API_KEY } },
+        );
+        if (!response.ok) return null;
+        const guilds = (await response.json()) as unknown[];
+        return Array.isArray(guilds) && guilds.length > 0 ? instance : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return checks.filter((i): i is MobileInstance => i !== null);
+}
+
+/**
  * Resolves a mobile-supplied bot ID to the corresponding `botapi` URL.
  * Returns `null` if the ID is unknown or the instance is inactive — never
  * a client-controlled URL, so SSRF is impossible regardless of header
