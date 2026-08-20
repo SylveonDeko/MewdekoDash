@@ -112,7 +112,7 @@ export const POST: RequestHandler = async ({ request }) => {
   const displayName = profile?.username ?? env.MOBILE_DEMO_USERNAME ?? "Demo";
 
   const user = {
-    id: BigInt(demoUserId),
+    id: demoUserId,
     username: displayName,
     display_name: displayName,
     discriminator: "0",
