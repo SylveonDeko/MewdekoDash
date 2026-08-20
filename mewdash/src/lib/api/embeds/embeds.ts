@@ -13,6 +13,16 @@ import type {
 } from "./models";
 
 /**
+ * Normalizes a list response to an array. The bot returns an empty body (rather than `[]`) for
+ * some empty collections, which `apiRequest` surfaces as `null`; callers spread these results,
+ * so a null would throw before it ever reached the UI.
+ */
+async function asList<T>(request: Promise<T[]>): Promise<T[]> {
+  const result = await request;
+  return Array.isArray(result) ? result : [];
+}
+
+/**
  * Saved embed templates API
  * Maps to Mewdeko.Controllers.EmbedsController
  */
@@ -23,7 +33,7 @@ export const embedsApi = {
    * @returns The user's personal embed templates
    */
   getUserEmbeds: (userId: bigint) =>
-    apiRequest<SavedEmbed[]>(`Embeds/user/${userId}`),
+    asList(apiRequest<SavedEmbed[]>(`Embeds/user/${userId}`)),
 
   /**
    * Gets all guild-shared embed templates for a guild
@@ -31,7 +41,7 @@ export const embedsApi = {
    * @returns The guild's shared embed templates
    */
   getGuildEmbeds: (guildId: bigint) =>
-    apiRequest<SavedEmbed[]>(`Embeds/guild/${guildId}`),
+    asList(apiRequest<SavedEmbed[]>(`Embeds/guild/${guildId}`)),
 
   /**
    * Gets a single embed template by its ID
@@ -74,7 +84,7 @@ export const embedsApi = {
    * @returns The visible channels and their permission flags
    */
   getSendableChannels: (guildId: bigint, userId: bigint) =>
-    apiRequest<SendableChannel[]>(`Embeds/channels/${guildId}?userId=${userId}`),
+    asList(apiRequest<SendableChannel[]>(`Embeds/channels/${guildId}?userId=${userId}`)),
 
   /**
    * Sends a built message to a guild channel, as the bot or through a channel webhook.
@@ -90,14 +100,14 @@ export const embedsApi = {
    * @param userId The Discord user ID
    */
   getUserPersonas: (userId: bigint) =>
-    apiRequest<EmbedPersona[]>(`Embeds/personas/user/${userId}`),
+    asList(apiRequest<EmbedPersona[]>(`Embeds/personas/user/${userId}`)),
 
   /**
    * Gets the "send as" personas shared with a guild.
    * @param guildId The guild ID
    */
   getGuildPersonas: (guildId: bigint) =>
-    apiRequest<EmbedPersona[]>(`Embeds/personas/guild/${guildId}`),
+    asList(apiRequest<EmbedPersona[]>(`Embeds/personas/guild/${guildId}`)),
 
   /**
    * Creates a personal or guild-shared "send as" persona.

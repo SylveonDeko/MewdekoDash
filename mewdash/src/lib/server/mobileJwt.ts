@@ -105,6 +105,12 @@ export interface MobileSessionData {
     accessExpiry: string;
   };
   createdAt: string;
+  /**
+   * Marks a session minted by the demo endpoint rather than by a Discord
+   * login. The API proxy refuses anything but reads on these, so a store
+   * reviewer can tour the app without being able to change a live server.
+   */
+  demo?: boolean;
 }
 
 /**
@@ -115,6 +121,7 @@ export interface MobileSessionData {
 export async function createSession(
   user: DiscordUser,
   discord: { accessToken: string; refreshToken: string; accessExpiry: Date },
+  options: { demo?: boolean; ttlSeconds?: number } = {},
 ): Promise<{ sid: string; refreshToken: string; accessToken: string; expiresIn: number }> {
   const r = getRedis();
   const sid = b64url(randomBytes(24));
@@ -127,8 +134,9 @@ export async function createSession(
       accessExpiry: discord.accessExpiry.toISOString(),
     },
     createdAt: new Date().toISOString(),
+    ...(options.demo ? { demo: true } : {}),
   };
-  await r.setex(sessionKey(sid), REFRESH_TTL, JSON.stringify(session));
+  await r.setex(sessionKey(sid), options.ttlSeconds ?? REFRESH_TTL, JSON.stringify(session));
 
   const userId = user.id.toString();
   const refresh = await issueRefreshToken({ sid, family, userId });
