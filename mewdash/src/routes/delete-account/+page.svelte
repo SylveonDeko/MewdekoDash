@@ -99,9 +99,8 @@
 
     <p>
       Sessions and sign-in tokens are destroyed at the moment of deletion and are
-      not retained. Server-side logs that may contain your Discord user ID are
-      kept for up to 30 days for security and abuse investigation, then removed
-      automatically.
+      not retained. Data belonging to a Discord server is kept for as long as the
+      bot remains in that server, and is covered by the section above.
     </p>
 
     <h2 class="text-2xl font-semibold">Self-hosted dashboards</h2>
