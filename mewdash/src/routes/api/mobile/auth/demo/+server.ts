@@ -75,7 +75,7 @@ function secretMatches(supplied: string, expected: string): boolean {
 }
 
 /**
- * Redeems a demo code for a read-only mobile session.
+ * Redeems a demo code for a mobile session.
  *
  * Responds 404 unless both `MOBILE_DEMO_CODE` and `MOBILE_DEMO_USER_ID` are
  * configured.
@@ -131,7 +131,7 @@ export const POST: RequestHandler = async ({ request }) => {
     { demo: true, ttlSeconds: DEMO_TTL_SECONDS },
   );
 
-  logger.info("Mobile demo: minted a read-only session");
+  logger.info("Mobile demo: minted a session");
 
   return json({
     accessToken: session.accessToken,

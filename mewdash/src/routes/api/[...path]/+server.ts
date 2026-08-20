@@ -123,13 +123,6 @@ async function resolveMobileBackend(
     return json({ error: "session_revoked" }, { status: 401 });
   }
 
-  if (session.demo && request.method !== "GET") {
-    return json(
-      { error: "demo_read_only", message: "This demo session cannot make changes." },
-      { status: 403 },
-    );
-  }
-
   const user = session.user;
   const instanceId = request.headers.get("x-mobile-instance");
 

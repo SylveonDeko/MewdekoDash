@@ -105,7 +105,7 @@ export interface MobileSessionData {
     accessExpiry: string;
   };
   createdAt: string;
-  /** Whether this session is restricted to reads. */
+  /** Whether this session was minted from a demo code rather than a Discord login. */
   demo?: boolean;
 }
 
