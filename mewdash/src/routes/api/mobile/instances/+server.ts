@@ -19,6 +19,11 @@ export const GET: RequestHandler = async ({ request }) => {
   try {
     const all = await listMobileInstances();
     const instances = await filterInstancesForUser(all, auth.claims.sub);
+    if (all.length > 0 && instances.length === 0) {
+      logger.info(
+        `Mobile: user ${auth.claims.sub} administers none of the ${all.length} instances`,
+      );
+    }
     return json({ instances });
   } catch (err) {
     logger.error("Mobile instance discovery failed", err);

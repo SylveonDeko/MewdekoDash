@@ -119,13 +119,19 @@ export async function filterInstancesForUser(
       if (!match) return null;
       try {
         const response = await fetch(
-          `${instanceUrl(match)}/botapi/ClientOperations/mutualguilds/${userId}?adminOnly=true`,
+          `${instanceUrl(match)}/ClientOperations/mutualguilds/${userId}?adminOnly=true`,
           { headers: { "X-API-Key": env.MEWDEKO_API_KEY } },
         );
-        if (!response.ok) return null;
+        if (!response.ok) {
+          logger.warn(
+            `Instance ${instance.botName} rejected a mutual-guild lookup: ${response.status}`,
+          );
+          return null;
+        }
         const guilds = (await response.json()) as unknown[];
         return Array.isArray(guilds) && guilds.length > 0 ? instance : null;
-      } catch {
+      } catch (err) {
+        logger.warn(`Instance ${instance.botName} was unreachable`, err);
         return null;
       }
     }),

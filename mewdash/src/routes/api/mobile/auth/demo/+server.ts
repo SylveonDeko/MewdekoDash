@@ -37,7 +37,7 @@ async function lookupDemoProfile(
 
   try {
     const guildsResponse = await fetch(
-      `${backend}/botapi/ClientOperations/mutualguilds/${userId}`,
+      `${backend}/ClientOperations/mutualguilds/${userId}`,
       { headers },
     );
     if (!guildsResponse.ok) return null;
@@ -46,7 +46,7 @@ async function lookupDemoProfile(
     if (guildId === undefined) return null;
 
     const userResponse = await fetch(
-      `${backend}/botapi/ClientOperations/user/${guildId}/${userId}`,
+      `${backend}/ClientOperations/user/${guildId}/${userId}`,
       { headers },
     );
     if (!userResponse.ok) return null;
