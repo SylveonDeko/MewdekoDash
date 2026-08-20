@@ -180,21 +180,21 @@
     <div class="flex justify-center">
       <ul class="list-disc text-left">
         <li>
-          The right to access – You have the right to request from Mewdeko
+          The right to access: You have the right to request from Mewdeko
           copies of your personal data.
         </li>
         <li>
-          The right to rectification – You have the right to request that
+          The right to rectification: You have the right to request that
           Mewdeko correct any information you believe is inaccurate. You also
           have the right to request Mewdeko to complete the information you
           believe is incomplete.
         </li>
         <li>
-          The right to erasure – You have the right to request that Mewdeko
+          The right to erasure: You have the right to request that Mewdeko
           erase your personal data.
         </li>
         <li>
-          The right to restrict processing – You have the right to request that
+          The right to restrict processing: You have the right to request that
           Mewdeko restrict the processing of your personal data.
         </li>
       </ul>

@@ -1464,7 +1464,7 @@
 
                   {#if !allowComponents || restrictedComponentTypes.includes('all')}
                     <p class="text-xs" style="color: {$colorStore.muted};">
-                      Components aren't supported here — any <code>components</code> in pasted JSON are ignored.
+                      Components aren't supported here: any <code>components</code> in pasted JSON are ignored.
                     </p>
                   {/if}
                 </div>

@@ -287,6 +287,6 @@ export async function revokeSession(sid: string): Promise<void> {
  */
 export function logMobileAuthInit(): void {
   if (!MOBILE_JWT_SECRET || MOBILE_JWT_SECRET.length < 32) {
-    logger.warn("MOBILE_JWT_SECRET is missing or shorter than 32 bytes — set a strong secret");
+    logger.warn("MOBILE_JWT_SECRET is missing or shorter than 32 bytes, set a strong secret");
   }
 }

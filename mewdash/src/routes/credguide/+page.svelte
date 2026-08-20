@@ -295,7 +295,7 @@
           },
           {
             name: "JwtSecret",
-            purpose: "Signs dashboard user tokens — must match BOT_JWT_SECRET in the dashboard .env",
+            purpose: "Signs dashboard user tokens, must match BOT_JWT_SECRET in the dashboard .env",
             example: "\"JwtSecret\": \"your-secret-here\""
           }
         ],

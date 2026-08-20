@@ -36,7 +36,7 @@ interface CachedInstances {
 let cache: CachedInstances | null = null;
 
 /**
- * Returns the URL of the primary bot — the deployment whose database owns
+ * Returns the URL of the primary bot: the deployment whose database owns
  * the instance list and acts as the seed for instance discovery. This is
  * the same `PUBLIC_MEWDEKO_API_URL` the dashboard already uses as its
  * default backend.
@@ -141,7 +141,7 @@ export async function filterInstancesForUser(
 
 /**
  * Resolves a mobile-supplied bot ID to the corresponding `botapi` URL.
- * Returns `null` if the ID is unknown or the instance is inactive — never
+ * Returns `null` if the ID is unknown or the instance is inactive: never
  * a client-controlled URL, so SSRF is impossible regardless of header
  * tampering.
  */

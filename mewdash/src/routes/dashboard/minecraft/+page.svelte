@@ -1671,7 +1671,7 @@
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-users"
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                            <h3 class="font-semibold" style="color: {$colorStore.text}">Players Online — {selectedHistoryServer}</h3>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">Players Online ({selectedHistoryServer})</h3>
                         </div>
                         <div class="w-full h-[250px] relative">
                             <canvas bind:this={playersCanvas}></canvas>
@@ -1684,7 +1684,7 @@
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fa-utility-duo fa-regular fa-signal"
                                style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 18px;"></i>
-                            <h3 class="font-semibold" style="color: {$colorStore.text}">Latency — {selectedHistoryServer}</h3>
+                            <h3 class="font-semibold" style="color: {$colorStore.text}">Latency ({selectedHistoryServer})</h3>
                         </div>
                         <div class="w-full h-[250px] relative">
                             <canvas bind:this={latencyCanvas}></canvas>
@@ -1763,7 +1763,7 @@
                          style="background: #0d1117; border-color: {$colorStore.primary}30;">
                         <div class="p-3 flex items-center gap-2" style="background: {$colorStore.primary}10; border-bottom: 1px solid {$colorStore.primary}20;">
                             <i class="fa-solid fa-terminal" style="color: {$colorStore.primary}; font-size: 14px;"></i>
-                            <span class="text-sm font-mono font-medium" style="color: {$colorStore.text}">RCON — {rconServer}</span>
+                            <span class="text-sm font-mono font-medium" style="color: {$colorStore.text}">RCON ({rconServer})</span>
                         </div>
 
                         <div class="p-4 font-mono text-sm space-y-2 max-h-[400px] overflow-y-auto" style="color: #c9d1d9;">
