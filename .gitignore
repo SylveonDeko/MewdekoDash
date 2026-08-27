@@ -221,3 +221,11 @@ mewdash/mewdash.zip
 .npmrc
 sitemap.xml
 package-lock.json
+
+# Local-only working files
+.DS_Store
+mewdash/CLAUDE.md
+mewdash/FA-ICON-SEARCH-README.md
+mewdash/fa-icon-search.js
+mewdash/fa-utility-duo-icons.json
+**/.idea/

@@ -11,6 +11,32 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "stat-channel-counters",
+    label: "New in stat channels",
+    title: "Counters That Keep Up",
+    summary: "Stat channels can count almost anything now, and you pick how each one updates so Discord's rate limits stop holding them back.",
+    details: [
+      "Nearly sixty counters, including presence and join counts, boost tiers and emoji slots, Twitch viewers, subs and chat counters, Minecraft players, open tickets, giveaways and XP.",
+      "Choose how the number reads: grouped, compact, zero padded, ordinal, percent, progress bar, emoji digits or roman numerals.",
+      "Pick whether a channel updates by renaming or by recreating itself. Recreating sidesteps the two renames per ten minutes cap, so a live counter can refresh every minute."
+    ],
+    href: "/dashboard/statchannels",
+    action: "Open stat channels"
+  },
+  {
+    id: "ban-purge",
+    label: "New in moderation",
+    title: "Ban Purge Rules",
+    summary: "Decide up front how much of a banned member's message history gets cleared, instead of choosing it again on every ban.",
+    details: [
+      "Set a default purge window for the whole server, from nothing at all up to seven days.",
+      "Override it per category or per channel when one corner of the server needs a heavier clean.",
+      "Give each moderation action its own purge, so an automated ban and a manual one can behave differently."
+    ],
+    href: "/dashboard/moderation?tab=banpurge",
+    action: "Set up ban purge"
+  },
+  {
     id: "channel-access",
     label: "New in server setup",
     title: "Vote People Into Locked Channels",

@@ -1,5 +1,12 @@
 import { apiRequest } from "../core";
-import type { StatChannel, AddStatChannelRequest, UpdateStatChannelRequest } from "./models";
+import type {
+  AddStatChannelRequest,
+  StatChannel,
+  StatChannelMetadata,
+  StatChannelPreviewRequest,
+  StatChannelSettings,
+  UpdateStatChannelRequest,
+} from "./models";
 
 /**
  * Stat Channels API
@@ -13,13 +20,37 @@ export const statChannelsApi = {
     apiRequest<StatChannel[]>(`StatChannel/${guildId}`),
 
   /**
+   * Gets the catalogue of stat types, display styles and update mechanisms
+   */
+  getMetadata: (guildId: bigint) =>
+    apiRequest<StatChannelMetadata>(`StatChannel/${guildId}/metadata`),
+
+  /**
+   * Gets the guild wide defaults applied to new stat channels
+   */
+  getSettings: (guildId: bigint) =>
+    apiRequest<StatChannelSettings>(`StatChannel/${guildId}/settings`),
+
+  /**
+   * Updates the guild wide defaults applied to new stat channels
+   */
+  updateSettings: (guildId: bigint, request: Partial<StatChannelSettings>) =>
+    apiRequest<StatChannelSettings>(`StatChannel/${guildId}/settings`, "PUT", request),
+
+  /**
+   * Renders a template without saving it, for live previews
+   */
+  preview: (guildId: bigint, request: StatChannelPreviewRequest) =>
+    apiRequest<{ rendered: string }>(`StatChannel/${guildId}/preview`, "POST", request),
+
+  /**
    * Adds a new stat channel
    */
   addStatChannel: (guildId: bigint, request: AddStatChannelRequest) =>
     apiRequest<StatChannel>(`StatChannel/${guildId}`, "POST", request),
 
   /**
-   * Updates a stat channel's template
+   * Updates a stat channel. Omitted fields are left unchanged.
    */
   updateStatChannel: (guildId: bigint, channelId: bigint, request: UpdateStatChannelRequest) =>
     apiRequest<StatChannel>(`StatChannel/${guildId}/${channelId}`, "PUT", request),
