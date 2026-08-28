@@ -16,6 +16,7 @@
   import { logger } from "$lib/logger.ts";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
+  import TriggerAdvancedSettings from "$lib/components/specialized/TriggerAdvancedSettings.svelte";
   import { parseStoredMessage, toBuilderValue } from "$lib/utils/embedMessage";
 
   /**
@@ -56,11 +57,16 @@
     Both: 2,
   };
 
+  /**
+   * Bit flags for the ways a trigger can fire. Mirrors ChatTriggerType in the bot.
+   */
   const ChatTriggerType = {
-    Message: 1,      // 0b0001
-    Interaction: 2,  // 0b0010
-    Button: 4,       // 0b0100
-    Reactions: 8,    // 0b1000
+    Message: 1,
+    Interaction: 2,
+    Button: 4,
+    Reactions: 8,
+    ReactionsRemoved: 16,
+    Event: 32
   };
 
   const CtApplicationCommandType = {
@@ -104,6 +110,9 @@
     roleGrantType: CtRoleGrantType.Sender,
   });
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
+  let guildChannels: Array<{ id: string; name: string }> = $state([]);
+  let categoryFilter: string = $state("all");
+  let searchQuery = $state("");
 
   // UI state variables - Dual Mode Interface
   let activeTab = $state("simple");
@@ -192,6 +201,12 @@
         throw new Error("No guild selected");
       }
       guildRoles = await clientApi.getRoles(guild.id);
+
+      try {
+        guildChannels = await clientApi.getTextChannels(guild.id);
+      } catch (channelErr) {
+        logger.error("Failed to fetch guild channels:", channelErr);
+      }
     } catch (err) {
       logger.error("Failed to fetch guild roles:", err);
     }
@@ -539,6 +554,75 @@
     id: role.id,
     name: role.name
     })));
+
+  /**
+   * Channel choices for the event response channel picker.
+   */
+  let channelOptions = $derived(guildChannels.map(channel => ({
+    id: channel.id,
+    name: channel.name
+  })));
+
+  /**
+   * Every category currently in use, for the category picker and the filter bar.
+   */
+  let categories = $derived([...new Set(
+    triggers.map(t => t.category).filter((c): c is string => !!c && c.trim().length > 0)
+  )].sort((a, b) => a.localeCompare(b)));
+
+  /**
+   * Category choices for the filter, including the two catch-all entries.
+   */
+  let categoryFilterOptions = $derived([
+    { id: "all", name: "All triggers", icon: "fa-list" },
+    { id: "__none", name: "Ungrouped", icon: "fa-folder-open" },
+    ...categories.map(c => ({ id: c, name: c, icon: "fa-folder" }))
+  ]);
+
+  /**
+   * The triggers shown in the list, after the category filter and search box.
+   */
+  let visibleTriggers = $derived(triggers.filter(trigger => {
+    const matchesCategory = categoryFilter === "all"
+      || (categoryFilter === "__none" && !trigger.category)
+      || trigger.category === categoryFilter;
+
+    if (!matchesCategory) return false;
+    if (!searchQuery.trim()) return true;
+
+    const needle = searchQuery.trim().toLowerCase();
+    return (trigger.trigger ?? "").toLowerCase().includes(needle)
+      || summarizeResponse(trigger.response).toLowerCase().includes(needle);
+  }));
+
+  /**
+   * Short badges describing a trigger's configuration, shown on the collapsed row so
+   * its behaviour is visible without opening it.
+   */
+  function triggerBadges(trigger: ChatTrigger): Array<{ label: string; icon: string }> {
+    const badges: Array<{ label: string; icon: string }> = [];
+
+    if (trigger.isDisabled) badges.push({ label: "Paused", icon: "fa-circle-pause" });
+    if (trigger.category) badges.push({ label: trigger.category, icon: "fa-folder" });
+    if (trigger.eventType > 0) badges.push({ label: "On event", icon: "fa-bolt" });
+    if (trigger.isRegex) badges.push({ label: "Regex", icon: "fa-code" });
+    if (trigger.cooldownSeconds > 0) badges.push({ label: `${trigger.cooldownSeconds}s cooldown`, icon: "fa-hourglass-half" });
+    if (trigger.currencyCost > 0) badges.push({ label: `Costs ${trigger.currencyCost}`, icon: "fa-coins" });
+    if (trigger.requiredXpLevel > 0) badges.push({ label: `Level ${trigger.requiredXpLevel}+`, icon: "fa-arrow-up" });
+    if (trigger.maxUses != null) badges.push({ label: `${trigger.useCount ?? 0}/${trigger.maxUses} uses`, icon: "fa-gauge-high" });
+    if (trigger.allowBots) badges.push({ label: "Bots only", icon: "fa-robot" });
+
+    return badges;
+  }
+
+  /**
+   * Pauses or resumes a trigger straight from its row, saving immediately.
+   */
+  async function toggleTriggerEnabled(trigger: ChatTrigger) {
+    trigger.isDisabled = !trigger.isDisabled;
+    triggers = [...triggers];
+    await updateTrigger(trigger);
+  }
 
   // Boolean options for DiscordSelector
     let booleanOptions = $derived([
@@ -1133,8 +1217,43 @@
             <p style="color: {colors.muted}">Create your first trigger using the quick setup above</p>
           </div>
         {:else}
+          <!-- Filter bar: keeps a long trigger list navigable -->
+          <div class="flex flex-col sm:flex-row gap-3 mb-4">
+            <div class="flex-1">
+              <label for="trigger-search" class="sr-only">Search triggers</label>
+              <input
+                id="trigger-search"
+                type="search"
+                bind:value={searchQuery}
+                placeholder="Search triggers and responses"
+                class="w-full p-3 rounded-lg border transition-all duration-200"
+                style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+              />
+            </div>
+            {#if categories.length > 0}
+              <div class="sm:w-64">
+                <DiscordSelector
+                  type="custom"
+                  options={categoryFilterOptions}
+                  selected={categoryFilter}
+                  searchable={false}
+                  ariaLabel="Filter triggers by category"
+                  placeholder="All triggers"
+                  onchange={(detail) => categoryFilter = (detail.selected as string) ?? "all"}
+                />
+              </div>
+            {/if}
+          </div>
+
+          {#if visibleTriggers.length === 0}
+            <div class="text-center py-10 rounded-2xl border"
+                 style="border-color: {colors.primary}30; background: {colors.primary}08;" transition:fade>
+              <p style="color: {colors.muted}">No triggers match your search.</p>
+            </div>
+          {/if}
+
           <div class="space-y-4">
-            {#each triggers as trigger (trigger.id)}
+            {#each visibleTriggers as trigger (trigger.id)}
               <div class="trigger-card rounded-2xl border shadow-2xl transition-all duration-200 relative"
                    style="background: linear-gradient(135deg, {colors.gradientStart}10, {colors.gradientMid}15);
                           border-color: {colors.primary}30;
@@ -1146,15 +1265,37 @@
                 <div class="p-4">
                   <div class="flex items-center justify-between gap-4">
                     <div class="flex-1 min-w-0">
-                      <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1" style="color: {colors.text}">
+                      <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1"
+                          style="color: {colors.text}; opacity: {trigger.isDisabled ? 0.6 : 1};">
                         "{trigger.trigger}" → "{summarizeResponse(trigger.response)}"
                       </h3>
                       <div class="text-sm" style="color: {colors.muted}">
                         Used {trigger.useCount || 0} times
                       </div>
+                      {#if triggerBadges(trigger).length > 0}
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                          {#each triggerBadges(trigger) as badge (badge.label)}
+                            <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                                  style="background: {colors.primary}18; color: {colors.muted};">
+                              <i class="fa-solid {badge.icon}" style="font-size: 10px;"></i>
+                              {badge.label}
+                            </span>
+                          {/each}
+                        </div>
+                      {/if}
                     </div>
                     
                     <div class="flex items-center gap-2">
+                      <button
+                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
+                        onclick={() => toggleTriggerEnabled(trigger)}
+                        aria-label="{trigger.isDisabled ? 'Resume' : 'Pause'} trigger {trigger.trigger}"
+                      >
+                        <i class="fa-solid {trigger.isDisabled ? 'fa-play' : 'fa-pause'}"
+                           style="color: {colors.primary}; font-size: 16px;"></i>
+                      </button>
+
                       <button
                         class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
@@ -1303,6 +1444,18 @@
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      <!-- Everything else, grouped so the common cases stay near the top -->
+                      <div class="space-y-3">
+                        <h4 class="font-medium" style="color: {colors.text}">More settings</h4>
+                        <TriggerAdvancedSettings
+                          {trigger}
+                          {colors}
+                          {channelOptions}
+                          {categories}
+                          onchange={() => triggers = [...triggers]}
+                        />
                       </div>
 
                       <!-- Save Button -->
