@@ -15,6 +15,7 @@
   import { musicStore } from "$lib/stores/musicStore";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import { openProductUpdates, unreadUpdateCount } from "$lib/stores/productUpdateStore";
 
   interface Props {
     collapsed?: boolean;
@@ -668,6 +669,30 @@
             <span class="text-[15px] font-medium">Dashboard Access</span>
           {/if}
         </a>
+
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
+          onclick={() => openProductUpdates()}
+          onmouseenter={(e) => showTooltip(e, "What's New")}
+          onmouseleave={hideTooltip}
+        >
+          <span class="relative shrink-0" style="width: 20px; text-align: center;">
+            <i class="fa-utility-duo fa-regular fa-sparkles text-base"
+               style="--fa-primary-color: {$unreadUpdateCount > 0 ? $colorStore.primary : $colorStore.muted};
+                      --fa-secondary-color: {$unreadUpdateCount > 0 ? $colorStore.secondary : $colorStore.muted};
+                      --fa-secondary-opacity: 0.4;"
+               aria-hidden="true"></i>
+            {#if $unreadUpdateCount > 0}
+              <span class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full"
+                    style="background: {$colorStore.primary};"></span>
+            {/if}
+          </span>
+          {#if !collapsed}
+            <span class="text-[15px] font-medium">What's New</span>
+          {/if}
+        </button>
       </div>
 
       <div class="mx-3 my-2 h-px" style="background: {$colorStore.primary}10;"></div>

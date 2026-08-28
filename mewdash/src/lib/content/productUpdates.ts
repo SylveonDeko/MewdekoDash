@@ -11,6 +11,19 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "chat-triggers-conditions",
+    label: "New in chat triggers",
+    title: "Triggers That Know When To Stay Quiet",
+    summary: "Chat triggers can now read the rest of the bot, decide for themselves whether to fire, and tell you why when they don't.",
+    details: [
+      "Pull a member's level, balance, reputation or message count straight into a response, and keep your own counters that responses can read and add to.",
+      "Gate a trigger on a cooldown, an XP level, a price, active hours, an expiry date or a use limit, and let one fire on a level up, a join, a boost or a giveaway win instead of a message.",
+      "Test a trigger against a sample message before anyone sees it. If it would not fire, the dashboard names the exact rule stopping it."
+    ],
+    href: "/dashboard/chat-triggers",
+    action: "Open chat triggers"
+  },
+  {
     id: "stat-channel-counters",
     label: "New in stat channels",
     title: "Counters That Keep Up",
@@ -91,3 +104,25 @@ export const productUpdates: ProductUpdate[] = [
 ];
 
 export const latestProductUpdate = productUpdates[0];
+
+/** Key the id of the newest update a viewer has acknowledged is stored under. */
+export const lastSeenUpdateKey = "product-updates:last-seen";
+
+/**
+ * The updates published since the one a viewer last acknowledged, newest first.
+ *
+ * A viewer who has never acknowledged anything sees nothing: someone opening the dashboard for
+ * the first time should not be met with the entire changelog. The layout records the newest id
+ * for them instead, so they start receiving updates from their next visit onwards.
+ */
+export function unseenProductUpdates(lastSeenId: string | null): ProductUpdate[] {
+  if (!lastSeenId) return [];
+
+  const index = productUpdates.findIndex((update) => update.id === lastSeenId);
+
+  // An unknown id means the stored update was removed, so treat only the newest as unseen
+  // rather than replaying everything.
+  if (index === -1) return productUpdates.slice(0, 1);
+
+  return productUpdates.slice(0, index);
+}

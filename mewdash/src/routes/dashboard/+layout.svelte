@@ -8,8 +8,19 @@
   import { userStore } from "$lib/stores/userStore.ts";
   import DashboardSidebar from "$lib/components/layout/DashboardSidebar.svelte";
   import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
-  import DashboardUpdateNotice from "$lib/components/dashboard/DashboardUpdateNotice.svelte";
-  import { latestProductUpdate } from "$lib/content/productUpdates";
+  import ProductUpdateModal from "$lib/components/dashboard/ProductUpdateModal.svelte";
+  import {
+    lastSeenUpdateKey,
+    latestProductUpdate,
+    productUpdates,
+    unseenProductUpdates
+  } from "$lib/content/productUpdates";
+  import {
+    announceProductUpdates,
+    closeProductUpdates,
+    unseenUpdates,
+    updatesDialog
+  } from "$lib/stores/productUpdateStore";
   import { browser } from "$app/environment";
   import { wizardApi } from "$lib/api/index.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
@@ -63,11 +74,46 @@
   // Setup suggestion banner state
   let showSetupSuggestion = $state(false);
   let setupSuggestionContext = $state<any>(null);
-  let showProductUpdate = $state(false);
+  /**
+   * Marks every update as read, so the next visit only surfaces what is published after this one.
+   */
+  function dismissProductUpdates() {
+    unseenUpdates.set([]);
+    closeProductUpdates();
+    localStorage.setItem(lastSeenUpdateKey, latestProductUpdate.id);
+  }
 
-  function dismissProductUpdate() {
-    showProductUpdate = false;
-    localStorage.setItem(`dismissed-product-update:${latestProductUpdate.id}`, "true");
+  /**
+   * Converts the retired per-update dismissal keys into the single last-seen marker.
+   *
+   * The old scheme wrote one key per update and never removed any, so it grew by a key with
+   * every release. This reads the newest update the viewer had already dismissed, clears the
+   * whole set, and returns that id so they carry on from the right place instead of being
+   * treated as a first-time visitor and silently skipping an update.
+   */
+  function migrateDismissedUpdates(): string | null {
+    const legacyPrefix = "dismissed-product-update:";
+    const dismissed = new Set<string>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(legacyPrefix) && localStorage.getItem(key) === "true") {
+        dismissed.add(key.slice(legacyPrefix.length));
+      }
+    }
+
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(legacyPrefix)) localStorage.removeItem(key);
+    }
+
+    if (dismissed.size === 0) return null;
+
+    const newest = productUpdates.find((update) => dismissed.has(update.id));
+    if (!newest) return null;
+
+    localStorage.setItem(lastSeenUpdateKey, newest.id);
+    return newest.id;
   }
 
   // Check for wizard or setup suggestion when guild changes
@@ -164,7 +210,15 @@
       userStore.set(data.user);
     }
 
-    showProductUpdate = localStorage.getItem(`dismissed-product-update:${latestProductUpdate.id}`) !== "true";
+    const lastSeen = localStorage.getItem(lastSeenUpdateKey) ?? migrateDismissedUpdates();
+
+    // Nothing acknowledged yet means a first visit, which gets the newest update only rather
+    // than the whole changelog. Being seen is recorded when it is dismissed, never on load, so
+    // closing the tab without reading it does not quietly mark it read.
+    const unseen = lastSeen ? unseenProductUpdates(lastSeen) : [latestProductUpdate];
+
+    unseenUpdates.set(unseen);
+    if (unseen.length > 0) announceProductUpdates();
 
     // If no user, redirect to login with current URL
     if (browser && !data.user && !$userStore) {
@@ -291,8 +345,12 @@
     {:else}
       <ErrorBoundary fallback="Dashboard component failed to load. Please refresh or try a different page."
                      showDetails={true}>
-        {#if showProductUpdate}
-          <DashboardUpdateNotice update={latestProductUpdate} ondismiss={dismissProductUpdate} />
+        {#if $updatesDialog.open}
+          <ProductUpdateModal
+            updates={$unseenUpdates}
+            startInArchive={$updatesDialog.archive}
+            ondismiss={dismissProductUpdates}
+          />
         {/if}
         {#if $currentGuild && showSetupSuggestion && setupSuggestionContext}
           <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
