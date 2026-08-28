@@ -29,6 +29,7 @@
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
 
@@ -202,7 +203,7 @@
 
   async function resetConfig() {
     if (!$currentGuild?.id) return;
-    if (!confirm("Reset every economy setting to its default?")) return;
+    if (!(await requestConfirmation({ message: "Reset every economy setting to its default?", confirmText: "Reset" }))) return;
 
     saving = true;
     try {
@@ -276,7 +277,7 @@
 
   async function deleteShopItem(item: ShopItem) {
     if (!$currentGuild?.id) return;
-    if (!confirm(`Delete "${item.name}"? Everyone who owns one loses it.`)) return;
+    if (!(await requestConfirmation({ message: `Delete "${item.name}"? Everyone who owns one loses it.`, confirmText: "Delete" }))) return;
 
     try {
       await currencyApi.deleteShopItem($currentGuild.id, item.name);

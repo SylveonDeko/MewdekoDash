@@ -26,6 +26,7 @@
     import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     interface Props {
         data: PageData;
@@ -1094,8 +1095,8 @@
                   <button aria-label="Play"
                           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    onclick={() => {
-                      if (confirm("Are you sure you want to restore from this save point?")) {
+                    onclick={async () => {
+                      if (await requestConfirmation({ message: "Are you sure you want to restore from this save point?", confirmText: "Restore" })) {
                         // Implementation would go here
                       }
                     }}
@@ -1105,8 +1106,8 @@
 
                   <button aria-label="Delete"
                           class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] text-red-500 hover:bg-red-500/20"
-                    onclick={() => {
-                      if (confirm("Are you sure you want to delete this save point?")) {
+                    onclick={async () => {
+                      if (await requestConfirmation({ message: "Are you sure you want to delete this save point?", confirmText: "Delete" })) {
                         // Implementation would go here
                       }
                     }}

@@ -12,6 +12,7 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
     import { parseStoredMessage } from "$lib/utils/embedMessage";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     // Component state
     let loading = $state(false);
@@ -115,7 +116,7 @@
     // Remove feed
     async function removeFeed(index: number) {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to remove this RSS feed?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to remove this RSS feed?", confirmText: "Remove" }))) return;
 
         saving = true;
         try {

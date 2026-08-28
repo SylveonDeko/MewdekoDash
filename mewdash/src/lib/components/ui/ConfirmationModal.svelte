@@ -29,17 +29,25 @@
   }: Props = $props();
 
   function handleConfirm() {
-    onconfirm?.();
     close();
+    onconfirm?.();
   }
 
   function handleCancel() {
-    oncancel?.();
     close();
+    oncancel?.();
   }
 
   function close() {
+    const scrollPosition = typeof window === "undefined"
+      ? null
+      : { x: window.scrollX, y: window.scrollY };
+
     isOpen = false;
+
+    if (scrollPosition) {
+      requestAnimationFrame(() => window.scrollTo(scrollPosition.x, scrollPosition.y));
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -87,7 +95,7 @@
             {title}
           </h2>
         </div>
-        <button aria-label="Button action"
+        <button type="button" aria-label="Button action"
           class="p-2 rounded-lg transition-colors hover:opacity-70"
           style="background: {$colorStore.primary}10; color: {$colorStore.muted}"
           onclick={handleCancel}
@@ -105,6 +113,7 @@
       <!-- Actions -->
       <div class="flex gap-3 p-6 pt-0">
         <button
+          type="button"
           class="flex-1 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 min-h-[44px]"
           style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
           onclick={handleCancel}
@@ -112,6 +121,7 @@
           {cancelText}
         </button>
         <button
+          type="button"
           class="flex-1 px-4 py-3 rounded-xl font-medium transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
           style="background: {variantColor}20; color: {variantColor}; border: 1px solid {variantColor}30;"
           onclick={handleConfirm}

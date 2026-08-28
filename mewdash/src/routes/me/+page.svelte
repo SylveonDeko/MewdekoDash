@@ -8,6 +8,7 @@
   import { clickOutside } from "$lib/clickOutside";
   import Notification from "$lib/components/ui/Notification.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   let {data} = $props();
 
@@ -953,7 +954,7 @@
                   class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border-color: {$colorStore.accent}30;"
                   onclick={async () => {
-                    if (confirm('Are you sure you want to unlink your Last.fm account?')) {
+                    if (await requestConfirmation({ message: 'Are you sure you want to unlink your Last.fm account?', confirmText: 'Unlink' })) {
                       saving = true;
                       try {
                         await lastfmApi.unlink(BigInt("0"), userId);

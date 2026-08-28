@@ -12,6 +12,7 @@
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import type { PageData } from "./$types";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
       data: PageData;
@@ -110,7 +111,7 @@
     // Remove status role
     async function removeStatusRole(id: number) {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to remove this status role?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to remove this status role?", confirmText: "Remove" }))) return;
 
         saving = true;
         try {

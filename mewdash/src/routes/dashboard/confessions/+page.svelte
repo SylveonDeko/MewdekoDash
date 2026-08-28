@@ -10,6 +10,7 @@
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     // Component state
     let loading = $state(false);
@@ -142,7 +143,7 @@
     // Delete confession
     async function deleteConfession(confessionNumber: bigint) {
         if (!$currentGuild?.id) return;
-        if (!confirm(`Are you sure you want to delete confession #${confessionNumber}? This will also delete the message.`)) return;
+        if (!(await requestConfirmation({ message: `Are you sure you want to delete confession #${confessionNumber}? This will also delete the message.`, confirmText: "Delete" }))) return;
 
         saving = true;
         try {

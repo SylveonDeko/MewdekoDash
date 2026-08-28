@@ -24,6 +24,7 @@
   import { logger } from "$lib/logger";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     data: PageData;
@@ -406,7 +407,7 @@
   }
 
   async function removeCommand(name: string) {
-    if (!$currentGuild?.id || !confirm(`Remove ${configForm.commandPrefix}${name}?`)) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove ${configForm.commandPrefix}${name}?`, confirmText: "Remove" }))) return;
     commandSaving = true;
     try {
       await twitchApi.removeCustomCommand($currentGuild.id, name);
@@ -489,7 +490,7 @@
   }
 
   async function removeTimer(name: string) {
-    if (!$currentGuild?.id || !confirm(`Remove timer ${name}?`)) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove timer ${name}?`, confirmText: "Remove" }))) return;
     timerSaving = true;
     try {
       await twitchApi.removeTimer($currentGuild.id, name);
@@ -571,7 +572,7 @@
   }
 
   async function removeRedemption(rewardTitle: string) {
-    if (!$currentGuild?.id || !confirm(`Remove action for ${rewardTitle}?`)) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove action for ${rewardTitle}?`, confirmText: "Remove" }))) return;
     redemptionSaving = true;
     try {
       await twitchApi.removeRedemptionAction($currentGuild.id, rewardTitle);
@@ -635,7 +636,7 @@
   }
 
   async function removeQuote(quoteId: number) {
-    if (!$currentGuild?.id || !confirm(`Remove quote #${quoteId}?`)) return;
+    if (!$currentGuild?.id || !(await requestConfirmation({ message: `Remove quote #${quoteId}?`, confirmText: "Remove" }))) return;
     quoteSaving = true;
     try {
       await twitchApi.removeQuote($currentGuild.id, quoteId);
@@ -693,7 +694,7 @@
   async function disconnect(mode: "bot" | "channel") {
     if (!$currentGuild?.id) return;
     const label = mode === "bot" ? "bot account" : "channel authorization";
-    if (!confirm(`Disconnect the Twitch ${label}?`)) return;
+    if (!(await requestConfirmation({ message: `Disconnect the Twitch ${label}?`, confirmText: "Disconnect" }))) return;
 
     saving = true;
     try {

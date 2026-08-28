@@ -18,6 +18,7 @@
   import { goto } from "$app/navigation";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     data: PageData;
@@ -1055,8 +1056,8 @@
                       <button
                         class="ml-auto px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 transition-all hover:scale-[1.02] hover:bg-red-500/20 focus:ring-2"
                         style="background: {$colorStore.muted}10; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}20; --tw-ring-color: {$colorStore.muted}50;"
-                        onclick={() => {
-                            if (confirm('Are you sure you want to delete this suggestion?')) {
+                        onclick={async () => {
+                            if (await requestConfirmation({ message: 'Are you sure you want to delete this suggestion?', confirmText: 'Delete' })) {
                               deleteSuggestion(suggestion.id);
                             }
                           }}
@@ -1699,4 +1700,3 @@
     </div>
   {/if}
 </DashboardPageLayout>
-

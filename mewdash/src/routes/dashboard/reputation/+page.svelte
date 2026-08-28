@@ -10,6 +10,7 @@
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   // Component state
     let loading = $state(false);
@@ -249,7 +250,7 @@
     // Remove role reward
     async function removeRoleReward(roleId: bigint) {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to remove this role reward?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to remove this role reward?", confirmText: "Remove" }))) return;
 
         saving = true;
         try {

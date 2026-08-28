@@ -162,6 +162,12 @@
   // JSON tab state
   let jsonText = $state("");
   let jsonParseError = $state("");
+  let editHistory = $state<string[]>([]);
+  let historyIndex = $state(-1);
+  let initialSnapshot = $state("");
+  let historyReady = $state(false);
+  let restoringHistory = false;
+  let historyDebounce: ReturnType<typeof setTimeout> | null = null;
 
   // Saved embeds state
   let savedUserEmbeds: SavedEmbed[] = $state([]);
@@ -216,6 +222,12 @@
   onMount(() => {
     validateEmbeds();
     validateComponents();
+    queueMicrotask(() => {
+      initialSnapshot = serializeDraft();
+      editHistory = [initialSnapshot];
+      historyIndex = 0;
+      historyReady = true;
+    });
     if (data.user?.id) {
       loadSavedEmbeds();
     }
@@ -291,6 +303,53 @@
     return exportData;
   }
 
+  function serializeDraft(): string {
+    const output = buildExportData();
+    return Object.keys(output).length === 0 ? "" : JSON.stringify(output);
+  }
+
+  function restoreSnapshot(snapshot: string) {
+    if (historyDebounce) clearTimeout(historyDebounce);
+    restoringHistory = true;
+    applyImportedJson(snapshot || "{}", false);
+    queueMicrotask(() => {
+      restoringHistory = false;
+    });
+  }
+
+  function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex -= 1;
+    restoreSnapshot(editHistory[historyIndex]);
+  }
+
+  function redo() {
+    if (historyIndex >= editHistory.length - 1) return;
+    historyIndex += 1;
+    restoreSnapshot(editHistory[historyIndex]);
+  }
+
+  function cancelEdits() {
+    restoreSnapshot(initialSnapshot);
+    historyIndex = 0;
+  }
+
+  $effect(() => {
+    JSON.stringify({ content, embeds, componentRows });
+
+    if (!historyReady || restoringHistory) return;
+
+    if (historyDebounce) clearTimeout(historyDebounce);
+    historyDebounce = setTimeout(() => {
+      const snapshot = serializeDraft();
+      if (snapshot === editHistory[historyIndex]) return;
+
+      const nextHistory = [...editHistory.slice(0, historyIndex + 1), snapshot].slice(-50);
+      editHistory = nextHistory;
+      historyIndex = nextHistory.length - 1;
+    }, 350);
+  });
+
   // Refreshes the editable JSON textarea from the current builder state
   function refreshJsonPreview() {
     jsonText = JSON.stringify(buildExportData(), null, 2);
@@ -298,13 +357,13 @@
   }
 
   // Parses embed JSON (either { content, embeds, components } or a bare embed) and loads it into the builder
-  function applyImportedJson(text: string) {
+  function applyImportedJson(text: string, notify = true) {
     let parsed: any;
     try {
       parsed = JSON.parse(text);
     } catch (error) {
       jsonParseError = "That isn't valid JSON.";
-      showNotificationMessage("Invalid JSON", "error");
+      if (notify) showNotificationMessage("Invalid JSON", "error");
       return;
     }
 
@@ -381,8 +440,10 @@
     jsonParseError = "";
     validateEmbeds();
     validateComponents();
-    showNotificationMessage("JSON applied to builder");
-    activeMainTab = "editor";
+    if (notify) {
+      showNotificationMessage("JSON applied to builder");
+      activeMainTab = "editor";
+    }
   }
 
   function applyJsonText() {
@@ -1553,6 +1614,27 @@
     ) || content.trim().length > 0);
   // Action buttons for DashboardPageLayout
     let actionButtons = $derived([
+    {
+      label: "Undo",
+      icon: "fa-rotate-left",
+      action: undo,
+      disabled: historyIndex <= 0,
+      loading: false
+    },
+    {
+      label: "Redo",
+      icon: "fa-rotate-right",
+      action: redo,
+      disabled: historyIndex >= editHistory.length - 1,
+      loading: false
+    },
+    {
+      label: "Cancel edits",
+      icon: "fa-xmark",
+      action: cancelEdits,
+      disabled: historyIndex <= 0,
+      loading: false
+    },
     {
       label: jsonCopied ? 'Copied!' : 'Copy JSON',
       icon: "fa-copy",

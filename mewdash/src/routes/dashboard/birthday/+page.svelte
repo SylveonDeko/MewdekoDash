@@ -22,6 +22,7 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
     import type { PageData } from "./$types";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     interface Props {
       data: PageData;
@@ -226,7 +227,7 @@
     // Reset configuration
     async function resetConfig() {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to reset the birthday configuration to defaults?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to reset the birthday configuration to defaults?", confirmText: "Reset" }))) return;
 
         saving = true;
         try {

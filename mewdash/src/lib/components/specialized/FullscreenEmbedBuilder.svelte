@@ -154,6 +154,11 @@
   let showMobilePreview = $state(false);
   let hasInitialized = $state(false);
   let editingComponentKey = $state<string | null>(null);
+  let editHistory = $state<string[]>([]);
+  let historyIndex = $state(-1);
+  let initialSnapshot = $state("");
+  let restoringHistory = false;
+  let historyDebounce: ReturnType<typeof setTimeout> | null = null;
 
   // JSON tab state
   let jsonText = $state("");
@@ -383,6 +388,10 @@
 
   // Open/Close handlers
   function open() {
+    if (historyDebounce) clearTimeout(historyDebounce);
+    initialSnapshot = serializeDraft();
+    editHistory = [initialSnapshot];
+    historyIndex = 0;
     isOpen = true;
     loadChatTriggers();
     loadSavedEmbeds();
@@ -395,12 +404,21 @@
   }
 
   function close() {
+    if (historyDebounce) clearTimeout(historyDebounce);
     isOpen = false;
     onclose?.();
     // Restore body scrolling
     if (typeof document !== "undefined") {
       document.body.style.overflow = "";
     }
+  }
+
+  function cancel() {
+    restoreSnapshot(initialSnapshot);
+    const restoredValue = initialSnapshot ? JSON.parse(initialSnapshot) : "";
+    value = restoredValue;
+    onchange?.(restoredValue);
+    close();
   }
 
   function save() {
@@ -450,6 +468,58 @@
 
     return exportData;
   }
+
+  function serializeDraft(): string {
+    const output = cleanOutput();
+    return typeof output === "string" ? "" : JSON.stringify(output);
+  }
+
+  function restoreSnapshot(snapshot: string) {
+    if (historyDebounce) clearTimeout(historyDebounce);
+    restoringHistory = true;
+
+    if (!snapshot) {
+      content = "";
+      embeds = [];
+      componentRows = [];
+      validateEmbeds();
+      validateComponents();
+    } else {
+      applyImportedJson(snapshot, false);
+    }
+
+    queueMicrotask(() => {
+      restoringHistory = false;
+    });
+  }
+
+  function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex -= 1;
+    restoreSnapshot(editHistory[historyIndex]);
+  }
+
+  function redo() {
+    if (historyIndex >= editHistory.length - 1) return;
+    historyIndex += 1;
+    restoreSnapshot(editHistory[historyIndex]);
+  }
+
+  $effect(() => {
+    JSON.stringify({ content, embeds, componentRows });
+
+    if (!isOpen || restoringHistory) return;
+
+    if (historyDebounce) clearTimeout(historyDebounce);
+    historyDebounce = setTimeout(() => {
+      const snapshot = serializeDraft();
+      if (snapshot === editHistory[historyIndex]) return;
+
+      const nextHistory = [...editHistory.slice(0, historyIndex + 1), snapshot].slice(-50);
+      editHistory = nextHistory;
+      historyIndex = nextHistory.length - 1;
+    }, 350);
+  });
 
   function cleanEmbed(embed: Embed) {
     const cleaned: any = {};
@@ -538,13 +608,13 @@
   // Parses embed JSON (either { content, embeds, components } or a bare embed) and loads it into
   // the builder. Respects the same restrictions manual editing is subject to: allowContent,
   // allowMultipleEmbeds/maxEmbeds, and allowComponents/restrictedComponentTypes.
-  function applyImportedJson(text: string) {
+  function applyImportedJson(text: string, notify = true) {
     let parsed: any;
     try {
       parsed = JSON.parse(text);
     } catch {
       jsonParseError = "That isn't valid JSON.";
-      showNotificationMessage("Invalid JSON", "error");
+      if (notify) showNotificationMessage("Invalid JSON", "error");
       return;
     }
 
@@ -652,10 +722,12 @@
     jsonParseError = "";
     validateEmbeds();
     validateComponents();
-    showNotificationMessage(
-      componentsSkipped ? "JSON applied (components aren't allowed here and were skipped)" : "JSON applied to builder"
-    );
-    activeTab = "editor";
+    if (notify) {
+      showNotificationMessage(
+        componentsSkipped ? "JSON applied (components aren't allowed here and were skipped)" : "JSON applied to builder"
+      );
+      activeTab = "editor";
+    }
   }
 
   function applyJsonText() {
@@ -1103,7 +1175,7 @@
         type="button"
         class="absolute inset-0 bg-black/80 backdrop-blur-sm"
         aria-label="Close editor"
-        onclick={close}
+        onclick={cancel}
       ></button>
 
       <!-- Modal Content -->
@@ -1128,6 +1200,28 @@
 
           <div class="flex items-center gap-2">
             <button
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+              onclick={undo}
+              disabled={historyIndex <= 0}
+              type="button"
+              title="Undo"
+            >
+              <i class="fa-solid fa-rotate-left"></i>
+              <span class="hidden sm:inline ml-1">Undo</span>
+            </button>
+            <button
+              class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+              style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+              onclick={redo}
+              disabled={historyIndex >= editHistory.length - 1}
+              type="button"
+              title="Redo"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+              <span class="hidden sm:inline ml-1">Redo</span>
+            </button>
+            <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
               style="background: #ED424520; color: #ED4245; border: 1px solid #ED424530;"
               onclick={clearAll}
@@ -1140,7 +1234,7 @@
             <button
               class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-sm transition-all hover:scale-[1.02]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-              onclick={close}
+              onclick={cancel}
               type="button"
             >
               Cancel

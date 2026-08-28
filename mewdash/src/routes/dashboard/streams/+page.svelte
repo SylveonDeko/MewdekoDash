@@ -13,6 +13,7 @@
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import PreviewCard from "$lib/components/specialized/PreviewCard.svelte";
   import { parseStoredMessage, serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     data: PageData;
@@ -137,7 +138,7 @@
   // Unfollow stream
   async function unfollowStream(id: number) {
     if (!$currentGuild?.id) return;
-    if (!confirm("Are you sure you want to stop following this stream?")) return;
+    if (!(await requestConfirmation({ message: "Are you sure you want to stop following this stream?", confirmText: "Unfollow" }))) return;
 
     saving = true;
     try {
@@ -155,7 +156,7 @@
   // Clear all streams
   async function clearAllStreams() {
     if (!$currentGuild?.id) return;
-    if (!confirm("Are you sure you want to unfollow ALL streams? This cannot be undone!")) return;
+    if (!(await requestConfirmation({ message: "Are you sure you want to unfollow all streams? This cannot be undone.", confirmText: "Unfollow all" }))) return;
 
     saving = true;
     try {

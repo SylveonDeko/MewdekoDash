@@ -9,6 +9,7 @@
 
     import StatCard from "$lib/components/monitoring/StatCard.svelte";
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     // Component state
     let loading = $state(false);
@@ -81,7 +82,7 @@
     // Delete highlight
     async function deleteHighlight(highlightId: number) {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to delete this highlight?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to delete this highlight?", confirmText: "Delete" }))) return;
 
         try {
             await highlightsApi.removeHighlight($currentGuild.id, highlightId);
@@ -99,7 +100,7 @@
     // Delete all user highlights
     async function deleteUserHighlights(userId: bigint, username: string) {
         if (!$currentGuild?.id) return;
-        if (!confirm(`Are you sure you want to delete all highlights for ${username}?`)) return;
+        if (!(await requestConfirmation({ message: `Are you sure you want to delete all highlights for ${username}?`, confirmText: "Delete all" }))) return;
 
         try {
             const result = await highlightsApi.removeUserHighlights($currentGuild.id, userId);

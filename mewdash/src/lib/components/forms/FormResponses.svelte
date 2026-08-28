@@ -15,6 +15,7 @@
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fade, slide } from "svelte/transition";
   import { escapeHtml } from "$lib/utils/sanitize";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     formId: number;
@@ -70,7 +71,7 @@
   }
 
   async function deleteResponse(responseId: number) {
-    if (!confirm("Are you sure you want to delete this response?")) return;
+    if (!(await requestConfirmation({ message: "Are you sure you want to delete this response?", confirmText: "Delete" }))) return;
 
     return await loadingStore.wrap("delete-response", async () => {
       try {

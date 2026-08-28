@@ -27,6 +27,7 @@
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import { toBuilderValue } from "$lib/utils/embedMessage";
   import type { PageData } from "./$types";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     data: PageData;
@@ -440,7 +441,7 @@
   // Delete a repeater
   async function deleteRepeater(repeaterId: number) {
     if (!$currentGuild?.id) return;
-    if (!confirm("Are you sure you want to delete this repeater? This action cannot be undone.")) return;
+    if (!(await requestConfirmation({ message: "Are you sure you want to delete this repeater? This action cannot be undone.", confirmText: "Delete" }))) return;
 
     try {
       await repeatersApi.deleteRepeater($currentGuild.id, repeaterId);
@@ -2053,4 +2054,3 @@
     </div>
   {/if}
 </DashboardPageLayout>
-

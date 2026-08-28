@@ -19,6 +19,7 @@
   import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
   import TriggerAdvancedSettings from "$lib/components/specialized/TriggerAdvancedSettings.svelte";
   import { parseStoredMessage, toBuilderValue } from "$lib/utils/embedMessage";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   /**
    * One-line description of a trigger response for the collapsed row. Embed-only
@@ -403,7 +404,7 @@
     const trigger = triggers.find(t => t.id === triggerId);
     const triggerName = trigger?.trigger || 'trigger';
     
-    if (!confirm(`Are you sure you want to delete the trigger "${triggerName}"?`)) {
+    if (!(await requestConfirmation({ message: `Are you sure you want to delete the trigger "${triggerName}"?`, confirmText: "Delete" }))) {
       announceAction('Delete cancelled');
       return;
     }

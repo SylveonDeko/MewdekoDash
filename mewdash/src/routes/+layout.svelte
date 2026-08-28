@@ -13,6 +13,8 @@
   import { userStore } from "$lib/stores/userStore.ts";
   import { initAuthRefresh } from "$lib/authRefresh";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import { pendingConfirmation, resolveConfirmation } from "$lib/stores/confirmationStore";
 
 
   interface Props {
@@ -183,3 +185,14 @@
       {@render children?.()}
   </main>
 </ErrorBoundary>
+
+<ConfirmationModal
+  isOpen={!!$pendingConfirmation}
+  title={$pendingConfirmation?.title}
+  message={$pendingConfirmation?.message}
+  confirmText={$pendingConfirmation?.confirmText}
+  cancelText={$pendingConfirmation?.cancelText}
+  variant={$pendingConfirmation?.variant}
+  onconfirm={() => resolveConfirmation(true)}
+  oncancel={() => resolveConfirmation(false)}
+/>

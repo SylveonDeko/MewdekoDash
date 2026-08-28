@@ -22,6 +22,7 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import FullscreenEmbedBuilder from "$lib/components/specialized/FullscreenEmbedBuilder.svelte";
     import { serializeMessage, toBuilderValue } from "$lib/utils/embedMessage";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     let loading = $state(false);
     let saving = $state(false);
@@ -379,7 +380,7 @@
 
     async function removeServer(name: string) {
         if (!$currentGuild?.id) return;
-        if (!confirm(`Are you sure you want to remove server "${name}"?`)) return;
+        if (!(await requestConfirmation({ message: `Are you sure you want to remove server "${name}"?`, confirmText: "Remove" }))) return;
 
         saving = true;
         try {
@@ -577,7 +578,7 @@
 
     async function generatePluginKey() {
         if (!$currentGuild?.id || !selectedServer) return;
-        if (selectedServer.hasPluginKey && !confirm("This will replace the existing key. The old key will stop working. Continue?")) return;
+        if (selectedServer.hasPluginKey && !(await requestConfirmation({ message: "This will replace the existing key. The old key will stop working.", confirmText: "Replace" }))) return;
         try {
             const result = await minecraftApi.generatePluginKey($currentGuild.id, selectedServer.name);
             pluginKey = result.key;
@@ -591,7 +592,7 @@
 
     async function revokePluginKey() {
         if (!$currentGuild?.id || !selectedServer) return;
-        if (!confirm("This will revoke the plugin API key. The companion plugin will disconnect. Continue?")) return;
+        if (!(await requestConfirmation({ message: "This will revoke the plugin API key. The companion plugin will disconnect.", confirmText: "Revoke" }))) return;
         try {
             await minecraftApi.revokePluginKey($currentGuild.id, selectedServer.name);
             pluginKey = null;

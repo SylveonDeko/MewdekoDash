@@ -21,6 +21,7 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
     import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+    import { requestConfirmation } from "$lib/stores/confirmationStore";
 
     interface Props {
         data: PageData;
@@ -379,7 +380,7 @@
   }
 
   async function resetMessageCounts(type: "all" | "user" | "channel") {
-    if (!$currentGuild || !confirm(`Are you sure you want to reset ${type} message counts? This cannot be undone.`)) return;
+    if (!$currentGuild || !(await requestConfirmation({ message: `Are you sure you want to reset ${type} message counts? This cannot be undone.`, confirmText: "Reset" }))) return;
 
     resetLoading = true;
     try {

@@ -10,6 +10,7 @@
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   // Component state
     let loading = $state(false);
@@ -184,7 +185,7 @@
     // Clear all vote roles
     async function clearAllVoteRoles() {
         if (!$currentGuild?.id) return;
-        if (!confirm("Are you sure you want to remove all vote roles?")) return;
+        if (!(await requestConfirmation({ message: "Are you sure you want to remove all vote roles?", confirmText: "Remove all" }))) return;
 
         saving = true;
         try {

@@ -15,6 +15,7 @@
   import FormEdit from "$lib/components/forms/FormEdit.svelte";
   import FormResponses from "$lib/components/forms/FormResponses.svelte";
   import FormWorkflowReview from "$lib/components/forms/FormWorkflowReview.svelte";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
     data: PageData;
@@ -112,7 +113,7 @@
   }
 
   async function deleteForm(form: Form) {
-    if (!confirm(`Are you sure you want to delete "${form.name}"? This will delete all responses.`)) {
+    if (!(await requestConfirmation({ message: `Are you sure you want to delete "${form.name}"? This will delete all responses.`, confirmText: "Delete" }))) {
       return;
     }
 
