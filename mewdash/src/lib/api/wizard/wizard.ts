@@ -66,6 +66,19 @@ export const wizardApi = {
     apiRequest<void>(`Wizard/skip/${guildId}`, "POST", userId),
 
   /**
+   * Clears a guild's wizard completed and skipped flags so the wizard is offered again
+   * @param guildId The guild ID
+   * @param userId Optional user whose completed-guild list should also be cleared
+   * @returns The wizard state after the reset
+   */
+  resetWizard: (guildId: bigint, userId?: bigint) =>
+    apiRequest<WizardStateResponse>(
+      `Wizard/reset/${guildId}`,
+      "POST",
+      userId ?? null,
+    ),
+
+  /**
    * Checks bot permissions in a guild
    * @param guildId The guild ID
    * @returns Permission check results

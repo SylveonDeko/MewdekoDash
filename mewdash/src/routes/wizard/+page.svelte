@@ -27,18 +27,47 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   // API imports
   import {
     administrationApi,
+    afkApi,
     birthdayApi,
     clientApi,
     confessionsApi,
     countingApi,
+    customVoiceApi,
+    feedsApi,
+    guildApi,
+    inviteTrackingApi,
     loggingApi,
     multiGreetApi,
+    protectionApi,
+    repeatersApi,
+    reputationApi,
     roleGreetApi,
+    roleStatesApi,
     starboardApi,
+    statChannelsApi,
+    statusRolesApi,
+    streamNotificationsApi,
     suggestionsApi,
+    ticketApi,
+    votesApi,
     wizardApi,
     xpApi
   } from "$lib/api/index.ts";
+
+  // Wizard feature catalog
+  import {
+    allWizardFeatures,
+    createDefaultFeatureConfigs,
+    createDefaultFeatureStates,
+    wizardAfkTypes,
+    wizardChannelPatterns,
+    wizardFeatureCategories,
+    wizardLoggingEvents,
+    wizardPunishmentActions,
+    wizardStatChannelTypes,
+    type WizardFeature,
+    type WizardFeatureState
+  } from "$lib/config/wizardFeatures";
 
   interface Props {
     data: PageData;
@@ -102,97 +131,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   let wizardDecision: any = null;
   let dataLoading = $state(true);
   let dataError: string | null = $state(null);
+  let actionError: string | null = $state(null);
 
   // Feature states
-  type FeatureState = "full" | "quick" | "skip";
-  let featureStates = $state<Record<string, FeatureState>>({
-    multigreets: "skip",
-    rolegreets: "skip",
-    logging: "skip",
-    administration: "skip",
-    xp: "skip",
-    starboard: "skip",
-    suggestions: "skip",
-    moderation: "skip",
-    tickets: "skip",
-    giveaways: "skip",
-    confessions: "skip",
-    counting: "skip",
-    birthday: "skip"
-  });
+  type FeatureState = WizardFeatureState;
+  let featureStates = $state<Record<string, FeatureState>>(createDefaultFeatureStates());
 
   // Feature configurations
-  let featureConfigs = $state<Record<string, any>>({
-    multigreets: {
-      channelId: null,
-      channelIds: [],
-      message: "Welcome to %server.name%, %user.mention%! 🎉",
-      messageStyle: "plain",
-      embeds: [],
-      components: [],
-      applyToMultiple: false
-    },
-    rolegreets: {
-      roleId: null,
-      channelId: null,
-      message: "Congratulations %user.mention% on getting the %role.name% role! 🎉",
-      messageStyle: "plain",
-      embeds: [],
-      components: []
-    },
-    logging: {
-      // Logging events are tracked in loggingEvents state array
-    },
-    administration: {
-      normalRoles: [],
-      botRoles: []
-    },
-    xp: {
-      textRate: 3,
-      voiceRate: 2,
-      levelChannelId: null,
-      roleRewards: [],
-      excludedChannels: []
-    },
-    starboard: {
-      starboards: [
-        { channelId: null, threshold: 3, emoji: "⭐" }
-      ]
-    },
-    suggestions: {
-      channelId: null,
-      acceptChannelId: null,
-      denyChannelId: null,
-      considerChannelId: null,
-      implementChannelId: null
-    },
-    moderation: {
-      logChannelId: null,
-      muteRoleId: null
-    },
-    tickets: {
-      categoryId: null
-    },
-    giveaways: {
-      // Giveaways are configured per-event in the dashboard
-      // No persistent configuration needed for wizard
-    },
-    confessions: {
-      channelId: null,
-      logChannelId: null
-    },
-    counting: {
-      channelId: null
-    },
-    birthday: {
-      channelId: null,
-      roleId: null,
-      message: "Happy Birthday, %user.mention%! 🎉🎂",
-      messageStyle: "plain",
-      embeds: [],
-      components: []
-    }
-  });
+  let featureConfigs = $state<Record<string, any>>(createDefaultFeatureConfigs());
 
   // Current configuration step tracking
   let configPhase = $state(false);
@@ -203,623 +149,52 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   let availableChannels = $state<any[]>([]);
   let availableRoles = $state<any[]>([]);
   let availableCategories = $state<any[]>([]);
+  let availableVoiceChannels = $state<any[]>([]);
+  let availableTimezones = $state<any[]>([]);
   let channelsLoading = $state(false);
+
+  /** Server-wide settings collected on the Server Basics step. */
+  let basicsConfig = $state({
+    prefix: "",
+    locale: "",
+    timezoneId: null as string | null
+  });
+  let guildConfig: any = $state(null);
+  let basicsLoading = $state(true);
+
+  /** Languages the bot ships translations for. */
+  const availableLocales = [
+    { id: "en-US", name: "English (US)" },
+    { id: "es-ES", name: "Español" },
+    { id: "fr-FR", name: "Français" },
+    { id: "de-DE", name: "Deutsch" },
+    { id: "it-IT", name: "Italiano" },
+    { id: "pt-BR", name: "Português (Brasil)" },
+    { id: "nl-NL", name: "Nederlands" },
+    { id: "pl-PL", name: "Polski" },
+    { id: "ru-RU", name: "Русский" },
+    { id: "tr-TR", name: "Türkçe" },
+    { id: "ja-JP", name: "日本語" },
+    { id: "zh-CN", name: "中文 (简体)" },
+    { id: "ko-KR", name: "한국어" }
+  ];
 
   // Dependency suggestions
   let suggestions = $state<any[]>([]);
 
   // Expanded feature categories (Essential expanded by default)
-  let expandedFeatureCategories = $state<Record<string, boolean>>({
-    "Essential": true,
-    "Community Growth": false,
-    "Moderation & Support": false
-  });
+  let expandedFeatureCategories = $state<Record<string, boolean>>(
+    Object.fromEntries(
+      wizardFeatureCategories.map((category) => [category.name, category.name === "Essential"])
+    )
+  );
 
-  // Logging events for bulk setup - comprehensive list with correct FA icons
-  let loggingEvents = $state([
-    // Essential events (enabled by default)
-    {
-      id: "UserJoined",
-      name: "Member Joins",
-      icon: "fa-solid fa-user-plus",
-      description: "When members join the server",
-      enabled: true,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "UserLeft",
-      name: "Member Leaves",
-      icon: "fa-solid fa-user-minus",
-      description: "When members leave the server",
-      enabled: true,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "MessageDeleted",
-      name: "Message Deletions",
-      icon: "fa-solid fa-trash",
-      description: "When messages are deleted",
-      enabled: true,
-      channelId: null as string | null,
-      category: "Messages"
-    },
+  /** Every supported log type, pre-populated from the shared catalog. */
+  let loggingEvents = $state(wizardLoggingEvents.map((event) => ({ ...event })));
 
-    // Additional member events (collapsed)
-    {
-      id: "UserBanned",
-      name: "Member Bans",
-      icon: "fa-solid fa-gavel",
-      description: "When members are banned",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "UserUnbanned",
-      name: "Member Unbans",
-      icon: "fa-solid fa-user-check",
-      description: "When members are unbanned",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "UserMuted",
-      name: "Member Mutes",
-      icon: "fa-solid fa-volume-xmark",
-      description: "When members are muted/timed out",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "UserRoleAdded",
-      name: "Roles Added",
-      icon: "fa-solid fa-circle-plus",
-      description: "When roles are added to members",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Members"
-    },
-    {
-      id: "UserRoleRemoved",
-      name: "Roles Removed",
-      icon: "fa-solid fa-circle-minus",
-      description: "When roles are removed from members",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Members"
-    },
-
-    // Message events (collapsed)
-    {
-      id: "MessageUpdated",
-      name: "Message Edits",
-      icon: "fa-solid fa-pen",
-      description: "When messages are edited",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Messages"
-    },
-
-    // User profile events (collapsed)
-    {
-      id: "UsernameUpdated",
-      name: "Username Changes",
-      icon: "fa-solid fa-user-pen",
-      description: "When usernames are changed",
-      enabled: false,
-      channelId: null as string | null,
-      category: "User Updates"
-    },
-    {
-      id: "NicknameUpdated",
-      name: "Nickname Changes",
-      icon: "fa-solid fa-signature",
-      description: "When nicknames are changed",
-      enabled: false,
-      channelId: null as string | null,
-      category: "User Updates"
-    },
-    {
-      id: "AvatarUpdated",
-      name: "Avatar Changes",
-      icon: "fa-solid fa-image-portrait",
-      description: "When avatars are changed",
-      enabled: false,
-      channelId: null as string | null,
-      category: "User Updates"
-    },
-
-    // Channel events (collapsed)
-    {
-      id: "ChannelCreated",
-      name: "Channel Created",
-      icon: "fa-solid fa-plus",
-      description: "When channels are created",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Channels"
-    },
-    {
-      id: "ChannelDestroyed",
-      name: "Channel Deleted",
-      icon: "fa-solid fa-trash",
-      description: "When channels are deleted",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Channels"
-    },
-    {
-      id: "ChannelUpdated",
-      name: "Channel Updated",
-      icon: "fa-solid fa-pen",
-      description: "When channel settings change",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Channels"
-    },
-
-    // Role events (collapsed)
-    {
-      id: "RoleCreated",
-      name: "Role Created",
-      icon: "fa-solid fa-plus",
-      description: "When roles are created",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Roles"
-    },
-    {
-      id: "RoleDeleted",
-      name: "Role Deleted",
-      icon: "fa-solid fa-trash",
-      description: "When roles are deleted",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Roles"
-    },
-    {
-      id: "RoleUpdated",
-      name: "Role Updated",
-      icon: "fa-solid fa-pen",
-      description: "When role settings change",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Roles"
-    },
-
-    // Thread events (collapsed)
-    {
-      id: "ThreadCreated",
-      name: "Thread Created",
-      icon: "fa-solid fa-comments",
-      description: "When threads are created",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Threads"
-    },
-    {
-      id: "ThreadDeleted",
-      name: "Thread Deleted",
-      icon: "fa-solid fa-trash",
-      description: "When threads are deleted",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Threads"
-    },
-    {
-      id: "ThreadUpdated",
-      name: "Thread Updated",
-      icon: "fa-solid fa-pen",
-      description: "When thread settings change",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Threads"
-    },
-
-    // Voice events (collapsed)
-    {
-      id: "VoicePresence",
-      name: "Voice Activity",
-      icon: "fa-solid fa-microphone",
-      description: "When members join/leave voice channels",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Voice"
-    },
-
-    // Server events (collapsed)
-    {
-      id: "ServerUpdated",
-      name: "Server Updated",
-      icon: "fa-solid fa-server",
-      description: "When server settings change",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Server"
-    },
-    {
-      id: "EventCreated",
-      name: "Event Created",
-      icon: "fa-utility-duo fa-regular fa-calendar",
-      description: "When server events are created",
-      enabled: false,
-      channelId: null as string | null,
-      category: "Server"
-    }
-  ]);
-
-  // Feature definitions with full details
-  const featureCategories = [
-    {
-      name: "Essential",
-      description: "Core features every server should consider",
-      features: [
-        {
-          id: "multigreets",
-          title: "Welcome Messages",
-          description: "Greet new members when they join/leave",
-          icon: "fa-utility-duo fa-regular fa-bell",
-          recommended: true,
-          difficulty: "easy" as const,
-          setupTime: "3-5 min",
-          benefits: [
-            "Make new members feel welcome instantly",
-            "Customize messages with embeds and buttons",
-            "Set up multiple welcome channels",
-            "Track member count in messages"
-          ],
-          steps: [
-            {
-              id: "channel",
-              title: "Choose Channels",
-              description: "Where should welcome messages be sent?",
-              component: "channel" as const
-            },
-            {
-              id: "message",
-              title: "Design Message",
-              description: "Create your welcome message",
-              component: "message" as const
-            }
-          ]
-        },
-        {
-          id: "rolegreets",
-          title: "Role Messages",
-          description: "Greet members when they get roles (perfect for verification)",
-          icon: "fa-utility-duo fa-regular fa-user",
-          recommended: true,
-          difficulty: "easy" as const,
-          setupTime: "2-4 min",
-          benefits: [
-            "Perfect for verification systems",
-            "Celebrate staff promotions",
-            "Reduce spam from unverified users",
-            "Announce achievement roles"
-          ],
-          steps: [
-            {
-              id: "role",
-              title: "Choose Role",
-              description: "Which role should trigger the message?",
-              component: "custom" as const
-            },
-            {
-              id: "channel",
-              title: "Choose Channel",
-              description: "Where should the message be sent?",
-              component: "channel" as const
-            },
-            {
-              id: "message",
-              title: "Design Message",
-              description: "Create your role greet message",
-              component: "message" as const
-            }
-          ]
-        },
-        {
-          id: "logging",
-          title: "Event Logging",
-          description: "Track joins, leaves, and moderation actions",
-          icon: "fa-utility-duo fa-regular fa-file",
-          recommended: true,
-          difficulty: "easy" as const,
-          setupTime: "2-3 min",
-          benefits: [
-            "Track all member activity",
-            "Monitor message edits and deletions",
-            "Log moderation actions",
-            "Separate logs by event type"
-          ],
-          steps: [
-            {
-              id: "channels",
-              title: "Configure Logging",
-              description: "Set up event log channels",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "administration",
-          title: "Auto-Assign Roles",
-          description: "Give roles to new members automatically",
-          icon: "fa-utility-duo fa-regular fa-cog",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "2-3 min",
-          benefits: [
-            "Instant permissions for new members",
-            "Distinguish members from bots",
-            "Separate roles for users vs bots",
-            "Grant channel access automatically"
-          ],
-          steps: [
-            {
-              id: "roles",
-              title: "Choose Roles",
-              description: "Select roles to auto-assign",
-              component: "custom" as const
-            }
-          ]
-        }
-      ]
-    },
-    {
-      name: "Community Growth",
-      description: "Features to engage and grow your community",
-      features: [
-        {
-          id: "xp",
-          title: "XP & Leveling",
-          description: "Reward active members with levels and role rewards",
-          icon: "fa-utility-duo fa-regular fa-star",
-          recommended: false,
-          difficulty: "medium" as const,
-          setupTime: "5-8 min",
-          benefits: [
-            "Reward active members",
-            "Automatic role rewards at levels",
-            "Exclude spam channels",
-            "Voice and text XP tracking"
-          ],
-          steps: [
-            { id: "rates", title: "XP Rates", description: "Configure XP earning rates", component: "custom" as const },
-            {
-              id: "rewards",
-              title: "Role Rewards",
-              description: "Set up level-based role rewards",
-              component: "custom" as const
-            },
-            {
-              id: "exclusions",
-              title: "Exclusions",
-              description: "Exclude channels from XP gain",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "starboard",
-          title: "Starboard",
-          description: "Highlight the best messages with reactions",
-          icon: "fa-utility-duo fa-regular fa-star",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "2-3 min",
-          benefits: [
-            "Showcase community highlights",
-            "Encourage positive interactions",
-            "Custom star emoji and threshold",
-            "Multiple starboards support"
-          ],
-          steps: [
-            {
-              id: "config",
-              title: "Configure Starboard",
-              description: "Set up your starboard",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "suggestions",
-          title: "Suggestions",
-          description: "Let members suggest server improvements",
-          icon: "fa-utility-duo fa-regular fa-lightbulb",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "2-4 min",
-          benefits: [
-            "Gather community feedback",
-            "Automatic voting reactions",
-            "Staff approval workflow",
-            "Optional channels for accepted/denied"
-          ],
-          steps: [
-            {
-              id: "channels",
-              title: "Suggestion Channels",
-              description: "Configure where suggestions are managed",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "giveaways",
-          title: "Giveaways",
-          description: "Host contests and events (configured per giveaway)",
-          icon: "fa-utility-duo fa-regular fa-gift",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "N/A",
-          benefits: [
-            "Host engaging events",
-            "Automatic winner selection",
-            "Role and message requirements",
-            "Multiple winners support",
-            "Configured per-giveaway in dashboard"
-          ],
-          steps: []
-        },
-        {
-          id: "confessions",
-          title: "Anonymous Confessions",
-          description: "Let members submit anonymous confessions",
-          icon: "fa-utility-duo fa-regular fa-comment",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "2-3 min",
-          benefits: [
-            "Anonymous community feedback",
-            "Staff moderation via log channel",
-            "Build trust and openness",
-            "Track confession statistics"
-          ],
-          steps: [
-            {
-              id: "config",
-              title: "Confession Setup",
-              description: "Configure confession channels",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "counting",
-          title: "Counting Game",
-          description: "Count to infinity (or chaos ensues)",
-          icon: "fa-utility-duo fa-regular fa-list-numeric",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "1 min",
-          benefits: [
-            "Fun community activity",
-            "Simple but engaging",
-            "Automatic number tracking",
-            "Prevents duplicate counts"
-          ],
-          steps: [
-            {
-              id: "channel",
-              title: "Counting Channel",
-              description: "Where should counting happen?",
-              component: "channel" as const
-            }
-          ]
-        },
-        {
-          id: "birthday",
-          title: "Birthday Celebrations",
-          description: "Celebrate member birthdays automatically",
-          icon: "fa-utility-duo fa-regular fa-birthday-cake",
-          recommended: false,
-          difficulty: "easy" as const,
-          setupTime: "3-4 min",
-          benefits: [
-            "Auto birthday announcements",
-            "Optional birthday role",
-            "Customizable messages/embeds",
-            "Never miss a birthday"
-          ],
-          steps: [
-            {
-              id: "channel",
-              title: "Birthday Channel & Role",
-              description: "Where to announce birthdays",
-              component: "custom" as const
-            },
-            {
-              id: "message",
-              title: "Birthday Message",
-              description: "Customize the birthday announcement",
-              component: "message" as const
-            }
-          ]
-        }
-      ]
-    },
-    {
-      name: "Moderation & Support",
-      description: "Keep your server safe and organized",
-      features: [
-        {
-          id: "moderation",
-          title: "Moderation Tools",
-          description: "Warning system for rule breakers",
-          icon: "fa-utility-duo fa-regular fa-flag",
-          recommended: false,
-          difficulty: "medium" as const,
-          setupTime: "3-5 min",
-          benefits: [
-            "Track warnings per user",
-            "Automatic punishment thresholds",
-            "Moderation logs",
-            "Case management system"
-          ],
-          steps: [
-            {
-              id: "config",
-              title: "Moderation Setup",
-              description: "Configure moderation settings",
-              component: "custom" as const
-            }
-          ]
-        },
-        {
-          id: "tickets",
-          title: "Support Tickets",
-          description: "Private support channels for members",
-          icon: "fa-utility-duo fa-regular fa-ticket",
-          recommended: false,
-          difficulty: "medium" as const,
-          setupTime: "3-5 min",
-          benefits: [
-            "Private support channels",
-            "Automatic ticket management",
-            "Transcript saving",
-            "Staff role permissions"
-          ],
-          steps: [
-            {
-              id: "category",
-              title: "Ticket Category",
-              description: "Where should tickets be created?",
-              component: "custom" as const
-            }
-          ]
-        }
-      ]
-    }
-  ];
-
-  // Flatten features - explicit type to avoid inference issues
-  type Feature = {
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    recommended: boolean;
-    difficulty: "easy" | "medium" | "advanced";
-    setupTime: string;
-    benefits: string[];
-    steps: Array<{
-      id: string;
-      title: string;
-      description: string;
-      component: "channel" | "message" | "embed" | "custom"
-    }>;
-  };
-
-  const allFeatures: Feature[] = [];
-  featureCategories.forEach(cat => {
-    cat.features.forEach(f => allFeatures.push(f));
-  });
+  /** Feature catalog, shared with the dashboard's wizard config module. */
+  const featureCategories = wizardFeatureCategories;
+  const allFeatures: WizardFeature[] = allWizardFeatures;
 
   // Computed values
   let fullSetupFeatures = $derived(
@@ -861,8 +236,19 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     }));
   });
 
+  /** Whether the permission check screen is part of this run. */
+  let hasPermissionStep = $derived(data.wizardType === "first-time");
+
+  /** 1-based step numbers for the fixed screens at the front of the wizard. */
+  let permissionsStep = $derived(2);
+  let basicsStep = $derived(hasPermissionStep ? 3 : 2);
+  let featureSelectionStep = $derived(basicsStep + 1);
+
+  /** The step index of the bulk quick-enable screen, when there is one. */
+  let quickSetupStep = $derived(featureSelectionStep + fullSetupFeatures.length + 1);
+
   let totalSteps = $derived.by(() => {
-    const baseSteps = data.wizardType === "first-time" ? 3 : 2; // Welcome + (Permissions) + Features
+    const baseSteps = featureSelectionStep; // Welcome + (Permissions) + Basics + Features
     const configSteps = fullSetupFeatures.length; // One step per full setup feature
     const bulkStep = quickEnableFeatures.length > 0 ? 1 : 0; // One bulk config step
     return baseSteps + configSteps + bulkStep + 1; // +1 for completion
@@ -871,7 +257,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   let currentStepTitle = $derived.by(() => {
     const titles: string[] = [
       "Welcome",
-      ...(data.wizardType === "first-time" ? ["Permissions"] : []),
+      ...(hasPermissionStep ? ["Permissions"] : []),
+      "Server Basics",
       "Select Features",
       ...fullSetupFeatures.map(id => allFeatures.find(f => f.id === id)?.title || id),
       ...(quickEnableFeatures.length > 0 ? ["Quick Setup"] : []),
@@ -913,6 +300,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }
 
             await loadAvailableChannels();
+            await loadServerBasics();
             await loadExistingConfigurations();
           })();
         });
@@ -978,23 +366,88 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       channelsLoading = true;
       const guildId = BigInt(data.guildId);
 
-      const [channels, roles, categories] = await Promise.all([
+      const [channels, roles, categories, voiceChannels] = await Promise.all([
         clientApi.getTextChannels(guildId).catch(() => []),
         clientApi.getRoles(guildId).catch(() => []),
-        clientApi.getCategories(guildId).catch(() => [])
+        clientApi.getCategories(guildId).catch(() => []),
+        clientApi.getVoiceChannels(guildId).catch(() => [])
       ]);
 
       availableChannels = channels;
       availableRoles = roles;
       availableCategories = categories;
+      availableVoiceChannels = voiceChannels;
 
     } catch (err) {
       console.error("Error loading guild data:", err);
       availableChannels = [];
       availableRoles = [];
       availableCategories = [];
+      availableVoiceChannels = [];
     } finally {
       channelsLoading = false;
+    }
+  }
+
+  /**
+   * Loads the server-wide settings shown on the Server Basics step.
+   * The full guild config is kept so the later save can round-trip every field
+   * the wizard does not touch.
+   */
+  async function loadServerBasics() {
+    if (!guild) return;
+
+    try {
+      basicsLoading = true;
+      const guildId = BigInt(data.guildId);
+
+      const [config, timezone, timezones] = await Promise.all([
+        guildApi.getGuildConfig(guildId).catch(() => null),
+        administrationApi.getGuildTimezone(guildId).catch(() => null),
+        administrationApi.getTimezones(guildId).catch(() => [])
+      ]);
+
+      guildConfig = config;
+      availableTimezones = Array.isArray(timezones) ? timezones : [];
+
+      basicsConfig = {
+        prefix: config?.prefix || "",
+        locale: config?.locale || "",
+        timezoneId: typeof timezone === "string" ? timezone : (timezone as any)?.timezoneId ?? null
+      };
+    } catch (err) {
+      console.warn("Error loading server basics:", err);
+    } finally {
+      basicsLoading = false;
+    }
+  }
+
+  /** Persists the Server Basics step. Only changed values are sent. */
+  async function saveServerBasics() {
+    const guildId = BigInt(data.guildId);
+    const requests: Promise<unknown>[] = [];
+
+    const prefixChanged = (basicsConfig.prefix || "") !== (guildConfig?.prefix || "");
+    const localeChanged = (basicsConfig.locale || "") !== (guildConfig?.locale || "");
+
+    if (guildConfig && (prefixChanged || localeChanged)) {
+      requests.push(
+        guildApi.updateGuildConfig(guildId, {
+          ...guildConfig,
+          prefix: basicsConfig.prefix?.trim() || null,
+          locale: basicsConfig.locale || null
+        })
+      );
+    }
+
+    if (basicsConfig.timezoneId) {
+      requests.push(
+        administrationApi.setGuildTimezone(guildId, { timezoneId: basicsConfig.timezoneId })
+      );
+    }
+
+    if (requests.length > 0) {
+      await Promise.all(requests);
     }
   }
 
@@ -1012,7 +465,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         confessionChannel,
         confessionLogChannel,
         countingChannels,
-        birthdayConfig
+        birthdayConfig,
+        protectionStatus,
+        repConfig,
+        inviteSettings,
+        roleStateSettings,
+        voiceConfig,
+        staffRole,
+        memberRole
       ] = await Promise.all([
         multiGreetApi.getMultiGreets(guildId).catch(() => []),
         starboardApi.getStarboards(guildId).catch(() => []),
@@ -1021,38 +481,23 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         confessionsApi.getConfessionChannel(guildId).catch(() => null),
         confessionsApi.getConfessionLogChannel(guildId).catch(() => null),
         countingApi.getCountingChannels(guildId).catch(() => []),
-        birthdayApi.getBirthdayConfig(guildId).catch(() => null)
+        birthdayApi.getBirthdayConfig(guildId).catch(() => null),
+        protectionApi.getProtectionStatus(guildId).catch(() => null),
+        reputationApi.getRepConfig(guildId).catch(() => null),
+        inviteTrackingApi.getInviteSettings(guildId).catch(() => null),
+        roleStatesApi.getRoleStateSettings(guildId).catch(() => null),
+        customVoiceApi.getCustomVoiceConfig(guildId).catch(() => null),
+        administrationApi.getStaffRole(guildId).catch(() => null),
+        administrationApi.getMemberRole(guildId).catch(() => null)
       ]);
 
       if (multiGreets.length > 0) {
         const existing = multiGreets[0];
 
-        // Parse message if it's JSON (contains embeds)
-        let parsedMessage = existing.message || featureConfigs.multigreets.message;
-        let parsedEmbeds = featureConfigs.multigreets.embeds;
-        let parsedComponents = featureConfigs.multigreets.components;
-        let parsedStyle = featureConfigs.multigreets.messageStyle;
-
-        if (typeof existing.message === "string" && existing.message.startsWith("{")) {
-          try {
-            const messageObj = JSON.parse(existing.message);
-            parsedMessage = messageObj.content || "";
-            parsedEmbeds = messageObj.embeds || [];
-            parsedComponents = messageObj.components || [];
-            parsedStyle = parsedEmbeds.length > 0 ? (parsedComponents.length > 0 ? "embed-buttons" : "embed") : "plain";
-          } catch (e) {
-            // Not JSON, use as plain text
-            parsedMessage = existing.message;
-          }
-        }
-
         featureConfigs.multigreets = {
           ...featureConfigs.multigreets,
           channelId: existing.channelId ? existing.channelId.toString() : null,
-          message: parsedMessage,
-          embeds: parsedEmbeds,
-          components: parsedComponents,
-          messageStyle: parsedStyle
+          message: parseStoredMessage(existing.message, featureConfigs.multigreets.message)
         };
       }
 
@@ -1120,6 +565,95 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         };
       }
 
+      if (protectionStatus) {
+        const status = protectionStatus as any;
+        featureConfigs.protection = {
+          antiRaid: {
+            ...featureConfigs.protection.antiRaid,
+            enabled: status.antiRaid?.enabled ?? featureConfigs.protection.antiRaid.enabled,
+            userThreshold: status.antiRaid?.userThreshold ?? featureConfigs.protection.antiRaid.userThreshold,
+            seconds: status.antiRaid?.seconds ?? featureConfigs.protection.antiRaid.seconds,
+            action: status.antiRaid?.action ?? featureConfigs.protection.antiRaid.action
+          },
+          antiSpam: {
+            ...featureConfigs.protection.antiSpam,
+            enabled: status.antiSpam?.enabled ?? featureConfigs.protection.antiSpam.enabled,
+            messageThreshold: status.antiSpam?.messageThreshold ?? featureConfigs.protection.antiSpam.messageThreshold,
+            action: status.antiSpam?.action ?? featureConfigs.protection.antiSpam.action
+          },
+          antiAlt: {
+            ...featureConfigs.protection.antiAlt,
+            enabled: status.antiAlt?.enabled ?? featureConfigs.protection.antiAlt.enabled,
+            minAgeMinutes: status.antiAlt?.minAgeMinutes ?? featureConfigs.protection.antiAlt.minAgeMinutes,
+            action: status.antiAlt?.action ?? featureConfigs.protection.antiAlt.action
+          },
+          antiMassMention: {
+            ...featureConfigs.protection.antiMassMention,
+            enabled: status.antiMassMention?.enabled ?? featureConfigs.protection.antiMassMention.enabled,
+            mentionThreshold:
+              status.antiMassMention?.mentionThreshold ?? featureConfigs.protection.antiMassMention.mentionThreshold,
+            action: status.antiMassMention?.action ?? featureConfigs.protection.antiMassMention.action
+          }
+        };
+      }
+
+      if (repConfig) {
+        featureConfigs.reputation = {
+          ...featureConfigs.reputation,
+          cooldownMinutes: repConfig.defaultCooldownMinutes ?? featureConfigs.reputation.cooldownMinutes,
+          dailyLimit: repConfig.dailyLimit ?? featureConfigs.reputation.dailyLimit,
+          notificationChannelId: repConfig.notificationChannel ? repConfig.notificationChannel.toString() : null,
+          enableNegative: repConfig.enableNegativeRep ?? false,
+          enableAnonymous: repConfig.enableAnonymous ?? false
+        };
+      }
+
+      if (inviteSettings) {
+        featureConfigs.invitetracking = {
+          ...featureConfigs.invitetracking,
+          removeOnLeave: inviteSettings.removeInviteOnLeave ?? featureConfigs.invitetracking.removeOnLeave
+        };
+      }
+
+      if (roleStateSettings) {
+        featureConfigs.rolestates = {
+          clearOnBan: roleStateSettings.clearOnBan ?? featureConfigs.rolestates.clearOnBan,
+          ignoreBots: roleStateSettings.ignoreBots ?? featureConfigs.rolestates.ignoreBots
+        };
+      }
+
+      if (voiceConfig) {
+        featureConfigs.customvoice = {
+          ...featureConfigs.customvoice,
+          hubChannelId: voiceConfig.hubVoiceChannelId ? voiceConfig.hubVoiceChannelId.toString() : null,
+          categoryId: voiceConfig.channelCategoryId ? voiceConfig.channelCategoryId.toString() : null,
+          defaultNameFormat: voiceConfig.defaultNameFormat || featureConfigs.customvoice.defaultNameFormat,
+          defaultUserLimit: voiceConfig.defaultUserLimit ?? featureConfigs.customvoice.defaultUserLimit,
+          deleteWhenEmpty: voiceConfig.deleteWhenEmpty ?? featureConfigs.customvoice.deleteWhenEmpty
+        };
+      }
+
+      featureConfigs.roles = {
+        ...featureConfigs.roles,
+        staffRoleId: staffRole && staffRole !== BigInt(0) ? staffRole.toString() : null,
+        memberRoleId: memberRole && memberRole !== BigInt(0) ? memberRole.toString() : null
+      };
+
+      if (guildConfig) {
+        featureConfigs.moderation = {
+          ...featureConfigs.moderation,
+          warnlogChannelId:
+            guildConfig.warnlogChannelId && guildConfig.warnlogChannelId !== BigInt(0)
+              ? guildConfig.warnlogChannelId.toString()
+              : null,
+          miniWarnlogChannelId:
+            guildConfig.miniWarnlogChannelId && guildConfig.miniWarnlogChannelId !== BigInt(0)
+              ? guildConfig.miniWarnlogChannelId.toString()
+              : null,
+          warnExpireHours: guildConfig.warnExpireHours ?? 0
+        };
+      }
+
       console.log("Loaded existing configurations:", featureConfigs);
 
     } catch (err) {
@@ -1129,19 +663,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   // Smart channel detection
   function detectChannelsForFeature(featureId: string): string[] {
-    const patterns: Record<string, string[]> = {
-      multigreets: ["welcome", "greet", "general", "lobby"],
-      rolegreets: ["welcome", "announcements", "roles"],
-      logging: ["logs", "mod-log", "audit"],
-      suggestions: ["suggest", "feedback", "ideas"],
-      starboard: ["starboard", "best-of", "highlights"],
-      giveaways: ["giveaway", "events", "contests"],
-      confessions: ["confess", "anonymous", "secrets"],
-      counting: ["count", "number", "game"],
-      birthday: ["birthday", "bday", "celebration", "announcements"]
-    };
-
-    const featurePatterns = patterns[featureId] || [];
+    const featurePatterns = wizardChannelPatterns[featureId] || [];
     return availableChannels
       .filter(ch => featurePatterns.some(pattern => ch.name.toLowerCase().includes(pattern)))
       .map(ch => ch.id);
@@ -1190,6 +712,45 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       });
     }
 
+    if (featureId === "protection" && featureStates.logging === "skip") {
+      newSuggestions.push({
+        feature: "Event Logging",
+        reason: "See what protection acted on and why",
+        icon: "fa-file-lines",
+        benefits: [
+          "Review every automated punishment",
+          "Spot false positives early",
+          "Keep a record of raid attempts"
+        ]
+      });
+    }
+
+    if (featureId === "multigreets" && featureStates.invitetracking === "skip") {
+      newSuggestions.push({
+        feature: "Invite Tracking",
+        reason: "Unlocks %inviter% placeholders in your welcome message",
+        icon: "fa-link",
+        benefits: [
+          "Credit the member who brought someone in",
+          "Build an invite leaderboard",
+          "Spot invite farming"
+        ]
+      });
+    }
+
+    if (featureId === "tickets" && featureStates.roles === "skip") {
+      newSuggestions.push({
+        feature: "Server Roles",
+        reason: "Tickets need a support role to notify",
+        icon: "fa-crown",
+        benefits: [
+          "Set the staff role once and reuse it",
+          "Support roles get access to every ticket",
+          "Powers permission checks elsewhere"
+        ]
+      });
+    }
+
     if (featureId === "rolegreets" && featureStates.administration === "skip") {
       newSuggestions.push({
         feature: "Auto-Assign Roles",
@@ -1219,8 +780,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     if (detail.state !== "skip") {
       // Smart channel detection
       const detected = detectChannelsForFeature(detail.id);
-      if (detected.length > 0 && !featureConfigs[detail.id].channelId) {
-        featureConfigs[detail.id].channelId = detected[0];
+      const config = featureConfigs[detail.id];
+      if (detected.length > 0 && config && "channelId" in config && !config.channelId) {
+        config.channelId = detected[0];
       }
 
       // Check dependencies
@@ -1247,7 +809,6 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       currentStep--;
 
       // If we went back to a step that should be in config phase, re-enter it
-      const featureSelectionStep = data.wizardType === "first-time" ? 3 : 2;
       const stepIndexAfterFeatureSelection = currentStep - featureSelectionStep;
 
       if (stepIndexAfterFeatureSelection > 0 && stepIndexAfterFeatureSelection <= fullSetupFeatures.length) {
@@ -1270,11 +831,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
     try {
       wizardLoading = true;
+      actionError = null;
       await wizardApi.skipWizard(BigInt(data.guildId), BigInt(data.user.id));
       goto(`/dashboard?guild=${data.guildId}`);
     } catch (error: any) {
       console.error("Error skipping wizard:", error);
-      alert("Failed to skip wizard: " + (error?.message || "Unknown error"));
+      actionError = `Failed to skip setup: ${error?.message || "Unknown error"}`;
     } finally {
       wizardLoading = false;
       skipConfirmation = false;
@@ -1285,18 +847,73 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     skipConfirmation = false;
   }
 
-  // Configuration helpers
+  /** Saves the Server Basics step, then advances. A failure here is not fatal. */
+  async function handleBasicsNext() {
+    try {
+      wizardLoading = true;
+      actionError = null;
+      await saveServerBasics();
+      nextStep();
+    } catch (error: any) {
+      console.error("Error saving server basics:", error);
+      actionError = `Could not save server settings: ${error?.message || "Unknown error"}. You can change them later in Settings.`;
+    } finally {
+      wizardLoading = false;
+    }
+  }
+
+  /** Formats a minute count as the "HH:MM:SS" TimeSpan the repeater API expects. */
+  function minutesToTimeSpan(minutes: number): string {
+    const total = Math.max(1, Math.round(minutes));
+    const hours = Math.floor(total / 60);
+    const mins = total % 60;
+    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:00`;
+  }
+
+  /**
+   * Serialises an embed builder value for the bot API.
+   * Text-only messages are sent as a plain string so simple greets stay readable
+   * in the dashboard; anything with embeds or components is sent as JSON.
+   */
   function buildFullMessage(config: any) {
-    if (!config.embeds || config.embeds.length === 0) {
-      return config.message;
+    const value = config.message;
+
+    if (!value) return "";
+    if (typeof value === "string") return value;
+
+    const hasEmbeds = Array.isArray(value.embeds) && value.embeds.length > 0;
+    const hasComponents = Array.isArray(value.components) && value.components.length > 0;
+
+    if (!hasEmbeds && !hasComponents) {
+      return value.content ?? "";
     }
 
     const messageJson: any = {};
-    if (config.message?.trim()) messageJson.content = config.message;
-    if (config.embeds.length > 0) messageJson.embeds = config.embeds;
-    if (config.components && config.components.length > 0) messageJson.components = config.components;
+    if (value.content?.trim()) messageJson.content = value.content;
+    if (hasEmbeds) messageJson.embeds = value.embeds;
+    if (hasComponents) messageJson.components = value.components;
 
     return JSON.stringify(messageJson);
+  }
+
+  /** Turns a stored message into the object shape the embed builder binds to. */
+  function parseStoredMessage(raw: unknown, fallback: any) {
+    if (typeof raw !== "string" || raw.length === 0) return fallback;
+
+    if (raw.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          content: parsed.content ?? "",
+          embeds: parsed.embeds ?? [],
+          components: parsed.components ?? []
+        };
+      } catch {
+        return { content: raw };
+      }
+    }
+
+    return { content: raw };
   }
 
   // Feature configuration
@@ -1510,6 +1127,262 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             });
           }
           break;
+
+        case "protection":
+          if (config.antiRaid.enabled) {
+            await protectionApi.configureAntiRaid(guildId, {
+              enabled: true,
+              userThreshold: config.antiRaid.userThreshold,
+              seconds: config.antiRaid.seconds,
+              action: Number(config.antiRaid.action),
+              punishDuration: config.antiRaid.punishDuration
+            });
+          }
+          if (config.antiSpam.enabled) {
+            await protectionApi.configureAntiSpam(guildId, {
+              enabled: true,
+              messageThreshold: config.antiSpam.messageThreshold,
+              action: Number(config.antiSpam.action),
+              muteTime: config.antiSpam.muteTime,
+              roleId: config.antiSpam.roleId ? BigInt(config.antiSpam.roleId) : null
+            });
+          }
+          if (config.antiAlt.enabled) {
+            await protectionApi.configureAntiAlt(guildId, {
+              enabled: true,
+              minAgeMinutes: config.antiAlt.minAgeMinutes,
+              action: Number(config.antiAlt.action),
+              actionDurationMinutes: config.antiAlt.actionDurationMinutes,
+              roleId: config.antiAlt.roleId ? BigInt(config.antiAlt.roleId) : null
+            });
+          }
+          if (config.antiMassMention.enabled) {
+            await protectionApi.configureAntiMassMention(guildId, {
+              enabled: true,
+              mentionThreshold: config.antiMassMention.mentionThreshold,
+              timeWindowSeconds: config.antiMassMention.timeWindowSeconds,
+              maxMentionsInTimeWindow: config.antiMassMention.maxMentionsInTimeWindow,
+              ignoreBots: config.antiMassMention.ignoreBots,
+              action: Number(config.antiMassMention.action),
+              muteTime: config.antiMassMention.muteTime,
+              roleId: config.antiMassMention.roleId ? BigInt(config.antiMassMention.roleId) : null
+            });
+          }
+          break;
+
+        case "moderation": {
+          const existingConfig = guildConfig ?? (await guildApi.getGuildConfig(guildId));
+          await guildApi.updateGuildConfig(guildId, {
+            ...existingConfig,
+            warnlogChannelId: config.warnlogChannelId ? BigInt(config.warnlogChannelId) : BigInt(0),
+            miniWarnlogChannelId: config.miniWarnlogChannelId
+              ? BigInt(config.miniWarnlogChannelId)
+              : BigInt(0),
+            warnExpireHours: config.warnExpireHours || 0
+          });
+          break;
+        }
+
+        case "tickets": {
+          if (!config.panelChannelId) break;
+
+          await ticketApi.createTicketPanel(guildId, {
+            channelId: BigInt(config.panelChannelId),
+            title: config.panelTitle,
+            description: config.panelDescription
+          });
+
+          const panels = await ticketApi.getTicketPanels(guildId);
+          const panel = panels
+            .filter((p: any) => p.channelId?.toString() === config.panelChannelId)
+            .pop();
+
+          if (panel) {
+            await ticketApi.addPanelButton(guildId, BigInt(panel.id), {
+              label: config.buttonLabel || "Create Ticket",
+              emoji: "🎫",
+              categoryId: config.categoryId ? BigInt(config.categoryId) : null,
+              supportRoles: config.supportRoles?.length
+                ? config.supportRoles.map((id: string) => BigInt(id))
+                : null
+            });
+          }
+          break;
+        }
+
+        case "rolestates": {
+          const settings = await roleStatesApi.getRoleStateSettings(guildId).catch(() => null);
+          if (!settings?.enabled) {
+            await roleStatesApi.toggleRoleStates(guildId);
+          }
+          if (settings && settings.clearOnBan !== config.clearOnBan) {
+            await roleStatesApi.toggleClearOnBan(guildId);
+          }
+          if (settings && settings.ignoreBots !== config.ignoreBots) {
+            await roleStatesApi.toggleIgnoreBots(guildId);
+          }
+          break;
+        }
+
+        case "reputation":
+          await reputationApi.setEnabled(guildId, true);
+          await reputationApi.setDefaultCooldown(guildId, config.cooldownMinutes);
+          await reputationApi.setDailyLimit(guildId, config.dailyLimit);
+          await reputationApi.setNegativeReputation(guildId, config.enableNegative);
+          await reputationApi.setAnonymousReputation(guildId, config.enableAnonymous);
+          await reputationApi.setNotificationChannel(
+            guildId,
+            config.notificationChannelId ? BigInt(config.notificationChannelId) : null
+          );
+          break;
+
+        case "roles":
+          if (config.staffRoleId) {
+            await administrationApi.setStaffRole(guildId, BigInt(config.staffRoleId));
+          }
+          if (config.memberRoleId) {
+            await administrationApi.setMemberRole(guildId, BigInt(config.memberRoleId));
+          }
+          for (const roleId of config.selfAssignableRoles || []) {
+            try {
+              await administrationApi.addSelfAssignableRole(guildId, BigInt(roleId));
+            } catch (err) {
+              console.warn(`Could not add self-assignable role ${roleId}:`, err);
+            }
+          }
+          break;
+
+        case "statusroles": {
+          if (!config.status?.trim() || !config.addRoles?.length) break;
+
+          await statusRolesApi.addStatusRole(guildId, config.status.trim());
+          const statusRoles = await statusRolesApi.getStatusRoles(guildId);
+          const created = statusRoles
+            .filter((s: any) => s.status === config.status.trim())
+            .pop();
+
+          if (created) {
+            await statusRolesApi.setAddRoles(guildId, created.id, config.addRoles.join(" "));
+            if (config.channelId) {
+              await statusRolesApi.setStatusChannel(guildId, created.id, BigInt(config.channelId));
+            }
+          }
+          break;
+        }
+
+        case "customvoice":
+          if (!config.hubChannelId) break;
+
+          await customVoiceApi.updateCustomVoiceConfig(guildId, {
+            hubVoiceChannelId: BigInt(config.hubChannelId),
+            channelCategoryId: config.categoryId ? BigInt(config.categoryId) : null,
+            defaultNameFormat: config.defaultNameFormat,
+            defaultUserLimit: config.defaultUserLimit,
+            defaultBitrate: 64,
+            deleteWhenEmpty: config.deleteWhenEmpty,
+            emptyChannelTimeout: config.emptyChannelTimeout,
+            allowMultipleChannels: false,
+            allowNameCustomization: config.allowNameCustomization,
+            allowUserLimitCustomization: config.allowUserLimitCustomization,
+            allowBitrateCustomization: false,
+            allowLocking: config.allowLocking,
+            allowUserManagement: true,
+            maxUserLimit: 99,
+            maxBitrate: 96,
+            persistUserPreferences: true,
+            autoPermission: true,
+            customVoiceAdminRoleId: null
+          });
+          break;
+
+        case "feeds":
+          for (const entry of config.entries || []) {
+            if (!entry.url?.trim() || !entry.channelId) continue;
+            try {
+              await feedsApi.addFeed(guildId, {
+                channelId: BigInt(entry.channelId),
+                url: entry.url.trim()
+              });
+            } catch (err) {
+              console.warn(`Could not add feed ${entry.url}:`, err);
+            }
+          }
+          break;
+
+        case "streams":
+          for (const entry of config.entries || []) {
+            if (!entry.url?.trim() || !entry.channelId) continue;
+            try {
+              await streamNotificationsApi.followStream(guildId, {
+                channelId: BigInt(entry.channelId),
+                url: entry.url.trim()
+              });
+            } catch (err) {
+              console.warn(`Could not follow stream ${entry.url}:`, err);
+            }
+          }
+          if (config.offlineNotifications) {
+            await streamNotificationsApi.toggleOfflineNotifications(guildId);
+          }
+          break;
+
+        case "repeaters":
+          if (config.channelId && config.message?.trim()) {
+            await repeatersApi.createRepeater(guildId, {
+              channelId: BigInt(config.channelId),
+              message: config.message.trim(),
+              interval: minutesToTimeSpan(config.intervalMinutes),
+              noRedundant: config.noRedundant
+            });
+          }
+          break;
+
+        case "votes":
+          if (config.channelId) {
+            await votesApi.setVoteChannel(guildId, BigInt(config.channelId));
+          }
+          if (config.message?.trim()) {
+            await votesApi.setVoteMessage(guildId, config.message.trim());
+          }
+          if (config.password?.trim()) {
+            await votesApi.setVotePassword(guildId, config.password.trim());
+          }
+          break;
+
+        case "statchannels":
+          for (const statType of config.statTypes || []) {
+            try {
+              await statChannelsApi.addStatChannel(guildId, {
+                channelId: BigInt(0),
+                categoryId: config.categoryId ? BigInt(config.categoryId) : undefined,
+                statType
+              });
+            } catch (err) {
+              console.warn(`Could not create stat channel for type ${statType}:`, err);
+            }
+          }
+          break;
+
+        case "invitetracking":
+          await inviteTrackingApi.toggleInviteTracking(guildId, true);
+          await inviteTrackingApi.setRemoveOnLeave(guildId, config.removeOnLeave);
+          if (config.minAccountAgeDays > 0) {
+            await inviteTrackingApi.setMinAccountAge(guildId, `${config.minAccountAgeDays}d`);
+          }
+          break;
+
+        case "afk":
+          await afkApi.afkTypeSet(guildId, Number(config.afkType));
+          if (config.timeout && config.timeout !== "0s") {
+            await afkApi.afkTimeoutSet(guildId, config.timeout);
+          }
+          if (config.customMessage?.trim()) {
+            await afkApi.setCustomAfkMessage(guildId, config.customMessage.trim());
+          }
+          if (config.disabledChannels?.length) {
+            await afkApi.setDisabledAfkChannels(guildId, config.disabledChannels.join(","));
+          }
+          break;
       }
 
       console.log(`Configured feature: ${featureId}`);
@@ -1519,29 +1392,45 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     }
   }
 
+  /** Feature ids that could not be saved, surfaced on the completion step. */
+  let failedFeatures = $state<string[]>([]);
+
+  /** Features that actually saved, used for the completion summary. */
+  let configuredFeatureIds = $derived(
+    allEnabledFeatures.filter((id) => !failedFeatures.includes(id))
+  );
+
   // Complete wizard
   async function completeWizard() {
     try {
       wizardLoading = true;
-      console.log("Starting wizard completion...");
+      actionError = null;
+      failedFeatures = [];
 
-      // Configure all quick enable features
+      // A single failing feature should not block the rest of the setup
       for (const featureId of quickEnableFeatures) {
-        await configureFeature(featureId);
+        try {
+          await configureFeature(featureId);
+        } catch (error) {
+          console.error(`Error configuring ${featureId}:`, error);
+          failedFeatures = [...failedFeatures, featureId];
+        }
       }
 
       // Mark wizard as completed
-      await wizardApi.completeWizard(BigInt(data.user.id), BigInt(data.guildId), allEnabledFeatures);
+      const succeeded = allEnabledFeatures.filter((id) => !failedFeatures.includes(id));
+      await wizardApi.completeWizard(BigInt(data.user.id), BigInt(data.guildId), succeeded);
 
       completedSteps = [...completedSteps, currentStep];
       currentStep = totalSteps;
 
       setTimeout(() => {
         goto(`/dashboard?guild=${data.guildId}`);
-      }, 2000);
+      }, failedFeatures.length > 0 ? 6000 : 2000);
 
     } catch (error: any) {
       console.error("Error completing wizard:", error);
+      actionError = `Failed to finish setup: ${error?.message || "Unknown error"}`;
     } finally {
       wizardLoading = false;
     }
@@ -1564,7 +1453,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       currentConfigStep++;
     } else {
       // Finish this feature and move to next
-      await configureFeature(currentConfigFeature);
+      actionError = null;
+      try {
+        await configureFeature(currentConfigFeature);
+      } catch (error: any) {
+        console.error(`Error configuring ${currentConfigFeature}:`, error);
+        actionError = `${feature.title} could not be saved: ${error?.message || "Unknown error"}. You can set it up later from the dashboard.`;
+        failedFeatures = [...failedFeatures, currentConfigFeature];
+      }
 
       const currentIndex = fullSetupFeatures.indexOf(currentConfigFeature);
       if (currentIndex < fullSetupFeatures.length - 1) {
@@ -1575,7 +1471,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         // Done with all full setup features
         configPhase = false;
         currentConfigFeature = null;
-        nextStep();
+
+        // With no quick-enable features there is no bulk step to finish on,
+        // so completion has to be triggered here instead
+        if (quickEnableFeatures.length > 0) {
+          nextStep();
+        } else {
+          await completeWizard();
+        }
       }
     }
   }
@@ -1588,6 +1491,38 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   function addRoleReward(configObj: any) {
     const maxLevel = Math.max(...configObj.roleRewards.map((r: any) => r.level));
     configObj.roleRewards = [...configObj.roleRewards, { level: maxLevel + 5, roleId: null }];
+  }
+
+  /**
+   * Abandons the feature being configured without saving it.
+   * Removing it from the full-setup list shifts every later feature down one
+   * step, so the current step number already points at the next feature.
+   */
+  function handleFeatureConfigSkip() {
+    if (!currentConfigFeature) return;
+
+    actionError = null;
+    featureStates = { ...featureStates, [currentConfigFeature]: "skip" };
+    failedFeatures = failedFeatures.filter((id) => id !== currentConfigFeature);
+
+    const remaining = fullSetupFeatures;
+    const nextIndex = currentStep - featureSelectionStep - 1;
+
+    if (nextIndex >= 0 && nextIndex < remaining.length) {
+      startFeatureConfig(remaining[nextIndex]);
+      return;
+    }
+
+    configPhase = false;
+    currentConfigFeature = null;
+
+    if (quickEnableFeatures.length > 0) {
+      currentStep = quickSetupStep;
+    } else if (allEnabledFeatures.length > 0) {
+      completeWizard();
+    } else {
+      currentStep = featureSelectionStep;
+    }
   }
 
   function handleFeatureConfigBack() {
@@ -1648,8 +1583,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   let canProceed = $derived(
     currentStep === 1 ||
-    (currentStep === 2 && (data.wizardType === "quick-setup" || permissionData?.canFunction)) ||
-    (currentStep === 3 && allEnabledFeatures.length > 0) ||
+    (hasPermissionStep && currentStep === permissionsStep && permissionData?.canFunction) ||
+    currentStep === basicsStep ||
+    (currentStep === featureSelectionStep && allEnabledFeatures.length > 0) ||
     currentStep === totalSteps
   );
 
@@ -1733,11 +1669,11 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Choose features to configure</span>
+                <span>Set your prefix, timezone and language</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Set up essential settings</span>
+                <span>Choose from {allFeatures.length} features to configure</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
@@ -1768,6 +1704,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             <i class="fa-solid fa-forward" style="font-size: 16px;"></i>
           </button>
         </div>
+
+        {#if actionError}
+          <div class="p-4 rounded-lg border text-left"
+               style="background: #ef444415; border-color: #ef444440; color: #ef4444;">
+            <div class="flex items-start gap-2">
+              <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
+              <p class="text-sm">{actionError}</p>
+            </div>
+          </div>
+        {/if}
 
         {#if skipConfirmation}
           <div class="p-4 rounded-lg border"
@@ -1901,12 +1847,111 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       </WizardStep>
     {/if}
 
-    <!-- Step 3: Feature Selection -->
+    <!-- Server Basics -->
+    <WizardStep
+      title="Server Basics"
+      subtitle="A few server-wide settings that everything else builds on."
+      stepNumber={basicsStep}
+      isActive={currentStep === basicsStep}
+      icon="fa-solid fa-gear"
+      maxWidth="max-w-3xl"
+    >
+      <div class="space-y-6">
+        {#if basicsLoading}
+          <div class="flex items-center justify-center py-8">
+            <i class="fa-solid fa-arrows-rotate fa-spin" style="color: {$colorStore.primary}; font-size: 24px;"></i>
+            <span class="ml-2" style="color: {$colorStore.text};">Loading server settings...</span>
+          </div>
+        {:else}
+          <div>
+            <label for="basics-prefix" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+              Command Prefix
+            </label>
+            <input
+              id="basics-prefix"
+              type="text"
+              maxlength="10"
+              class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+              bind:value={basicsConfig.prefix}
+              placeholder="Leave blank to keep the default"
+            />
+            <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+              What members type before a command, for example <code>.help</code>. Slash commands work regardless.
+            </p>
+          </div>
+
+          <div>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+              Server Timezone
+            </span>
+            <DiscordSelector
+              type="timezone"
+              options={availableTimezones}
+              bind:selected={basicsConfig.timezoneId}
+              placeholder="Choose your server's timezone..."
+            />
+            <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+              Used for birthdays, repeating messages, timestamps and every other scheduled feature. Worth
+              setting even if you skip everything else.
+            </p>
+          </div>
+
+          <div>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+              Language
+            </span>
+            <DiscordSelector
+              type="custom"
+              customIcon="fa-globe"
+              options={availableLocales}
+              bind:selected={basicsConfig.locale}
+              placeholder="Choose a language..."
+            />
+            <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+              The language Mewdeko replies in for this server.
+            </p>
+          </div>
+        {/if}
+
+        {#if actionError}
+          <div class="p-4 rounded-lg border" style="background: #ef444415; border-color: #ef444440; color: #ef4444;">
+            <div class="flex items-start gap-2">
+              <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
+              <p class="text-sm">{actionError}</p>
+            </div>
+          </div>
+        {/if}
+
+        <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+          <button
+            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
+            onclick={previousStep}
+          >
+            <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
+            Back
+          </button>
+
+          <button
+            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
+            onclick={handleBasicsNext}
+            disabled={wizardLoading}
+          >
+            {wizardLoading ? 'Saving...' : 'Continue'}
+            <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
+          </button>
+        </div>
+      </div>
+    </WizardStep>
+
+    <!-- Feature Selection -->
     <WizardStep
       title="Choose Features"
       subtitle="Select which features you want to set up for your server."
-      stepNumber={data.wizardType === 'first-time' ? 3 : 2}
-      isActive={currentStep === (data.wizardType === 'first-time' ? 3 : 2)}
+      stepNumber={featureSelectionStep}
+      isActive={currentStep === featureSelectionStep}
       icon="fa-solid fa-sliders"
       maxWidth="max-w-7xl"
     >
@@ -2138,9 +2183,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         {/if}
 
         <!-- Navigation -->
-        <div class="flex items-center justify-between pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+        <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
           <button
-            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2"
+            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={previousStep}
           >
@@ -2149,7 +2194,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </button>
 
           <button
-            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50"
+            class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
             onclick={() => {
               nextStep();
@@ -2159,8 +2204,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }}
             disabled={!canProceed}
           >
-            {allEnabledFeatures.length > 0 ? 'Configure Features' : 'Skip to Completion'}
-            <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
+            <span class="truncate">
+              {allEnabledFeatures.length > 0 ? 'Configure Features' : 'Select a feature'}
+            </span>
+            <i class="fa-solid fa-arrow-right shrink-0" style="font-size: 16px;"></i>
           </button>
         </div>
       </div>
@@ -2178,8 +2225,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           icon={feature.icon}
           maxWidth="max-w-6xl"
         >
+          <div class="config-step-stack">
           {#key `${currentConfigFeature}-${currentConfigStep}`}
             <div
+              class="config-step-pane"
               in:fly|global={{ y: 20, duration: 400, delay: 300, easing: cubicOut }}
               out:fade|global={{ duration: 250 }}
             >
@@ -2193,9 +2242,11 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 roles={availableRoles}
                 categories={availableCategories}
                 placeholders={allPlaceholders}
-                showPreview={!['logging', 'administration', 'moderation', 'tickets', 'xp', 'starboard', 'suggestions', 'confessions', 'counting'].includes(feature.id)}
+                guildId={data.guildId}
+                user={data.user}
                 onnext={handleFeatureConfigNext}
                 onback={handleFeatureConfigBack}
+                onskip={handleFeatureConfigSkip}
               >
                 {#snippet children({ step, config })}
                   <!-- Custom configuration for specific feature steps -->
@@ -2475,51 +2526,6 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     </p>
                   </div>
                 </div>
-                  {:else if feature.id === 'moderation' && step.id === 'config'}
-                    <div class="space-y-4">
-                      <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Moderation Log Channel
-                    </span>
-                        <DiscordSelector
-                          type="channel"
-                          options={availableChannels}
-                          bind:selected={config.logChannelId}
-                          placeholder="Choose moderation log channel..."
-                        />
-                  </div>
-                      <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Mute Role (Optional)
-                    </span>
-                        <DiscordSelector
-                          type="role"
-                          options={availableRoles}
-                          bind:selected={config.muteRoleId}
-                          placeholder="Choose mute role..."
-                        />
-                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          This role will be used for timing out members
-                        </p>
-                      </div>
-                    </div>
-                  {:else if feature.id === 'tickets' && step.id === 'category'}
-                    <div class="space-y-4">
-                      <div>
-                    <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
-                      Ticket Category
-                    </span>
-                        <DiscordSelector
-                          type="custom"
-                          options={availableCategories}
-                          bind:selected={config.categoryId}
-                          placeholder="Choose category for tickets..."
-                        />
-                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                          Ticket channels will be created under this category
-                        </p>
-                      </div>
-                    </div>
                   {:else if feature.id === 'confessions' && step.id === 'config'}
                     <div class="space-y-4">
                       <div>
@@ -2683,17 +2689,891 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                         </p>
                       </div>
                     </div>
+                  {:else if feature.id === 'protection' && step.id === 'raid'}
+                    <div class="space-y-4">
+                      <div class="p-4 rounded-lg border"
+                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                          <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiRaid.enabled} />
+                          <span>
+                            <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                              Anti-Raid
+                            </span>
+                            <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                              Acts when a burst of members joins at once
+                            </span>
+                          </span>
+                        </label>
+
+                        {#if config.antiRaid.enabled}
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                            <div>
+                              <label for="raid-threshold" class="block text-xs font-medium mb-2"
+                                     style="color: {$colorStore.text};">
+                                Members
+                              </label>
+                              <input id="raid-threshold" type="number" min="2" max="30"
+                                     class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     bind:value={config.antiRaid.userThreshold} />
+                            </div>
+                            <div>
+                              <label for="raid-seconds" class="block text-xs font-medium mb-2"
+                                     style="color: {$colorStore.text};">
+                                Within (seconds)
+                              </label>
+                              <input id="raid-seconds" type="number" min="2" max="300"
+                                     class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     bind:value={config.antiRaid.seconds} />
+                            </div>
+                            <div>
+                              <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
+                                Punishment
+                              </span>
+                              <DiscordSelector
+                                type="custom"
+                                customIcon="fa-gavel"
+                                options={wizardPunishmentActions}
+                                selected={String(config.antiRaid.action)}
+                                onchange={(detail) => config.antiRaid.action = Number(detail.selected)}
+                                placeholder="Choose action..."
+                              />
+                            </div>
+                          </div>
+                          <p class="text-xs mt-3" style="color: {$colorStore.muted};">
+                            Triggers when {config.antiRaid.userThreshold} members join within
+                            {config.antiRaid.seconds} seconds.
+                          </p>
+                        {/if}
+                      </div>
+
+                      <div class="p-4 rounded-lg border"
+                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                          <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiSpam.enabled} />
+                          <span>
+                            <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                              Anti-Spam
+                            </span>
+                            <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                              Acts when someone repeats the same message
+                            </span>
+                          </span>
+                        </label>
+
+                        {#if config.antiSpam.enabled}
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                            <div>
+                              <label for="spam-threshold" class="block text-xs font-medium mb-2"
+                                     style="color: {$colorStore.text};">
+                                Repeated messages
+                              </label>
+                              <input id="spam-threshold" type="number" min="2" max="10"
+                                     class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     bind:value={config.antiSpam.messageThreshold} />
+                            </div>
+                            <div>
+                              <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
+                                Punishment
+                              </span>
+                              <DiscordSelector
+                                type="custom"
+                                customIcon="fa-gavel"
+                                options={wizardPunishmentActions}
+                                selected={String(config.antiSpam.action)}
+                                onchange={(detail) => config.antiSpam.action = Number(detail.selected)}
+                                placeholder="Choose action..."
+                              />
+                            </div>
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                  {:else if feature.id === 'protection' && step.id === 'alts'}
+                    <div class="space-y-4">
+                      <div class="p-4 rounded-lg border"
+                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                          <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.antiAlt.enabled} />
+                          <span>
+                            <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                              Anti-Alt
+                            </span>
+                            <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                              Acts on accounts younger than a minimum age
+                            </span>
+                          </span>
+                        </label>
+
+                        {#if config.antiAlt.enabled}
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                            <div>
+                              <label for="alt-age" class="block text-xs font-medium mb-2"
+                                     style="color: {$colorStore.text};">
+                                Minimum account age (hours)
+                              </label>
+                              <input id="alt-age" type="number" min="1" max="8760"
+                                     class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     value={Math.round(config.antiAlt.minAgeMinutes / 60)}
+                                     oninput={(e) => config.antiAlt.minAgeMinutes = Math.max(1, Number(e.currentTarget.value)) * 60} />
+                            </div>
+                            <div>
+                              <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
+                                Punishment
+                              </span>
+                              <DiscordSelector
+                                type="custom"
+                                customIcon="fa-gavel"
+                                options={wizardPunishmentActions}
+                                selected={String(config.antiAlt.action)}
+                                onchange={(detail) => config.antiAlt.action = Number(detail.selected)}
+                                placeholder="Choose action..."
+                              />
+                            </div>
+                          </div>
+                        {/if}
+                      </div>
+
+                      <div class="p-4 rounded-lg border"
+                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                          <input type="checkbox" class="mt-1 w-5 h-5 shrink-0"
+                                 bind:checked={config.antiMassMention.enabled} />
+                          <span>
+                            <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                              Anti-Mass-Mention
+                            </span>
+                            <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                              Acts on members who mention many people at once
+                            </span>
+                          </span>
+                        </label>
+
+                        {#if config.antiMassMention.enabled}
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                            <div>
+                              <label for="mention-threshold" class="block text-xs font-medium mb-2"
+                                     style="color: {$colorStore.text};">
+                                Mentions allowed
+                              </label>
+                              <input id="mention-threshold" type="number" min="2" max="50"
+                                     class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                     bind:value={config.antiMassMention.mentionThreshold} />
+                            </div>
+                            <div>
+                              <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
+                                Punishment
+                              </span>
+                              <DiscordSelector
+                                type="custom"
+                                customIcon="fa-gavel"
+                                options={wizardPunishmentActions}
+                                selected={String(config.antiMassMention.action)}
+                                onchange={(detail) => config.antiMassMention.action = Number(detail.selected)}
+                                placeholder="Choose action..."
+                              />
+                            </div>
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                  {:else if feature.id === 'moderation' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Warning Log Channel
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.warnlogChannelId}
+                          placeholder="Where should warnings be logged?"
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Full warning details are posted here
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Short Warning Log (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.miniWarnlogChannelId}
+                          placeholder="Optional condensed log channel"
+                        />
+                      </div>
+
+                      <div>
+                        <label for="warn-expire" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Warnings Expire After (hours)
+                        </label>
+                        <input id="warn-expire" type="number" min="0" max="8760"
+                               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                               bind:value={config.warnExpireHours} />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Set to 0 to keep warnings forever
+                        </p>
+                      </div>
+                    </div>
+                  {:else if feature.id === 'tickets' && step.id === 'panel'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Panel Channel
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.panelChannelId}
+                          placeholder="Where should the ticket panel be posted?"
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Members click a button here to open a ticket
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Ticket Category
+                        </span>
+                        <DiscordSelector
+                          type="custom"
+                          customIcon="fa-folder"
+                          options={availableCategories}
+                          bind:selected={config.categoryId}
+                          placeholder="Choose category for tickets..."
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Ticket channels will be created under this category
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Support Roles
+                        </span>
+                        <DiscordSelector
+                          type="role"
+                          options={availableRoles}
+                          bind:selected={config.supportRoles}
+                          multiple={true}
+                          placeholder="Who should see and answer tickets?"
+                        />
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label for="panel-title" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Panel Title
+                          </label>
+                          <input id="panel-title" type="text" maxlength="256"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.panelTitle} />
+                        </div>
+                        <div>
+                          <label for="button-label" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Button Label
+                          </label>
+                          <input id="button-label" type="text" maxlength="80"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.buttonLabel} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label for="panel-description" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Panel Description
+                        </label>
+                        <textarea id="panel-description" rows="3"
+                                  class="w-full px-3 py-2 rounded-lg border resize-none"
+                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                  bind:value={config.panelDescription}></textarea>
+                      </div>
+                    </div>
+                  {:else if feature.id === 'rolestates' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.ignoreBots} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Ignore bots
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Don't save or restore roles for bot accounts
+                          </span>
+                        </span>
+                      </label>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.clearOnBan} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Clear saved roles on ban
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            A banned member who is later unbanned starts fresh
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  {:else if feature.id === 'reputation' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label for="rep-cooldown" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Cooldown (minutes)
+                          </label>
+                          <input id="rep-cooldown" type="number" min="0" max="10080"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.cooldownMinutes} />
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                            How long before a member can give rep again
+                          </p>
+                        </div>
+                        <div>
+                          <label for="rep-daily" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Daily limit
+                          </label>
+                          <input id="rep-daily" type="number" min="1" max="100"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.dailyLimit} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Announcement Channel (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.notificationChannelId}
+                          placeholder="Announce reputation changes here"
+                        />
+                      </div>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.enableAnonymous} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Allow anonymous reputation
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Members can give rep without revealing who they are
+                          </span>
+                        </span>
+                      </label>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.enableNegative} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Allow negative reputation
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Members can take reputation away as well as give it
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  {:else if feature.id === 'roles' && step.id === 'core'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Staff Role
+                        </span>
+                        <DiscordSelector
+                          type="role"
+                          options={availableRoles}
+                          bind:selected={config.staffRoleId}
+                          placeholder="Which role are your moderators?"
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Used by permission checks and staff-only features
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Member Role (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="role"
+                          options={availableRoles}
+                          bind:selected={config.memberRoleId}
+                          placeholder="Which role marks a verified member?"
+                        />
+                      </div>
+                    </div>
+                  {:else if feature.id === 'roles' && step.id === 'selfassign'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Self-Assignable Roles
+                        </span>
+                        <DiscordSelector
+                          type="role"
+                          options={availableRoles}
+                          bind:selected={config.selfAssignableRoles}
+                          multiple={true}
+                          placeholder="Roles members can give themselves..."
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Members claim these with the <code>.iam</code> command. Colour and pronoun roles are
+                          the usual picks.
+                        </p>
+                      </div>
+                    </div>
+                  {:else if feature.id === 'statusroles' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div>
+                        <label for="status-text" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Status Text
+                        </label>
+                        <input id="status-text" type="text" maxlength="128"
+                               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                               bind:value={config.status}
+                               placeholder="discord.gg/yourserver" />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Members whose custom status contains this text get the roles below
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Roles to Grant
+                        </span>
+                        <DiscordSelector
+                          type="role"
+                          options={availableRoles}
+                          bind:selected={config.addRoles}
+                          multiple={true}
+                          placeholder="Roles to give while the status matches..."
+                        />
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Announcement Channel (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.channelId}
+                          placeholder="Announce when someone qualifies"
+                        />
+                      </div>
+                    </div>
+                  {:else if feature.id === 'customvoice' && step.id === 'hub'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Hub Voice Channel
+                        </span>
+                        <DiscordSelector
+                          type="custom"
+                          customIcon="fa-microphone"
+                          options={availableVoiceChannels}
+                          bind:selected={config.hubChannelId}
+                          placeholder="Which channel do members join to get a room?"
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Joining this channel creates a personal voice channel and moves the member into it
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Category (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="custom"
+                          customIcon="fa-folder"
+                          options={availableCategories}
+                          bind:selected={config.categoryId}
+                          placeholder="Where should new channels be created?"
+                        />
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label for="cv-name" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Channel Name Format
+                          </label>
+                          <input id="cv-name" type="text" maxlength="100"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.defaultNameFormat} />
+                        </div>
+                        <div>
+                          <label for="cv-limit" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Default User Limit
+                          </label>
+                          <input id="cv-limit" type="number" min="0" max="99"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.defaultUserLimit} />
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                            0 means unlimited
+                          </p>
+                        </div>
+                      </div>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.deleteWhenEmpty} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Delete channels when empty
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Keeps your channel list from filling up with dead rooms
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  {:else if feature.id === 'feeds' && step.id === 'feeds'}
+                    <div class="space-y-4">
+                      {#each config.entries as entry, index (index)}
+                        <div class="p-4 rounded-lg border space-y-3"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium" style="color: {$colorStore.text};">
+                              Feed #{index + 1}
+                            </span>
+                            {#if config.entries.length > 1}
+                              <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
+                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                                      aria-label="Remove feed {index + 1}"
+                                      onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
+                                <i class="fa-solid fa-trash" style="font-size: 11px;"></i>
+                              </button>
+                            {/if}
+                          </div>
+                          <input type="url"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={entry.url}
+                                 placeholder="https://example.com/feed.xml"
+                                 aria-label="Feed URL {index + 1}" />
+                          <DiscordSelector
+                            type="channel"
+                            options={availableChannels}
+                            bind:selected={entry.channelId}
+                            placeholder="Post new items to..."
+                          />
+                        </div>
+                      {/each}
+                      <button class="w-full px-3 py-2 rounded-lg transition-all hover:scale-[1.01] min-h-[44px]"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                              onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
+                        <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
+                        Add Another Feed
+                      </button>
+                    </div>
+                  {:else if feature.id === 'streams' && step.id === 'streams'}
+                    <div class="space-y-4">
+                      {#each config.entries as entry, index (index)}
+                        <div class="p-4 rounded-lg border space-y-3"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium" style="color: {$colorStore.text};">
+                              Stream #{index + 1}
+                            </span>
+                            {#if config.entries.length > 1}
+                              <button class="px-2 py-1 rounded text-xs transition-all hover:scale-[1.05]"
+                                      style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                                      aria-label="Remove stream {index + 1}"
+                                      onclick={() => config.entries = config.entries.filter((_: unknown, i: number) => i !== index)}>
+                                <i class="fa-solid fa-trash" style="font-size: 11px;"></i>
+                              </button>
+                            {/if}
+                          </div>
+                          <input type="url"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={entry.url}
+                                 placeholder="https://twitch.tv/username"
+                                 aria-label="Stream URL {index + 1}" />
+                          <DiscordSelector
+                            type="channel"
+                            options={availableChannels}
+                            bind:selected={entry.channelId}
+                            placeholder="Announce going live in..."
+                          />
+                        </div>
+                      {/each}
+                      <button class="w-full px-3 py-2 rounded-lg transition-all hover:scale-[1.01] min-h-[44px]"
+                              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                              onclick={() => config.entries = [...config.entries, { url: '', channelId: null }]}>
+                        <i class="fa-solid fa-plus" style="font-size: 12px;"></i>
+                        Add Another Stream
+                      </button>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0"
+                               bind:checked={config.offlineNotifications} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Also announce when a stream ends
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  {:else if feature.id === 'repeaters' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Channel
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.channelId}
+                          placeholder="Where should the message repeat?"
+                        />
+                      </div>
+
+                      <div>
+                        <label for="repeat-message" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Message
+                        </label>
+                        <textarea id="repeat-message" rows="4"
+                                  class="w-full px-3 py-2 rounded-lg border resize-none"
+                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                  bind:value={config.message}
+                                  placeholder="Remember to read the rules in #rules!"></textarea>
+                      </div>
+
+                      <div>
+                        <label for="repeat-interval" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Repeat Every (minutes)
+                        </label>
+                        <input id="repeat-interval" type="number" min="5" max="10080"
+                               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                               bind:value={config.intervalMinutes} />
+                      </div>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.noRedundant} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Skip if it's still the last message
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Avoids spamming a quiet channel
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  {:else if feature.id === 'votes' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Vote Announcement Channel
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.channelId}
+                          placeholder="Where should votes be announced?"
+                        />
+                      </div>
+
+                      <div>
+                        <label for="vote-message" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Thank You Message
+                        </label>
+                        <textarea id="vote-message" rows="3"
+                                  class="w-full px-3 py-2 rounded-lg border resize-none"
+                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                  bind:value={config.message}></textarea>
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Supports placeholders like %user.mention%
+                        </p>
+                      </div>
+
+                      <div>
+                        <label for="vote-password" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Webhook Password
+                        </label>
+                        <input id="vote-password" type="text"
+                               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                               bind:value={config.password}
+                               placeholder="Paste the same secret you set on top.gg" />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Must match the authorization secret configured in your top.gg webhook settings
+                        </p>
+                      </div>
+                    </div>
+                  {:else if feature.id === 'statchannels' && step.id === 'stats'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Category (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="custom"
+                          customIcon="fa-folder"
+                          options={availableCategories}
+                          bind:selected={config.categoryId}
+                          placeholder="Where should the counters be created?"
+                        />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          A locked voice channel is created for each counter you pick below
+                        </p>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {#each wizardStatChannelTypes as statType (statType.type)}
+                          <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all"
+                                 style="background: {config.statTypes.includes(statType.type) ? $colorStore.primary + '10' : $colorStore.primary + '05'};
+                                        border-color: {config.statTypes.includes(statType.type) ? $colorStore.primary + '40' : $colorStore.primary + '20'};">
+                            <input type="checkbox" class="mt-1 w-5 h-5 shrink-0"
+                                   checked={config.statTypes.includes(statType.type)}
+                                   onchange={() => {
+                                     config.statTypes = config.statTypes.includes(statType.type)
+                                       ? config.statTypes.filter((t: number) => t !== statType.type)
+                                       : [...config.statTypes, statType.type];
+                                   }} />
+                            <span>
+                              <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                                {statType.label}
+                              </span>
+                              <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                                {statType.description}
+                              </span>
+                            </span>
+                          </label>
+                        {/each}
+                      </div>
+                    </div>
+                  {:else if feature.id === 'invitetracking' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div class="p-4 rounded-lg border"
+                           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <p class="text-sm" style="color: {$colorStore.text};">
+                          Invite tracking will be turned on for this server.
+                        </p>
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Mewdeko needs the Manage Server permission to read invite counts.
+                        </p>
+                      </div>
+
+                      <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer"
+                             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;">
+                        <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" bind:checked={config.removeOnLeave} />
+                        <span>
+                          <span class="block font-semibold text-sm" style="color: {$colorStore.text};">
+                            Subtract invites when a member leaves
+                          </span>
+                          <span class="block text-xs mt-1" style="color: {$colorStore.muted};">
+                            Keeps the leaderboard honest against invite farming
+                          </span>
+                        </span>
+                      </label>
+
+                      <div>
+                        <label for="invite-min-age" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Minimum Account Age (days)
+                        </label>
+                        <input id="invite-min-age" type="number" min="0" max="365"
+                               class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                               style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                               bind:value={config.minAccountAgeDays} />
+                        <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                          Joins from newer accounts won't count towards invites. 0 disables the check.
+                        </p>
+                      </div>
+                    </div>
+                  {:else if feature.id === 'afk' && step.id === 'config'}
+                    <div class="space-y-4">
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Clear AFK When
+                        </span>
+                        <DiscordSelector
+                          type="custom"
+                          customIcon="fa-moon"
+                          options={wizardAfkTypes}
+                          selected={String(config.afkType)}
+                          onchange={(detail) => config.afkType = Number(detail.selected)}
+                          placeholder="Choose behaviour..."
+                        />
+                      </div>
+
+                      <div>
+                        <label for="afk-message" class="block text-sm font-medium mb-2"
+                               style="color: {$colorStore.text};">
+                          Custom AFK Message (Optional)
+                        </label>
+                        <textarea id="afk-message" rows="3"
+                                  class="w-full px-3 py-2 rounded-lg border resize-none"
+                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                  bind:value={config.customMessage}
+                                  placeholder="%user.mention% is AFK: %afk.message%"></textarea>
+                      </div>
+
+                      <div>
+                        <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                          Disable AFK In (Optional)
+                        </span>
+                        <DiscordSelector
+                          type="channel"
+                          options={availableChannels}
+                          bind:selected={config.disabledChannels}
+                          multiple={true}
+                          placeholder="Channels where AFK replies are noise..."
+                        />
+                      </div>
+                    </div>
                   {/if}
                 {/snippet}
               </ProgressiveFeatureConfig>
             </div>
           {/key}
+          </div>
         </WizardStep>
       {/if}
     {/if}
 
     <!-- Quick Enable Bulk Setup -->
-    {#if !configPhase && quickEnableFeatures.length > 0 && currentStep === (data.wizardType === 'first-time' ? 3 : 2) + fullSetupFeatures.length + 1}
+    {#if !configPhase && quickEnableFeatures.length > 0 && currentStep === quickSetupStep}
       <WizardStep
         title="Quick Enable Features"
         subtitle="Configure essential settings for features you're quick enabling"
@@ -2717,9 +3597,18 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             }}
           />
 
-          <div class="flex items-center justify-between pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+          {#if actionError}
+            <div class="p-4 rounded-lg border" style="background: #ef444415; border-color: #ef444440; color: #ef4444;">
+              <div class="flex items-start gap-2">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
+                <p class="text-sm">{actionError}</p>
+              </div>
+            </div>
+          {/if}
+
+          <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
             <button
-              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2"
+              class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
               style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
               onclick={previousStep}
             >
@@ -2728,13 +3617,13 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             </button>
 
             <button
-              class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2"
+              class="px-4 sm:px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
               style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
               onclick={completeWizard}
               disabled={wizardLoading}
             >
-              {wizardLoading ? 'Completing...' : 'Complete Setup'}
-              <i class="fa-solid fa-check" style="font-size: 16px;"></i>
+              <span class="truncate">{wizardLoading ? 'Completing...' : 'Complete Setup'}</span>
+              <i class="fa-solid fa-check shrink-0" style="font-size: 16px;"></i>
             </button>
           </div>
         </div>
@@ -2758,12 +3647,12 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           </div>
         </div>
 
-        {#if allEnabledFeatures.length > 0}
+        {#if configuredFeatureIds.length > 0}
           <div class="p-4 rounded-lg border"
                style="background: {$colorStore.accent}10; border-color: {$colorStore.accent}30;">
             <h3 class="font-semibold mb-2" style="color: {$colorStore.text};">Features Configured:</h3>
             <div class="flex flex-wrap justify-center gap-2">
-              {#each allEnabledFeatures as featureId (featureId)}
+              {#each configuredFeatureIds as featureId (featureId)}
                 {@const feature = allFeatures.find(f => f.id === featureId)}
                 {#if feature}
                   <span class="px-3 py-1 rounded-full text-sm font-medium"
@@ -2773,6 +3662,31 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 {/if}
               {/each}
             </div>
+          </div>
+        {/if}
+
+        {#if failedFeatures.length > 0}
+          <div class="p-4 rounded-lg border text-left"
+               style="background: #f59e0b15; border-color: #f59e0b40;">
+            <h3 class="font-semibold mb-2 flex items-center gap-2" style="color: #f59e0b;">
+              <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
+              Could not be set up
+            </h3>
+            <div class="flex flex-wrap gap-2 mb-2">
+              {#each failedFeatures as featureId (featureId)}
+                {@const feature = allFeatures.find(f => f.id === featureId)}
+                {#if feature}
+                  <span class="px-3 py-1 rounded-full text-sm font-medium"
+                        style="background: #f59e0b25; color: #f59e0b;">
+                    {feature.title}
+                  </span>
+                {/if}
+              {/each}
+            </div>
+            <p class="text-sm" style="color: {$colorStore.muted};">
+              Everything else was saved. Set these up from the dashboard, and check that Mewdeko has the
+              permissions they need.
+            </p>
           </div>
         {/if}
 
@@ -2792,5 +3706,28 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 <style>
     .wizard-container {
         overflow-x: hidden;
+        /* Steps share one grid cell so an outgoing and incoming step overlap
+           instead of stacking, which would otherwise double the page height
+           mid-transition and flash a scrollbar */
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: auto auto;
+        align-content: start;
+    }
+
+    .wizard-container > :global(.wizard-step) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    /* Same overlay treatment for the per-feature config panes */
+    .config-step-stack {
+        display: grid;
+        grid-template-columns: 100%;
+    }
+
+    .config-step-stack > :global(.config-step-pane) {
+        grid-column: 1;
+        grid-row: 1;
     }
 </style>

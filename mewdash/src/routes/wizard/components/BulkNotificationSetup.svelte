@@ -90,7 +90,8 @@ Groups similar features together for efficient configuration with category suppo
   // Auto-expand essential categories by default
   let expandedCategories = $state<Record<string, boolean>>({
     "Members": true,
-    "Messages": true
+    "Messages": true,
+    "Moderation": true
   });
 
   let categoryChannelSelectors = $state<Record<string, string | null>>({});
@@ -134,7 +135,7 @@ Groups similar features together for efficient configuration with category suppo
   <!-- Bulk Actions -->
   <div class="flex flex-wrap gap-2">
     <button
-      class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
       disabled={!features.some(f => f.channelId)}
       onclick={applyToAll}
       style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
@@ -143,7 +144,7 @@ Groups similar features together for efficient configuration with category suppo
       Apply First Channel to All
     </button>
     <button
-      class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
       onclick={enableAll}
       style="background: {$colorStore.accent}20; color: {$colorStore.accent}; border: 1px solid {$colorStore.accent}30;"
     >
@@ -151,7 +152,7 @@ Groups similar features together for efficient configuration with category suppo
       Enable All
     </button>
     <button
-      class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+      class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[44px]"
       onclick={disableAll}
       style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
     >
@@ -188,11 +189,11 @@ Groups similar features together for efficient configuration with category suppo
           {#if expandedCategories[category]}
             <div class="p-3 border-x border-b rounded-b-lg mb-2"
                  style="background: {$colorStore.secondary}05; border-color: {$colorStore.primary}15;">
-              <div class="flex gap-2 items-center">
-                <span class="text-xs font-medium whitespace-nowrap" style="color: {$colorStore.text};">
-                  Apply to all {category}:
-                </span>
-                <div class="flex-1">
+              <span class="block text-xs font-medium mb-2" style="color: {$colorStore.text};">
+                Apply to all {category}:
+              </span>
+              <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div class="flex-1 min-w-0">
                   <DiscordSelector
                     type="channel"
                     options={channels}
@@ -202,7 +203,7 @@ Groups similar features together for efficient configuration with category suppo
                   />
                 </div>
                 <button
-                  class="px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02]"
+                  class="px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
                   style="background: {$colorStore.secondary}; color: white;"
                   onclick={() => applyToCategory(category)}
                   disabled={!categoryChannelSelectors[category]}

@@ -76,3 +76,10 @@ Wizard layout - minimal layout for focused setup experience
       {@render children?.()}
   </main>
 </div>
+
+<style>
+    /* Reserve the scrollbar track so steps of differing height don't shift the page sideways */
+    :global(html) {
+        scrollbar-gutter: stable;
+    }
+</style>
