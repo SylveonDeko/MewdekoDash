@@ -2,8 +2,9 @@
 <script lang="ts">
 
 
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { type ChatTrigger, chatTriggersApi, clientApi } from "$lib/api/index.ts";
+  import type { TriggerCounter, TriggerStats, TriggerTestResult } from "$lib/api/chattriggers/chattriggers";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { fade, slide } from "svelte/transition";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -76,6 +77,42 @@
     User: 3,
   };
 
+  /**
+   * Defaults for the settings shared with the editor panel, so a trigger can be fully configured
+   * at creation instead of having to be created and then reopened.
+   */
+  function newTriggerDefaults() {
+    return {
+      id: 0,
+      isDisabled: false,
+      additionalResponses: null,
+      responseMode: 0,
+      roundRobinIndex: 0,
+      currencyCost: 0,
+      currencyReward: 0,
+      xpReward: 0,
+      requiredXpLevel: 0,
+      requirementFailMessage: null,
+      timeConditions: null,
+      expiresAt: null,
+      maxUses: null,
+      minAccountAgeMinutes: 0,
+      minServerMembershipMinutes: 0,
+      eventType: 0,
+      eventChannelId: 0n,
+      allowBots: false,
+      nextTriggerId: null,
+      replyToTrigger: false,
+      deleteResponseAfter: 0,
+      cooldownSeconds: 0,
+      cooldownScope: 0,
+      counterName: null,
+      counterMin: null,
+      counterMax: null,
+      category: null
+    };
+  }
+
   // Data variables
   let triggers: ChatTrigger[] = $state([]);
   let newTrigger: Partial<ChatTrigger> & {
@@ -86,6 +123,7 @@
     validTriggerTypesInteraction: boolean;
     validTriggerTypesButton: boolean;
     validTriggerTypesReactions: boolean;
+    validTriggerTypesReactionsRemoved: boolean;
   } = $state({
     trigger: "",
     response: {} as any,
@@ -97,6 +135,7 @@
     validTriggerTypesInteraction: false,
     validTriggerTypesButton: false,
     validTriggerTypesReactions: false,
+    validTriggerTypesReactionsRemoved: false,
     // Initialize other properties with sensible defaults
     autoDeleteTrigger: false,
     reactToTrigger: false,
@@ -108,18 +147,27 @@
     applicationCommandType: CtApplicationCommandType.None,
     prefixType: RequirePrefixType.None,
     roleGrantType: CtRoleGrantType.Sender,
+    ...newTriggerDefaults()
   });
     let guildRoles: Array<{ id: string; name: string }> = $state([]);
   let guildChannels: Array<{ id: string; name: string }> = $state([]);
   let categoryFilter: string = $state("all");
   let searchQuery = $state("");
+  let counters: TriggerCounter[] = $state([]);
+  let availablePlaceholders: string[] = $state([]);
+  let showPlaceholders = $state(false);
+  let showCounters = $state(false);
+  let newCounterName = $state("");
+  let newCounterValue = $state(0);
+  let testSample: Record<number, string> = $state({});
+  let testResults: Record<number, TriggerTestResult | null> = $state({});
+  let triggerStats: Record<number, TriggerStats | null> = $state({});
 
   // UI state variables - Dual Mode Interface
   let activeTab = $state("simple");
     let expandedTriggerId: number | null = $state(null);
     let loading = $state(true);
     let error: string | null = $state(null);
-  let isMobile = false;
   
   // Accessibility state
     let statusMessage = $state("");
@@ -129,7 +177,6 @@
   // Simple mode state
     let quickTriggerText = $state("");
   let quickResponseText: any = $state({});
-    let showAdvancedOptions = $state(false);
   
   // Advanced mode state
     let newTriggerRegexTestString = $state("");
@@ -139,10 +186,6 @@
   let regexTestResult = "";
   let regexHighlightedString = "";
   let activeDropdown: string | null = null;
-
-  function checkMobile() {
-    isMobile = browser && window.innerWidth < 768;
-  }
 
   // Function to load triggers
   async function loadTriggers() {
@@ -182,7 +225,8 @@
           validTriggerTypesMessage: !!(trigger.validTriggerTypes & ChatTriggerType.Message),
           validTriggerTypesInteraction: !!(trigger.validTriggerTypes & ChatTriggerType.Interaction),
           validTriggerTypesButton: !!(trigger.validTriggerTypes & ChatTriggerType.Button),
-          validTriggerTypesReactions: !!(trigger.validTriggerTypes & ChatTriggerType.Reactions)
+          validTriggerTypesReactions: !!(trigger.validTriggerTypes & ChatTriggerType.Reactions),
+          validTriggerTypesReactionsRemoved: !!(trigger.validTriggerTypes & ChatTriggerType.ReactionsRemoved)
         } as any;
       });
     } catch (err: any) {
@@ -240,6 +284,7 @@
       if (newTrigger.validTriggerTypesInteraction) validTriggerTypes |= ChatTriggerType.Interaction;
       if (newTrigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
       if (newTrigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
+      if (newTrigger.validTriggerTypesReactionsRemoved) validTriggerTypes |= ChatTriggerType.ReactionsRemoved;
 
       // Serialize response if it's an object
       const responseText = typeof newTrigger.response === "object" && newTrigger.response !== null && Object.keys(newTrigger.response).length > 0
@@ -273,6 +318,8 @@
         validTriggerTypesInteraction: false,
         validTriggerTypesButton: false,
         validTriggerTypesReactions: false,
+        validTriggerTypesReactionsRemoved: false,
+        ...newTriggerDefaults(),
         autoDeleteTrigger: false,
         reactToTrigger: false,
         dmResponse: false,
@@ -324,6 +371,7 @@
         if (trigger.validTriggerTypesInteraction) validTriggerTypes |= ChatTriggerType.Interaction;
         if (trigger.validTriggerTypesButton) validTriggerTypes |= ChatTriggerType.Button;
         if (trigger.validTriggerTypesReactions) validTriggerTypes |= ChatTriggerType.Reactions;
+        if (trigger.validTriggerTypesReactionsRemoved) validTriggerTypes |= ChatTriggerType.ReactionsRemoved;
       }
 
       // Serialize response if it's an object
@@ -596,6 +644,114 @@
   }));
 
   /**
+   * Loads the guild's counters and the placeholder list, which the response editor references.
+   */
+  async function loadExtras() {
+    const guild = get(currentGuild);
+    if (!guild?.id) return;
+
+    try {
+      counters = await chatTriggersApi.getCounters(guild.id);
+    } catch (err) {
+      logger.error("Failed to fetch trigger counters:", err);
+    }
+
+    try {
+      availablePlaceholders = await chatTriggersApi.getPlaceholders(guild.id);
+    } catch (err) {
+      logger.error("Failed to fetch placeholders:", err);
+    }
+  }
+
+  /**
+   * Creates or updates a counter, then refreshes the list.
+   */
+  async function saveCounter(name: string, value: number) {
+    const guild = get(currentGuild);
+    if (!guild?.id || !name.trim()) return;
+
+    try {
+      await chatTriggersApi.setCounter(guild.id, name.trim().toLowerCase(), value);
+      counters = await chatTriggersApi.getCounters(guild.id);
+      newCounterName = "";
+      newCounterValue = 0;
+    } catch (err) {
+      logger.error("Failed to save counter:", err);
+      showNotificationMessage("Failed to save counter.", "error");
+    }
+  }
+
+  /**
+   * Deletes a counter and every per-user value stored under its name.
+   */
+  async function removeCounter(name: string) {
+    const guild = get(currentGuild);
+    if (!guild?.id) return;
+
+    try {
+      await chatTriggersApi.deleteCounter(guild.id, name);
+      counters = await chatTriggersApi.getCounters(guild.id);
+    } catch (err) {
+      logger.error("Failed to delete counter:", err);
+      showNotificationMessage("Failed to delete counter.", "error");
+    }
+  }
+
+  /**
+   * Pauses or resumes every trigger in the selected category.
+   */
+  async function toggleCategory(disabled: boolean) {
+    const guild = get(currentGuild);
+    if (!guild?.id || categoryFilter === "all" || categoryFilter === "__none") return;
+
+    try {
+      const result = await chatTriggersApi.toggleCategory(guild.id, categoryFilter, disabled);
+      triggers = triggers.map(t =>
+        t.category === categoryFilter ? { ...t, isDisabled: disabled } : t
+      );
+      showNotificationMessage(
+        `${result.changed} trigger(s) ${disabled ? "paused" : "resumed"}.`,
+        "success"
+      );
+    } catch (err) {
+      logger.error("Failed to toggle category:", err);
+      showNotificationMessage("Failed to update category.", "error");
+    }
+  }
+
+  /**
+   * Dry runs a trigger against the sample message, reporting what would block it.
+   */
+  async function runTest(trigger: ChatTrigger) {
+    const guild = get(currentGuild);
+    if (!guild?.id) return;
+
+    try {
+      testResults[trigger.id] = await chatTriggersApi.testTrigger(guild.id, trigger.id, {
+        sample: testSample[trigger.id] ?? "",
+        userId: String(data.user?.id ?? "0")
+      });
+    } catch (err) {
+      logger.error("Failed to test trigger:", err);
+      showNotificationMessage("Failed to test trigger.", "error");
+    }
+  }
+
+  /**
+   * Loads a trigger's fire history the first time its panel is opened.
+   */
+  async function loadStats(trigger: ChatTrigger) {
+    const guild = get(currentGuild);
+    if (!guild?.id || triggerStats[trigger.id]) return;
+
+    try {
+      triggerStats[trigger.id] = await chatTriggersApi.getTriggerStats(guild.id, trigger.id);
+    } catch (err) {
+      logger.error("Failed to fetch trigger stats:", err);
+    }
+  }
+
+  /**
    * Short badges describing a trigger's configuration, shown on the collapsed row so
    * its behaviour is visible without opening it.
    */
@@ -722,9 +878,7 @@
     newTrigger.guildId = guild.id;
     loading = true;
     try {
-      await Promise.all([loadTriggers(), loadGuildRoles()]);
-      checkMobile();
-      if (browser) window.addEventListener("resize", checkMobile);
+      await Promise.all([loadTriggers(), loadGuildRoles(), loadExtras()]);
     } catch (err) {
       error = "Failed to fetch data";
       logger.error(error, err);
@@ -737,15 +891,12 @@
   $effect(() => {
         if ($currentGuild) {
           loadTriggers();
-            loadGuildRoles()
+          loadGuildRoles();
+          loadExtras();
         }
     });
 
     let colors = $derived($colorStore);
-
-  onDestroy(() => {
-    if (browser) window.removeEventListener("resize", checkMobile);
-  });
 
     let colorVars = $derived(`
     --color-primary: ${colors.primary};
@@ -893,10 +1044,11 @@
     }
     
     // If no trigger types are selected, default to message
-    if (!newTrigger.validTriggerTypesMessage && 
-        !newTrigger.validTriggerTypesInteraction && 
-        !newTrigger.validTriggerTypesButton && 
-        !newTrigger.validTriggerTypesReactions) {
+    if (!newTrigger.validTriggerTypesMessage &&
+        !newTrigger.validTriggerTypesInteraction &&
+        !newTrigger.validTriggerTypesButton &&
+        !newTrigger.validTriggerTypesReactions &&
+        !newTrigger.validTriggerTypesReactionsRemoved) {
       newTrigger.validTriggerTypesMessage = true;
       announceAction("Message triggers enabled - at least one trigger type is required");
     }
@@ -1060,7 +1212,7 @@
               </label>
               <input 
                 id="quick-trigger"
-                class="w-full p-3 rounded-lg border transition-all duration-200"
+                class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                 placeholder="hello"
                 bind:value={quickTriggerText}
@@ -1217,6 +1369,118 @@
             <p style="color: {colors.muted}">Create your first trigger using the quick setup above</p>
           </div>
         {:else}
+          <!-- Server-wide tools: counters and the placeholder reference -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <button
+              type="button"
+              class="min-h-[44px] flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:brightness-110"
+              style="border-color: {colors.primary}25; background: {colors.primary}08;"
+              aria-expanded={showCounters}
+              onclick={() => showCounters = !showCounters}
+            >
+              <i class="fa-solid fa-hashtag" style="color: {colors.primary};"></i>
+              <span class="flex-1">
+                <span class="block text-sm font-medium" style="color: {colors.text}">Counters</span>
+                <span class="block text-xs" style="color: {colors.muted}">
+                  {counters.length} defined
+                </span>
+              </span>
+              <i class="fa-solid {showCounters ? 'fa-chevron-up' : 'fa-chevron-down'}"
+                 style="color: {colors.muted}; font-size: 12px;"></i>
+            </button>
+
+            <button
+              type="button"
+              class="min-h-[44px] flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:brightness-110"
+              style="border-color: {colors.primary}25; background: {colors.primary}08;"
+              aria-expanded={showPlaceholders}
+              onclick={() => showPlaceholders = !showPlaceholders}
+            >
+              <i class="fa-solid fa-code" style="color: {colors.primary};"></i>
+              <span class="flex-1">
+                <span class="block text-sm font-medium" style="color: {colors.text}">Placeholders</span>
+                <span class="block text-xs" style="color: {colors.muted}">
+                  {availablePlaceholders.length} available in responses
+                </span>
+              </span>
+              <i class="fa-solid {showPlaceholders ? 'fa-chevron-up' : 'fa-chevron-down'}"
+                 style="color: {colors.muted}; font-size: 12px;"></i>
+            </button>
+          </div>
+
+          {#if showCounters}
+            <div transition:slide={{ duration: 150 }} class="mb-4 p-4 rounded-xl border space-y-3"
+                 style="border-color: {colors.primary}25;">
+              <p class="text-xs" style="color: {colors.muted}">
+                Counters are shared across the server. A response reads one with
+                <code>%counter:name%</code>, or adds to it with <code>%counter:name+%</code>.
+              </p>
+
+              {#each counters as counter (counter.id)}
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="flex-1 min-w-0 basis-full sm:basis-auto text-base font-mono break-all"
+                        style="color: {colors.text}">{counter.name}</span>
+                  <input
+                    type="number"
+                    value={counter.value}
+                    onchange={(e) => saveCounter(counter.name, Number((e.target as HTMLInputElement).value))}
+                    class="flex-1 sm:flex-none sm:w-32 min-h-[44px] px-3 rounded-lg border text-base"
+                    style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+                  />
+                  <button
+                    class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all hover:brightness-110"
+                    style="background: {colors.accent}20; color: {colors.accent};"
+                    aria-label="Delete counter {counter.name}"
+                    onclick={() => removeCounter(counter.name)}
+                  >
+                    <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
+                  </button>
+                </div>
+              {/each}
+
+              <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t"
+                   style="border-color: {colors.primary}20;">
+                <input
+                  type="text"
+                  bind:value={newCounterName}
+                  placeholder="New counter name"
+                  class="flex-1 min-h-[44px] px-3 rounded-lg border text-base"
+                  style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+                />
+                <input
+                  type="number"
+                  bind:value={newCounterValue}
+                  class="w-full sm:w-32 min-h-[44px] px-3 rounded-lg border text-base"
+                  style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+                />
+                <button
+                  class="min-h-[44px] px-4 rounded-lg font-medium transition-all hover:brightness-110"
+                  style="background: {colors.primary}20; color: {colors.primary};"
+                  disabled={!newCounterName.trim()}
+                  onclick={() => saveCounter(newCounterName, newCounterValue)}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          {/if}
+
+          {#if showPlaceholders}
+            <div transition:slide={{ duration: 150 }} class="mb-4 p-4 rounded-xl border"
+                 style="border-color: {colors.primary}25;">
+              <p class="text-xs mb-3" style="color: {colors.muted}">
+                Drop any of these into a response and the bot fills them in when the trigger fires.
+                Regex triggers can also use <code>%regex.1%</code> for capture groups.
+              </p>
+              <div class="flex flex-wrap gap-1.5">
+                {#each availablePlaceholders as placeholder (placeholder)}
+                  <code class="text-xs px-2 py-1 rounded"
+                        style="background: {colors.primary}15; color: {colors.text};">{placeholder}</code>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
           <!-- Filter bar: keeps a long trigger list navigable -->
           <div class="flex flex-col sm:flex-row gap-3 mb-4">
             <div class="flex-1">
@@ -1226,7 +1490,7 @@
                 type="search"
                 bind:value={searchQuery}
                 placeholder="Search triggers and responses"
-                class="w-full p-3 rounded-lg border transition-all duration-200"
+                class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                 style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
               />
             </div>
@@ -1244,6 +1508,29 @@
               </div>
             {/if}
           </div>
+
+          {#if categoryFilter !== "all" && categoryFilter !== "__none"}
+            <div class="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl border"
+                 style="border-color: {colors.primary}25; background: {colors.primary}08;">
+              <span class="text-sm flex-1" style="color: {colors.text}">
+                Bulk actions for <strong>{categoryFilter}</strong>
+              </span>
+              <button
+                class="min-h-[44px] px-4 rounded-lg text-base font-medium transition-all hover:brightness-110"
+                style="background: {colors.primary}20; color: {colors.primary};"
+                onclick={() => toggleCategory(false)}
+              >
+                Resume all
+              </button>
+              <button
+                class="min-h-[44px] px-4 rounded-lg text-base font-medium transition-all hover:brightness-110"
+                style="background: {colors.accent}20; color: {colors.accent};"
+                onclick={() => toggleCategory(true)}
+              >
+                Pause all
+              </button>
+            </div>
+          {/if}
 
           {#if visibleTriggers.length === 0}
             <div class="text-center py-10 rounded-2xl border"
@@ -1263,11 +1550,14 @@
                    id="trigger-{trigger.id}">
                 
                 <div class="p-4">
-                  <div class="flex items-center justify-between gap-4">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <div class="flex-1 min-w-0">
-                      <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1"
+                      <h3 id="trigger-{trigger.id}-title" class="font-medium mb-1 break-words"
                           style="color: {colors.text}; opacity: {trigger.isDisabled ? 0.6 : 1};">
-                        "{trigger.trigger}" → "{summarizeResponse(trigger.response)}"
+                        <span class="block sm:inline">"{trigger.trigger}"</span>
+                        <span class="block sm:inline" style="color: {colors.muted}">
+                          → "{summarizeResponse(trigger.response)}"
+                        </span>
                       </h3>
                       <div class="text-sm" style="color: {colors.muted}">
                         Used {trigger.useCount || 0} times
@@ -1284,10 +1574,10 @@
                         </div>
                       {/if}
                     </div>
-                    
-                    <div class="flex items-center gap-2">
+
+                    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
                       <button
-                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                         onclick={() => toggleTriggerEnabled(trigger)}
                         aria-label="{trigger.isDisabled ? 'Resume' : 'Pause'} trigger {trigger.trigger}"
@@ -1297,7 +1587,7 @@
                       </button>
 
                       <button
-                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
                         onclick={() => deleteTrigger(trigger.id)}
                         aria-label="Delete trigger {trigger.trigger}"
@@ -1306,7 +1596,7 @@
                       </button>
                       
                       <button
-                        class="p-2 rounded-lg transition-all duration-200 hover:brightness-110"
+                        class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-200 hover:brightness-110"
                         style="background: {colors.secondary}20; color: {colors.secondary}; border: 1px solid {colors.secondary}30;"
                         onclick={() => toggleExpand(trigger.id)}
                         aria-expanded={expandedTriggerId === trigger.id}
@@ -1331,7 +1621,7 @@
                           </label>
                           <input
                             id="edit-trigger-{trigger.id}"
-                            class="w-full p-3 rounded-lg border transition-all duration-200"
+                            class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                             style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                             bind:value={trigger.trigger}
                             aria-describedby="edit-trigger-help-{trigger.id}"
@@ -1367,101 +1657,83 @@
                         </div>
                       </div>
 
-                      <!-- Quick Settings -->
-                      <div class="space-y-3">
-                        <h4 class="font-medium" style="color: {colors.text}">Quick Settings</h4>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
-                            <input type="checkbox"
-                                   bind:checked={trigger.autoDeleteTrigger}
-                                   class="sr-only peer"
-                                   aria-describedby="auto-delete-desc-{trigger.id}" />
-                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
-                                 style="peer-checked:bg-color: {colors.primary}; {trigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
-                            <span style="color: {colors.text}">Delete trigger message</span>
-                          </label>
-                          <div id="auto-delete-desc-{trigger.id}" class="text-xs" style="color: {colors.muted}">
-                            Automatically delete the user's message that triggered this response
-                          </div>
+                      <!-- One accordion grouped by topic, shared with the creation form -->
+                      <TriggerAdvancedSettings
+                        {trigger}
+                        {colors}
+                        {channelOptions}
+                        {roleOptions}
+                        {categories}
+                        onchange={() => triggers = [...triggers]}
+                      />
 
-                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
-                            <input type="checkbox" 
-                                   bind:checked={trigger.dmResponse}
-                                   class="sr-only peer" />
-                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
-                                 style="peer-checked:bg-color: {colors.primary}; {trigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
-                            <span style="color: {colors.text}">Send as DM</span>
-                          </label>
-
-                          <label class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
-                            <input type="checkbox" 
-                                   bind:checked={trigger.containsAnywhere}
-                                   class="sr-only peer" />
-                              <div class="switch-toggle w-11 h-6 bg-gray-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative"
-                                 style="peer-checked:bg-color: {colors.primary}; {trigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}"></div>
-                            <span style="color: {colors.text}">Match anywhere in message</span>
-                          </label>
+                      <!-- Dry run: explains which of the many gates is blocking a trigger -->
+                      <div class="space-y-3 pt-3 border-t" style="border-color: {colors.primary}20;">
+                        <h4 class="font-medium" style="color: {colors.text}">Test this trigger</h4>
+                        <p class="text-xs" style="color: {colors.muted}">
+                          Checks whether a message would fire this trigger, as you. Nothing is sent,
+                          charged or counted.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            placeholder="Type a sample message"
+                            value={testSample[trigger.id] ?? ""}
+                            oninput={(e) => testSample[trigger.id] = (e.target as HTMLInputElement).value}
+                            class="flex-1 min-h-[44px] px-3 rounded-lg border text-base"
+                            style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+                          />
+                          <button
+                            class="min-h-[44px] px-4 rounded-lg font-medium transition-all hover:brightness-110"
+                            style="background: {colors.primary}20; color: {colors.primary};"
+                            onclick={() => runTest(trigger)}
+                          >
+                            Test
+                          </button>
                         </div>
-                      </div>
 
-                      <!-- Role Settings -->
-                      <div class="space-y-3">
-                        <h4 class="font-medium" style="color: {colors.text}">Role Management</h4>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <span class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                              Roles to Grant
-                            </span>
-                            <DiscordSelector
-                              type="role"
-                              options={roleOptions}
-                              multiple={true}
-                              selected={trigger.grantedRoles}
-                              placeholder="No roles to grant"
-                              onchange={(detail) => handleRoleChange(trigger, 'grantedRoles', detail)}
-                            />
-                            <div id="roles-grant-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
-                              Users will receive these roles when the trigger is activated
-                            </div>
+                        {#if testResults[trigger.id]}
+                          {@const result = testResults[trigger.id]}
+                          <div class="p-3 rounded-lg text-sm"
+                               style="background: {result?.wouldFire ? colors.primary : colors.accent}15;
+                                      color: {result?.wouldFire ? colors.primary : colors.accent};">
+                            {#if result?.wouldFire}
+                              <i class="fa-solid fa-check"></i> This message would fire the trigger.
+                            {:else if !result?.matched}
+                              <i class="fa-solid fa-xmark"></i>
+                              The message does not match this trigger's text, prefix or pattern.
+                            {:else}
+                              <i class="fa-solid fa-ban"></i> Matched, but blocked: {result?.blocker}
+                            {/if}
                           </div>
+                        {/if}
 
-                          <div>
-                            <span class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                              Roles to Remove  
-                            </span>
-                            <DiscordSelector
-                              type="role"
-                              options={roleOptions}
-                              multiple={true}
-                              selected={trigger.removedRoles}
-                              placeholder="No roles to remove"
-                              onchange={(detail) => handleRoleChange(trigger, 'removedRoles', detail)}
-                            />
-                            <div id="roles-remove-help-{trigger.id}" class="text-xs mt-1" style="color: {colors.muted}">
-                              Users will lose these roles when the trigger is activated
-                            </div>
+                        <button
+                          class="min-h-[44px] text-base underline text-left"
+                          style="color: {colors.muted}"
+                          onclick={() => loadStats(trigger)}
+                        >
+                          Show recent activity
+                        </button>
+
+                        {#if triggerStats[trigger.id]}
+                          {@const stats = triggerStats[trigger.id]}
+                          <div class="text-xs space-y-1" style="color: {colors.muted}">
+                            <div>Fired {stats?.total ?? 0} time(s) in total.</div>
+                            {#each stats?.recent ?? [] as fire (String(fire.dateAdded) + String(fire.userId))}
+                              <div>
+                                &lt;@{fire.userId}&gt; in &lt;#{fire.channelId}&gt;
+                                {fire.dateAdded ? new Date(fire.dateAdded).toLocaleString() : ""}
+                              </div>
+                            {/each}
                           </div>
-                        </div>
-                      </div>
-
-                      <!-- Everything else, grouped so the common cases stay near the top -->
-                      <div class="space-y-3">
-                        <h4 class="font-medium" style="color: {colors.text}">More settings</h4>
-                        <TriggerAdvancedSettings
-                          {trigger}
-                          {colors}
-                          {channelOptions}
-                          {categories}
-                          onchange={() => triggers = [...triggers]}
-                        />
+                        {/if}
                       </div>
 
                       <!-- Save Button -->
                       <div class="flex justify-end pt-3">
                         <button
-                          class="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
+                          class="w-full sm:w-auto min-h-[44px] px-4 rounded-lg font-medium transition-all duration-200 hover:brightness-110"
                           style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
                           onclick={() => updateTrigger(trigger)}
                         >
@@ -1502,7 +1774,7 @@
                 </label>
                 <input
                   id="new-trigger"
-                  class="w-full p-3 rounded-lg border transition-all duration-200"
+                  class="w-full min-h-[44px] p-3 rounded-lg border text-base transition-all duration-200"
                   style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
                   bind:value={newTrigger.trigger}
                   oninput={handleNewTriggerRegexChange}
@@ -1624,7 +1896,22 @@
                             peer-checked:after:translate-x-full relative"
                        style="background: {newTrigger.validTriggerTypesReactions ? colors.primary : `${colors.primary}20`};">
                   </div>
-                  <span style="color: {colors.text}">Reaction triggers</span>
+                  <span style="color: {colors.text}">Reaction added</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
+                  <input type="checkbox"
+                         bind:checked={newTrigger.validTriggerTypesReactionsRemoved}
+                         onchange={validateTriggerOptions}
+                         class="sr-only peer" />
+                  <div class="w-11 h-6 rounded-full peer-focus:ring-2
+                            after:content-[''] after:absolute after:top-[2px]
+                            after:left-[2px] after:bg-white after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full relative"
+                       style="background: {newTrigger.validTriggerTypesReactionsRemoved ? colors.primary : `${colors.primary}20`};">
+                  </div>
+                  <span style="color: {colors.text}">Reaction removed</span>
                 </label>
               </div>
               <div class="text-xs" style="color: {colors.muted}">
@@ -1677,267 +1964,18 @@
               </div>
             {/if}
 
-            <!-- Role Management -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold flex items-center gap-2" style="color: {colors.text}">
-                Role Management
-                <Tooltip
-                  placement="bottom"
-                  text="Grant or remove Discord roles when triggered. Useful for role reactions, access controls, and rewards." />
-              </h3>
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <span id="roles-to-grant-label" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                    Roles to Grant
-                  </span>
-                  <DiscordSelector
-                    type="role"
-                    options={roleOptions}
-                    multiple={true}
-                    selected={newTrigger.grantedRoles}
-                    placeholder="Select roles to grant"
-                    onchange={(detail) => handleRoleChange(newTrigger, 'grantedRoles', detail)}
-                  />
-                  <div id="new-roles-grant-help" class="text-xs mt-1" style="color: {colors.muted}">
-                    Users will receive these roles when the trigger is activated
-                  </div>
-                </div>
-                <div>
-                  <span id="roles-to-remove-label" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                    Roles to Remove
-                  </span>
-                  <DiscordSelector
-                    type="role"
-                    options={roleOptions}
-                    multiple={true}
-                    selected={newTrigger.removedRoles}
-                    placeholder="Select roles to remove"
-                    onchange={(detail) => handleRoleChange(newTrigger, 'removedRoles', detail)}
-                  />
-                  <div id="new-roles-remove-help" class="text-xs mt-1" style="color: {colors.muted}">
-                    Users will lose these roles when the trigger is activated
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <!-- Basic Options -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold" style="color: {colors.text}">Basic Options</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" 
-                       style="background: {colors.primary}08; opacity: {newTrigger.reactToTrigger ? '0.5' : '1'};">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.autoDeleteTrigger}
-                         onchange={validateTriggerOptions}
-                         disabled={newTrigger.reactToTrigger}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.autoDeleteTrigger ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.autoDeleteTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">Auto-delete trigger message</span>
-                  <div class="ml-auto">
-                    <Tooltip
-                      placement="top"
-                      text="Automatically deletes the user's message that triggered this response. Cannot be used with 'React to trigger'." />
-                  </div>
-                </label>
+            <!-- Everything else, grouped by topic in one accordion rather than a nested
+                 "advanced" drawer, so the editor and this form stay identical -->
+            <TriggerAdvancedSettings
+              trigger={newTrigger as ChatTrigger}
+              {colors}
+              {channelOptions}
+              {roleOptions}
+              {categories}
+              onchange={() => { newTrigger = { ...newTrigger }; validateTriggerOptions(); }}
+            />
 
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.dmResponse}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.dmResponse ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.dmResponse ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">Send response as DM</span>
-                </label>
-
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.containsAnywhere}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.containsAnywhere ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.containsAnywhere ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">Match anywhere in message</span>
-                  <div class="ml-auto">
-                    <Tooltip
-                      placement="top"
-                      text="When enabled, the trigger can be found anywhere within a message. When disabled, the message must start with the trigger text." />
-                  </div>
-                </label>
-
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" 
-                       style="background: {colors.primary}08; opacity: {newTrigger.autoDeleteTrigger ? '0.5' : '1'};">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.reactToTrigger}
-                         onchange={validateTriggerOptions}
-                         disabled={newTrigger.autoDeleteTrigger}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.reactToTrigger ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.reactToTrigger ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">React to trigger message</span>
-                  <div class="ml-auto">
-                    <Tooltip
-                      placement="top"
-                      text="Adds reaction emojis to the user's message instead of the bot's response. Cannot be used with 'Auto-delete trigger'." />
-                  </div>
-                </label>
-
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.noRespond}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.noRespond ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.noRespond ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">Don't send response message</span>
-                </label>
-
-                <label class="flex items-center gap-3 p-3 rounded-lg cursor-pointer" style="background: {colors.primary}08;">
-                  <input type="checkbox" 
-                         bind:checked={newTrigger.ownerOnly}
-                         class="sr-only peer" />
-                  <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                            after:content-[''] after:absolute after:top-[2px]
-                            after:left-[2px] after:bg-white after:rounded-full
-                            after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full relative"
-                       style="background: {newTrigger.ownerOnly ? colors.primary : `${colors.primary}20`};
-                              {newTrigger.ownerOnly ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                  </div>
-                  <span style="color: {colors.text}">Owner only</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Advanced Configuration (Collapsible) -->
-            <div class="space-y-4">
-              <button
-                class="flex items-center gap-2 text-lg font-semibold transition-colors duration-200"
-                style="color: {colors.text}"
-                onclick={() => showAdvancedOptions = !showAdvancedOptions}
-                aria-expanded={showAdvancedOptions}
-                aria-controls="advanced-options"
-              >
-                <i class="fa-solid {showAdvancedOptions ? 'fa-chevron-up' : 'fa-chevron-right'}" style="font-size: 20px;"></i>
-                Advanced Configuration
-                <Tooltip
-                  placement="bottom"
-                  text="Advanced options for prefix requirements, role targeting, and interaction commands. Most users won't need these." />
-              </button>
-
-              {#if showAdvancedOptions}
-                <div id="advanced-options" transition:slide class="space-y-6">
-                  <!-- Prefix Configuration -->
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <span id="prefix-requirement-label" class="block text-sm font-medium mb-2"
-                            style="color: {colors.text}">
-                        Prefix Requirement
-                      </span>
-                      <DiscordSelector
-                        type="custom"
-                        options={getEnumOptionsForSelector('prefixType')}
-                        selected={newTrigger.prefixType?.toString() || "0"}
-                        placeholder="Select prefix type"
-                        onchange={(detail) => handleEnumChange(newTrigger, 'prefixType', detail)}
-                      />
-                    </div>
-
-                    {#if newTrigger.prefixType === RequirePrefixType.Custom}
-                      <div transition:slide>
-                        <label for="custom-prefix" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                          Custom Prefix
-                        </label>
-                        <input
-                          id="custom-prefix"
-                          class="w-full p-3 rounded-lg border"
-                          style="border-color: {colors.accent}30; color: {colors.text}; background: {colors.primary}08;"
-                          bind:value={newTrigger.customPrefix}
-                          placeholder="!"
-                        >
-                      </div>
-                    {/if}
-                  </div>
-
-                  <!-- Role Grant Type -->
-                  <div>
-                    <span id="role-grant-target-label" class="block text-sm font-medium mb-2"
-                          style="color: {colors.text}">
-                      Role Grant Target
-                    </span>
-                    <DiscordSelector
-                      type="custom"
-                      options={getEnumOptionsForSelector('roleGrantType')}
-                      selected={newTrigger.roleGrantType?.toString() || "0"}
-                      placeholder="Who gets the roles"
-                      onchange={(detail) => handleEnumChange(newTrigger, 'roleGrantType', detail)}
-                    />
-                  </div>
-
-                  <!-- Additional Options -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label for="reactions" class="block text-sm font-medium mb-2" style="color: {colors.text}">
-                        Reactions (emojis)
-                      </label>
-                      <input
-                        id="reactions"
-                        class="w-full p-3 rounded-lg border"
-                        style="border-color: {colors.secondary}30; color: {colors.text}; background: {colors.primary}08;"
-                        bind:value={newTrigger.reactions}
-                        placeholder="👍 ✅ 🎉"
-                      >
-                    </div>
-
-                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: {colors.primary}08;">
-                      <label class="flex items-center gap-3">
-                        <input type="checkbox" 
-                               bind:checked={newTrigger.allowTarget}
-                               class="sr-only peer" />
-                        <div class="switch-toggle w-11 h-6 rounded-full peer-focus:ring-2 
-                                  after:content-[''] after:absolute after:top-[2px]
-                                  after:left-[2px] after:bg-white after:rounded-full
-                                  after:h-5 after:w-5 after:transition-all
-                                  peer-checked:after:translate-x-full relative"
-                             style="background: {newTrigger.allowTarget ? colors.primary : `${colors.primary}20`};
-                                    {newTrigger.allowTarget ? `box-shadow: 0 0 8px ${colors.primary}40, inset 0 1px 0 rgba(255,255,255,0.2);` : ''}">
-                        </div>
-                        <span style="color: {colors.text}">Allow targeting</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              {/if}
-            </div>
 
             <!-- Create Button -->
             <div class="flex justify-end pt-6">
@@ -2050,21 +2088,4 @@
         }
     }
 
-    /* Touch target optimization */
-    @media (hover: none) {
-    }
-
-    /* Switch shine effect for active state */
-    @media (prefers-reduced-motion: no-preference) {
-        .switch-toggle {
-            transition: box-shadow 0.3s ease;
-        }
-    }
-
-    /* Disable shine for users who prefer reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-        .switch-toggle {
-            box-shadow: none !important;
-        }
-    }
 </style>

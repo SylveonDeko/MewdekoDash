@@ -2,6 +2,7 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
   import type { ChatTrigger } from "$lib/api/index.ts";
 
   /**
@@ -41,10 +42,31 @@
     { id: "11", name: "Giveaway won", icon: "fa-gift" }
   ];
 
+  /**
+   * How a trigger's prefix requirement is resolved. Mirrors RequirePrefixType in the bot.
+   */
+  const prefixTypes = [
+    { id: "0", name: "No prefix needed", icon: "fa-ban" },
+    { id: "1", name: "Global prefix", icon: "fa-globe" },
+    { id: "2", name: "Server prefix, or global", icon: "fa-server" },
+    { id: "3", name: "Server prefix if one is set", icon: "fa-server" },
+    { id: "4", name: "A custom prefix", icon: "fa-pen" }
+  ];
+
+  /**
+   * Who receives the roles a trigger grants or removes.
+   */
+  const roleGrantTypes = [
+    { id: "0", name: "Whoever used it", icon: "fa-user" },
+    { id: "1", name: "People they mentioned", icon: "fa-at" },
+    { id: "2", name: "Both", icon: "fa-users" }
+  ];
+
   interface Props {
     trigger: ChatTrigger;
     colors: any;
     channelOptions?: Array<{ id: string; name: string }>;
+    roleOptions?: Array<{ id: string; name: string }>;
     categories?: string[];
     onchange?: () => void;
   }
@@ -54,7 +76,24 @@
    * here updates the parent directly. That avoids binding to an each-block argument, which
    * runes mode disallows.
    */
-  let { trigger, colors, channelOptions = [], categories = [], onchange }: Props = $props();
+  let {
+    trigger,
+    colors,
+    channelOptions = [],
+    roleOptions = [],
+    categories = [],
+    onchange
+  }: Props = $props();
+
+  /**
+   * Normalises the role selection, which arrives as either an array or a separated string
+   * depending on where the trigger came from.
+   */
+  function roleSelection(value: string | string[] | null): string[] {
+    if (Array.isArray(value)) return value;
+    if (!value) return [];
+    return value.split("@@@").filter(id => id.trim().length > 0);
+  }
 
   let openSection: string | null = $state(null);
 
@@ -71,12 +110,19 @@
    */
   function activeCount(section: string): number {
     switch (section) {
+      case "matching":
+        return [trigger.containsAnywhere, trigger.allowTarget, trigger.ownerOnly,
+          trigger.prefixType > 0].filter(Boolean).length;
+      case "roles":
+        return [!!trigger.grantedRoles, !!trigger.removedRoles].filter(Boolean).length;
       case "delivery":
         return [trigger.replyToTrigger, trigger.deleteResponseAfter > 0, trigger.dmResponse,
-          trigger.noRespond, trigger.autoDeleteTrigger].filter(Boolean).length;
+          trigger.noRespond, trigger.autoDeleteTrigger, trigger.reactToTrigger,
+          !!trigger.additionalResponses].filter(Boolean).length;
       case "limits":
         return [trigger.cooldownSeconds > 0, trigger.maxUses != null, trigger.expiresAt != null,
-          trigger.minAccountAgeMinutes > 0, trigger.minServerMembershipMinutes > 0].filter(Boolean).length;
+          trigger.minAccountAgeMinutes > 0, trigger.minServerMembershipMinutes > 0,
+          !!trigger.timeConditions].filter(Boolean).length;
       case "economy":
         return [trigger.currencyCost > 0, trigger.currencyReward > 0, trigger.xpReward > 0,
           trigger.requiredXpLevel > 0].filter(Boolean).length;
@@ -92,13 +138,96 @@
   }
 
   const sections = [
+    { key: "matching", title: "When it matches", icon: "fa-crosshairs", hint: "Prefix, position and who may use it" },
     { key: "delivery", title: "How it responds", icon: "fa-paper-plane", hint: "Replies, DMs and clean-up" },
+    { key: "roles", title: "Roles", icon: "fa-user-tag", hint: "Roles to grant or remove" },
     { key: "limits", title: "Limits", icon: "fa-gauge-high", hint: "Cooldowns, expiry and who may use it" },
     { key: "economy", title: "Costs and rewards", icon: "fa-coins", hint: "Currency and XP" },
     { key: "counter", title: "Counter requirement", icon: "fa-hashtag", hint: "Only fire within a counter range" },
     { key: "event", title: "Fire on an event", icon: "fa-bolt", hint: "Respond to level ups, joins and more" },
     { key: "organise", title: "Organisation", icon: "fa-folder-tree", hint: "Category, chaining and bots" }
   ];
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  /**
+   * The extra responses as one per line, converted from the "@@@" separated form the bot stores.
+   */
+  let extraResponsesText = $derived((trigger.additionalResponses ?? "").split("@@@").join("\n"));
+
+  /**
+   * Stores the extra responses back in the separated form, dropping blank lines.
+   */
+  function setExtraResponses(value: string) {
+    const parts = value.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+    trigger.additionalResponses = parts.length > 0 ? parts.join("@@@") : null;
+    onchange?.();
+  }
+
+  /**
+   * The trigger's active window, parsed from the condition format shared with sticky messages.
+   * Only the first condition is edited here; the bot supports several, and any extras are left
+   * untouched rather than being silently dropped by this editor.
+   */
+  let activeHours = $derived.by(() => {
+    const fallback = { start: "09:00", end: "17:00", days: [] as number[] };
+
+    if (!trigger.timeConditions) return fallback;
+
+    try {
+      const parsed = JSON.parse(trigger.timeConditions);
+      const first = Array.isArray(parsed) ? parsed[0] : null;
+      if (!first) return fallback;
+
+      return {
+        start: first.StartTime ?? first.startTime ?? fallback.start,
+        end: first.EndTime ?? first.endTime ?? fallback.end,
+        days: (first.DaysOfWeek ?? first.daysOfWeek ?? []) as number[]
+      };
+    } catch {
+      return fallback;
+    }
+  });
+
+  let activeHoursEnabled = $derived(!!trigger.timeConditions);
+
+  /**
+   * Writes the active window back in the bot's condition format.
+   */
+  function setActiveHours(start: string, end: string, days: number[]) {
+    trigger.timeConditions = JSON.stringify([{
+      StartTime: start,
+      EndTime: end,
+      DaysOfWeek: days.length > 0 ? days : null,
+      Enabled: true,
+      Name: null
+    }]);
+    onchange?.();
+  }
+
+  /**
+   * Turns the active window on with a sensible default, or clears it entirely.
+   */
+  function toggleActiveHours(enabled: boolean) {
+    if (!enabled) {
+      trigger.timeConditions = null;
+      onchange?.();
+      return;
+    }
+
+    setActiveHours(activeHours.start, activeHours.end, activeHours.days);
+  }
+
+  /**
+   * Adds or removes a day from the active window.
+   */
+  function toggleDay(index: number) {
+    const days = activeHours.days.includes(index)
+      ? activeHours.days.filter(d => d !== index)
+      : [...activeHours.days, index].sort((a, b) => a - b);
+
+    setActiveHours(activeHours.start, activeHours.end, days);
+  }
 
   /**
    * Converts the datetime-local input value to the ISO string the API stores.
@@ -122,10 +251,16 @@
 <div class="space-y-2">
   {#each sections as section (section.key)}
     {@const count = activeCount(section.key)}
-    <div class="rounded-xl border overflow-hidden" style="border-color: {colors.primary}25;">
+    <div
+      class="rounded-xl border"
+      style="border-color: {colors.primary}25;
+             position: relative;
+             z-index: {openSection === section.key ? 20 : 1};"
+    >
       <button
         type="button"
-        class="w-full flex items-center gap-3 p-3 text-left transition-colors hover:brightness-110"
+        class="w-full min-h-[44px] flex items-center gap-3 p-3 text-left rounded-xl transition-colors hover:brightness-110"
+        class:rounded-b-none={openSection === section.key}
         style="background: {colors.primary}08;"
         aria-expanded={openSection === section.key}
         onclick={() => toggleSection(section.key)}
@@ -149,17 +284,166 @@
         <div transition:slide={{ duration: 150 }} class="p-4 space-y-4 border-t"
              style="border-color: {colors.primary}20;">
 
-          {#if section.key === "delivery"}
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" bind:checked={trigger.replyToTrigger} onchange={() => onchange?.()}
-                     class="mt-1" style="accent-color: {colors.primary};" />
-              <span>
-                <span class="block text-sm" style="color: {colors.text}">Reply to the message</span>
-                <span class="block text-xs" style="color: {colors.muted}">
-                  Shows the response as a reply so it is clear what it answered.
-                </span>
-              </span>
-            </label>
+          {#if section.key === "matching"}
+            <div>
+              <span class="block text-sm mb-1" style="color: {colors.text}">Prefix requirement</span>
+              <DiscordSelector
+                type="custom"
+                options={prefixTypes}
+                selected={String(trigger.prefixType ?? 0)}
+                placeholder="No prefix needed"
+                onchange={(d) => { trigger.prefixType = Number(d.selected); onchange?.(); }}
+              />
+            </div>
+
+            {#if trigger.prefixType === 4}
+              <div>
+                <label for="custom-prefix-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
+                  Custom prefix
+                </label>
+                <input id="custom-prefix-{trigger.id}" type="text"
+                       bind:value={trigger.customPrefix} onchange={() => onchange?.()}
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
+                       style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
+              </div>
+            {/if}
+
+            <ToggleRow
+              {colors}
+              checked={trigger.containsAnywhere}
+              title="Match anywhere in the message"
+              subtitle="Off means the whole message has to be the trigger."
+              onchange={(v) => { trigger.containsAnywhere = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.allowTarget}
+              title="Allow targeting someone"
+              subtitle="Lets people add a name after the trigger, used by %target%."
+              onchange={(v) => { trigger.allowTarget = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.ownerOnly}
+              title="Bot owner only"
+              subtitle="Nobody else can use it, including server administrators."
+              onchange={(v) => { trigger.ownerOnly = v; onchange?.(); }}
+            />
+
+          {:else if section.key === "roles"}
+            <div>
+              <span class="block text-sm mb-1" style="color: {colors.text}">Roles to grant</span>
+              <DiscordSelector
+                type="role"
+                options={roleOptions}
+                multiple={true}
+                selected={roleSelection(trigger.grantedRoles)}
+                placeholder="No roles granted"
+                onchange={(d) => {
+                  const ids = (d.selected as string[]) ?? [];
+                  trigger.grantedRoles = ids.length > 0 ? ids.join("@@@") : null;
+                  onchange?.();
+                }}
+              />
+            </div>
+
+            <div>
+              <span class="block text-sm mb-1" style="color: {colors.text}">Roles to remove</span>
+              <DiscordSelector
+                type="role"
+                options={roleOptions}
+                multiple={true}
+                selected={roleSelection(trigger.removedRoles)}
+                placeholder="No roles removed"
+                onchange={(d) => {
+                  const ids = (d.selected as string[]) ?? [];
+                  trigger.removedRoles = ids.length > 0 ? ids.join("@@@") : null;
+                  onchange?.();
+                }}
+              />
+            </div>
+
+            {#if trigger.grantedRoles || trigger.removedRoles}
+              <div>
+                <span class="block text-sm mb-1" style="color: {colors.text}">Apply those roles to</span>
+                <DiscordSelector
+                  type="custom"
+                  options={roleGrantTypes}
+                  selected={String(trigger.roleGrantType ?? 0)}
+                  placeholder="Whoever used it"
+                  onchange={(d) => { trigger.roleGrantType = Number(d.selected); onchange?.(); }}
+                />
+              </div>
+            {/if}
+
+          {:else if section.key === "delivery"}
+            <ToggleRow
+              {colors}
+              checked={trigger.replyToTrigger}
+              title="Reply to the message"
+              subtitle="Shows the response as a reply so it is clear what it answered."
+              onchange={(v) => { trigger.replyToTrigger = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.dmResponse}
+              title="Send the response as a DM"
+              subtitle="Replies privately instead of in the channel."
+              onchange={(v) => { trigger.dmResponse = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.autoDeleteTrigger}
+              disabled={trigger.reactToTrigger}
+              title="Delete the triggering message"
+              subtitle={trigger.reactToTrigger
+                ? "Unavailable while reacting to the message, since there would be nothing left to react to."
+                : "Removes what the person typed once the trigger fires."}
+              onchange={(v) => { trigger.autoDeleteTrigger = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.reactToTrigger}
+              disabled={trigger.autoDeleteTrigger}
+              title="React to the message instead"
+              subtitle={trigger.autoDeleteTrigger
+                ? "Unavailable while deleting the triggering message."
+                : "Puts the trigger's emoji on their message rather than on the reply."}
+              onchange={(v) => { trigger.reactToTrigger = v; onchange?.(); }}
+            />
+
+            <ToggleRow
+              {colors}
+              checked={trigger.noRespond}
+              title="Send no message at all"
+              subtitle="Useful when the trigger only exists to hand out roles or run another trigger."
+              onchange={(v) => { trigger.noRespond = v; onchange?.(); }}
+            />
+
+            <div>
+              <label for="reactions-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
+                Emoji to react with
+              </label>
+              <input id="reactions-{trigger.id}" type="text"
+                     value={(trigger.reactions ?? "").split("@@@").join(" ")}
+                     onchange={(e) => {
+                       const parts = (e.target as HTMLInputElement).value
+                         .split(/\s+/).filter(part => part.length > 0);
+                       trigger.reactions = parts.length > 0 ? parts.join("@@@") : null;
+                       onchange?.();
+                     }}
+                     placeholder="👍 ✅ 🎉"
+                     class="w-full min-h-[44px] px-3 rounded-lg border text-base"
+                     style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
+              <p class="text-xs mt-1" style="color: {colors.muted}">
+                Separate with spaces. Up to six, added one per second.
+              </p>
+            </div>
 
             <div>
               <label for="del-after-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
@@ -168,25 +452,42 @@
               <div class="flex items-center gap-2">
                 <input id="del-after-{trigger.id}" type="number" min="0" max="86400"
                        bind:value={trigger.deleteResponseAfter} onchange={() => onchange?.()}
-                       class="w-28 p-2 rounded-lg border"
+                       class="w-28 min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
                 <span class="text-sm" style="color: {colors.muted}">seconds (0 keeps it)</span>
               </div>
             </div>
 
             <div>
-              <span class="block text-sm mb-1" style="color: {colors.text}">When there are several responses</span>
-              <DiscordSelector
-                type="custom"
-                options={responseModes}
-                selected={String(trigger.responseMode ?? 0)}
-                placeholder="Pick a response mode"
-                onchange={(d) => { trigger.responseMode = Number(d.selected); onchange?.(); }}
-              />
+              <label for="extra-responses-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
+                Extra responses
+              </label>
+              <textarea
+                id="extra-responses-{trigger.id}"
+                rows="3"
+                value={extraResponsesText}
+                onchange={(e) => setExtraResponses((e.target as HTMLTextAreaElement).value)}
+                placeholder="One response per line"
+                class="w-full p-3 rounded-lg border font-mono text-base"
+                style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;"
+              ></textarea>
               <p class="text-xs mt-1" style="color: {colors.muted}">
-                Add extra responses with <code>.ctaddresponse</code>. Repeat one to make it more likely.
+                One per line. Repeat a line to make it more likely to be picked.
               </p>
             </div>
+
+            {#if (trigger.additionalResponses ?? "").trim().length > 0}
+              <div>
+                <span class="block text-sm mb-1" style="color: {colors.text}">When there are several responses</span>
+                <DiscordSelector
+                  type="custom"
+                  options={responseModes}
+                  selected={String(trigger.responseMode ?? 0)}
+                  placeholder="Pick a response mode"
+                  onchange={(d) => { trigger.responseMode = Number(d.selected); onchange?.(); }}
+                />
+              </div>
+            {/if}
 
           {:else if section.key === "limits"}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,7 +497,7 @@
                 </label>
                 <input id="cd-{trigger.id}" type="number" min="0"
                        bind:value={trigger.cooldownSeconds} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -223,7 +524,7 @@
                          trigger.maxUses = v > 0 ? v : null;
                          onchange?.();
                        }}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
                 <p class="text-xs mt-1" style="color: {colors.muted}">
                   Used {trigger.useCount ?? 0} times so far. 0 means no limit.
@@ -236,7 +537,7 @@
                 <input id="expiry-{trigger.id}" type="datetime-local"
                        value={expiryInputValue()}
                        onchange={(e) => setExpiry((e.target as HTMLInputElement).value)}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
             </div>
@@ -248,7 +549,7 @@
                 </label>
                 <input id="acct-age-{trigger.id}" type="number" min="0"
                        bind:value={trigger.minAccountAgeMinutes} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -257,13 +558,67 @@
                 </label>
                 <input id="member-age-{trigger.id}" type="number" min="0"
                        bind:value={trigger.minServerMembershipMinutes} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
             </div>
             <p class="text-xs" style="color: {colors.muted}">
               These keep brand new accounts from using a trigger. Leave at 0 for no restriction.
             </p>
+
+            <div class="pt-2 border-t" style="border-color: {colors.primary}20;">
+              <div class="mb-3">
+                <ToggleRow
+                  {colors}
+                  checked={activeHoursEnabled}
+                  title="Only active at certain hours"
+                  subtitle="Uses the server's timezone. An end time before the start time runs overnight."
+                  onchange={(v) => toggleActiveHours(v)}
+                />
+              </div>
+
+              {#if activeHoursEnabled}
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <label for="hours-start-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
+                      From
+                    </label>
+                    <input id="hours-start-{trigger.id}" type="time" value={activeHours.start}
+                           onchange={(e) => setActiveHours((e.target as HTMLInputElement).value, activeHours.end, activeHours.days)}
+                           class="w-full min-h-[44px] px-3 rounded-lg border text-base"
+                           style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
+                  </div>
+                  <div>
+                    <label for="hours-end-{trigger.id}" class="block text-sm mb-1" style="color: {colors.text}">
+                      Until
+                    </label>
+                    <input id="hours-end-{trigger.id}" type="time" value={activeHours.end}
+                           onchange={(e) => setActiveHours(activeHours.start, (e.target as HTMLInputElement).value, activeHours.days)}
+                           class="w-full min-h-[44px] px-3 rounded-lg border text-base"
+                           style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
+                  </div>
+                </div>
+
+                <span class="block text-sm mb-2" style="color: {colors.text}">On these days</span>
+                <div class="flex flex-wrap gap-2">
+                  {#each dayNames as day, index (day)}
+                    <button
+                      type="button"
+                      class="min-w-[44px] min-h-[44px] px-3 rounded-lg text-sm font-medium transition-all"
+                      style="background: {activeHours.days.includes(index) ? colors.primary : `${colors.primary}15`};
+                             color: {activeHours.days.includes(index) ? '#fff' : colors.text};"
+                      aria-pressed={activeHours.days.includes(index)}
+                      onclick={() => toggleDay(index)}
+                    >
+                      {day}
+                    </button>
+                  {/each}
+                </div>
+                <p class="text-xs mt-2" style="color: {colors.muted}">
+                  No days selected means every day.
+                </p>
+              {/if}
+            </div>
 
           {:else if section.key === "economy"}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -273,7 +628,7 @@
                 </label>
                 <input id="cost-{trigger.id}" type="number" min="0"
                        bind:value={trigger.currencyCost} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -282,7 +637,7 @@
                 </label>
                 <input id="reward-{trigger.id}" type="number" min="0"
                        bind:value={trigger.currencyReward} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -291,7 +646,7 @@
                 </label>
                 <input id="xp-{trigger.id}" type="number" min="0"
                        bind:value={trigger.xpReward} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -300,7 +655,7 @@
                 </label>
                 <input id="req-lvl-{trigger.id}" type="number" min="0"
                        bind:value={trigger.requiredXpLevel} onchange={() => onchange?.()}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
             </div>
@@ -312,7 +667,7 @@
               <input id="fail-msg-{trigger.id}" type="text"
                      bind:value={trigger.requirementFailMessage} onchange={() => onchange?.()}
                      placeholder="Leave empty to say nothing"
-                     class="w-full p-2 rounded-lg border"
+                     class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <p class="text-xs mt-1" style="color: {colors.muted}">
                 Shown when someone cannot afford the cost or is below the required level.
@@ -327,7 +682,7 @@
               <input id="counter-name-{trigger.id}" type="text"
                      bind:value={trigger.counterName} onchange={() => onchange?.()}
                      placeholder="Leave empty for no requirement"
-                     class="w-full p-2 rounded-lg border"
+                     class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -342,7 +697,7 @@
                          trigger.counterMin = raw === "" ? null : Number(raw);
                          onchange?.();
                        }}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
               <div>
@@ -356,7 +711,7 @@
                          trigger.counterMax = raw === "" ? null : Number(raw);
                          onchange?.();
                        }}
-                       class="w-full p-2 rounded-lg border"
+                       class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                        style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               </div>
             </div>
@@ -409,7 +764,7 @@
               <input id="category-{trigger.id}" type="text" list="ct-categories-{trigger.id}"
                      bind:value={trigger.category} onchange={() => onchange?.()}
                      placeholder="Ungrouped"
-                     class="w-full p-2 rounded-lg border"
+                     class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <datalist id="ct-categories-{trigger.id}">
                 {#each categories as category (category)}
@@ -432,23 +787,20 @@
                        trigger.nextTriggerId = v > 0 ? v : null;
                        onchange?.();
                      }}
-                     class="w-full p-2 rounded-lg border"
+                     class="w-full min-h-[44px] px-3 rounded-lg border text-base"
                      style="border-color: {colors.primary}30; color: {colors.text}; background: {colors.primary}08;" />
               <p class="text-xs mt-1" style="color: {colors.muted}">
                 Runs a second trigger by ID after this one. It still checks its own rules. 0 for none.
               </p>
             </div>
 
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" bind:checked={trigger.allowBots} onchange={() => onchange?.()}
-                     class="mt-1" style="accent-color: {colors.primary};" />
-              <span>
-                <span class="block text-sm" style="color: {colors.text}">Respond to bots instead of people</span>
-                <span class="block text-xs" style="color: {colors.muted}">
-                  Only matches messages from other bots and webhooks. Never its own.
-                </span>
-              </span>
-            </label>
+            <ToggleRow
+              {colors}
+              checked={trigger.allowBots}
+              title="Respond to bots instead of people"
+              subtitle="Only matches messages from other bots and webhooks. Never its own."
+              onchange={(v) => { trigger.allowBots = v; onchange?.(); }}
+            />
           {/if}
         </div>
       {/if}
