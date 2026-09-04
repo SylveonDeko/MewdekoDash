@@ -186,6 +186,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Patreon integration and rewards",
   },
   {
+    label: "Leave Feedback",
+    icon: "fa-utility-duo fa-regular fa-comments",
+    href: "/dashboard/leave-feedback",
+    category: "Analytics",
+    description: "Why servers removed the bot, answered by their owners",
+    ownerOnly: true,
+  },
+  {
     label: "Performance",
     icon: "fa-utility-duo fa-regular fa-clock",
     href: "/dashboard/performance",

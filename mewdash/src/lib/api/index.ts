@@ -59,6 +59,7 @@ export { formsApi } from "./forms/forms";
 export { minecraftApi } from "./minecraft/minecraft";
 export { statChannelsApi } from "./statchannels/statchannels";
 export { auditLogApi } from "./auditlog/auditlog";
+export { leaveFeedbackApi } from "./leavefeedback/leavefeedback";
 export { embedsApi } from "./embeds/embeds";
 export { dashboardAccessApi } from "./dashboardaccess/dashboardaccess";
 
@@ -118,5 +119,6 @@ export * from "./forms/models";
 export * from "./minecraft/models";
 export * from "./statchannels/models";
 export * from "./auditlog/models";
+export * from "./leavefeedback/models";
 export * from "./embeds/models";
 export * from "./dashboardaccess/models";
