@@ -22,6 +22,7 @@
     updatesDialog
   } from "$lib/stores/productUpdateStore";
   import { browser } from "$app/environment";
+  import { logger } from "$lib/logger";
   import { wizardApi } from "$lib/api/index.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore";
@@ -74,6 +75,11 @@
   // Setup suggestion banner state
   let showSetupSuggestion = $state(false);
   let setupSuggestionContext = $state<any>(null);
+
+  // The effect below re-fires on any currentGuild/userStore write, and the probe used to retry
+  // forever on failure (a guild the bot was removed from answered 403, hammering the bot API).
+  // One answer per user+guild is all the banner needs.
+  let lastWizardCheckKey: string | null = null;
   /**
    * Marks every update as read, so the next visit only surfaces what is published after this one.
    */
@@ -125,6 +131,11 @@
       if (window.location.pathname.startsWith('/wizard')) {
         return;
       }
+
+      const checkKey = `${$userStore.id}:${$currentGuild.id}`;
+      if (lastWizardCheckKey === checkKey) return;
+      lastWizardCheckKey = checkKey;
+
       const wizardDecision = await wizardApi.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
       console.log("Wizard decision:", wizardDecision);
 
@@ -140,6 +151,8 @@
         setupSuggestionContext = null;
       }
     } catch (err) {
+      // Deliberately not retried: lastWizardCheckKey stays set so a failing guild is asked about once.
+      logger.error("Failed to check wizard state for guild:", $currentGuild?.id, err);
       showSetupSuggestion = false;
     }
   }
