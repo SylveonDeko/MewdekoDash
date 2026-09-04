@@ -5,6 +5,7 @@
   import { currentInstance } from "$lib/stores/instanceStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { get } from "svelte/store";
+  import { safeUrl } from "$lib/utils/sanitize";
 
   // Props
     interface Props {
@@ -307,7 +308,7 @@
                   <img src={processedAuthorIcon} alt="Author icon">
                 {/if}
                 {#if processedAuthorUrl && !processedAuthorUrl.includes('%')}
-                  <a href={processedAuthorUrl}>
+                  <a href={safeUrl(processedAuthorUrl)}>
                     {@html processedAuthorName}
                   </a>
                 {:else}
@@ -332,7 +333,7 @@
               {@const processedUrl = processText(embed.url || "")}
               <div class="dc-embed-title">
                 {#if processedUrl && !processedUrl.includes('%')}
-                  <a href={processedUrl}>
+                  <a href={safeUrl(processedUrl)}>
                     {@html processedTitle}
                   </a>
                 {:else}

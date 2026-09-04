@@ -7,11 +7,16 @@
     import {goto} from "$app/navigation";
     import {clickOutside} from "$lib/clickOutside";
     import {colorStore} from "$lib/stores/colorStore";
-    import {closeSearch, getSearchableFeatures, type SearchableItem, searchStore} from "$lib/stores/searchStore";
+    import {closeSearch, getSearchableFeatures, matchesSearchTerms, type SearchableItem, searchStore} from "$lib/stores/searchStore";
     import Portal from "$lib/components/ui/Portal.svelte";
+    import {userStore} from "$lib/stores/userStore";
+    import {ownershipApi} from "$lib/api/index.ts";
+    import {logger} from "$lib/logger";
 
 
   // No props needed - using store state
+
+  let isOwner = $state(false);
 
   // State
   let searchInput: HTMLInputElement | undefined = $state();
@@ -25,7 +30,7 @@
 
   // Fuzzy search implementation
   function searchFeatures(searchQuery: string, category: string): SearchableItem[] {
-    const allFeatures = getSearchableFeatures(); // Get dynamic features
+    const allFeatures = getSearchableFeatures(isOwner); // Get dynamic features
 
     if (!searchQuery.trim()) {
       // Show all features when no query, filtered by category
@@ -40,13 +45,8 @@
       .filter(item => {
         // Category filter
         if (category !== 'All' && item.category !== category) return false;
-        
-        // Text matching
-        const titleMatch = item.title.toLowerCase().includes(query);
-        const descMatch = item.description.toLowerCase().includes(query);
-        const keywordMatch = item.keywords.some(keyword => keyword.toLowerCase().includes(query));
-        
-        return titleMatch || descMatch || keywordMatch;
+
+        return matchesSearchTerms(item, query);
       })
       .sort((a, b) => {
         // Prioritize exact title matches
@@ -148,6 +148,17 @@
     }
   });
 
+  onMount(async () => {
+    const userData = $userStore;
+    if (!userData?.id) return;
+    try {
+      isOwner = await ownershipApi.isOwner(BigInt(userData.id));
+    } catch (err) {
+      logger.error('Search owner check failed:', err);
+      isOwner = false;
+    }
+  });
+
   onDestroy(() => {
     if (browser) {
       window.removeEventListener('keydown', handleKeydown);
@@ -164,7 +175,9 @@
   });
   // Reactive updates
   $effect(() => {
-    $searchStore.isOpen && focusInput();
+    if (!$searchStore.isOpen) return;
+    query = $searchStore.query;
+    focusInput();
   });
   $effect(() => {
     results = searchFeatures(query, activeCategory);
@@ -292,7 +305,7 @@
             <!-- Popular Features -->
             <div class="space-y-2 pb-6">
               <p class="text-xs font-medium mb-3" style="color: {$colorStore.muted};">Popular Features</p>
-              {#each getSearchableFeatures().filter(f => ['music-player', 'xp-system', 'moderation', 'chat-triggers'].includes(f.id)) as feature}
+              {#each getSearchableFeatures(isOwner).filter(f => ['feature-music', 'feature-xp', 'feature-moderation', 'feature-chat-triggers'].includes(f.id)) as feature}
                 <button
                   class="search-result-item popular-feature flex items-center gap-4 w-full p-4 rounded-xl transition-all duration-200 ease-in-out border border-transparent relative group"
                   style="background: {$colorStore.primary}08; hover:background: {$colorStore.primary}15;"
@@ -300,7 +313,7 @@
                 >
                   <div class="w-10 h-10 rounded-xl flex items-center justify-center"
                        style="background: linear-gradient(135deg, {$colorStore.primary}40, {$colorStore.secondary}40);">
-                    <i class="fa-utility-duo fa-regular {feature.icon}"
+                    <i class={feature.icon}
                        style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                   </div>
                   <div class="flex-1 text-left">
@@ -329,7 +342,7 @@
                      style="background: {index === selectedIndex
                        ? `linear-gradient(135deg, ${$colorStore.primary}40, ${$colorStore.secondary}40)`
                        : `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}25)`};">
-                  <i class="fa-utility-duo fa-regular {result.icon} text-sm md:text-xl"
+                  <i class="{result.icon} text-sm md:text-xl"
                      style="--fa-primary-color: {$colorStore.text}; --fa-secondary-color: {$colorStore.text};"></i>
                 </div>
 

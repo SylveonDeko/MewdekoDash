@@ -17,6 +17,7 @@
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import ToggleRow from "$lib/components/forms/ToggleRow.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
 
   let { data } = $props();
 
@@ -40,6 +41,13 @@
   let channelInput = $state("");
   let savingSettings = $state(false);
   let settingsError: string | null = $state(null);
+
+  let activeTab = $state("responses");
+
+  const tabs = [
+    { id: "responses", label: "Responses", icon: "fa-comments" },
+    { id: "settings", label: "Settings", icon: "fa-cog" },
+  ];
 
   let channelDirty = $derived(
     settings !== null && channelInput.trim() !== (settings.channelId === 0n ? "" : settings.channelId.toString()),
@@ -277,7 +285,10 @@
   icon="fa-comments"
   subtitle="Why servers removed the bot, straight from their owners"
   title="Leave Feedback"
+  {tabs}
+  bind:activeTab
 >
+  {#if activeTab === 'settings'}
   <!-- Bot wide settings -->
   {#if settings}
     <div
@@ -348,6 +359,7 @@
       </div>
     </div>
   {/if}
+  {:else}
 
   <!-- Stats -->
   <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6" in:fly={{ y: 20, duration: 300 }}>
@@ -470,9 +482,10 @@
   </div>
 
   {#if loading}
-    <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">Loading leave feedback...</span>
+    <div class="space-y-2" aria-busy="true" aria-label="Loading leave feedback">
+      {#each Array(6) as _, i (i)}
+        <SkeletonLoader type="feature" delay={i * 60} />
+      {/each}
     </div>
   {:else if error}
     <div class="text-center py-12" style="color: {$colorStore.accent}">{error}</div>
@@ -645,6 +658,7 @@
         </button>
       </div>
     </div>
+  {/if}
   {/if}
 </DashboardPageLayout>
 

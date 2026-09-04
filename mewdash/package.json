@@ -4,14 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "vite dev --force --host",
-    "build": "npm run generate-sitemap && vite build",
+    "build": "npm run generate-tab-index && npm run generate-sitemap && vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint . --ext .js,.ts,.svelte",
     "lint:fix": "eslint . --ext .js,.ts,.svelte --fix",
     "format": "prettier --write --plugin-search-dir . .",
-    "generate-sitemap": "node generate-sitemap.js"
+    "generate-sitemap": "node generate-sitemap.js",
+    "generate-tab-index": "node generate-tab-index.js",
+    "check-tab-index": "node generate-tab-index.js --check"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

@@ -80,7 +80,6 @@
   onMount(async () => {
     if (browser) {
       await invalidateAll();
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       const urlParams = new URL(window.location.href).searchParams;
       const success = urlParams.get("success");

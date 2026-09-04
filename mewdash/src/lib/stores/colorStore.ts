@@ -36,12 +36,58 @@ const DEFAULT_PALETTE: ColorPalette = {
 const DARK_BG_LUMINANCE = 0.03; // Pre-calculated luminance for performance
 let currentPalette = DEFAULT_PALETTE;
 
+const PALETTE_CACHE_KEY = "mewdeko-palette-cache";
+const LAST_PALETTE_KEY = "mewdeko-colors";
+const PALETTE_CACHE_LIMIT = 30;
+
+/** Palettes already derived this session, keyed by image URL. */
+const paletteMemoryCache = new Map<string, ColorPalette>();
+
+/** Extractions currently running, so concurrent callers share one decode. */
+const paletteInFlight = new Map<string, Promise<ColorPalette>>();
+
+/**
+ * Discord asset URLs embed the image hash, so a URL that has been seen before is
+ * guaranteed to be the same image and its palette never needs recomputing.
+ */
+function readPaletteCache(): Record<string, ColorPalette> {
+  if (typeof globalThis.window === "undefined" || !globalThis.localStorage) return {};
+  try {
+    const raw = globalThis.localStorage.getItem(PALETTE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writePaletteCache(imageUrl: string, palette: ColorPalette) {
+  if (typeof globalThis.window === "undefined" || !globalThis.localStorage) return;
+  try {
+    const cache = readPaletteCache();
+    delete cache[imageUrl];
+    cache[imageUrl] = palette;
+
+    const keys = Object.keys(cache);
+    for (const stale of keys.slice(0, Math.max(0, keys.length - PALETTE_CACHE_LIMIT))) {
+      delete cache[stale];
+    }
+
+    globalThis.localStorage.setItem(PALETTE_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // A full or unavailable localStorage only costs us the cache, not correctness.
+  }
+}
+
 function createColorStore() {
   // Try to load colors from sessionStorage to prevent flash
   let initialPalette = DEFAULT_PALETTE;
   if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
     try {
-      const stored = globalThis.sessionStorage.getItem("mewdeko-colors");
+      // localStorage carries the palette across a restart; sessionStorage alone
+      // means every fresh tab starts on the default and visibly repaints.
+      const stored =
+        globalThis.sessionStorage.getItem(LAST_PALETTE_KEY) ??
+        globalThis.localStorage?.getItem(LAST_PALETTE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         const hexFields = ["primary", "secondary", "accent", "text", "muted", "background"] as const;
@@ -62,9 +108,11 @@ function createColorStore() {
     // Persist to session storage
     if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
       try {
-        globalThis.sessionStorage.setItem("mewdeko-colors", JSON.stringify(value));
+        const serialized = JSON.stringify(value);
+        globalThis.sessionStorage.setItem(LAST_PALETTE_KEY, serialized);
+        globalThis.localStorage?.setItem(LAST_PALETTE_KEY, serialized);
       } catch (err) {
-        logger.debug("Failed to persist colors to sessionStorage", err);
+        logger.debug("Failed to persist colors to storage", err);
       }
     }
   });
@@ -495,6 +543,31 @@ function createColorStore() {
       return DEFAULT_PALETTE;
     }
 
+    const remembered = paletteMemoryCache.get(imageUrl) ?? readPaletteCache()[imageUrl];
+    if (remembered) {
+      paletteMemoryCache.set(imageUrl, remembered);
+      return remembered;
+    }
+
+    const running = paletteInFlight.get(imageUrl);
+    if (running) return running;
+
+    const extraction = extractColorsUncached(imageUrl);
+    paletteInFlight.set(imageUrl, extraction);
+
+    try {
+      const palette = await extraction;
+      if (palette !== DEFAULT_PALETTE) {
+        paletteMemoryCache.set(imageUrl, palette);
+        writePaletteCache(imageUrl, palette);
+      }
+      return palette;
+    } finally {
+      paletteInFlight.delete(imageUrl);
+    }
+  }
+
+  async function extractColorsUncached(imageUrl: string): Promise<ColorPalette> {
     try {
       const img = new globalThis.Image();
       img.crossOrigin = "Anonymous";

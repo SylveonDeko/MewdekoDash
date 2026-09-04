@@ -39,7 +39,7 @@ A unified navigation component that provides responsive navigation with server a
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { get, writable } from "svelte/store";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
-  import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
+  import { adminGuildsLoaded, userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
   import { logger } from "$lib/logger.ts";
   import { goto } from "$app/navigation";
   import { colorStore } from "$lib/stores/colorStore.ts";
@@ -449,6 +449,7 @@ A unified navigation component that provides responsive navigation with server a
 
     isFetchingGuilds = true;
     guildFetchError = null;
+    adminGuildsLoaded.set(false);
     try {
       const newGuilds = await clientApi.getMutualGuilds(currentUser.id);
       adminGuilds = newGuilds || [];
@@ -458,6 +459,7 @@ A unified navigation component that provides responsive navigation with server a
       }
 
       userAdminGuilds.set(adminGuilds as any);
+      adminGuildsLoaded.set(true);
 
       if (initialized && lastSelectedGuild) {
         const guild = adminGuilds.find(g => g.id === lastSelectedGuild);

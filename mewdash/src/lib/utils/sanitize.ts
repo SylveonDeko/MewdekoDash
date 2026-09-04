@@ -2,6 +2,13 @@
 import DOMPurify from "dompurify";
 
 /**
+ * Unicode ranges for combining diacritical marks, built from an escaped source
+ * string so the file itself stays plain ASCII.
+ */
+const COMBINING_CHARS_PATTERN =
+  "[\\u0300-\\u036F\\u1AB0-\\u1AFF\\u1DC0-\\u1DFF\\u20D0-\\u20FF\\uFE20-\\uFE2F]";
+
+/**
  * Escapes HTML entities to prevent XSS attacks
  * @param str The string to escape
  * @returns The escaped string
@@ -29,9 +36,8 @@ export function escapeHtml(str: string): string {
 export function removeZalgoText(text: string, maxCombiningChars: number = 2): string {
   if (!text) return "";
 
-  // Unicode ranges for combining characters (diacritical marks)
   // NOTE: No 'g' flag - we test one character at a time
-  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/u;
+  const combiningCharsRegex = new RegExp(COMBINING_CHARS_PATTERN, "u");
 
   let result = "";
   let consecutiveCombining = 0;
@@ -66,7 +72,7 @@ export function containsZalgo(text: string, threshold: number = 2): boolean {
   if (!text) return false;
 
   // NOTE: No 'g' flag - we test one character at a time
-  const combiningCharsRegex = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/u;
+  const combiningCharsRegex = new RegExp(COMBINING_CHARS_PATTERN, "u");
   let consecutiveCombining = 0;
 
   for (const char of text) {
@@ -226,6 +232,43 @@ export function isValidNumber(
   if (Number.isNaN(value)) return false;
   if (min !== undefined && value < min) return false;
   return !(max !== undefined && value > max);
+}
+
+/**
+ * Schemes allowed in any href built from user-supplied text.
+ */
+const SAFE_URL_SCHEMES = ["http:", "https:", "mailto:", "discord:"];
+
+/**
+ * Returns the URL when it uses a safe scheme, otherwise "#". HTML-escaping a URL does
+ * not make it safe to place in an href: the parser decodes entities before the value
+ * is treated as a URL, so `javascript:` survives escaping and runs on click. Every
+ * href built from message content, embed fields or form input must go through this.
+ * @param url The candidate URL, which may still be HTML-escaped
+ * @returns The original URL, or "#" when the scheme is not allowed
+ */
+export function safeUrl(url: string | null | undefined): string {
+  if (!url) return "#";
+
+  // Decide on the decoded form, since that is what the browser ultimately parses.
+  const decoded = url
+    .replace(/&amp;/gi, "&")
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#x0*2f;/gi, "/")
+    .replace(/&#0*58;|&colon;/gi, ":")
+    .trim();
+
+  // Browsers strip control characters while parsing a scheme, so a tab or newline
+  // inside "java\tscript:" would otherwise slip past a naive prefix check.
+  const normalized = [...decoded].filter((char) => char.charCodeAt(0) > 0x20).join("");
+
+  try {
+    const parsed = new URL(normalized, "https://mewdeko.tech");
+    return SAFE_URL_SCHEMES.includes(parsed.protocol) ? url : "#";
+  } catch {
+    return "#";
+  }
 }
 
 /**

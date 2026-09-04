@@ -6,6 +6,7 @@
   import { type ChatTrigger, chatTriggersApi, clientApi } from "$lib/api/index.ts";
   import type { TriggerCounter, TriggerStats, TriggerTestResult } from "$lib/api/chattriggers/chattriggers";
   import { currentGuild } from "$lib/stores/currentGuild";
+  import { escapeHtml } from "$lib/utils/sanitize";
   import { fade, slide } from "svelte/transition";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import Tooltip from "$lib/components/ui/Tooltip.svelte";
@@ -573,7 +574,9 @@
   }
 
   function highlightMatches(text: string, regex: RegExp): string {
-    return text.replace(
+    // The result is rendered with {@html}, so the test string has to be escaped
+    // before the highlight markup is wrapped around it.
+    return escapeHtml(text).replace(
       regex,
       (match) => `<span class="bg-yellow-300 text-black">${match}</span>`,
     );

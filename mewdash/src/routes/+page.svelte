@@ -59,8 +59,7 @@
       // Fetch both guilds and GitHub stats in parallel
       const [response] = await Promise.all([
         fetch("/api/redis/guilds"),
-        fetchGitHubStats(),
-        new Promise(resolve => setTimeout(resolve, 500))
+        fetchGitHubStats()
       ]);
 
       if (response.ok) {
@@ -172,7 +171,7 @@
       "https://discord.gg/twQw45rBjN"
     ]
   }
-  </script>`}
+  <\/script>`}
 </svelte:head>
 
 <main

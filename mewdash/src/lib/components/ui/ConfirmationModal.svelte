@@ -50,13 +50,69 @@
     }
   }
 
+  let dialogEl = $state<HTMLElement>();
+  let previouslyFocused: HTMLElement | null = null;
+
+  function focusableWithin(): HTMLElement[] {
+    if (!dialogEl) return [];
+    return [
+      ...dialogEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ];
+  }
+
+  /**
+   * Keeps Tab inside the dialog. Without this, tabbing walks the page behind, which
+   * is especially wrong here because the dialog renders through a Portal at the end
+   * of the body and is therefore nowhere near its trigger in the tab order.
+   */
+  function trapTab(event: KeyboardEvent) {
+    const focusable = focusableWithin();
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && (active === first || active === dialogEl)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
+      event.preventDefault();
       handleCancel();
     } else if (event.key === "Enter" && !confirmDisabled) {
       handleConfirm();
+    } else if (event.key === "Tab") {
+      trapTab(event);
     }
   }
+
+  /**
+   * Listens on the window rather than the dialog element. The handler used to be bound
+   * to the backdrop, which never received focus, so Escape silently did nothing until
+   * the user happened to click or tab into the dialog first.
+   */
+  $effect(() => {
+    if (!isOpen || typeof window === "undefined") return;
+
+    previouslyFocused = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => dialogEl?.focus());
+    window.addEventListener("keydown", handleKeydown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+      previouslyFocused?.focus?.();
+      previouslyFocused = null;
+    };
+  });
 
   let variantColor = $derived(variant === "danger" ? $colorStore.accent : 
                    variant === "warning" ? "#f59e0b" : 
@@ -68,23 +124,22 @@
   <Portal>
   <div
     class="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4"
-    onclick={handleCancel}
-    onkeydown={handleKeydown}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
-    aria-describedby="modal-description"
-    tabindex="-1"
+    onclick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}
+    role="presentation"
   >
     <!-- Modal -->
     <div
+      bind:this={dialogEl}
       class="rounded-2xl border shadow-2xl max-w-md w-full"
       style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;"
-      onclick={(e) => e.stopPropagation()}
       in:fly={{ y: 20, duration: 200 }}
       out:fly={{ y: -20, duration: 150 }}
-      role="button" tabindex="0"
-      onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } }}>
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      aria-describedby="modal-description"
+      tabindex="-1"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b" style="border-color: {$colorStore.primary}20;">
         <div class="flex items-center gap-3">

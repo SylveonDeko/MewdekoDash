@@ -10,6 +10,7 @@
   import { loadingStore } from "$lib/stores/loadingStore";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
 
   let { data } = $props();
 
@@ -365,9 +366,10 @@
   </div>
 
   {#if loading}
-    <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: {$colorStore.primary}"></div>
-      <span class="ml-3" style="color: {$colorStore.text}">Loading audit log...</span>
+    <div class="space-y-2" aria-busy="true" aria-label="Loading audit log">
+      {#each Array(6) as _, i (i)}
+        <SkeletonLoader type="feature" delay={i * 60} />
+      {/each}
     </div>
   {:else if error}
     <div class="text-center py-12" style="color: {$colorStore.accent}">{error}</div>

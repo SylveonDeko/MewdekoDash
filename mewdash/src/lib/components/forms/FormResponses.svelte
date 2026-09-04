@@ -14,7 +14,6 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fade, slide } from "svelte/transition";
-  import { escapeHtml } from "$lib/utils/sanitize";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   interface Props {
@@ -266,12 +265,12 @@
                 {#if answer.answerValues && answer.answerValues.length > 0}
                   <ul class="list-disc list-inside space-y-1">
                     {#each answer.answerValues as value}
-                      <li>{@html escapeHtml(value)}</li>
+                      <li>{(value)}</li>
                     {/each}
                   </ul>
                 {:else}
                   <div class="whitespace-pre-wrap">
-                    {@html escapeHtml(answer.answerText || "(No answer)")}
+                    {(answer.answerText || "(No answer)")}
                   </div>
                 {/if}
               </div>

@@ -4,6 +4,7 @@
 
   import { onMount } from "svelte";
   import { chatApi, clientApi, type ChatLogMessage, type ChatLogSummary } from "$lib/api/index.ts";
+  import { safeUrl } from "$lib/utils/sanitize";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
@@ -233,7 +234,8 @@
 
     // Links with text [text](url)
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-      "<a href=\"$2\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--color-primary);\">$1</a>");
+      (_match: string, label: string, url: string) =>
+        `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary);">${label}</a>`);
 
     // Bold
     text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -257,7 +259,7 @@
     text = text.replace(/<@!?(\d+)>/g, (match, userId) => {
       const member = guildMembers.find(m => m.id === userId);
       if (member) {
-        return `<span class="mention user">@${member.username}</span>`;
+        return `<span class="mention user">@${sanitizeText(member.username)}</span>`;
       }
       return `<span class="mention user">@Unknown User</span>`;
     });
@@ -266,7 +268,7 @@
     text = text.replace(/<#(\d+)>/g, (match, channelId) => {
       const channel = guildChannels.find(c => c.id === channelId);
       if (channel) {
-        return `<span class="mention channel">#${channel.name}</span>`;
+        return `<span class="mention channel">#${sanitizeText(channel.name)}</span>`;
       }
       return `<span class="mention channel">#unknown-channel</span>`;
     });

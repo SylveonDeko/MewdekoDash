@@ -29,7 +29,7 @@
     import { musicStore } from "$lib/stores/musicStore";
     import { inviteStore } from "$lib/stores/inviteStore";
     import { dashboardStore } from "$lib/stores/dashboardStore";
-    import { userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
+    import { adminGuildsLoaded, userAdminGuilds } from "$lib/stores/adminGuildsStore.ts";
     import { switchingServer as switchingServerStore } from "$lib/stores/guildSwitchStore";
 
     // Import search component
@@ -234,14 +234,18 @@
     // Calculate role trend
 
     // Unified data fetch
-    async function fetchAllData() {
+    /**
+     * @param animate Holds briefly so the refresh spinner is visible. Only for
+     *   user-triggered refreshes: on first load it is dead time before the first
+     *   request goes out, which is most painful on mobile connections.
+     */
+    async function fetchAllData(animate: boolean = true) {
         if (fetchingData) return;
         fetchingData = true;
         refreshing = true;
 
         try {
-            if (browser) {
-                // Add a subtle refresh animation
+            if (browser && animate) {
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
 
@@ -469,22 +473,24 @@
 
         try {
             // Fetch data first to get guildInfo
-            await fetchAllData();
+            await fetchAllData(false);
 
             // Extract colors: server icon > user avatar > bot avatar
           // (Halloween swap will be applied automatically if active)
+            // Not awaited: theming is cosmetic and the decode should never hold up
+            // the rest of mount, which is most noticeable on mobile.
             if (guildInfo?.iconUrl) {
-                await colorStore.extractFromServerIcon(guildInfo.iconUrl);
+                void colorStore.extractFromServerIcon(guildInfo.iconUrl);
             } else if ($currentGuild?.icon) {
                 const serverIconUrl = `https://cdn.discordapp.com/icons/${$currentGuild.id}/${$currentGuild.icon}.${$currentGuild.icon.startsWith("a_") ? "gif" : "png"}`;
-                await colorStore.extractFromServerIcon(serverIconUrl);
+                void colorStore.extractFromServerIcon(serverIconUrl);
             } else if (currentUser?.avatar) {
                 const userAvatarUrl = currentUser.avatar.startsWith("a_")
                     ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.gif`
                     : `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
-                await colorStore.extractFromImage(userAvatarUrl);
+                void colorStore.extractFromImage(userAvatarUrl);
             } else if ($currentInstance?.botAvatar) {
-                await colorStore.extractFromImage($currentInstance.botAvatar);
+                void colorStore.extractFromImage($currentInstance.botAvatar);
             }
 
             // Setup keyboard shortcuts
@@ -532,14 +538,14 @@
     // Fetch data when instance changes
     $effect(() => {
         if ($currentInstance) {
-            fetchAllData();
+            fetchAllData(false);
         }
     });
 
     // Fetch data when guild changes
     $effect(() => {
         if ($currentGuild) {
-            fetchAllData();
+            fetchAllData(false);
         }
     });
 
@@ -563,7 +569,7 @@
 
     // Watch for userAdminGuilds to be populated and restore saved guild if needed
     $effect(() => {
-        if (browser && $userAdminGuilds) {
+        if (browser && $adminGuildsLoaded && $userAdminGuilds) {
             try {
                 const savedGuild = localStorage.getItem("lastSelectedGuild");
                 if (savedGuild) {
@@ -669,7 +675,7 @@
                     <div class="mt-4 flex justify-end">
                         <button
                                 class="flex items-center gap-2 py-2 px-4 rounded-lg transition-colors"
-                                onclick={fetchAllData}
+                                onclick={() => fetchAllData(true)}
                                 style="background: {$colorStore.accent}20; color: {$colorStore.accent}"
                         >
                             <i class="fa-utility-duo fa-regular fa-sync"
@@ -684,7 +690,7 @@
                     <button aria-label="Button action"
                             class="flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all hover:scale-[1.02]"
                             style="background: {$colorStore.primary}; color: white"
-                            onclick={fetchAllData}
+                            onclick={() => fetchAllData(true)}
 
                     >
           <span class:animate-spin={refreshing}>
@@ -767,7 +773,7 @@
                                 {joinStats}
                                 {leaveStats}
                                 {guildFeatures}
-                                onRefresh={fetchAllData}
+                                onRefresh={() => fetchAllData(true)}
                                 {refreshing}
                                 bind:activeTab={currentActiveTab}
                                 showMusicPlayer={hasMusicPlayer}

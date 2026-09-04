@@ -13,6 +13,13 @@ import type {
 } from "./models";
 
 /**
+ * In-flight mutual guild requests, keyed by user, scope and instance. Four separate
+ * components ask for this list on a cold load, which on mobile is four round trips
+ * for one answer; concurrent callers share a single request instead.
+ */
+const mutualGuildRequests = new Map<string, Promise<MutualGuild[]>>();
+
+/**
  * Client operations API for Discord-related data
  * Maps to Mewdeko.Controllers.ClientOperations
  */
@@ -113,14 +120,26 @@ export const clientApi = {
     adminOnly: boolean = true,
     customFetch: typeof fetch = fetch,
     additionalHeaders: HeadersInit = {},
-  ) =>
-    apiRequest<MutualGuild[]>(
+  ) => {
+    const port = (additionalHeaders as Record<string, string>)["X-Instance-Port"] ?? "default";
+    const key = `${userId}:${adminOnly}:${port}`;
+
+    const running = mutualGuildRequests.get(key);
+    if (running) return running;
+
+    const request = apiRequest<MutualGuild[]>(
       `ClientOperations/mutualguilds/${userId}?adminOnly=${adminOnly}`,
       "GET",
       undefined,
       additionalHeaders,
       customFetch,
-    ),
+    ).finally(() => {
+      mutualGuildRequests.delete(key);
+    });
+
+    mutualGuildRequests.set(key, request);
+    return request;
+  },
 
   /**
    * Checks if the bot has a specific guild

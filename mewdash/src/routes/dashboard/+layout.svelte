@@ -9,6 +9,7 @@
   import DashboardSidebar from "$lib/components/layout/DashboardSidebar.svelte";
   import SetupSuggestionBanner from "$lib/components/dashboard/SetupSuggestionBanner.svelte";
   import ProductUpdateModal from "$lib/components/dashboard/ProductUpdateModal.svelte";
+  import SearchModal from "$lib/components/search/SearchModal.svelte";
   import {
     lastSeenUpdateKey,
     latestProductUpdate,
@@ -25,7 +26,8 @@
   import { logger } from "$lib/logger";
   import { wizardApi } from "$lib/api/index.ts";
   import { musicStore } from "$lib/stores/musicStore.ts";
-  import { userAdminGuilds } from "$lib/stores/adminGuildsStore";
+  import { adminGuildsLoaded, userAdminGuilds } from "$lib/stores/adminGuildsStore";
+  import JSONbig from "json-bigint";
   import { switchingServer } from "$lib/stores/guildSwitchStore";
   import { fade, fly } from "svelte/transition";
 
@@ -181,9 +183,33 @@
         }));
       } catch {}
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
     switchingServer.set(false);
   }
+
+  /**
+   * Drops the remembered guild once we know it is not one the bot shares with this
+   * user on this instance, which happens whenever the bot is removed from a server
+   * or the user switches instances. The selection is persisted to localStorage, so
+   * without this it survives forever and every per-guild request answers 403.
+   */
+  $effect(() => {
+    if (!browser || !$adminGuildsLoaded) return;
+
+    const selected = $currentGuild;
+    if (!selected) return;
+
+    const stillAvailable = ($userAdminGuilds || []).some(
+      (guild: any) => guild.id?.toString() === selected.id?.toString()
+    );
+    if (stillAvailable) return;
+
+    logger.info("Clearing guild the bot is no longer in:", selected.id?.toString());
+    currentGuild.set(null);
+    try {
+      localStorage.removeItem("lastSelectedGuild");
+    } catch {}
+  });
 
   let filteredGuilds = $derived(
     ($userAdminGuilds || [])
@@ -217,10 +243,38 @@
     }
   }
 
+  /**
+   * Mirrors the selected instance's bot ID into a cookie. localStorage is invisible
+   * to the server, so without this the SSR guild prefetch cannot tell which instance
+   * to ask and has to fall back to the default one.
+   */
+  $effect(() => {
+    if (!browser) return;
+
+    const botId = $currentInstance?.botId;
+    if (botId === undefined || botId === null) return;
+
+    document.cookie = `selectedInstanceId=${botId.toString()}; path=/; max-age=31536000; SameSite=Lax`;
+  });
+
   onMount(() => {
     // Set user from server data if available
     if (data.user) {
       userStore.set(data.user);
+    }
+
+    // Guild list prefetched during SSR, so the server picker can render before the
+    // client has made any request of its own.
+    if (data.guilds) {
+      try {
+        const prefetched = JSONbig.parse(data.guilds);
+        if (Array.isArray(prefetched) && prefetched.length) {
+          userAdminGuilds.set(prefetched);
+          adminGuildsLoaded.set(true);
+        }
+      } catch (err) {
+        logger.debug("Failed to parse prefetched guilds", err);
+      }
     }
 
     const lastSeen = localStorage.getItem(lastSeenUpdateKey) ?? migrateDismissedUpdates();
@@ -382,3 +436,5 @@
     {/if}
   </div>
 </div>
+
+<SearchModal />

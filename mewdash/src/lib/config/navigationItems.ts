@@ -7,6 +7,11 @@ export interface NavigationItem {
   category: string;
   ownerOnly?: boolean;
   description?: string;
+  /**
+   * Extra terms the command palette matches on, for words users search that do not
+   * appear in the label or description ("autoresponder" for Triggers).
+   */
+  keywords?: string[];
 }
 
 export const allDashboardFeatures: NavigationItem[] = [
@@ -16,6 +21,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/administration",
     category: "Security",
     description: "Server administration and automation",
+    keywords: ["admin", "administration", "protection", "roles"],
   },
   {
     label: "AFK System",
@@ -23,6 +29,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/afk",
     category: "Actions",
     description: "Away from keyboard notifications",
+    keywords: ["afk", "away", "status", "idle"],
   },
   {
     label: "Audit Log",
@@ -30,6 +37,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/auditlog",
     category: "Security",
     description: "Who accessed the dashboard, what they changed and viewed",
+    keywords: ["audit", "audit log", "history", "who changed", "accountability", "dashboard access log"],
   },
   {
     label: "Channel Access",
@@ -37,6 +45,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/channel-access",
     category: "Security",
     description: "Applications and member votes for locked channels",
+    keywords: ["channel access", "applications", "apply", "vote", "locked", "gate", "private"],
   },
   {
     label: "Birthdays",
@@ -44,6 +53,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/birthday",
     category: "Community",
     description: "Birthday announcements and celebrations",
+    keywords: ["birthday", "birthdays", "celebrate", "anniversary"],
   },
   {
     label: "Chat Saver",
@@ -51,6 +61,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/chatsaver",
     category: "Security",
     description: "Save and archive chat messages",
+    keywords: ["chat saver", "audit", "history", "messages"],
   },
   {
     label: "Dashboard Access",
@@ -58,6 +69,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/access",
     category: "Security",
     description: "Grant restricted dashboard access to specific users and roles",
+    keywords: ["dashboard access", "permissions", "grant", "staff", "restrict", "who can edit"],
   },
   {
     label: "Confessions",
@@ -65,6 +77,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/confessions",
     category: "Community",
     description: "Anonymous confession system",
+    keywords: ["confessions", "anonymous", "secrets"],
   },
   {
     label: "Counting",
@@ -72,6 +85,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/counting",
     category: "Community",
     description: "Counting game channel",
+    keywords: ["counting", "numbers", "game", "channel"],
   },
   {
     label: "Currency",
@@ -79,6 +93,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/currency",
     category: "Entertainment",
     description: "Economy tuning, shop, balances and payout analytics",
+    keywords: ["currency", "economy", "money", "shop", "balance", "coins", "payout", "gambling"],
   },
   {
     label: "Minecraft",
@@ -86,6 +101,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/minecraft",
     category: "Entertainment",
     description: "Minecraft server monitoring and status",
+    keywords: ["minecraft", "server status", "mc", "bridge", "monitoring"],
   },
   {
     label: "Stat Channels",
@@ -93,6 +109,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/statchannels",
     category: "Community",
     description: "Voice channels displaying live server stats",
+    keywords: ["stat channels", "counter", "member count", "live stats", "voice channel stats"],
   },
   {
     label: "Custom Voice",
@@ -100,6 +117,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/customvoice",
     category: "Entertainment",
     description: "Custom voice channels",
+    keywords: ["voice", "channels", "temporary", "custom"],
   },
   {
     label: "Embeds",
@@ -107,6 +125,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/embedbuilder",
     category: "Actions",
     description: "Create and manage embeds",
+    keywords: ["embeds", "builder", "custom", "messages"],
   },
   {
     label: "Feeds",
@@ -114,6 +133,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/feeds",
     category: "Actions",
     description: "RSS and social media feeds",
+    keywords: ["feeds", "rss", "news", "updates"],
   },
   {
     label: "Forms",
@@ -121,6 +141,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/forms",
     category: "Community",
     description: "Custom forms and surveys",
+    keywords: ["forms", "surveys", "questionnaire", "applications", "responses"],
   },
   {
     label: "Giveaways",
@@ -128,6 +149,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/giveaways",
     category: "Entertainment",
     description: "Manage server giveaways",
+    keywords: ["giveaways", "contests", "prizes", "events"],
   },
   {
     label: "Greets",
@@ -135,6 +157,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/multigreets",
     category: "Actions",
     description: "Welcome and goodbye messages",
+    keywords: ["greets", "welcome", "goodbye", "messages", "join message", "leave message"],
   },
   {
     label: "Highlights",
@@ -142,6 +165,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/highlights",
     category: "Community",
     description: "Word highlights and notifications",
+    keywords: ["highlights", "keywords", "notifications", "mentions"],
   },
   {
     label: "Invites",
@@ -149,6 +173,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/invites",
     category: "Community",
     description: "Invite tracking and rewards",
+    keywords: ["invites", "tracking", "referrals", "recruitment"],
   },
   {
     label: "Logging",
@@ -156,6 +181,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/logging",
     category: "Security",
     description: "Server audit logs",
+    keywords: ["logging", "events", "audit", "history"],
   },
   {
     label: "Message Stats",
@@ -163,6 +189,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/messagestats",
     category: "Analytics",
     description: "Message activity statistics",
+    keywords: ["message stats", "activity", "tracking", "analytics"],
   },
   {
     label: "Moderation",
@@ -170,6 +197,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/moderation",
     category: "Security",
     description: "Moderation tools and settings",
+    keywords: ["moderation", "warnings", "punishments", "discipline"],
   },
   {
     label: "Music",
@@ -177,6 +205,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/music",
     category: "Entertainment",
     description: "Music player controls",
+    keywords: ["music", "player", "songs", "queue", "audio"],
   },
   {
     label: "Patreon",
@@ -184,6 +213,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/patreon",
     category: "Community",
     description: "Patreon integration and rewards",
+    keywords: ["patreon", "supporters", "donations", "premium"],
   },
   {
     label: "Leave Feedback",
@@ -192,6 +222,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Analytics",
     description: "Why servers removed the bot, answered by their owners",
     ownerOnly: true,
+    keywords: ["leave feedback", "kick feedback", "why removed", "churn", "exit survey"],
   },
   {
     label: "Performance",
@@ -200,6 +231,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     category: "Analytics",
     description: "Bot performance metrics",
     ownerOnly: true,
+    keywords: ["performance", "metrics", "cpu", "memory", "latency", "monitoring"],
   },
   {
     label: "Repeaters",
@@ -207,6 +239,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/repeaters",
     category: "Actions",
     description: "Scheduled repeated messages",
+    keywords: ["repeaters", "recurring", "scheduled", "messages"],
   },
   {
     label: "Reputation",
@@ -214,6 +247,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/reputation",
     category: "Community",
     description: "User reputation system",
+    keywords: ["reputation", "rep", "rewards", "karma"],
   },
   {
     label: "Role Greets",
@@ -221,6 +255,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/rolegreets",
     category: "Actions",
     description: "Role-based greeting messages",
+    keywords: ["role greets", "welcome", "roles", "messages"],
   },
   {
     label: "Role States",
@@ -228,6 +263,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/rolestates",
     category: "Actions",
     description: "Persistent role states",
+    keywords: ["role states", "persistence", "memory", "restore"],
   },
   {
     label: "Settings",
@@ -235,6 +271,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/settings",
     category: "Settings",
     description: "Bot configuration and roles",
+    keywords: ["settings", "config", "general", "bot", "prefix"],
   },
   {
     label: "Starboard",
@@ -242,6 +279,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/starboard",
     category: "Community",
     description: "Star-based message board",
+    keywords: ["starboard", "stars", "popular", "messages", "highlights"],
   },
   {
     label: "Status Roles",
@@ -249,6 +287,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/statusroles",
     category: "Actions",
     description: "Roles based on user status",
+    keywords: ["status roles", "custom status", "roles", "automation"],
   },
   {
     label: "Streams",
@@ -256,6 +295,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/streams",
     category: "Community",
     description: "Stream announcements",
+    keywords: ["streams", "twitch", "youtube", "notifications"],
   },
   {
     label: "Twitch",
@@ -263,6 +303,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/twitch",
     category: "Community",
     description: "Twitch chat bot and channel integration",
+    keywords: ["twitch", "chat bot", "integration", "streamer"],
   },
   {
     label: "Suggestions",
@@ -270,6 +311,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/suggestions",
     category: "Community",
     description: "Server suggestion system",
+    keywords: ["suggestions", "voting", "ideas", "feedback"],
   },
   {
     label: "Tickets",
@@ -277,6 +319,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/tickets",
     category: "Entertainment",
     description: "Support ticket system",
+    keywords: ["tickets", "support", "help", "assistance", "panels"],
   },
   {
     label: "Todo Lists",
@@ -284,6 +327,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/todo",
     category: "Community",
     description: "Shared todo lists",
+    keywords: ["todo", "tasks", "lists", "management"],
   },
   {
     label: "Triggers",
@@ -291,6 +335,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/chat-triggers",
     category: "Actions",
     description: "Custom chat triggers",
+    keywords: ["triggers", "autoresponder", "reactions", "chat"],
   },
   {
     label: "Votes",
@@ -298,6 +343,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/votes",
     category: "Community",
     description: "Voting and polls",
+    keywords: ["votes", "voting", "rewards", "incentives"],
   },
   {
     label: "XP System",
@@ -305,6 +351,7 @@ export const allDashboardFeatures: NavigationItem[] = [
     href: "/dashboard/xp",
     category: "Community",
     description: "Leveling and XP system",
+    keywords: ["xp", "experience", "levels", "ranking", "leaderboard"],
   },
 ];
 

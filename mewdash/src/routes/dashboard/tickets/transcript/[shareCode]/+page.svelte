@@ -7,6 +7,7 @@
   import { currentInstance } from "$lib/stores/instanceStore";
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
+  import { safeUrl } from "$lib/utils/sanitize";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -110,9 +111,11 @@
 
     text = sanitizeText(text);
 
-    // Links with text [text](url)
-    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-      "<a href=\"$2\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: var(--color-primary);\">$1</a>");
+    // Links with text [text](url). The URL must be scheme-checked: escaping alone
+    // leaves `javascript:` intact, since the parser decodes entities before the href
+    // is used, and this page is shared by link with anyone.
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) =>
+      `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary);">${label}</a>`);
 
     // Bold
     text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -136,7 +139,7 @@
     text = text.replace(/<@!?(\d+)>/g, (match, userId) => {
       const member = guildMembers.find(m => m.id === userId);
       if (member) {
-        return `<span class="mention user">@${member.username}</span>`;
+        return `<span class="mention user">@${sanitizeText(member.username)}</span>`;
       }
       return `<span class="mention user">@Unknown User</span>`;
     });
@@ -145,7 +148,7 @@
     text = text.replace(/<#(\d+)>/g, (match, channelId) => {
       const channel = guildChannels.find(c => c.id === channelId);
       if (channel) {
-        return `<span class="mention channel">#${channel.name}</span>`;
+        return `<span class="mention channel">#${sanitizeText(channel.name)}</span>`;
       }
       return `<span class="mention channel">#unknown-channel</span>`;
     });

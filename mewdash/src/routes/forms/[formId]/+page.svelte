@@ -18,7 +18,6 @@
   import { Turnstile } from "svelte-turnstile";
   import {
     containsZalgo,
-    escapeHtml,
     isValidEmail,
     isValidNumber,
     isValidUrl,
@@ -696,10 +695,9 @@
     formId = resolved.formId;
 
     // NOW set the correct instance only once, after we've found it
+    // Store writes are synchronous and apiRequest reads currentInstance with get(),
+    // so loadForm below already sees this instance without waiting.
     currentInstance.set(targetInstance);
-
-    // Wait longer for the store to update and propagate through all components
-    await new Promise(resolve => setTimeout(resolve, 200));
 
     if (!data.user) {
       showLoginPrompt = true;
@@ -822,7 +820,7 @@
           <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">Success!</h2>
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
             {#if form?.successMessage}
-              {@html escapeHtml(form.successMessage)}
+              {(form.successMessage)}
             {:else if form?.formType === 1}
               Your ban appeal has been submitted and is now pending review.
             {:else if form?.formType === 2}
@@ -1141,7 +1139,7 @@
                     style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
                   >
                     <div class="font-semibold mb-2" style="color: {$colorStore.text};">
-                      {@html escapeHtml(question.questionText)}
+                      {(question.questionText)}
                     </div>
                     <div
                       class="p-3 rounded"
@@ -1150,12 +1148,12 @@
                       {#if Array.isArray(answers[question.id])}
                         <ul class="list-disc list-inside space-y-1">
                           {#each answers[question.id] as value}
-                            <li>{@html escapeHtml(value)}</li>
+                            <li>{(value)}</li>
                           {/each}
                         </ul>
                       {:else}
                         <div class="whitespace-pre-wrap">
-                          {@html escapeHtml(String(answers[question.id] || ""))}
+                          {(String(answers[question.id] || ""))}
                         </div>
                       {/if}
                     </div>
@@ -1234,9 +1232,9 @@
                       <div class="flex-1">
                       <span class="font-semibold" style="color: {$colorStore.text};">
                         {#if question.enableAnswerPiping}
-                          {@html escapeHtml(applyAnswerPiping(question.questionText))}
+                          {(applyAnswerPiping(question.questionText))}
                         {:else}
-                          {@html escapeHtml(question.questionText)}
+                          {(question.questionText)}
                         {/if}
                       </span>
                         {#if question.isRequired || isQuestionConditionallyRequired(question)}
@@ -1314,7 +1312,7 @@
                                 class="w-4 h-4"
                                 style="accent-color: {$colorStore.primary};"
                               />
-                              <span style="color: {$colorStore.text};">{@html escapeHtml(option.optionText)}</span>
+                              <span style="color: {$colorStore.text};">{(option.optionText)}</span>
                             </label>
                           {/each}
                         {/if}
@@ -1345,7 +1343,7 @@
                                 class="w-4 h-4 rounded"
                                 style="accent-color: {$colorStore.primary};"
                               />
-                              <span style="color: {$colorStore.text};">{@html escapeHtml(option.optionText)}</span>
+                              <span style="color: {$colorStore.text};">{(option.optionText)}</span>
                             </label>
                           {/each}
                         {/if}

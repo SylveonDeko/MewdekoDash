@@ -1053,7 +1053,7 @@
             </div>
             <label class="grid gap-2 font-bold sm:col-span-2">
               <span style="color: {$colorStore.text}">Response</span>
-              <textarea bind:value={commandForm.response} rows="4" placeholder={"Hey %display%, welcome in."} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={commandForm.response} rows="4" placeholder="Hey %display%, welcome in." class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
@@ -1188,7 +1188,7 @@
             </div>
             <label class="grid gap-2 font-bold sm:col-span-2">
               <span style="color: {$colorStore.text}">Messages</span>
-              <textarea bind:value={timerForm.messages} rows="5" placeholder={"One message per line. Try: Follow the socials: %url%"} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={timerForm.messages} rows="5" placeholder="One message per line. Try: Follow the socials: %url%" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
@@ -1374,7 +1374,7 @@
             </div>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Sub message</span>
-              <textarea bind:value={configForm.subNotificationMessage} rows="3" placeholder={"%display% subscribed to %channel%!"} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={configForm.subNotificationMessage} rows="3" placeholder="%display% subscribed to %channel%!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <div class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Raid Discord channel</span>
@@ -1388,7 +1388,7 @@
             </div>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Raid message</span>
-              <textarea bind:value={configForm.raidNotificationMessage} rows="3" placeholder={"%raider% raided %channel% with %viewers% viewers!"} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={configForm.raidNotificationMessage} rows="3" placeholder="%raider% raided %channel% with %viewers% viewers!" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 
@@ -1450,11 +1450,11 @@
             </div>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Twitch reply</span>
-              <textarea bind:value={redemptionForm.twitchResponse} rows="3" placeholder={"Thanks %display%, hydrate time."} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={redemptionForm.twitchResponse} rows="3" placeholder="Thanks %display%, hydrate time." class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
             <label class="grid gap-2 font-bold">
               <span style="color: {$colorStore.text}">Discord message</span>
-              <textarea bind:value={redemptionForm.discordMessage} rows="3" placeholder={"%display% redeemed %reward%: %input%"} class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
+              <textarea bind:value={redemptionForm.discordMessage} rows="3" placeholder="%display% redeemed %reward%: %input%" class="w-full border rounded-lg p-3 resize-y min-h-[86px]" style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.muted}"></textarea>
             </label>
           </div>
 

@@ -16,6 +16,7 @@
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { openProductUpdates, unreadUpdateCount } from "$lib/stores/productUpdateStore";
+  import { matchesSearchTerms, openSearch } from "$lib/stores/searchStore";
 
   interface Props {
     collapsed?: boolean;
@@ -65,11 +66,11 @@
     // not shown again inside its category.
     let features = allDashboardFeatures.filter(item => (!item.ownerOnly || isOwner) && item.href !== "/dashboard/access");
     if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
       features = features.filter(f =>
-        f.label.toLowerCase().includes(term) ||
-        f.description?.toLowerCase().includes(term) ||
-        f.category.toLowerCase().includes(term)
+        matchesSearchTerms(
+          { title: f.label, description: f.description, category: f.category, keywords: f.keywords },
+          searchTerm
+        )
       );
     }
     return features;
@@ -137,8 +138,10 @@
 
     switchingServer.set(true);
 
+    // Yield one frame so the switching overlay paints before the store update, rather
+    // than holding for a fixed delay the user pays on every switch.
     if (browser) {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
     }
 
     currentGuild.set(guild);
@@ -613,6 +616,16 @@
         >
           <i class="fa-solid fa-xmark text-xs"></i>
         </button>
+      {:else}
+        <button
+          class="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-sm text-xs transition-colors"
+          style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+          onclick={() => openSearch()}
+          title="Search everything, including settings inside each page"
+          aria-label="Open full search"
+        >
+          ⌘K
+        </button>
       {/if}
     </div>
   </div>
@@ -773,6 +786,13 @@
       <div class="px-4 py-8 text-center">
         <i class="fa-solid fa-search text-2xl mb-2 block" style="color: {$colorStore.muted}; opacity: 0.3;"></i>
         <p class="text-xs" style="color: {$colorStore.muted};">No features match "{searchTerm}"</p>
+        <button
+          class="mt-3 rounded-lg px-3 py-2 text-xs font-medium min-h-[44px] w-full transition-colors"
+          style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
+          onclick={() => openSearch(searchTerm)}
+        >
+          Search settings inside pages
+        </button>
       </div>
     {/if}
   </nav>

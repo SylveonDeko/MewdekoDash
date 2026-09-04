@@ -35,11 +35,11 @@ function attachUpgradeHandler(server: ViteDevServer) {
 export default defineConfig(({ command }) => ({
   plugins: [
     sentrySvelteKit({
+      autoUploadSourceMaps: Boolean(process.env.SENTRY_AUTH_TOKEN),
       sourceMapsUploadOptions: {
         org: "mewdeko-2i",
         project: "mewdash",
         authToken: process.env.SENTRY_AUTH_TOKEN,
-        disable: !process.env.SENTRY_AUTH_TOKEN,
       },
     }),
     tailwindcss(),

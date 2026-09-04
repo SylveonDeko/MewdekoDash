@@ -9,7 +9,7 @@
   import LoadingOverlay from "$lib/components/ui/LoadingOverlay.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import {goto} from "$app/navigation";
-  import {registerTabFeatures, unregisterSearchFeatures} from "$lib/stores/searchStore";
+  import {registerTabFeatures} from "$lib/stores/searchStore";
 
   // Props
   interface Props {
@@ -135,14 +135,6 @@
       window.removeEventListener("keydown", handleGlobalKeyDown);
     }
 
-    // Unregister search features when component is destroyed
-    if (tabs.length > 0 || subTabs.length > 0) {
-      const featureIds = [
-        ...tabs.map(tab => `${basePath}-${tab.id}`),
-        ...subTabs.map(subTab => `${basePath}-${subTab.id}`)
-      ];
-      unregisterSearchFeatures(featureIds);
-    }
   });
   
   // Simple reduced motion check
