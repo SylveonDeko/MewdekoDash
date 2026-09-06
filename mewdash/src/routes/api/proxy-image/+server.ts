@@ -13,6 +13,8 @@ const MAX_BYTES = 10 * 1024 * 1024;
  * endpoint is a server-side request forgery primitive: it is unauthenticated, it
  * returns the response body verbatim with permissive CORS, and it runs inside the
  * deployment's network, where it can reach loopback services and cloud metadata.
+ * Redirects are left unfollowed for the same reason, since a permitted host could
+ * otherwise bounce the request to an internal address.
  */
 const ALLOWED_HOSTS = [
   "cdn.discordapp.com",
@@ -61,8 +63,6 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   try {
-    // Redirects are not followed: a permitted host could otherwise bounce the
-    // request to an internal address and defeat the allow-list.
     const response = await fetch(target, { redirect: "manual" });
 
     if (!response.ok) {

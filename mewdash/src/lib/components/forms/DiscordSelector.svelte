@@ -168,19 +168,37 @@
 
 
 
+  /**
+   * Whether the event came from a text field. Keydown is handled on the container, so
+   * typing in a nested field bubbles up here, where a space is a character rather than
+   * an activation.
+   */
+  function isTextEntry(target: EventTarget | null): boolean {
+    return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  }
+
+  function confirmFocusedOption() {
+    if (!isOpen) {
+      toggleDropdown();
+    } else if (focusedIndex >= 0 && filteredOptions[focusedIndex]) {
+      selectOption(filteredOptions[focusedIndex].id);
+    }
+  }
+
   // Keyboard navigation
   function handleKeydown(event: KeyboardEvent) {
     if (disabled) return;
 
     switch (event.key) {
       case "Enter":
-      case " ":
         event.preventDefault();
-        if (!isOpen) {
-          toggleDropdown();
-        } else if (focusedIndex >= 0 && filteredOptions[focusedIndex]) {
-          selectOption(filteredOptions[focusedIndex].id);
-        }
+        confirmFocusedOption();
+        break;
+
+      case " ":
+        if (isTextEntry(event.target)) return;
+        event.preventDefault();
+        confirmFocusedOption();
         break;
 
       case "Escape":
@@ -240,13 +258,50 @@
     selected = multiple ? [] : null;
     onchange?.({ selected });
   }
+  /**
+   * Flattens punctuation and separators to spaces so each word can be matched on its own.
+   */
+  function normalizeForSearch(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[_/\-.()&,:#@|]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /**
+   * Every piece of text an option can be searched by, combined into one string. An
+   * option's words are often spread across several fields, so matching a query against
+   * any single field alone rejects perfectly reasonable searches.
+   */
+  function optionHaystack(option: OptionType): string {
+    return normalizeForSearch(
+      [
+        getOptionDisplayName(option),
+        option.name,
+        option.label,
+        option.displayName,
+        option.value,
+        option.offset,
+        option.id
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
+  }
+
   // Computed values
-  let filteredOptions = $derived(searchable && searchTerm
-    ? options.filter(option => {
-      const searchText = getOptionDisplayName(option).toLowerCase();
-      return searchText.includes(searchTerm.toLowerCase());
-    })
-    : options);
+  let filteredOptions = $derived.by(() => {
+    if (!searchable || !searchTerm.trim()) return options;
+
+    const tokens = normalizeForSearch(searchTerm).split(" ").filter(Boolean);
+    if (tokens.length === 0) return options;
+
+    return options.filter(option => {
+      const haystack = optionHaystack(option);
+      return tokens.every(token => haystack.includes(token));
+    });
+  });
   let selectedArray = $derived(multiple
     ? (Array.isArray(selected) ? selected : selected ? [selected] : [])
     : []);

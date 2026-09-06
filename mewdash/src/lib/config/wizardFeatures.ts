@@ -28,6 +28,14 @@ export interface WizardFeature {
   description: string;
   icon: string;
   recommended: boolean;
+  /**
+   * Preselected as "quick" so the feature screen arrives with a working answer rather
+   * than 26 skipped toggles. Only set this where quick mode actually produces a working
+   * configuration: either the defaults are enough, or the only missing piece is a channel,
+   * which the bulk setup screen collects. Features needing a role or other specific input
+   * silently no-op when quick-enabled, so they stay opt-in even when recommended.
+   */
+  quickSafe?: boolean;
   difficulty: WizardDifficulty;
   setupTime: string;
   benefits: string[];
@@ -341,6 +349,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Greet new members when they join/leave",
         icon: "fa-utility-duo fa-regular fa-bell",
         recommended: true,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "3-5 min",
         benefits: [
@@ -370,6 +379,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Automatically stop raids, spam and alt accounts",
         icon: "fa-utility-duo fa-regular fa-shield-halved",
         recommended: true,
+        quickSafe: true,
         difficulty: "medium",
         setupTime: "3-5 min",
         benefits: [
@@ -434,6 +444,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Track joins, leaves, and moderation actions",
         icon: "fa-utility-duo fa-regular fa-file",
         recommended: true,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "2-3 min",
         benefits: [
@@ -509,6 +520,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Private support channels for members",
         icon: "fa-utility-duo fa-regular fa-ticket",
         recommended: false,
+        quickSafe: true,
         difficulty: "medium",
         setupTime: "3-5 min",
         benefits: [
@@ -591,6 +603,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Highlight the best messages with reactions",
         icon: "fa-utility-duo fa-regular fa-star",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "2-3 min",
         benefits: [
@@ -614,6 +627,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Let members suggest server improvements",
         icon: "fa-utility-duo fa-regular fa-lightbulb",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "2-4 min",
         benefits: [
@@ -654,6 +668,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Let members submit anonymous confessions",
         icon: "fa-utility-duo fa-regular fa-comment",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "2-3 min",
         benefits: [
@@ -677,6 +692,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Count to infinity (or chaos ensues)",
         icon: "fa-utility-duo fa-regular fa-list-numeric",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "1 min",
         benefits: [
@@ -700,6 +716,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Celebrate member birthdays automatically",
         icon: "fa-utility-duo fa-regular fa-birthday-cake",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "3-4 min",
         benefits: [
@@ -729,6 +746,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "Let members thank each other and earn standing",
         icon: "fa-utility-duo fa-regular fa-thumbs-up",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "2-3 min",
         benefits: [
@@ -960,6 +978,7 @@ export const wizardFeatureCategories: WizardFeatureCategory[] = [
         description: "See who invited each new member",
         icon: "fa-utility-duo fa-regular fa-link",
         recommended: false,
+        quickSafe: true,
         difficulty: "easy",
         setupTime: "1-2 min",
         benefits: [
@@ -1012,9 +1031,104 @@ export const allWizardFeatures: WizardFeature[] = wizardFeatureCategories.flatMa
 /** Feature selection state as it is stored before setup runs. */
 export type WizardFeatureState = "full" | "quick" | "skip";
 
-/** Every feature starts skipped until the user opts in. */
+/**
+ * Feature states before the server has been inspected. Everything starts skipped;
+ * {@link recommendFeatures} then turns on what suits the server once its channels,
+ * roles and size are known.
+ */
 export function createDefaultFeatureStates(): Record<string, WizardFeatureState> {
   return Object.fromEntries(allWizardFeatures.map((feature) => [feature.id, "skip"]));
+}
+
+/** What the wizard knows about a server when deciding what to suggest. */
+export interface WizardServerContext {
+  memberCount: number;
+  channelNames: string[];
+  voiceChannelNames: string[];
+  categoryNames: string[];
+  roleNames: string[];
+}
+
+/** A suggested starting state for one feature, and the reason to show for it. */
+export interface WizardSuggestion {
+  state: WizardFeatureState;
+  reason: string;
+}
+
+/**
+ * Servers below this size are small enough that a burst of legitimate joins looks like
+ * a raid, so protection is left for the user to opt into rather than turned on for them.
+ */
+const PROTECTION_MIN_MEMBERS = 50;
+
+/** Servers past this size are where manual moderation stops scaling. */
+const BUSY_SERVER_MEMBERS = 500;
+
+/**
+ * Channel, category and role names that indicate a server already wants a feature.
+ * A channel called "tickets" is a statement of intent, and matching on it lets the
+ * wizard arrive with an opinion rather than 26 identical toggles.
+ */
+const KEYWORD_RULES: Array<{ feature: string; keywords: string[]; label: string }> = [
+  { feature: "tickets", keywords: ["ticket", "support", "modmail", "helpdesk"], label: "support channel" },
+  { feature: "suggestions", keywords: ["suggestion", "idea", "feedback"], label: "suggestions channel" },
+  { feature: "xp", keywords: ["level", "rank", "leaderboard"], label: "levels channel" },
+  { feature: "confessions", keywords: ["confession"], label: "confessions channel" },
+  { feature: "starboard", keywords: ["starboard", "hall-of-fame", "best-of", "highlight"], label: "starboard channel" },
+  { feature: "counting", keywords: ["counting"], label: "counting channel" },
+  { feature: "rolegreets", keywords: ["verify", "verification", "unverified"], label: "verification setup" },
+  { feature: "birthday", keywords: ["birthday"], label: "birthdays channel" },
+  { feature: "giveaways", keywords: ["giveaway"], label: "giveaways channel" },
+  { feature: "invitetracking", keywords: ["invite"], label: "invites channel" },
+  { feature: "reputation", keywords: ["reputation", "kudos", "thanks"], label: "reputation channel" }
+];
+
+/**
+ * Suggests which features to start enabled, based on what the server looks like.
+ *
+ * A suggestion only becomes "quick" when the feature can actually be configured from
+ * the bulk screen, which collects a channel and nothing else. Features needing a role,
+ * a voice channel or a panel are suggested as "full" instead, because quick-enabling
+ * them would silently apply nothing.
+ * @param context What the wizard knows about the server.
+ * @returns The suggested state and reason per feature id.
+ */
+export function recommendFeatures(context: WizardServerContext): Record<string, WizardSuggestion> {
+  const suggestions: Record<string, WizardSuggestion> = {};
+  const quickSafeIds = new Set(allWizardFeatures.filter((f) => f.quickSafe).map((f) => f.id));
+
+  const suggest = (feature: string, reason: string) => {
+    if (suggestions[feature]) return;
+    suggestions[feature] = {
+      state: quickSafeIds.has(feature) ? "quick" : "full",
+      reason
+    };
+  };
+
+  suggest("multigreets", "Most servers greet new members");
+  suggest("logging", "Keeps a record of joins, leaves and moderation");
+
+  if (context.memberCount >= PROTECTION_MIN_MEMBERS)
+    suggest("protection", `Worth having on a server of ${context.memberCount.toLocaleString()} members`);
+
+  if (context.memberCount >= BUSY_SERVER_MEMBERS) {
+    suggest("moderation", "Busy servers need moderation tooling");
+    suggest("tickets", "Gives members a private way to reach staff");
+  }
+
+  const haystack = [
+    ...context.channelNames,
+    ...context.voiceChannelNames,
+    ...context.categoryNames,
+    ...context.roleNames
+  ].map((name) => name.toLowerCase());
+
+  for (const rule of KEYWORD_RULES) {
+    const match = haystack.find((name) => rule.keywords.some((keyword) => name.includes(keyword)));
+    if (match) suggest(rule.feature, `You already have a ${rule.label}`);
+  }
+
+  return suggestions;
 }
 
 /**
@@ -1101,8 +1215,11 @@ export function createDefaultFeatureConfigs(): Record<string, any> {
       categoryId: null,
       supportRoles: [],
       buttonLabel: "Create Ticket",
+      buttonEmoji: "🎫",
       panelTitle: "Need help?",
-      panelDescription: "Click the button below to open a private support ticket."
+      panelDescription: "Click the button below to open a private support ticket.",
+      maxActiveTickets: 1,
+      autoCloseHours: 0
     },
     rolestates: {
       clearOnBan: false,

@@ -30,7 +30,7 @@
 
   // Fuzzy search implementation
   function searchFeatures(searchQuery: string, category: string): SearchableItem[] {
-    const allFeatures = getSearchableFeatures(isOwner); // Get dynamic features
+    const allFeatures = getSearchableFeatures(isOwner);
 
     if (!searchQuery.trim()) {
       // Show all features when no query, filtered by category

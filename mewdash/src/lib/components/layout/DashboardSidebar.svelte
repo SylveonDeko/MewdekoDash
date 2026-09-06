@@ -138,8 +138,6 @@
 
     switchingServer.set(true);
 
-    // Yield one frame so the switching overlay paints before the store update, rather
-    // than holding for a fixed delay the user pays on every switch.
     if (browser) {
       await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
     }

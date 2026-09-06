@@ -29,6 +29,8 @@ Each feature gets multiple screens for deeper configuration
     guildId?: string | bigint | null;
     user?: DiscordUser | null;
     children?: import("svelte").Snippet<[{ step: FeatureStep; config: any }]>;
+    /** Blocks navigation and shows progress while the caller saves this step. */
+    busy?: boolean;
     onnext?: (detail: { config: any }) => void;
     onback?: () => void;
     onskip?: () => void;
@@ -47,6 +49,7 @@ Each feature gets multiple screens for deeper configuration
     guildId = null,
     user = null,
     children,
+    busy = false,
     onnext,
     onback,
     onskip
@@ -56,6 +59,7 @@ Each feature gets multiple screens for deeper configuration
   let isLastStep = $derived(currentStep === steps.length - 1);
 
   function handleNext() {
+    if (busy) return;
     onnext?.({ config });
   }
 
@@ -153,8 +157,9 @@ Each feature gets multiple screens for deeper configuration
   <div class="pt-6 border-t" style="border-color: {$colorStore.primary}20;">
     <div class="flex items-center justify-between gap-3">
       <button
-        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+        class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60 disabled:hover:scale-100"
         onclick={handleBack}
+        disabled={busy}
         style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
       >
         <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
@@ -170,6 +175,7 @@ Each feature gets multiple screens for deeper configuration
             class="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
             style="background: {$colorStore.muted}15; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30; focus:ring-color: {$colorStore.muted};"
             onclick={onskip}
+            disabled={busy}
           >
             <i class="fa-solid fa-forward" style="font-size: 13px;"></i>
             Skip {featureName}
@@ -178,12 +184,16 @@ Each feature gets multiple screens for deeper configuration
       </div>
 
       <button
-        class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+        class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px] disabled:opacity-60 disabled:hover:scale-100"
         onclick={handleNext}
+        disabled={busy}
         style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"
       >
-        {isLastStep ? 'Complete' : 'Next'}
-        <i class="fa-solid {isLastStep ? 'fa-check' : 'fa-arrow-right'}" style="font-size: 16px;"></i>
+        {busy ? 'Saving...' : isLastStep ? 'Complete' : 'Next'}
+        <i
+          class="fa-solid {busy ? 'fa-arrows-rotate fa-spin' : isLastStep ? 'fa-check' : 'fa-arrow-right'}"
+          style="font-size: 16px;"
+        ></i>
       </button>
     </div>
 

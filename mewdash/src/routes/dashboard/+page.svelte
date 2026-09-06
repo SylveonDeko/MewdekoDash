@@ -477,8 +477,6 @@
 
             // Extract colors: server icon > user avatar > bot avatar
           // (Halloween swap will be applied automatically if active)
-            // Not awaited: theming is cosmetic and the decode should never hold up
-            // the rest of mount, which is most noticeable on mobile.
             if (guildInfo?.iconUrl) {
                 void colorStore.extractFromServerIcon(guildInfo.iconUrl);
             } else if ($currentGuild?.icon) {

@@ -111,9 +111,7 @@
 
     text = sanitizeText(text);
 
-    // Links with text [text](url). The URL must be scheme-checked: escaping alone
-    // leaves `javascript:` intact, since the parser decodes entities before the href
-    // is used, and this page is shared by link with anyone.
+    // Links with text [text](url)
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) =>
       `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary);">${label}</a>`);
 

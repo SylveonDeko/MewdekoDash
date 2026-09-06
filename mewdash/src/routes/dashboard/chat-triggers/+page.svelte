@@ -574,8 +574,6 @@
   }
 
   function highlightMatches(text: string, regex: RegExp): string {
-    // The result is rendered with {@html}, so the test string has to be escaped
-    // before the highlight markup is wrapped around it.
     return escapeHtml(text).replace(
       regex,
       (match) => `<span class="bg-yellow-300 text-black">${match}</span>`,

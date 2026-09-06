@@ -23,6 +23,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   import FeatureDependencySuggestion from "./components/FeatureDependencySuggestion.svelte";
   import ChannelBulkSelector from "./components/ChannelBulkSelector.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
 
   // API imports
   import {
@@ -59,6 +60,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     allWizardFeatures,
     createDefaultFeatureConfigs,
     createDefaultFeatureStates,
+    recommendFeatures,
+    type WizardSuggestion,
     wizardAfkTypes,
     wizardChannelPatterns,
     wizardFeatureCategories,
@@ -136,6 +139,21 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   // Feature states
   type FeatureState = WizardFeatureState;
   let featureStates = $state<Record<string, FeatureState>>(createDefaultFeatureStates());
+  let featureSuggestions = $state<Record<string, WizardSuggestion>>({});
+  let recommendationsApplied = $state(false);
+  let browsingAllFeatures = $state(false);
+
+  /**
+   * The shortlist shown before the full catalogue: what this server was suggested, plus
+   * anything already turned on. Opening with 26 features across six categories asks the
+   * user to survey the whole product before they can continue, so the catalogue sits
+   * behind an explicit "browse" step instead.
+   */
+  let spotlightFeatures = $derived(
+    allWizardFeatures.filter(
+      (feature) => featureSuggestions[feature.id] || featureStates[feature.id] !== "skip"
+    )
+  );
 
   // Feature configurations
   let featureConfigs = $state<Record<string, any>>(createDefaultFeatureConfigs());
@@ -151,6 +169,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   let availableCategories = $state<any[]>([]);
   let availableVoiceChannels = $state<any[]>([]);
   let availableTimezones = $state<any[]>([]);
+  let availableEmojis = $state<any[]>([]);
   let channelsLoading = $state(false);
 
   /** Server-wide settings collected on the Server Basics step. */
@@ -366,17 +385,21 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       channelsLoading = true;
       const guildId = BigInt(data.guildId);
 
-      const [channels, roles, categories, voiceChannels] = await Promise.all([
+      const [channels, roles, categories, voiceChannels, emojis] = await Promise.all([
         clientApi.getTextChannels(guildId).catch(() => []),
         clientApi.getRoles(guildId).catch(() => []),
         clientApi.getCategories(guildId).catch(() => []),
-        clientApi.getVoiceChannels(guildId).catch(() => [])
+        clientApi.getVoiceChannels(guildId).catch(() => []),
+        clientApi.getEmojis(BigInt(data.user.id)).catch(() => [])
       ]);
 
       availableChannels = channels;
       availableRoles = roles;
       availableCategories = categories;
       availableVoiceChannels = voiceChannels;
+      availableEmojis = Array.isArray(emojis) ? emojis : [];
+
+      await applyRecommendations();
 
     } catch (err) {
       console.error("Error loading guild data:", err);
@@ -387,6 +410,32 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     } finally {
       channelsLoading = false;
     }
+  }
+
+  /**
+   * Turns on the features this particular server looks like it wants, so the selection
+   * step opens with a working answer instead of 26 skipped toggles. Only applies to
+   * features the user has not already touched, and never on a repeat run of the wizard.
+   */
+  async function applyRecommendations() {
+    if (recommendationsApplied || data.wizardType !== "first-time") return;
+    recommendationsApplied = true;
+
+    const info = await guildApi.getGuildInfo(BigInt(data.guildId)).catch(() => null);
+
+    featureSuggestions = recommendFeatures({
+      memberCount: info?.memberCount ?? 0,
+      channelNames: availableChannels.map((c: any) => c.name ?? ""),
+      voiceChannelNames: availableVoiceChannels.map((c: any) => c.name ?? ""),
+      categoryNames: availableCategories.map((c: any) => c.name ?? ""),
+      roleNames: availableRoles.map((r: any) => r.name ?? "")
+    });
+
+    const next = { ...featureStates };
+    for (const [id, suggestion] of Object.entries(featureSuggestions)) {
+      if (next[id] === "skip") next[id] = suggestion.state;
+    }
+    featureStates = next;
   }
 
   /**
@@ -1032,6 +1081,11 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           break;
 
         case "starboard":
+          // Quick enable only collects a channel, so it seeds the first starboard.
+          if (config.channelId && config.starboards?.[0] && !config.starboards[0].channelId) {
+            config.starboards[0].channelId = config.channelId;
+          }
+
           if (config.starboards && config.starboards.length > 0) {
             const existingStarboards = await starboardApi.getStarboards(guildId);
 
@@ -1184,27 +1238,31 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         }
 
         case "tickets": {
-          if (!config.panelChannelId) break;
+          // Quick enable only collects a channel, so it stands in as the panel channel.
+          const panelChannelId = config.panelChannelId ?? config.channelId;
+          if (!panelChannelId) break;
 
           await ticketApi.createTicketPanel(guildId, {
-            channelId: BigInt(config.panelChannelId),
+            channelId: BigInt(panelChannelId),
             title: config.panelTitle,
             description: config.panelDescription
           });
 
           const panels = await ticketApi.getTicketPanels(guildId);
           const panel = panels
-            .filter((p: any) => p.channelId?.toString() === config.panelChannelId)
+            .filter((p: any) => p.channelId?.toString() === panelChannelId.toString())
             .pop();
 
           if (panel) {
             await ticketApi.addPanelButton(guildId, BigInt(panel.id), {
               label: config.buttonLabel || "Create Ticket",
-              emoji: "🎫",
+              emoji: config.buttonEmoji || "🎫",
               categoryId: config.categoryId ? BigInt(config.categoryId) : null,
               supportRoles: config.supportRoles?.length
                 ? config.supportRoles.map((id: string) => BigInt(id))
-                : null
+                : null,
+              maxActiveTickets: config.maxActiveTickets ?? 1,
+              autoCloseTime: config.autoCloseHours > 0 ? `${config.autoCloseHours}:00:00` : null
             });
           }
           break;
@@ -1455,11 +1513,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       // Finish this feature and move to next
       actionError = null;
       try {
+        wizardLoading = true;
         await configureFeature(currentConfigFeature);
       } catch (error: any) {
         console.error(`Error configuring ${currentConfigFeature}:`, error);
         actionError = `${feature.title} could not be saved: ${error?.message || "Unknown error"}. You can set it up later from the dashboard.`;
         failedFeatures = [...failedFeatures, currentConfigFeature];
+      } finally {
+        wizardLoading = false;
       }
 
       const currentIndex = fullSetupFeatures.indexOf(currentConfigFeature);
@@ -1622,7 +1683,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     </div>
   {:else if showContent}
     <!-- Progress indicator -->
-    <div class="container mx-auto px-3 sm:px-4 pt-3 sm:pt-6">
+    <div class="w-full max-w-[1800px] mx-auto px-3 sm:px-4 pt-3 sm:pt-6">
       <WizardProgress
         {currentStep}
         {totalSteps}
@@ -1673,7 +1734,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
-                <span>Choose from {allFeatures.length} features to configure</span>
+                <span>Turn on the features that suit your server</span>
               </div>
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-circle-check" style="color: {$colorStore.accent}; font-size: 16px;"></i>
@@ -1753,7 +1814,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         stepNumber={2}
         isActive={currentStep === 2}
         icon="fa-solid fa-shield"
-        maxWidth="max-w-5xl"
+        maxWidth="max-w-5xl 2xl:max-w-[1400px]"
       >
         <div class="space-y-6">
           {#if permissionsLoading}
@@ -1778,7 +1839,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             </div>
 
             <div class="relative">
-              <div class="space-y-3 max-h-80 overflow-y-auto border rounded-lg p-2"
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 max-h-80 lg:max-h-none overflow-y-auto lg:overflow-visible border rounded-lg p-2"
                    style="border-color: {$colorStore.primary}20;">
                 {#each permissionData.permissionResults as permission (permission.permissionName)}
                   <PermissionCheck
@@ -1792,7 +1853,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               </div>
 
               {#if permissionData.permissionResults.length > 4}
-                <div class="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs"
+                <div class="lg:hidden absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-md text-xs"
                      style="background: {$colorStore.primary}15; color: {$colorStore.muted}; backdrop-filter: blur(4px);">
                   <span>Scroll for more</span>
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1940,7 +2001,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             disabled={wizardLoading}
           >
             {wizardLoading ? 'Saving...' : 'Continue'}
-            <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
+            <i class="fa-solid {wizardLoading ? 'fa-arrows-rotate fa-spin' : 'fa-arrow-right'}"
+               style="font-size: 16px;"></i>
           </button>
         </div>
       </div>
@@ -1949,14 +2011,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     <!-- Feature Selection -->
     <WizardStep
       title="Choose Features"
-      subtitle="Select which features you want to set up for your server."
+      subtitle="We've picked a starting point. Adjust it if you like, or carry on."
       stepNumber={featureSelectionStep}
       isActive={currentStep === featureSelectionStep}
       icon="fa-solid fa-sliders"
-      maxWidth="max-w-7xl"
+      maxWidth="max-w-7xl 2xl:max-w-[1800px]"
     >
       <div class="space-y-8">
-        <!-- Bulk Actions -->
+        <!-- Bulk Actions, only alongside the full catalogue: applying them to all 26
+             features from the shortlist view would undo the shortlist -->
+        {#if browsingAllFeatures || spotlightFeatures.length === 0}
         <div class="flex flex-col sm:flex-row flex-wrap gap-3 justify-center p-4 rounded-xl border"
              style="background: linear-gradient(135deg, {$colorStore.primary}05, {$colorStore.secondary}08); border-color: {$colorStore.secondary}30;">
           <button
@@ -2007,6 +2071,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             <span>Clear All</span>
           </button>
         </div>
+        {/if}
 
         <!-- Dependency Suggestions -->
         {#if suggestions.length > 0}
@@ -2029,7 +2094,62 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           />
         {/if}
 
+        <!-- Suggested shortlist, with the full catalogue one click away -->
+        {#if !browsingAllFeatures && spotlightFeatures.length > 0}
+          <div in:fly={{ y: 20, duration: 300 }}>
+            <div class="mb-4 text-center">
+              <h3 class="text-xl font-bold mb-1" style="color: {$colorStore.text};">
+                Suggested for your server
+              </h3>
+              <p class="text-sm" style="color: {$colorStore.muted};">
+                Based on your channels, roles and size. Change anything you like, or continue as is.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 px-2">
+              {#each spotlightFeatures as feature (feature.id)}
+                <FeatureSetupCard
+                  id={feature.id}
+                  title={feature.title}
+                  description={feature.description}
+                  icon={feature.icon}
+                  setupState={featureStates[feature.id]}
+                  recommended={feature.recommended}
+                  setupTime={feature.setupTime}
+                  difficulty={feature.difficulty}
+                  benefits={feature.benefits}
+                  stepCount={feature.steps.length}
+                  suggestionReason={featureSuggestions[feature.id]?.reason ?? ""}
+                  onchange={handleFeatureStateChange}
+                />
+              {/each}
+            </div>
+
+            <div class="mt-6 text-center">
+              <button
+                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium min-h-[44px] transition-all hover:scale-[1.02]"
+                style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                onclick={() => (browsingAllFeatures = true)}
+              >
+                <i class="fa-solid fa-layer-group"></i>
+                Browse all {allWizardFeatures.length} features
+              </button>
+            </div>
+          </div>
+        {/if}
+
         <!-- Features by Category -->
+        {#if browsingAllFeatures || spotlightFeatures.length === 0}
+        <div class="flex justify-center mb-4">
+          <button
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium min-h-[44px] transition-all"
+            style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
+            onclick={() => (browsingAllFeatures = false)}
+          >
+            <i class="fa-solid fa-chevron-up"></i>
+            Show only what's suggested
+          </button>
+        </div>
         {#each featureCategories as category (category.name)}
           <div>
             <!-- Category Header (Collapsible) -->
@@ -2097,7 +2217,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
             {#if expandedFeatureCategories[category.name]}
               <div
-                class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 px-2"
+                class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 px-2"
                 in:fly={{ y: -20, duration: 400 }}
                 out:fly={{ y: -10, duration: 200 }}
               >
@@ -2112,6 +2232,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     setupTime={feature.setupTime}
                     difficulty={feature.difficulty}
                     benefits={feature.benefits}
+                    stepCount={feature.steps.length}
+                    suggestionReason={featureSuggestions[feature.id]?.reason ?? ""}
                     onchange={handleFeatureStateChange}
                   />
                 {/each}
@@ -2119,6 +2241,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             {/if}
           </div>
         {/each}
+        {/if}
 
         <!-- Selection summary -->
         {#if allEnabledFeatures.length > 0}
@@ -2244,6 +2367,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 placeholders={allPlaceholders}
                 guildId={data.guildId}
                 user={data.user}
+                busy={wizardLoading}
                 onnext={handleFeatureConfigNext}
                 onback={handleFeatureConfigBack}
                 onskip={handleFeatureConfigSkip}
@@ -2460,16 +2584,17 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                 </p>
                               </div>
                               <div>
-                                <label for="f-+page-emoji-2412" class="block text-sm font-medium mb-2" style="color: {$colorStore.text};">
+                                <span class="block text-sm font-medium mb-2" id="starboard-emoji-label"
+                                      style="color: {$colorStore.text};">
                                   Emoji
-                                </label>
-                                <input id="f-+page-emoji-2412"
-                                  type="text"
-                                  maxlength="4"
-                                  class="w-full px-3 py-2 rounded-lg border text-center"
-                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  bind:value={starboard.emoji}
-                                  placeholder="⭐"
+                                </span>
+                                <EmojiPicker
+                                  guildEmojis={availableEmojis}
+                                  selected={starboard.emoji}
+                                  multiple={false}
+                                  placeholder="Pick an emoji..."
+                                  ariaLabelledby="starboard-emoji-label"
+                                  onchange={(detail) => (starboard.emoji = detail.selected)}
                                 />
                                 <p class="text-xs mt-1" style="color: {$colorStore.muted};">
                                   Each must be unique
@@ -3002,6 +3127,46 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                                   class="w-full px-3 py-2 rounded-lg border resize-none"
                                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
                                   bind:value={config.panelDescription}></textarea>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <span class="block text-sm font-medium mb-2" id="button-emoji-label"
+                                style="color: {$colorStore.text};">
+                            Button Emoji
+                          </span>
+                          <EmojiPicker
+                            guildEmojis={availableEmojis}
+                            selected={config.buttonEmoji}
+                            multiple={false}
+                            placeholder="Pick an emoji..."
+                            ariaLabelledby="button-emoji-label"
+                            onchange={(detail) => (config.buttonEmoji = detail.selected)}
+                          />
+                        </div>
+                        <div>
+                          <label for="max-active-tickets" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Open Tickets Per Member
+                          </label>
+                          <input id="max-active-tickets" type="number" min="1" max="10"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.maxActiveTickets} />
+                        </div>
+                        <div>
+                          <label for="auto-close-hours" class="block text-sm font-medium mb-2"
+                                 style="color: {$colorStore.text};">
+                            Auto Close After (hours)
+                          </label>
+                          <input id="auto-close-hours" type="number" min="0" max="720"
+                                 class="w-full px-3 py-2 rounded-lg border min-h-[44px]"
+                                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                                 bind:value={config.autoCloseHours} />
+                          <p class="text-xs mt-1" style="color: {$colorStore.muted};">
+                            0 keeps tickets open until staff close them
+                          </p>
+                        </div>
                       </div>
                     </div>
                   {:else if feature.id === 'rolestates' && step.id === 'config'}
@@ -3580,7 +3745,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         stepNumber={currentStep}
         isActive={true}
         icon="fa-solid fa-bolt"
-        maxWidth="max-w-6xl"
+        maxWidth="max-w-6xl 2xl:max-w-[1600px]"
       >
         <div class="space-y-6">
           <BulkNotificationSetup
@@ -3623,7 +3788,8 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               disabled={wizardLoading}
             >
               <span class="truncate">{wizardLoading ? 'Completing...' : 'Complete Setup'}</span>
-              <i class="fa-solid fa-check shrink-0" style="font-size: 16px;"></i>
+              <i class="fa-solid {wizardLoading ? 'fa-arrows-rotate fa-spin' : 'fa-check'} shrink-0"
+                 style="font-size: 16px;"></i>
             </button>
           </div>
         </div>

@@ -242,15 +242,16 @@ const SAFE_URL_SCHEMES = ["http:", "https:", "mailto:", "discord:"];
 /**
  * Returns the URL when it uses a safe scheme, otherwise "#". HTML-escaping a URL does
  * not make it safe to place in an href: the parser decodes entities before the value
- * is treated as a URL, so `javascript:` survives escaping and runs on click. Every
- * href built from message content, embed fields or form input must go through this.
+ * is treated as a URL, so `javascript:` survives escaping and runs on click. Control
+ * characters are stripped for the same reason: browsers ignore them while parsing a
+ * scheme, so "java\tscript:" would slip past a naive prefix check. Every href built
+ * from message content, embed fields or form input must go through this.
  * @param url The candidate URL, which may still be HTML-escaped
  * @returns The original URL, or "#" when the scheme is not allowed
  */
 export function safeUrl(url: string | null | undefined): string {
   if (!url) return "#";
 
-  // Decide on the decoded form, since that is what the browser ultimately parses.
   const decoded = url
     .replace(/&amp;/gi, "&")
     .replace(/&#0*39;|&apos;/gi, "'")
@@ -259,8 +260,6 @@ export function safeUrl(url: string | null | undefined): string {
     .replace(/&#0*58;|&colon;/gi, ":")
     .trim();
 
-  // Browsers strip control characters while parsing a scheme, so a tab or newline
-  // inside "java\tscript:" would otherwise slip past a naive prefix check.
   const normalized = [...decoded].filter((char) => char.charCodeAt(0) > 0x20).join("");
 
   try {

@@ -74,7 +74,7 @@ function writePaletteCache(imageUrl: string, palette: ColorPalette) {
 
     globalThis.localStorage.setItem(PALETTE_CACHE_KEY, JSON.stringify(cache));
   } catch {
-    // A full or unavailable localStorage only costs us the cache, not correctness.
+    /* a full or unavailable localStorage only costs the cache, not correctness */
   }
 }
 
@@ -83,8 +83,6 @@ function createColorStore() {
   let initialPalette = DEFAULT_PALETTE;
   if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
     try {
-      // localStorage carries the palette across a restart; sessionStorage alone
-      // means every fresh tab starts on the default and visibly repaints.
       const stored =
         globalThis.sessionStorage.getItem(LAST_PALETTE_KEY) ??
         globalThis.localStorage?.getItem(LAST_PALETTE_KEY);

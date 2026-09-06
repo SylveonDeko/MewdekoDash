@@ -61,7 +61,6 @@ function readArrayLiteral(source, fromIndex) {
  */
 function parseEntries(arraySource) {
   const entries = [];
-  // Interpolations carry braces of their own, which would otherwise cut objects short.
   const flattened = arraySource.replace(/\$\{[^{}]*\}/g, "");
   const objectPattern = /\{[^{}]*\}/g;
   let match;

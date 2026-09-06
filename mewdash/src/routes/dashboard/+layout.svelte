@@ -263,8 +263,6 @@
       userStore.set(data.user);
     }
 
-    // Guild list prefetched during SSR, so the server picker can render before the
-    // client has made any request of its own.
     if (data.guilds) {
       try {
         const prefetched = JSONbig.parse(data.guilds);

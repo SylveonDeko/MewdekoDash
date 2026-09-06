@@ -361,13 +361,29 @@
     manualInputError = "";
   }
 
+  /**
+   * Whether the event came from a text field. Keydown is handled on the container, so
+   * typing in a nested field bubbles up here, where a space is a character rather than
+   * an activation.
+   */
+  function isTextEntry(target: EventTarget | null): boolean {
+    return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  }
+
   // Keyboard navigation
   function handleKeydown(event: KeyboardEvent) {
     if (disabled) return;
 
     switch (event.key) {
       case "Enter":
+        event.preventDefault();
+        if (!isOpen) {
+          toggleDropdown();
+        }
+        break;
+
       case " ":
+        if (isTextEntry(event.target)) return;
         event.preventDefault();
         if (!isOpen) {
           toggleDropdown();

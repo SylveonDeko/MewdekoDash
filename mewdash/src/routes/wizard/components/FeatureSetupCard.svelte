@@ -18,6 +18,10 @@ Replaces the binary enable/disable pattern with progressive options
     difficulty?: "easy" | "medium" | "advanced";
     disabled?: boolean;
     benefits?: string[];
+    /** How many extra wizard screens choosing Full Setup adds. */
+    stepCount?: number;
+    /** Why this feature was suggested for this server, shown so the choice is not a mystery. */
+    suggestionReason?: string;
     onchange?: (detail: { id: string; state: "full" | "quick" | "skip" }) => void;
   }
 
@@ -32,10 +36,18 @@ Replaces the binary enable/disable pattern with progressive options
     difficulty = "easy",
     disabled = false,
     benefits = [],
+    stepCount = 0,
+    suggestionReason = "",
     onchange
   }: Props = $props();
 
   let showBenefits = $state(false);
+
+  /**
+   * Shown beside the Full Setup label rather than in its description, which is hidden
+   * on small screens. Wizard length is exactly what a phone user needs warning about.
+   */
+  let fullStepHint = $derived(stepCount > 0 ? `+${stepCount}` : "");
 
   function setState(newState: "full" | "quick" | "skip") {
     if (disabled) return;
@@ -87,25 +99,33 @@ Replaces the binary enable/disable pattern with progressive options
          border-color: {setupState !== 'skip' ? stateConfig[setupState].color + '40' : $colorStore.primary + '20'};"
 >
   <!-- Card Header -->
-  <div class="p-4 sm:p-6">
-    <div class="flex items-start gap-3 mb-4">
+  <div class="p-3 sm:p-6">
+    <div class="flex items-start gap-3 mb-3 sm:mb-4">
       <!-- Icon -->
       <div
-        class="flex items-center justify-center w-12 h-12 rounded-xl border transition-all shrink-0"
+        class="flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-xl border transition-all shrink-0"
         style="background: {setupState !== 'skip' ? stateConfig[setupState].color + '15' : $colorStore.primary + '10'};
                border-color: {setupState !== 'skip' ? stateConfig[setupState].color + '30' : $colorStore.primary + '20'};
                color: {setupState !== 'skip' ? stateConfig[setupState].color : $colorStore.muted};"
       >
-        <i class="fa-solid {icon}" style="font-size: 24px;"></i>
+        <i class="fa-solid {icon} text-lg sm:text-2xl"></i>
       </div>
 
       <!-- Title and Description -->
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <h3 class="text-lg font-bold" style="color: {disabled ? $colorStore.muted : $colorStore.text};">
+        <div class="flex items-center flex-wrap gap-x-2 gap-y-1 mb-1">
+          <h3 class="text-base sm:text-lg font-bold" style="color: {disabled ? $colorStore.muted : $colorStore.text};">
             {title}
           </h3>
-          {#if recommended}
+          {#if suggestionReason}
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+              style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+            >
+              <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 10px;"></i>
+              {suggestionReason}
+            </span>
+          {:else if recommended}
             <span
               class="px-2 py-0.5 rounded-full text-xs font-medium"
               style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
@@ -124,12 +144,13 @@ Replaces the binary enable/disable pattern with progressive options
             </button>
           {/if}
         </div>
-        <p class="text-sm mb-3" style="color: {disabled ? $colorStore.muted : $colorStore.text + 'c0'};">
+        <p class="text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-none"
+           style="color: {disabled ? $colorStore.muted : $colorStore.text + 'c0'};">
           {description}
         </p>
 
         <!-- Metadata -->
-        <div class="flex items-center gap-4 text-xs" style="color: {$colorStore.muted};">
+        <div class="hidden sm:flex items-center gap-4 text-xs" style="color: {$colorStore.muted};">
           <span class="flex items-center gap-1">
             <i class="fa-solid fa-clock" style="font-size: 12px;"></i>
             {setupTime}
@@ -145,7 +166,7 @@ Replaces the binary enable/disable pattern with progressive options
     </div>
 
     <!-- State Selection Buttons -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div class="grid grid-cols-3 gap-2">
       <button
         class="state-button px-3 py-3 rounded-lg transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 text-left"
         class:active={setupState === 'full'}
@@ -155,15 +176,21 @@ Replaces the binary enable/disable pattern with progressive options
                border: 2px solid {setupState === 'full' ? stateConfig.full.color : $colorStore.primary + '15'};
                focus:ring-color: {stateConfig.full.color};"
       >
-        <div class="flex items-center gap-2 mb-1">
+        <div class="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
           <i class="fa-solid {stateConfig.full.icon}" style="color: {stateConfig.full.color}; font-size: 16px;"></i>
-          <span class="font-semibold text-xs sm:text-sm"
+          <span class="font-semibold text-xs sm:text-sm text-center sm:text-left"
                 style="color: {setupState === 'full' ? stateConfig.full.color : $colorStore.text};">
             {stateConfig.full.label}
           </span>
+          {#if fullStepHint}
+            <span class="text-xs px-1.5 rounded-full shrink-0"
+                  style="background: {stateConfig.full.color}20; color: {stateConfig.full.color};">
+              {fullStepHint}
+            </span>
+          {/if}
         </div>
         <p class="text-xs hidden sm:block" style="color: {$colorStore.muted};">
-          {stateConfig.full.description}
+          {stateConfig.full.description}{stepCount > 0 ? ` (+${stepCount} ${stepCount === 1 ? "screen" : "screens"})` : ""}
         </p>
       </button>
 
@@ -176,9 +203,9 @@ Replaces the binary enable/disable pattern with progressive options
                border: 2px solid {setupState === 'quick' ? stateConfig.quick.color : $colorStore.primary + '15'};
                focus:ring-color: {stateConfig.quick.color};"
       >
-        <div class="flex items-center gap-2 mb-1">
+        <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
           <i class="fa-solid {stateConfig.quick.icon}" style="color: {stateConfig.quick.color}; font-size: 16px;"></i>
-          <span class="font-semibold text-xs sm:text-sm"
+          <span class="font-semibold text-xs sm:text-sm text-center sm:text-left"
                 style="color: {setupState === 'quick' ? stateConfig.quick.color : $colorStore.text};">
             {stateConfig.quick.label}
           </span>
@@ -197,9 +224,9 @@ Replaces the binary enable/disable pattern with progressive options
                border: 2px solid {setupState === 'skip' ? $colorStore.muted : $colorStore.primary + '15'};
                focus:ring-color: {$colorStore.muted};"
       >
-        <div class="flex items-center gap-2 mb-1">
+        <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
           <i class="fa-solid {stateConfig.skip.icon}" style="color: {$colorStore.muted}; font-size: 16px;"></i>
-          <span class="font-semibold text-xs sm:text-sm"
+          <span class="font-semibold text-xs sm:text-sm text-center sm:text-left"
                 style="color: {setupState === 'skip' ? $colorStore.muted : $colorStore.text};">
             {stateConfig.skip.label}
           </span>

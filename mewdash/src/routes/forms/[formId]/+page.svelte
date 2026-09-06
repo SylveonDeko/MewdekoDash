@@ -695,8 +695,6 @@
     formId = resolved.formId;
 
     // NOW set the correct instance only once, after we've found it
-    // Store writes are synchronous and apiRequest reads currentInstance with get(),
-    // so loadForm below already sees this instance without waiting.
     currentInstance.set(targetInstance);
 
     if (!data.user) {
