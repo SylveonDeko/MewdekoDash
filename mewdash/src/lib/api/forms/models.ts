@@ -8,7 +8,8 @@ export type QuestionType =
   | "dropdown"
   | "number"
   | "email"
-  | "url";
+  | "url"
+  | "section_break";
 
 export type ConditionalOperator =
   | "equals"
@@ -73,11 +74,62 @@ export interface Form {
   approvalRoleIds?: string;
   rejectionActionType: number; // 0=None, 1=AddRoles, 2=RemoveRoles
   rejectionRoleIds?: string;
+
+  /** When the form starts accepting responses. Null means as soon as it is published. */
+  opensAt?: string | null;
+  /** Channel the launch announcement is posted to once opensAt passes. */
+  announceChannelId?: bigint | null;
+  /** Role pinged by the launch announcement. */
+  announceRoleId?: bigint | null;
+  /** Body of the launch announcement. */
+  announceMessage?: string | null;
+  /** Stamped once the launch announcement has gone out. */
+  announcedAt?: string | null;
+
+  /** Role pinged when a response arrives in the submit channel. */
+  notifyRoleId?: bigint | null;
+  /** Comma separated roles granted the moment a response is submitted. */
+  submitRoleIds?: string;
+  /** Role held while a response awaits review, removed on decision. */
+  pendingRoleId?: bigint | null;
+  /** Role permitted to decide this form's responses from Discord. Null requires Manage Server. */
+  reviewerRoleId?: bigint | null;
+
+  /** Emote on this form's approve button. Null falls back to the guild default. */
+  approveEmote?: string | null;
+  /** Emote on this form's reject button. Null falls back to the guild default. */
+  rejectEmote?: string | null;
+
+  /** Minimum age of the submitter's Discord account, in days. */
+  minAccountAgeDays?: number | null;
+  /** Lets a rejected submitter try again without opening the form to unlimited submissions. */
+  allowResubmitAfterRejection: boolean;
+
+  /** Whether a single rejection ends a submitter's ability to appeal. */
+  blockReappealAfterRejection: boolean;
+  /** How many rejected appeals a submitter may accumulate before being locked out. */
+  maxAppealAttempts?: number | null;
+  /** Days a submitter must wait after a rejection before appealing again. */
+  reappealCooldownDays?: number | null;
+  /** Days after the ban before a first appeal may be filed. */
+  appealDelayDays?: number | null;
+
+  /** Comma separated roles added on approval, applied alongside the removals. */
+  approvalAddRoleIds?: string;
+  /** Comma separated roles removed on approval. */
+  approvalRemoveRoleIds?: string;
+  /** Comma separated roles added on rejection. */
+  rejectionAddRoleIds?: string;
+  /** Comma separated roles removed on rejection. */
+  rejectionRemoveRoleIds?: string;
+
   createdBy: bigint;
   createdAt: string;
   updatedAt: string;
   responseCount?: number;
   pendingCount?: number;
+  /** How many questions the form asks, shown on its card. */
+  questionCount?: number;
 }
 
 export interface FormQuestion {
@@ -124,6 +176,9 @@ export interface FormQuestion {
   // Answer piping
   enableAnswerPiping: boolean;
 
+  /** Image shown above the question, used to illustrate what is being asked. */
+  imageUrl?: string | null;
+
   createdAt: string;
   options?: FormQuestionOption[];
   conditions?: FormQuestionCondition[];
@@ -163,6 +218,11 @@ export interface FormResponse {
   ipAddress?: string;
   messageId?: bigint;
   answers?: FormAnswer[];
+
+  /** When the submitter last changed their answers, or null when they never have. */
+  editedAt?: string | null;
+  /** The form version this response was submitted against. */
+  formVersionId?: number | null;
 }
 
 export interface FormAnswer {
@@ -171,8 +231,37 @@ export interface FormAnswer {
   questionId: number;
   answerText?: string;
   answerValues?: string[];
+
+  /** The question as it was worded when the answer was given, so old responses stay readable. */
+  questionText?: string | null;
+  /** The kind of input the question presented at the time. */
+  questionType?: QuestionType | null;
+  /** The answer rendered for reading, with option values resolved to their labels. */
+  answerDisplay?: string | null;
+  /** The form version this answer was given against. */
+  formVersionId?: number | null;
+
   createdAt: string;
   question?: FormQuestion;
+}
+
+/** A whole form as sent to the save endpoint. */
+export interface FormSaveRequest {
+  form: Partial<Form>;
+  questions: FormQuestionSaveRequest[];
+  /** Who is saving, recorded against the version this creates. */
+  userId?: bigint;
+}
+
+/** One question within a whole-form save, with everything hanging off it. */
+export interface FormQuestionSaveRequest {
+  /**
+   * The question. An id of 0 creates a new one; anything else updates in place, which keeps
+   * conditions, answer piping and stored responses pointing at the right question.
+   */
+  question: Partial<FormQuestion>;
+  options: Partial<FormQuestionOption>[];
+  conditions: Partial<FormQuestionCondition>[];
 }
 
 export interface FormSubmissionRequest {
@@ -192,11 +281,22 @@ export interface FormSubmissionResponse {
 }
 
 export interface PaginatedResponses {
-  responses: FormResponse[];
+  responses: QueuedResponse[];
   totalCount: number;
   page: number;
   pageSize: number;
   totalPages: number;
+  /** How many responses sit in each review state, ignoring the current filter. */
+  statusCounts: Partial<Record<ResponseStatus, number>>;
+}
+
+/** One response as it appears in the review queue, with its review state and answers attached. */
+export interface QueuedResponse {
+  response: FormResponse;
+  workflow: FormResponseWorkflow | null;
+  answers: FormAnswer[];
+  /** How many times the submitter has edited it. */
+  revisionCount: number;
 }
 
 export interface FormResponseWorkflow {
@@ -207,6 +307,13 @@ export interface FormResponseWorkflow {
   reviewedAt?: string;
   reviewNotes?: string;
   actionTaken: number; // 0=None, 1=Unbanned, 2=InviteSent, 3=RolesPreassigned, 4=RolesAssigned, 5=RolesRemoved
+
+  /**
+   * Whether the decision could not be delivered to the submitter by direct message, so a reviewer
+   * can see that the person was never told.
+   */
+  dmFailed?: boolean;
+
   inviteCode?: string;
   inviteExpiresAt?: string;
   statusCheckToken: string;
@@ -226,6 +333,91 @@ export interface EligibilityCheckRequest {
 export interface EligibilityCheckResponse {
   isEligible: boolean;
   reason?: string;
+  /**
+   * When a temporary refusal lifts, so the page can count down to it rather than leaving the
+   * reader to guess. Null when the refusal is permanent.
+   */
+  retryAt?: string | null;
+}
+
+/**
+ * The emotes on the approve and reject buttons. A form may override either; null at both levels
+ * falls back to a plain tick and cross.
+ */
+export interface FormReviewEmotes {
+  approveEmote?: string | null;
+  rejectEmote?: string | null;
+}
+
+/** A form's saved history, and the cap on how much of it is kept. */
+export interface FormVersionList {
+  /** How many versions are retained before the oldest are dropped. */
+  versionsKept: number;
+  versions: FormVersion[];
+}
+
+/** A saved snapshot of a form, taken every time it is saved. */
+export interface FormVersion {
+  id: number;
+  versionNumber: number;
+  questionCount: number;
+  createdBy?: bigint | null;
+  createdAt: string;
+}
+
+/** One difference between a saved version of a form and the version before it. */
+export interface FormVersionChange {
+  kind: "Added" | "Changed" | "Removed";
+  section: string;
+  label: string;
+  before?: string | null;
+  after?: string | null;
+}
+
+/** A submitter's partly filled copy of a form. */
+export interface FormDraft {
+  hasDraft: boolean;
+  answers?: Record<string, string | string[]>;
+  page?: number;
+  updatedAt?: string;
+}
+
+/** One of a person's submissions, as it appears on the page listing everything they have sent. */
+export interface UserSubmission {
+  responseId: number;
+  formId: number;
+  formName: string;
+  guildId: bigint;
+  guildName?: string | null;
+  guildIconUrl?: string | null;
+  status: ResponseStatus;
+  submittedAt: string;
+  editedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewNotes?: string | null;
+  statusToken?: string | null;
+  canEdit: boolean;
+}
+
+/** An earlier version of a response's answers, kept when the submitter edits it. */
+export interface FormResponseRevision {
+  id: number;
+  editedBy?: bigint | null;
+  createdAt: string;
+  answers: Array<{
+    questionId: number;
+    questionText?: string | null;
+    questionType?: QuestionType | null;
+    answerText?: string | null;
+    answerValues?: string[] | null;
+    answerDisplay?: string | null;
+  }>;
+}
+
+/** Per-question validation errors returned when a submission is refused. */
+export interface FormValidationErrorResponse {
+  message: string;
+  errors: Record<string, string>;
 }
 
 export interface ApprovalRequest {
@@ -250,6 +442,27 @@ export interface ResponseStatusResponse {
   inviteCode?: string;
   inviteExpiresAt?: string;
   actionTaken: string;
+
+  /** Whether the decision could not be delivered to the submitter by direct message. */
+  dmFailed?: boolean;
+
+  responseId?: number;
+  formId?: number;
+  formName?: string | null;
+  /** The form's public share code, so the submitter can be pointed back at the form itself. */
+  shareCode?: string | null;
+
+  /** The server the response was sent to, so a bare status link still has context. */
+  guildId?: bigint | null;
+  guildName?: string | null;
+  guildIconUrl?: string | null;
+  submittedAt?: string;
+  editedAt?: string | null;
+
+  /** Whether the submitter may still correct their answers. */
+  canEdit?: boolean;
+  /** Why they may not, when they may not. */
+  editReason?: string | null;
 }
 
 export interface QuestionTypeMetadata {
@@ -326,7 +539,62 @@ export const QUESTION_TYPES: QuestionTypeMetadata[] = [
     supportsOptions: false,
     supportsValidation: false,
   },
+  {
+    type: "section_break",
+    label: "Section Break",
+    icon: "fa-grip-lines",
+    description: "Splits the form into pages, answering nothing itself",
+    supportsOptions: false,
+    supportsValidation: false,
+  },
 ];
+
+/** Question types that take no answer and exist only to lay the form out. */
+export function isPresentational(type: QuestionType | undefined): boolean {
+  return type === "section_break";
+}
+
+/** One page of a form: the section break heading it, and the questions on it. */
+export interface FormPage {
+  /** The section break heading this page, or null for a first page that has none. */
+  heading: FormQuestion | null;
+  /** Index of that heading in the flat question list, or -1 when there is none. */
+  headingIndex: number;
+  /** The questions on this page, in order. */
+  questions: FormQuestion[];
+  /** Indices of those questions in the flat question list. */
+  questionIndices: number[];
+}
+
+/**
+ * Splits questions into the pages a submitter fills in one at a time.
+ *
+ * A page is stored as the section break that heads it followed by its questions, which is the flat
+ * list the API and the stored form both use. This is the one place that shape is interpreted, so
+ * the builder and the public form cannot disagree about where a page begins. The break itself is
+ * never returned among the questions, because it asks nothing.
+ */
+export function paginateQuestions(questions: FormQuestion[]): FormPage[] {
+  const pages: FormPage[] = [];
+
+  let current: FormPage = { heading: null, headingIndex: -1, questions: [], questionIndices: [] };
+
+  questions.forEach((question, index) => {
+    if (question.questionType === "section_break") {
+      // A break at the very top heads the first page rather than creating an empty one above it.
+      if (current.questions.length > 0 || current.heading) pages.push(current);
+      current = { heading: question, headingIndex: index, questions: [], questionIndices: [] };
+      return;
+    }
+
+    current.questions.push(question);
+    current.questionIndices.push(index);
+  });
+
+  pages.push(current);
+
+  return pages;
+}
 
 export const CONDITIONAL_OPERATORS: Array<{
   value: ConditionalOperator;

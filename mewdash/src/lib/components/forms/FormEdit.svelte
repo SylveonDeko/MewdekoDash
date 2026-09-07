@@ -17,6 +17,13 @@
     ROLE_ACTION_TYPES
   } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { userStore } from "$lib/stores/userStore";
+  import { isSafeUrl } from "$lib/utils/formMarkdown";
+  import FormVersionHistory from "./FormVersionHistory.svelte";
+  import FormTypeScope from "./FormTypeScope.svelte";
+  import { paginateQuestions } from "$lib/api/forms/models";
+  import EmojiPicker from "./EmojiPicker.svelte";
+  import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fly, slide, fade } from "svelte/transition";
@@ -69,6 +76,43 @@
   let rejectionActionType = $state<number>(0);
   let rejectionRoleIds = $state<string[]>([]);
 
+  // Reviewing from Discord
+  let reviewerRoleId = $state<string>("");
+  let approveEmote = $state<string | null>(null);
+  let rejectEmote = $state<string | null>(null);
+
+  /** The guild's defaults, shown as the placeholder when a form does not override them. */
+  let guildApproveEmote = $state<string | null>(null);
+  let guildRejectEmote = $state<string | null>(null);
+  let guildEmojis = $state<any[]>([]);
+
+  // Scheduling and launch announcement
+  let opensAt = $state<string>("");
+  let announceChannelId = $state<string>("");
+  let announceRoleId = $state<string>("");
+  let announceMessage = $state<string>("");
+
+  // Roles applied around submission and review
+  let notifyRoleId = $state<string>("");
+  let submitRoleIds = $state<string[]>([]);
+  let pendingRoleId = $state<string>("");
+
+  // Decision roles, split so one decision can both grant and revoke
+  let approvalAddRoleIds = $state<string[]>([]);
+  let approvalRemoveRoleIds = $state<string[]>([]);
+  let rejectionAddRoleIds = $state<string[]>([]);
+  let rejectionRemoveRoleIds = $state<string[]>([]);
+
+  // Eligibility gates
+  let minAccountAgeDays = $state<number | null>(null);
+  let allowResubmitAfterRejection = $state(false);
+
+  // Appeal policy, which only applies to ban appeal forms
+  let blockReappealAfterRejection = $state(false);
+  let maxAppealAttempts = $state<number | null>(null);
+  let reappealCooldownDays = $state<number | null>(null);
+  let appealDelayDays = $state<number | null>(null);
+
   // Questions
   let questions = $state<FormQuestion[]>([]);
   let editingQuestionId = $state<number | null>(null);
@@ -88,6 +132,11 @@
   let mobileIdx = $derived(mobileEditingQuestionIndex ?? 0);
 
   // Accordion states for mobile
+  let showVersionHistory = $state(false);
+
+  /** The selected form type as the integer the scoping component and the API both use. */
+  let formTypeInt = $derived(formTypeToInt(formType));
+
   let expandedSections = $state({
     basicSettings: true,
     advancedOptions: false,
@@ -117,7 +166,7 @@
     try {
       channels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
-      console.error("Failed to load channels:", err);
+      logger.error("Failed to load channels:", err);
     }
   }
 
@@ -127,7 +176,24 @@
       const rolesData = await clientApi.getRoles($currentGuild.id);
       roles = rolesData.map((r) => ({ id: r.id, name: r.name }));
     } catch (err) {
-      console.error("Failed to load roles:", err);
+      logger.error("Failed to load roles:", err);
+    }
+  }
+
+  async function loadReviewEmoteContext() {
+    if (!$currentGuild?.id || !$userStore?.id) return;
+
+    try {
+      const [emojis, defaults] = await Promise.all([
+        clientApi.getEmojis(BigInt($userStore.id), false).catch(() => []),
+        formsApi.getReviewEmotes($currentGuild.id).catch(() => null)
+      ]);
+
+      guildEmojis = emojis || [];
+      guildApproveEmote = defaults?.approveEmote ?? null;
+      guildRejectEmote = defaults?.rejectEmote ?? null;
+    } catch (err) {
+      logger.error("Failed to load review emote settings:", err);
     }
   }
 
@@ -162,6 +228,32 @@
         approvalRoleIds = existingForm.approvalRoleIds?.split(",").filter(x => x) || [];
         rejectionActionType = existingForm.rejectionActionType || 0;
         rejectionRoleIds = existingForm.rejectionRoleIds?.split(",").filter(x => x) || [];
+
+        opensAt = existingForm.opensAt ? new Date(existingForm.opensAt).toISOString().slice(0, 16) : "";
+        announceChannelId = existingForm.announceChannelId?.toString() || "";
+        announceRoleId = existingForm.announceRoleId?.toString() || "";
+        announceMessage = existingForm.announceMessage || "";
+
+        notifyRoleId = existingForm.notifyRoleId?.toString() || "";
+        reviewerRoleId = existingForm.reviewerRoleId?.toString() || "";
+        approveEmote = existingForm.approveEmote || null;
+        rejectEmote = existingForm.rejectEmote || null;
+        submitRoleIds = existingForm.submitRoleIds?.split(",").filter(x => x) || [];
+        pendingRoleId = existingForm.pendingRoleId?.toString() || "";
+
+        approvalAddRoleIds = existingForm.approvalAddRoleIds?.split(",").filter(x => x) || [];
+        approvalRemoveRoleIds = existingForm.approvalRemoveRoleIds?.split(",").filter(x => x) || [];
+        rejectionAddRoleIds = existingForm.rejectionAddRoleIds?.split(",").filter(x => x) || [];
+        rejectionRemoveRoleIds = existingForm.rejectionRemoveRoleIds?.split(",").filter(x => x) || [];
+
+        minAccountAgeDays = existingForm.minAccountAgeDays ?? null;
+        allowResubmitAfterRejection = existingForm.allowResubmitAfterRejection || false;
+
+        blockReappealAfterRejection = existingForm.blockReappealAfterRejection || false;
+        maxAppealAttempts = existingForm.maxAppealAttempts ?? null;
+        reappealCooldownDays = existingForm.reappealCooldownDays ?? null;
+        appealDelayDays = existingForm.appealDelayDays ?? null;
+
         questions = loadedQuestions;
       } catch (err) {
         onShowNotification("Failed to load form", "error");
@@ -171,6 +263,199 @@
     }, "api", "Loading form...");
   }
 
+  /**
+   * The form split into the pages a submitter fills in one at a time, so the builder can present
+   * pages as pages, which is how somebody thinks about a long form. Split by the same helper the
+   * public form uses, so the two cannot disagree about where a page begins.
+   */
+  let builderPages = $derived(paginateQuestions(questions));
+
+  /** Which page the builder is showing. */
+  let activePage = $state(0);
+
+  let safePage = $derived(Math.min(activePage, Math.max(0, builderPages.length - 1)));
+  let currentBuilderPage = $derived(builderPages[safePage]);
+
+  /** The section break heading the current page, when it has one. */
+  let currentPageHeading = $derived(currentBuilderPage?.heading ?? null);
+
+  let isPagedForm = $derived(builderPages.length > 1);
+
+  /** Names a page for its tab, falling back to its number when it has no heading. */
+  function pageLabel(index: number): string {
+    const heading = builderPages[index]?.heading?.questionText?.trim();
+    return heading ? heading : `Page ${index + 1}`;
+  }
+
+  /**
+   * The questions as the save endpoint wants them: each with its options and conditions, in
+   * display order. A question keeps its identifier so conditions, answer piping and past
+   * responses stay pointed at it; a new one carries zero and gets one back.
+   */
+  function buildQuestionPayload() {
+    return questions
+      .filter((q) => q.questionType === "section_break" || q.questionText?.trim())
+      .map((question) => ({
+        question: {
+          id: question.id || 0,
+          questionText: sanitizeQuestionText(question.questionText ?? ""),
+          questionType: question.questionType,
+          isRequired: question.questionType === "section_break" ? false : question.isRequired || false,
+          placeholder: question.placeholder ? sanitizeInput(question.placeholder) : undefined,
+          imageUrl: question.imageUrl || undefined,
+          minValue: question.minValue,
+          maxValue: question.maxValue,
+          minLength: question.minLength,
+          maxLength: question.maxLength,
+          enableAnswerPiping: question.enableAnswerPiping || false,
+          conditionalType: question.conditionalType || 0,
+          conditionalParentQuestionId: question.conditionalParentQuestionId,
+          conditionalOperator: question.conditionalOperator,
+          conditionalExpectedValue: question.conditionalExpectedValue
+            ? sanitizeInput(question.conditionalExpectedValue)
+            : undefined,
+          conditionalRoleIds: question.conditionalRoleIds,
+          conditionalRoleLogic: question.conditionalRoleLogic,
+          conditionalDaysInServer: question.conditionalDaysInServer,
+          conditionalAccountAgeDays: question.conditionalAccountAgeDays,
+          conditionalRequiresBoost: question.conditionalRequiresBoost,
+          conditionalRequiresNitro: question.conditionalRequiresNitro,
+          conditionalPermissionFlags: question.conditionalPermissionFlags,
+          requiredWhenParentQuestionId: question.requiredWhenParentQuestionId,
+          requiredWhenOperator: question.requiredWhenOperator,
+          requiredWhenValue: question.requiredWhenValue
+        },
+        options: supportsOptions(question.questionType)
+          ? (question.options ?? [])
+              .filter((o) => o.optionText?.trim())
+              .map((option) => ({
+                optionText: sanitizeInput(option.optionText),
+                optionValue: sanitizeInput(option.optionValue || option.optionText)
+              }))
+          : [],
+        conditions: question.conditions ?? []
+      }));
+  }
+
+  /** Renumbers every question so display order matches the order they sit in the list. */
+  function resequence(list: FormQuestion[]): FormQuestion[] {
+    list.forEach((q, i) => (q.displayOrder = i));
+    return list;
+  }
+
+  /**
+   * Starts a new page after the current one, by appending a section break. Everything added from
+   * then on lands on the new page.
+   */
+  function addPage() {
+    const breakQuestion: FormQuestion = {
+      id: 0,
+      formId: formId,
+      questionText: "",
+      questionType: "section_break",
+      isRequired: false,
+      displayOrder: questions.length,
+      createdAt: new Date().toISOString(),
+      options: [],
+      conditionalType: 0,
+      enableAnswerPiping: false
+    };
+
+    const insertAt = endOfPage(safePage);
+
+    questions = resequence([
+      ...questions.slice(0, insertAt),
+      breakQuestion,
+      ...questions.slice(insertAt)
+    ]);
+
+    activePage = safePage + 1;
+  }
+
+  /** Gives the first page a heading, which it does not have until a break is put above it. */
+  function addHeadingToFirstPage() {
+    const breakQuestion: FormQuestion = {
+      id: 0,
+      formId: formId,
+      questionText: "",
+      questionType: "section_break",
+      isRequired: false,
+      displayOrder: 0,
+      createdAt: new Date().toISOString(),
+      options: [],
+      conditionalType: 0,
+      enableAnswerPiping: false
+    };
+
+    questions = resequence([breakQuestion, ...questions]);
+  }
+
+  /** Where a page ends in the flat list, which is where the next one begins. */
+  function endOfPage(pageIndex: number): number {
+    const page = builderPages[pageIndex];
+    if (!page) return questions.length;
+
+    const next = builderPages[pageIndex + 1];
+    if (next) return next.headingIndex >= 0 ? next.headingIndex : questions.length;
+
+    return questions.length;
+  }
+
+  /** Where a page begins in the flat list, counting its heading. */
+  function startOfPage(pageIndex: number): number {
+    const page = builderPages[pageIndex];
+    if (!page) return 0;
+
+    if (page.headingIndex >= 0) return page.headingIndex;
+
+    return page.questionIndices.length > 0 ? page.questionIndices[0] : 0;
+  }
+
+  /** The whole page, heading and questions together, as one block to move around. */
+  function pageBlock(pageIndex: number): FormQuestion[] {
+    return questions.slice(startOfPage(pageIndex), endOfPage(pageIndex));
+  }
+
+  /**
+   * Swaps a page with its neighbour, moving its heading and every question on it together.
+   * Only pages that have a heading can move, because the first page without one is defined by
+   * being at the top.
+   */
+  function movePage(direction: "back" | "forward") {
+    const target = direction === "back" ? safePage - 1 : safePage + 1;
+
+    if (target < 0 || target >= builderPages.length) return;
+    if (startOfPage(Math.min(safePage, target)) === 0 && builderPages[0].headingIndex < 0) {
+      onShowNotification("Give the first page a heading before moving pages around", "error");
+      return;
+    }
+
+    const first = Math.min(safePage, target);
+    const second = Math.max(safePage, target);
+
+    const before = questions.slice(0, startOfPage(first));
+    const firstBlock = pageBlock(first);
+    const secondBlock = pageBlock(second);
+    const after = questions.slice(endOfPage(second));
+
+    questions = resequence([...before, ...secondBlock, ...firstBlock, ...after]);
+    activePage = target;
+  }
+
+  /**
+   * Removes a page break, which merges that page's questions into the one before it. The questions
+   * are kept, since deleting somebody's questions as a side effect of tidying up the page layout
+   * would be its own kind of rude.
+   */
+  function removePage() {
+    if (!currentBuilderPage || currentBuilderPage.headingIndex < 0) return;
+
+    const headingIndex = currentBuilderPage.headingIndex;
+
+    questions = resequence(questions.filter((_, i) => i !== headingIndex));
+    activePage = Math.max(0, safePage - 1);
+  }
+
   function addQuestion(type: QuestionType) {
     const newQuestion: FormQuestion = {
       id: 0, // Will be assigned by backend
@@ -178,17 +463,24 @@
       questionText: "",
       questionType: type,
       isRequired: false,
-      displayOrder: questions.length,
+      displayOrder: 0,
       createdAt: new Date().toISOString(),
       options: [],
       conditionalType: 0, // Default to QuestionBased
       enableAnswerPiping: false
     };
 
-    questions = [...questions, newQuestion];
+    // A new question joins the page being edited, not the end of the whole form.
+    const insertAt = endOfPage(safePage);
+
+    questions = resequence([
+      ...questions.slice(0, insertAt),
+      newQuestion,
+      ...questions.slice(insertAt)
+    ]);
 
     if (isMobile) {
-      mobileEditingQuestionIndex = questions.length - 1;
+      mobileEditingQuestionIndex = insertAt;
       showMobileQuestionEditor = true;
     } else {
       editingQuestionId = newQuestion.id;
@@ -208,21 +500,34 @@
       ...question,
       id: 0,
       questionText: question.questionText + " (Copy)",
-      displayOrder: questions.length,
+      displayOrder: 0,
       createdAt: new Date().toISOString(),
       options: question.options?.map((opt) => ({ ...opt, id: 0 }))
     };
-    questions = [...questions, duplicated];
+
+    // The copy goes directly below the original, where somebody duplicating a question is looking,
+    // rather than at the far end of the form on whatever page happens to be last.
+    questions = resequence([
+      ...questions.slice(0, index + 1),
+      duplicated,
+      ...questions.slice(index + 1)
+    ]);
   }
 
+  /**
+   * Moves a question one place within its own page. A move stops at a page boundary rather than
+   * carrying the question onto the next page, because reordering and re-paging are different
+   * intentions and the arrows only claim to do the first.
+   */
   function moveQuestion(index: number, direction: "up" | "down") {
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= questions.length) return;
 
+    if (questions[newIndex].questionType === "section_break") return;
+
     const newQuestions = [...questions];
     [newQuestions[index], newQuestions[newIndex]] = [newQuestions[newIndex], newQuestions[index]];
-    newQuestions.forEach((q, i) => (q.displayOrder = i));
-    questions = newQuestions;
+    questions = resequence(newQuestions);
   }
 
   function addOption(questionIndex: number) {
@@ -287,7 +592,7 @@
         const validationErrors = validateForm(formName, questions);
         if (validationErrors.length > 0) {
           onShowNotification(validationErrors[0].message, "error");
-          console.error("Validation errors:", validationErrors);
+          logger.error("Validation errors:", validationErrors);
           return;
         }
 
@@ -300,8 +605,7 @@
           throw new Error("Missing form data");
         }
 
-        // Update form - Start with ALL existing fields, then override only what changed
-        await formsApi.updateForm(formId, {
+        const settings = {
           ...existingForm, // ✅ Preserve ALL existing fields
           // Override with edited values
           name: sanitizedName,
@@ -326,62 +630,53 @@
           approvalActionType: formType === "Regular" && requireApproval ? approvalActionType : 0,
           approvalRoleIds: formType === "Regular" && requireApproval && approvalRoleIds.length > 0 ? approvalRoleIds.join(",") : undefined,
           rejectionActionType: formType === "Regular" && requireApproval ? rejectionActionType : 0,
-          rejectionRoleIds: formType === "Regular" && requireApproval && rejectionRoleIds.length > 0 ? rejectionRoleIds.join(",") : undefined
+          rejectionRoleIds: formType === "Regular" && requireApproval && rejectionRoleIds.length > 0 ? rejectionRoleIds.join(",") : undefined,
+
+          opensAt: opensAt || undefined,
+          announceChannelId: announceChannelId ? BigInt(announceChannelId) : undefined,
+          announceRoleId: announceRoleId ? BigInt(announceRoleId) : undefined,
+          announceMessage: announceMessage || undefined,
+
+          notifyRoleId: notifyRoleId ? BigInt(notifyRoleId) : undefined,
+          reviewerRoleId: reviewerRoleId ? BigInt(reviewerRoleId) : undefined,
+          approveEmote: approveEmote || undefined,
+          rejectEmote: rejectEmote || undefined,
+          // An anonymous form records no submitter, so there is nobody whose roles could change.
+          submitRoleIds: !allowAnonymous && submitRoleIds.length > 0 ? submitRoleIds.join(",") : undefined,
+          pendingRoleId: !allowAnonymous && pendingRoleId ? BigInt(pendingRoleId) : undefined,
+
+          approvalAddRoleIds: !allowAnonymous && approvalAddRoleIds.length > 0 ? approvalAddRoleIds.join(",") : undefined,
+          approvalRemoveRoleIds: !allowAnonymous && approvalRemoveRoleIds.length > 0 ? approvalRemoveRoleIds.join(",") : undefined,
+          rejectionAddRoleIds: !allowAnonymous && rejectionAddRoleIds.length > 0 ? rejectionAddRoleIds.join(",") : undefined,
+          rejectionRemoveRoleIds: !allowAnonymous && rejectionRemoveRoleIds.length > 0 ? rejectionRemoveRoleIds.join(",") : undefined,
+
+          minAccountAgeDays: minAccountAgeDays || undefined,
+          allowResubmitAfterRejection,
+
+          // Appeal limits only mean anything where there is an appeal to limit.
+          blockReappealAfterRejection: formType === "BanAppeal" ? blockReappealAfterRejection : false,
+          maxAppealAttempts: formType === "BanAppeal" ? maxAppealAttempts || undefined : undefined,
+          reappealCooldownDays: formType === "BanAppeal" ? reappealCooldownDays || undefined : undefined,
+          appealDelayDays: formType === "BanAppeal" ? appealDelayDays || undefined : undefined
+        };
+
+        await formsApi.saveForm($currentGuild!.id, {
+          form: { ...settings, id: formId },
+          questions: buildQuestionPayload(),
+          userId: $userStore?.id ? BigInt($userStore.id) : undefined
         });
-
-        // Delete all existing questions first (backend will handle cascade)
-        const existingQuestions = await formsApi.getFormQuestions(formId);
-        for (const q of existingQuestions) {
-          await formsApi.deleteQuestion(q.id);
-        }
-
-        // Re-create questions with new order and data
-        for (const question of questions) {
-          if (!question.questionText?.trim()) continue;
-
-          const sanitizedQuestionText = sanitizeQuestionText(question.questionText);
-
-          const createdQuestion = await formsApi.addQuestion(formId, {
-            questionText: sanitizedQuestionText,
-            questionType: question.questionType,
-            isRequired: question.isRequired || false,
-            displayOrder: question.displayOrder,
-            placeholder: question.placeholder ? sanitizeInput(question.placeholder) : undefined,
-            minValue: question.minValue,
-            maxValue: question.maxValue,
-            minLength: question.minLength,
-            maxLength: question.maxLength,
-            conditionalParentQuestionId: question.conditionalParentQuestionId,
-            conditionalOperator: question.conditionalOperator,
-            conditionalExpectedValue: question.conditionalExpectedValue
-              ? sanitizeInput(question.conditionalExpectedValue)
-              : undefined
-          });
-
-          // Add options if applicable
-          if (
-            question.options &&
-            question.options.length > 0 &&
-            ["multiple_choice", "checkboxes", "dropdown"].includes(question.questionType)
-          ) {
-            for (const option of question.options) {
-              if (!option.optionText?.trim()) continue;
-
-              await formsApi.addQuestionOption(createdQuestion.id, {
-                optionText: sanitizeInput(option.optionText),
-                optionValue: sanitizeInput(option.optionValue || option.optionText),
-                displayOrder: option.displayOrder
-              });
-            }
-          }
-        }
 
         onShowNotification("Form updated successfully!", "success");
         setTimeout(() => onSuccess(), 1500);
-      } catch (err) {
-        console.error("Failed to update form:", err);
+      } catch (err: any) {
+        logger.error("Failed to update form:", err);
+
+        const reasons = err?.body?.errors;
+
         onShowNotification(
-          err instanceof Error ? err.message : "Failed to update form",
+          Array.isArray(reasons) && reasons.length > 0
+            ? reasons.join(". ")
+            : err?.message || "Failed to update form",
           "error"
         );
       }
@@ -392,6 +687,7 @@
     checkMobile();
     loadChannels();
     loadRoles();
+    loadReviewEmoteContext();
     loadForm();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -654,14 +950,16 @@
                   />
                 </div>
 
-                <!-- Required Role (only for Regular forms) -->
-                {#if formType === "Regular"}
+                <!-- A required role gates who may open the form, which only makes sense on a form
+                     for people already in the server. -->
+                <FormTypeScope formType={formTypeInt} types={[0]} animate={false}>
                   <div>
                     <label for="required-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
                       <i class="fa-solid fa-shield mr-1"></i>
                       Required Role (Optional)
                     </label>
                     <DiscordSelector
+                      id="required-role"
                       type="role"
                       options={roles}
                       selected={requiredRoleId}
@@ -669,8 +967,304 @@
                       onchange={(e) => (requiredRoleId = e.selected as string)}
                     />
                   </div>
+                </FormTypeScope>
+
+                <!-- Opening time. Whether the form accepts a response is judged on submission, so
+                     this schedules the form itself, not just the announcement below. -->
+                <div>
+                  <label for="opens-at" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                    <i class="fa-solid fa-calendar-day mr-1"></i>
+                    Opens at (Optional)
+                  </label>
+                  <input
+                    id="opens-at"
+                    type="datetime-local"
+                    bind:value={opensAt}
+                    class="w-full p-2 rounded-lg text-sm"
+                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                  />
+                </div>
+
+                <!-- Minimum account age -->
+                <div>
+                  <label for="min-account-age" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                    <i class="fa-solid fa-user-clock mr-1"></i>
+                    Min account age in days (Optional)
+                  </label>
+                  <input
+                    id="min-account-age"
+                    type="number"
+                    bind:value={minAccountAgeDays}
+                    min="0"
+                    class="w-full p-2 rounded-lg text-sm"
+                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                    placeholder="Any age"
+                  />
+                </div>
+
+                <!-- Reviewer ping -->
+                <div>
+                  <label for="notify-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                    <i class="fa-solid fa-bell mr-1"></i>
+                    Ping on new response (Optional)
+                  </label>
+                  <DiscordSelector
+                    type="role"
+                    options={roles}
+                    selected={notifyRoleId}
+                    placeholder="Select a role..."
+                    onchange={(e) => (notifyRoleId = e.selected as string)}
+                  />
+                </div>
+
+                {#if !allowAnonymous}
+                  <!-- Role held while a response waits, removed automatically on any decision -->
+                  <div>
+                    <label for="pending-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                      <i class="fa-solid fa-hourglass-half mr-1"></i>
+                      Pending role (Optional)
+                    </label>
+                    <DiscordSelector
+                      type="role"
+                      options={roles}
+                      selected={pendingRoleId}
+                      placeholder="Select a role..."
+                      onchange={(e) => (pendingRoleId = e.selected as string)}
+                    />
+                  </div>
+
+                  <!-- Roles granted the moment somebody submits -->
+                  <div>
+                    <label for="submit-roles" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                      <i class="fa-solid fa-user-check mr-1"></i>
+                      Roles granted on submit (Optional)
+                    </label>
+                    <DiscordSelector
+                      type="role"
+                      options={roles}
+                      selected={submitRoleIds}
+                      multiple={true}
+                      placeholder="Select roles..."
+                      onchange={(e) => (submitRoleIds = e.selected as string[])}
+                    />
+                  </div>
                 {/if}
               </div>
+
+              <!-- Reviewing from Discord. Approve and reject buttons ride along with the
+                   submission, so moderators can work the queue without dashboard access. -->
+              {#if requireApproval || formType !== "Regular"}
+                <div
+                  class="mt-4 p-4 rounded-lg space-y-3"
+                  style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
+                  transition:slide
+                >
+                  <div class="text-sm font-semibold" style="color: {$colorStore.text};">
+                    <i class="fa-solid fa-gavel mr-2"></i>
+                    Reviewing in Discord
+                  </div>
+                  <p class="text-xs" style="color: {$colorStore.muted};">
+                    Each submission posted to the channel above carries approve and reject buttons.
+                    Rejecting asks for a reason, which is sent to the submitter.
+                  </p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label for="reviewer-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Who may decide
+                      </label>
+                      <DiscordSelector
+                        id="reviewer-role"
+                        type="role"
+                        options={roles}
+                        selected={reviewerRoleId}
+                        placeholder="Anyone with Manage Server"
+                        onchange={(e) => (reviewerRoleId = e.selected as string)}
+                      />
+                    </div>
+
+                    <div>
+                      <label for="approve-emote" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Approve button emote
+                      </label>
+                      <EmojiPicker
+                        id="approve-emote"
+                        {guildEmojis}
+                        bind:selected={approveEmote}
+                        multiple={false}
+                        placeholder={guildApproveEmote || "✅ (server default)"}
+                        searchable={true}
+                        groupByGuild={true}
+                      />
+                    </div>
+
+                    <div>
+                      <label for="reject-emote" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Reject button emote
+                      </label>
+                      <EmojiPicker
+                        id="reject-emote"
+                        {guildEmojis}
+                        bind:selected={rejectEmote}
+                        multiple={false}
+                        placeholder={guildRejectEmote || "❌ (server default)"}
+                        searchable={true}
+                        groupByGuild={true}
+                      />
+                    </div>
+                  </div>
+
+                  <p class="text-xs" style="color: {$colorStore.muted};">
+                    Leave an emote empty to use the server default, which is set on the Forms page.
+                  </p>
+                </div>
+              {/if}
+
+              <!-- Launch announcement -->
+              {#if opensAt}
+                <div
+                  class="mt-4 p-4 rounded-lg space-y-3"
+                  style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
+                  transition:slide
+                >
+                  <div class="text-sm font-semibold" style="color: {$colorStore.text};">
+                    <i class="fa-solid fa-bullhorn mr-2"></i>
+                    Launch announcement
+                  </div>
+                  <p class="text-xs" style="color: {$colorStore.muted};">
+                    Posted once the opening time passes. The message carries a countdown to the
+                    closing time when one is set.
+                  </p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label for="announce-channel" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Announce in
+                      </label>
+                      <DiscordSelector
+                        type="channel"
+                        options={channels}
+                        selected={announceChannelId}
+                        placeholder="Select a channel..."
+                        onchange={(e) => (announceChannelId = e.selected as string)}
+                      />
+                    </div>
+
+                    <div>
+                      <label for="announce-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Ping role (Optional)
+                      </label>
+                      <DiscordSelector
+                        type="role"
+                        options={roles}
+                        selected={announceRoleId}
+                        placeholder="Select a role..."
+                        onchange={(e) => (announceRoleId = e.selected as string)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="announce-message" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                      Message (Optional)
+                    </label>
+                    <textarea
+                      id="announce-message"
+                      bind:value={announceMessage}
+                      rows="2"
+                      maxlength="2000"
+                      class="w-full p-2 rounded-lg text-sm resize-none"
+                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                      placeholder="This form is now open."
+                    ></textarea>
+                  </div>
+
+                  {#if existingForm?.announcedAt}
+                    <div class="text-xs" style="color: {$colorStore.muted};">
+                      <i class="fa-solid fa-check mr-1"></i>
+                      Announced {new Date(existingForm.announcedAt).toLocaleString()}. Changing the
+                      opening time will not send it again.
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Appeal policy, which is what stops one person filing the same appeal daily -->
+              <FormTypeScope formType={formTypeInt} types={[1]}>
+                <div
+                  class="mt-4 p-4 rounded-lg space-y-3"
+                  style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
+                >
+                  <div class="text-sm font-semibold" style="color: {$colorStore.text};">
+                    <i class="fa-solid fa-gavel mr-2"></i>
+                    Appeal limits
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label for="appeal-delay" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Wait after ban (days)
+                      </label>
+                      <input
+                        id="appeal-delay"
+                        type="number"
+                        bind:value={appealDelayDays}
+                        min="0"
+                        class="w-full p-2 rounded-lg text-sm"
+                        style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                        placeholder="None"
+                      />
+                    </div>
+
+                    <div>
+                      <label for="max-appeals" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Max attempts
+                      </label>
+                      <input
+                        id="max-appeals"
+                        type="number"
+                        bind:value={maxAppealAttempts}
+                        min="1"
+                        disabled={blockReappealAfterRejection}
+                        class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
+                        style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                        placeholder="Unlimited"
+                      />
+                    </div>
+
+                    <div>
+                      <label for="reappeal-cooldown" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
+                        Cooldown after rejection (days)
+                      </label>
+                      <input
+                        id="reappeal-cooldown"
+                        type="number"
+                        bind:value={reappealCooldownDays}
+                        min="0"
+                        disabled={blockReappealAfterRejection}
+                        class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
+                        style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                        placeholder="None"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between p-2.5 rounded-lg"
+                       style="background: {$colorStore.primary}08;">
+                    <div class="text-sm" style="color: {$colorStore.text};">
+                      One rejection is final
+                      <div class="text-xs" style="color: {$colorStore.muted};">
+                        Overrides the attempt count and cooldown above
+                      </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" class="sr-only peer" bind:checked={blockReappealAfterRejection} />
+                      <div class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+                           style="background: {blockReappealAfterRejection ? $colorStore.primary : $colorStore.primary + '30'};"></div>
+                    </label>
+                  </div>
+                </div>
+              </FormTypeScope>
 
               <!-- Options Grid -->
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
@@ -704,8 +1298,9 @@
                   </label>
                 </div>
 
-                <!-- Allow Anonymous (only for Regular forms) -->
-                {#if formType === "Regular"}
+                <!-- An appeal or an application has to know who sent it, so anonymity is only
+                     offered on a plain form. -->
+                <FormTypeScope formType={formTypeInt} types={[0]} animate={false}>
                   <div class="flex items-center justify-between p-2.5 rounded-lg"
                        style="background: {$colorStore.primary}08;">
                     <div class="text-sm" style="color: {$colorStore.text};">
@@ -720,7 +1315,7 @@
                       ></span>
                     </label>
                   </div>
-                {/if}
+                </FormTypeScope>
 
                 <!-- Multiple Submissions -->
                 <div class="flex items-center justify-between p-2.5 rounded-lg"
@@ -736,6 +1331,24 @@
                     ></span>
                   </label>
                 </div>
+
+                <!-- Lets somebody who was turned down try again, without opening the form up to
+                     unlimited submissions from everybody. -->
+                {#if !allowMultipleSubmissions}
+                  <div class="flex items-center justify-between p-2.5 rounded-lg"
+                       style="background: {$colorStore.primary}08;">
+                    <div class="text-sm" style="color: {$colorStore.text};">
+                      Allow retry after rejection
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" class="sr-only peer" bind:checked={allowResubmitAfterRejection} />
+                      <span
+                        class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
+                        style:background-color={allowResubmitAfterRejection ? $colorStore.primary : "#4b5563"}
+                      ></span>
+                    </label>
+                  </div>
+                {/if}
 
                 <!-- Require Captcha -->
                 <div class="flex items-center justify-between p-2.5 rounded-lg"
@@ -825,12 +1438,12 @@
       {/if}
     </div>
 
-    <!-- Approval Workflow Settings (Regular Forms Only) -->
-    {#if formType === "Regular"}
+    <!-- An appeal and an application always review, so opting into review is only a choice on a
+         plain form. -->
+    <FormTypeScope formType={formTypeInt} types={[0]}>
       <div
         class=" rounded-xl border p-4 sm:p-6 transition-all"
         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-        transition:slide
       >
         {#if isMobile}
           <button
@@ -902,6 +1515,52 @@
                   <h3 class="font-semibold" style="color: {$colorStore.text};">When Approved</h3>
                 </div>
 
+                {#if !allowAnonymous}
+                  <!-- Additions and removals are applied together, so an approval can hand over the
+                       role somebody applied for and take away their applicant tag in one step,
+                       rather than as two decisions that can half fail. -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label for="approval-add-roles" class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                        <i class="fa-solid fa-plus mr-1"></i>
+                        Roles to add
+                      </label>
+                      <DiscordSelector
+                        id="approval-add-roles"
+                        type="role"
+                        options={roles}
+                        selected={approvalAddRoleIds}
+                        multiple={true}
+                        placeholder="Select roles..."
+                        onchange={(e) => (approvalAddRoleIds = e.selected as string[])}
+                      />
+                    </div>
+
+                    <div>
+                      <label for="approval-remove-roles" class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                        <i class="fa-solid fa-minus mr-1"></i>
+                        Roles to remove
+                      </label>
+                      <DiscordSelector
+                        id="approval-remove-roles"
+                        type="role"
+                        options={roles}
+                        selected={approvalRemoveRoleIds}
+                        multiple={true}
+                        placeholder="Select roles..."
+                        onchange={(e) => (approvalRemoveRoleIds = e.selected as string[])}
+                      />
+                    </div>
+                  </div>
+
+                  {#if pendingRoleId}
+                    <p class="text-xs" style="color: {$colorStore.muted};">
+                      The pending role is taken off automatically on any decision, so it does not
+                      need listing here.
+                    </p>
+                  {/if}
+                {/if}
+
                 <!-- Approval Action Type -->
                 <div>
                   <label for="f-FormEdit-action-type-907" class="block text-sm mb-2" style="color: {$colorStore.muted};">
@@ -959,6 +1618,42 @@
                   <h3 class="font-semibold" style="color: {$colorStore.text};">When Rejected</h3>
                 </div>
 
+                {#if !allowAnonymous}
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label for="rejection-add-roles" class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                        <i class="fa-solid fa-plus mr-1"></i>
+                        Roles to add
+                      </label>
+                      <DiscordSelector
+                        id="rejection-add-roles"
+                        type="role"
+                        options={roles}
+                        selected={rejectionAddRoleIds}
+                        multiple={true}
+                        placeholder="Select roles..."
+                        onchange={(e) => (rejectionAddRoleIds = e.selected as string[])}
+                      />
+                    </div>
+
+                    <div>
+                      <label for="rejection-remove-roles" class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                        <i class="fa-solid fa-minus mr-1"></i>
+                        Roles to remove
+                      </label>
+                      <DiscordSelector
+                        id="rejection-remove-roles"
+                        type="role"
+                        options={roles}
+                        selected={rejectionRemoveRoleIds}
+                        multiple={true}
+                        placeholder="Select roles..."
+                        onchange={(e) => (rejectionRemoveRoleIds = e.selected as string[])}
+                      />
+                    </div>
+                  </div>
+                {/if}
+
                 <!-- Rejection Action Type -->
                 <div>
                   <label for="f-FormEdit-action-type-964" class="block text-sm mb-2" style="color: {$colorStore.muted};">
@@ -1015,7 +1710,7 @@
                   <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
                   <div style="color: {$colorStore.muted};">
                     <strong>Note:</strong> Approval workflow requires users to be guild members for role actions to
-                    work. Submissions will appear in the "Pending" tab until reviewed.
+                    work. Submissions appear under Responses, filtered to Pending, until reviewed.
                   </div>
                 </div>
               </div>
@@ -1023,14 +1718,13 @@
           </div>
         {/if}
       </div>
-    {/if}
+    </FormTypeScope>
 
     <!-- Join Application Settings -->
-    {#if formType === "JoinApplication"}
+    <FormTypeScope formType={formTypeInt} types={[2]}>
       <div
         class=" rounded-xl border p-4 sm:p-6 transition-all"
         style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-        transition:slide
       >
         {#if isMobile}
           <button
@@ -1116,7 +1810,7 @@
           </div>
         {/if}
       </div>
-    {/if}
+    </FormTypeScope>
 
     <!-- Questions Section -->
     <div
@@ -1128,6 +1822,17 @@
           <i class="fa-solid fa-question-circle mr-2" style="color: {$colorStore.primary};"></i>
           Questions
         </h2>
+        <div class="flex items-center gap-2">
+        <button
+          onclick={addPage}
+          class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+          style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
+          type="button"
+          title="Splits the form here, so what follows is a separate page"
+        >
+          <i class="fa-solid fa-file-circle-plus mr-2"></i>
+          Add page
+        </button>
         <button
           onclick={() => (showQuestionTypeMenu = !showQuestionTypeMenu)}
           onmousemove={(e) => !isMobile && handleButtonMouseMove(e, 'add-question')}
@@ -1157,6 +1862,7 @@
               Add Question
             </span>
         </button>
+        </div>
       </div>
 
       <!-- Question Type Menu -->
@@ -1169,8 +1875,11 @@
           <p class="text-sm mb-3 font-medium" style="color: {$colorStore.text};">
             Select Question Type:
           </p>
+          <!-- Section breaks are not offered here. They are what a page is made of, and pages have
+               their own controls above, so letting one be added as a "question" would give two
+               ways to do the same thing that disagree with each other. -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {#each QUESTION_TYPES as qType, qIndex}
+            {#each QUESTION_TYPES.filter((t) => t.type !== "section_break") as qType, qIndex}
               <button
                 onclick={() => addQuestion(qType.type)}
                 onmousemove={(e) => !isMobile && handleButtonMouseMove(e, `qtype-${qType.type}`)}
@@ -1214,6 +1923,105 @@
         </div>
       {/if}
 
+      <!-- Pages. A long form is split at its section breaks and edited a page at a time, which is
+           how somebody thinks about it, rather than as one very long list. -->
+      {#if isPagedForm}
+        <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+          {#each builderPages as _, index}
+            <button
+              type="button"
+              onclick={() => (activePage = index)}
+              class="flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all max-w-[14rem] truncate"
+              style="background: {safePage === index ? $colorStore.primary + '25' : $colorStore.primary + '08'};
+                     color: {safePage === index ? $colorStore.text : $colorStore.muted};
+                     border: 1px solid {safePage === index ? $colorStore.primary + '40' : $colorStore.primary + '20'};"
+              title={pageLabel(index)}
+            >
+              {index + 1}. {pageLabel(index)}
+            </button>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- The heading and blurb the submitter reads at the top of this page -->
+      {#if currentPageHeading}
+        <div
+          class="mb-4 p-3 rounded-lg space-y-2"
+          style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-medium" style="color: {$colorStore.muted};">
+              <i class="fa-solid fa-heading mr-1"></i>
+              Page {safePage + 1} heading
+            </span>
+
+            <div class="flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                onclick={() => movePage("back")}
+                disabled={safePage === 0}
+                class="text-xs px-2 py-1.5 rounded transition-colors disabled:opacity-30"
+                style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+              >
+                <i class="fa-solid fa-arrow-left mr-1"></i>Move back
+              </button>
+              <button
+                type="button"
+                onclick={() => movePage("forward")}
+                disabled={safePage >= builderPages.length - 1}
+                class="text-xs px-2 py-1.5 rounded transition-colors disabled:opacity-30"
+                style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+              >
+                Move forward<i class="fa-solid fa-arrow-right ml-1"></i>
+              </button>
+              <button
+                type="button"
+                onclick={removePage}
+                class="text-xs px-2 py-1.5 rounded transition-colors"
+                style="background: #ef444420; color: #ef4444;"
+                title="Removes the page break. Its questions join the page above."
+              >
+                <i class="fa-solid fa-trash mr-1"></i>Remove page
+              </button>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            value={currentPageHeading.questionText || ""}
+            oninput={(e) => updateQuestion(currentBuilderPage.headingIndex, { questionText: e.currentTarget.value })}
+            maxlength="500"
+            placeholder="Page title, shown above its questions"
+            class="w-full p-2 rounded-lg text-sm"
+            style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
+            aria-label="Page title"
+          />
+
+          <textarea
+            value={currentPageHeading.placeholder || ""}
+            oninput={(e) => updateQuestion(currentBuilderPage.headingIndex, { placeholder: e.currentTarget.value })}
+            rows="2"
+            maxlength="500"
+            placeholder="Optional introduction for this page"
+            class="w-full p-2 rounded-lg text-sm resize-none"
+            style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
+            aria-label="Page introduction"
+          ></textarea>
+        </div>
+      {:else}
+        <div class="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onclick={addHeadingToFirstPage}
+            class="text-xs px-3 py-2 rounded-lg transition-colors"
+            style="background: {$colorStore.primary}10; color: {$colorStore.muted};"
+          >
+            <i class="fa-solid fa-heading mr-1"></i>
+            Add a heading to this page
+          </button>
+        </div>
+      {/if}
+
       <!-- Questions List -->
       {#if questions.length === 0}
         <div class="text-center py-12">
@@ -1225,9 +2033,20 @@
             No questions yet. Click "Add Question" to get started.
           </p>
         </div>
+      {:else if currentBuilderPage.questionIndices.length === 0}
+        <div class="text-center py-10">
+          <i
+            class="fa-solid fa-clipboard-question mb-3"
+            style="color: {$colorStore.muted}; font-size: 32px; display: block;"
+          ></i>
+          <p class="text-sm" style="color: {$colorStore.muted};">
+            Nothing on this page yet. Anything you add lands here.
+          </p>
+        </div>
       {:else}
         <div class="space-y-3">
-          {#each questions as question, index (question.id || index)}
+          {#each currentBuilderPage.questionIndices as index (questions[index].id || index)}
+            {@const question = questions[index]}
             <div
               draggable={!isMobile}
               ondragstart={() => !isMobile && handleDragStart(index)}
@@ -1342,10 +2161,11 @@
                     style="background: {$colorStore.primary}05; border: 1px solid {$colorStore.primary}20;"
                     transition:slide
                   >
-                    <!-- Placeholder -->
+                    <!-- Placeholder. On a section break this is the blurb under the heading,
+                         which is why the label changes rather than the field disappearing. -->
                     <div>
                         <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                          Placeholder Text
+                          {question.questionType === "section_break" ? "Section description" : "Placeholder Text"}
                         </span>
                       <input
                         type="text"
@@ -1353,10 +2173,42 @@
                         oninput={(e) => updateQuestion(index, { placeholder: e.currentTarget.value })}
                         class="w-full p-2 rounded-lg"
                         style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
-                        placeholder="e.g., Type your answer here..."
+                        placeholder={question.questionType === "section_break"
+                          ? "Shown under the section heading"
+                          : "e.g., Type your answer here..."}
                         aria-label="Placeholder text"
                       />
                     </div>
+
+                    {#if question.questionType !== "section_break"}
+                      <!-- An illustrated question, for the ones easier to show than to describe -->
+                      <div>
+                        <span class="block text-sm mb-2" style="color: {$colorStore.muted};">
+                          Image URL (Optional)
+                        </span>
+                        <input
+                          type="url"
+                          value={question.imageUrl || ""}
+                          oninput={(e) => updateQuestion(index, { imageUrl: e.currentTarget.value })}
+                          class="w-full p-2 rounded-lg"
+                          style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20; color: {$colorStore.text};"
+                          placeholder="https://..."
+                          aria-label="Question image URL"
+                        />
+                        {#if question.imageUrl && !isSafeUrl(question.imageUrl)}
+                          <p class="text-xs mt-1" style="color: #ef4444;">
+                            Only http and https addresses can be shown.
+                          </p>
+                        {:else if question.imageUrl}
+                          <img
+                            src={question.imageUrl}
+                            alt=""
+                            class="mt-2 rounded-lg max-h-32 w-auto"
+                            style="border: 1px solid {$colorStore.primary}20;"
+                          />
+                        {/if}
+                      </div>
+                    {/if}
 
                     <!-- Required Toggle -->
                     <div class="flex items-center gap-2">
@@ -1518,6 +2370,36 @@
               {/if}
             </div>
           {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Version history -->
+    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+      <button
+        type="button"
+        onclick={() => (showVersionHistory = !showVersionHistory)}
+        class="w-full flex items-center justify-between p-3 rounded-lg"
+        style="background: {$colorStore.primary}08;"
+      >
+        <span class="text-sm font-medium" style="color: {$colorStore.text};">
+          <i class="fa-solid fa-clock-rotate-left mr-2"></i>
+          Version history
+        </span>
+        <i class="fa-solid fa-chevron-{showVersionHistory ? 'up' : 'down'}"
+           style="color: {$colorStore.muted};"></i>
+      </button>
+
+      {#if showVersionHistory && $userStore?.id}
+        <div class="mt-4" transition:slide>
+          <FormVersionHistory
+            {formId}
+            userId={BigInt($userStore.id)}
+            onRestored={() => {
+              loadForm();
+              onShowNotification("Form restored", "success");
+            }}
+          />
         </div>
       {/if}
     </div>

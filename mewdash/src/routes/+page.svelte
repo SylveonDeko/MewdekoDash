@@ -64,7 +64,7 @@
 
       if (response.ok) {
         guilds = await response.json();
-        console.log(guilds);
+        logger.debug(guilds);
         guilds.sort((a, b) => b.MemberCount - a.MemberCount);
         guilds = guilds.slice(0, MAX_GUILDS_TO_SHOW);
         fetched = true;

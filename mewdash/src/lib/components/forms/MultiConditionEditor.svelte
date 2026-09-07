@@ -9,6 +9,7 @@
     formsApi
   } from "$lib/api/index.ts";
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
   import { slide, fade } from "svelte/transition";
   import DiscordSelector from "./DiscordSelector.svelte";
   import Portal from "$lib/components/ui/Portal.svelte";
@@ -98,7 +99,7 @@
           onConditionsChange();
         })
         .catch((err) => {
-          console.error("Failed to delete condition:", err);
+          logger.error("Failed to delete condition:", err);
           alert("Failed to delete condition");
         })
         .finally(() => {
@@ -160,7 +161,7 @@
             });
             allConditions.push(created);
           } catch (err) {
-            console.error("Failed to save condition:", err);
+            logger.error("Failed to save condition:", err);
             throw err;
           }
         } else {

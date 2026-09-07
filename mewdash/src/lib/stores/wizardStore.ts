@@ -1,5 +1,6 @@
 // Wizard state management store
 import { writable, derived, type Writable } from 'svelte/store';
+import { logger } from '$lib/logger';
 import {
   WizardType,
   DefaultWizardFeatures,
@@ -102,7 +103,7 @@ export const wizardActions = {
       try {
         localStorage.setItem(`wizard_progress_${guildId}`, JSON.stringify(progress));
       } catch (err) {
-        console.warn('Failed to save wizard progress to localStorage:', err);
+        logger.warn('Failed to save wizard progress to localStorage:', err);
       }
     }
   },
@@ -130,7 +131,7 @@ export const wizardActions = {
         try {
           localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
         } catch (err) {
-          console.warn('Failed to save wizard progress:', err);
+          logger.warn('Failed to save wizard progress:', err);
         }
       }
 
@@ -159,7 +160,7 @@ export const wizardActions = {
         try {
           localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
         } catch (err) {
-          console.warn('Failed to save wizard progress:', err);
+          logger.warn('Failed to save wizard progress:', err);
         }
       }
 
@@ -191,7 +192,7 @@ export const wizardActions = {
           try {
             localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
           } catch (err) {
-            console.warn('Failed to save wizard progress:', err);
+            logger.warn('Failed to save wizard progress:', err);
           }
         }
 
@@ -226,7 +227,7 @@ export const wizardActions = {
           try {
             localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
           } catch (err) {
-            console.warn('Failed to save wizard progress:', err);
+            logger.warn('Failed to save wizard progress:', err);
           }
         }
 
@@ -329,7 +330,7 @@ export const wizardActions = {
 
       return true;
     } catch (err) {
-      console.warn('Failed to restore wizard progress:', err);
+      logger.warn('Failed to restore wizard progress:', err);
       return false;
     }
   },
@@ -343,7 +344,7 @@ export const wizardActions = {
     try {
       localStorage.removeItem(`wizard_progress_${guildId}`);
     } catch (err) {
-      console.warn('Failed to clear stored wizard progress:', err);
+      logger.warn('Failed to clear stored wizard progress:', err);
     }
   }
 };

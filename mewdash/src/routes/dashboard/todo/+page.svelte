@@ -2,6 +2,7 @@
 <script lang="ts">
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
   import { fly, scale } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -154,7 +155,7 @@
       }
       
     } catch (err) {
-      console.error("Failed to load todo lists:", err);
+      logger.error("Failed to load todo lists:", err);
       error = "Failed to load todo lists. Please try again.";
     } finally {
       loading = false;
@@ -179,7 +180,7 @@
       calculateStats();
       
     } catch (err) {
-      console.error("Failed to load todo items:", err);
+      logger.error("Failed to load todo items:", err);
       error = "Failed to load todo items. Please try again.";
     }
   }
@@ -259,7 +260,7 @@
       };
 
     } catch (err) {
-      console.error("Failed to check permissions:", err);
+      logger.error("Failed to check permissions:", err);
       return {
         canView: false,
         canAdd: false,
@@ -317,7 +318,7 @@
       await loadTodoLists();
       
     } catch (err) {
-      console.error("Failed to create todo list:", err);
+      logger.error("Failed to create todo list:", err);
       error = "Failed to create todo list. Please try again.";
     }
   }
@@ -339,7 +340,7 @@
       }
       
     } catch (err) {
-      console.error("Failed to add todo item:", err);
+      logger.error("Failed to add todo item:", err);
       error = "Failed to add todo item. Please try again.";
     }
   }
@@ -351,7 +352,7 @@
       await todoApi.completeTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
       await loadTodoItems();
     } catch (err) {
-      console.error("Failed to complete todo item:", err);
+      logger.error("Failed to complete todo item:", err);
       error = "Failed to complete todo item. Please try again.";
     }
   }
@@ -363,7 +364,7 @@
       await todoApi.deleteTodoItem($currentGuild.id, detail.itemId, BigInt($userStore.id));
       await loadTodoItems();
     } catch (err) {
-      console.error("Failed to delete todo item:", err);
+      logger.error("Failed to delete todo item:", err);
       error = "Failed to delete todo item. Please try again.";
     }
   }

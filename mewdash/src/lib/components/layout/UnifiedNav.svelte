@@ -283,7 +283,7 @@ A unified navigation component that provides responsive navigation with server a
           checked: true
         };
       } else {
-        console.error(`Nav: Actual error for instance ${instance.botName}:`, err);
+        logger.error(`Nav: Actual error for instance ${instance.botName}:`, err);
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
@@ -482,7 +482,7 @@ A unified navigation component that provides responsive navigation with server a
     
     // Don't do anything if this is already the current instance
     if (previousInstance?.botId === instance.botId) {
-      console.log("Same instance selected, no action needed");
+      logger.debug("Same instance selected, no action needed");
       closeDropdown();
       return;
     }

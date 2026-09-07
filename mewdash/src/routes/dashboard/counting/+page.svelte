@@ -3,6 +3,7 @@
 
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
     import {
       countingApi,
       clientApi,
@@ -158,7 +159,7 @@
       }
 
     } catch (err) {
-      console.error("Failed to load counting data:", err);
+      logger.error("Failed to load counting data:", err);
       error = err instanceof Error ? err.message : "Failed to load counting data";
       showNotificationMessage("Failed to load counting data", "error");
     } finally {
@@ -199,7 +200,7 @@
 
       hasChanges = false;
     } catch (err) {
-      console.error("Failed to load channel details:", err);
+      logger.error("Failed to load channel details:", err);
       showNotificationMessage("Failed to load channel details", "error");
     }
   }
@@ -217,7 +218,7 @@
       );
       leaderboard = leaderboardData.users || [];
     } catch (err) {
-      console.error("Failed to load leaderboard:", err);
+      logger.error("Failed to load leaderboard:", err);
       showNotificationMessage("Failed to load leaderboard", "error");
     }
   }
@@ -246,7 +247,7 @@
       setupStartNumber = 1;
       setupIncrement = 1;
     } catch (err) {
-      console.error("Failed to setup counting channel:", err);
+      logger.error("Failed to setup counting channel:", err);
       showNotificationMessage("Failed to setup counting channel", "error");
     }
   }
@@ -278,7 +279,7 @@
       // Reload channel details
       await loadChannelDetails(selectedChannel.channelId);
     } catch (err) {
-      console.error("Failed to save configuration:", err);
+      logger.error("Failed to save configuration:", err);
       showNotificationMessage("Failed to save configuration", "error");
     }
   }
@@ -304,7 +305,7 @@
       resetNumber = 1;
       resetReason = "";
     } catch (err) {
-      console.error("Failed to reset channel:", err);
+      logger.error("Failed to reset channel:", err);
       showNotificationMessage("Failed to reset channel", "error");
     }
   }
@@ -328,7 +329,7 @@
       // Reset form
       saveReason = "";
     } catch (err) {
-      console.error("Failed to create save point:", err);
+      logger.error("Failed to create save point:", err);
       showNotificationMessage("Failed to create save point", "error");
     }
   }
@@ -348,7 +349,7 @@
         selectedChannel = null;
       }
     } catch (err) {
-      console.error("Failed to disable channel:", err);
+      logger.error("Failed to disable channel:", err);
       showNotificationMessage("Failed to disable channel", "error");
     }
   }

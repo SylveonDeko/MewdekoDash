@@ -1,19 +1,27 @@
 // lib/api/forms/forms.ts
-import { apiRequest } from "../core";
+import { apiDownload, apiRequest } from "../core";
 import type {
   ApprovalResponse,
   EligibilityCheckResponse,
   Form,
   FormQuestion,
   FormQuestionCondition,
+  FormDraft,
   FormQuestionOption,
   FormResponse,
+  FormResponseRevision,
+  FormReviewEmotes,
+  FormSaveRequest,
   FormSubmissionRequest,
   FormSubmissionResponse,
+  FormVersion,
+  FormVersionChange,
+  FormVersionList,
   PaginatedResponses,
   ResponseStatus,
   ResponseStatusResponse,
-  ResponseWithWorkflow
+  ResponseWithWorkflow,
+  UserSubmission
 } from "./models";
 
 /**
@@ -58,6 +66,18 @@ export const formsApi = {
    */
   updateForm: (formId: number, form: Partial<Form>) =>
     apiRequest<{ message: string }>(`forms/${formId}`, "PUT", form),
+
+  /**
+   * Saves a whole form in one request: settings, questions, options and conditions.
+   *
+   * Preferred over the per-question calls, which for a long form meant dozens of sequential
+   * requests and could leave a form half saved if one of them failed.
+   * @param guildId The guild the form belongs to
+   * @param request The form and its questions
+   * @returns The saved form
+   */
+  saveForm: (guildId: bigint, request: FormSaveRequest) =>
+    apiRequest<Form>(`forms/guild/${guildId}/save`, "POST", request),
 
   /**
    * Deletes a form and all associated data
@@ -184,6 +204,33 @@ export const formsApi = {
     ),
 
   /**
+   * Updates an option
+   * @param optionId The option ID
+   * @param option The updated option data
+   * @returns Success message
+   */
+  updateQuestionOption: (
+    optionId: number,
+    option: Partial<FormQuestionOption>,
+  ) =>
+    apiRequest<{ message: string }>(
+      `forms/questions/options/${optionId}`,
+      "PUT",
+      option,
+    ),
+
+  /**
+   * Deletes an option
+   * @param optionId The option ID
+   * @returns Success message
+   */
+  deleteQuestionOption: (optionId: number) =>
+    apiRequest<{ message: string }>(
+      `forms/questions/options/${optionId}`,
+      "DELETE",
+    ),
+
+  /**
    * Gets all conditions for a question
    * @param questionId The question ID
    * @returns List of conditions
@@ -244,10 +291,17 @@ export const formsApi = {
    * @param pageSize Number of responses per page
    * @returns Paginated responses
    */
-  getFormResponses: (formId: number, page: number = 1, pageSize: number = 50) =>
-    apiRequest<PaginatedResponses>(
-      `forms/${formId}/responses?page=${page}&pageSize=${pageSize}`,
-    ),
+  getFormResponses: (
+    formId: number,
+    page: number = 1,
+    pageSize: number = 25,
+    status?: ResponseStatus,
+  ) => {
+    const statusQs = status ? `&status=${status}` : "";
+    return apiRequest<PaginatedResponses>(
+      `forms/${formId}/responses?page=${page}&pageSize=${pageSize}${statusQs}`,
+    );
+  },
 
   /**
    * Gets a specific response with answers
@@ -272,19 +326,8 @@ export const formsApi = {
    * @param formId The form ID
    * @returns CSV file blob
    */
-  exportResponses: async (formId: number): Promise<Blob> => {
-    const response = await fetch(`/api/forms/${formId}/responses/export`, {
-      headers: {
-        "x-api-key": "your-api-key", // This will be set by the proxy
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to export responses");
-    }
-
-    return await response.blob();
-  },
+  exportResponses: (formId: number) =>
+    apiDownload(`forms/${formId}/responses/export`),
 
   // ============================================
   // Workflow Management
@@ -351,4 +394,156 @@ export const formsApi = {
    */
   getResponseStatus: (token: string) =>
     apiRequest<ResponseStatusResponse>(`forms/status/${token}`),
+
+  // ============================================
+  // Guild Defaults
+  // ============================================
+
+  /**
+   * Gets the guild's default review button emotes, which every form falls back to
+   * @param guildId The guild ID
+   * @returns The configured emotes, null where the guild has not set one
+   */
+  getReviewEmotes: (guildId: bigint) =>
+    apiRequest<FormReviewEmotes>(`forms/guild/${guildId}/review-emotes`),
+
+  /**
+   * Sets the guild's default review button emotes
+   * @param guildId The guild ID
+   * @param emotes The emotes to store, empty values restore the built-in tick and cross
+   * @returns Success message
+   */
+  setReviewEmotes: (guildId: bigint, emotes: FormReviewEmotes) =>
+    apiRequest<{ message: string }>(
+      `forms/guild/${guildId}/review-emotes`,
+      "POST",
+      emotes,
+    ),
+
+  // ============================================
+  // Versions
+  // ============================================
+
+  /**
+   * Lists the saved versions of a form, newest first
+   * @param formId The form ID
+   * @returns The versions, without their snapshots
+   */
+  getFormVersions: (formId: number) =>
+    apiRequest<FormVersionList>(`forms/${formId}/versions`),
+
+  /**
+   * Describes what a saved version changed, compared against the version before it
+   * @param formId The form ID
+   * @param versionNumber The version to describe
+   * @returns The changes, grouped by section
+   */
+  getVersionDiff: (formId: number, versionNumber: number) =>
+    apiRequest<FormVersionChange[]>(
+      `forms/${formId}/versions/${versionNumber}/diff`,
+    ),
+
+  /**
+   * Saves the current state of a form as a new version. A save that changes nothing reuses the
+   * existing version rather than adding a duplicate to the history
+   * @param formId The form ID
+   * @param userId Who made the edit
+   * @returns The saved version
+   */
+  saveFormVersion: (formId: number, userId: bigint) =>
+    apiRequest<FormVersion>(`forms/${formId}/versions`, "POST", userId),
+
+  /**
+   * Puts a form back to the way it was in a saved version
+   * @param formId The form ID
+   * @param versionNumber The version to restore
+   * @param userId Who performed the restore
+   * @returns Success message
+   */
+  restoreFormVersion: (formId: number, versionNumber: number, userId: bigint) =>
+    apiRequest<{ message: string }>(
+      `forms/${formId}/versions/${versionNumber}/restore`,
+      "POST",
+      userId,
+    ),
+
+  // ============================================
+  // Drafts
+  // ============================================
+
+  /**
+   * Reads a submitter's partly filled copy of a form, so they resume where they left off
+   * @param formId The form ID
+   * @param userId The submitter
+   * @returns The draft, or a flag saying there is none
+   */
+  getDraft: (formId: number, userId: bigint) =>
+    apiRequest<FormDraft>(`forms/${formId}/draft/${userId}`),
+
+  /**
+   * Saves what a submitter has filled in so far
+   * @param formId The form ID
+   * @param userId The submitter
+   * @param answers The answers so far, keyed by question ID
+   * @param page The page they had reached
+   * @returns When the draft was saved
+   */
+  saveDraft: (
+    formId: number,
+    userId: bigint,
+    answers: Record<number, string | string[]>,
+    page: number,
+  ) =>
+    apiRequest<{ savedAt: string }>(`forms/${formId}/draft`, "POST", {
+      userId,
+      answers,
+      page,
+    }),
+
+  /**
+   * Discards a submitter's draft, for when they want to start over
+   * @param formId The form ID
+   * @param userId The submitter
+   * @returns Success message
+   */
+  deleteDraft: (formId: number, userId: bigint) =>
+    apiRequest<{ message: string }>(`forms/${formId}/draft/${userId}`, "DELETE"),
+
+  // ============================================
+  // Response Editing
+  // ============================================
+
+  /**
+   * Lists everything a person has submitted, newest first
+   * @param userId The submitter
+   * @param guildId A guild to narrow the list to, or omitted for everything
+   * @returns Their submissions
+   */
+  getUserSubmissions: (userId: bigint, guildId?: bigint) => {
+    const guildQs = guildId ? `?guildId=${guildId}` : "";
+    return apiRequest<UserSubmission[]>(`forms/submissions/${userId}${guildQs}`);
+  },
+
+  /**
+   * Replaces the answers of a response with a corrected set, keeping the original as a revision
+   * @param responseId The response to change
+   * @param request Who is making the change and the corrected answers
+   * @returns The updated response
+   */
+  editResponse: (responseId: number, request: FormSubmissionRequest) =>
+    apiRequest<{ message: string; id: number; editedAt: string }>(
+      `forms/responses/${responseId}`,
+      "PUT",
+      request,
+    ),
+
+  /**
+   * Lists the earlier versions of a response's answers, newest first
+   * @param responseId The response
+   * @returns The revisions and the answers each one held
+   */
+  getResponseRevisions: (responseId: number) =>
+    apiRequest<FormResponseRevision[]>(
+      `forms/responses/${responseId}/revisions`,
+    ),
 };

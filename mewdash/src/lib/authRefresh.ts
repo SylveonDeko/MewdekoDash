@@ -1,5 +1,6 @@
 // Client-side auth refresh handler
 import { browser } from '$app/environment';
+import { logger } from '$lib/logger';
 import { goto } from '$app/navigation';
 import { userStore } from '$lib/stores/userStore';
 import { get } from 'svelte/store';
@@ -53,7 +54,7 @@ export async function performTokenRefresh(): Promise<boolean> {
       return false;
     }
   } catch (error) {
-    console.error('Token refresh error:', error);
+    logger.error('Token refresh error:', error);
     return false;
   } finally {
     isRefreshing = false;

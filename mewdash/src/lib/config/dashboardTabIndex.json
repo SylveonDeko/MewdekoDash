@@ -220,6 +220,11 @@
         "id": "create",
         "label": "Create",
         "icon": "fa-plus"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-sliders"
       }
     ]
   },

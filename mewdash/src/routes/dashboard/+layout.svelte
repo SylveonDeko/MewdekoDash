@@ -139,7 +139,7 @@
       lastWizardCheckKey = checkKey;
 
       const wizardDecision = await wizardApi.shouldShowWizard(BigInt($userStore.id), $currentGuild.id);
-      console.log("Wizard decision:", wizardDecision);
+      logger.debug("Wizard decision:", wizardDecision);
 
       if (wizardDecision.showWizard) {
         // Convert numeric wizard type to string
@@ -237,7 +237,7 @@
       try {
         currentInstance.set(JSON.parse(savedInstance));
       } catch (err) {
-        console.error("Failed to parse saved instance:", err);
+        logger.error("Failed to parse saved instance:", err);
         localStorage.removeItem("selectedInstance");
       }
     }

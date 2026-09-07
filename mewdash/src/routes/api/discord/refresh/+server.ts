@@ -1,4 +1,5 @@
 import { json } from "@sveltejs/kit";
+import { logger } from "$lib/logger";
 import type { RequestHandler } from "./$types";
 import { getOrRefreshToken } from "$lib/server/discordApi";
 
@@ -23,7 +24,7 @@ export const POST: RequestHandler = async (event) => {
       message: "Tokens are valid",
     });
   } catch (error) {
-    console.error("Token refresh error:", error);
+    logger.error("Token refresh error:", error);
     return json(
       {
         success: false,

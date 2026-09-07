@@ -98,3 +98,46 @@ export async function apiRequest<T>(
 
   return parsed as T;
 }
+
+/**
+ * Downloads a file from the Mewdeko backend.
+ *
+ * Goes through the same `/api` proxy as {@link apiRequest}, carrying the selected instance's
+ * port, so a download lands on the instance the dashboard is pointed at rather than on whichever
+ * one the proxy falls back to.
+ * @param endpoint The API endpoint (without /api/ prefix)
+ * @param customFetch Custom fetch function (mainly for SSR)
+ * @returns Promise resolving to the file contents
+ */
+export async function apiDownload(
+  endpoint: string,
+  customFetch: typeof fetch = fetch,
+): Promise<Blob> {
+  const instance = get(currentInstance);
+
+  const response = await customFetch(`/api/${endpoint}`, {
+    headers: {
+      ...(instance ? { "X-Instance-Port": instance.port.toString() } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "");
+
+    let parsed: any = null;
+    try {
+      parsed = responseText ? JSONbig.parse(responseText) : null;
+    } catch {
+      parsed = null;
+    }
+
+    throw new ApiError(
+      errorMessageFrom(parsed, responseText, response.status),
+      response.status,
+      parsed ?? responseText,
+      parsed?.error,
+    );
+  }
+
+  return await response.blob();
+}

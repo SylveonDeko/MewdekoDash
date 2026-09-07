@@ -476,7 +476,7 @@
 
     try {
       const buttonDetails = await ticketApi.getButton($currentGuild.id, buttonId);
-      console.log("Raw button details from API:", buttonDetails);
+      logger.debug("Raw button details from API:", buttonDetails);
       return buttonDetails;
     } catch (err) {
       logger.error("Failed to load button details:", err);
@@ -540,7 +540,7 @@
         openMessageJson: serializeTicketOpenMessage(button.openMessageJson)
       };
 
-      console.log("Sending update request:", updateRequest);
+      logger.debug("Sending update request:", updateRequest);
 
       await ticketApi.updateButton($currentGuild.id, button.id, updateRequest);
 
@@ -652,7 +652,7 @@
 
     try {
       const optionDetails = await ticketApi.getSelectMenuOption($currentGuild.id, optionId);
-      console.log("Raw select option details from API:", optionDetails);
+      logger.debug("Raw select option details from API:", optionDetails);
       return optionDetails;
     } catch (err) {
       logger.error("Failed to load select option details:", err);
@@ -731,7 +731,7 @@
         openMessageJson: serializeTicketOpenMessage(option.openMessageJson)
       };
 
-      console.log("Sending select option update request:", updateRequest);
+      logger.debug("Sending select option update request:", updateRequest);
 
       await ticketApi.updateSelectMenuOption($currentGuild.id, option.id, updateRequest);
 

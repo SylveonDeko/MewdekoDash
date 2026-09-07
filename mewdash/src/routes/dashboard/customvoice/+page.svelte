@@ -3,6 +3,7 @@
 
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
   import {
     clientApi,
     customVoiceApi,
@@ -143,11 +144,11 @@
       }
 
     } catch (err) {
-      console.error("Failed to load custom voice data:", err);
+      logger.error("Failed to load custom voice data:", err);
       error = err instanceof Error ? err.message : "Failed to load custom voice data";
       showNotificationMessage("Failed to load custom voice data", "error");
 
-      console.log(activeChannels)
+      logger.debug(activeChannels)
     } finally {
       loading = false;
     }
@@ -185,7 +186,7 @@
       // Reload data to get updated config
       await loadData();
     } catch (err) {
-      console.error("Failed to save configuration:", err);
+      logger.error("Failed to save configuration:", err);
       showNotificationMessage("Failed to save configuration", "error");
     }
   }
@@ -200,7 +201,7 @@
       // Remove from local array
       activeChannels = activeChannels.filter(ch => ch.channelId !== channelId);
     } catch (err) {
-      console.error("Failed to delete channel:", err);
+      logger.error("Failed to delete channel:", err);
       showNotificationMessage("Failed to delete channel", "error");
     }
   }
@@ -217,7 +218,7 @@
         ch.channelId === channelId ? { ...ch, isLocked: lock } : ch
       );
     } catch (err) {
-      console.error("Failed to update channel:", err);
+      logger.error("Failed to update channel:", err);
       showNotificationMessage("Failed to update channel", "error");
     }
   }

@@ -1,6 +1,7 @@
 <!-- ComponentEditor.svelte -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import EmojiPicker from "$lib/components/forms/EmojiPicker.svelte";
   import { clientApi } from "$lib/api/client/client";
@@ -44,7 +45,7 @@
             guildEmojis = data;
           })
           .catch(err => {
-            console.error("Failed to load guild emojis:", err);
+            logger.error("Failed to load guild emojis:", err);
           })
           .finally(() => {
             emojisLoading = false;

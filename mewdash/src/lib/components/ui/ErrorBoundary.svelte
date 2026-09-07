@@ -2,6 +2,7 @@
 
 
   import { browser } from "$app/environment";
+  import { logger } from "$lib/logger";
     import {onMount} from "svelte";
 
     interface Props {
@@ -27,7 +28,7 @@
     if (browser) {
       // Global error handler for unhandled JavaScript errors
       const handleError = (event: ErrorEvent) => {
-        console.error("Global error caught:", event.error);
+        logger.error("Global error caught:", event.error);
 
         // Prevent error propagation to avoid page freeze
         event.preventDefault();
@@ -44,7 +45,7 @@
 
       // Global handler for unhandled promise rejections
       const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-        console.error("Unhandled promise rejection:", event.reason);
+        logger.error("Unhandled promise rejection:", event.reason);
 
         // Prevent default handling to avoid page freeze
         event.preventDefault();

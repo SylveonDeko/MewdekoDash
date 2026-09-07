@@ -1,0 +1,42 @@
+name: Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+defaults:
+  run:
+    working-directory: mewdash
+
+jobs:
+  checks:
+    name: Type check, lint and generated artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mewdash/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
+
+      # Fails when a page's tabs changed without regenerating the search index.
+      - name: Tab index is current
+        run: npm run check-tab-index
+
+      # Fails on utility duo icons that are not in the font and would render blank.
+      - name: Font Awesome icons are valid
+        run: node fa-icon-search.js --validate

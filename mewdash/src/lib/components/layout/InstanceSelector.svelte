@@ -1,5 +1,6 @@
 <script lang="ts">
   import {onMount} from "svelte";
+  import { logger } from "$lib/logger";
   import { instanceManagementApi, clientApi, type BotInstance } from "$lib/api/index.ts";
   import {currentInstance} from "$lib/stores/instanceStore.ts";
   import {fade, fly} from "svelte/transition";
@@ -65,7 +66,7 @@
       const is404 = err?.message?.includes("404") || err?.status === 404 || err?.response?.status === 404;
 
       if (is404) {
-        console.log(`Instance ${instance.botName}: No mutual guilds (404)`);
+        logger.debug(`Instance ${instance.botName}: No mutual guilds (404)`);
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
@@ -73,7 +74,7 @@
           checked: true
         };
       } else {
-        console.error(`Actual error for instance ${instance.botName}:`, err);
+        logger.error(`Actual error for instance ${instance.botName}:`, err);
         instanceStates[instanceId] = {
           loading: false,
           hasMutualGuild: false,
@@ -91,7 +92,7 @@
     try {
       const response = await instanceManagementApi.getBotInstances();
       instances = response || [];
-      console.log("Loaded instances:", instances);
+      logger.debug("Loaded instances:", instances);
 
       if (instances.length === 0) {
         loading = false;
@@ -125,7 +126,7 @@
 
       checkingInstances = false;
     } catch (err) {
-      console.error("Error loading bot instances:", err);
+      logger.error("Error loading bot instances:", err);
       error = "Failed to load bot instances. Please try again later.";
       checkingInstances = false;
     } finally {

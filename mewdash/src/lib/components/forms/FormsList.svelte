@@ -210,25 +210,41 @@
             </div>
           </div>
 
-          <!-- Form Stats - Tighter spacing -->
-          <div class="p-4 grid grid-cols-2 gap-4">
-            <div class="text-center">
-              <div
-                class="text-2xl font-bold mb-0.5"
-                style="color: {$colorStore.primary};"
-              >
-                {form.responseCount || 0}
+          <!-- Three numbers that answer what somebody scanning this list actually wants to know:
+               how big the form is, how many replies it got, and how many need attention. -->
+          <div class="p-4 grid grid-cols-3 gap-2">
+            <div
+              class="text-center rounded-lg py-2"
+              style="background: {$colorStore.primary}08;"
+            >
+              <div class="text-xl font-bold mb-0.5" style="color: {$colorStore.text};">
+                {form.questionCount ?? 0}
+              </div>
+              <div class="text-xs" style="color: {$colorStore.muted};">Questions</div>
+            </div>
+            <div
+              class="text-center rounded-lg py-2"
+              style="background: {$colorStore.primary}08;"
+            >
+              <div class="text-xl font-bold mb-0.5" style="color: {$colorStore.primary};">
+                {form.responseCount || 0}{#if form.maxResponses}<span
+                    class="text-sm font-normal"
+                    style="color: {$colorStore.muted};">/{form.maxResponses}</span
+                  >{/if}
               </div>
               <div class="text-xs" style="color: {$colorStore.muted};">Responses</div>
             </div>
-            <div class="text-center">
+            <div
+              class="text-center rounded-lg py-2"
+              style="background: {form.pendingCount ? '#f59e0b15' : $colorStore.primary + '08'};"
+            >
               <div
-                class="text-2xl font-bold mb-0.5"
-                style="color: {$colorStore.secondary};"
+                class="text-xl font-bold mb-0.5"
+                style="color: {form.pendingCount ? '#f59e0b' : $colorStore.text};"
               >
-                {form.maxResponses || "∞"}
+                {form.pendingCount || 0}
               </div>
-              <div class="text-xs" style="color: {$colorStore.muted};">Max</div>
+              <div class="text-xs" style="color: {$colorStore.muted};">Pending</div>
             </div>
           </div>
 

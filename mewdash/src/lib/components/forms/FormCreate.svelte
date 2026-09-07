@@ -16,6 +16,7 @@
     ROLE_ACTION_TYPES
   } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fly, slide, fade } from "svelte/transition";
@@ -47,6 +48,23 @@
   let maxResponses = $state<number | null>(null);
   let requireCaptcha = $state(false);
   let expiresAt = $state<string>("");
+
+  // Scheduling and launch announcement
+  let opensAt = $state<string>("");
+  let announceChannelId = $state<string>("");
+  let announceRoleId = $state<string>("");
+  let announceMessage = $state<string>("");
+
+  // Eligibility gates and reviewer notification
+  let notifyRoleId = $state<string>("");
+  let minAccountAgeDays = $state<number | null>(null);
+  let allowResubmitAfterRejection = $state(false);
+
+  // Appeal policy, which only applies to ban appeal forms
+  let blockReappealAfterRejection = $state(false);
+  let maxAppealAttempts = $state<number | null>(null);
+  let reappealCooldownDays = $state<number | null>(null);
+  let appealDelayDays = $state<number | null>(null);
   let requiredRoleId = $state<string>("");
   let successMessage = $state<string>("");
   let saveAsDraft = $state(false);
@@ -112,7 +130,7 @@
     try {
       channels = await clientApi.getTextChannels($currentGuild.id);
     } catch (err) {
-      console.error("Failed to load channels:", err);
+      logger.error("Failed to load channels:", err);
     }
   }
 
@@ -122,7 +140,7 @@
       const rolesData = await clientApi.getRoles($currentGuild.id);
       roles = rolesData.map((r) => ({ id: r.id, name: r.name }));
     } catch (err) {
-      console.error("Failed to load roles:", err);
+      logger.error("Failed to load roles:", err);
     }
   }
 
@@ -244,7 +262,7 @@
         const validationErrors = validateForm(formName, questions);
         if (validationErrors.length > 0) {
           onShowNotification(validationErrors[0].message, "error");
-          console.error("Validation errors:", validationErrors);
+          logger.error("Validation errors:", validationErrors);
           return;
         }
 
@@ -257,8 +275,7 @@
           return;
         }
 
-        // Create form
-        const createdForm = await formsApi.createForm($currentGuild.id, {
+        const settings = {
           name: sanitizedName,
           description: sanitizedDescription,
           submitChannelId: submitChannelId ? BigInt(submitChannelId) : undefined,
@@ -281,56 +298,73 @@
           approvalRoleIds: formType === "Regular" && requireApproval && approvalRoleIds.length > 0 ? approvalRoleIds.join(",") : undefined,
           rejectionActionType: formType === "Regular" && requireApproval ? rejectionActionType : 0,
           rejectionRoleIds: formType === "Regular" && requireApproval && rejectionRoleIds.length > 0 ? rejectionRoleIds.join(",") : undefined,
+
+          opensAt: opensAt || undefined,
+          announceChannelId: announceChannelId ? BigInt(announceChannelId) : undefined,
+          announceRoleId: announceRoleId ? BigInt(announceRoleId) : undefined,
+          announceMessage: announceMessage || undefined,
+
+          notifyRoleId: notifyRoleId ? BigInt(notifyRoleId) : undefined,
+          minAccountAgeDays: minAccountAgeDays || undefined,
+          allowResubmitAfterRejection,
+
+          // Appeal limits only mean anything where there is an appeal to limit.
+          blockReappealAfterRejection: formType === "BanAppeal" ? blockReappealAfterRejection : false,
+          maxAppealAttempts: formType === "BanAppeal" ? maxAppealAttempts || undefined : undefined,
+          reappealCooldownDays: formType === "BanAppeal" ? reappealCooldownDays || undefined : undefined,
+          appealDelayDays: formType === "BanAppeal" ? appealDelayDays || undefined : undefined,
+
           createdBy: BigInt(userId)
+        };
+
+        const createdForm = await formsApi.saveForm($currentGuild.id, {
+          form: settings,
+          questions: questions
+            .filter((q) => q.questionType === "section_break" || q.questionText?.trim())
+            .map((question) => ({
+              question: {
+                id: 0,
+                questionText: sanitizeQuestionText(question.questionText ?? ""),
+                questionType: question.questionType!,
+                isRequired: question.questionType === "section_break" ? false : question.isRequired || false,
+                placeholder: question.placeholder ? sanitizeInput(question.placeholder) : undefined,
+                imageUrl: question.imageUrl || undefined,
+                enableAnswerPiping: question.enableAnswerPiping || false,
+                conditionalType: question.conditionalType || 0,
+                minValue: question.minValue,
+                maxValue: question.maxValue,
+                minLength: question.minLength,
+                maxLength: question.maxLength,
+                conditionalParentQuestionId: question.conditionalParentQuestionId,
+                conditionalOperator: question.conditionalOperator,
+                conditionalExpectedValue: question.conditionalExpectedValue
+                  ? sanitizeInput(question.conditionalExpectedValue)
+                  : undefined
+              },
+              options: ["multiple_choice", "checkboxes", "dropdown"].includes(question.questionType!)
+                ? (question.options ?? [])
+                    .filter((o) => o.optionText?.trim())
+                    .map((option) => ({
+                      optionText: sanitizeInput(option.optionText),
+                      optionValue: sanitizeInput(option.optionValue || option.optionText)
+                    }))
+                : [],
+              conditions: question.conditions ?? []
+            })),
+          userId: BigInt(userId)
         });
-
-        // Create questions
-        for (const question of questions) {
-          if (!question.questionText?.trim()) continue;
-
-          const sanitizedQuestionText = sanitizeQuestionText(question.questionText);
-
-          const createdQuestion = await formsApi.addQuestion(createdForm.id, {
-            questionText: sanitizedQuestionText,
-            questionType: question.questionType!,
-            isRequired: question.isRequired || false,
-            displayOrder: question.displayOrder || 0,
-            placeholder: question.placeholder ? sanitizeInput(question.placeholder) : undefined,
-            minValue: question.minValue,
-            maxValue: question.maxValue,
-            minLength: question.minLength,
-            maxLength: question.maxLength,
-            conditionalParentQuestionId: question.conditionalParentQuestionId,
-            conditionalOperator: question.conditionalOperator,
-            conditionalExpectedValue: question.conditionalExpectedValue
-              ? sanitizeInput(question.conditionalExpectedValue)
-              : undefined
-          });
-
-          // Add options if applicable
-          if (
-            question.options &&
-            question.options.length > 0 &&
-            ["multiple_choice", "checkboxes", "dropdown"].includes(question.questionType!)
-          ) {
-            for (const option of question.options) {
-              if (!option.optionText?.trim()) continue;
-
-              await formsApi.addQuestionOption(createdQuestion.id, {
-                optionText: sanitizeInput(option.optionText),
-                optionValue: sanitizeInput(option.optionValue || option.optionText),
-                displayOrder: option.displayOrder
-              });
-            }
-          }
-        }
 
         onShowNotification("Form created successfully!", "success");
         setTimeout(() => onSuccess(createdForm.id), 1500);
-      } catch (err) {
-        console.error("Failed to create form:", err);
+      } catch (err: any) {
+        logger.error("Failed to create form:", err);
+
+        const reasons = err?.body?.errors;
+
         onShowNotification(
-          err instanceof Error ? err.message : "Failed to create form",
+          Array.isArray(reasons) && reasons.length > 0
+            ? reasons.join(". ")
+            : err?.message || "Failed to create form",
           "error"
         );
       }
@@ -604,6 +638,55 @@
                 />
               </div>
 
+              <!-- Opening time. Whether the form accepts a response is judged on submission, so
+                   this schedules the form itself, not just the announcement. -->
+              <div>
+                <label class="block text-xs mb-1.5" for="opens-at" style="color: {$colorStore.muted};">
+                  <i class="fa-solid fa-calendar-day mr-1"></i>
+                  Opens at (Optional)
+                </label>
+                <input
+                  bind:value={opensAt}
+                  class="w-full p-2 rounded-lg text-sm"
+                  id="opens-at"
+                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                  type="datetime-local"
+                />
+              </div>
+
+              <!-- Minimum account age -->
+              <div>
+                <label class="block text-xs mb-1.5" for="min-account-age" style="color: {$colorStore.muted};">
+                  <i class="fa-solid fa-user-clock mr-1"></i>
+                  Min account age in days (Optional)
+                </label>
+                <input
+                  bind:value={minAccountAgeDays}
+                  class="w-full p-2 rounded-lg text-sm"
+                  id="min-account-age"
+                  min="0"
+                  placeholder="Any age"
+                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                  type="number"
+                />
+              </div>
+
+              <!-- Reviewer ping -->
+              <div>
+                <label class="block text-xs mb-1.5" for="notify-role" style="color: {$colorStore.muted};">
+                  <i class="fa-solid fa-bell mr-1"></i>
+                  Ping on new response (Optional)
+                </label>
+                <DiscordSelector
+                  id="notify-role"
+                  onchange={(e) => (notifyRoleId = e.selected as string)}
+                  options={roles}
+                  placeholder="Select a role..."
+                  selected={notifyRoleId}
+                  type="role"
+                />
+              </div>
+
               <!-- Notification Channel -->
               <div class="{formType === 'Regular' ? '' : 'md:col-span-2'}">
                 <label class="block text-xs mb-1.5" for="submit-channel" style="color: {$colorStore.muted};">
@@ -635,6 +718,149 @@
                 </div>
               {/if}
             </div>
+
+            <!-- Launch announcement -->
+            {#if opensAt}
+              <div
+                class="mt-4 p-4 rounded-lg space-y-3"
+                style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
+                transition:slide
+              >
+                <div class="text-sm font-semibold" style="color: {$colorStore.text};">
+                  <i class="fa-solid fa-bullhorn mr-2"></i>
+                  Launch announcement
+                </div>
+                <p class="text-xs" style="color: {$colorStore.muted};">
+                  Posted once the opening time passes. The message carries a countdown to the
+                  closing time when one is set.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs mb-1.5" for="announce-channel" style="color: {$colorStore.muted};">
+                      Announce in
+                    </label>
+                    <DiscordSelector
+                      id="announce-channel"
+                      onchange={(e) => (announceChannelId = e.selected as string)}
+                      options={channels}
+                      placeholder="Select a channel..."
+                      selected={announceChannelId}
+                      type="channel"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs mb-1.5" for="announce-role" style="color: {$colorStore.muted};">
+                      Ping role (Optional)
+                    </label>
+                    <DiscordSelector
+                      id="announce-role"
+                      onchange={(e) => (announceRoleId = e.selected as string)}
+                      options={roles}
+                      placeholder="Select a role..."
+                      selected={announceRoleId}
+                      type="role"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs mb-1.5" for="announce-message" style="color: {$colorStore.muted};">
+                    Message (Optional)
+                  </label>
+                  <textarea
+                    bind:value={announceMessage}
+                    class="w-full p-2 rounded-lg text-sm resize-none"
+                    id="announce-message"
+                    maxlength="2000"
+                    placeholder="This form is now open."
+                    rows="2"
+                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                  ></textarea>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Appeal policy, which is what stops one person filing the same appeal daily -->
+            {#if formType === "BanAppeal"}
+              <div
+                class="mt-4 p-4 rounded-lg space-y-3"
+                style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
+                transition:slide
+              >
+                <div class="text-sm font-semibold" style="color: {$colorStore.text};">
+                  <i class="fa-solid fa-gavel mr-2"></i>
+                  Appeal limits
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-xs mb-1.5" for="appeal-delay" style="color: {$colorStore.muted};">
+                      Wait after ban (days)
+                    </label>
+                    <input
+                      bind:value={appealDelayDays}
+                      class="w-full p-2 rounded-lg text-sm"
+                      id="appeal-delay"
+                      min="0"
+                      placeholder="None"
+                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                      type="number"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs mb-1.5" for="max-appeals" style="color: {$colorStore.muted};">
+                      Max attempts
+                    </label>
+                    <input
+                      bind:value={maxAppealAttempts}
+                      class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
+                      disabled={blockReappealAfterRejection}
+                      id="max-appeals"
+                      min="1"
+                      placeholder="Unlimited"
+                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                      type="number"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs mb-1.5" for="reappeal-cooldown" style="color: {$colorStore.muted};">
+                      Cooldown after rejection (days)
+                    </label>
+                    <input
+                      bind:value={reappealCooldownDays}
+                      class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
+                      disabled={blockReappealAfterRejection}
+                      id="reappeal-cooldown"
+                      min="0"
+                      placeholder="None"
+                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
+                      type="number"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-2.5 rounded-lg"
+                     style="background: {$colorStore.primary}08;">
+                  <div class="text-sm" style="color: {$colorStore.text};">
+                    One rejection is final
+                    <div class="text-xs" style="color: {$colorStore.muted};">
+                      Overrides the attempt count and cooldown above
+                    </div>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input bind:checked={blockReappealAfterRejection} class="sr-only peer" type="checkbox" />
+                    <span
+                      class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
+                      style:background-color={blockReappealAfterRejection ? $colorStore.primary : "#4b5563"}
+                    ></span>
+                  </label>
+                </div>
+              </div>
+            {/if}
 
             <!-- Options Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -670,6 +896,24 @@
                   ></span>
                 </label>
               </div>
+
+              <!-- Lets somebody who was turned down try again, without opening the form up to
+                   unlimited submissions from everybody. -->
+              {#if !allowMultipleSubmissions}
+                <div class="flex items-center justify-between p-2.5 rounded-lg"
+                     style="background: {$colorStore.primary}08;">
+                  <div class="text-sm" style="color: {$colorStore.text};">
+                    Allow retry after rejection
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input bind:checked={allowResubmitAfterRejection} class="sr-only peer" type="checkbox" />
+                    <span
+                      class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
+                      style:background-color={allowResubmitAfterRejection ? $colorStore.primary : "#4b5563"}
+                    ></span>
+                  </label>
+                </div>
+              {/if}
 
               <!-- Require Captcha -->
               <div class="flex items-center justify-between p-2.5 rounded-lg"

@@ -4,6 +4,10 @@ export interface NavigationItem {
   label: string;
   icon: string;
   href: string;
+  /**
+   * Grouping used by the Dashboard Access page and matched on by search. The sidebar lists
+   * features alphabetically and does not group by this.
+   */
   category: string;
   ownerOnly?: boolean;
   description?: string;
@@ -14,6 +18,14 @@ export interface NavigationItem {
   keywords?: string[];
 }
 
+/**
+ * Every dashboard feature. The sidebar sorts these by label, so the order here does not matter
+ * and a new feature can go anywhere in the list.
+ *
+ * `category` no longer groups the sidebar. It is still what the Dashboard Access page groups its
+ * permission sections by, and it is a field the command palette matches on, so "moderation" finds
+ * things filed under Security.
+ */
 export const allDashboardFeatures: NavigationItem[] = [
   {
     label: "Administration",

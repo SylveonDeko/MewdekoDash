@@ -1,6 +1,7 @@
 // lib/server/discordApi.ts
 import type { Cookies, RequestEvent } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
+import { logger } from "$lib/logger";
 import type { DiscordUser } from "../types/discord";
 import {
   buildSearchParams,
@@ -84,13 +85,13 @@ export async function authenticateUser(
     
     return user;
   } catch (error) {
-    console.error("Authentication error:", error);
+    logger.error("Authentication error:", error);
     // Clear cookies on any authentication error
     try {
       const { deleteCookies } = await import("../../routes/api/discord/discordAuth");
       await deleteCookies(cookies);
     } catch (deleteError) {
-      console.error("Failed to delete cookies in auth error:", deleteError);
+      logger.error("Failed to delete cookies in auth error:", deleteError);
     }
     return null;
   }
@@ -161,7 +162,7 @@ async function tryRefreshToken(
   
   // Check if this token has already failed recently
   if (failedRefreshTokens.has(refreshToken)) {
-    console.log("Skipping refresh attempt for known bad token");
+    logger.debug("Skipping refresh attempt for known bad token");
     return null;
   }
   
@@ -178,7 +179,7 @@ async function tryRefreshToken(
       await setCookies(tokens, event.cookies);
       return tokens.access_token;
     } catch (error) {
-      console.error(`Token refresh attempt ${attempt + 1} failed:`, error);
+      logger.error(`Token refresh attempt ${attempt + 1} failed:`, error);
       
       // If it's a permanent error, mark token as failed and delete cookies immediately
       if (error instanceof Error && 
@@ -199,7 +200,7 @@ async function tryRefreshToken(
           const { deleteCookies } = await import("../../routes/api/discord/discordAuth");
           await deleteCookies(event.cookies);
         } catch (deleteError) {
-          console.error("Failed to delete cookies:", deleteError);
+          logger.error("Failed to delete cookies:", deleteError);
         }
         break;
       }

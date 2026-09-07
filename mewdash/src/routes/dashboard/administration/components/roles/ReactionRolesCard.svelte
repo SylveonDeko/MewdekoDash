@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
+  import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { administrationApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -28,7 +29,7 @@
       await administrationApi.removeReactionRoles($currentGuild.id, index);
       await fetchAllData();
     } catch (err) {
-      console.error("Failed to remove reaction role:", err);
+      logger.error("Failed to remove reaction role:", err);
     }
   }
 

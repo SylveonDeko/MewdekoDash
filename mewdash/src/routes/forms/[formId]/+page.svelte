@@ -11,6 +11,9 @@
     type FormSubmissionRequest,
     instanceManagementApi
   } from "$lib/api/index.ts";
+  import { guildApi } from "$lib/api/index.ts";
+  import { paginateQuestions } from "$lib/api/forms/models";
+  import { isSafeUrl, renderFormText, renderFormTextPlain } from "$lib/utils/formMarkdown";
   import { currentInstance } from "$lib/stores/instanceStore";
   import type { PageData } from "./$types";
   import { colorStore } from "$lib/stores/colorStore";
@@ -41,6 +44,7 @@
   let error = $state<string | null>(null);
   let success = $state(false);
   let turnstileToken = $state<string | undefined>(undefined);
+  let turnstileExpired = $state(false);
   let validationErrors = $state<Record<number, string>>({});
   let isPreviewMode = $state(false);
   let isAdmin = $state(false);
@@ -51,13 +55,70 @@
   let statusCheckToken = $state<string>("");
   let userGuildMember = $state<any>(null); // Guild member data for Discord conditionals
 
+  /**
+   * The server the form belongs to. A public form link arrives with no context at all, so saying
+   * whose form this is matters both on the page and in the link preview.
+   */
+  let guildName = $state<string | null>(null);
+  let guildIconUrl = $state<string | null>(null);
+
+  /**
+   * The response being corrected, when the page was opened from a status link to fix an answer a
+   * reviewer asked about. The whole form is reused rather than reimplemented, so an edit is
+   * checked against exactly the same rules a first submission is.
+   */
+  let editingResponseId = $state<number | null>(null);
+  let editToken = $state<string | null>(null);
+  let isEditing = $derived(editingResponseId !== null);
+
+  /** When a temporary refusal lifts, so the page can count down to it instead of just refusing. */
+  let retryAt = $state<Date | null>(null);
+  let now = $state(new Date());
+
+  /** The page of the form being filled in, counting from zero. */
+  let currentPage = $state(0);
+
+  /** When the draft was last saved, shown so somebody can trust the form is holding their work. */
+  let draftSavedAt = $state<Date | null>(null);
+  let draftRestored = $state(false);
+  let savingDraft = $state(false);
+  let draftTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Computed - Filter visible questions based on ALL conditional types
   let visibleQuestions = $derived(
     questions.filter((q) => shouldShowQuestion(q))
   );
 
+  /**
+   * The form split into pages at its section breaks. Recomputed from the visible questions, so a
+   * page whose every question is conditionally hidden disappears rather than presenting itself as
+   * an empty step somebody has to click through.
+   */
+  let pages = $derived(
+    paginateQuestions(visibleQuestions).filter(
+      (p) => p.questions.length > 0 || p.heading
+    )
+  );
+
+  let isPaginated = $derived(pages.length > 1);
+
+  let pageQuestions = $derived(
+    isPaginated ? (pages[Math.min(currentPage, pages.length - 1)]?.questions ?? []) : visibleQuestions
+  );
+
+  let pageHeading = $derived(
+    isPaginated ? (pages[Math.min(currentPage, pages.length - 1)]?.heading ?? null) : null
+  );
+
+  let isLastPage = $derived(!isPaginated || currentPage >= pages.length - 1);
+
+  /** Questions that actually take an answer, which excludes the section breaks laying out the form. */
+  let answerableQuestions = $derived(
+    visibleQuestions.filter((q) => q.questionType !== "section_break")
+  );
+
   let answeredQuestions = $derived(
-    visibleQuestions.filter((q) => {
+    answerableQuestions.filter((q) => {
       const answer = answers[q.id];
       if (!answer) return false;
       if (typeof answer === "string") return answer.trim().length > 0;
@@ -67,8 +128,59 @@
   );
 
   let progressPercentage = $derived(
-    visibleQuestions.length > 0 ? Math.round((answeredQuestions.length / visibleQuestions.length) * 100) : 0
+    answerableQuestions.length > 0 ? Math.round((answeredQuestions.length / answerableQuestions.length) * 100) : 0
   );
+
+  // Every kind of input writes into `answers`, so watching it here catches the checkboxes and
+  // dropdowns as well as the text fields, rather than each having to remember to save.
+  $effect(() => {
+    // Read the answers so this reruns whenever any of them change.
+    JSON.stringify(answers);
+
+    // An edit already has a stored response behind it, so there is nothing a draft would protect.
+    if (!form || isPreviewMode || isEditing || success || !data.user) return;
+    if (Object.keys(answers).length === 0) return;
+
+    scheduleDraftSave();
+  });
+
+  /** What a screen reader is told when the page changes. */
+  let pageAnnouncement = $derived(
+    pageHeading
+      ? `Page ${currentPage + 1} of ${pages.length}: ${renderFormTextPlain(pageHeading.questionText)}`
+      : `Page ${currentPage + 1} of ${pages.length}`
+  );
+
+  /**
+   * The one line the link preview gets. An anonymous form says so here too, since that is what
+   * somebody reads before deciding whether to open the link at all.
+   */
+  let metaDescription = $derived.by(() => {
+    const summary =
+      form?.description?.trim() ||
+      (guildName ? `A form from ${guildName}` : "Fill out this form");
+
+    return form?.allowAnonymous ? `${summary} Your answers are submitted anonymously.` : summary;
+  });
+
+  /** How long until a temporary refusal lifts, phrased the way somebody would say it out loud. */
+  let retryCountdown = $derived.by(() => {
+    if (!retryAt) return null;
+
+    const seconds = Math.max(0, Math.floor((retryAt.getTime() - now.getTime()) / 1000));
+    if (seconds <= 0) return null;
+
+    const days = Math.floor(seconds / 86400);
+    if (days >= 1) return `${days} day${days === 1 ? "" : "s"}`;
+
+    const hours = Math.floor(seconds / 3600);
+    if (hours >= 1) return `${hours} hour${hours === 1 ? "" : "s"}`;
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes >= 1) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+    return `${seconds} second${seconds === 1 ? "" : "s"}`;
+  });
 
   // Comprehensive conditional evaluation
   function shouldShowQuestion(question: FormQuestion): boolean {
@@ -325,6 +437,9 @@
   }
 
   function validateQuestion(question: FormQuestion): string | null {
+    // A section break lays the form out, it does not ask anything.
+    if (question.questionType === "section_break") return null;
+
     const answer = answers[question.id];
 
     // Check if required (base or conditional)
@@ -435,6 +550,16 @@
       form = await formsApi.getForm(formId);
       questions = await formsApi.getFormQuestions(formId);
 
+      // Loaded before the eligibility check, so even a refused form still says which server
+      // turned the person away.
+      try {
+        const guild = await guildApi.getGuildInfo(form.guildId);
+        guildName = guild?.name ?? null;
+        guildIconUrl = guild?.iconUrl ?? null;
+      } catch {
+        // The form is still perfectly usable without the server's name on it.
+      }
+
       // Load guild member data for Discord-based conditionals
       try {
         userGuildMember = await clientApi.getUser(form.guildId, data.user.id);
@@ -442,21 +567,22 @@
         // Continue anyway - Discord conditionals will show by default
       }
 
-      // Check eligibility for ban appeals and join applications (formType !== 0 means not Regular)
-      if (!isPreviewMode && form.formType !== 0) {
+      // Correcting an existing response is not a new submission, so the checks that stop somebody
+      // submitting twice do not apply to it. Whether the response is still open to changes was
+      // already settled by the status endpoint that sent them here.
+      if (isEditing) {
+        await loadAnswersForEditing();
+        return;
+      }
+
+      // One eligibility call covers every form type. The server holds the whole policy, which is
+      // what stops the page and the submit endpoint disagreeing about who may submit.
+      if (!isPreviewMode) {
         try {
           const eligibilityCheck = await formsApi.checkEligibility(formId, data.user.id);
           if (!eligibilityCheck.isEligible) {
-            // Provide more specific error messages based on form type
-            if (form.formType === 1) {
-              // Ban appeal - user is not banned
-              error = eligibilityCheck.reason || "You are not banned from this server. Ban appeals are only for users who have been banned.";
-            } else if (form.formType === 2) {
-              // Join application - user is already a member or other issue
-              error = eligibilityCheck.reason || "You are not eligible to submit this join application. You may already be a member of this server.";
-            } else {
-              error = eligibilityCheck.reason || "You are not eligible to submit this form";
-            }
+            error = eligibilityCheck.reason || "You are not eligible to submit this form";
+            retryAt = eligibilityCheck.retryAt ? new Date(eligibilityCheck.retryAt) : null;
             // Clear the form so it's not displayed
             form = null;
             questions = [];
@@ -494,33 +620,11 @@
         }
       }
 
-      // Skip validation checks in preview mode
+      // Whether the form is open, expired or full is part of the eligibility answer above, so it
+      // is not re-derived here where the two could drift apart and contradict each other.
+
       if (!isPreviewMode) {
-        if (!form.isActive) {
-          error = "This form is no longer accepting responses";
-          // Clear the form so it's not displayed
-          form = null;
-          questions = [];
-          return;
-        }
-
-        // Check if form has expired
-        if (form.expiresAt && new Date(form.expiresAt) < new Date()) {
-          error = "This form has expired and is no longer accepting responses";
-          // Clear the form so it's not displayed
-          form = null;
-          questions = [];
-          return;
-        }
-
-        // Check if max responses reached
-        if (form.maxResponses && form.responseCount && form.responseCount >= form.maxResponses) {
-          error = "This form has reached its maximum number of responses";
-          // Clear the form so it's not displayed
-          form = null;
-          questions = [];
-          return;
-        }
+        await restoreDraft();
       }
     } catch (err: any) {
       // Check if it's a specific error message
@@ -537,6 +641,141 @@
     }
   }
 
+  /** Fills the form with what the submitter already sent, so they correct it rather than retype it. */
+  async function loadAnswersForEditing() {
+    if (editingResponseId === null) return;
+
+    try {
+      const details = await formsApi.getResponseDetails(editingResponseId);
+
+      const existing: Record<number, string | string[]> = {};
+      for (const answer of details.answers ?? []) {
+        existing[answer.questionId] =
+          answer.answerValues && answer.answerValues.length > 0
+            ? answer.answerValues
+            : (answer.answerText ?? "");
+      }
+
+      answers = existing;
+    } catch {
+      error = "We could not load your answers. Try the link in your submission again.";
+      form = null;
+      questions = [];
+    }
+  }
+
+  /**
+   * Loads whatever the submitter had already typed, so a long form survives a closed tab. A draft
+   * is never validated on the way in, because it is incomplete by definition.
+   */
+  async function restoreDraft() {
+    try {
+      const draft = await formsApi.getDraft(formId, data.user.id);
+      if (!draft?.hasDraft || !draft.answers) return;
+
+      const restored: Record<number, string | string[]> = {};
+      for (const [questionId, value] of Object.entries(draft.answers)) {
+        restored[parseInt(questionId)] = value;
+      }
+
+      answers = restored;
+      currentPage = draft.page ?? 0;
+      draftSavedAt = draft.updatedAt ? new Date(draft.updatedAt) : null;
+      draftRestored = true;
+    } catch {
+      // A draft that cannot be read is not worth blocking the form over. The submitter simply
+      // starts from an empty form, which is where they would have been anyway.
+    }
+  }
+
+  /**
+   * Saves the answers so far. Debounced, because this runs on every keystroke and the point is to
+   * not lose work, not to write a row per character.
+   */
+  function scheduleDraftSave() {
+    if (isPreviewMode || !form || !data.user) return;
+
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 1500);
+  }
+
+  async function saveDraft() {
+    if (isPreviewMode || !form || !data.user || savingDraft) return;
+
+    savingDraft = true;
+
+    try {
+      const result = await formsApi.saveDraft(formId, data.user.id, answers, currentPage);
+      draftSavedAt = new Date(result.savedAt);
+    } catch {
+      // A draft that fails to save is not worth interrupting somebody mid-sentence over. The next
+      // keystroke schedules another attempt.
+    } finally {
+      savingDraft = false;
+    }
+  }
+
+  /** Throws away the saved draft and empties the form, for when somebody wants to start over. */
+  async function discardDraft() {
+    if (draftTimer) clearTimeout(draftTimer);
+
+    answers = {};
+    validationErrors = {};
+    currentPage = 0;
+    draftRestored = false;
+    draftSavedAt = null;
+
+    try {
+      await formsApi.deleteDraft(formId, data.user.id);
+    } catch {
+      // Nothing to do. The answers are already cleared on screen, which is what was asked for.
+    }
+  }
+
+  /** Whether every answer on the current page is acceptable, checked before moving on. */
+  function currentPageIsValid(): boolean {
+    let valid = true;
+
+    for (const question of pageQuestions) {
+      const message = validateQuestion(question);
+
+      if (message) {
+        validationErrors[question.id] = message;
+        valid = false;
+      }
+    }
+
+    validationErrors = { ...validationErrors };
+
+    return valid;
+  }
+
+  function goToNextPage() {
+    // Catching an error here rather than at the end means somebody is told about a missed
+    // question while it is still on screen.
+    if (!currentPageIsValid()) {
+      error = "Please fix the highlighted answers before continuing";
+      return;
+    }
+
+    error = null;
+    currentPage = Math.min(currentPage + 1, pages.length - 1);
+    saveDraft();
+    scrollToTop();
+  }
+
+  function goToPreviousPage() {
+    error = null;
+    currentPage = Math.max(currentPage - 1, 0);
+    scrollToTop();
+  }
+
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   function proceedToConfirmation() {
     // Validate before showing confirmation
     if (!validateAllQuestions()) {
@@ -545,14 +784,10 @@
       return;
     }
 
-    // Check captcha
-    if (form?.requireCaptcha && !turnstileToken) {
-      error = "Please complete the captcha verification";
-      return;
-    }
-
+    // The captcha lives on the review step below, so it is not checked here.
     showConfirmation = true;
     error = null;
+    scrollToTop();
   }
 
   function backToEditing() {
@@ -585,6 +820,16 @@
         premiumType: (data.user as any).premium_type
       };
 
+      if (isEditing) {
+        await formsApi.editResponse(editingResponseId!, request);
+
+        success = true;
+        statusCheckToken = editToken ?? "";
+        statusCheckUrl = editToken ? `/forms/status/${editToken}` : "";
+
+        return;
+      }
+
       const result = await formsApi.submitForm(formId, request);
       success = true;
       statusCheckToken = result.statusCheckToken;
@@ -596,8 +841,34 @@
       }
 
       statusCheckUrl = validatedUrl;
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to submit form";
+
+      if (draftTimer) clearTimeout(draftTimer);
+    } catch (err: any) {
+      // The server checks every answer again on arrival, and reports what failed per question, so
+      // the page marks the answers that need fixing where they sit rather than showing one
+      // message at the foot of a long form.
+      const serverErrors = err?.body?.errors ?? err?.errors;
+
+      if (serverErrors && typeof serverErrors === "object") {
+        const mapped: Record<number, string> = {};
+        for (const [questionId, message] of Object.entries(serverErrors)) {
+          mapped[parseInt(questionId)] = String(message);
+        }
+
+        validationErrors = mapped;
+        showConfirmation = false;
+
+        // Send them back to the first page that actually has a problem on it.
+        const firstBadPage = pages.findIndex((p) =>
+          p.questions.some((q) => mapped[q.id])
+        );
+        if (firstBadPage >= 0) currentPage = firstBadPage;
+
+        error = "Some answers need fixing before this can be submitted";
+      } else {
+        error = err instanceof Error ? err.message : "Failed to submit form";
+      }
+
       success = false;
     } finally {
       submitting = false;
@@ -606,6 +877,16 @@
 
   function onTurnstileSuccess(event: CustomEvent<{ token: string }>) {
     turnstileToken = event.detail.token;
+    turnstileExpired = false;
+  }
+
+  /**
+   * A Turnstile token is short lived, and the server rejects an expired one. Clearing it here
+   * re-locks the submit button rather than letting somebody press it and be refused.
+   */
+  function onTurnstileExpired() {
+    turnstileToken = undefined;
+    turnstileExpired = true;
   }
 
   // Handle text input with Zalgo cleaning
@@ -704,13 +985,62 @@
     }
 
     isPreviewMode = $page.url.searchParams.get("preview") === "true";
+
+    // A status link can send somebody back here to correct an answer. The token proves which
+    // response is theirs, and the server checks ownership again when the edit arrives.
+    const requestedEdit = $page.url.searchParams.get("edit");
+    if (requestedEdit) {
+      try {
+        const status = await formsApi.getResponseStatus(requestedEdit);
+
+        if (status.canEdit && status.responseId) {
+          editToken = requestedEdit;
+          editingResponseId = status.responseId;
+        } else {
+          error = status.editReason ?? "This response can no longer be changed";
+          loading = false;
+          return;
+        }
+      } catch {
+        error = "That edit link is not valid any more";
+        loading = false;
+        return;
+      }
+    }
+
     await loadForm();
+  });
+
+  onMount(() => {
+    // Keeps the "you can try again in..." line honest while somebody sits on the page.
+    const tick = setInterval(() => (now = new Date()), 30_000);
+
+    return () => {
+      clearInterval(tick);
+      if (draftTimer) clearTimeout(draftTimer);
+    };
   });
 </script>
 
 <svelte:head>
   <title>{form?.name || "Form"} - Mewdeko</title>
-  <meta content={form?.description || "Fill out this form"} name="description" />
+  <meta content={metaDescription} name="description" />
+
+  <!-- These forms get shared by pasting the link into Discord, so the unfurl is most of the first
+       impression: whose server is asking, what for, and whether it is anonymous. -->
+  <meta content={form?.name || "Form"} property="og:title" />
+  <meta content={metaDescription} property="og:description" />
+  <meta content="website" property="og:type" />
+  {#if guildIconUrl}
+    <meta content={guildIconUrl} property="og:image" />
+  {/if}
+  <meta content="summary" name="twitter:card" />
+  <meta content={form?.name || "Form"} name="twitter:title" />
+  <meta content={metaDescription} name="twitter:description" />
+  {#if guildIconUrl}
+    <meta content={guildIconUrl} name="twitter:image" />
+  {/if}
+  <meta content={$colorStore.primary} name="theme-color" />
 </svelte:head>
 
 <main
@@ -804,6 +1134,24 @@
         </div>
         <h2 class="text-2xl font-bold mb-4" style="color: #ef4444;">Error</h2>
         <p class="text-lg" style="color: {$colorStore.text};">{error}</p>
+
+        <!-- Some refusals lift on their own. Saying when beats leaving somebody to keep checking. -->
+        {#if retryCountdown}
+          <div
+            class="mt-6 inline-flex items-center gap-2 px-4 py-3 rounded-xl"
+            style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30;"
+          >
+            <i class="fa-solid fa-hourglass-half" style="color: {$colorStore.primary};"></i>
+            <span style="color: {$colorStore.text};">
+              You can try again in about {retryCountdown}
+            </span>
+          </div>
+          {#if retryAt}
+            <p class="text-sm mt-2" style="color: {$colorStore.muted};">
+              {retryAt.toLocaleString()}
+            </p>
+          {/if}
+        {/if}
       </div>
     {:else if success}
       <div class="space-y-6">
@@ -815,9 +1163,13 @@
           <div class="flex justify-center mb-4">
             <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 48px;"></i>
           </div>
-          <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">Success!</h2>
+          <h2 class="text-2xl font-bold mb-4" style="color: #10B981;">
+            {isEditing ? "Answers updated" : "Success!"}
+          </h2>
           <p class="text-lg mb-6" style="color: {$colorStore.text};">
-            {#if form?.successMessage}
+            {#if isEditing}
+              Your changes have been saved and the reviewers can see them.
+            {:else if form?.successMessage}
               {(form.successMessage)}
             {:else if form?.formType === 1}
               Your ban appeal has been submitted and is now pending review.
@@ -1037,15 +1389,29 @@
           style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
           in:fade
         >
-          <div
-            class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-            style="background: linear-gradient(135deg, {$colorStore.primary}30, {$colorStore.secondary}40);"
-          >
-            <i class="fa-solid fa-clipboard-list" style="color: {$colorStore.primary}; font-size: 32px;"></i>
-          </div>
-          <h1 class="text-3xl font-bold mb-3" style="color: {$colorStore.text};">
+          <!-- The server's own icon rather than a generic clipboard, because a public form link
+               arrives with no context and whose form this is comes first. -->
+          {#if guildIconUrl}
+            <img
+              src={guildIconUrl}
+              alt=""
+              class="w-16 h-16 mx-auto mb-4 rounded-full"
+              style="border: 1px solid {$colorStore.primary}30;"
+            />
+          {:else}
+            <div
+              class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+              style="background: linear-gradient(135deg, {$colorStore.primary}30, {$colorStore.secondary}40);"
+            >
+              <i class="fa-solid fa-clipboard-list" style="color: {$colorStore.primary}; font-size: 32px;"></i>
+            </div>
+          {/if}
+          <h1 class="text-3xl font-bold mb-1" style="color: {$colorStore.text};">
             {form.name}
           </h1>
+          {#if guildName}
+            <p class="text-sm mb-3" style="color: {$colorStore.muted};">{guildName}</p>
+          {/if}
           {#if form.description}
             <p class="text-lg" style="color: {$colorStore.muted};">
               {form.description}
@@ -1084,8 +1450,69 @@
           </div>
         </div>
 
+        <!-- Editing an already submitted response -->
+        {#if isEditing}
+          <div
+            class="rounded-xl border p-4"
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}40;"
+            in:slide
+          >
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-pen" style="color: {$colorStore.primary};"></i>
+              <div>
+                <div class="font-semibold" style="color: {$colorStore.text};">
+                  You are changing a response you already sent
+                </div>
+                <div class="text-sm" style="color: {$colorStore.muted};">
+                  The reviewers keep a copy of what you wrote before, so they can see what changed.
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Resumed draft notice -->
+        {#if draftRestored && !isPreviewMode && !isEditing && !showConfirmation}
+          <div
+            class="rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap"
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}40;"
+            in:slide
+          >
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-clock-rotate-left" style="color: {$colorStore.primary};"></i>
+              <div>
+                <div class="font-semibold" style="color: {$colorStore.text};">
+                  We brought back what you had already written
+                </div>
+                {#if draftSavedAt}
+                  <div class="text-sm" style="color: {$colorStore.muted};">
+                    Saved {draftSavedAt.toLocaleString()}
+                  </div>
+                {/if}
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick={discardDraft}
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              style="background: {$colorStore.primary}15; color: {$colorStore.text};"
+            >
+              Start over
+            </button>
+          </div>
+        {/if}
+
+        <!-- Paging happens without a navigation, so the change is announced here. The visible
+             copy below repeats it and is hidden from the accessibility tree, so it is not read
+             out twice. -->
+        {#if isPaginated && !showConfirmation}
+          <p class="sr-only" role="status" aria-live="polite">
+            {pageAnnouncement}
+          </p>
+        {/if}
+
         <!-- Progress Indicator -->
-        {#if visibleQuestions.length > 1 && !isPreviewMode}
+        {#if answerableQuestions.length > 1 && !isPreviewMode}
           <div
             class=" rounded-xl border p-4"
             style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
@@ -1094,8 +1521,16 @@
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-list-check" style="color: {$colorStore.primary};"></i>
-                <span class="font-semibold" style="color: {$colorStore.text};">
-                  Progress: {answeredQuestions.length} of {visibleQuestions.length} questions
+                <span
+                  class="font-semibold"
+                  style="color: {$colorStore.text};"
+                  aria-hidden={isPaginated ? "true" : undefined}
+                >
+                  {#if isPaginated}
+                    Page {currentPage + 1} of {pages.length}, {answeredQuestions.length} of {answerableQuestions.length} answered
+                  {:else}
+                    Progress: {answeredQuestions.length} of {answerableQuestions.length} questions
+                  {/if}
                 </span>
               </div>
               <span class="font-bold" style="color: {$colorStore.primary};">
@@ -1130,14 +1565,14 @@
             </p>
 
             <div class="space-y-4 mb-6">
-              {#each visibleQuestions as question}
+              {#each answerableQuestions as question}
                 {#if answers[question.id]}
                   <div
                     class="p-4 rounded-lg"
                     style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}20;"
                   >
                     <div class="font-semibold mb-2" style="color: {$colorStore.text};">
-                      {(question.questionText)}
+                      {renderFormTextPlain(question.enableAnswerPiping ? applyAnswerPiping(question.questionText) : question.questionText)}
                     </div>
                     <div
                       class="p-3 rounded"
@@ -1160,6 +1595,33 @@
               {/each}
             </div>
 
+            <!-- The challenge is only rendered once the review step is reached, so nobody verifies
+                 themselves and then discovers more pages of questions. The token expires, so the
+                 submit button locks again when it does. -->
+            {#if form.requireCaptcha && !isEditing}
+              <div
+                class="rounded-xl border p-6 mb-6"
+                style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
+                in:slide
+              >
+                <p class="text-sm mb-4 text-center" style="color: {$colorStore.muted};">
+                  {turnstileExpired
+                    ? "That verification timed out, please complete it again"
+                    : "Please complete the verification below"}
+                </p>
+                <div class="flex justify-center">
+                  <Turnstile
+                    siteKey="0x4AAAAAAAAvvAPaJgbIJWh-"
+                    theme="auto"
+                    on:callback={onTurnstileSuccess}
+                    on:expired={onTurnstileExpired}
+                    on:error={onTurnstileExpired}
+                    on:timeout={onTurnstileExpired}
+                  />
+                </div>
+              </div>
+            {/if}
+
             <div class="flex gap-4">
               <button
                 onclick={backToEditing}
@@ -1171,7 +1633,7 @@
               </button>
               <button
                 onclick={submitForm}
-                disabled={submitting}
+                disabled={submitting || (form.requireCaptcha && !turnstileToken)}
                 class="flex-1 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] disabled:opacity-50 border"
                 style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30; box-shadow: 0 4px 20px {$colorStore.secondary}10;"
               >
@@ -1210,8 +1672,21 @@
               </div>
             {/if}
 
+            {#if pageHeading}
+              <div class="mb-6 pb-4 border-b" style="border-color: {$colorStore.primary}25;">
+                <h2 class="text-xl font-bold mb-1" style="color: {$colorStore.text};">
+                  {renderFormTextPlain(pageHeading.questionText)}
+                </h2>
+                {#if pageHeading.placeholder}
+                  <div class="form-prose text-sm" style="color: {$colorStore.muted};">
+                    {@html renderFormText(pageHeading.placeholder)}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+
             <div class="space-y-4">
-              {#each visibleQuestions as question, index (question.id)}
+              {#each pageQuestions as question, index (question.id)}
                 <div
                   data-question-id={question.id}
                   class=" rounded-xl p-6 transition-all"
@@ -1225,21 +1700,33 @@
                       class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                       style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
                     >
-                      {index + 1}
+                      {visibleQuestions.filter((q) => q.questionType !== "section_break").indexOf(question) + 1}
                     </span>
                       <div class="flex-1">
-                      <span class="font-semibold" style="color: {$colorStore.text};">
-                        {#if question.enableAnswerPiping}
-                          {(applyAnswerPiping(question.questionText))}
-                        {:else}
-                          {(question.questionText)}
-                        {/if}
-                      </span>
+                        <!-- Rendered Markdown produces block elements, so this is a div rather
+                             than a span. -->
+                        <div class="form-prose font-semibold inline-block" style="color: {$colorStore.text};">
+                          {#if question.enableAnswerPiping}
+                            {@html renderFormText(applyAnswerPiping(question.questionText))}
+                          {:else}
+                            {@html renderFormText(question.questionText)}
+                          {/if}
+                        </div>
                         {#if question.isRequired || isQuestionConditionallyRequired(question)}
                           <span style="color: #ef4444;"> *</span>
                         {/if}
                       </div>
                     </div>
+
+                    {#if question.imageUrl && isSafeUrl(question.imageUrl)}
+                      <img
+                        src={question.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        class="mb-3 rounded-lg max-h-64 w-auto"
+                        style="border: 1px solid {$colorStore.primary}20;"
+                      />
+                    {/if}
 
                     <!-- Question Input Based on Type -->
                     {#if question.questionType === "short_text"}
@@ -1381,24 +1868,58 @@
               {/each}
             </div>
 
-            <!-- Captcha (if required) -->
-            {#if form.requireCaptcha}
-              <div
-                class=" rounded-xl border p-6 mt-6"
-                style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-                in:slide
-              >
-                <p class="text-sm mb-4 text-center" style="color: {$colorStore.muted};">
-                  Please complete the verification below
-                </p>
-                <div class="flex justify-center">
-                  <Turnstile siteKey="0x4AAAAAAAAvvAPaJgbIJWh-" on:callback={onTurnstileSuccess} />
-                </div>
+            <!-- Page navigation. The captcha and the submit button only appear on the last page,
+                 so nobody verifies themselves and then discovers three more pages of questions. -->
+            {#if isPaginated && !isLastPage}
+              <div class="mt-6 flex items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onclick={goToPreviousPage}
+                  disabled={currentPage === 0}
+                  class="px-5 py-3 rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                >
+                  <i class="fa-solid fa-arrow-left mr-2"></i>
+                  Back
+                </button>
+
+                {#if savingDraft}
+                  <span class="text-sm" style="color: {$colorStore.muted};">
+                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i>
+                    Saving
+                  </span>
+                {:else if draftSavedAt && !isPreviewMode}
+                  <span class="text-sm" style="color: {$colorStore.muted};">
+                    <i class="fa-solid fa-check mr-1"></i>
+                    Saved
+                  </span>
+                {/if}
+
+                <button
+                  type="button"
+                  onclick={goToNextPage}
+                  class="px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] border"
+                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10); color: {$colorStore.text}; border-color: {$colorStore.secondary}30;"
+                >
+                  Next
+                  <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
               </div>
             {/if}
 
             <!-- Submit Button -->
-            <div class="mt-6">
+            <div class="mt-6" class:hidden={!isLastPage}>
+              {#if isPaginated}
+                <button
+                  type="button"
+                  onclick={goToPreviousPage}
+                  class="w-full mb-3 py-3 rounded-xl font-medium transition-all"
+                  style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+                >
+                  <i class="fa-solid fa-arrow-left mr-2"></i>
+                  Back
+                </button>
+              {/if}
               {#if isPreviewMode}
                 <div
                   class="w-full py-4 rounded-xl font-bold text-lg text-center"
@@ -1430,3 +1951,79 @@
     {/if}
   </div>
 </main>
+
+<style>
+  /* Question text is rendered as a small subset of Markdown, so it needs the handful of element
+     styles Tailwind's reset takes away. Everything here is scoped to the rendered fragment. */
+  .form-prose :global(p) {
+    margin: 0 0 0.5em;
+  }
+
+  .form-prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .form-prose :global(strong) {
+    font-weight: 700;
+  }
+
+  .form-prose :global(em) {
+    font-style: italic;
+  }
+
+  .form-prose :global(del) {
+    text-decoration: line-through;
+  }
+
+  .form-prose :global(a) {
+    text-decoration: underline;
+  }
+
+  .form-prose :global(code) {
+    font-family: ui-monospace, monospace;
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    border-radius: 0.25rem;
+    background: rgb(127 127 127 / 0.15);
+  }
+
+  .form-prose :global(pre) {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    background: rgb(127 127 127 / 0.12);
+  }
+
+  .form-prose :global(blockquote) {
+    padding-left: 0.75rem;
+    border-left: 3px solid rgb(127 127 127 / 0.35);
+    opacity: 0.85;
+  }
+
+  .form-prose :global(ul),
+  .form-prose :global(ol) {
+    margin: 0.25em 0 0.5em;
+    padding-left: 1.35em;
+  }
+
+  .form-prose :global(ul) {
+    list-style: disc;
+  }
+
+  .form-prose :global(ol) {
+    list-style: decimal;
+  }
+
+  .form-prose :global(h1),
+  .form-prose :global(h2),
+  .form-prose :global(h3),
+  .form-prose :global(h4) {
+    font-weight: 700;
+    margin: 0.25em 0;
+  }
+
+  .form-prose :global(hr) {
+    margin: 0.75em 0;
+    border-color: rgb(127 127 127 / 0.3);
+  }
+</style>

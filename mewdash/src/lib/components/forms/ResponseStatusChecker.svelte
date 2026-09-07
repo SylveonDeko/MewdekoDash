@@ -195,6 +195,81 @@
           </div>
         </div>
 
+        <!-- Which server this went to. A status link is often the only thing somebody still has,
+             so the page has to carry that context on its own. -->
+        {#if status.guildName}
+          <div
+            class=" rounded-xl border p-4 flex items-center gap-3"
+            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20;"
+            in:slide
+          >
+            {#if status.guildIconUrl}
+              <img src={status.guildIconUrl} alt="" class="w-10 h-10 rounded-full flex-shrink-0" />
+            {:else}
+              <span
+                class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center"
+                style="background: {$colorStore.primary}15;"
+              >
+                <i class="fa-solid fa-server" style="color: {$colorStore.muted};"></i>
+              </span>
+            {/if}
+            <div class="min-w-0">
+              {#if status.formName}
+                <div class="font-medium truncate" style="color: {$colorStore.text};">
+                  {status.formName}
+                </div>
+              {/if}
+              <div class="text-sm truncate" style="color: {$colorStore.muted};">
+                {status.guildName}
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Correcting an answer. A reviewer asking somebody to clarify something is the ordinary
+             case, and this keeps the conversation on the response already under review rather than
+             pushing them into filing a second one. -->
+        {#if status.canEdit && status.shareCode}
+          <div
+            class=" rounded-xl border p-6"
+            style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;"
+            in:slide
+          >
+            <div class="font-semibold mb-1" style="color: {$colorStore.text};">
+              <i class="fa-solid fa-pen mr-2" style="color: {$colorStore.primary};"></i>
+              Need to change an answer?
+            </div>
+            <p class="text-sm mb-4" style="color: {$colorStore.muted};">
+              You can still correct this while it is waiting to be reviewed. The reviewers keep a
+              copy of what you wrote before.
+            </p>
+
+            {#if status.editedAt}
+              <p class="text-xs mb-4" style="color: {$colorStore.muted};">
+                Last changed on {formatDate(status.editedAt)}
+              </p>
+            {/if}
+
+            <a
+              href="/forms/{status.shareCode}?edit={token}"
+              class="inline-block px-4 py-2.5 rounded-lg font-medium transition-all hover:scale-[1.02]"
+              style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+            >
+              <i class="fa-solid fa-pen-to-square mr-2"></i>
+              Edit my answers
+            </a>
+          </div>
+        {:else if status.editedAt}
+          <div
+            class=" rounded-xl border p-4 text-sm"
+            style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}20; color: {$colorStore.muted};"
+            in:slide
+          >
+            <i class="fa-solid fa-pen mr-2"></i>
+            You changed your answers on {formatDate(status.editedAt)}.
+          </div>
+        {/if}
+
         <!-- Invite Link (for approved join applications) -->
         {#if status.status === "Approved" && status.inviteCode}
           <div
@@ -326,6 +401,25 @@
             <i class="fa-solid fa-sync mr-2"></i>
             Refresh Status
           </button>
+        </div>
+
+        <!-- Somewhere to go that is not this one link. An anonymous response is stored without a
+             submitter, so it will not be in that list and this link really is the only way back. -->
+        <div
+          class=" rounded-xl border p-4 text-center"
+          style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
+        >
+          <p class="text-sm mb-3" style="color: {$colorStore.muted};">
+            Everything you have submitted is listed in one place.
+          </p>
+          <a
+            href="/forms/submissions"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
+            style="background: {$colorStore.primary}15; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30;"
+          >
+            <i class="fa-solid fa-clipboard-list"></i>
+            My submissions
+          </a>
         </div>
 
         <!-- Informational Footer -->

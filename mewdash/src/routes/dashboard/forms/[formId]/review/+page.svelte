@@ -2,7 +2,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-  import FormWorkflowReview from "$lib/components/forms/FormWorkflowReview.svelte";
+  import FormResponseQueue from "$lib/components/forms/FormResponseQueue.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { fade } from "svelte/transition";
@@ -61,7 +61,7 @@
   title="Review Form Responses"
   statusMessages={statusMessagesSnippet}
 >
-  <FormWorkflowReview
+  <FormResponseQueue
     {formId}
     onShowNotification={showNotificationMessage}
     userId={data.user.id}

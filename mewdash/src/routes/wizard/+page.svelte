@@ -6,6 +6,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { onMount, untrack } from "svelte";
+  import { logger } from "$lib/logger";
   import { fade, fly, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { colorStore } from "$lib/stores/colorStore";
@@ -357,10 +358,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         return;
       }
 
-      console.log("Wizard data loaded successfully:", { guild, wizardState, wizardDecision });
+      logger.debug("Wizard data loaded successfully:", { guild, wizardState, wizardDecision });
 
     } catch (err) {
-      console.error("Error loading wizard data:", err);
+      logger.error("Error loading wizard data:", err);
       dataError = "Failed to load wizard data";
     } finally {
       dataLoading = false;
@@ -372,7 +373,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       permissionsLoading = true;
       permissionData = await wizardApi.checkBotPermissions(BigInt(data.guildId));
     } catch (error) {
-      console.error("Error loading permissions:", error);
+      logger.error("Error loading permissions:", error);
     } finally {
       permissionsLoading = false;
     }
@@ -402,7 +403,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       await applyRecommendations();
 
     } catch (err) {
-      console.error("Error loading guild data:", err);
+      logger.error("Error loading guild data:", err);
       availableChannels = [];
       availableRoles = [];
       availableCategories = [];
@@ -465,7 +466,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         timezoneId: typeof timezone === "string" ? timezone : (timezone as any)?.timezoneId ?? null
       };
     } catch (err) {
-      console.warn("Error loading server basics:", err);
+      logger.warn("Error loading server basics:", err);
     } finally {
       basicsLoading = false;
     }
@@ -703,10 +704,10 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         };
       }
 
-      console.log("Loaded existing configurations:", featureConfigs);
+      logger.debug("Loaded existing configurations:", featureConfigs);
 
     } catch (err) {
-      console.warn("Error loading existing configurations:", err);
+      logger.warn("Error loading existing configurations:", err);
     }
   }
 
@@ -818,7 +819,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
 
   // Feature state change handler
   function handleFeatureStateChange(detail: { id: string; state: FeatureState }) {
-    console.log("Feature state change:", detail);
+    logger.debug("Feature state change:", detail);
 
     // Update state with proper reactivity
     featureStates = {
@@ -884,7 +885,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       await wizardApi.skipWizard(BigInt(data.guildId), BigInt(data.user.id));
       goto(`/dashboard?guild=${data.guildId}`);
     } catch (error: any) {
-      console.error("Error skipping wizard:", error);
+      logger.error("Error skipping wizard:", error);
       actionError = `Failed to skip setup: ${error?.message || "Unknown error"}`;
     } finally {
       wizardLoading = false;
@@ -904,7 +905,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       await saveServerBasics();
       nextStep();
     } catch (error: any) {
-      console.error("Error saving server basics:", error);
+      logger.error("Error saving server basics:", error);
       actionError = `Could not save server settings: ${error?.message || "Unknown error"}. You can change them later in Settings.`;
     } finally {
       wizardLoading = false;
@@ -990,7 +991,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   // Update existing greet message
                   const fullMessage = buildFullMessage(config);
                   await multiGreetApi.updateMultiGreetMessage(guildId, existingGreet.id, fullMessage);
-                  console.log(`Updated existing greet for channel ${channelId}`);
+                  logger.debug(`Updated existing greet for channel ${channelId}`);
                 } else {
                   // Try to add new greet
                   await multiGreetApi.addMultiGreet(guildId, BigInt(channelId));
@@ -999,16 +1000,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                   if (newGreet) {
                     const fullMessage = buildFullMessage(config);
                     await multiGreetApi.updateMultiGreetMessage(guildId, newGreet.id, fullMessage);
-                    console.log(`Created new greet for channel ${channelId}`);
+                    logger.debug(`Created new greet for channel ${channelId}`);
                   }
                 }
               } catch (err: any) {
                 // If we hit max greets, just skip this channel
                 if (err.message && (err.message.includes("maximum greets") || err.message.includes("reached maximum"))) {
-                  console.warn(`Skipped channel ${channelId} - max greets reached`);
+                  logger.warn(`Skipped channel ${channelId} - max greets reached`);
 
                 } else {
-                  console.error(`Error setting up greet for channel ${channelId}:`, err);
+                  logger.error(`Error setting up greet for channel ${channelId}:`, err);
                 }
               }
             }
@@ -1048,7 +1049,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             try {
               await loggingApi.setLogChannel(guildId, event.id as any, BigInt(event.channelId!));
             } catch (err) {
-              console.error(`Failed to set log channel for ${event.id}:`, err);
+              logger.error(`Failed to set log channel for ${event.id}:`, err);
             }
           }
           break;
@@ -1096,7 +1097,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
               const channelHasStarboard = existingStarboards.some(s => s.starboardChannelId.toString() === starboard.channelId);
 
               if (channelHasStarboard) {
-                console.log(`Channel ${starboard.channelId} already has a starboard, skipping`);
+                logger.debug(`Channel ${starboard.channelId} already has a starboard, skipping`);
                 continue;
               }
 
@@ -1115,22 +1116,22 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                     emote,
                     starboard.threshold
                   );
-                  console.log(`Created starboard in channel ${starboard.channelId} with emote: ${emote}`);
+                  logger.debug(`Created starboard in channel ${starboard.channelId} with emote: ${emote}`);
                   starboardCreated = true;
                   break;
                 } catch (err: any) {
                   if (err.message && err.message.includes("already in use")) {
-                    console.log(`Emote ${emote} already in use, trying next...`);
+                    logger.debug(`Emote ${emote} already in use, trying next...`);
 
                   } else {
-                    console.error(`Error creating starboard:`, err);
+                    logger.error(`Error creating starboard:`, err);
                     throw err;
                   }
                 }
               }
 
               if (!starboardCreated) {
-                console.warn(`Could not create starboard for channel ${starboard.channelId} - all emotes in use`);
+                logger.warn(`Could not create starboard for channel ${starboard.channelId} - all emotes in use`);
               }
             }
           }
@@ -1305,7 +1306,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             try {
               await administrationApi.addSelfAssignableRole(guildId, BigInt(roleId));
             } catch (err) {
-              console.warn(`Could not add self-assignable role ${roleId}:`, err);
+              logger.warn(`Could not add self-assignable role ${roleId}:`, err);
             }
           }
           break;
@@ -1362,7 +1363,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 url: entry.url.trim()
               });
             } catch (err) {
-              console.warn(`Could not add feed ${entry.url}:`, err);
+              logger.warn(`Could not add feed ${entry.url}:`, err);
             }
           }
           break;
@@ -1376,7 +1377,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 url: entry.url.trim()
               });
             } catch (err) {
-              console.warn(`Could not follow stream ${entry.url}:`, err);
+              logger.warn(`Could not follow stream ${entry.url}:`, err);
             }
           }
           if (config.offlineNotifications) {
@@ -1416,7 +1417,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
                 statType
               });
             } catch (err) {
-              console.warn(`Could not create stat channel for type ${statType}:`, err);
+              logger.warn(`Could not create stat channel for type ${statType}:`, err);
             }
           }
           break;
@@ -1443,9 +1444,9 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           break;
       }
 
-      console.log(`Configured feature: ${featureId}`);
+      logger.debug(`Configured feature: ${featureId}`);
     } catch (error) {
-      console.error(`Error configuring ${featureId}:`, error);
+      logger.error(`Error configuring ${featureId}:`, error);
       throw error;
     }
   }
@@ -1470,7 +1471,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         try {
           await configureFeature(featureId);
         } catch (error) {
-          console.error(`Error configuring ${featureId}:`, error);
+          logger.error(`Error configuring ${featureId}:`, error);
           failedFeatures = [...failedFeatures, featureId];
         }
       }
@@ -1487,7 +1488,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       }, failedFeatures.length > 0 ? 6000 : 2000);
 
     } catch (error: any) {
-      console.error("Error completing wizard:", error);
+      logger.error("Error completing wizard:", error);
       actionError = `Failed to finish setup: ${error?.message || "Unknown error"}`;
     } finally {
       wizardLoading = false;
@@ -1516,7 +1517,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
         wizardLoading = true;
         await configureFeature(currentConfigFeature);
       } catch (error: any) {
-        console.error(`Error configuring ${currentConfigFeature}:`, error);
+        logger.error(`Error configuring ${currentConfigFeature}:`, error);
         actionError = `${feature.title} could not be saved: ${error?.message || "Unknown error"}. You can set it up later from the dashboard.`;
         failedFeatures = [...failedFeatures, currentConfigFeature];
       } finally {
@@ -2078,16 +2079,16 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
           <FeatureDependencySuggestion
             {suggestions}
             onaccept={(detail) => {
-              console.log('Suggestion accepted:', detail);
+              logger.debug('Suggestion accepted:', detail);
               const feature = allFeatures.find(f => f.title === detail.feature);
-              console.log('Found feature:', feature);
+              logger.debug('Found feature:', feature);
               if (feature) {
                 featureStates = {
                   ...featureStates,
                   [feature.id]: 'full'
                 };
                 suggestions = [];
-                console.log('Updated featureStates:', featureStates);
+                logger.debug('Updated featureStates:', featureStates);
               }
             }}
             ondismiss={() => suggestions = []}

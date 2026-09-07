@@ -13,9 +13,10 @@
   import FormsList from "$lib/components/forms/FormsList.svelte";
   import FormCreate from "$lib/components/forms/FormCreate.svelte";
   import FormEdit from "$lib/components/forms/FormEdit.svelte";
-  import FormResponses from "$lib/components/forms/FormResponses.svelte";
-  import FormWorkflowReview from "$lib/components/forms/FormWorkflowReview.svelte";
+  import FormResponseQueue from "$lib/components/forms/FormResponseQueue.svelte";
+  import FormGuildSettings from "$lib/components/forms/FormGuildSettings.svelte";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { logger } from "$lib/logger";
 
   interface Props {
     data: PageData;
@@ -87,10 +88,10 @@
             : null
         }));
 
-        console.log(`Loaded ${sanitizedForms.length} forms for guild ${$currentGuild.id}:`, sanitizedForms);
+        logger.debug(`Loaded ${sanitizedForms.length} forms for guild ${$currentGuild.id}:`, sanitizedForms);
         forms = sanitizedForms;
       } catch (err) {
-        console.error("Failed to load forms:", err);
+        logger.error("Failed to load forms:", err);
         error = err instanceof Error ? err.message : "Failed to load forms";
       } finally {
         loading = false;
@@ -151,8 +152,17 @@
         await formsApi.publishForm(form.id);
         form.isDraft = false;
         showNotificationMessage("Form published successfully!");
-      } catch (err) {
-        showNotificationMessage("Failed to publish form", "error");
+      } catch (err: any) {
+        // Publishing is where the checks spanning the whole form run, so a refusal usually names
+        // something specific and fixable. Saying what beats saying that it failed.
+        const reasons = err?.body?.errors;
+
+        showNotificationMessage(
+          Array.isArray(reasons) && reasons.length > 0
+            ? reasons.join(". ")
+            : err?.message || "Failed to publish form",
+          "error"
+        );
       }
     }, "operation", "Publishing form...");
   }
@@ -167,18 +177,18 @@
         }
 
         const instanceId = instance.port.toString();
-        console.log(`Generating/retrieving share link for form ${formId} with instance ${instanceId}`);
+        logger.debug(`Generating/retrieving share link for form ${formId} with instance ${instanceId}`);
 
         const { shareCode } = await formsApi.generateShareLink(formId, instanceId);
         const link = `${window.location.origin}/forms/${shareCode}`;
 
-        console.log(`Share link generated successfully: ${link} (code: ${shareCode})`);
+        logger.debug(`Share link generated successfully: ${link} (code: ${shareCode})`);
 
         currentShareLink = link;
         showShareLinkModal = true;
       } catch (err: any) {
-        console.error("Failed to generate share link:", err);
-        console.error("Error details:", err?.error || err);
+        logger.error("Failed to generate share link:", err);
+        logger.error("Error details:", err?.error || err);
 
         // Provide more detailed error message
         const errorMessage = err?.error?.message || err?.message || "Failed to generate share link";
@@ -187,13 +197,46 @@
     }, "operation", "Getting share link...");
   }
 
-  function copyToClipboard() {
-    navigator.clipboard.writeText(currentShareLink).then(() => {
+  /**
+   * The clipboard API needs a secure context and is missing in a few browsers, so a copy button
+   * that only knows about it silently does nothing for some people. The textarea route is the
+   * fallback for those.
+   */
+  async function writeToClipboard(text: string): Promise<boolean> {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fall through and try the older approach.
+      }
+    }
+
+    try {
+      const scratch = document.createElement("textarea");
+      scratch.value = text;
+      scratch.setAttribute("readonly", "");
+      scratch.style.position = "fixed";
+      scratch.style.opacity = "0";
+      document.body.appendChild(scratch);
+      scratch.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(scratch);
+      return copied;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyToClipboard() {
+    if (await writeToClipboard(currentShareLink)) {
       showNotificationMessage("Link copied to clipboard!");
       showShareLinkModal = false;
-    }).catch(() => {
-      showNotificationMessage("Failed to copy to clipboard", "error");
-    });
+      return;
+    }
+
+    // The modal stays open with the link visible, so it can still be copied by hand.
+    showNotificationMessage("Could not copy automatically, select the link and copy it", "error");
   }
 
   async function previewForm(formId: number) {
@@ -206,14 +249,14 @@
         }
 
         const instanceId = instance.port.toString();
-        console.log(`Generating preview link for form ${formId} with instance ${instanceId}`);
+        logger.debug(`Generating preview link for form ${formId} with instance ${instanceId}`);
 
         const { shareCode } = await formsApi.generateShareLink(formId, instanceId);
-        console.log(`Preview link generated: /forms/${shareCode}?preview=true`);
+        logger.debug(`Preview link generated: /forms/${shareCode}?preview=true`);
 
         window.open(`/forms/${shareCode}?preview=true`, "_blank");
       } catch (err: any) {
-        console.error("Failed to generate preview link:", err);
+        logger.error("Failed to generate preview link:", err);
         const errorMessage = err?.error?.message || err?.message || "Failed to generate preview link";
         showNotificationMessage(errorMessage, "error");
       }
@@ -236,9 +279,10 @@
     activeTab = "responses";
   }
 
+  /** Review happens on the responses screen, so both entry points land in the same place. */
   function handleReview(formId: number) {
     selectedFormId = formId;
-    activeTab = "review";
+    activeTab = "responses";
   }
 
   async function handleFormCreated(formId: number) {
@@ -251,7 +295,7 @@
       activeTab = "responses";
     } else {
       // If form not found, stay on list view
-      console.warn(`Created form with ID ${formId} not found in forms list`);
+      logger.warn(`Created form with ID ${formId} not found in forms list`);
       activeTab = "list";
       selectedFormId = null;
       showNotificationMessage("Form created successfully", "success");
@@ -268,7 +312,8 @@
   let tabs = $derived((() => {
     const baseTabs = [
       { id: "list", label: "Forms", icon: "fa-list" },
-      { id: "create", label: "Create", icon: "fa-plus" }
+      { id: "create", label: "Create", icon: "fa-plus" },
+      { id: "settings", label: "Settings", icon: "fa-sliders" }
     ];
 
     if (selectedFormId) {
@@ -276,19 +321,14 @@
 
       // Only add tabs if the form exists in our forms array
       if (selectedForm) {
+        // Reading a response and deciding on it are the same task, so they are one tab. The
+        // pending count rides on it, since that is the number a reviewer is looking for.
+        const pending = selectedForm.pendingCount ? ` (${selectedForm.pendingCount})` : "";
+
         baseTabs.push(
           { id: "edit", label: "Edit", icon: "fa-edit" },
-          { id: "responses", label: "Responses", icon: "fa-chart-bar" }
+          { id: "responses", label: `Responses${pending}`, icon: "fa-inbox" }
         );
-
-        // Add Review tab for forms that require workflow (formType !== 0 means not Regular)
-        if (selectedForm.formType !== 0) {
-          baseTabs.push({
-            id: "review",
-            label: `Review${selectedForm.pendingCount ? ` (${selectedForm.pendingCount})` : ""}`,
-            icon: "fa-clipboard-check"
-          });
-        }
       }
     }
 
@@ -491,13 +531,13 @@
       onSuccess={handleFormUpdated}
       onShowNotification={showNotificationMessage}
     />
-  {:else if activeTab === "responses" && selectedFormId}
-    <FormResponses
-      formId={selectedFormId}
+  {:else if activeTab === "settings"}
+    <FormGuildSettings
+      userId={data.user.id}
       onShowNotification={showNotificationMessage}
     />
-  {:else if activeTab === "review" && selectedFormId}
-    <FormWorkflowReview
+  {:else if activeTab === "responses" && selectedFormId}
+    <FormResponseQueue
       formId={selectedFormId}
       userId={data.user.id}
       onShowNotification={showNotificationMessage}

@@ -1,6 +1,7 @@
 <!-- components/tabs/CasesTab.svelte -->
 <script lang="ts">
   import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger";
   import { ticketApi } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild";
 
@@ -113,7 +114,7 @@
     try {
       selectedCase = await ticketApi.getTicketCase($currentGuild.id, caseId);
     } catch (err) {
-      console.error("Failed to load case details:", err);
+      logger.error("Failed to load case details:", err);
     }
   }
 </script>

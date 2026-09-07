@@ -3,6 +3,7 @@
 
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
   import {
     clientApi,
     LOG_TYPE_MAPPINGS,
@@ -136,7 +137,7 @@
       ignoredChannels = (config.ignoredChannels || []).map(id => id.toString());
 
     } catch (err) {
-      console.error("Failed to load logging data:", err);
+      logger.error("Failed to load logging data:", err);
       error = err instanceof Error ? err.message : "Failed to load logging data";
       showNotificationMessage("Failed to load logging data", "error");
     } finally {
@@ -171,7 +172,7 @@
       // Reload data to get updated config
       await loadData();
     } catch (err) {
-      console.error("Failed to save configuration:", err);
+      logger.error("Failed to save configuration:", err);
       showNotificationMessage("Failed to save configuration", "error");
     }
   }

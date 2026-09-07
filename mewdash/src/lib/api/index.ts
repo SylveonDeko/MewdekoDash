@@ -1,7 +1,7 @@
 // lib/api/index.ts
 
 // Re-export core functionality
-export { apiRequest } from "./core";
+export { apiDownload, apiRequest } from "./core";
 
 // Re-export all API modules
 export { clientApi } from "./client/client";

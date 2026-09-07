@@ -1066,7 +1066,7 @@
     if (newTrigger.validTriggerTypesReactions && newTrigger.trigger && 
         !newTrigger.trigger.match(/^[👍👎❤️😂😢😮😡💯]|:\w+:$/)) {
       // This is just a warning, not enforcement
-      console.log("Consider using emoji names or Unicode emojis for reaction triggers");
+      logger.debug("Consider using emoji names or Unicode emojis for reaction triggers");
     }
   }
   

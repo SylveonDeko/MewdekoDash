@@ -6,7 +6,7 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { currentInstance } from "$lib/stores/instanceStore";
-  import { allDashboardFeatures, categoryOrder, type NavigationItem } from "$lib/config/navigationItems";
+  import { allDashboardFeatures } from "$lib/config/navigationItems";
   import { type BotInstance, clientApi, instanceManagementApi, ownershipApi } from "$lib/api/index";
   import { userStore } from "$lib/stores/userStore";
   import { switchingServer } from "$lib/stores/guildSwitchStore";
@@ -25,7 +25,6 @@
 
   let { collapsed = $bindable(false), mobileOpen = $bindable(false) }: Props = $props();
   let isOwner = $state(false);
-  let collapsedCategories = $state<Record<string, boolean>>({});
   let searchTerm = $state("");
   let searchInputRef = $state<HTMLInputElement>();
   let hoveringItem = $state<string | null>(null);
@@ -61,10 +60,16 @@
     return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}`;
   });
 
+  /**
+   * Every feature the viewer may reach, in alphabetical order.
+   *
+   * Sorted here rather than relying on the order of the source array, which had drifted out of
+   * alphabetical in several places as features were appended next to related ones.
+   */
   let filteredFeatures = $derived.by(() => {
-    // Dashboard Access is pinned above the categorized list alongside the Dashboard Home link,
-    // not shown again inside its category.
+    // Dashboard Access is pinned above this list alongside the Dashboard Home link.
     let features = allDashboardFeatures.filter(item => (!item.ownerOnly || isOwner) && item.href !== "/dashboard/access");
+
     if (searchTerm.trim()) {
       features = features.filter(f =>
         matchesSearchTerms(
@@ -73,19 +78,21 @@
         )
       );
     }
-    return features;
+
+    return [...features].sort((a, b) => a.label.localeCompare(b.label));
   });
 
-  let featuresByCategory = $derived.by(() => {
-    const grouped: Record<string, NavigationItem[]> = {};
-    for (const item of filteredFeatures) {
-      if (!grouped[item.category]) {
-        grouped[item.category] = [];
-      }
-      grouped[item.category].push(item);
-    }
-    return grouped;
-  });
+  /**
+   * The letter to show above an entry, when it is the first of its letter. Gives the eye something
+   * to jump between in a long list without reintroducing groups that have to be opened.
+   */
+  function letterFor(index: number): string | null {
+    const letter = filteredFeatures[index].label[0].toUpperCase();
+
+    if (index === 0) return letter;
+
+    return filteredFeatures[index - 1].label[0].toUpperCase() === letter ? null : letter;
+  }
 
   let filteredGuilds = $derived(
     ($userAdminGuilds || [])
@@ -98,13 +105,6 @@
       return isDashboardHome;
     }
     return currentPath === href || currentPath.startsWith(href + "/");
-  }
-
-  function toggleCategory(category: string) {
-    collapsedCategories[category] = !collapsedCategories[category];
-    if (browser) {
-      localStorage.setItem("sidebar-collapsed-categories", JSON.stringify(collapsedCategories));
-    }
   }
 
   function toggleSidebar() {
@@ -317,14 +317,8 @@
     if (browser) {
       collapsed = localStorage.getItem("sidebar-collapsed") === "true";
 
-      const savedCategories = localStorage.getItem("sidebar-collapsed-categories");
-      if (savedCategories) {
-        try {
-          collapsedCategories = JSON.parse(savedCategories);
-        } catch {
-          collapsedCategories = {};
-        }
-      }
+      // Left over from when the sidebar grouped features into collapsible categories.
+      localStorage.removeItem("sidebar-collapsed-categories");
 
       window.addEventListener("keydown", handleGlobalKeydown);
       window.addEventListener("resize", handleWindowResize);
@@ -708,38 +702,21 @@
 
       <div class="mx-3 my-2 h-px" style="background: {$colorStore.primary}10;"></div>
 
-    {#each categoryOrder as category}
-      {#if featuresByCategory[category] && featuresByCategory[category].length > 0}
-        <div class="mb-1">
-          {#if !collapsed}
-            <button
-              class="w-full flex items-center gap-2 px-4 py-1.5 text-[13px] font-semibold uppercase tracking-wider transition-[color,opacity] duration-200 hover:opacity-100 group"
-              style="color: {$colorStore.muted}; opacity: 0.7;"
-              onclick={() => toggleCategory(category)}
-              aria-expanded={!collapsedCategories[category]}
-            >
-              <span class="flex-1 text-left">{category}</span>
-              <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200 group-hover:opacity-100 opacity-50"
-                 style="transform: rotate({collapsedCategories[category] ? '-90deg' : '0deg'});"
-                 aria-hidden="true"></i>
-              <span class="text-[10px] font-normal px-1.5 py-0.5 rounded-full opacity-50 group-hover:opacity-80"
-                    style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
-                {featuresByCategory[category].length}
-              </span>
-            </button>
-          {:else}
-            <div class="flex items-center justify-center py-2">
-              <div class="w-1.5 h-1.5 rounded-full" style="background: {$colorStore.primary}25;"></div>
-            </div>
-          {/if}
+    <div class="px-2 space-y-0.5">
+      {#each filteredFeatures as feature, index (feature.href)}
+        {@const active = isActive(feature.href)}
+        {@const letter = collapsed || searchTerm.trim() ? null : letterFor(index)}
 
-          {#if !collapsedCategories[category] || collapsed}
-            <div class="px-2 space-y-0.5"
-                 class:mt-0.5={!collapsed}>
-              {#each featuresByCategory[category] as feature}
-                {@const active = isActive(feature.href)}
-                <a
-                  href={noGuild ? undefined : feature.href}
+        {#if letter}
+          <div class="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wider"
+               style="color: {$colorStore.muted}; opacity: 0.5;"
+               aria-hidden="true">
+            {letter}
+          </div>
+        {/if}
+
+        <a
+          href={noGuild ? undefined : feature.href}
                   class="flex items-center gap-3 px-3 py-2 max-lg:py-3 rounded-xl transition-[color,background-color,border-color,transform] duration-200 group relative"
                   class:justify-center={collapsed}
                   class:hover:scale-[1.01]={!noGuild}
@@ -772,13 +749,9 @@
                       {feature.label}
                     </span>
                   {/if}
-                </a>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-    {/each}
+        </a>
+      {/each}
+    </div>
 
     {#if searchTerm && filteredFeatures.length === 0}
       <div class="px-4 py-8 text-center">

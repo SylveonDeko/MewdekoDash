@@ -3,6 +3,7 @@
 
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
   import { clientApi, type GuildEmojiInfo, type Suggestion, suggestionsApi, SuggestionState } from "$lib/api/index.ts";
   import type { PageData } from "./$types";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
@@ -389,7 +390,7 @@
 
         minLength = fetchedMinLength;
         maxLength = fetchedMaxLength;
-        console.log(fetchedMinLength, fetchedMaxLength, fetchedAcceptMessage, fetchedDenyMessage, fetchedArchiveOnConsider);
+        logger.debug(fetchedMinLength, fetchedMaxLength, fetchedAcceptMessage, fetchedDenyMessage, fetchedArchiveOnConsider);
 
         // Helper to convert string to embed object
         const stringToEmbed = (str: any) => {
@@ -534,7 +535,7 @@
           suggestButtonChannel
         };
       } catch (err) {
-        console.error("Error loading settings:", err);
+        logger.error("Error loading settings:", err);
         showNotificationMessage("Failed to load settings", "error");
       }
     }, "api", "Loading settings...");
@@ -554,7 +555,7 @@
       if (!currentUser?.id) throw new Error("User not authenticated");
       guildEmojis = await clientApi.getEmojis(currentUser.id, true);
     } catch (err) {
-      console.error("Failed to fetch guild emojis:", err);
+      logger.error("Failed to fetch guild emojis:", err);
     }
   }
 

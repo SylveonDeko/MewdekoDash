@@ -3,6 +3,7 @@
 
 
   import { onMount } from "svelte";
+  import { logger } from "$lib/logger";
   import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -51,7 +52,7 @@
       permissions = permsData;
       guildMembers = membersData;
     } catch (error) {
-      console.error("Failed to load permissions:", error);
+      logger.error("Failed to load permissions:", error);
     } finally {
       loading = false;
     }
@@ -78,7 +79,7 @@
 
       onpermissionsUpdated?.();
     } catch (error) {
-      console.error("Failed to grant permissions:", error);
+      logger.error("Failed to grant permissions:", error);
     }
   }
 
@@ -90,7 +91,7 @@
       await loadPermissions();
       onpermissionsUpdated?.();
     } catch (error) {
-      console.error("Failed to revoke permissions:", error);
+      logger.error("Failed to revoke permissions:", error);
     }
   }
 

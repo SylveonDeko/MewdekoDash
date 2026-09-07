@@ -84,8 +84,22 @@
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
+
+    // A picker already holding a Unicode emoji needs the table to name it, so that selection is
+    // shown as an emoji rather than as a bare character.
+    if (hasUnicodeSelection()) {
+      unicodeEmojiStore.load();
+    }
+
     return () => window.removeEventListener("resize", checkMobile);
   });
+
+  /** Whether the current value includes a Unicode emoji, as opposed to a Discord custom one. */
+  function hasUnicodeSelection(): boolean {
+    const values = Array.isArray(selected) ? selected : selected ? [selected] : [];
+
+    return values.some((value) => typeof value === "string" && value && !value.startsWith("<"));
+  }
 
   // Reset scroll position when switching tabs
   $effect(() => {
@@ -97,10 +111,17 @@
   });
 
   // Handle tab switching with loading state
-  function switchTab(newTab: "discord" | "unicode") {
+  async function switchTab(newTab: "discord" | "unicode") {
     if (activeTab === newTab) return;
 
     isLoadingTab = true;
+
+    // The emoji table is fetched on demand, so the first switch to the Unicode tab waits for it.
+    // The loading state already showing covers the wait.
+    if (newTab === "unicode") {
+      await unicodeEmojiStore.load();
+    }
+
     // Defer tab switch to next tick to show loading state
     setTimeout(() => {
       activeTab = newTab;
@@ -548,10 +569,13 @@
 
       // Check for Unicode emoji
       if (selected && typeof selected === "string" && !selected.startsWith("<")) {
+        // The character itself is enough to render, so a value shows even before the emoji table
+        // has been fetched. The name fills in once it has.
         const match = unicodeEmojiStore.getByUnicode(selected);
-        if (match) {
-          return [{ ...match, isUnicode: true }];
-        }
+
+        return [match
+          ? { ...match, isUnicode: true }
+          : { name: selected, unicode: selected, searchTerms: [], isUnicode: true }];
       }
 
       return [];
@@ -566,9 +590,10 @@
       if (!sel.startsWith("<")) {
         // Unicode emoji
         const match = unicodeEmojiStore.getByUnicode(sel);
-        if (match) {
-          result.push({ ...match, isUnicode: true });
-        }
+
+        result.push(match
+          ? { ...match, isUnicode: true }
+          : { name: sel, unicode: sel, searchTerms: [], isUnicode: true });
       } else {
         // Discord custom emoji - extract ID and find in allEmojis
         const emojiId = getEmojiId(sel);

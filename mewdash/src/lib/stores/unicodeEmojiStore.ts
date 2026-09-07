@@ -1,10 +1,12 @@
 /**
  * Store for Unicode emojis loaded from emotes.js
- * Loads once at app initialization and provides searchable emoji list
+ *
+ * The emoji table is around 360 KB, which is far too much to put on the initial load of every
+ * route that happens to mount an emoji picker. It is fetched and processed the first time
+ * something actually needs it, so a page carrying a picker nobody opens pays nothing.
  */
 
 import { writable } from "svelte/store";
-import emotes from "$lib/emotes.js";
 
 export interface UnicodeEmoji {
   name: string; // Display name (without colons), e.g., "100"
@@ -12,8 +14,8 @@ export interface UnicodeEmoji {
   searchTerms: string[]; // All possible search names for this emoji
 }
 
-// Process the emotes dictionary into a searchable format
-function processEmojis(): UnicodeEmoji[] {
+/** Turns the raw name-to-character dictionary into a searchable list, aliases merged. */
+function processEmojis(emotes: Record<string, string>): UnicodeEmoji[] {
   const emojiMap = new Map<string, UnicodeEmoji>();
 
   for (const [key, value] of Object.entries(emotes)) {
@@ -22,12 +24,10 @@ function processEmojis(): UnicodeEmoji[] {
 
     const existing = emojiMap.get(value);
     if (existing) {
-      // This emoji already exists, add this name as an alias
       if (!existing.searchTerms.includes(name)) {
         existing.searchTerms.push(name);
       }
     } else {
-      // New emoji
       emojiMap.set(value, {
         name: name,
         unicode: value,
@@ -39,20 +39,42 @@ function processEmojis(): UnicodeEmoji[] {
   return Array.from(emojiMap.values());
 }
 
-// Create the store with processed emojis
 function createUnicodeEmojiStore() {
-  const emojis = processEmojis();
-  const { subscribe } = writable(emojis);
+  const { subscribe, set } = writable<UnicodeEmoji[]>([]);
 
-  // Create a Map for fast lookups by unicode character
-  const emojiMap = new Map<string, UnicodeEmoji>();
-  for (const emoji of emojis) {
-    emojiMap.set(emoji.unicode, emoji);
+  let emojis: UnicodeEmoji[] = [];
+  let emojiMap = new Map<string, UnicodeEmoji>();
+
+  /** Held so concurrent callers share one download rather than starting several. */
+  let loading: Promise<void> | null = null;
+
+  async function load(): Promise<void> {
+    if (emojis.length > 0) return;
+
+    loading ??= (async () => {
+      const module = await import("$lib/emotes.js");
+
+      emojis = processEmojis(module.default as Record<string, string>);
+      emojiMap = new Map(emojis.map((emoji) => [emoji.unicode, emoji]));
+
+      set(emojis);
+    })();
+
+    await loading;
   }
 
   return {
     subscribe,
-    // Utility function to search emojis
+
+    /**
+     * Fetches the emoji table if it is not already in memory. Call before searching or looking up,
+     * and await it before showing a list.
+     */
+    load,
+
+    /** Whether the table is in memory, so a caller can show a loading state for the first open. */
+    isLoaded: () => emojis.length > 0,
+
     search: (query: string) => {
       if (!query.trim()) return emojis;
 
@@ -63,9 +85,9 @@ function createUnicodeEmojiStore() {
         ),
       );
     },
-    // Get total count
+
     count: () => emojis.length,
-    // Fast lookup by unicode character
+
     getByUnicode: (unicode: string) => emojiMap.get(unicode),
   };
 }
