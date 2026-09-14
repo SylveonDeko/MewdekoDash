@@ -6,6 +6,7 @@
     import {onDestroy, onMount, untrack} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
     import type {PageData} from "./$types";
 
     interface Props {
@@ -268,17 +269,17 @@
           <div class="md:hidden mb-4">
             <label for="module-select" class="block text-sm font-medium mb-2" style="color: {$colorStore.muted};">Select
               Module:</label>
-            <select
+            <DiscordSelector
+              type="custom"
               id="module-select"
-              class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
-              style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
-              bind:value={activeTabIndex}
-            >
-              {#each filteredModules as module, index}
-                <option value={index}>{capitalizeFirstLetter(module.Name)} ({module.Commands?.length || 0}commands)
-                </option>
-              {/each}
-            </select>
+              options={filteredModules.map((module, index) => ({
+                id: index.toString(),
+                name: `${capitalizeFirstLetter(module.Name)} (${module.Commands?.length || 0} commands)`
+              }))}
+              selected={activeTabIndex.toString()}
+              ariaLabel="Select module"
+              onchange={(e) => { if (typeof e.selected === "string") activeTabIndex = parseInt(e.selected); }}
+            />
           </div>
 
           <!-- Desktop: Horizontal tabs -->

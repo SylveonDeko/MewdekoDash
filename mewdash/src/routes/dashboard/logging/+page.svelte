@@ -20,6 +20,10 @@
   import SkeletonLoader from "$lib/components/ui/SkeletonLoader.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+
+  useUnsavedChangesGuard(() => hasChanges);
 
   interface Props {
         data: PageData;
@@ -233,14 +237,39 @@
         {id: "ignored", label: `Ignored Channels (${ignoredChannels.length})`, icon: "fa-xmark"}
     ]);
     // Action buttons for save functionality
-    let actionButtons = $derived(hasChanges ? [
-        {
+    /** Turns off every log type at once after confirmation */
+    async function disableAllLogging() {
+        if (!$currentGuild?.id) return;
+        if (!(await requestConfirmation({
+            title: "Disable all logging?",
+            message: "Every log type will be unassigned from its channel. Ignored channels are kept.",
+            confirmText: "Disable all"
+        }))) return;
+        try {
+            await loggingApi.disableAllLogging($currentGuild.id);
+            hasChanges = false;
+            await loadData();
+        } catch (err) {
+            logger.error("Failed to disable all logging:", err);
+            showNotificationMessage("Failed to disable logging", "error");
+        }
+    }
+
+    let hasAnyLogChannel = $derived(Object.values(logChannels).some(Boolean));
+
+    let actionButtons = $derived([
+        ...(hasChanges ? [{
             label: "Save Configuration",
             icon: "fa-floppy-disk",
             action: saveConfiguration,
-          style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30; box-shadow: 0 4px 12px ${$colorStore.primary}15;`
-        }
-    ] : []);
+            style: `background: ${$colorStore.primary}20; color: ${$colorStore.primary}; border: 1px solid ${$colorStore.primary}30; box-shadow: 0 4px 12px ${$colorStore.primary}15;`
+        }] : []),
+        ...(hasAnyLogChannel ? [{
+            label: "Disable All",
+            icon: "fa-power-off",
+            action: disableAllLogging
+        }] : [])
+    ]);
     // Reactive: Separate ignored and active channels for better UX
     let ignoredChannelList = $derived(textChannels.filter(channel => ignoredChannels.includes(channel.id)));
     let activeChannelList = $derived(textChannels.filter(channel => !ignoredChannels.includes(channel.id)));

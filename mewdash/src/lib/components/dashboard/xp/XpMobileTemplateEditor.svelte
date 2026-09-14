@@ -4,6 +4,21 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { fly, fade, slide } from "svelte/transition";
   import Portal from "$lib/components/ui/Portal.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+
+  /** Options for the text alignment selector */
+  const textAlignOptions = [
+    { id: "left", name: "Left" },
+    { id: "center", name: "Center" },
+    { id: "right", name: "Right" }
+  ];
+
+  /** Options for the progress bar style selector */
+  const progressStyleOptions = [
+    { id: "rounded", name: "Rounded" },
+    { id: "segmented", name: "Segmented" },
+    { id: "radial", name: "Radial" }
+  ];
 
   interface Props {
     localTemplate: any;
@@ -1638,14 +1653,16 @@
                                value={element.fontSize}
                                onchange={(e) => updateCustomElement(element.id, { fontSize: Number(e.currentTarget.value) })}>
                       </label>
-                      <label class="text-xs block" style="color: {$colorStore.muted}">Text alignment
-                        <select class="w-full px-3 py-2 rounded-lg border text-sm"
-                                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                value={element.textAlign || "left"}
-                                onchange={(e) => updateCustomElement(element.id, { textAlign: e.currentTarget.value })}>
-                          <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-                        </select>
-                      </label>
+                      <div class="text-xs" style="color: {$colorStore.muted}">Text alignment
+                        <DiscordSelector
+                          type="custom"
+                          options={textAlignOptions}
+                          selected={element.textAlign || "left"}
+                          searchable={false}
+                          ariaLabel="Text alignment"
+                          onchange={(e) => updateCustomElement(element.id, { textAlign: String(e.selected) })}
+                        />
+                      </div>
                     {:else if element.type === "image"}
                       <label class="text-xs block" style="color: {$colorStore.muted}">Image URL
                         <input type="url" class="w-full px-3 py-2 rounded-lg border text-sm"
@@ -1655,14 +1672,16 @@
                       </label>
                     {:else if element.type === "progress"}
                       <div class="grid grid-cols-2 gap-2">
-                        <label class="text-xs" style="color: {$colorStore.muted}">Style
-                          <select class="w-full px-2 py-2 rounded-lg border text-sm"
-                                  style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                                  value={element.progressStyle || "rounded"}
-                                  onchange={(e) => updateCustomElement(element.id, { progressStyle: e.currentTarget.value })}>
-                            <option value="rounded">Rounded</option><option value="segmented">Segmented</option><option value="radial">Radial</option>
-                          </select>
-                        </label>
+                        <div class="text-xs" style="color: {$colorStore.muted}">Style
+                          <DiscordSelector
+                            type="custom"
+                            options={progressStyleOptions}
+                            selected={element.progressStyle || "rounded"}
+                            searchable={false}
+                            ariaLabel="Progress bar style"
+                            onchange={(e) => updateCustomElement(element.id, { progressStyle: String(e.selected) })}
+                          />
+                        </div>
                         {#if element.progressStyle === "segmented"}
                           <label class="text-xs" style="color: {$colorStore.muted}">Segments
                             <input type="number" min="2" max="50" class="w-full px-2 py-2 rounded-lg border text-sm"

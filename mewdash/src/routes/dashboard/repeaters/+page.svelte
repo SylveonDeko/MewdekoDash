@@ -66,6 +66,82 @@
   let showAdvancedOptions = $state(false);
   let showForumTagEditor = $state(false);
 
+  /** Which quick-edit field is being edited in the quick edit modal */
+  type QuickEditField = "interval" | "startTime" | "threshold" | "expiry";
+  let quickEdit = $state<{ repeater: RepeaterResponse; field: QuickEditField } | null>(null);
+  let quickEditForm = $state({ interval: "", startTime: "", threshold: 5, maxAge: "", maxTriggers: "" });
+  let quickEditSaving = $state(false);
+  let quickEditError = $state("");
+
+  /** Human readable metadata for each quick-edit field */
+  const quickEditMeta: Record<QuickEditField, { title: string; icon: string; hint: string }> = {
+    interval: { title: "Edit Interval", icon: "fa-clock", hint: "How often the message repeats, in hours, minutes and seconds." },
+    startTime: { title: "Edit Start Time", icon: "fa-clock", hint: "Time of day (24h) the first message should send. Leave empty to disable." },
+    threshold: { title: "Conversation Threshold", icon: "fa-users", hint: "Messages per minute that count as an active conversation." },
+    expiry: { title: "Edit Expiry", icon: "fa-calendar", hint: "Stop the repeater after a time limit or a number of triggers. Leave empty for no limit." }
+  };
+
+  /** Open the quick edit modal for a single repeater property */
+  function openQuickEdit(repeater: RepeaterResponse, field: QuickEditField) {
+    quickEditForm = {
+      interval: repeater.interval || "01:00:00",
+      startTime: repeater.startTimeOfDay || "",
+      threshold: repeater.conversationThreshold || 5,
+      maxAge: repeater.maxAge || "",
+      maxTriggers: repeater.maxTriggers?.toString() || ""
+    };
+    quickEditError = "";
+    quickEdit = { repeater, field };
+  }
+
+  function closeQuickEdit() {
+    quickEdit = null;
+    quickEditError = "";
+  }
+
+  /** Validate and persist the quick edit modal value */
+  async function saveQuickEdit() {
+    if (!quickEdit) return;
+    const { repeater, field } = quickEdit;
+    quickEditError = "";
+
+    if (field === "interval" && !/^\d{1,2}:\d{2}:\d{2}$/.test(quickEditForm.interval.trim())) {
+      quickEditError = "Interval must be in HH:MM:SS format.";
+      return;
+    }
+    if (field === "startTime" && quickEditForm.startTime.trim() && !/^\d{1,2}:\d{2}$/.test(quickEditForm.startTime.trim())) {
+      quickEditError = "Start time must be in HH:MM format.";
+      return;
+    }
+    if (field === "threshold" && (!Number.isFinite(quickEditForm.threshold) || quickEditForm.threshold < 1)) {
+      quickEditError = "Threshold must be at least 1 message per minute.";
+      return;
+    }
+    if (field === "expiry" && quickEditForm.maxAge.trim() && !/^(\d+\.)?\d{1,2}:\d{2}:\d{2}$/.test(quickEditForm.maxAge.trim())) {
+      quickEditError = "Max age must look like 7.00:00:00 (days.hours:minutes:seconds).";
+      return;
+    }
+    if (field === "expiry" && quickEditForm.maxTriggers.trim() && !/^\d+$/.test(quickEditForm.maxTriggers.trim())) {
+      quickEditError = "Max triggers must be a whole number.";
+      return;
+    }
+
+    quickEditSaving = true;
+    try {
+      if (field === "interval") await updateRepeaterInterval(repeater.id, quickEditForm.interval.trim());
+      else if (field === "startTime") await updateRepeaterStartTime(repeater.id, quickEditForm.startTime.trim() || null);
+      else if (field === "threshold") await updateRepeaterConversationThreshold(repeater.id, quickEditForm.threshold);
+      else await updateRepeaterExpiry(
+        repeater.id,
+        quickEditForm.maxAge.trim() || undefined,
+        quickEditForm.maxTriggers.trim() ? parseInt(quickEditForm.maxTriggers) : undefined
+      );
+      closeQuickEdit();
+    } finally {
+      quickEditSaving = false;
+    }
+  }
+
   // Form data for creating/editing repeaters - using any for flexibility
   let formData: any = $state({
     channelId: "",
@@ -1364,12 +1440,10 @@
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <!-- Quick Property Updates -->
                   <button
-                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                    onclick={() => {
-                      const newInterval = prompt('New interval (HH:MM:SS):', repeater.interval);
-                      if (newInterval) updateRepeaterInterval(repeater.id, newInterval);
-                    }}
+                    onclick={() => openQuickEdit(repeater, "interval")}
+                    aria-label="Edit interval"
                   >
                     <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
                     <span class="hidden sm:inline">Interval</span>
@@ -1377,12 +1451,10 @@
                   </button>
 
                   <button
-                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                    onclick={() => {
-                      const newTime = prompt('Start time (HH:MM, leave empty to disable):', repeater.startTimeOfDay || '');
-                      updateRepeaterStartTime(repeater.id, newTime || null);
-                    }}
+                    onclick={() => openQuickEdit(repeater, "startTime")}
+                    aria-label="Edit start time"
                   >
                     <i class="fa-solid fa-clock" style="font-size: 10px;"></i>
                     <span class="hidden sm:inline">Start Time</span>
@@ -1391,12 +1463,10 @@
 
                   {#if repeater.conversationDetection}
                     <button
-                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                      class="flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
-                      onclick={() => {
-                        const newThreshold = prompt('Conversation threshold (messages/minute):', repeater.conversationThreshold.toString());
-                        if (newThreshold) updateRepeaterConversationThreshold(repeater.id, parseInt(newThreshold));
-                      }}
+                      onclick={() => openQuickEdit(repeater, "threshold")}
+                      aria-label="Edit conversation threshold"
                     >
                       <i class="fa-solid fa-users" style="font-size: 10px;"></i>
                       <span class="whitespace-nowrap">Conv: {repeater.conversationThreshold}/min</span>
@@ -1404,28 +1474,21 @@
                   {/if}
 
                   <button
-                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                    class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                     style="background: {$colorStore.accent}15; color: {$colorStore.accent};"
-                    onclick={() => {
-                      const maxAge = prompt('Max age (e.g., 7.00:00:00 for 7 days, empty for no limit):', repeater.maxAge || '');
-                      const maxTriggers = prompt('Max triggers (empty for no limit):', repeater.maxTriggers?.toString() || '');
-                      updateRepeaterExpiry(repeater.id, maxAge || undefined, maxTriggers ? parseInt(maxTriggers) : undefined);
-                    }}
+                    onclick={() => openQuickEdit(repeater, "expiry")}
+                    aria-label="Edit expiry"
                   >
                     <i class="fa-solid fa-calendar" style="font-size: 12px;"></i>
                     Expiry
                   </button>
 
-                  <!-- Advanced Features -->
+                  <!-- Advanced Features open the full editor -->
                   {#if repeater.forumTagConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                       style="background: {$colorStore.secondary}15; color: {$colorStore.secondary};"
-                      onclick={() => {
-                        selectedRepeater = repeater;
-                        showForumTagEditor = true;
-                        loadForumTags(repeater.id);
-                      }}
+                      onclick={() => editRepeater(repeater)}
                     >
                       <i class="fa-solid fa-tags" style="font-size: 12px;"></i>
                       Forum Tags
@@ -1434,12 +1497,12 @@
 
                   {#if repeater.timeConditions}
                     <button
-                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+                      class="flex items-center gap-2 px-2 py-1 rounded-sm text-xs font-medium transition-all duration-200 hover:scale-[1.02] min-h-[32px]"
                       style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
-                      onclick={() => openAdvancedTimeEditor(repeater.id)}
+                      onclick={() => editRepeater(repeater)}
                     >
                       <i class="fa-solid fa-code" style="font-size: 12px;"></i>
-                      Time JSON
+                      Time Conditions
                     </button>
                   {/if}
 
@@ -2054,3 +2117,99 @@
     </div>
   {/if}
 </DashboardPageLayout>
+
+<!-- Quick Edit Modal -->
+{#if quickEdit}
+  {@const meta = quickEditMeta[quickEdit.field]}
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+       role="presentation"
+       onclick={closeQuickEdit}
+       onkeydown={(e) => { if (e.key === "Escape") closeQuickEdit(); }}
+       in:fade={{ duration: 150 }}>
+    <div class="rounded-2xl shadow-2xl w-full max-w-md border"
+         style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="quick-edit-title"
+         tabindex="-1"
+         onclick={(e) => e.stopPropagation()}
+         onkeydown={(e) => e.stopPropagation()}
+         in:fly={{ y: 20, duration: 250 }}>
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
+            <i class="fa-solid {meta.icon}" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+          </div>
+          <div>
+            <h3 id="quick-edit-title" class="text-lg font-bold" style="color: {$colorStore.text}">{meta.title}</h3>
+            <p class="text-xs" style="color: {$colorStore.muted}">{quickEdit.repeater.message?.slice(0, 60) || `Repeater #${quickEdit.repeater.id}`}</p>
+          </div>
+        </div>
+        <p class="text-sm mb-5" style="color: {$colorStore.muted}">{meta.hint}</p>
+
+        <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); saveQuickEdit(); }}>
+          {#if quickEdit.field === "interval"}
+            <div>
+              <label for="quick-interval" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Interval (HH:MM:SS)</label>
+              <input id="quick-interval" type="text" bind:value={quickEditForm.interval} placeholder="01:00:00"
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            </div>
+          {:else if quickEdit.field === "startTime"}
+            <div>
+              <label for="quick-start" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Start time (HH:MM)</label>
+              <input id="quick-start" type="time" bind:value={quickEditForm.startTime}
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            </div>
+          {:else if quickEdit.field === "threshold"}
+            <div>
+              <label for="quick-threshold" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Messages per minute</label>
+              <input id="quick-threshold" type="number" min="1" max="1000" bind:value={quickEditForm.threshold}
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            </div>
+          {:else}
+            <div>
+              <label for="quick-maxage" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max age</label>
+              <input id="quick-maxage" type="text" bind:value={quickEditForm.maxAge} placeholder="7.00:00:00 for 7 days"
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            </div>
+            <div>
+              <label for="quick-maxtriggers" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Max triggers</label>
+              <input id="quick-maxtriggers" type="number" min="1" bind:value={quickEditForm.maxTriggers} placeholder="No limit"
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            </div>
+          {/if}
+
+          {#if quickEditError}
+            <div class="p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
+                 style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>{quickEditError}</span>
+            </div>
+          {/if}
+
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="button" onclick={closeQuickEdit}
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                    style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
+              Cancel
+            </button>
+            <button type="submit" disabled={quickEditSaving}
+                    class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
+              {#if quickEditSaving}
+                <i class="fa-solid fa-arrows-rotate fa-spin mr-2"></i>Saving
+              {:else}
+                <i class="fa-solid fa-floppy-disk mr-2"></i>Save
+              {/if}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{/if}

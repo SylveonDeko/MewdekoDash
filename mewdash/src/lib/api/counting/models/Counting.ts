@@ -207,6 +207,21 @@ export interface SetCustomMessageRequest {
  * Set milestones request
  * Maps to Mewdeko.Controllers.Common.Counting.SetMilestonesRequest
  */
+/**
+ * An active counting ban as returned by the bot API
+ */
+export interface CountingBanResponse {
+  id: number;
+  userId: bigint;
+  username: string | null;
+  avatarUrl: string | null;
+  bannedBy: bigint;
+  bannedByUsername: string | null;
+  bannedAt: string;
+  expiresAt: string | null;
+  reason: string | null;
+}
+
 export interface SetMilestonesRequest {
   milestones: number[];
 }

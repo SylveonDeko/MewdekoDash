@@ -14,6 +14,7 @@
   import PanelsTab from "./components/tabs/PanelsTab.svelte";
   import ConfigurationTab from "./components/tabs/ConfigurationTab.svelte";
   import CasesTab from "./components/tabs/CasesTab.svelte";
+  import TicketsTab from "./components/tabs/TicketsTab.svelte";
   import AdvancedTab from "./components/tabs/AdvancedTab.svelte";
 
   let { data } = $props();
@@ -27,6 +28,7 @@
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "fa-chart-line" },
+    { id: "tickets", label: "Tickets", icon: "fa-ticket" },
     { id: "panels", label: "Ticket Panels", icon: "fa-table-cells" },
     { id: "configuration", label: "Configuration", icon: "fa-sliders" },
     { id: "cases", label: "Cases", icon: "fa-folder-open" },
@@ -244,8 +246,8 @@
     }
   }
 
-  async function loadAllTickets() {
-    if (!$currentGuild?.id || allTickets.length > 0) return;
+  async function loadAllTickets(force = false) {
+    if (!$currentGuild?.id || (allTickets.length > 0 && !force)) return;
 
     try {
       const tickets = await ticketApi.getGuildTickets($currentGuild.id, true, true, false);
@@ -1000,9 +1002,9 @@
     }
   });
 
-  // Lazy-load tickets when Cases tab is accessed
+  // Lazy-load tickets when the Tickets or Cases tab is accessed
   $effect(() => {
-    if (activeTab === "cases" && $currentGuild?.id) {
+    if ((activeTab === "cases" || activeTab === "tickets") && $currentGuild?.id) {
       loadAllTickets();
     }
   });
@@ -1046,6 +1048,17 @@
         {tags}
         {cases}
         bind:activeTab
+      />
+    {/if}
+
+    {#if activeTab === 'tickets'}
+      <TicketsTab
+        {allTickets}
+        {priorities}
+        {tags}
+        staffId={data.user?.id ? BigInt(data.user.id) : null}
+        {showConfirm}
+        reloadTickets={() => loadAllTickets(true)}
       />
     {/if}
 

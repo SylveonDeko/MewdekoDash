@@ -2,8 +2,8 @@
 <script lang="ts">
 
 
-  import { onMount } from "svelte";
-  import { inviteTrackingApi, clientApi } from "$lib/api/index.ts";
+  import { onMount, untrack } from "svelte";
+  import { inviteTrackingApi, clientApi, joinLeaveApi, type GraphStatsResponse } from "$lib/api/index.ts";
     import {currentGuild} from "$lib/stores/currentGuild.ts";
     import {fade} from "svelte/transition";
     import {goto} from "$app/navigation";
@@ -34,7 +34,8 @@
     { id: "stats", label: "Statistics", icon: "fa-file-spreadsheet" },
     { id: "leaderboard", label: "Leaderboard", icon: "fa-award" },
     { id: "inviter", label: "Find Inviter", icon: "fa-user" },
-    { id: "invited", label: "Invited Users", icon: "fa-user-plus" }
+    { id: "invited", label: "Invited Users", icon: "fa-user-plus" },
+    { id: "flow", label: "Member Flow", icon: "fa-arrow-right-arrow-left" }
   ];
 
   // Invite Settings
@@ -113,6 +114,68 @@
   function markAsChanged(setting: string) {
     changedSettings = changedSettings.add(setting);
   }
+
+  /** Member flow (join/leave) state */
+  let flowLoading = $state(false);
+  let flowError = $state<string | null>(null);
+  let joinStats: GraphStatsResponse | null = $state(null);
+  let leaveStats: GraphStatsResponse | null = $state(null);
+  let joinGraph = $state<string | null>(null);
+  let leaveGraph = $state<string | null>(null);
+  let joinColor = $state("#10b981");
+  let leaveColor = $state("#ef4444");
+  let colorSaving = $state(false);
+  let flowLoaded = $state(false);
+
+  async function loadMemberFlow(force = false) {
+    if (!$currentGuild?.id || (flowLoaded && !force)) return;
+    flowLoading = true;
+    flowError = null;
+    try {
+      const [joins, leaves, joinImg, leaveImg] = await Promise.all([
+        joinLeaveApi.getJoinStats($currentGuild.id).catch(() => null),
+        joinLeaveApi.getLeaveStats($currentGuild.id).catch(() => null),
+        joinLeaveApi.getJoinGraph($currentGuild.id).catch(() => null),
+        joinLeaveApi.getLeaveGraph($currentGuild.id).catch(() => null)
+      ]);
+      joinStats = joins;
+      leaveStats = leaves;
+      joinGraph = joinImg?.imageData ? `data:image/png;base64,${joinImg.imageData}` : null;
+      leaveGraph = leaveImg?.imageData ? `data:image/png;base64,${leaveImg.imageData}` : null;
+      flowLoaded = true;
+    } catch (err) {
+      logger.error("Failed to load member flow:", err);
+      flowError = "Failed to load join and leave data";
+    } finally {
+      flowLoading = false;
+    }
+  }
+
+  /** Converts a hex color string to the integer the bot stores */
+  function hexToInt(hex: string): number {
+    return parseInt(hex.replace("#", ""), 16);
+  }
+
+  async function saveGraphColors() {
+    if (!$currentGuild?.id) return;
+    colorSaving = true;
+    try {
+      await Promise.all([
+        joinLeaveApi.setJoinColor($currentGuild.id, hexToInt(joinColor)),
+        joinLeaveApi.setLeaveColor($currentGuild.id, hexToInt(leaveColor))
+      ]);
+      await loadMemberFlow(true);
+    } catch (err) {
+      logger.error("Failed to save graph colors:", err);
+      showNotificationMessage("Failed to save graph colors", "error");
+    } finally {
+      colorSaving = false;
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === "flow" && $currentGuild?.id) untrack(() => loadMemberFlow());
+  });
 
   function showNotificationMessage(message: string, type: "success" | "error" = "success") {
     notificationMessage = message;
@@ -990,6 +1053,108 @@
             </div>
           {/if}
         </div>
+    </section>
+  {/if}
+
+  {#if activeTab === 'flow'}
+    <section class="space-y-6" in:fade={{ duration: 200 }}>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="p-3 rounded-xl"
+               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
+            <i class="fa-utility-duo fa-regular fa-arrow-right-arrow-left"
+               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
+               aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Member Flow</h2>
+            <p class="text-sm" style="color: {$colorStore.muted}">Joins and leaves over the last month</p>
+          </div>
+        </div>
+        <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+                disabled={flowLoading}
+                onclick={() => loadMemberFlow(true)}>
+          <i class="fa-solid fa-arrows-rotate {flowLoading ? 'fa-spin' : ''}"></i>
+          Refresh
+        </button>
+      </div>
+
+      {#if flowLoading && !flowLoaded}
+        <div class="flex justify-center items-center min-h-[200px]">
+          <div class="w-12 h-12 border-4 rounded-full animate-spin"
+               style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
+               aria-label="Loading"></div>
+        </div>
+      {:else if flowError}
+        <div class="rounded-xl p-4 flex items-center gap-3" style="background: {$colorStore.accent}10;" role="alert">
+          <i class="fa-solid fa-circle-exclamation" style="color: {$colorStore.accent};"></i>
+          <p style="color: {$colorStore.accent}">{flowError}</p>
+        </div>
+      {:else}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {#each [
+            { label: "Joins (30d)", value: Number(joinStats?.summary?.total ?? 0), sub: `avg ${Number(joinStats?.summary?.average ?? 0).toFixed(1)}/day`, color: joinColor },
+            { label: "Peak join day", value: Number(joinStats?.summary?.peakCount ?? 0), sub: joinStats?.summary?.peakDate ? new Date(joinStats.summary.peakDate).toLocaleDateString() : "n/a", color: joinColor },
+            { label: "Leaves (30d)", value: Number(leaveStats?.summary?.total ?? 0), sub: `avg ${Number(leaveStats?.summary?.average ?? 0).toFixed(1)}/day`, color: leaveColor },
+            { label: "Net change", value: Number(joinStats?.summary?.total ?? 0) - Number(leaveStats?.summary?.total ?? 0), sub: "joins minus leaves", color: $colorStore.primary }
+          ] as stat}
+            <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+              <div class="text-xs mb-1" style="color: {$colorStore.muted}">{stat.label}</div>
+              <div class="text-2xl font-bold" style="color: {stat.color}">{stat.value}</div>
+              <div class="text-xs" style="color: {$colorStore.muted}">{stat.sub}</div>
+            </div>
+          {/each}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {#each [{ title: "Joins", img: joinGraph, stats: joinStats, color: joinColor }, { title: "Leaves", img: leaveGraph, stats: leaveStats, color: leaveColor }] as graph}
+            <div class="rounded-2xl border p-4 md:p-6"
+                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+              <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
+                <span class="w-3 h-3 rounded-full inline-block" style="background: {graph.color};"></span>
+                {graph.title}
+              </h3>
+              {#if graph.img}
+                <img src={graph.img} alt={`${graph.title} over time`} class="w-full rounded-xl" style="max-width: 100%;">
+              {:else if graph.stats?.dailyStats?.length}
+                {@const max = Math.max(1, ...graph.stats.dailyStats.map(d => d.count))}
+                <div class="flex items-end gap-[2px] h-40 overflow-x-auto" role="img" aria-label={`${graph.title} per day`}>
+                  {#each graph.stats.dailyStats as day}
+                    <div class="flex-1 min-w-[6px] rounded-t-sm" title={`${new Date(day.date).toLocaleDateString()}: ${day.count}`}
+                         style="height: {Math.max(2, (day.count / max) * 100)}%; background: {graph.color};"></div>
+                  {/each}
+                </div>
+              {:else}
+                <p class="text-sm py-8 text-center" style="color: {$colorStore.muted}">No data yet</p>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <div class="rounded-2xl border p-4 md:p-6"
+             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
+          <h3 class="font-semibold mb-1" style="color: {$colorStore.text}">Graph colors</h3>
+          <p class="text-sm mb-4" style="color: {$colorStore.muted}">Used when the bot renders join and leave graphs in Discord.</p>
+          <div class="flex flex-wrap items-end gap-4">
+            <div>
+              <label for="join-color" class="block text-xs mb-1" style="color: {$colorStore.muted}">Join color</label>
+              <input id="join-color" type="color" bind:value={joinColor} class="w-16 h-11 rounded-lg border cursor-pointer" style="border-color: {$colorStore.primary}30; background: transparent;">
+            </div>
+            <div>
+              <label for="leave-color" class="block text-xs mb-1" style="color: {$colorStore.muted}">Leave color</label>
+              <input id="leave-color" type="color" bind:value={leaveColor} class="w-16 h-11 rounded-lg border cursor-pointer" style="border-color: {$colorStore.primary}30; background: transparent;">
+            </div>
+            <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                    disabled={colorSaving}
+                    onclick={saveGraphColors}>
+              {#if colorSaving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-floppy-disk"></i>{/if}
+              Save colors
+            </button>
+          </div>
+        </div>
+      {/if}
     </section>
   {/if}
 </DashboardPageLayout>

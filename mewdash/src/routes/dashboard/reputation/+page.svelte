@@ -266,6 +266,38 @@
     }
 
     // Utility functions
+    /** Reputation history modal state */
+    let historyTarget: any = $state(null);
+    let history: any[] = $state([]);
+    let historyPage = $state(1);
+    const historyPageSize = 20;
+    let historyLoading = $state(false);
+
+    async function loadHistory(page: number) {
+        if (!$currentGuild?.id || !historyTarget || page < 1) return;
+        historyLoading = true;
+        try {
+            history = await reputationApi.getReputationHistory($currentGuild.id, BigInt(historyTarget.userId), page, historyPageSize);
+            historyPage = page;
+        } catch (err) {
+            logger.error("Failed to load reputation history:", err);
+            showMessage("Failed to load reputation history", "error");
+        } finally {
+            historyLoading = false;
+        }
+    }
+
+    function openHistory(entry: any) {
+        historyTarget = entry;
+        history = [];
+        loadHistory(1);
+    }
+
+    function closeHistory() {
+        historyTarget = null;
+        history = [];
+    }
+
     function showMessage(text: string, type: "success" | "error" | "info") {
         message = text;
         messageType = type;
@@ -758,12 +790,86 @@
                                 {:else if entry.rank === 3}
                                   <i class="fa-solid fa-star" style="color: {$colorStore.accent}; font-size: 24px;"></i>
                                 {/if}
+                                <button class="p-2 rounded-lg transition-all hover:scale-[1.05] shrink-0 min-h-[40px] min-w-[40px]"
+                                        style="background: {$colorStore.primary}15; color: {$colorStore.primary};"
+                                        aria-label={`View reputation history for ${entry.username}`}
+                                        title="View history"
+                                        onclick={() => openHistory(entry)}>
+                                    <i class="fa-solid fa-clock-rotate-left" style="font-size: 14px;"></i>
+                                </button>
                             </div>
                         {/each}
                     {/if}
                 </div>
             </div>
         </div>
+
+        {#if historyTarget}
+            <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                 role="presentation"
+                 onclick={closeHistory}
+                 onkeydown={(e) => { if (e.key === "Escape") closeHistory(); }}
+                 in:fade={{ duration: 150 }}>
+                <div class="rounded-2xl shadow-2xl w-full max-w-2xl border max-h-[85vh] flex flex-col"
+                     style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="rep-history-title"
+                     tabindex="-1"
+                     onclick={(e) => e.stopPropagation()}
+                     onkeydown={(e) => e.stopPropagation()}
+                     in:fly={{ y: 20, duration: 250 }}>
+                    <div class="p-6 pb-4 flex items-center justify-between gap-3 border-b" style="border-color: {$colorStore.primary}20;">
+                        <div class="min-w-0">
+                            <h3 id="rep-history-title" class="text-lg font-bold truncate" style="color: {$colorStore.text}">Reputation history</h3>
+                            <p class="text-xs truncate" style="color: {$colorStore.muted}">{historyTarget.username} · {historyTarget.reputation} reputation</p>
+                        </div>
+                        <button class="p-2 rounded-lg min-h-[40px] min-w-[40px]" style="background: {$colorStore.muted}20; color: {$colorStore.muted};"
+                                aria-label="Close" onclick={closeHistory}>
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1 space-y-2">
+                        {#if historyLoading}
+                            <div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin" style="color: {$colorStore.primary}; font-size: 28px;"></i></div>
+                        {:else if history.length === 0}
+                            <p class="text-center py-8 text-sm" style="color: {$colorStore.muted}">No reputation has been given to this member yet.</p>
+                        {:else}
+                            {#each history as item (item.id)}
+                                <div class="flex items-start gap-3 p-3 rounded-lg" style="background: {$colorStore.primary}08;">
+                                    <span class="px-2 py-1 rounded-sm text-sm font-bold shrink-0"
+                                          style="background: {item.amount >= 0 ? '#10b98120' : '#ef444420'}; color: {item.amount >= 0 ? '#10b981' : '#ef4444'};">
+                                        {item.amount >= 0 ? "+" : ""}{item.amount}
+                                    </span>
+                                    <div class="flex-1 min-w-0 text-sm">
+                                        <div style="color: {$colorStore.text}">
+                                            <span class="font-medium">{item.repType}</span>
+                                            <span style="color: {$colorStore.muted}"> from </span>
+                                            <span class="font-medium">{item.isAnonymous ? "an anonymous member" : `user ${item.giverId.toString()}`}</span>
+                                        </div>
+                                        {#if item.reason}
+                                            <div class="text-xs mt-0.5 break-words" style="color: {$colorStore.muted}">{item.reason}</div>
+                                        {/if}
+                                        <div class="text-xs mt-1" style="color: {$colorStore.muted}">{new Date(item.timestamp).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                            {/each}
+                            <div class="flex justify-center gap-2 pt-2">
+                                <button class="px-4 py-2 rounded-lg text-sm min-h-[40px] disabled:opacity-40"
+                                        style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+                                        disabled={historyPage <= 1 || historyLoading}
+                                        onclick={() => loadHistory(historyPage - 1)}>Previous</button>
+                                <span class="px-3 py-2 text-sm" style="color: {$colorStore.muted}">Page {historyPage}</span>
+                                <button class="px-4 py-2 rounded-lg text-sm min-h-[40px] disabled:opacity-40"
+                                        style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+                                        disabled={history.length < historyPageSize || historyLoading}
+                                        onclick={() => loadHistory(historyPage + 1)}>Next</button>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+        {/if}
 
     {:else if activeTab === 'stats'}
         <div class="w-full" in:fade={{ duration: 200 }}>

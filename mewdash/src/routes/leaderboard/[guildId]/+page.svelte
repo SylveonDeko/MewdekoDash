@@ -7,6 +7,7 @@
   import { logger } from "$lib/logger";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentInstance } from "$lib/stores/instanceStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
   let { data } = $props();
 
@@ -381,22 +382,22 @@
           <div class="flex justify-center">
             <div class="p-2 rounded-xl border"
                  style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}20;">
-              <select
-                bind:value={selectedInstance}
-                class="px-3 py-2 rounded-lg border-none text-sm"
-                style="background: {$colorStore.primary}08; color: {$colorStore.text};"
-              >
-                {#each availableInstances as instance}
-                  <option value={instance}>
-                    {instance.botName}
-                    {#if instance.isActive}
-                      ✅
-                    {:else}
-                      ⚠️
-                    {/if}
-                  </option>
-                {/each}
-              </select>
+              <div class="min-w-[220px]">
+                <DiscordSelector
+                  type="custom"
+                  options={availableInstances.map(instance => ({
+                    id: instance.botId.toString(),
+                    name: `${instance.botName} ${instance.isActive ? "✅" : "⚠️"}`
+                  }))}
+                  selected={selectedInstance?.botId?.toString() ?? null}
+                  searchable={false}
+                  ariaLabel="Bot instance"
+                  onchange={(e) => {
+                    const match = availableInstances.find(i => i.botId.toString() === e.selected);
+                    if (match) selectedInstance = match;
+                  }}
+                />
+              </div>
             </div>
           </div>
         {:else if selectedInstance}

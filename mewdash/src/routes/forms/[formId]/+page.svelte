@@ -28,6 +28,7 @@
     sanitizeAnswerText,
     sanitizeUrlPath
   } from "$lib/utils/sanitize";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
   interface Props {
     data: PageData;
@@ -1834,19 +1835,20 @@
                         {/if}
                       </div>
                     {:else if question.questionType === "dropdown"}
-                      <select
-                        bind:value={answers[question.id]}
-                        onchange={() => clearValidationError(question.id)}
-                        class="w-full p-3 rounded-lg"
-                        style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                      >
-                        <option value="">Select an option...</option>
-                        {#if question.options}
-                          {#each question.options as option}
-                            <option value={option.optionValue}>{option.optionText}</option>
-                          {/each}
-                        {/if}
-                      </select>
+                      <DiscordSelector
+                        type="custom"
+                        options={(question.options ?? []).map((option) => ({
+                          id: option.optionValue,
+                          name: option.optionText
+                        }))}
+                        selected={answers[question.id] ? String(answers[question.id]) : null}
+                        placeholder="Select an option..."
+                        ariaLabel={renderFormTextPlain(question.questionText)}
+                        onchange={(e) => {
+                          answers[question.id] = typeof e.selected === "string" ? e.selected : "";
+                          clearValidationError(question.id);
+                        }}
+                      />
                     {/if}
                   </label>
 

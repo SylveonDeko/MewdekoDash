@@ -2,6 +2,7 @@
   import { fly } from "svelte/transition";
   import BanMessageCard from "../advanced/BanMessageCard.svelte";
   import MassOperationsCard from "../advanced/MassOperationsCard.svelte";
+  import ServerRecoveryCard from "../advanced/ServerRecoveryCard.svelte";
 
   let {
     banMessage = $bindable(),
@@ -23,6 +24,8 @@
     {guildId}
     {user}
   />
+
+  <ServerRecoveryCard {showConfirm} />
 
   <MassOperationsCard
     {fetchAllData}

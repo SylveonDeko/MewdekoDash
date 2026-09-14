@@ -66,6 +66,7 @@
     { title: "Home", elements: [{ href: "/" }] },
     { title: "Dashboard", elements: [{ href: "/dashboard" }] },
     { title: "Commands", elements: [{ href: "/commands" }] },
+    { title: "Wiki", elements: [{ href: "/wiki" }] },
     {
       title: "About",
       elements: [

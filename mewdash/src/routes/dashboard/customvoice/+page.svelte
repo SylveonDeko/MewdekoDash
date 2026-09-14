@@ -9,8 +9,13 @@
     customVoiceApi,
     type CustomVoiceChannelResponse,
     type CustomVoiceConfigurationRequest,
-    type CustomVoiceConfigurationResponse
+    type CustomVoiceConfigurationResponse,
+    type CustomVoiceUserPreference
   } from "$lib/api/index.ts";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+
+  useUnsavedChangesGuard(() => hasChanges);
   import { currentGuild } from "$lib/stores/currentGuild";
   import { colorStore } from "$lib/stores/colorStore";
   import { fade, slide } from "svelte/transition";
@@ -190,6 +195,113 @@
       showNotificationMessage("Failed to save configuration", "error");
     }
   }
+
+  /** Statistics, maintenance, and user preference state */
+  let stats: any = $state(null);
+  let cleanupHours = $state(24);
+  let maintenanceBusy = $state(false);
+  let prefUserId = $state("");
+  let prefLoading = $state(false);
+  let prefSaving = $state(false);
+  let prefError = $state("");
+  let userPrefs: CustomVoiceUserPreference | null = $state(null);
+  let prefForm = $state({ defaultName: "", defaultUserLimit: null as number | null, defaultBitrate: null as number | null });
+
+  async function loadStats() {
+    if (!$currentGuild) return;
+    try {
+      stats = await customVoiceApi.getCustomVoiceStatistics($currentGuild.id);
+    } catch (err) {
+      logger.error("Failed to load custom voice statistics:", err);
+    }
+  }
+
+  async function cleanupInactive() {
+    if (!$currentGuild) return;
+    if (!(await requestConfirmation({
+      message: `Delete every custom voice channel that has been inactive for ${cleanupHours} hours or more?`,
+      confirmText: "Clean up",
+      variant: "warning"
+    }))) return;
+    maintenanceBusy = true;
+    try {
+      const result = await customVoiceApi.cleanupInactiveChannels($currentGuild.id, cleanupHours);
+      showNotificationMessage(`Removed ${result.deletedChannels} inactive channel${result.deletedChannels === 1 ? "" : "s"}`, "success");
+      await loadData();
+      await loadStats();
+    } catch (err) {
+      logger.error("Failed to clean up channels:", err);
+      showNotificationMessage("Failed to clean up channels", "error");
+    } finally {
+      maintenanceBusy = false;
+    }
+  }
+
+  async function disableCustomVoice() {
+    if (!$currentGuild) return;
+    if (!(await requestConfirmation({
+      title: "Disable custom voice?",
+      message: "The hub channel stops creating channels and the configuration is removed. Existing channels are left alone.",
+      confirmText: "Disable"
+    }))) return;
+    maintenanceBusy = true;
+    try {
+      await customVoiceApi.disableCustomVoice($currentGuild.id);
+      await loadData();
+      await loadStats();
+    } catch (err) {
+      logger.error("Failed to disable custom voice:", err);
+      showNotificationMessage("Failed to disable custom voice", "error");
+    } finally {
+      maintenanceBusy = false;
+    }
+  }
+
+  async function loadUserPreferences() {
+    if (!$currentGuild) return;
+    prefError = "";
+    userPrefs = null;
+    if (!/^\d{15,22}$/.test(prefUserId.trim())) {
+      prefError = "Enter a valid Discord user ID.";
+      return;
+    }
+    prefLoading = true;
+    try {
+      userPrefs = await customVoiceApi.getCustomVoiceUserPreferences($currentGuild.id, BigInt(prefUserId.trim()));
+      prefForm = {
+        defaultName: userPrefs?.defaultName ?? "",
+        defaultUserLimit: userPrefs?.defaultUserLimit ?? null,
+        defaultBitrate: userPrefs?.defaultBitrate ?? null
+      };
+    } catch (err) {
+      logger.error("Failed to load user preferences:", err);
+      prefError = "No preferences found for that user, or the lookup failed.";
+    } finally {
+      prefLoading = false;
+    }
+  }
+
+  async function saveUserPreferences() {
+    if (!$currentGuild || !userPrefs) return;
+    prefSaving = true;
+    try {
+      await customVoiceApi.updateCustomVoiceUserPreferences($currentGuild.id, userPrefs.userId, {
+        defaultName: prefForm.defaultName.trim() || null,
+        defaultUserLimit: prefForm.defaultUserLimit ?? null,
+        defaultBitrate: prefForm.defaultBitrate ?? null
+      });
+      showNotificationMessage("Preferences saved", "success");
+    } catch (err) {
+      logger.error("Failed to save user preferences:", err);
+      prefError = "Failed to save preferences.";
+    } finally {
+      prefSaving = false;
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === "channels" && $currentGuild?.id) loadStats();
+  });
 
   async function deleteChannel(channelId: bigint) {
     if (!$currentGuild) return;
@@ -528,6 +640,51 @@
 
     {:else if activeTab === 'channels'}
       <div class="space-y-6" transition:fade>
+        {#if stats?.enabled}
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {#each [
+              { label: "Total created", value: stats.totalChannels ?? 0, icon: "fa-microphone" },
+              { label: "Active last hour", value: stats.activeChannels ?? 0, icon: "fa-bolt" },
+              { label: "Locked", value: stats.lockedChannels ?? 0, icon: "fa-lock" },
+              { label: "Kept alive", value: stats.keepAliveChannels ?? 0, icon: "fa-thumbtack" }
+            ] as stat}
+              <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+                <div class="flex items-center gap-2 mb-1">
+                  <i class="fa-solid {stat.icon}" style="color: {$colorStore.primary}; font-size: 14px;"></i>
+                  <span class="text-xs" style="color: {$colorStore.muted}">{stat.label}</span>
+                </div>
+                <div class="text-2xl font-bold" style="color: {$colorStore.text}">{stat.value}</div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label for="cleanup-hours" class="text-sm" style="color: {$colorStore.muted}">Inactive for</label>
+            <input id="cleanup-hours" type="number" min="1" max="720" bind:value={cleanupHours}
+                   class="w-20 p-2 rounded-lg border min-h-[40px] text-sm"
+                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            <span class="text-sm" style="color: {$colorStore.muted}">hours</span>
+          </div>
+          <button disabled={maintenanceBusy}
+                  class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[40px] disabled:opacity-50"
+                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                  onclick={cleanupInactive}>
+            <i class="fa-solid fa-broom"></i>
+            Clean up inactive channels
+          </button>
+          {#if config?.enabled}
+            <button disabled={maintenanceBusy}
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[40px] disabled:opacity-50 ml-auto"
+                    style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
+                    onclick={disableCustomVoice}>
+              <i class="fa-solid fa-power-off"></i>
+              Disable custom voice
+            </button>
+          {/if}
+        </div>
+
         {#if activeChannels === undefined || !activeChannels || activeChannels.length === 0}
           <div class="text-center py-12">
             <i class="fa-utility-duo fa-regular fa-microphone" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
@@ -591,10 +748,65 @@
 
     {:else if activeTab === 'preferences'}
       <div class="space-y-6" transition:fade>
-        <div class="text-center py-12">
-          <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"></i>
-          <h3 class="text-xl font-bold mb-2" style="color: {$colorStore.text}">User Preferences</h3>
-          <p style="color: {$colorStore.muted}">Individual user preferences will be displayed here</p>
+        <div class=" rounded-xl border p-6 transition-all"
+             style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+          <div class="flex items-center gap-3 mb-2">
+            <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+            <h3 class="text-xl font-bold" style="color: {$colorStore.text}">User Preferences</h3>
+          </div>
+          <p class="text-sm mb-4" style="color: {$colorStore.muted}">Look up a member to view or change the defaults applied when they create a channel.</p>
+
+          <form class="flex flex-col sm:flex-row gap-3" onsubmit={(e) => { e.preventDefault(); loadUserPreferences(); }}>
+            <input type="text" inputmode="numeric" bind:value={prefUserId} placeholder="Discord user ID" aria-label="User ID"
+                   class="flex-1 p-3 rounded-lg border min-h-[44px]"
+                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            <button type="submit" disabled={prefLoading || !prefUserId.trim()}
+                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                    style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
+              {#if prefLoading}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-magnifying-glass"></i>{/if}
+              Load
+            </button>
+          </form>
+
+          {#if prefError}
+            <div class="mt-4 p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
+                 style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>{prefError}</span>
+            </div>
+          {/if}
+
+          {#if userPrefs}
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" transition:slide>
+              <div>
+                <label for="pref-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default channel name</label>
+                <input id="pref-name" type="text" bind:value={prefForm.defaultName} placeholder="Use server default"
+                       class="w-full p-3 rounded-lg border min-h-[44px]"
+                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+              </div>
+              <div>
+                <label for="pref-limit" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default user limit</label>
+                <input id="pref-limit" type="number" min="0" max="99" bind:value={prefForm.defaultUserLimit} placeholder="Server default"
+                       class="w-full p-3 rounded-lg border min-h-[44px]"
+                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+              </div>
+              <div>
+                <label for="pref-bitrate" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Default bitrate (kbps)</label>
+                <input id="pref-bitrate" type="number" min="8" max="384" bind:value={prefForm.defaultBitrate} placeholder="Server default"
+                       class="w-full p-3 rounded-lg border min-h-[44px]"
+                       style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+              </div>
+              <div class="md:col-span-3 flex justify-end">
+                <button disabled={prefSaving}
+                        class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+                        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                        onclick={saveUserPreferences}>
+                  {#if prefSaving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-floppy-disk"></i>{/if}
+                  Save preferences
+                </button>
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
     {/if}

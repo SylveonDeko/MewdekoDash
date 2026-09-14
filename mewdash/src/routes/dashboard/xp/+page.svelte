@@ -9,6 +9,12 @@
   import XpSettings from "$lib/components/dashboard/xp/XpSettings.svelte";
   import XpStats from "$lib/components/dashboard/xp/XpStats.svelte";
   import XpLeaderboard from "$lib/components/dashboard/xp/XpLeaderboard.svelte";
+
+  /** Manual XP adjustment requested from the leaderboard */
+  type XpAdjustment =
+    | { mode: "add"; userId: string; amount: number }
+    | { mode: "set"; userId: string; amount: number }
+    | { mode: "reset"; userId: string; resetBonus: boolean };
   import XpRewards from "$lib/components/dashboard/xp/XpRewards.svelte";
   import XpExclusions from "$lib/components/dashboard/xp/XpExclusions.svelte";
   import XpTemplateEditor from "$lib/components/dashboard/xp/XpTemplateEditor.svelte";
@@ -640,6 +646,22 @@
     fetchLeaderboard();
   }
 
+  /** Applies a manual XP change requested from the leaderboard */
+  async function adjustUserXp(adjustment: XpAdjustment) {
+    if (!$currentGuild?.id) return;
+    const userId = BigInt(adjustment.userId);
+    try {
+      if (adjustment.mode === "add") await xpApi.addUserXp($currentGuild.id, userId, adjustment.amount);
+      else if (adjustment.mode === "set") await xpApi.setUserXp($currentGuild.id, userId, adjustment.amount);
+      else await xpApi.resetUserXp($currentGuild.id, userId, adjustment.resetBonus);
+      await Promise.all([fetchLeaderboard(), fetchServerStats()]);
+    } catch (err) {
+      logger.error("Failed to adjust user XP:", err);
+      showNotificationMessage("Failed to update XP", "error");
+      throw err;
+    }
+  }
+
   // Save current state for undo functionality
   function saveStateForUndo() {
     if (localTemplate) {
@@ -1163,6 +1185,7 @@
         loading={loading.leaderboard}
         error={error.leaderboard}
         onPageChange={goToPage}
+        onAdjust={adjustUserXp}
       />
     </div>
 

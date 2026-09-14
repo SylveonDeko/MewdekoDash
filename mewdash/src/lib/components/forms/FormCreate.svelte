@@ -5,18 +5,20 @@
     clientApi,
     CONDITIONAL_OPERATORS,
     type ConditionalOperator,
-    FORM_TYPES,
     type FormQuestion,
     type FormQuestionOption,
     formsApi,
     type FormType,
-    formTypeToInt,
     QUESTION_TYPES,
-    type QuestionType,
-    ROLE_ACTION_TYPES
+    type QuestionType
   } from "$lib/api/index.ts";
   import { currentGuild } from "$lib/stores/currentGuild.ts";
   import { logger } from "$lib/logger";
+  import { paginateQuestions } from "$lib/api/forms/models";
+  import * as pageOps from "$lib/utils/formPages";
+  import FormPageBar from "./FormPageBar.svelte";
+  import FormSettingsPanel from "./FormSettingsPanel.svelte";
+  import { defaultFormSettings, type FormSettings, settingsToForm } from "$lib/utils/formSettings";
   import { colorStore } from "$lib/stores/colorStore";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { fly, slide, fade } from "svelte/transition";
@@ -40,48 +42,13 @@
 
   let { userId, onSuccess, onShowNotification }: Props = $props();
 
-  // Form settings
-  let formName = $state("");
-  let formDescription = $state("");
-  let submitChannelId = $state("");
-  let allowMultipleSubmissions = $state(false);
-  let maxResponses = $state<number | null>(null);
-  let requireCaptcha = $state(false);
-  let expiresAt = $state<string>("");
+  /** Every setting on the form, in one object so the shared panel can edit it. */
+  let settings = $state<FormSettings>(defaultFormSettings());
 
-  // Scheduling and launch announcement
-  let opensAt = $state<string>("");
-  let announceChannelId = $state<string>("");
-  let announceRoleId = $state<string>("");
-  let announceMessage = $state<string>("");
-
-  // Eligibility gates and reviewer notification
-  let notifyRoleId = $state<string>("");
-  let minAccountAgeDays = $state<number | null>(null);
-  let allowResubmitAfterRejection = $state(false);
-
-  // Appeal policy, which only applies to ban appeal forms
-  let blockReappealAfterRejection = $state(false);
-  let maxAppealAttempts = $state<number | null>(null);
-  let reappealCooldownDays = $state<number | null>(null);
-  let appealDelayDays = $state<number | null>(null);
-  let requiredRoleId = $state<string>("");
-  let successMessage = $state<string>("");
-  let saveAsDraft = $state(false);
-  let allowAnonymous = $state(false);
-  let formType = $state<FormType>("Regular");
-  let allowExternalUsers = $state(false);
-  let autoApproveRoleIds = $state<string[]>([]);
-  let inviteMaxUses = $state<number>(1);
-  let inviteMaxAge = $state<number>(86400);
-  let notificationWebhookUrl = $state<string>("");
-
-  // Approval workflow (Regular forms only)
-  let requireApproval = $state(false);
-  let approvalActionType = $state<number>(0);
-  let approvalRoleIds = $state<string[]>([]);
-  let rejectionActionType = $state<number>(0);
-  let rejectionRoleIds = $state<string[]>([]);
+  /** The server's default review emotes, shown as the placeholder when a form has none. */
+  let guildApproveEmote = $state<string | null>(null);
+  let guildRejectEmote = $state<string | null>(null);
+  let guildEmojis = $state<any[]>([]);
 
   // Questions
   let questions = $state<Partial<FormQuestion>[]>([]);
@@ -90,6 +57,7 @@
 
   // UI state
   let channels = $state<Array<{ id: string; name: string }>>([]);
+  /** Still needed by the per-question conditional editor, which can gate on a role. */
   let roles = $state<Array<{ id: string; name: string }>>([]);
   let isMobile = $state(false);
   let showQuestionTypeMenu = $state(false);
@@ -99,14 +67,6 @@
   let showMobileQuestionEditor = $state(false);
   let mobileEditingQuestionIndex = $state<number | null>(null);
   let mobileIdx = $derived(mobileEditingQuestionIndex ?? 0);
-
-  // Accordion states for mobile
-  let expandedSections = $state({
-    basicSettings: true,
-    advancedOptions: false,
-    approvalWorkflow: false,
-    joinAppSettings: false
-  });
 
   function checkMobile() {
     isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -144,22 +104,73 @@
     }
   }
 
+  async function loadReviewEmoteContext() {
+    if (!$currentGuild?.id) return;
+
+    try {
+      const [emojis, defaults] = await Promise.all([
+        clientApi.getEmojis(BigInt(userId), false).catch(() => []),
+        formsApi.getReviewEmotes($currentGuild.id).catch(() => null)
+      ]);
+
+      guildEmojis = emojis || [];
+      guildApproveEmote = defaults?.approveEmote ?? null;
+      guildRejectEmote = defaults?.rejectEmote ?? null;
+    } catch (err) {
+      logger.error("Failed to load review emote settings:", err);
+    }
+  }
+
+  /** The form split into pages, the same way the edit builder and the public form split it. */
+  let builderPages = $derived(paginateQuestions(questions));
+
+  /** Which page the builder is showing. */
+  let activePage = $state(0);
+
+  let safePage = $derived(Math.min(activePage, Math.max(0, builderPages.length - 1)));
+  let currentBuilderPage = $derived(builderPages[safePage]);
+
+  /**
+   * Nothing here is saved yet, so questions carry a temporary negative identifier. It has to be
+   * unique rather than just unsaved, since it is what keys the list and tracks which question is
+   * open for editing.
+   */
+  let nextTempId = $state(-1);
+
+  function takeTempId(): number {
+    return nextTempId--;
+  }
+
+  function newPageBreak(): Partial<FormQuestion> {
+    return { ...pageOps.createPageBreak(0, takeTempId()) };
+  }
+
+  function addPage() {
+    const result = pageOps.addPage(questions, newPageBreak(), safePage);
+
+    questions = result.questions;
+    activePage = result.activePage;
+  }
+
   function addQuestion(type: QuestionType) {
     const newQuestion: Partial<FormQuestion> = {
-      id: -(questions.length + 1), // Temporary negative ID
+      id: takeTempId(),
       questionText: "",
       questionType: type,
       isRequired: false,
-      displayOrder: questions.length,
+      displayOrder: 0,
       options: [],
       conditionalType: 0, // Default to QuestionBased
       enableAnswerPiping: false
     };
 
-    questions = [...questions, newQuestion];
+    // A new question joins the page being edited, not the end of the whole form.
+    const result = pageOps.insertOnPage(questions, newQuestion, safePage);
+
+    questions = result.questions;
 
     if (isMobile) {
-      mobileEditingQuestionIndex = questions.length - 1;
+      mobileEditingQuestionIndex = result.index;
       showMobileQuestionEditor = true;
     } else {
       editingQuestionId = newQuestion.id!;
@@ -169,34 +180,24 @@
   }
 
   function deleteQuestion(index: number) {
-    questions = questions.filter((_, i) => i !== index);
-    // Update display order
-    questions.forEach((q, i) => (q.displayOrder = i));
+    questions = pageOps.resequence(questions.filter((_, i) => i !== index));
   }
 
   function duplicateQuestion(index: number) {
     const question = questions[index];
-    const duplicated: Partial<FormQuestion> = {
+
+    questions = pageOps.duplicateQuestion(questions, index, {
       ...question,
-      id: -(questions.length + 1),
+      id: takeTempId(),
       questionText: question.questionText + " (Copy)",
-      displayOrder: questions.length,
+      displayOrder: 0,
       options: question.options?.map((opt) => ({ ...opt, id: 0 }))
-    };
-    questions = [...questions, duplicated];
+    });
   }
 
   function moveQuestion(index: number, direction: "up" | "down") {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= questions.length) return;
-
-    const newQuestions = [...questions];
-    [newQuestions[index], newQuestions[newIndex]] = [
-      newQuestions[newIndex],
-      newQuestions[index]
-    ];
-    newQuestions.forEach((q, i) => (q.displayOrder = i));
-    questions = newQuestions;
+    const moved = pageOps.moveQuestion(questions, index, direction);
+    if (moved) questions = moved;
   }
 
   function addOption(questionIndex: number) {
@@ -259,66 +260,25 @@
     return await loadingStore.wrap("save-form", async () => {
       try {
         // Validate form
-        const validationErrors = validateForm(formName, questions);
+        const validationErrors = validateForm(settings.name, questions);
         if (validationErrors.length > 0) {
           onShowNotification(validationErrors[0].message, "error");
           logger.error("Validation errors:", validationErrors);
           return;
         }
 
-        // Sanitize form data
-        const sanitizedName = sanitizeFormName(formName);
-        const sanitizedDescription = formDescription ? sanitizeInput(formDescription) : undefined;
-
         if (!$currentGuild?.id) {
           onShowNotification("No guild selected", "error");
           return;
         }
 
-        const settings = {
-          name: sanitizedName,
-          description: sanitizedDescription,
-          submitChannelId: submitChannelId ? BigInt(submitChannelId) : undefined,
-          allowMultipleSubmissions,
-          maxResponses: maxResponses || undefined,
-          requireCaptcha,
-          expiresAt: expiresAt || undefined,
-          requiredRoleId: requiredRoleId ? BigInt(requiredRoleId) : undefined,
-          successMessage: successMessage || undefined,
-          isDraft: saveAsDraft,
-          allowAnonymous,
-          formType: formTypeToInt(formType) as any,
-          allowExternalUsers,
-          autoApproveRoleIds: autoApproveRoleIds.length > 0 ? autoApproveRoleIds.join(",") : undefined,
-          inviteMaxUses: formType === "JoinApplication" ? inviteMaxUses : undefined,
-          inviteMaxAge: formType === "JoinApplication" ? inviteMaxAge : undefined,
-          notificationWebhookUrl: notificationWebhookUrl || undefined,
-          requireApproval: formType === "Regular" ? requireApproval : false,
-          approvalActionType: formType === "Regular" && requireApproval ? approvalActionType : 0,
-          approvalRoleIds: formType === "Regular" && requireApproval && approvalRoleIds.length > 0 ? approvalRoleIds.join(",") : undefined,
-          rejectionActionType: formType === "Regular" && requireApproval ? rejectionActionType : 0,
-          rejectionRoleIds: formType === "Regular" && requireApproval && rejectionRoleIds.length > 0 ? rejectionRoleIds.join(",") : undefined,
-
-          opensAt: opensAt || undefined,
-          announceChannelId: announceChannelId ? BigInt(announceChannelId) : undefined,
-          announceRoleId: announceRoleId ? BigInt(announceRoleId) : undefined,
-          announceMessage: announceMessage || undefined,
-
-          notifyRoleId: notifyRoleId ? BigInt(notifyRoleId) : undefined,
-          minAccountAgeDays: minAccountAgeDays || undefined,
-          allowResubmitAfterRejection,
-
-          // Appeal limits only mean anything where there is an appeal to limit.
-          blockReappealAfterRejection: formType === "BanAppeal" ? blockReappealAfterRejection : false,
-          maxAppealAttempts: formType === "BanAppeal" ? maxAppealAttempts || undefined : undefined,
-          reappealCooldownDays: formType === "BanAppeal" ? reappealCooldownDays || undefined : undefined,
-          appealDelayDays: formType === "BanAppeal" ? appealDelayDays || undefined : undefined,
-
-          createdBy: BigInt(userId)
-        };
-
         const createdForm = await formsApi.saveForm($currentGuild.id, {
-          form: settings,
+          form: {
+            ...settingsToForm(settings),
+            name: sanitizeFormName(settings.name),
+            description: settings.description ? sanitizeInput(settings.description) : undefined,
+            createdBy: BigInt(userId)
+          },
           questions: questions
             .filter((q) => q.questionType === "section_break" || q.questionText?.trim())
             .map((question) => ({
@@ -375,6 +335,7 @@
     checkMobile();
     loadChannels();
     loadRoles();
+    loadReviewEmoteContext();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   });
@@ -382,8 +343,9 @@
   $effect(() => {
     if ($currentGuild) {
       loadChannels();
-      loadRoles();
-    }
+    loadRoles();
+    loadReviewEmoteContext();
+      }
   });
 
   function getQuestionTypeLabel(type: QuestionType): string {
@@ -455,885 +417,54 @@
     }
   }
 
-  // Auto-update allowExternalUsers and clear incompatible options based on form type
-  $effect(() => {
-    // For BanAppeal and JoinApplication, external users MUST be allowed (force it)
-    // For Regular forms, let the user decide (don't override their choice)
-    if (formType === "BanAppeal" || formType === "JoinApplication") {
-      allowExternalUsers = true; // Force enable for these types
-      allowAnonymous = false;
-      requiredRoleId = "";
-      requireApproval = false; // Ban appeals and join apps have their own workflow
-    }
-  });
-
-  // Validation: Anonymous forms cannot have approval workflows with role actions
-  $effect(() => {
-    if (allowAnonymous && requireApproval && (approvalActionType !== 0 || rejectionActionType !== 0)) {
-      // Warn user and disable approval workflow
-      requireApproval = false;
-      approvalActionType = 0;
-      rejectionActionType = 0;
-      approvalRoleIds = [];
-      rejectionRoleIds = [];
-    }
-  });
-
-  function toggleSection(section: keyof typeof expandedSections) {
-    expandedSections[section] = !expandedSections[section];
-  }
+  // The effects that used to reconcile anonymity, external users and the approval workflow are
+  // gone with the settings they policed. Those rules now live on the edit screen and in the
+  // server-side validation, which is the only place they were ever actually enforced.
 </script>
 
 <div class="space-y-6">
-  <!-- Form Settings -->
-  <div
-    class="rounded-xl border p-4 sm:p-6 transition-all"
-    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-  >
-    <!-- Mobile: Collapsible header -->
-    {#if isMobile}
-      <button
-        type="button"
-        onclick={() => toggleSection('basicSettings')}
-        class="w-full flex items-center justify-between mb-4"
-      >
-        <h2 class="text-lg font-bold" style="color: {$colorStore.text};">
-          <i class="fa-solid fa-gear mr-2" style="color: {$colorStore.primary};"></i>
-          Form Settings
-        </h2>
-        <i class="fa-solid fa-chevron-{expandedSections.basicSettings ? 'up' : 'down'}"
-           style="color: {$colorStore.muted};"></i>
-      </button>
-    {:else}
-      <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text};">
-        <i class="fa-solid fa-gear mr-2" style="color: {$colorStore.primary};"></i>
-        Form Settings
-      </h2>
-    {/if}
-
-    {#if !isMobile || expandedSections.basicSettings}
-      <div class="space-y-4" transition:slide>
-        <!-- Form Type Selector -->
-        <div>
-          <span class="block text-sm font-medium mb-3" style="color: {$colorStore.text};">
-            Form Type <span style="color: #ef4444;">*</span>
-          </span>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Form Type">
-            {#each FORM_TYPES as fType}
-              <label
-                class="group relative flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-200"
-                style="background: {formType === fType.type ? `linear-gradient(135deg, ${$colorStore.primary}15, ${$colorStore.secondary}10)` : $colorStore.primary + '05'};
-                       border: 2px solid {formType === fType.type ? $colorStore.primary : 'transparent'};"
-              >
-                <input
-                  type="radio"
-                  name="form-type"
-                  value={fType.type}
-                  bind:group={formType}
-                  class="sr-only"
-                />
-                <div
-                  class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style="background: {formType === fType.type ? $colorStore.primary + '25' : $colorStore.primary + '12'};"
-                >
-                  <i class="fa-solid {fType.icon}"
-                     style="color: {formType === fType.type ? $colorStore.primary : $colorStore.muted}; font-size: 14px;"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-medium text-sm" style="color: {$colorStore.text};">
-                    {fType.label}
-                  </div>
-                </div>
-                {#if formType === fType.type}
-                  <i class="fa-solid fa-check-circle flex-shrink-0"
-                     style="color: {$colorStore.primary}; font-size: 16px;"></i>
-                {/if}
-              </label>
-            {/each}
-          </div>
-        </div>
-
-        <!-- Form Name & Description -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm mb-1.5" for="form-name" style="color: {$colorStore.muted};">
-              Form Name <span style="color: #ef4444;">*</span>
-            </label>
-            <input
-              bind:value={formName}
-              class="w-full p-2.5 rounded-lg text-sm"
-              id="form-name"
-              maxlength="255"
-              placeholder="e.g., Staff Application"
-              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              type="text"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm mb-1.5" for="form-description" style="color: {$colorStore.muted};">
-              Description (Optional)
-            </label>
-            <input
-              bind:value={formDescription}
-              class="w-full p-2.5 rounded-lg text-sm"
-              id="form-description"
-              maxlength="500"
-              placeholder="Brief description..."
-              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              type="text"
-            />
-          </div>
-        </div>
-
-        <!-- Advanced Options Toggle for Mobile -->
-        {#if isMobile}
-          <button
-            type="button"
-            onclick={() => toggleSection('advancedOptions')}
-            class="w-full flex items-center justify-between p-3 rounded-lg"
-            style="background: {$colorStore.primary}08;"
-          >
-            <span class="text-sm font-medium" style="color: {$colorStore.text};">
-              <i class="fa-solid fa-sliders mr-2"></i>
-              Advanced Options
-            </span>
-            <i class="fa-solid fa-chevron-{expandedSections.advancedOptions ? 'up' : 'down'}"
-               style="color: {$colorStore.muted};"></i>
-          </button>
-        {/if}
-
-        {#if !isMobile || expandedSections.advancedOptions}
-          <div transition:slide>
-            <!-- Two-Column Layout for Compact Settings -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Max Responses -->
-              <div>
-                <label class="block text-xs mb-1.5" for="max-responses" style="color: {$colorStore.muted};">
-                  Max Responses (Optional)
-                </label>
-                <input
-                  bind:value={maxResponses}
-                  class="w-full p-2 rounded-lg text-sm"
-                  id="max-responses"
-                  min="1"
-                  placeholder="Unlimited"
-                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                  type="number"
-                />
-              </div>
-
-              <!-- Expiration Date/Time -->
-              <div>
-                <label class="block text-xs mb-1.5" for="expires-at" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-clock mr-1"></i>
-                  Expiration (Optional)
-                </label>
-                <input
-                  bind:value={expiresAt}
-                  class="w-full p-2 rounded-lg text-sm"
-                  id="expires-at"
-                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                  type="datetime-local"
-                />
-              </div>
-
-              <!-- Opening time. Whether the form accepts a response is judged on submission, so
-                   this schedules the form itself, not just the announcement. -->
-              <div>
-                <label class="block text-xs mb-1.5" for="opens-at" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-calendar-day mr-1"></i>
-                  Opens at (Optional)
-                </label>
-                <input
-                  bind:value={opensAt}
-                  class="w-full p-2 rounded-lg text-sm"
-                  id="opens-at"
-                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                  type="datetime-local"
-                />
-              </div>
-
-              <!-- Minimum account age -->
-              <div>
-                <label class="block text-xs mb-1.5" for="min-account-age" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-user-clock mr-1"></i>
-                  Min account age in days (Optional)
-                </label>
-                <input
-                  bind:value={minAccountAgeDays}
-                  class="w-full p-2 rounded-lg text-sm"
-                  id="min-account-age"
-                  min="0"
-                  placeholder="Any age"
-                  style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                  type="number"
-                />
-              </div>
-
-              <!-- Reviewer ping -->
-              <div>
-                <label class="block text-xs mb-1.5" for="notify-role" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-bell mr-1"></i>
-                  Ping on new response (Optional)
-                </label>
-                <DiscordSelector
-                  id="notify-role"
-                  onchange={(e) => (notifyRoleId = e.selected as string)}
-                  options={roles}
-                  placeholder="Select a role..."
-                  selected={notifyRoleId}
-                  type="role"
-                />
-              </div>
-
-              <!-- Notification Channel -->
-              <div class="{formType === 'Regular' ? '' : 'md:col-span-2'}">
-                <label class="block text-xs mb-1.5" for="submit-channel" style="color: {$colorStore.muted};">
-                  Notification Channel (Optional)
-                </label>
-                <DiscordSelector
-                  onchange={(e) => (submitChannelId = e.selected as string)}
-                  options={channels}
-                  placeholder="Select a channel..."
-                  selected={submitChannelId}
-                  type="channel"
-                />
-              </div>
-
-              <!-- Required Role (only for Regular forms) -->
-              {#if formType === "Regular"}
-                <div>
-                  <label for="required-role" class="block text-xs mb-1.5" style="color: {$colorStore.muted};">
-                    <i class="fa-solid fa-shield mr-1"></i>
-                    Required Role (Optional)
-                  </label>
-                  <DiscordSelector
-                    type="role"
-                    options={roles}
-                    selected={requiredRoleId}
-                    placeholder="Select a role..."
-                    onchange={(e) => (requiredRoleId = e.selected as string)}
-                  />
-                </div>
-              {/if}
-            </div>
-
-            <!-- Launch announcement -->
-            {#if opensAt}
-              <div
-                class="mt-4 p-4 rounded-lg space-y-3"
-                style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
-                transition:slide
-              >
-                <div class="text-sm font-semibold" style="color: {$colorStore.text};">
-                  <i class="fa-solid fa-bullhorn mr-2"></i>
-                  Launch announcement
-                </div>
-                <p class="text-xs" style="color: {$colorStore.muted};">
-                  Posted once the opening time passes. The message carries a countdown to the
-                  closing time when one is set.
-                </p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-xs mb-1.5" for="announce-channel" style="color: {$colorStore.muted};">
-                      Announce in
-                    </label>
-                    <DiscordSelector
-                      id="announce-channel"
-                      onchange={(e) => (announceChannelId = e.selected as string)}
-                      options={channels}
-                      placeholder="Select a channel..."
-                      selected={announceChannelId}
-                      type="channel"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-xs mb-1.5" for="announce-role" style="color: {$colorStore.muted};">
-                      Ping role (Optional)
-                    </label>
-                    <DiscordSelector
-                      id="announce-role"
-                      onchange={(e) => (announceRoleId = e.selected as string)}
-                      options={roles}
-                      placeholder="Select a role..."
-                      selected={announceRoleId}
-                      type="role"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-xs mb-1.5" for="announce-message" style="color: {$colorStore.muted};">
-                    Message (Optional)
-                  </label>
-                  <textarea
-                    bind:value={announceMessage}
-                    class="w-full p-2 rounded-lg text-sm resize-none"
-                    id="announce-message"
-                    maxlength="2000"
-                    placeholder="This form is now open."
-                    rows="2"
-                    style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                  ></textarea>
-                </div>
-              </div>
-            {/if}
-
-            <!-- Appeal policy, which is what stops one person filing the same appeal daily -->
-            {#if formType === "BanAppeal"}
-              <div
-                class="mt-4 p-4 rounded-lg space-y-3"
-                style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}25;"
-                transition:slide
-              >
-                <div class="text-sm font-semibold" style="color: {$colorStore.text};">
-                  <i class="fa-solid fa-gavel mr-2"></i>
-                  Appeal limits
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label class="block text-xs mb-1.5" for="appeal-delay" style="color: {$colorStore.muted};">
-                      Wait after ban (days)
-                    </label>
-                    <input
-                      bind:value={appealDelayDays}
-                      class="w-full p-2 rounded-lg text-sm"
-                      id="appeal-delay"
-                      min="0"
-                      placeholder="None"
-                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                      type="number"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-xs mb-1.5" for="max-appeals" style="color: {$colorStore.muted};">
-                      Max attempts
-                    </label>
-                    <input
-                      bind:value={maxAppealAttempts}
-                      class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
-                      disabled={blockReappealAfterRejection}
-                      id="max-appeals"
-                      min="1"
-                      placeholder="Unlimited"
-                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                      type="number"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-xs mb-1.5" for="reappeal-cooldown" style="color: {$colorStore.muted};">
-                      Cooldown after rejection (days)
-                    </label>
-                    <input
-                      bind:value={reappealCooldownDays}
-                      class="w-full p-2 rounded-lg text-sm disabled:opacity-50"
-                      disabled={blockReappealAfterRejection}
-                      id="reappeal-cooldown"
-                      min="0"
-                      placeholder="None"
-                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-                      type="number"
-                    />
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between p-2.5 rounded-lg"
-                     style="background: {$colorStore.primary}08;">
-                  <div class="text-sm" style="color: {$colorStore.text};">
-                    One rejection is final
-                    <div class="text-xs" style="color: {$colorStore.muted};">
-                      Overrides the attempt count and cooldown above
-                    </div>
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input bind:checked={blockReappealAfterRejection} class="sr-only peer" type="checkbox" />
-                    <span
-                      class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
-                      style:background-color={blockReappealAfterRejection ? $colorStore.primary : "#4b5563"}
-                    ></span>
-                  </label>
-                </div>
-              </div>
-            {/if}
-
-            <!-- Options Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              <!-- Allow Anonymous (only for Regular forms) -->
-              {#if formType === "Regular"}
-                <div class="flex items-center justify-between p-2.5 rounded-lg"
-                     style="background: {$colorStore.primary}08;">
-                  <div class="text-sm" style="color: {$colorStore.text};">
-                    <i class="fa-solid fa-user-secret mr-1.5"></i>
-                    Anonymous
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" bind:checked={allowAnonymous} />
-                    <span
-                      class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
-                      style:background-color={allowAnonymous ? "#8b5cf6" : "#4b5563"}
-                    ></span>
-                  </label>
-                </div>
-              {/if}
-
-              <!-- Multiple Submissions -->
-              <div class="flex items-center justify-between p-2.5 rounded-lg"
-                   style="background: {$colorStore.primary}08;">
-                <div class="text-sm" style="color: {$colorStore.text};">
-                  Multiple Submissions
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input bind:checked={allowMultipleSubmissions} class="sr-only peer" type="checkbox" />
-                  <span
-                    class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
-                    style:background-color={allowMultipleSubmissions ? $colorStore.primary : "#4b5563"}
-                  ></span>
-                </label>
-              </div>
-
-              <!-- Lets somebody who was turned down try again, without opening the form up to
-                   unlimited submissions from everybody. -->
-              {#if !allowMultipleSubmissions}
-                <div class="flex items-center justify-between p-2.5 rounded-lg"
-                     style="background: {$colorStore.primary}08;">
-                  <div class="text-sm" style="color: {$colorStore.text};">
-                    Allow retry after rejection
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input bind:checked={allowResubmitAfterRejection} class="sr-only peer" type="checkbox" />
-                    <span
-                      class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
-                      style:background-color={allowResubmitAfterRejection ? $colorStore.primary : "#4b5563"}
-                    ></span>
-                  </label>
-                </div>
-              {/if}
-
-              <!-- Require Captcha -->
-              <div class="flex items-center justify-between p-2.5 rounded-lg"
-                   style="background: {$colorStore.primary}08;">
-                <div class="text-sm" style="color: {$colorStore.text};">Require Captcha</div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input bind:checked={requireCaptcha} class="sr-only peer" type="checkbox" />
-                  <span
-                    class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block"
-                    style:background-color={requireCaptcha ? $colorStore.primary : "#4b5563"}
-                  ></span>
-                </label>
-              </div>
-
-              <!-- Allow External Users -->
-              <div class="flex items-center justify-between p-2.5 rounded-lg"
-                   style="background: {$colorStore.primary}08; opacity: {formType !== 'Regular' ? '0.6' : '1'};">
-                <div class="text-sm" style="color: {$colorStore.text};">
-                  <i class="fa-solid fa-globe mr-1.5"></i>
-                  Allow External Users
-                  {#if formType !== "Regular"}
-                    <span class="text-xs ml-1" style="color: {$colorStore.muted};}">(required)</span>
-                  {/if}
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input bind:checked={allowExternalUsers}
-                         class="sr-only peer"
-                         disabled={formType !== "Regular"}
-                         type="checkbox" />
-                  <span
-                    class="w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all block peer-disabled:cursor-not-allowed"
-                    style:background-color={allowExternalUsers ? $colorStore.primary : "#4b5563"}
-                  ></span>
-                </label>
-              </div>
-            </div>
-
-            {#if allowExternalUsers}
-              <div
-                class="p-3 rounded-lg border text-xs mt-4"
-                style="background: #3b82f608; border-color: #3b82f620;"
-                transition:slide
-              >
-                <div class="flex items-start gap-2">
-                  <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
-                  <span style="color: {$colorStore.muted};">
-                    Users can submit this form even if they're not in your server. Perfect for applications and feedback.
-                  </span>
-                </div>
-              </div>
-            {/if}
-
-            {#if allowAnonymous}
-              <div
-                class="p-3 rounded-lg border text-xs mt-4"
-                style="background: #8b5cf608; border-color: #8b5cf620;"
-                transition:slide
-              >
-                <div class="flex items-start gap-2">
-                  <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #8b5cf6;"></i>
-                  <span style="color: {$colorStore.muted};">
-                      Users log in for verification but identity is not stored. Only answers are saved.
-                    </span>
-                </div>
-              </div>
-            {/if}
-
-            <!-- Custom Success Message -->
-            <div class="mt-4">
-              <label class="block text-xs mb-1.5" for="success-message" style="color: {$colorStore.muted};">
-                <i class="fa-solid fa-message mr-1"></i>
-                Success Message (Optional)
-              </label>
-              <textarea
-                bind:value={successMessage}
-                class="w-full p-2 rounded-lg resize-none text-sm"
-                id="success-message"
-                maxlength="1000"
-                placeholder="Thank you for your submission!"
-                rows="2"
-                style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              ></textarea>
-            </div>
-          </div>
-        {/if}
-      </div>
-    {/if}
-  </div>
-
-  <!-- Approval Workflow Settings (Regular Forms Only) -->
-  {#if formType === "Regular"}
-    <div
-      class=" rounded-xl border p-4 sm:p-6 transition-all"
-      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-      transition:slide
-    >
-      {#if isMobile}
-        <button
-          type="button"
-          onclick={() => toggleSection('approvalWorkflow')}
-          class="w-full flex items-center justify-between mb-4"
-        >
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text};">
-            <i class="fa-solid fa-clipboard-check mr-2" style="color: {$colorStore.primary};"></i>
-            Approval Workflow
-          </h2>
-          <i class="fa-solid fa-chevron-{expandedSections.approvalWorkflow ? 'up' : 'down'}"
-             style="color: {$colorStore.muted};"></i>
-        </button>
-      {:else}
-        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text};">
-          <i class="fa-solid fa-clipboard-check mr-2" style="color: {$colorStore.primary};"></i>
-          Approval Workflow (Optional)
-        </h2>
-      {/if}
-
-      {#if !isMobile || expandedSections.approvalWorkflow}
-        <div class="space-y-4" transition:slide>
-          <!-- Require Approval Toggle -->
-          <div class="flex items-center justify-between p-3 rounded-lg" style="background: {$colorStore.primary}08;">
-            <div>
-              <div class="font-semibold mb-1" style="color: {$colorStore.text};">
-                <i class="fa-solid fa-user-check mr-2" style="color: {$colorStore.primary};"></i>
-                Require Manual Approval
-              </div>
-              <p class="text-xs" style="color: {$colorStore.muted};">
-                Form submissions will need to be manually approved or rejected
-              </p>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" class="sr-only peer" bind:checked={requireApproval} />
-              <span
-                class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
-                style:background-color={requireApproval ? $colorStore.primary : "#4b5563"}
-              ></span>
-            </label>
-          </div>
-
-          <!-- Warning: Anonymous + Approval with Role Actions -->
-          {#if allowAnonymous && requireApproval}
-            <div
-              class="p-3 rounded-lg border text-xs"
-              style="background: #ef444408; border-color: #ef444430;"
-              transition:slide
-            >
-              <div class="flex items-start gap-2">
-                <i class="fa-solid fa-exclamation-triangle flex-shrink-0 mt-0.5" style="color: #ef4444;"></i>
-                <span style="color: #ef4444;">
-                  <strong>Warning:</strong> Anonymous forms cannot have role actions because user identity is not stored. Role action settings will be ignored.
-                </span>
-              </div>
-            </div>
-          {/if}
-
-          {#if requireApproval}
-            <!-- Approval Actions -->
-            <div
-              class="p-4 rounded-lg border space-y-4"
-              style="background: #10B98108; border-color: #10B98130;"
-              transition:slide
-            >
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 18px;"></i>
-                <h3 class="font-semibold" style="color: {$colorStore.text};">When Approved</h3>
-              </div>
-
-              <!-- Approval Action Type -->
-              <div>
-                <label for="f-FormCreate-action-type-841" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-cog mr-1"></i>
-                  Action Type
-                </label>
-                <DiscordSelector id="f-FormCreate-action-type-841"
-                  type="custom"
-                  options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
-                  selected={String(approvalActionType)}
-                  placeholder="Select action type..."
-                  onchange={(e) => {
-                    approvalActionType = parseInt(e.selected as string);
-                  }}
-                  searchable={false}
-                />
-              </div>
-
-              <!-- Approval Roles (only show if action type is not None) -->
-              {#if approvalActionType !== 0}
-                <div transition:slide>
-                  <label for="f-FormCreate-roles-to-approvalactiontype-1--860" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    <i class="fa-solid fa-shield mr-1"></i>
-                    Roles to {approvalActionType === 1 ? "Add" : "Remove"}
-                  </label>
-                  <DiscordSelector id="f-FormCreate-roles-to-approvalactiontype-1--860"
-                    type="role"
-                    options={roles}
-                    selected={approvalRoleIds}
-                    placeholder="Select roles to {approvalActionType === 1 ? 'add' : 'remove'} on approval..."
-                    multiple
-                    onchange={(e) => {
-                      approvalRoleIds = e.selected as string[];
-                    }}
-                  />
-                  <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                    {#if approvalActionType === 1}
-                      These roles will be added to the user when their response is approved
-                    {:else}
-                      These roles will be removed from the user when their response is approved
-                    {/if}
-                  </p>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Rejection Actions -->
-            <div
-              class="p-4 rounded-lg border space-y-4"
-              style="background: #ef444408; border-color: #ef444430;"
-              transition:slide
-            >
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-times-circle" style="color: #ef4444; font-size: 18px;"></i>
-                <h3 class="font-semibold" style="color: {$colorStore.text};">When Rejected</h3>
-              </div>
-
-              <!-- Rejection Action Type -->
-              <div>
-                <label for="f-FormCreate-action-type-898" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                  <i class="fa-solid fa-cog mr-1"></i>
-                  Action Type
-                </label>
-                <DiscordSelector id="f-FormCreate-action-type-898"
-                  type="custom"
-                  options={ROLE_ACTION_TYPES.map(t => ({ id: String(t.value), name: `${t.label} - ${t.description}` }))}
-                  selected={String(rejectionActionType)}
-                  placeholder="Select action type..."
-                  onchange={(e) => {
-                    rejectionActionType = parseInt(e.selected as string);
-                  }}
-                  searchable={false}
-                />
-              </div>
-
-              <!-- Rejection Roles (only show if action type is not None) -->
-              {#if rejectionActionType !== 0}
-                <div transition:slide>
-                  <label for="f-FormCreate-roles-to-rejectionactiontype-1-917" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                    <i class="fa-solid fa-shield mr-1"></i>
-                    Roles to {rejectionActionType === 1 ? "Add" : "Remove"}
-                  </label>
-                  <DiscordSelector id="f-FormCreate-roles-to-rejectionactiontype-1-917"
-                    type="role"
-                    options={roles}
-                    selected={rejectionRoleIds}
-                    placeholder="Select roles to {rejectionActionType === 1 ? 'add' : 'remove'} on rejection..."
-                    multiple
-                    onchange={(e) => {
-                      rejectionRoleIds = e.selected as string[];
-                    }}
-                  />
-                  <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                    {#if rejectionActionType === 1}
-                      These roles will be added to the user when their response is rejected
-                    {:else}
-                      These roles will be removed from the user when their response is rejected
-                    {/if}
-                  </p>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Info Banner -->
-            <div
-              class="p-3 rounded-lg border text-xs"
-              style="background: #3b82f608; border-color: #3b82f620;"
-              transition:slide
-            >
-              <div class="flex items-start gap-2">
-                <i class="fa-solid fa-info-circle flex-shrink-0 mt-0.5" style="color: #3b82f6;"></i>
-                <div style="color: {$colorStore.muted};">
-                  <strong>Note:</strong> Approval workflow requires users to be guild members for role actions to work.
-                  Submissions will appear in the "Pending" tab until reviewed.
-                </div>
-              </div>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
-  {/if}
-
-  <!-- Join Application Settings -->
-  {#if formType === "JoinApplication"}
-    <div
-      class=" rounded-xl border p-4 sm:p-6 transition-all"
-      style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-      transition:slide
-    >
-      {#if isMobile}
-        <button
-          type="button"
-          onclick={() => toggleSection('joinAppSettings')}
-          class="w-full flex items-center justify-between mb-4"
-        >
-          <h2 class="text-lg font-bold" style="color: {$colorStore.text};">
-            <i class="fa-solid fa-user-plus mr-2" style="color: {$colorStore.primary};"></i>
-            Join Application Settings
-          </h2>
-          <i class="fa-solid fa-chevron-{expandedSections.joinAppSettings ? 'up' : 'down'}"
-             style="color: {$colorStore.muted};"></i>
-        </button>
-      {:else}
-        <h2 class="text-xl font-bold mb-4" style="color: {$colorStore.text};">
-          <i class="fa-solid fa-user-plus mr-2" style="color: {$colorStore.primary};"></i>
-          Join Application Settings
-        </h2>
-      {/if}
-
-      {#if !isMobile || expandedSections.joinAppSettings}
-        <div class="space-y-4" transition:slide>
-          <!-- Auto-Approve Roles -->
-          <div>
-            <label for="auto-approve-roles" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-              <i class="fa-solid fa-shield mr-1"></i>
-              Roles to Assign on Join (Optional)
-            </label>
-            <DiscordSelector
-              type="role"
-              options={roles}
-              selected={autoApproveRoleIds}
-              placeholder="Select roles to assign when approved..."
-              multiple
-              onchange={(e) => (autoApproveRoleIds = e.selected as string[])}
-            />
-            <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-              These roles will be automatically assigned when the user joins the server after approval
-            </p>
-          </div>
-
-          <!-- Invite Settings -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="invite-max-uses" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                <i class="fa-solid fa-ticket mr-1"></i>
-                Invite Max Uses
-              </label>
-              <input
-                id="invite-max-uses"
-                type="number"
-                bind:value={inviteMaxUses}
-                min="1"
-                max="100"
-                class="w-full p-3 rounded-lg"
-                style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              />
-              <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                How many times the invite can be used (default: 1)
-              </p>
-            </div>
-
-            <div>
-              <label for="invite-max-age" class="block text-sm mb-2" style="color: {$colorStore.muted};">
-                <i class="fa-solid fa-clock mr-1"></i>
-                Invite Expiry (seconds)
-              </label>
-              <input
-                id="invite-max-age"
-                type="number"
-                bind:value={inviteMaxAge}
-                min="60"
-                max="604800"
-                class="w-full p-3 rounded-lg"
-                style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}30; color: {$colorStore.text};"
-              />
-              <p class="text-xs mt-1" style="color: {$colorStore.muted};">
-                How long before the invite expires (default: 86400 = 24 hours)
-              </p>
-            </div>
-          </div>
-        </div>
-      {/if}
-    </div>
-  {/if}
-
-  <!-- Form Type Info Banner -->
-  {#if formType !== "Regular"}
-    <div
-      class=" rounded-xl border p-4 sm:p-6 transition-all"
-      style="background: {formType === 'BanAppeal' ? '#ef444410' : '#3b82f610'}; border-color: {formType === 'BanAppeal' ? '#ef444430' : '#3b82f630'};"
-      transition:slide
-    >
-      <div class="flex items-start gap-3">
-        <i
-          class="fa-solid {formType === 'BanAppeal' ? 'fa-gavel' : 'fa-user-plus'} flex-shrink-0 mt-1"
-          style="color: {formType === 'BanAppeal' ? '#ef4444' : '#3b82f6'}; font-size: 20px;"
-        ></i>
-        <div class="text-sm" style="color: {$colorStore.text};">
-          {#if formType === "BanAppeal"}
-            <strong>Ban Appeal Form:</strong> This form will be accessible to banned users. When approved,
-            the user will be automatically unbanned from the server. Make sure to add questions that help
-            moderators make an informed decision (e.g., "Why were you banned?", "Why should we unban you?").
-          {:else if formType === "JoinApplication"}
-            <strong>Join Application Form:</strong> This form will be accessible to users who are NOT in the server.
-            When approved, an invite link will be generated and roles can be pre-assigned. The user will receive
-            their assigned roles automatically when they join via the invite link.
-          {/if}
-        </div>
-      </div>
-    </div>
-  {/if}
+  <FormSettingsPanel
+    bind:settings
+    mode="create"
+    {channels}
+    {roles}
+    {guildEmojis}
+    {guildApproveEmote}
+    {guildRejectEmote}
+  />
 
   <!-- Questions Section -->
   <div
     class=" rounded-xl border p-4 sm:p-6 transition-all"
     style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
   >
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
       <h2 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">
         <i class="fa-solid fa-question-circle mr-2" style="color: {$colorStore.primary};"></i>
         Questions
       </h2>
+
+      <button
+        onclick={addPage}
+        class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+        style="background: {$colorStore.primary}10; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}25;"
+        type="button"
+        title="Splits the form here, so what follows is a separate page"
+      >
+        <i class="fa-solid fa-file-circle-plus mr-2"></i>
+        Add page
+      </button>
     </div>
+
+    <FormPageBar
+      {questions}
+      pages={builderPages}
+      activePage={safePage}
+      createBreak={newPageBreak}
+      onQuestionsChange={(next) => (questions = next)}
+      onActivePageChange={(page) => (activePage = page)}
+      onNotify={onShowNotification}
+    />
 
     <!-- Questions List -->
     {#if questions.length === 0}
@@ -1344,9 +475,20 @@
         ></i>
         <p style="color: {$colorStore.muted};">No questions yet. Click "Add Question" to get started.</p>
       </div>
+    {:else if currentBuilderPage.questionIndices.length === 0}
+      <div class="text-center py-10">
+        <i
+          class="fa-solid fa-clipboard-question mb-3"
+          style="color: {$colorStore.muted}; font-size: 32px; display: block;"
+        ></i>
+        <p class="text-sm" style="color: {$colorStore.muted};">
+          Nothing on this page yet. Anything you add lands here.
+        </p>
+      </div>
     {:else}
       <div class="space-y-3">
-        {#each questions as question, index (question.id)}
+        {#each currentBuilderPage.questionIndices as index (questions[index].id)}
+          {@const question = questions[index]}
           <div
             draggable={!isMobile}
             ondragstart={() => !isMobile && handleDragStart(index)}
@@ -1688,7 +830,9 @@
           Select Question Type:
         </p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {#each QUESTION_TYPES as qType, qIndex}
+          <!-- Section breaks are not offered here. They are what a page is made of, and pages
+               have their own controls above. -->
+          {#each QUESTION_TYPES.filter((t) => t.type !== "section_break") as qType, qIndex}
             <button
               onclick={() => addQuestion(qType.type)}
               onmousemove={(e) => !isMobile && handleButtonMouseMove(e, `qtype-${qType.type}`)}
@@ -1730,31 +874,6 @@
     {/if}
   </div>
 
-  <!-- Draft Mode Toggle -->
-  <div
-    class=" rounded-xl border p-4 sm:p-6 transition-all"
-    style="background: {$colorStore.primary}05; border-color: {$colorStore.primary}30;"
-  >
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="font-semibold mb-1" style="color: {$colorStore.text};">
-          <i class="fa-solid fa-file-pen mr-2" style="color: #f59e0b;"></i>
-          Save as Draft
-        </div>
-        <p class="text-sm" style="color: {$colorStore.muted};">
-          Draft forms are only visible in the dashboard and cannot be submitted by users
-        </p>
-      </div>
-      <label class="relative inline-flex items-center cursor-pointer">
-        <input bind:checked={saveAsDraft} class="sr-only peer" type="checkbox" />
-        <span
-          class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
-          style:background-color={saveAsDraft ? "#f59e0b" : "#4b5563"}
-        ></span>
-      </label>
-    </div>
-  </div>
-
   <!-- Save Button (Mobile) -->
   {#if isMobile}
     <div class="sticky bottom-4">
@@ -1765,7 +884,7 @@
         type="button"
       >
         <i class="fa-solid fa-check mr-2"></i>
-        {saveAsDraft ? "Save as Draft" : "Save & Publish Form"}
+        {settings.isDraft ? "Save as draft" : "Save and publish"}
       </button>
     </div>
   {/if}

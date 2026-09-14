@@ -29,6 +29,16 @@
   let conditionGroups = $state<FormQuestionCondition[][]>([]);
   let isLoading = $state(false);
   let isMobile = $state(false);
+
+  /** Inline error banner shown when an API action fails */
+  let editorError = $state<string | null>(null);
+  let editorErrorTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function showEditorError(text: string) {
+    editorError = text;
+    if (editorErrorTimer) clearTimeout(editorErrorTimer);
+    editorErrorTimer = setTimeout(() => { editorError = null; }, 5000);
+  }
   let showMobileModal = $state(false);
 
   // Detect mobile viewport
@@ -100,7 +110,7 @@
         })
         .catch((err) => {
           logger.error("Failed to delete condition:", err);
-          alert("Failed to delete condition");
+          showEditorError("Failed to delete condition. Please try again.");
         })
         .finally(() => {
           isLoading = false;
@@ -180,6 +190,16 @@
     return CONDITIONAL_TYPES.find(t => t.value === type)?.label || "Unknown";
   }
 </script>
+
+{#if editorError}
+  <div class="mb-3 p-3 rounded-lg flex items-center gap-2 text-sm"
+       style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;"
+       role="alert"
+       transition:slide>
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{editorError}</span>
+  </div>
+{/if}
 
 {#if isMobile}
   <!-- Mobile: Compact button that opens full-screen modal -->

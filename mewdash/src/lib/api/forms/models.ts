@@ -554,14 +554,27 @@ export function isPresentational(type: QuestionType | undefined): boolean {
   return type === "section_break";
 }
 
-/** One page of a form: the section break heading it, and the questions on it. */
-export interface FormPage {
+/** The least a value needs to be placed on a page. */
+export interface PageableQuestion {
+  questionType?: QuestionType;
+  questionText?: string;
+  placeholder?: string;
+  displayOrder?: number;
+}
+
+/**
+ * One page of a form: the section break heading it, and the questions on it.
+ *
+ * Generic over the question type because the create builder works with partially filled questions
+ * that have no identifier yet, while the edit builder works with saved ones.
+ */
+export interface FormPage<T extends PageableQuestion = FormQuestion> {
   /** The section break heading this page, or null for a first page that has none. */
-  heading: FormQuestion | null;
+  heading: T | null;
   /** Index of that heading in the flat question list, or -1 when there is none. */
   headingIndex: number;
   /** The questions on this page, in order. */
-  questions: FormQuestion[];
+  questions: T[];
   /** Indices of those questions in the flat question list. */
   questionIndices: number[];
 }
@@ -574,10 +587,10 @@ export interface FormPage {
  * the builder and the public form cannot disagree about where a page begins. The break itself is
  * never returned among the questions, because it asks nothing.
  */
-export function paginateQuestions(questions: FormQuestion[]): FormPage[] {
-  const pages: FormPage[] = [];
+export function paginateQuestions<T extends PageableQuestion>(questions: T[]): FormPage<T>[] {
+  const pages: FormPage<T>[] = [];
 
-  let current: FormPage = { heading: null, headingIndex: -1, questions: [], questionIndices: [] };
+  let current: FormPage<T> = { heading: null, headingIndex: -1, questions: [], questionIndices: [] };
 
   questions.forEach((question, index) => {
     if (question.questionType === "section_break") {

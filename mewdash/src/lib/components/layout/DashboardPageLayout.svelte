@@ -10,6 +10,9 @@
   import Notification from "$lib/components/ui/Notification.svelte";
   import {goto} from "$app/navigation";
   import {registerTabFeatures} from "$lib/stores/searchStore";
+  import { page } from "$app/state";
+  import { getWikiArticleForPath } from "$lib/wiki";
+  import WikiDrawer from "$lib/components/wiki/WikiDrawer.svelte";
 
   // Props
   interface Props {
@@ -61,6 +64,9 @@
 
   // Reactive: show notification when message is set
   let showNotification = $derived(notificationMessage.length > 0);
+
+  let wikiArticle = $derived(getWikiArticleForPath(page.url.pathname));
+  let wikiOpen = $state(false);
 
   function handleNotificationDismiss() {
     notificationMessage = "";
@@ -304,8 +310,20 @@
       </div>
     </div>
 
-    {#if actionButtons.length > 0}
-      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+    {#if actionButtons.length > 0 || wikiArticle}
+      <div class="flex flex-wrap items-center justify-center gap-3 w-full lg:w-auto lg:shrink-0">
+        {#if wikiArticle}
+          <button
+            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}40;"
+            onclick={() => (wikiOpen = true)}
+            aria-label="How {title} works"
+            title="Read the wiki page for this feature"
+          >
+            <i class="fa-solid fa-circle-question" style="font-size: 18px;" aria-hidden="true"></i>
+            <span class="text-sm sm:text-base">How it works</span>
+          </button>
+        {/if}
         {#each actionButtons as button}
           <button
             class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
@@ -502,6 +520,9 @@
   
   <!-- Universal Loading Overlay -->
   <LoadingOverlay />
+  {#if wikiArticle}
+    <WikiDrawer article={wikiArticle} open={wikiOpen} onclose={() => (wikiOpen = false)} />
+  {/if}
 </div>
 
 <style>

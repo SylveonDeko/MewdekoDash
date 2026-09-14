@@ -18,6 +18,7 @@
   import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
 
   // Local interfaces for UI state (not from backend)
   interface TodoFilterOptions {
@@ -357,6 +358,93 @@
     }
   }
 
+  /** Item edit modal state */
+  let editingItem = $state<TodoItem | null>(null);
+  let editForm = $state({ title: "", description: "", priority: 2, dueDate: "" });
+  let editSaving = $state(false);
+  let editError = $state("");
+
+  /** Priority choices shared by the add form and the edit modal */
+  const priorityOptions = [
+    { id: "1", name: "Low Priority", label: "Low Priority", emoji: "🟢" },
+    { id: "2", name: "Medium Priority", label: "Medium Priority", emoji: "🟠" },
+    { id: "3", name: "High Priority", label: "High Priority", emoji: "🟡" },
+    { id: "4", name: "Critical Priority", label: "Critical Priority", emoji: "🔴" }
+  ];
+
+  /** Theme colors for the priority chips */
+  const priorityStyles: Record<number, { label: string; emoji: string; color: string }> = {
+    1: { label: "Low", emoji: "🟢", color: "#10b981" },
+    2: { label: "Medium", emoji: "🟠", color: "#f97316" },
+    3: { label: "High", emoji: "🟡", color: "#eab308" },
+    4: { label: "Critical", emoji: "🔴", color: "#ef4444" }
+  };
+
+  function openEditItem(item: TodoItem) {
+    editingItem = item;
+    editForm = {
+      title: item.title,
+      description: item.description ?? "",
+      priority: item.priority || 2,
+      dueDate: item.dueDate ? item.dueDate.slice(0, 10) : ""
+    };
+    editError = "";
+  }
+
+  function closeEditItem() {
+    editingItem = null;
+    editError = "";
+  }
+
+  async function saveEditItem() {
+    if (!editingItem || !$currentGuild?.id || !$userStore?.id) return;
+    if (!editForm.title.trim()) {
+      editError = "Title is required.";
+      return;
+    }
+    editSaving = true;
+    editError = "";
+    try {
+      await todoApi.updateTodoItem($currentGuild.id, editingItem.id, {
+        title: editForm.title.trim(),
+        description: editForm.description.trim() || null,
+        priority: editForm.priority
+      });
+      const originalDue = editingItem.dueDate ? editingItem.dueDate.slice(0, 10) : "";
+      if (editForm.dueDate !== originalDue) {
+        await todoApi.setTodoItemDueDate($currentGuild.id, editingItem.id, {
+          userId: BigInt($userStore.id),
+          dueDate: editForm.dueDate ? new Date(`${editForm.dueDate}T23:59:59`).toISOString() : null
+        });
+      }
+      closeEditItem();
+      await loadTodoItems();
+    } catch (err) {
+      logger.error("Failed to update todo item:", err);
+      editError = "Failed to save changes. Please try again.";
+    } finally {
+      editSaving = false;
+    }
+  }
+
+  async function handleDeleteList() {
+    if (!selectedListId || !$currentGuild?.id || !$userStore?.id) return;
+    const list = todoLists.find(l => l.id === selectedListId);
+    if (!(await requestConfirmation({
+      title: "Delete list?",
+      message: `"${list?.name ?? "This list"}" and every item in it will be deleted permanently.`,
+      confirmText: "Delete list"
+    }))) return;
+    try {
+      await todoApi.deleteTodoList($currentGuild.id, selectedListId, BigInt($userStore.id));
+      selectedListId = null;
+      await loadTodoLists();
+    } catch (err) {
+      logger.error("Failed to delete todo list:", err);
+      error = "Failed to delete list. Please try again.";
+    }
+  }
+
   async function handleDeleteItem({ detail }: { detail: { itemId: number } }) {
     if (!$currentGuild?.id || !$userStore?.id) return;
 
@@ -685,17 +773,29 @@
             <h2 class="text-2xl font-bold" style="color: {$colorStore.text}">
               {selectedList?.name} Items
             </h2>
-            
-            {#if currentPermissions.canAdd}
-              <button
-                class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
-                style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
-                onclick={() => showQuickAdd = !showQuickAdd}
-              >
-                <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
-                <span>Add Item</span>
-              </button>
-            {/if}
+
+            <div class="flex flex-wrap items-center gap-2">
+              {#if currentPermissions.canAdd}
+                <button
+                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
+                  style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
+                  onclick={() => showQuickAdd = !showQuickAdd}
+                >
+                  <i class="fa-solid fa-plus" style="font-size: 16px;"></i>
+                  <span>Add Item</span>
+                </button>
+              {/if}
+              {#if currentPermissions.canManage}
+                <button
+                  class="flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-[1.02] min-h-[44px]"
+                  style="background: #ef444415; color: #ef4444; border: 1px solid #ef444430;"
+                  onclick={handleDeleteList}
+                >
+                  <i class="fa-solid fa-trash" style="font-size: 14px;"></i>
+                  <span>Delete List</span>
+                </button>
+              {/if}
+            </div>
           </div>
           
           <!-- Quick Add Form -->
@@ -835,21 +935,11 @@
                           <!-- Metadata -->
                           <div class="flex items-center gap-3 mt-2 text-xs" style="color: {$colorStore.muted}">
                             <!-- Priority -->
-                            {#if item.priority === 1}
-                              <span class="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700">
-                                🟢 Low
-                              </span>
-                            {:else if item.priority === 2}
-                              <span class="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700">
-                                🟠 Medium
-                              </span>
-                            {:else if item.priority === 3}
-                              <span class="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">
-                                🟡 High
-                              </span>
-                            {:else if item.priority === 4}
-                              <span class="flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700">
-                                🔴 Critical
+                            {#if priorityStyles[item.priority]}
+                              {@const p = priorityStyles[item.priority]}
+                              <span class="flex items-center gap-1 px-2 py-1 rounded-full font-medium"
+                                    style="background: {p.color}20; color: {p.color};">
+                                {p.emoji} {p.label}
                               </span>
                             {/if}
                             
@@ -874,10 +964,11 @@
                         {#if currentPermissions.canEdit || currentPermissions.canDelete}
                           <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                             {#if currentPermissions.canEdit}
-                              <button aria-label="Button action"
+                              <button aria-label="Edit item"
                                 class="p-2 rounded-lg transition-all hover:scale-110 flex items-center justify-center min-w-[36px] min-h-[36px]"
                                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}20, {$colorStore.gradientMid}20); color: {$colorStore.primary};"
                                 title="Edit item"
+                                onclick={() => openEditItem(item)}
                               >
                                 <i class="fa-solid fa-pen" style="font-size: 12px;"></i>
                               </button>
@@ -906,6 +997,86 @@
       {/if}
     {/if}
   </DashboardPageLayout>
+
+  <!-- Edit Item Modal -->
+  {#if editingItem}
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+         role="presentation"
+         onclick={closeEditItem}
+         onkeydown={(e) => { if (e.key === "Escape") closeEditItem(); }}
+         in:fly={{ opacity: 0, duration: 200 }}>
+      <div class="rounded-2xl shadow-2xl w-full max-w-lg border"
+           style="background: linear-gradient(135deg, {$colorStore.gradientStart}, {$colorStore.gradientMid}); border-color: {$colorStore.primary}30;"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="edit-item-title"
+           tabindex="-1"
+           onclick={(e) => e.stopPropagation()}
+           onkeydown={(e) => e.stopPropagation()}
+           in:fly={{ y: 20, duration: 300, delay: 100 }}>
+        <div class="p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 rounded-lg" style="background: {$colorStore.primary}20;">
+              <i class="fa-solid fa-pen" style="color: {$colorStore.primary}; font-size: 18px;"></i>
+            </div>
+            <h3 id="edit-item-title" class="text-xl font-bold" style="color: {$colorStore.text}">Edit Item</h3>
+          </div>
+
+          <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); saveEditItem(); }}>
+            <div>
+              <label for="edit-item-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Title *</label>
+              <input id="edit-item-name" type="text" bind:value={editForm.title}
+                     class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                     style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
+            </div>
+            <div>
+              <label for="edit-item-description" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Description</label>
+              <textarea id="edit-item-description" rows="3" bind:value={editForm.description}
+                        class="w-full px-4 py-3 rounded-lg border resize-none"
+                        style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};"></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <span id="edit-item-priority" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Priority</span>
+                <DiscordSelector type="custom" options={priorityOptions} searchable={false}
+                                 selected={editForm.priority.toString()}
+                                 ariaLabelledby="edit-item-priority"
+                                 onchange={(d) => { if (typeof d.selected === "string") editForm.priority = parseInt(d.selected); }} />
+              </div>
+              <div>
+                <label for="edit-item-due" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Due date</label>
+                <input id="edit-item-due" type="date" bind:value={editForm.dueDate}
+                       class="w-full px-4 py-3 rounded-lg border min-h-[44px]"
+                       style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10); border-color: {$colorStore.primary}50; color: {$colorStore.text};">
+              </div>
+            </div>
+
+            {#if editError}
+              <div class="p-3 rounded-lg flex items-center gap-2 text-sm" role="alert"
+                   style="background: #ef444420; border: 1px solid #ef444430; color: #ef4444;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{editError}</span>
+              </div>
+            {/if}
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+              <button type="button" onclick={closeEditItem}
+                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px]"
+                      style="background: {$colorStore.muted}20; color: {$colorStore.muted};">
+                Cancel
+              </button>
+              <button type="submit" disabled={editSaving}
+                      class="flex-1 px-4 py-3 rounded-lg font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                      style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
+                {#if editSaving}<i class="fa-solid fa-spinner fa-spin mr-2"></i>{/if}
+                Save changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- New List Modal -->
   {#if showNewListModal}

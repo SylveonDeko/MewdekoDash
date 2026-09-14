@@ -3,6 +3,7 @@
     import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {colorStore} from "$lib/stores/colorStore";
+    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
 
     let mounted = $state(false);
   let currentStep = $state(0);
@@ -439,17 +440,17 @@
           <div class="sticky top-32">
             <!-- Mobile Step Selector -->
             <div class="lg:hidden mb-6">
-              <select
-                class="w-full px-4 py-3 rounded-xl transition-all duration-300 focus:ring-2 focus:outline-hidden "
-                style="background: {$colorStore.primary}20; color: {$colorStore.text}; border: 1px solid {$colorStore.primary}30; --tw-ring-color: {$colorStore.accent};"
-                bind:value={currentStep}
-              >
-                {#each steps as step, index}
-                  <option value={index}>
-                    {step.title} {step.required ? '*' : ''}
-                  </option>
-                {/each}
-              </select>
+              <DiscordSelector
+                type="custom"
+                options={steps.map((step, index) => ({
+                  id: index.toString(),
+                  name: `${step.title}${step.required ? ' *' : ''}`
+                }))}
+                selected={currentStep.toString()}
+                searchable={false}
+                ariaLabel="Setup step"
+                onchange={(e) => { if (typeof e.selected === "string") currentStep = parseInt(e.selected); }}
+              />
             </div>
 
             <!-- Desktop Step Navigation -->

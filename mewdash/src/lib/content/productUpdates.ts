@@ -11,6 +11,136 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "wiki",
+    label: "New everywhere",
+    title: "A Wiki For Every Feature",
+    summary: "Every module now has a plain English guide, and each dashboard page can open its own guide in a side panel without leaving the page.",
+    details: [
+      "Fifty one articles covering what a feature does, why you would want it, every dashboard tab and field, and a full command table with permissions.",
+      "Press the How it works button on any dashboard page to read the matching guide beside your settings.",
+      "Search the whole wiki by title, category or tag, and jump straight from an article into the right page for your server."
+    ],
+    href: "/wiki",
+    action: "Browse the wiki"
+  },
+  {
+    id: "utilities-page",
+    label: "New page",
+    title: "Utilities, All In One Place",
+    summary: "Seven smaller features that only lived in commands now share one dashboard page.",
+    details: [
+      "Command aliases, server quotes with search and inline editing, and auto publishing for announcement channels with user and word blacklists.",
+      "A role that follows members while they stream, an NSFW tag blocklist, and a role monitor that punishes anyone who hands out a blacklisted role or permission.",
+      "The AI assistant: pick OpenAI, Claude or Groq, choose a model from a live list, write a system prompt, and switch on web search."
+    ],
+    href: "/dashboard/utility",
+    action: "Open utilities"
+  },
+  {
+    id: "polls-page",
+    label: "New page",
+    title: "Polls From The Dashboard",
+    summary: "Create, schedule, template and analyse polls without touching a command.",
+    details: [
+      "Single choice, multiple choice, yes or no, anonymous or role restricted polls with up to twenty five options, a duration, and toggles for vote changes and live results.",
+      "Schedule a poll for later, or save the form as a template to reuse, then close or delete polls from the same list with their live results.",
+      "Thirty day analytics: polls created, votes cast, average votes per poll, the most used poll type, and a per day chart."
+    ],
+    href: "/dashboard/polls",
+    action: "Open polls"
+  },
+  {
+    id: "message-filters-page",
+    label: "New page",
+    title: "Message Filters",
+    summary: "Word, invite and link filtering now has a home on the dashboard instead of a pile of commands.",
+    details: [
+      "Toggle the word, invite and link filters for the whole server, or turn any of them on for just the channels you pick.",
+      "Keep a filtered word list and a separate auto ban list whose posters are removed on sight.",
+      "Choose whether a filtered word or invite also warns the member on top of deleting the message."
+    ],
+    href: "/dashboard/filter",
+    action: "Open message filters"
+  },
+  {
+    id: "moderation-warnings",
+    label: "New in moderation",
+    title: "Warnings And The Punishment Ladder",
+    summary: "Warn members, forgive them, and decide what happens at each warning count, all from the moderation page.",
+    details: [
+      "Issue a warning by user ID with a reason and see straight away whether a ladder punishment kicked in.",
+      "Forgive one warning, forgive everything for a member at once, or delete a record, with search across users, reasons and moderators.",
+      "Build the ladder on the new Punishments tab: mute, chat or voice mute, timeout, kick, softban, ban, add a role or strip every role, with durations for the timed ones."
+    ],
+    href: "/dashboard/moderation?tab=punishments",
+    action: "Set up punishments"
+  },
+  {
+    id: "tickets-tab",
+    label: "New in tickets",
+    title: "Work Tickets Without Opening Discord",
+    summary: "The tickets page can now browse and act on every ticket, not just configure panels.",
+    details: [
+      "Filter by open, closed or archived and search by ticket, creator, channel, claimer or tag, sorted by last activity.",
+      "Claim or release a ticket as yourself, set its priority, and add or remove tags.",
+      "Close with a reason, archive, and leave staff notes that the whole team can see."
+    ],
+    href: "/dashboard/tickets?tab=tickets",
+    action: "Open tickets"
+  },
+  {
+    id: "forms-builder",
+    label: "New in forms",
+    title: "A Cleaner Form Builder",
+    summary: "Pages, settings and appeals now behave the same whether you are creating a form or editing one.",
+    details: [
+      "Add, reorder and delete pages with their questions, and give each page its own heading and intro.",
+      "Settings are grouped by who can submit, when the form is open, what happens on submit, and how reviews work, including reviewer roles and custom approve and reject emotes.",
+      "Ban appeal forms get their own rules: appeal limits, cooldowns, a waiting period after the ban, and the invite sent on approval. Leaving with unsaved edits now asks first."
+    ],
+    href: "/dashboard/forms",
+    action: "Open forms"
+  },
+  {
+    id: "command-permissions",
+    label: "New in administration",
+    title: "Command Permissions You Can Read",
+    summary: "Permission rules are built with pickers and shown as sentences instead of raw entries.",
+    details: [
+      "Allow or deny a whole module or a single command for the server, a role, a channel, a category or one user.",
+      "Rules read like Deny command for role, with the protected default rule marked and up and down arrows for ordering since the first match wins.",
+      "Server recovery lives on the Advanced tab: store a recovery key and a two factor key so an owner can regain control if their account is lost."
+    ],
+    href: "/dashboard/administration?tab=automation",
+    action: "Open permissions"
+  },
+  {
+    id: "counting-management",
+    label: "New in counting",
+    title: "Counting Channel Management",
+    summary: "Bans, save points and milestones for counting channels are now on the dashboard.",
+    details: [
+      "Ban a member from a counting channel for a set time with a reason, and see who banned whom and when in the active bans list.",
+      "Restore the count from a save point or delete old ones, and purge a channel's data entirely behind a typed confirmation.",
+      "Set custom milestone numbers and write the announcement using user, number and channel placeholders."
+    ],
+    href: "/dashboard/counting?tab=management",
+    action: "Open counting"
+  },
+  {
+    id: "dashboard-quality-of-life",
+    label: "Across the dashboard",
+    title: "Smaller Things You Asked For",
+    summary: "A round of additions to pages that already existed.",
+    details: [
+      "Adjust, set or reset a member's XP from the leaderboard, read a member's full reputation history, and give a starboard more than one star emote.",
+      "Control the live music player: shuffle or clear the queue, switch repeat mode, and toggle eight audio filters. Server settings gained language, timezone, mute role and sniping options.",
+      "Edit todo items and delete lists, quick edit repeater intervals and expiry, clean up inactive custom voice channels, disable every log channel at once, and see thirty days of joins and leaves under Invites."
+    ],
+    href: "/dashboard/music",
+    action: "Open the player"
+  },
+  {
     id: "chat-triggers-conditions",
     label: "New in chat triggers",
     title: "Triggers That Know When To Stay Quiet",

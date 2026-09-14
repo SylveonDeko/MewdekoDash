@@ -91,6 +91,8 @@
 
   <PermissionsManagementCard
     {availableRoles}
+    {textChannels}
+    {guildChannels}
     {fetchAllData}
     {showConfirm}
   />

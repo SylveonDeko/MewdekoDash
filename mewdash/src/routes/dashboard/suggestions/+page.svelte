@@ -20,6 +20,9 @@
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { loadingStore } from "$lib/stores/loadingStore";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+
+  useUnsavedChangesGuard(() => hasChanges);
 
   interface Props {
     data: PageData;

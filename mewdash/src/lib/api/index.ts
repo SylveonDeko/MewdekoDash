@@ -62,6 +62,8 @@ export { auditLogApi } from "./auditlog/auditlog";
 export { leaveFeedbackApi } from "./leavefeedback/leavefeedback";
 export { embedsApi } from "./embeds/embeds";
 export { dashboardAccessApi } from "./dashboardaccess/dashboardaccess";
+export { utilityApi } from "./utility/utility";
+export { analyticsApi } from "./analytics/analytics";
 
 // Re-export all models
 export * from "./client/models";
@@ -79,6 +81,7 @@ export * from "./chattriggers/models";
 export * from "./reviews/models";
 export * from "./instancemanagement/models";
 export * from "./moderation/models";
+export * from "./utility/models";
 export * from "./systeminfo/models";
 export * from "./performance/models";
 // @ts-ignore
@@ -122,3 +125,4 @@ export * from "./auditlog/models";
 export * from "./leavefeedback/models";
 export * from "./embeds/models";
 export * from "./dashboardaccess/models";
+export * from "./analytics/models";

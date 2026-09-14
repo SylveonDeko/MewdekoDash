@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { logger } from "$lib/logger";
   import { browser } from "$app/environment";
   import { colorStore } from "$lib/stores/colorStore";
   import { fly } from "svelte/transition";
@@ -17,7 +18,7 @@
   // Log error details for debugging
   $effect(() => {
     if (browser && page.error) {
-      console.error("Page error:", page.error);
+      logger.error("Page error:", page.error);
     }
   });
 

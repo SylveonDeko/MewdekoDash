@@ -36,13 +36,23 @@
     }, "api", "Loading status...");
   }
 
+  /** Transient feedback shown under the copy button after a clipboard attempt */
+  let copyFeedback = $state<{ text: string; ok: boolean } | null>(null);
+  let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function showCopyFeedback(text: string, ok: boolean) {
+    copyFeedback = { text, ok };
+    if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer);
+    copyFeedbackTimer = setTimeout(() => { copyFeedback = null; }, 4000);
+  }
+
   function copyInviteToClipboard() {
     if (!status?.inviteCode) return;
     const inviteUrl = `https://discord.gg/${status.inviteCode}`;
     navigator.clipboard.writeText(inviteUrl).then(() => {
-      alert("Invite link copied to clipboard!");
+      showCopyFeedback("Invite link copied to clipboard", true);
     }).catch(() => {
-      alert("Failed to copy to clipboard. Link: " + inviteUrl);
+      showCopyFeedback(`Could not copy automatically. Link: ${inviteUrl}`, false);
     });
   }
 
@@ -336,6 +346,15 @@
                 Join Server
               </button>
             </div>
+            {#if copyFeedback}
+              <div class="mt-3 p-3 rounded-lg flex items-center gap-2 text-sm break-all"
+                   style="background: {copyFeedback.ok ? '#10b98120' : '#ef444420'}; border: 1px solid {copyFeedback.ok ? '#10b981' : '#ef4444'}30; color: {copyFeedback.ok ? '#10b981' : '#ef4444'};"
+                   role="status"
+                   transition:slide>
+                <i class="fa-solid {copyFeedback.ok ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+                <span>{copyFeedback.text}</span>
+              </div>
+            {/if}
           </div>
         {/if}
 

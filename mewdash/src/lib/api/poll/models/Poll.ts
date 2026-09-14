@@ -2,11 +2,14 @@
 
 /**
  * Poll types
+ * Mirrors Mewdeko.Modules.Games.Common.PollType
  */
 export enum PollType {
-  SingleChoice = 0,
-  MultiChoice = 1,
-  Ranking = 2,
+  YesNo = 0,
+  SingleChoice = 1,
+  MultiChoice = 2,
+  Anonymous = 3,
+  RoleRestricted = 4,
 }
 
 /**
@@ -32,16 +35,31 @@ export interface PollOptionResponse {
 }
 
 /**
+ * A single recorded vote
+ */
+export interface VoteHistoryResponse {
+  userId: bigint;
+  username: string | null;
+  optionIndices: number[];
+  votedAt: string;
+  isAnonymous: boolean;
+  userRoles: string[];
+}
+
+/**
  * Poll statistics
+ * Maps to Mewdeko.Controllers.Common.Polls.PollStatsResponse
  */
 export interface PollStatsResponse {
   totalVotes: number;
   uniqueVoters: number;
-  options: Array<{
-    optionId: number;
-    voteCount: number;
-    percentage: number;
-  }>;
+  optionVotes: Record<string, number>;
+  voteHistory: VoteHistoryResponse[];
+  votesByRole: Record<string, number>;
+  averageVoteTime: string;
+  participationRate: number;
+  hourlyVoteCounts: Record<string, number>;
+  peakVotingHour: number;
 }
 
 /**
@@ -88,35 +106,103 @@ export interface CreatePollRequest {
 
 /**
  * Update poll request
+ * Maps to Mewdeko.Controllers.Common.Polls.UpdatePollRequest
  */
 export interface UpdatePollRequest {
   question?: string | null;
-  expiresAt?: string | null;
-  allowVoteChanges?: boolean | null;
-  showResults?: boolean | null;
+  durationMinutes?: number | null;
+  allowMultipleVotes?: boolean | null;
+  isAnonymous?: boolean | null;
+  allowedRoles?: bigint[] | null;
 }
 
 /**
  * Close poll request
+ * Maps to Mewdeko.Controllers.Common.Polls.ClosePollRequest
  */
 export interface ClosePollRequest {
   userId: bigint;
   reason?: string | null;
+  notifyVoters?: boolean;
 }
 
 /**
  * Schedule poll request
+ * Maps to Mewdeko.Controllers.Common.Polls.SchedulePollRequest
  */
-export interface SchedulePollRequest {
+export interface SchedulePollRequest extends Omit<CreatePollRequest, "durationMinutes"> {
   scheduledFor: string;
-  pollData: CreatePollRequest;
+  durationMinutes?: number | null;
+}
+
+/**
+ * Scheduled poll as returned by the bot
+ */
+export interface ScheduledPollResponse {
+  id: number;
+  question: string;
+  type: PollType;
+  channelId: bigint;
+  creatorId: bigint;
+  scheduledFor: string;
+  durationMinutes: number | null;
+  scheduledAt: string;
+  isExecuted: boolean;
+  executedAt: string | null;
+  createdPollId: number | null;
+  isCancelled: boolean;
+  cancelledAt: string | null;
+  timeUntilExecution: string;
 }
 
 /**
  * Create template request
+ * Maps to Mewdeko.Controllers.Common.Polls.CreateTemplateRequest
  */
 export interface CreateTemplateRequest {
   name: string;
-  description?: string | null;
-  pollData: CreatePollRequest;
+  question: string;
+  options: PollOptionRequest[];
+  defaultType: PollType;
+  allowMultipleVotes: boolean;
+  isAnonymous: boolean;
+  color?: string | null;
+  allowVoteChanges?: boolean;
+  showResults?: boolean;
+  userId: bigint;
+}
+
+/**
+ * Poll template as stored by the bot
+ */
+export interface PollTemplateResponse {
+  id: number;
+  guildId: bigint;
+  name: string;
+  question: string;
+  /** JSON encoded list of options */
+  options: string;
+  /** JSON encoded settings */
+  settings: string | null;
+  creatorId: bigint;
+  createdAt: string;
+}
+
+/**
+ * Guild wide poll analytics
+ */
+export interface PollAnalyticsResponse {
+  totalPolls: number;
+  activePolls: number;
+  closedPolls: number;
+  totalVotes: number;
+  averageVotesPerPoll: number;
+  mostPopularPollType: PollType;
+  pollTypeDistribution: Record<string, number>;
+  pollsCreatedByDay: Record<string, number>;
+  hourlyCreationDistribution: Record<string, number>;
+  dailyEngagement: Record<string, number>;
+  topCreators: Record<string, number>;
+  timeframe: string;
+  analysisDate: string;
 }

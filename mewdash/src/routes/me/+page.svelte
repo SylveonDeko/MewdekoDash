@@ -9,6 +9,35 @@
   import Notification from "$lib/components/ui/Notification.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import { TIMEZONE_OPTIONS } from "$lib/config/timezones";
+
+  /** Zodiac sign options for the profile editor */
+  const zodiacOptions = [
+    { id: "", name: "Not specified" },
+    { id: "Aries", name: "♈ Aries" },
+    { id: "Taurus", name: "♉ Taurus" },
+    { id: "Gemini", name: "♊ Gemini" },
+    { id: "Cancer", name: "♋ Cancer" },
+    { id: "Leo", name: "♌ Leo" },
+    { id: "Virgo", name: "♍ Virgo" },
+    { id: "Libra", name: "♎ Libra" },
+    { id: "Scorpio", name: "♏ Scorpio" },
+    { id: "Sagittarius", name: "♐ Sagittarius" },
+    { id: "Capricorn", name: "♑ Capricorn" },
+    { id: "Aquarius", name: "♒ Aquarius" },
+    { id: "Pisces", name: "♓ Pisces" }
+  ];
+
+  /** Last.fm period options */
+  const lastFmPeriodOptions = [
+    { id: "7day", name: "Week" },
+    { id: "1month", name: "Month" },
+    { id: "3month", name: "3 Months" },
+    { id: "6month", name: "6 Months" },
+    { id: "12month", name: "Year" },
+    { id: "overall", name: "All Time" }
+  ];
 
   let {data} = $props();
 
@@ -554,27 +583,16 @@
 
             <!-- Zodiac Sign -->
             <div>
-              <label for="input-1516" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Zodiac
-                Sign</label>
-              <select
-                bind:value={profileForm.zodiacSign}
-                class="w-full px-3 py-2 rounded-lg border"
-                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              >
-                <option value="">Not specified</option>
-                <option value="Aries">♈ Aries</option>
-                <option value="Taurus">♉ Taurus</option>
-                <option value="Gemini">♊ Gemini</option>
-                <option value="Cancer">♋ Cancer</option>
-                <option value="Leo">♌ Leo</option>
-                <option value="Virgo">♍ Virgo</option>
-                <option value="Libra">♎ Libra</option>
-                <option value="Scorpio">♏ Scorpio</option>
-                <option value="Sagittarius">♐ Sagittarius</option>
-                <option value="Capricorn">♑ Capricorn</option>
-                <option value="Aquarius">♒ Aquarius</option>
-                <option value="Pisces">♓ Pisces</option>
-              </select>
+              <span id="zodiac-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Zodiac
+                Sign</span>
+              <DiscordSelector
+                type="custom"
+                options={zodiacOptions}
+                selected={profileForm.zodiacSign || ""}
+                ariaLabelledby="zodiac-label"
+                placeholder="Not specified"
+                onchange={(e) => { profileForm.zodiacSign = typeof e.selected === "string" ? e.selected : ""; }}
+              />
             </div>
 
             <!-- Birthday -->
@@ -591,22 +609,16 @@
 
             <!-- Timezone -->
             <div>
-              <label for="input-4352" class="block text-sm font-medium mb-2"
-                     style="color: {$colorStore.text}">Timezone</label>
-              <select
-                bind:value={profileForm.birthdayTimezone}
-                class="w-full px-3 py-2 rounded-lg border"
-                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text}"
-              >
-                <option value="UTC">UTC</option>
-                <option value="America/New_York">Eastern Time</option>
-                <option value="America/Chicago">Central Time</option>
-                <option value="America/Denver">Mountain Time</option>
-                <option value="America/Los_Angeles">Pacific Time</option>
-                <option value="Europe/London">London</option>
-                <option value="Europe/Paris">Paris</option>
-                <option value="Asia/Tokyo">Tokyo</option>
-              </select>
+              <span id="birthday-timezone-label" class="block text-sm font-medium mb-2"
+                    style="color: {$colorStore.text}">Timezone</span>
+              <DiscordSelector
+                type="timezone"
+                options={TIMEZONE_OPTIONS}
+                selected={profileForm.birthdayTimezone || "UTC"}
+                ariaLabelledby="birthday-timezone-label"
+                placeholder="Select timezone"
+                onchange={(e) => { profileForm.birthdayTimezone = typeof e.selected === "string" ? e.selected : "UTC"; }}
+              />
             </div>
 
             <!-- Switch Friend Code -->
@@ -1069,19 +1081,16 @@
                  style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
               Top Artists
             </h3>
-            <select
-              bind:value={lastFmPeriod}
-              onchange={() => loadLastFmStats()}
-              class="px-2 py-1 rounded text-xs border"
-              style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-            >
-              <option value="7day">Week</option>
-              <option value="1month">Month</option>
-              <option value="3month">3 Months</option>
-              <option value="6month">6 Months</option>
-              <option value="12month">Year</option>
-              <option value="overall">All Time</option>
-            </select>
+            <div class="w-36">
+              <DiscordSelector
+                type="custom"
+                options={lastFmPeriodOptions}
+                selected={lastFmPeriod}
+                searchable={false}
+                ariaLabel="Last.fm period"
+                onchange={(e) => { lastFmPeriod = typeof e.selected === "string" ? e.selected : "7day"; loadLastFmStats(); }}
+              />
+            </div>
           </div>
 
           {#if loadingLastFmStats}

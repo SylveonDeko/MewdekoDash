@@ -28,6 +28,9 @@
     import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
     import {currentInstance} from "$lib/stores/instanceStore";
     import { requestConfirmation } from "$lib/stores/confirmationStore";
+    import { useUnsavedChangesGuard } from "$lib/utils/unsavedChanges";
+
+    useUnsavedChangesGuard(() => hasChanges);
 
     interface Props {
         data: PageData;
@@ -333,6 +336,160 @@
       showNotificationMessage("Failed to create save point", "error");
     }
   }
+
+  /** Banned users, milestones, and custom message state for the management tab */
+  let bannedUsers: any[] = $state([]);
+  let milestones: number[] = $state([]);
+  let newMilestone = $state<number | null>(null);
+  let customMessage = $state("");
+  let banUserId = $state("");
+  let banReason = $state("");
+  let banDurationMinutes = $state<number | null>(null);
+  let purgeReason = $state("");
+  let managementBusy = $state(false);
+
+  async function loadManagementData() {
+    if (!selectedChannel || !$currentGuild) return;
+    try {
+      const [bannedData, milestoneData] = await Promise.all([
+        countingApi.getBannedUsers($currentGuild.id, selectedChannel.channelId).catch(() => []),
+        countingApi.getMilestones($currentGuild.id, selectedChannel.channelId).catch(() => [])
+      ]);
+      bannedUsers = bannedData || [];
+      milestones = ((milestoneData as any)?.milestones ?? []).slice().sort((a: number, b: number) => a - b);
+    } catch (err) {
+      logger.error("Failed to load counting management data:", err);
+    }
+  }
+
+  async function restoreSavePoint(saveId: number) {
+    if (!selectedChannel || !$currentGuild || !data.user) return;
+    managementBusy = true;
+    try {
+      await countingApi.restoreSavePoint($currentGuild.id, selectedChannel.channelId, { saveId, userId: BigInt(data.user.id) });
+      showNotificationMessage("Save point restored", "success");
+      await loadChannelDetails(selectedChannel.channelId);
+    } catch (err) {
+      logger.error("Failed to restore save point:", err);
+      showNotificationMessage("Failed to restore save point", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function deleteSavePoint(saveId: number) {
+    if (!selectedChannel || !$currentGuild || !data.user) return;
+    managementBusy = true;
+    try {
+      await countingApi.deleteSavePoint($currentGuild.id, selectedChannel.channelId, saveId, BigInt(data.user.id));
+      savePoints = savePoints.filter(sp => sp.id !== saveId);
+    } catch (err) {
+      logger.error("Failed to delete save point:", err);
+      showNotificationMessage("Failed to delete save point", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function banCountingUser() {
+    if (!selectedChannel || !$currentGuild || !data.user) return;
+    if (!/^\d{15,22}$/.test(banUserId.trim())) {
+      showNotificationMessage("Enter a valid Discord user ID", "error");
+      return;
+    }
+    managementBusy = true;
+    try {
+      await countingApi.banUser($currentGuild.id, selectedChannel.channelId, BigInt(banUserId.trim()), {
+        bannedBy: BigInt(data.user.id),
+        durationMinutes: banDurationMinutes || null,
+        reason: banReason || null
+      });
+      banUserId = "";
+      banReason = "";
+      banDurationMinutes = null;
+      await loadManagementData();
+    } catch (err) {
+      logger.error("Failed to ban user from counting:", err);
+      showNotificationMessage("Failed to ban user", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function unbanCountingUser(userId: bigint) {
+    if (!selectedChannel || !$currentGuild || !data.user) return;
+    managementBusy = true;
+    try {
+      await countingApi.unbanUser($currentGuild.id, selectedChannel.channelId, userId, { unbannedBy: BigInt(data.user.id) });
+      await loadManagementData();
+    } catch (err) {
+      logger.error("Failed to unban user from counting:", err);
+      showNotificationMessage("Failed to unban user", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function saveMilestones(next: number[]) {
+    if (!selectedChannel || !$currentGuild) return;
+    managementBusy = true;
+    try {
+      const sorted = Array.from(new Set(next.filter(n => Number.isFinite(n) && n > 0))).sort((a, b) => a - b);
+      await countingApi.setMilestones($currentGuild.id, selectedChannel.channelId, { milestones: sorted });
+      milestones = sorted;
+      newMilestone = null;
+    } catch (err) {
+      logger.error("Failed to save milestones:", err);
+      showNotificationMessage("Failed to save milestones", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function saveCustomMessage() {
+    if (!selectedChannel || !$currentGuild) return;
+    managementBusy = true;
+    try {
+      await countingApi.setCustomMessage($currentGuild.id, selectedChannel.channelId, { message: customMessage });
+      showNotificationMessage("Milestone message saved", "success");
+    } catch (err) {
+      logger.error("Failed to save custom message:", err);
+      showNotificationMessage("Failed to save message", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  async function purgeChannel() {
+    if (!selectedChannel || !$currentGuild || !data.user) return;
+    if (!(await requestConfirmation({
+      title: "Purge counting data?",
+      message: "This wipes every count, streak, statistic, and save point for this channel. It cannot be undone.",
+      confirmText: "Purge everything"
+    }))) return;
+    managementBusy = true;
+    try {
+      await countingApi.purgeCountingChannel($currentGuild.id, selectedChannel.channelId, {
+        userId: BigInt(data.user.id),
+        reason: purgeReason || null
+      });
+      purgeReason = "";
+      showNotificationMessage("Counting data purged", "success");
+      await loadChannelDetails(selectedChannel.channelId);
+      await loadManagementData();
+    } catch (err) {
+      logger.error("Failed to purge counting channel:", err);
+      showNotificationMessage("Failed to purge channel", "error");
+    } finally {
+      managementBusy = false;
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === "management" && selectedChannel) {
+      loadManagementData();
+    }
+  });
 
   async function disableChannel(channel: CountingChannelResponse) {
     if (!$currentGuild) return;
@@ -1093,23 +1250,26 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                  <button aria-label="Play"
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                  <button aria-label="Restore save point"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
                     style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                    disabled={managementBusy}
                     onclick={async () => {
-                      if (await requestConfirmation({ message: "Are you sure you want to restore from this save point?", confirmText: "Restore" })) {
-                        // Implementation would go here
+                      if (await requestConfirmation({ message: `Restore the count to ${formatNumber(savePoint.savedNumber)}?`, confirmText: "Restore", variant: "warning" })) {
+                        await restoreSavePoint(savePoint.id);
                       }
                     }}
                   >
-                    <i class="fa-solid fa-play" style="font-size: 14px;"></i>
+                    <i class="fa-solid fa-rotate-left" style="font-size: 14px;"></i>
                   </button>
 
-                  <button aria-label="Delete"
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] text-red-500 hover:bg-red-500/20"
+                  <button aria-label="Delete save point"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                    style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+                    disabled={managementBusy}
                     onclick={async () => {
-                      if (await requestConfirmation({ message: "Are you sure you want to delete this save point?", confirmText: "Delete" })) {
-                        // Implementation would go here
+                      if (await requestConfirmation({ message: "Delete this save point?", confirmText: "Delete" })) {
+                        await deleteSavePoint(savePoint.id);
                       }
                     }}
                   >
@@ -1120,6 +1280,152 @@
             {/each}
           </div>
         {/if}
+      </div>
+
+      <!-- Milestones -->
+      <div class=" rounded-xl border p-6 transition-all"
+           style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="fa-utility-duo fa-regular fa-flag" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Milestones</h3>
+        </div>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Numbers that trigger a celebration message when reached.</p>
+
+        <div class="flex flex-wrap gap-2 mb-4">
+          {#if milestones.length === 0}
+            <span class="text-sm" style="color: {$colorStore.muted}">Using the default milestones.</span>
+          {/if}
+          {#each milestones as milestone (milestone)}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
+                  style="background: {$colorStore.primary}15; color: {$colorStore.text};" transition:fade>
+              {formatNumber(milestone)}
+              <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px]" aria-label={`Remove milestone ${milestone}`}
+                      disabled={managementBusy}
+                      onclick={() => saveMilestones(milestones.filter(m => m !== milestone))}>
+                <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
+              </button>
+            </span>
+          {/each}
+        </div>
+
+        <form class="flex flex-col sm:flex-row gap-3" onsubmit={(e) => { e.preventDefault(); if (newMilestone) saveMilestones([...milestones, newMilestone]); }}>
+          <input type="number" min="1" bind:value={newMilestone} placeholder="Add a milestone, e.g. 1000"
+                 aria-label="New milestone"
+                 class="flex-1 p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+          <button type="submit" disabled={managementBusy || !newMilestone}
+                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;">
+            <i class="fa-solid fa-plus"></i>
+            Add
+          </button>
+        </form>
+
+        <div class="mt-6">
+          <label for="milestone-message" class="block mb-2 font-medium" style="color: {$colorStore.text}">Milestone message</label>
+          <p class="text-xs mb-2" style="color: {$colorStore.muted}">Supports placeholders like %user%, %number% and %channel%.</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input id="milestone-message" type="text" bind:value={customMessage} placeholder="🎉 %user% reached %number%!"
+                   class="flex-1 p-3 rounded-lg border min-h-[44px]"
+                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+            <button disabled={managementBusy || !customMessage.trim()}
+                    class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                    onclick={saveCustomMessage}>
+              <i class="fa-solid fa-floppy-disk"></i>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Counting bans -->
+      <div class=" rounded-xl border p-6 transition-all"
+           style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05;">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="fa-utility-duo fa-regular fa-user" style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Counting Bans</h3>
+        </div>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Banned members can still chat but their numbers are ignored.</p>
+
+        <form class="grid grid-cols-1 md:grid-cols-[1fr_1fr_140px_auto] gap-3 mb-6" onsubmit={(e) => { e.preventDefault(); banCountingUser(); }}>
+          <input type="text" inputmode="numeric" bind:value={banUserId} placeholder="User ID" aria-label="User ID to ban"
+                 class="p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+          <input type="text" bind:value={banReason} placeholder="Reason (optional)" aria-label="Ban reason"
+                 class="p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+          <input type="number" min="1" bind:value={banDurationMinutes} placeholder="Minutes" aria-label="Ban duration in minutes"
+                 class="p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+          <button type="submit" disabled={managementBusy || !banUserId.trim()}
+                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;">
+            <i class="fa-solid fa-ban"></i>
+            Ban
+          </button>
+        </form>
+
+        {#if bannedUsers.length === 0}
+          <div class="text-center py-6">
+            <i class="fa-utility-duo fa-regular fa-user-check" style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 32px; display: block; margin: 0 auto 8px;"></i>
+            <p style="color: {$colorStore.muted}">Nobody is banned from counting here</p>
+          </div>
+        {:else}
+          <div class="space-y-3">
+            {#each bannedUsers as ban (ban.id)}
+              <div class="rounded-lg border p-4 flex flex-col sm:flex-row sm:items-center gap-3 transition-all"
+                   style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}08;" transition:slide>
+                {#if ban.avatarUrl}
+                  <img src={ban.avatarUrl} alt="" class="w-10 h-10 rounded-full shrink-0 border-2" style="border-color: {$colorStore.primary}30;">
+                {:else}
+                  <div class="w-10 h-10 rounded-full shrink-0 flex items-center justify-center" style="background: {$colorStore.primary}20;">
+                    <i class="fa-solid fa-user" style="color: {$colorStore.primary};"></i>
+                  </div>
+                {/if}
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium truncate" style="color: {$colorStore.text}">{ban.username || `User ${ban.userId}`}</div>
+                  <div class="text-sm" style="color: {$colorStore.muted}">
+                    {ban.reason || "No reason provided"} • by {ban.bannedByUsername || ban.bannedBy}
+                    {#if ban.expiresAt}
+                      • until {new Date(ban.expiresAt).toLocaleString()}
+                    {:else}
+                      • permanent
+                    {/if}
+                  </div>
+                </div>
+                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] min-h-[40px] disabled:opacity-50"
+                        style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
+                        disabled={managementBusy}
+                        onclick={() => unbanCountingUser(ban.userId)}>
+                  Unban
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Danger zone -->
+      <div class=" rounded-xl border p-6 transition-all"
+           style="border-color: #ef444430; background: #ef444405;">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="fa-utility-duo fa-regular fa-circle-exclamation" style="--fa-primary-color: #ef4444; --fa-secondary-color: #dc2626; font-size: 20px;"></i>
+          <h3 class="text-xl font-bold" style="color: {$colorStore.text}">Purge Channel Data</h3>
+        </div>
+        <p class="text-sm mb-4" style="color: {$colorStore.muted}">Deletes every count, statistic, streak, ban, and save point for this channel. The channel stays configured but starts from scratch.</p>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input type="text" bind:value={purgeReason} placeholder="Reason (optional)" aria-label="Purge reason"
+                 class="flex-1 p-3 rounded-lg border min-h-[44px]"
+                 style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};">
+          <button disabled={managementBusy}
+                  class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50"
+                  style="background: #ef444420; color: #ef4444; border: 1px solid #ef444430;"
+                  onclick={purgeChannel}>
+            <i class="fa-solid fa-trash"></i>
+            Purge everything
+          </button>
+        </div>
       </div>
     </div>
 

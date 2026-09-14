@@ -164,6 +164,53 @@
     showChannelsModal = true;
   }
 
+  /** Emote management state for the settings modal */
+  let newStarEmote = $state("");
+  let emoteBusy = $state(false);
+
+  /** Splits the bot's pipe-separated emote list */
+  function parseEmotes(emoteString: string | null | undefined): string[] {
+    if (!emoteString) return [];
+    return emoteString.split("|").map(e => e.trim()).filter(Boolean);
+  }
+
+  /** Refreshes the starboard list and the copy shown in the open modal */
+  async function refreshEditStarboard(starboardId: number) {
+    await fetchStarboards();
+    const updated = starboards.find(s => s.id === starboardId);
+    if (updated && currentEditStarboard) currentEditStarboard = { ...updated };
+  }
+
+  async function addStarEmote(starboardId: number) {
+    const emote = newStarEmote.trim();
+    if (!emote || !$currentGuild?.id) return;
+    emoteBusy = true;
+    try {
+      await starboardApi.addEmoteToStarboard($currentGuild.id, starboardId, emote);
+      newStarEmote = "";
+      await refreshEditStarboard(starboardId);
+    } catch (err: any) {
+      logger.error("Failed to add starboard emote:", err);
+      showNotificationMessage(err?.message?.includes("already") ? "That emote is already used by another starboard" : "Failed to add emote", "error");
+    } finally {
+      emoteBusy = false;
+    }
+  }
+
+  async function removeStarEmote(starboardId: number, emote: string) {
+    if (!$currentGuild?.id) return;
+    emoteBusy = true;
+    try {
+      await starboardApi.removeEmoteFromStarboard($currentGuild.id, starboardId, emote);
+      await refreshEditStarboard(starboardId);
+    } catch (err) {
+      logger.error("Failed to remove starboard emote:", err);
+      showNotificationMessage("Failed to remove emote", "error");
+    } finally {
+      emoteBusy = false;
+    }
+  }
+
   async function toggleAllowBots(starboardId: number, currentValue: boolean) {
     try {
       if (!$currentGuild?.id) throw new Error("No guild selected");
@@ -774,6 +821,47 @@
                 Update
               </button>
             </div>
+          </div>
+
+          <!-- Emotes -->
+          <div
+            class="rounded-xl p-4"
+            style="background: {$colorStore.primary}10;"
+          >
+            <h4 class="font-medium mb-1" style="color: {$colorStore.text}">Star Emotes</h4>
+            <p class="text-sm mb-3" style="color: {$colorStore.muted}">Any of these reactions counts toward the threshold.</p>
+            <div class="flex flex-wrap gap-2 mb-3">
+              {#each parseEmotes(currentEditStarboard.emote) as emote (emote)}
+                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"
+                      style="background: {$colorStore.primary}15; color: {$colorStore.text};">
+                  <span>{emote}</span>
+                  <button class="rounded-sm hover:opacity-80 min-h-[24px] min-w-[24px] disabled:opacity-30"
+                          aria-label={`Remove emote ${emote}`}
+                          disabled={emoteBusy || parseEmotes(currentEditStarboard.emote).length <= 1}
+                          onclick={() => removeStarEmote(currentEditStarboard.id, emote)}>
+                    <i class="fa-solid fa-xmark" style="color: {$colorStore.muted}; font-size: 12px;"></i>
+                  </button>
+                </span>
+              {/each}
+            </div>
+            <form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); addStarEmote(currentEditStarboard.id); }}>
+              <input
+                type="text"
+                bind:value={newStarEmote}
+                placeholder="⭐ or <:name:id>"
+                aria-label="New star emote"
+                class="flex-1 p-3 rounded-lg border transition-all duration-200 min-h-[44px]"
+                style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+              >
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px] disabled:opacity-50"
+                disabled={emoteBusy || !newStarEmote.trim()}
+                style="background: {$colorStore.primary}20; color: {$colorStore.text};"
+              >
+                Add
+              </button>
+            </form>
           </div>
 
           <!-- Toggle Settings -->

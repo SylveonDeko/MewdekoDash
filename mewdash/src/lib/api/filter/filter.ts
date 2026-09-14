@@ -4,9 +4,6 @@ import type {
   FilterSettings,
   ServerFilterSettingsRequest,
   WarningSettingsRequest,
-  AutomodRule,
-  CreateAutomodRuleRequest,
-  FilterStats,
 } from "./models";
 
 export const filterApi = {
@@ -64,35 +61,4 @@ export const filterApi = {
       "POST",
     ),
 
-  getAutomodRules: (guildId: bigint) =>
-    apiRequest<AutomodRule[]>(`filter/${guildId}/automod-rules`),
-
-  createAutomodRule: (guildId: bigint, rule: CreateAutomodRuleRequest) =>
-    apiRequest<AutomodRule>(`filter/${guildId}/automod-rules`, "POST", rule),
-
-  updateAutomodRule: (
-    guildId: bigint,
-    ruleId: number,
-    rule: Partial<CreateAutomodRuleRequest>,
-  ) =>
-    apiRequest<void>(`filter/${guildId}/automod-rules/${ruleId}`, "PUT", rule),
-
-  deleteAutomodRule: (guildId: bigint, ruleId: number) =>
-    apiRequest<void>(`filter/${guildId}/automod-rules/${ruleId}`, "DELETE"),
-
-  toggleAutomodRule: (guildId: bigint, ruleId: number) =>
-    apiRequest<boolean>(
-      `filter/${guildId}/automod-rules/${ruleId}/toggle`,
-      "POST",
-    ),
-
-  getFilterStats: (guildId: bigint) =>
-    apiRequest<FilterStats>(`filter/${guildId}/stats`),
-
-  testAutomodRule: (guildId: bigint, ruleId: number, testMessage: string) =>
-    apiRequest<{ triggered: boolean; reason?: string }>(
-      `filter/${guildId}/automod-rules/${ruleId}/test`,
-      "POST",
-      { message: testMessage },
-    ),
 };

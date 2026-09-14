@@ -4,6 +4,7 @@
 
   import { onDestroy, onMount } from "svelte";
   import { musicApi, clientApi } from "$lib/api/index.ts";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
     import type {PageData} from "./$types";
     import {currentGuild} from "$lib/stores/currentGuild";
     import {fade} from "svelte/transition";
@@ -346,6 +347,87 @@
     }
   }
 
+  /** Guards queue tools against double submits */
+  let queueBusy = $state(false);
+
+  /** Filters the bot player supports, keyed by the API filter name */
+  const audioFilters = [
+    { key: "bassboost", label: "Bass boost" },
+    { key: "nightcore", label: "Nightcore" },
+    { key: "vaporwave", label: "Vaporwave" },
+    { key: "karaoke", label: "Karaoke" },
+    { key: "tremolo", label: "Tremolo" },
+    { key: "vibrato", label: "Vibrato" },
+    { key: "rotation", label: "8D rotation" },
+    { key: "distortion", label: "Distortion" }
+  ];
+
+  /** Reads the active state of a filter from the player status regardless of casing */
+  function isFilterActive(key: string): boolean {
+    const filters = musicStatus?.filters ?? musicStatus?.Filters;
+    if (!filters) return false;
+    const wanted = key.toLowerCase();
+    for (const [name, value] of Object.entries(filters)) {
+      if (name.toLowerCase() === wanted) return Boolean(value);
+    }
+    return false;
+  }
+
+  async function shuffleQueue() {
+    if (!$currentGuild?.id) return;
+    queueBusy = true;
+    try {
+      await musicApi.shuffleQueue(BigInt($currentGuild.id));
+      await fetchPlaybackStatus();
+    } catch (err) {
+      logger.error("Failed to shuffle queue:", err);
+      showNotificationMessage("Failed to shuffle queue", "error");
+    } finally {
+      queueBusy = false;
+    }
+  }
+
+  async function clearQueue() {
+    if (!$currentGuild?.id) return;
+    if (!(await requestConfirmation({ message: "Remove every track from the queue? The current track keeps playing.", confirmText: "Clear queue" }))) return;
+    queueBusy = true;
+    try {
+      await musicApi.clearQueue(BigInt($currentGuild.id));
+      await fetchPlaybackStatus();
+    } catch (err) {
+      logger.error("Failed to clear queue:", err);
+      showNotificationMessage("Failed to clear queue", "error");
+    } finally {
+      queueBusy = false;
+    }
+  }
+
+  async function setLiveRepeat(mode: string, value: number) {
+    if (!$currentGuild?.id) return;
+    try {
+      await musicApi.setRepeatMode(BigInt($currentGuild.id), mode);
+      settings.playerRepeat = value;
+      await fetchPlaybackStatus();
+    } catch (err) {
+      logger.error("Failed to set repeat mode:", err);
+      showNotificationMessage("Failed to change repeat mode", "error");
+    }
+  }
+
+  async function toggleAudioFilter(key: string, enable: boolean) {
+    if (!$currentGuild?.id) return;
+    queueBusy = true;
+    try {
+      await musicApi.toggleFilter(BigInt($currentGuild.id), key, enable);
+      await fetchPlaybackStatus();
+    } catch (err) {
+      logger.error("Failed to toggle filter:", err);
+      showNotificationMessage("Failed to toggle filter", "error");
+    } finally {
+      queueBusy = false;
+    }
+  }
+
   function getVcName(vcId: bigint): string {
     const vc = voiceChannels.find(v => v.id.toString() === vcId.toString());
     return vc?.name ?? `Unknown (${vcId})`;
@@ -516,6 +598,64 @@
                     Queue: {musicStatus.queue.length} tracks
                   </span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Queue tools -->
+            <div class="flex flex-wrap items-center gap-2 mt-5 pt-5 border-t" style="border-color: {colors.primary}20;">
+              <button
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                style="background: {colors.primary}20; color: {colors.primary}; border: 1px solid {colors.primary}30;"
+                disabled={queueBusy || musicStatus.queue.length < 2}
+                onclick={shuffleQueue}
+              >
+                <i class="fa-solid fa-shuffle"></i>
+                Shuffle queue
+              </button>
+              <button
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] min-h-[44px] disabled:opacity-50"
+                style="background: {colors.accent}20; color: {colors.accent}; border: 1px solid {colors.accent}30;"
+                disabled={queueBusy || musicStatus.queue.length === 0}
+                onclick={clearQueue}
+              >
+                <i class="fa-solid fa-trash"></i>
+                Clear queue
+              </button>
+              <div class="flex items-center gap-1 ml-auto">
+                <span class="text-xs mr-1" style="color: {colors.muted}">Repeat</span>
+                {#each [{ id: "off", icon: "fa-xmark", label: "Off", value: 0 }, { id: "track", icon: "fa-repeat-1", label: "Track", value: 1 }, { id: "queue", icon: "fa-repeat", label: "Queue", value: 2 }] as mode}
+                  <button
+                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px]"
+                    style="background: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '30' : colors.primary + '08'}; color: {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary : colors.muted}; border: 1px solid {(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value ? colors.primary + '40' : 'transparent'};"
+                    onclick={() => setLiveRepeat(mode.id, mode.value)}
+                    aria-pressed={(musicStatus.repeatMode ?? settings.playerRepeat) === mode.value}
+                    aria-label={`Repeat ${mode.label}`}
+                  >
+                    <i class="fa-solid {mode.icon} mr-1"></i>{mode.label}
+                  </button>
+                {/each}
+              </div>
+            </div>
+
+            <!-- Audio filters -->
+            <div class="mt-4">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="fa-solid fa-wave-square" style="color: {colors.primary}; font-size: 14px;"></i>
+                <span class="text-sm font-medium" style="color: {colors.text}">Audio filters</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {#each audioFilters as filter}
+                  {@const active = isFilterActive(filter.key)}
+                  <button
+                    class="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02] min-h-[36px] disabled:opacity-50"
+                    style="background: {active ? colors.secondary + '30' : colors.primary + '08'}; color: {active ? colors.secondary : colors.muted}; border: 1px solid {active ? colors.secondary + '40' : 'transparent'};"
+                    disabled={queueBusy}
+                    onclick={() => toggleAudioFilter(filter.key, !active)}
+                    aria-pressed={active}
+                  >
+                    {filter.label}
+                  </button>
+                {/each}
               </div>
             </div>
           </div>

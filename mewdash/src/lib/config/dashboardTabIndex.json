@@ -47,6 +47,70 @@
       }
     ]
   },
+  "/dashboard/analytics": {
+    "tabs": [
+      {
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-gauge-high"
+      },
+      {
+        "id": "commands",
+        "label": "Commands",
+        "icon": "fa-terminal"
+      },
+      {
+        "id": "events",
+        "label": "Events",
+        "icon": "fa-bolt"
+      },
+      {
+        "id": "latency",
+        "label": "Latency",
+        "icon": "fa-stopwatch"
+      },
+      {
+        "id": "servers",
+        "label": "Servers",
+        "icon": "fa-server"
+      },
+      {
+        "id": "guilds",
+        "label": "Guilds",
+        "icon": "fa-people-group"
+      },
+      {
+        "id": "features",
+        "label": "Features",
+        "icon": "fa-puzzle-piece"
+      },
+      {
+        "id": "ai",
+        "label": "AI",
+        "icon": "fa-robot"
+      },
+      {
+        "id": "music",
+        "label": "Music",
+        "icon": "fa-music"
+      },
+      {
+        "id": "website",
+        "label": "Website",
+        "icon": "fa-globe"
+      },
+      {
+        "id": "alerts",
+        "label": "Alerts",
+        "icon": "fa-bell"
+      },
+      {
+        "id": "pipeline",
+        "label": "Pipeline",
+        "icon": "fa-diagram-project"
+      }
+    ]
+  },
   "/dashboard/birthday": {
     "tabs": [
       {
@@ -209,6 +273,30 @@
       }
     ]
   },
+  "/dashboard/filter": {
+    "tabs": [
+      {
+        "id": "filters",
+        "label": "Filters",
+        "icon": "fa-filter"
+      },
+      {
+        "id": "words",
+        "label": "Filtered Words",
+        "icon": "fa-comment-slash"
+      },
+      {
+        "id": "autoban",
+        "label": "Auto-ban Words",
+        "icon": "fa-ban"
+      },
+      {
+        "id": "channels",
+        "label": "Channel Overrides",
+        "icon": "fa-hashtag"
+      }
+    ]
+  },
   "/dashboard/forms": {
     "tabs": [
       {
@@ -297,6 +385,11 @@
         "id": "invited",
         "label": "Invited Users",
         "icon": "fa-user-plus"
+      },
+      {
+        "id": "flow",
+        "label": "Member Flow",
+        "icon": "fa-arrow-right-arrow-left"
       }
     ]
   },
@@ -391,6 +484,11 @@
         "icon": "fa-triangle-exclamation"
       },
       {
+        "id": "punishments",
+        "label": "Punishments",
+        "icon": "fa-gavel"
+      },
+      {
         "id": "activity",
         "label": "Recent Activity",
         "icon": "fa-clock"
@@ -461,6 +559,35 @@
         "id": "modules",
         "label": "Modules",
         "icon": "fa-square"
+      }
+    ]
+  },
+  "/dashboard/polls": {
+    "tabs": [
+      {
+        "id": "active",
+        "label": "Polls",
+        "icon": "fa-chart-simple"
+      },
+      {
+        "id": "create",
+        "label": "Create",
+        "icon": "fa-plus"
+      },
+      {
+        "id": "scheduled",
+        "label": "Scheduled",
+        "icon": "fa-calendar"
+      },
+      {
+        "id": "templates",
+        "label": "Templates",
+        "icon": "fa-copy"
+      },
+      {
+        "id": "analytics",
+        "label": "Analytics",
+        "icon": "fa-chart-simple"
       }
     ]
   },
@@ -637,6 +764,11 @@
         "icon": "fa-chart-line"
       },
       {
+        "id": "tickets",
+        "label": "Tickets",
+        "icon": "fa-ticket"
+      },
+      {
         "id": "panels",
         "label": "Ticket Panels",
         "icon": "fa-table-cells"
@@ -716,6 +848,45 @@
         "id": "live",
         "label": "Live Tools",
         "icon": "fa-sliders"
+      }
+    ]
+  },
+  "/dashboard/utility": {
+    "tabs": [
+      {
+        "id": "aliases",
+        "label": "Aliases",
+        "icon": "fa-terminal"
+      },
+      {
+        "id": "quotes",
+        "label": "Quotes",
+        "icon": "fa-quote-left"
+      },
+      {
+        "id": "autopublish",
+        "label": "Auto Publish",
+        "icon": "fa-bullhorn"
+      },
+      {
+        "id": "streamrole",
+        "label": "Stream Role",
+        "icon": "fa-video"
+      },
+      {
+        "id": "ai",
+        "label": "AI Assistant",
+        "icon": "fa-robot"
+      },
+      {
+        "id": "nsfw",
+        "label": "NSFW Filter",
+        "icon": "fa-eye-slash"
+      },
+      {
+        "id": "rolemonitor",
+        "label": "Role Monitor",
+        "icon": "fa-user-shield"
       }
     ]
   },

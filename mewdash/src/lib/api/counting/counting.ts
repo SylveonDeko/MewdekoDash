@@ -14,6 +14,7 @@ import {
   type RestoreSavePointRequest,
   type BanUserRequest,
   type UnbanUserRequest,
+  type CountingBanResponse,
   type SetCustomMessageRequest,
   type SetMilestonesRequest,
   type PurgeChannelRequest,
@@ -186,7 +187,7 @@ export const countingApi = {
     request: CreateSavePointRequest,
   ) =>
     apiRequest<SavePointResponse>(
-      `Counting/${guildId}/channels/${channelId}/savepoints`,
+      `Counting/${guildId}/channels/${channelId}/saves`,
       "POST",
       request,
     ),
@@ -199,7 +200,7 @@ export const countingApi = {
    */
   getSavePoints: (guildId: bigint, channelId: bigint) =>
     apiRequest<SavePointResponse[]>(
-      `Counting/${guildId}/channels/${channelId}/savepoints`,
+      `Counting/${guildId}/channels/${channelId}/saves`,
     ),
 
   /**
@@ -214,7 +215,7 @@ export const countingApi = {
     request: RestoreSavePointRequest,
   ) =>
     apiRequest<void>(
-      `Counting/${guildId}/channels/${channelId}/savepoints/restore`,
+      `Counting/${guildId}/channels/${channelId}/restore`,
       "POST",
       request,
     ),
@@ -224,10 +225,16 @@ export const countingApi = {
    * @param guildId The guild ID
    * @param channelId The channel ID
    * @param saveId The save point ID
+   * @param userId The user performing the deletion
    */
-  deleteSavePoint: (guildId: bigint, channelId: bigint, saveId: number) =>
+  deleteSavePoint: (
+    guildId: bigint,
+    channelId: bigint,
+    saveId: number,
+    userId: bigint,
+  ) =>
     apiRequest<void>(
-      `Counting/${guildId}/channels/${channelId}/savepoints/${saveId}`,
+      `Counting/${guildId}/channels/${channelId}/saves/${saveId}?userId=${userId}`,
       "DELETE",
     ),
 
@@ -264,22 +271,24 @@ export const countingApi = {
     request: UnbanUserRequest,
   ) =>
     apiRequest<void>(
-      `Counting/${guildId}/channels/${channelId}/users/${userId}/unban`,
-      "POST",
+      `Counting/${guildId}/channels/${channelId}/users/${userId}/ban`,
+      "DELETE",
       request,
     ),
 
   /**
-   * Gets banned users for a channel
+   * Gets users currently banned from counting in a channel
    * @param guildId The guild ID
    * @param channelId The channel ID
-   * @returns List of banned users
+   * @returns List of active counting bans
    */
   getBannedUsers: (guildId: bigint, channelId: bigint) =>
-    apiRequest<any[]>(`Counting/${guildId}/channels/${channelId}/banned-users`),
+    apiRequest<CountingBanResponse[]>(
+      `Counting/${guildId}/channels/${channelId}/bans`,
+    ),
 
   /**
-   * Sets custom success message
+   * Sets the custom milestone announcement message
    * @param guildId The guild ID
    * @param channelId The channel ID
    * @param request Custom message request
@@ -290,8 +299,42 @@ export const countingApi = {
     request: SetCustomMessageRequest,
   ) =>
     apiRequest<void>(
-      `Counting/${guildId}/channels/${channelId}/custom-message`,
-      "POST",
+      `Counting/${guildId}/channels/${channelId}/messages/milestone`,
+      "PUT",
+      request,
+    ),
+
+  /**
+   * Sets the message sent on a successful count
+   * @param guildId The guild ID
+   * @param channelId The channel ID
+   * @param request Custom message request
+   */
+  setSuccessMessage: (
+    guildId: bigint,
+    channelId: bigint,
+    request: SetCustomMessageRequest,
+  ) =>
+    apiRequest<void>(
+      `Counting/${guildId}/channels/${channelId}/messages/success`,
+      "PUT",
+      request,
+    ),
+
+  /**
+   * Sets the message sent on a failed count
+   * @param guildId The guild ID
+   * @param channelId The channel ID
+   * @param request Custom message request
+   */
+  setFailureMessage: (
+    guildId: bigint,
+    channelId: bigint,
+    request: SetCustomMessageRequest,
+  ) =>
+    apiRequest<void>(
+      `Counting/${guildId}/channels/${channelId}/messages/failure`,
+      "PUT",
       request,
     ),
 
@@ -308,7 +351,7 @@ export const countingApi = {
   ) =>
     apiRequest<void>(
       `Counting/${guildId}/channels/${channelId}/milestones`,
-      "POST",
+      "PUT",
       request,
     ),
 
@@ -316,10 +359,10 @@ export const countingApi = {
    * Gets milestones for a channel
    * @param guildId The guild ID
    * @param channelId The channel ID
-   * @returns List of milestone numbers
+   * @returns Milestone numbers
    */
   getMilestones: (guildId: bigint, channelId: bigint) =>
-    apiRequest<number[]>(
+    apiRequest<{ milestones: number[] }>(
       `Counting/${guildId}/channels/${channelId}/milestones`,
     ),
 };

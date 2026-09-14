@@ -968,9 +968,26 @@
                     maxEmbeds={10}
                     allowComponents={true}
                     additionalPlaceholders={[
-                      { category: "Patreon", name: "%patron.name%", description: "Patron's name" },
-                      { category: "Patreon", name: "%patron.tier%", description: "Patron's tier" },
-                      { category: "Patreon", name: "%patron.amount%", description: "Pledge amount" }
+                      { category: "Patreon", name: "%month%", description: "Current month name" },
+                      { category: "Patreon", name: "%year%", description: "Current year" },
+                      { category: "Patreon", name: "%patreon.link%", description: "Patreon link" },
+                      { category: "Patreon", name: "%patron.name%", description: "Highest pledging supporter's name" },
+                      { category: "Patreon", name: "%patron.tier%", description: "Highest pledging supporter's tier" },
+                      { category: "Patreon", name: "%patron.amount%", description: "Highest pledging supporter's monthly pledge" },
+                      { category: "Patreon", name: "%supporter.count%", description: "Active supporters" },
+                      { category: "Patreon", name: "%supporter.total%", description: "All supporters ever recorded" },
+                      { category: "Patreon", name: "%supporter.new%", description: "New supporters this month" },
+                      { category: "Patreon", name: "%supporter.former%", description: "Former supporters" },
+                      { category: "Patreon", name: "%supporter.linked%", description: "Supporters with a linked Discord account" },
+                      { category: "Patreon", name: "%revenue.monthly%", description: "Current monthly pledges" },
+                      { category: "Patreon", name: "%revenue.average%", description: "Average pledge" },
+                      { category: "Patreon", name: "%revenue.lifetime%", description: "Lifetime revenue" },
+                      { category: "Patreon", name: "%tiers.count%", description: "Number of tiers" },
+                      { category: "Patreon", name: "%tier.popular%", description: "Tier with the most supporters" },
+                      { category: "Patreon", name: "%tier.popular.count%", description: "How many are on the most popular tier" },
+                      { category: "Patreon", name: "%supporters.summary%", description: "Ready made sentence about supporter count" },
+                      { category: "Patreon", name: "%revenue.summary%", description: "Ready made sentence about revenue" },
+                      { category: "Patreon", name: "%growth.summary%", description: "Ready made sentence about growth" }
                     ]}
                     guildId={$currentGuild?.id}
                     user={data.user}

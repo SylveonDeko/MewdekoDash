@@ -1,6 +1,7 @@
 import { env } from "$env/dynamic/public";
 import { authenticateUser } from "$lib/server/discordApi";
 import { logBackendJwtInit } from "$lib/server/backendJwt";
+import { recordPageView } from "$lib/server/analyticsBeacon";
 import * as Sentry from "@sentry/sveltekit";
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
@@ -35,7 +36,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
     event.locals.user = await authenticateUser(event, event.cookies);
 
+    const startedAt = Date.now();
     const response = await resolve(event);
+    recordPageView(event, response, startedAt);
 
     // Content-Security-Policy for defense-in-depth
     // Helps mitigate XSS attacks even if output encoding fails
