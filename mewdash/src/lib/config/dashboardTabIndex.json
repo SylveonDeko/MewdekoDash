@@ -254,6 +254,30 @@
       }
     ]
   },
+  "/dashboard/feature-requests": {
+    "tabs": [
+      {
+        "id": "browse",
+        "label": "Browse",
+        "icon": "fa-lightbulb"
+      },
+      {
+        "id": "submit",
+        "label": "Suggest",
+        "icon": "fa-paper-plane"
+      },
+      {
+        "id": "mine",
+        "label": "Mine",
+        "icon": "fa-user"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-cog"
+      }
+    ]
+  },
   "/dashboard/feeds": {
     "tabs": [
       {

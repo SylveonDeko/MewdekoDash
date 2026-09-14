@@ -261,6 +261,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["leave feedback", "kick feedback", "why removed", "churn", "exit survey"],
   },
   {
+    label: "Feature Requests",
+    icon: "fa-utility-duo fa-regular fa-lightbulb",
+    href: "/dashboard/feature-requests",
+    category: "Community",
+    description: "Suggest features, report bugs, and upvote what others asked for",
+    keywords: ["feature request", "suggest", "suggestion", "idea", "bug report", "feedback", "roadmap", "upvote"],
+  },
+  {
     label: "Analytics",
     icon: "fa-utility-duo fa-regular fa-chart-simple",
     href: "/dashboard/analytics",
