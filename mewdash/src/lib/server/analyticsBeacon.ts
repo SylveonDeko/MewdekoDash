@@ -12,7 +12,6 @@ const MAX_BUFFER = 2_000;
 
 const SKIP_PREFIXES = ["/api/", "/cdn/", "/_app/", "/dashboard/analytics"];
 const STATIC_FILE = /\.(?:js|mjs|css|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|txt|xml|json|webmanifest)$/i;
-const SNOWFLAKE = /\d{15,20}/g;
 
 let buffer: PageViewSample[] = [];
 let timer: NodeJS.Timeout | null = null;
@@ -57,10 +56,6 @@ function locale(acceptLanguage: string | null): string | null {
   return first ? first.slice(0, 16) : null;
 }
 
-function routeOf(event: RequestEvent): string {
-  return event.route.id ?? event.url.pathname.replace(SNOWFLAKE, "{id}");
-}
-
 function shouldSkip(pathname: string): boolean {
   return SKIP_PREFIXES.some((p) => pathname.startsWith(p)) || STATIC_FILE.test(pathname);
 }
@@ -103,17 +98,21 @@ function ensureTimer(): void {
  * Queues one dashboard request for the bot's page view analytics. Never throws
  * and never blocks the response: rows are batched in memory and posted every
  * ten seconds, or as soon as two hundred are waiting.
+ *
+ * Only requests that matched a SvelteKit route are recorded. An unmatched
+ * request has no route template, and recording its raw path would fill the
+ * analytics with scanner probes like /wp-json/batch/v1.
  */
 export function recordPageView(event: RequestEvent, response: Response, startedAt: number): void {
   try {
-    const pathname = event.url.pathname;
-    if (shouldSkip(pathname)) return;
+    const route = event.route.id;
+    if (!route || shouldSkip(event.url.pathname)) return;
     if (!env.MEWDEKO_API_KEY) return;
 
     const headers = event.request.headers;
     const sample: PageViewSample = {
       at: new Date().toISOString(),
-      route: routeOf(event),
+      route,
       method: event.request.method,
       status: response.status,
       durationMs: Math.max(0, Date.now() - startedAt),
