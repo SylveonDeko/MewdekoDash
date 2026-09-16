@@ -72,9 +72,12 @@ Greets are built with the user, server and bot placeholder sets. Inviter placeho
 | `%server.boostlevel%`, `%server.boostcount%` | Boost tier and number of boosts |
 | `%server.time%`, `%server.timestamp.longdatetime%` | Current time, plain or as a Discord timestamp |
 | `%bot.name%`, `%bot.id%`, `%bot.avatar%` | About the bot itself |
-| `%inviter.username%` | Username of the person whose invite was used, or `Unknown` |
-| `%inviter.avatar%` | Inviter's avatar URL |
-| `%inviter.count%` | How many invites the inviter has |
+| `%inviter.username%`, `%inviter.mention%`, `%inviter.id%`, `%inviter.avatar%` | The person whose invite was used, or `Unknown` |
+| `%inviter.count%`, `%inviter.regular%`, `%inviter.left%`, `%inviter.fake%`, `%inviter.bonus%` | The inviter's invite tally |
+| `%invite.code%`, `%invite.url%`, `%invite.uses%`, `%invite.label%`, `%invite.type%` | The invite that was used, its label, and whether it was an invite, the vanity link or an app |
+| `%user.joincount%`, `%user.leavecount%` | How many times this member has joined and left |
+| `%server.members.ordinal%` | Member count as 1st, 2nd, 1,204th |
+| `%user.joined.R%`, `%user.created.F%` (and t, T, d, D, f styles) | Join and account creation times as Discord timestamps |
 
 > [!EXAMPLE]
 > `Welcome %user.mention% to %server%! You are member #%server.members%.`
@@ -158,6 +161,6 @@ Run these with your server's prefix (`.` unless you changed it). Multi greet com
 - `multigreetdelete` needs the bot to have Manage Messages, and `multigreetwebhook` and `leavehook` need Manage Webhooks.
 - Greet numbers are positions in the list, so removing one shifts the numbers of everything after it. Run `multigreetlist` before editing.
 - The `off` option of `multigreettype`, `/multigreets type` and the dashboard's **Disabled** button all set the same greet type, so any of them turns the system off without deleting your greets.
-- Invite placeholders add a half second pause before each greet so the invite cache can catch up. `%inviter.id%` and `%inviter.mention%` currently return the new member's ID and mention, not the inviter's.
+- Invite placeholders wait up to five seconds for the join to be attributed before the greet goes out, so the inviter is right even when several people join at once.
 - The welcome DM only works if the member allows DMs from server members. Failed DMs are ignored.
 - Role Greets are a separate feature that fires when a role is given rather than on join.

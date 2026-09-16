@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
   import { currentInstance } from "$lib/stores/instanceStore";
+  import { safeLocalStorage } from "$lib/safeStorage";
   import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
   import ErrorBoundary from "$lib/components/ui/ErrorBoundary.svelte";
   import { colorStore } from "$lib/stores/colorStore.ts";
@@ -34,7 +35,7 @@
   let { data, children } = $props();
   let guildSearchTerm = $state("");
 
-  let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
+  let sidebarCollapsed = $state(browser ? safeLocalStorage.getItem("sidebar-collapsed") === "true" : false);
   let mobileSidebarOpen = $state(false);
   let contentEl = $state<HTMLElement>();
   let prevCollapsed = untrack(() => sidebarCollapsed);
@@ -88,7 +89,7 @@
   function dismissProductUpdates() {
     unseenUpdates.set([]);
     closeProductUpdates();
-    localStorage.setItem(lastSeenUpdateKey, latestProductUpdate.id);
+    safeLocalStorage.setItem(lastSeenUpdateKey, latestProductUpdate.id);
   }
 
   /**
@@ -103,16 +104,12 @@
     const legacyPrefix = "dismissed-product-update:";
     const dismissed = new Set<string>();
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(legacyPrefix) && localStorage.getItem(key) === "true") {
+    const legacyKeys = safeLocalStorage.keys().filter((key) => key.startsWith(legacyPrefix));
+    for (const key of legacyKeys) {
+      if (safeLocalStorage.getItem(key) === "true") {
         dismissed.add(key.slice(legacyPrefix.length));
       }
-    }
-
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(legacyPrefix)) localStorage.removeItem(key);
+      safeLocalStorage.removeItem(key);
     }
 
     if (dismissed.size === 0) return null;
@@ -120,7 +117,7 @@
     const newest = productUpdates.find((update) => dismissed.has(update.id));
     if (!newest) return null;
 
-    localStorage.setItem(lastSeenUpdateKey, newest.id);
+    safeLocalStorage.setItem(lastSeenUpdateKey, newest.id);
     return newest.id;
   }
 
@@ -176,7 +173,7 @@
     currentGuild.set(guild);
     if (browser) {
       try {
-        localStorage.setItem("lastSelectedGuild", JSON.stringify({
+        safeLocalStorage.setItem("lastSelectedGuild", JSON.stringify({
           id: guild.id.toString(),
           name: guild.name,
           icon: guild.icon
@@ -207,7 +204,7 @@
     logger.info("Clearing guild the bot is no longer in:", selected.id?.toString());
     currentGuild.set(null);
     try {
-      localStorage.removeItem("lastSelectedGuild");
+      safeLocalStorage.removeItem("lastSelectedGuild");
     } catch {}
   });
 
@@ -232,13 +229,13 @@
 
   // Load saved instance immediately when browser is available to prevent flash
   if (browser) {
-    const savedInstance = localStorage.getItem("selectedInstance");
+    const savedInstance = safeLocalStorage.getItem("selectedInstance");
     if (savedInstance) {
       try {
         currentInstance.set(JSON.parse(savedInstance));
       } catch (err) {
         logger.error("Failed to parse saved instance:", err);
-        localStorage.removeItem("selectedInstance");
+        safeLocalStorage.removeItem("selectedInstance");
       }
     }
   }
@@ -275,7 +272,7 @@
       }
     }
 
-    const lastSeen = localStorage.getItem(lastSeenUpdateKey) ?? migrateDismissedUpdates();
+    const lastSeen = safeLocalStorage.getItem(lastSeenUpdateKey) ?? migrateDismissedUpdates();
 
     // Nothing acknowledged yet means a first visit, which gets the newest update only rather
     // than the whole changelog. Being seen is recorded when it is dismissed, never on load, so

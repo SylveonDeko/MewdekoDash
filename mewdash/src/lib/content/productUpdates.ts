@@ -11,6 +11,58 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "activity-stats",
+    label: "New page",
+    title: "Activity Stats For The Whole Server",
+    summary: "Messages, voice time, games and member growth over any window from a day to ninety, with charts, rankings and a per member view.",
+    details: [
+      "Voice time is tracked per member and channel, with muted, deafened, AFK or alone time left out if you want. Hourly snapshots feed member count and online, idle and DND charts.",
+      "Turn on game tracking to see what your server plays, who plays it and for how long, with a whitelist or blacklist of games and a verification switch that ignores spoofed presences.",
+      "Rank members and channels by messages, voice or game time, export any ranking as CSV, ignore channels, roles or members, and let anyone opt out of tracking everywhere with one command."
+    ],
+    href: "/dashboard/serverstats",
+    action: "Open activity stats"
+  },
+  {
+    id: "stat-roles",
+    label: "New page",
+    title: "Roles That Follow Activity",
+    summary: "Level roles are forever. Stat roles are earned by activity over a window and taken away again when it stops.",
+    details: [
+      "Measure messages, voice minutes, minutes in a game, invites, days in the server or account age, over the last N days or all time.",
+      "Qualify by a threshold, a top rank, a top percentage, or a daily streak such as five messages on seven of the last seven days. Invert a rule to mark inactive members instead.",
+      "Limit a rule to channels or roles, ignore specific members, keep only the highest tier in a group, choose the schedule, and announce changes in a channel or by DM. Preview who gains and loses before it runs."
+    ],
+    href: "/dashboard/statroles",
+    action: "Create a stat role"
+  },
+  {
+    id: "invite-tracking-overhaul",
+    label: "New in invites",
+    title: "Invite Tracking That Tells The Whole Story",
+    summary: "Every invite is now regular, left, fake or bonus, every join is attributed to a code, the vanity link or an app, and the page shows whether people stay.",
+    details: [
+      "Fake detection for young accounts, self invites, rejoins and members without an avatar, with blacklisted inviters and roles that never earn credit and members you can hide from the leaderboard.",
+      "Label invite codes so campaigns show up by name, grant a role to everyone who joins through one, and give members a personal link that credits them. Greets get inviter and invite placeholders to match.",
+      "Growth analytics with retention and join sources, a leaderboard for the last day, week or month, bonus invites, a join and leave log channel, CSV exports and a mass ban for everyone one inviter brought in."
+    ],
+    href: "/dashboard/invites",
+    action: "Open invites"
+  },
+  {
+    id: "live-boards",
+    label: "New page",
+    title: "Boards That Keep Themselves Current",
+    summary: "Pin a leaderboard, chart or overview in a channel and the bot keeps editing it, and get a digest of the week or month posted on a schedule.",
+    details: [
+      "Invite, message, voice and game leaderboards, join, leave, growth, members and message charts, the server overview and invite analytics, each refreshed as often as every five minutes.",
+      "Daily, weekly or monthly server reports with joins, leaves, retention, top inviters, chatters, voice members, busiest channels, invite codes and games, plus a growth chart.",
+      "Stat channels gained a clock in your timezone, messages and voice hours today and this week, top chatter, top voice member, top inviter, top game, members left and net growth counters."
+    ],
+    href: "/dashboard/liveboards",
+    action: "Add a live board"
+  },
+  {
     id: "wiki",
     label: "New everywhere",
     title: "A Wiki For Every Feature",

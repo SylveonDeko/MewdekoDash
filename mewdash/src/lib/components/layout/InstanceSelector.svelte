@@ -8,6 +8,7 @@
   import {page} from "$app/stores";
   import {colorStore} from "$lib/stores/colorStore";
   import {browser} from "$app/environment";
+  import { safeLocalStorage } from "$lib/safeStorage";
 
   interface Props {
     data: any;
@@ -108,7 +109,7 @@
           currentInstance.set(instances[0]);
           // Save to localStorage for future loads
           if (browser) {
-            localStorage.setItem("selectedInstance", JSON.stringify(instances[0]));
+            safeLocalStorage.setItem("selectedInstance", JSON.stringify(instances[0]));
           }
           // Stay on the current page instead of redirecting to main dashboard
           const currentPath = browser ? $page.url.pathname : "/dashboard";
@@ -136,7 +137,7 @@
 
   async function handleInstanceSelect(instance: BotInstance) {
     currentInstance.set(instance);
-    localStorage.setItem("selectedInstance", JSON.stringify(instance));
+    safeLocalStorage.setItem("selectedInstance", JSON.stringify(instance));
     // Stay on the current page instead of redirecting to main dashboard
     const currentPath = browser ? $page.url.pathname : "/dashboard";
     if (currentPath === "/dashboard") {

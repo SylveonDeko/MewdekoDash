@@ -11,7 +11,7 @@ export interface WikiArticleMeta {
   summary: string;
   /** FontAwesome icon class, without the `fa-utility-duo fa-regular` prefix. */
   icon: string;
-  /** Grouping shown on the wiki index. Mirrors the category in navigationItems. */
+  /** Feature category, shown on the article page. Mirrors the category in navigationItems. */
   category: string;
   /** Dashboard page this article documents, so the dashboard can find its own article. */
   dashboardHref?: string;

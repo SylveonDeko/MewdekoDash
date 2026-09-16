@@ -22,6 +22,7 @@ A unified navigation component that provides responsive navigation with server a
   import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import { safeLocalStorage } from "$lib/safeStorage";
   import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
 
@@ -102,7 +103,7 @@ A unified navigation component that provides responsive navigation with server a
   let booTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   let showBoo = $state(false);
   let navElement = $state<HTMLElement>();
-  let sidebarCollapsed = $state(browser ? localStorage.getItem("sidebar-collapsed") === "true" : false);
+  let sidebarCollapsed = $state(browser ? safeLocalStorage.getItem("sidebar-collapsed") === "true" : false);
 
   // Listen for sidebar collapse changes
   function handleStorageChange(e: StorageEvent) {
@@ -368,7 +369,7 @@ A unified navigation component that provides responsive navigation with server a
         const currentInst = get(currentInstance);
         const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
 
-        localStorage.setItem(storageKey, JSON.stringify({
+        safeLocalStorage.setItem(storageKey, JSON.stringify({
           id: guild.id.toString(),
           name: guild.name,
           icon: guild.icon,
@@ -494,17 +495,17 @@ A unified navigation component that provides responsive navigation with server a
     if (browser) {
       if (previousInstance) {
         const oldStorageKey = `lastSelectedGuild_${previousInstance.botId}`;
-        localStorage.removeItem(oldStorageKey);
+        safeLocalStorage.removeItem(oldStorageKey);
       }
       // Also clear the generic key for backwards compatibility
-      localStorage.removeItem("lastSelectedGuild");
+      safeLocalStorage.removeItem("lastSelectedGuild");
     }
 
     // Set the new instance
     currentInstance.set(instance);
 
     if (browser) {
-      localStorage.setItem("selectedInstance", JSON.stringify(instance));
+      safeLocalStorage.setItem("selectedInstance", JSON.stringify(instance));
 
       // After setting an instance, fetch the guilds for the new instance
       await fetchGuildsIfReady();
@@ -544,7 +545,7 @@ A unified navigation component that provides responsive navigation with server a
         const isFormsPage = page.url.pathname.startsWith("/forms/");
 
         if (!isFormsPage) {
-          const storedInstance = localStorage.getItem("selectedInstance");
+          const storedInstance = safeLocalStorage.getItem("selectedInstance");
           if (storedInstance) {
             try {
               const parsedInstance = JSON.parse(storedInstance);
@@ -584,7 +585,7 @@ A unified navigation component that provides responsive navigation with server a
     const currentInst = get(currentInstance);
     const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
 
-    const stored = localStorage.getItem(storageKey);
+    const stored = safeLocalStorage.getItem(storageKey);
     if (stored) {
       try {
         const storedGuild = JSON.parse(stored);
@@ -795,7 +796,7 @@ A unified navigation component that provides responsive navigation with server a
               const currentInst = $currentInstance;
               const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
 
-              localStorage.setItem(storageKey, JSON.stringify({
+              safeLocalStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
                 icon: $currentGuild.icon,
@@ -852,7 +853,7 @@ A unified navigation component that provides responsive navigation with server a
               const currentInst = $currentInstance;
               const storageKey = currentInst ? `lastSelectedGuild_${currentInst.botId}` : "lastSelectedGuild";
 
-              localStorage.setItem(storageKey, JSON.stringify({
+              safeLocalStorage.setItem(storageKey, JSON.stringify({
                 id: $currentGuild.id.toString(),
                 name: $currentGuild.name,
                 icon: $currentGuild.icon,

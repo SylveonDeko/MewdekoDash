@@ -21,5 +21,5 @@ export function load({ params }) {
   const previous = index > 0 ? all[index - 1] : null;
   const next = index < all.length - 1 ? all[index + 1] : null;
 
-  return { article, related, previous, next, all };
+  return { article, related, previous, next };
 }

@@ -1,1183 +1,889 @@
 <!-- routes/dashboard/invites/+page.svelte -->
 <script lang="ts">
-
-
   import { onMount, untrack } from "svelte";
-  import { inviteTrackingApi, clientApi, joinLeaveApi, type GraphStatsResponse } from "$lib/api/index.ts";
-    import {currentGuild} from "$lib/stores/currentGuild.ts";
-    import {fade} from "svelte/transition";
-    import {goto} from "$app/navigation";
-    import Notification from "$lib/components/ui/Notification.svelte";
-    import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
-    import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
-    import {currentInstance} from "$lib/stores/instanceStore.ts";
-    import {colorStore} from "$lib/stores/colorStore";
-    import {logger} from "$lib/logger.ts";
-    import {loadingStore} from "$lib/stores/loadingStore";
-    import type {PageData} from "./$types";
+  import { goto } from "$app/navigation";
+  import {
+    clientApi,
+    inviteTrackingApi,
+    InviteExclusionKind,
+    InviteResetScope,
+    statsRangeLabels,
+    type GuildInviteCode,
+    type InviteAnalytics,
+    type InviteBreakdown,
+    type InvitedPage,
+    type InviteLabel,
+    type InviteLeaderboardEntry,
+    type InviterInfo,
+    type InviteTrackingSettings,
+    type StatsRangeValue,
+  } from "$lib/api/index.ts";
+  import { currentGuild } from "$lib/stores/currentGuild.ts";
+  import { currentInstance } from "$lib/stores/instanceStore.ts";
+  import { colorStore } from "$lib/stores/colorStore";
+  import { logger } from "$lib/logger.ts";
+  import { requestConfirmation } from "$lib/stores/confirmationStore";
+  import DashboardPageLayout from "$lib/components/layout/DashboardPageLayout.svelte";
+  import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
+  import SettingToggle from "$lib/components/forms/SettingToggle.svelte";
+  import SettingField from "$lib/components/forms/SettingField.svelte";
+  import SimpleLineChart from "$lib/components/analytics/SimpleLineChart.svelte";
+  import StatTile from "$lib/components/analytics/StatTile.svelte";
+  import Card from "$lib/components/analytics/Card.svelte";
+  import Pill from "$lib/components/analytics/Pill.svelte";
+  import SectionHeader from "$lib/components/stats/SectionHeader.svelte";
+  import AsyncState from "$lib/components/stats/AsyncState.svelte";
+  import WindowPicker from "$lib/components/stats/WindowPicker.svelte";
+  import RankList, { type RankRow } from "$lib/components/stats/RankList.svelte";
+  import { formatAgo, formatDate, formatNumber, formatPercent, formatSigned, rangeOptions, saveBlob } from "$lib/components/stats/format";
+  import type { PageData } from "./$types";
 
-    interface Props {
-        data: PageData;
-    }
+  interface Props {
+    data: PageData;
+  }
 
-    let {data}: Props = $props();
+  let { data }: Props = $props();
 
-  // State management
-    let showNotification = $state(false);
-    let notificationMessage = $state("");
-    let notificationType: "success" | "error" = $state("success");
-    let activeTab = $state("settings");
-  
-  // Layout configuration
   const tabs = [
+    { id: "overview", label: "Overview", icon: "fa-chart-line" },
+    { id: "leaderboard", label: "Leaderboard", icon: "fa-trophy" },
+    { id: "members", label: "Members", icon: "fa-user-plus" },
+    { id: "codes", label: "Codes & Labels", icon: "fa-link" },
     { id: "settings", label: "Settings", icon: "fa-gear" },
-    { id: "stats", label: "Statistics", icon: "fa-file-spreadsheet" },
-    { id: "leaderboard", label: "Leaderboard", icon: "fa-award" },
-    { id: "inviter", label: "Find Inviter", icon: "fa-user" },
-    { id: "invited", label: "Invited Users", icon: "fa-user-plus" },
-    { id: "flow", label: "Member Flow", icon: "fa-arrow-right-arrow-left" }
   ];
 
-  // Invite Settings
-    let inviteSettingsEnabled = $state(true);
-    let inviteSettingsRemoveOnLeave = $state(false);
-    let inviteSettingsMinAccountAge = $state("00:00:00");
+  let activeTab = $state("overview");
+  let notificationMessage = $state("");
+  let notificationType = $state<"success" | "error">("success");
 
-  // Invite Leaderboard
-  let leaderboard: Array<{
-    userId: string;
-    username: string;
-    inviteCount: number;
-  }> = $state([]);
-    let leaderboardPage = $state(1);
-  let leaderboardPageSize = 10;
-
-  // User selection for viewing inviter/invited
-    let selectedUserId = $state("");
-  let guildMembers: Array<{
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string;
-  }> = $state([]);
-
-  // Inviter lookup
-  let inviterInfo: {
-    id: string;
-    username: string;
-    discriminator: string;
-    avatarUrl: string;
-  } | null = $state(null);
-    let inviterLoading = $state(false);
-    let inviterError: string | null = $state(null);
-
-  // Invited users list
-  let invitedUsers: Array<{
-    id: string;
-    username: string;
-    discriminator: string;
-    avatarUrl: string;
-  }> = $state([]);
-    let invitedLoading = $state(false);
-    let invitedError: string | null = $state(null);
-
-  // Stats
-    let userStats = $state({
-    totalInvites: 0,
-    avgInvitesPerUser: 0,
-    topInviter: {
-      username: "",
-      inviteCount: 0
-    }
-    });
-
-  // Management
-    let changedSettings = $state(new Set<string>());
-    let loading = $state({
-    settings: true,
-    leaderboard: true,
-    members: true,
-    stats: true
-    });
-    let error = $state({
-    settings: null as string | null,
-    leaderboard: null as string | null,
-    members: null as string | null,
-    stats: null as string | null
-    });
-
-  // Min account age inputs
-    let minAgeDays = $state(0);
-    let minAgeHours = $state(0);
-    let minAgeMinutes = $state(0);
-
-  function markAsChanged(setting: string) {
-    changedSettings = changedSettings.add(setting);
-  }
-
-  /** Member flow (join/leave) state */
-  let flowLoading = $state(false);
-  let flowError = $state<string | null>(null);
-  let joinStats: GraphStatsResponse | null = $state(null);
-  let leaveStats: GraphStatsResponse | null = $state(null);
-  let joinGraph = $state<string | null>(null);
-  let leaveGraph = $state<string | null>(null);
-  let joinColor = $state("#10b981");
-  let leaveColor = $state("#ef4444");
-  let colorSaving = $state(false);
-  let flowLoaded = $state(false);
-
-  async function loadMemberFlow(force = false) {
-    if (!$currentGuild?.id || (flowLoaded && !force)) return;
-    flowLoading = true;
-    flowError = null;
-    try {
-      const [joins, leaves, joinImg, leaveImg] = await Promise.all([
-        joinLeaveApi.getJoinStats($currentGuild.id).catch(() => null),
-        joinLeaveApi.getLeaveStats($currentGuild.id).catch(() => null),
-        joinLeaveApi.getJoinGraph($currentGuild.id).catch(() => null),
-        joinLeaveApi.getLeaveGraph($currentGuild.id).catch(() => null)
-      ]);
-      joinStats = joins;
-      leaveStats = leaves;
-      joinGraph = joinImg?.imageData ? `data:image/png;base64,${joinImg.imageData}` : null;
-      leaveGraph = leaveImg?.imageData ? `data:image/png;base64,${leaveImg.imageData}` : null;
-      flowLoaded = true;
-    } catch (err) {
-      logger.error("Failed to load member flow:", err);
-      flowError = "Failed to load join and leave data";
-    } finally {
-      flowLoading = false;
-    }
-  }
-
-  /** Converts a hex color string to the integer the bot stores */
-  function hexToInt(hex: string): number {
-    return parseInt(hex.replace("#", ""), 16);
-  }
-
-  async function saveGraphColors() {
-    if (!$currentGuild?.id) return;
-    colorSaving = true;
-    try {
-      await Promise.all([
-        joinLeaveApi.setJoinColor($currentGuild.id, hexToInt(joinColor)),
-        joinLeaveApi.setLeaveColor($currentGuild.id, hexToInt(leaveColor))
-      ]);
-      await loadMemberFlow(true);
-    } catch (err) {
-      logger.error("Failed to save graph colors:", err);
-      showNotificationMessage("Failed to save graph colors", "error");
-    } finally {
-      colorSaving = false;
-    }
-  }
-
-  $effect(() => {
-    if (activeTab === "flow" && $currentGuild?.id) untrack(() => loadMemberFlow());
-  });
-
-  function showNotificationMessage(message: string, type: "success" | "error" = "success") {
+  function notify(message: string, type: "success" | "error" = "error") {
     notificationMessage = message;
     notificationType = type;
-    showNotification = true;
-    setTimeout(() => {
-      showNotification = false;
-    }, 3000);
+    setTimeout(() => (notificationMessage = ""), 4000);
   }
 
-  async function fetchInviteSettings() {
-    return await loadingStore.wrap("fetch-invite-settings", async () => {
-      try {
-        loading.settings = true;
-        error.settings = null;
-        if (!$currentGuild?.id) {
-          throw new Error("No guild selected");
-        }
-
-        const settings = await inviteTrackingApi.getInviteSettings($currentGuild.id);
-        inviteSettingsEnabled = settings.isEnabled;
-        inviteSettingsRemoveOnLeave = settings.removeInviteOnLeave;
-        inviteSettingsMinAccountAge = settings.minAccountAge;
-
-      // Parse the TimeSpan format for min account age
-      const timeSpanRegex = /^(\d+)\:(\d+)\:(\d+)(?:\.(\d+))?$/;
-        const match = inviteSettingsMinAccountAge.match(timeSpanRegex);
-
-      if (match) {
-        minAgeDays = Math.floor(parseInt(match[1]) / 24); // Convert hours to days
-        minAgeHours = parseInt(match[1]) % 24;
-        minAgeMinutes = parseInt(match[2]);
-      }
-      } catch (err) {
-        logger.error("Failed to fetch invite settings:", err);
-        error.settings = err instanceof Error ? err.message : "Failed to fetch invite settings";
-      } finally {
-        loading.settings = false;
-      }
-    }, "api", "Loading invite settings...");
+  function fail(err: unknown, fallback: string) {
+    logger.error(fallback, err);
+    notify(err instanceof Error ? err.message : fallback, "error");
   }
 
-  async function fetchLeaderboard() {
-    return await loadingStore.wrap("fetch-leaderboard", async () => {
-      try {
-        loading.leaderboard = true;
-        error.leaderboard = null;
-        if (!$currentGuild?.id) {
-          throw new Error("No guild selected");
-        }
+  /** Guild lists for selectors */
+  let members = $state<Array<{ id: string; name: string; avatarUrl?: string }>>([]);
+  let roles = $state<Array<{ id: string; name: string; color?: number }>>([]);
+  let channels = $state<Array<{ id: string; name: string }>>([]);
 
-        leaderboard = await inviteTrackingApi.getInviteLeaderboard($currentGuild.id, leaderboardPage, leaderboardPageSize);
-      } catch (err) {
-        logger.error("Failed to fetch invite leaderboard:", err);
-        error.leaderboard = err instanceof Error ? err.message : "Failed to fetch invite leaderboard";
-      } finally {
-        loading.leaderboard = false;
-      }
-    }, "api", "Loading leaderboard...");
+  async function loadGuildLists() {
+    if (!$currentGuild?.id) return;
+    const guildId = $currentGuild.id;
+    const [memberList, roleList, channelList] = await Promise.all([
+      clientApi.getMembers(guildId).catch(() => []),
+      clientApi.getRoles(guildId).catch(() => []),
+      clientApi.getTextChannels(guildId).catch(() => []),
+    ]);
+    members = memberList.map((m: any) => ({ id: m.id.toString(), name: m.username, avatarUrl: m.avatarUrl }));
+    roles = roleList.map((r: any) => ({ id: r.id.toString(), name: r.name, color: r.color }));
+    channels = channelList.map((c) => ({ id: c.id.toString(), name: c.name }));
   }
 
-  async function fetchGuildMembers() {
+  function memberName(id: bigint | string): string {
+    const key = id.toString();
+    return members.find((m) => m.id === key)?.name ?? key;
+  }
+
+  /** Overview */
+  let overviewRange = $state<number>(3);
+  let analytics = $state<InviteAnalytics | null>(null);
+  let overviewLoading = $state(false);
+  let overviewError = $state<string | null>(null);
+
+  async function loadOverview() {
+    if (!$currentGuild?.id) return;
+    overviewLoading = true;
+    overviewError = null;
     try {
-      loading.members = true;
-      error.members = null;
-      if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
-      }
-
-      guildMembers = await clientApi.getMembers($currentGuild.id);
+      analytics = await inviteTrackingApi.getAnalytics($currentGuild.id, overviewRange as StatsRangeValue);
     } catch (err) {
-      logger.error("Failed to fetch guild members:", err);
-      error.members = err instanceof Error ? err.message : "Failed to fetch guild members";
+      overviewError = err instanceof Error ? err.message : "Failed to load analytics";
+      logger.error("Failed to load invite analytics", err);
     } finally {
-      loading.members = false;
+      overviewLoading = false;
     }
   }
 
-  async function lookupInviter() {
-    if (!selectedUserId || !$currentGuild?.id) return;
+  let growthLabels = $derived(analytics?.series.map((p) => formatDate(p.day)) ?? []);
+  let growthSeries = $derived(
+    analytics
+      ? [
+          { name: "Joins", data: analytics.series.map((p) => p.joins), color: "#4ade80" },
+          { name: "Leaves", data: analytics.series.map((p) => p.leaves), color: "#f87171" },
+        ]
+      : [],
+  );
 
+  /** Leaderboard */
+  let boardRange = $state<number>(0);
+  let boardRole = $state<string | null>(null);
+  let boardPage = $state(1);
+  const boardPageSize = 25;
+  let leaderboard = $state<InviteLeaderboardEntry[]>([]);
+  let boardLoading = $state(false);
+  let boardError = $state<string | null>(null);
+
+  async function loadLeaderboard() {
+    if (!$currentGuild?.id) return;
+    boardLoading = true;
+    boardError = null;
     try {
-      inviterLoading = true;
-      inviterError = null;
-      inviterInfo = null;
-
-      inviterInfo = await inviteTrackingApi.getInviter($currentGuild.id, BigInt(selectedUserId));
+      leaderboard = await inviteTrackingApi.getInviteLeaderboard(
+        $currentGuild.id,
+        boardRange as StatsRangeValue,
+        boardPage,
+        boardPageSize,
+        boardRole ? BigInt(boardRole) : undefined,
+      );
     } catch (err) {
-      inviterError = "No inviter found for this user";
-      inviterInfo = null;
+      boardError = err instanceof Error ? err.message : "Failed to load leaderboard";
+      logger.error("Failed to load invite leaderboard", err);
     } finally {
-      inviterLoading = false;
+      boardLoading = false;
     }
   }
 
-  async function lookupInvitedUsers() {
-    if (!selectedUserId || !$currentGuild?.id) return;
+  let boardRows = $derived<RankRow[]>(
+    leaderboard.map((e) => ({
+      rank: e.rank,
+      id: e.userId.toString(),
+      name: e.username,
+      avatarUrl: e.avatarUrl ?? null,
+      value: formatNumber(e.total),
+      detail: `${e.regular} regular · ${e.left} left · ${e.fake} fake · ${e.bonus} bonus` +
+        (e.retention !== null && e.retention !== undefined ? ` · ${formatPercent(e.retention)} retained` : ""),
+    })),
+  );
 
+  async function exportLeaderboard() {
+    if (!$currentGuild?.id) return;
     try {
-      invitedLoading = true;
-      invitedError = null;
-      invitedUsers = [];
-
-      invitedUsers = await inviteTrackingApi.getInvitedUsers($currentGuild.id, BigInt(selectedUserId));
+      const blob = await inviteTrackingApi.exportLeaderboard($currentGuild.id, boardRange as StatsRangeValue);
+      saveBlob(blob, `invites-${statsRangeLabels[boardRange as StatsRangeValue].replace(/\s+/g, "-").toLowerCase()}.csv`);
     } catch (err) {
-      invitedError = "No users found invited by this user";
-      invitedUsers = [];
-    } finally {
-      invitedLoading = false;
+      fail(err, "Failed to export the leaderboard");
     }
   }
 
-  async function calculateStats() {
+  /** Selected member detail (breakdown, adjust, reset) */
+  let detailUserId = $state<string | null>(null);
+  let detail = $state<InviteBreakdown | null>(null);
+  let detailInviter = $state<InviterInfo | null>(null);
+  let detailLoading = $state(false);
+  let adjustRegular = $state(0);
+  let adjustBonus = $state(0);
+  let adjustFake = $state(0);
+
+  async function openDetail(userId: string) {
+    if (!$currentGuild?.id) return;
+    detailUserId = userId;
+    detailLoading = true;
+    detail = null;
+    detailInviter = null;
+    adjustRegular = 0;
+    adjustBonus = 0;
+    adjustFake = 0;
     try {
-      loading.stats = true;
-      error.stats = null;
-      if (!$currentGuild?.id) {
-        throw new Error("No guild selected");
+      const id = BigInt(userId);
+      const [breakdown, inviter] = await Promise.all([
+        inviteTrackingApi.getBreakdown($currentGuild.id, id),
+        inviteTrackingApi.getInviter($currentGuild.id, id).catch(() => null),
+      ]);
+      detail = breakdown;
+      detailInviter = inviter;
+    } catch (err) {
+      fail(err, "Failed to load the member's invites");
+    } finally {
+      detailLoading = false;
+    }
+  }
+
+  async function applyAdjust() {
+    if (!$currentGuild?.id || !detailUserId) return;
+    if (!adjustRegular && !adjustBonus && !adjustFake) return;
+    try {
+      detail = await inviteTrackingApi.adjust($currentGuild.id, BigInt(detailUserId), {
+        regular: adjustRegular,
+        bonus: adjustBonus,
+        fake: adjustFake,
+      });
+      adjustRegular = 0;
+      adjustBonus = 0;
+      adjustFake = 0;
+      await loadLeaderboard();
+    } catch (err) {
+      fail(err, "Failed to adjust invites");
+    }
+  }
+
+  async function resetMember() {
+    if (!$currentGuild?.id || !detailUserId) return;
+    const ok = await requestConfirmation({
+      title: "Reset invites",
+      message: `Reset all invites for ${memberName(detailUserId)}? This cannot be undone.`,
+      confirmText: "Reset",
+    });
+    if (!ok) return;
+    try {
+      await inviteTrackingApi.resetUser($currentGuild.id, BigInt(detailUserId));
+      await Promise.all([openDetail(detailUserId), loadLeaderboard()]);
+    } catch (err) {
+      fail(err, "Failed to reset invites");
+    }
+  }
+
+  /** Members (invited list) */
+  let memberFilterInviter = $state<string | null>(null);
+  let memberFilterCode = $state("");
+  let memberFilterLabel = $state("");
+  let memberIncludeLeft = $state(true);
+  let memberPage = $state(1);
+  const memberPageSize = 25;
+  let invitedPage = $state<InvitedPage | null>(null);
+  let membersLoading = $state(false);
+  let membersError = $state<string | null>(null);
+
+  async function loadInvited() {
+    if (!$currentGuild?.id) return;
+    membersLoading = true;
+    membersError = null;
+    try {
+      invitedPage = await inviteTrackingApi.getInvited(
+        $currentGuild.id,
+        {
+          inviterId: memberFilterInviter ? BigInt(memberFilterInviter) : undefined,
+          code: memberFilterCode.trim() || undefined,
+          label: memberFilterLabel.trim() || undefined,
+          includeLeft: memberIncludeLeft,
+        },
+        memberPage,
+        memberPageSize,
+      );
+    } catch (err) {
+      membersError = err instanceof Error ? err.message : "Failed to load members";
+      logger.error("Failed to load invited members", err);
+    } finally {
+      membersLoading = false;
+    }
+  }
+
+  let memberPages = $derived(invitedPage ? Math.max(1, Math.ceil(invitedPage.total / memberPageSize)) : 1);
+
+  async function exportInvited() {
+    if (!$currentGuild?.id) return;
+    try {
+      const blob = await inviteTrackingApi.exportInvited($currentGuild.id, {
+        inviterId: memberFilterInviter ? BigInt(memberFilterInviter) : undefined,
+        code: memberFilterCode.trim() || undefined,
+        label: memberFilterLabel.trim() || undefined,
+      });
+      saveBlob(blob, "invited-members.csv");
+    } catch (err) {
+      fail(err, "Failed to export members");
+    }
+  }
+
+  /** Codes and labels */
+  let codes = $state<GuildInviteCode[]>([]);
+  let labels = $state<InviteLabel[]>([]);
+  let codesLoading = $state(false);
+  let codesError = $state<string | null>(null);
+  let labelDrafts = $state<Record<string, { label: string; roleId: string | null }>>({});
+
+  async function loadCodes() {
+    if (!$currentGuild?.id) return;
+    codesLoading = true;
+    codesError = null;
+    try {
+      const [codeList, labelList] = await Promise.all([
+        inviteTrackingApi.getCodes($currentGuild.id),
+        inviteTrackingApi.getLabels($currentGuild.id),
+      ]);
+      codes = codeList;
+      labels = labelList;
+      const drafts: Record<string, { label: string; roleId: string | null }> = {};
+      for (const code of codeList) {
+        drafts[code.code] = { label: code.label ?? "", roleId: code.labelRoleId ? code.labelRoleId.toString() : null };
       }
-
-      // Get leaderboard for stats calculation
-      const fullLeaderboard = await inviteTrackingApi.getInviteLeaderboard($currentGuild.id, 1, 100);
-
-      // Calculate statistics
-      const totalInvites = fullLeaderboard.reduce((sum, user) => sum + user.inviteCount, 0);
-      const topInviter = fullLeaderboard.length > 0 ?
-        fullLeaderboard.reduce((max, user) => max.inviteCount > user.inviteCount ? max : user) :
-        { username: "None", inviteCount: 0 };
-
-      userStats = {
-        totalInvites,
-        avgInvitesPerUser: fullLeaderboard.length > 0 ? totalInvites / fullLeaderboard.length : 0,
-        topInviter: {
-          username: topInviter.username,
-          inviteCount: topInviter.inviteCount
-        }
-      };
+      labelDrafts = drafts;
     } catch (err) {
-      logger.error("Failed to calculate stats:", err);
-      error.stats = err instanceof Error ? err.message : "Failed to calculate statistics";
+      codesError = err instanceof Error ? err.message : "Failed to load invite codes";
+      logger.error("Failed to load invite codes", err);
     } finally {
-      loading.stats = false;
+      codesLoading = false;
     }
   }
 
-  async function updateInviteSettings() {
+  async function saveLabel(code: string) {
+    if (!$currentGuild?.id) return;
+    const draft = labelDrafts[code];
+    if (!draft) return;
     try {
-      if (!$currentGuild?.id) throw new Error("No guild selected");
-
-      // Update enabled state
-      await inviteTrackingApi.toggleInviteTracking($currentGuild.id, inviteSettingsEnabled);
-
-      // Update remove on leave setting
-      await inviteTrackingApi.setRemoveOnLeave($currentGuild.id, inviteSettingsRemoveOnLeave);
-
-      // Calculate TimeSpan for minimum account age
-      const totalHours = (minAgeDays * 24) + minAgeHours;
-      const minAgeTimeSpan = `${totalHours.toString().padStart(2, "0")}:${minAgeMinutes.toString().padStart(2, "0")}:00`;
-
-      // Update minimum account age
-      await inviteTrackingApi.setMinAccountAge($currentGuild.id, minAgeTimeSpan);
-
-      showNotificationMessage("Invite settings updated successfully", "success");
-      changedSettings.clear();
-      await fetchInviteSettings();
+      if (!draft.label.trim()) {
+        await inviteTrackingApi.removeLabel($currentGuild.id, code);
+      } else {
+        await inviteTrackingApi.setLabel($currentGuild.id, {
+          code,
+          label: draft.label.trim(),
+          roleId: draft.roleId ? BigInt(draft.roleId) : null,
+        });
+      }
+      await loadCodes();
     } catch (err) {
-      logger.error("Failed to update invite settings:", err);
-      showNotificationMessage("Failed to update invite settings", "error");
+      fail(err, "Failed to save the label");
     }
   }
 
-  function formatNumber(num: number): string {
-    return new Intl.NumberFormat().format(num);
+  async function deleteCode(code: string) {
+    if (!$currentGuild?.id) return;
+    const ok = await requestConfirmation({
+      title: "Delete invite",
+      message: `Delete invite code ${code}? Anyone holding the link will no longer be able to use it.`,
+      confirmText: "Delete",
+    });
+    if (!ok) return;
+    try {
+      await inviteTrackingApi.deleteCode($currentGuild.id, code);
+      await loadCodes();
+    } catch (err) {
+      fail(err, "Failed to delete the invite");
+    }
   }
 
-  function goToPage(page: number) {
-    if (page < 1) return;
-    leaderboardPage = page;
-    fetchLeaderboard();
+  /** Settings */
+  let settings = $state<InviteTrackingSettings | null>(null);
+  let settingsLoading = $state(false);
+  let settingsError = $state<string | null>(null);
+  let minAgeDays = $state(0);
+  let blacklistedUsers = $state<string[]>([]);
+  let blacklistedRoles = $state<string[]>([]);
+  let hiddenUsers = $state<string[]>([]);
+  let exclusionUser = $state<string | null>(null);
+  let exclusionRole = $state<string | null>(null);
+  let hiddenUser = $state<string | null>(null);
+
+  function timeSpanToDays(span: string): number {
+    const match = span.match(/^(?:(\d+)\.)?(\d+):(\d+):(\d+)/);
+    if (!match) return 0;
+    const days = parseInt(match[1] ?? "0", 10);
+    const hours = parseInt(match[2], 10);
+    return Math.round((days * 24 + hours) / 24);
+  }
+
+  async function loadSettings() {
+    if (!$currentGuild?.id) return;
+    settingsLoading = true;
+    settingsError = null;
+    try {
+      const guildId = $currentGuild.id;
+      const [s, users, roleIds, hidden] = await Promise.all([
+        inviteTrackingApi.getInviteSettings(guildId),
+        inviteTrackingApi.getExclusions(guildId, InviteExclusionKind.BlacklistedUser),
+        inviteTrackingApi.getExclusions(guildId, InviteExclusionKind.BlacklistedRole),
+        inviteTrackingApi.getExclusions(guildId, InviteExclusionKind.HiddenUser),
+      ]);
+      settings = s;
+      minAgeDays = timeSpanToDays(s.minAccountAge);
+      blacklistedUsers = users.map((x) => x.toString());
+      blacklistedRoles = roleIds.map((x) => x.toString());
+      hiddenUsers = hidden.map((x) => x.toString());
+    } catch (err) {
+      settingsError = err instanceof Error ? err.message : "Failed to load settings";
+      logger.error("Failed to load invite settings", err);
+    } finally {
+      settingsLoading = false;
+    }
+  }
+
+  async function saveSetting(work: () => Promise<unknown>, fallback: string) {
+    try {
+      await work();
+      await loadSettings();
+    } catch (err) {
+      fail(err, fallback);
+    }
+  }
+
+  async function saveMinAge() {
+    if (!$currentGuild?.id) return;
+    const days = Math.max(0, Math.min(300, Math.round(minAgeDays)));
+    await saveSetting(() => inviteTrackingApi.setMinAccountAge($currentGuild!.id, `${days}.00:00:00`), "Failed to save the minimum account age");
+  }
+
+  async function addExclusion(kind: 0 | 1 | 2, target: string | null) {
+    if (!$currentGuild?.id || !target) return;
+    await saveSetting(() => inviteTrackingApi.addExclusion($currentGuild!.id, kind, BigInt(target)), "Failed to add the exclusion");
+    exclusionUser = null;
+    exclusionRole = null;
+    hiddenUser = null;
+  }
+
+  async function removeExclusion(kind: 0 | 1 | 2, target: string) {
+    if (!$currentGuild?.id) return;
+    await saveSetting(() => inviteTrackingApi.removeExclusion($currentGuild!.id, kind, BigInt(target)), "Failed to remove the exclusion");
+  }
+
+  async function syncInvites() {
+    if (!$currentGuild?.id) return;
+    try {
+      const raised = await inviteTrackingApi.sync($currentGuild.id);
+      notify(`Imported invite uses from Discord and raised totals for ${raised} inviters.`, "success");
+      await loadLeaderboard();
+    } catch (err) {
+      fail(err, "Failed to sync invites");
+    }
+  }
+
+  async function resetAll(scope: 0 | 1) {
+    if (!$currentGuild?.id) return;
+    const ok = await requestConfirmation({
+      title: scope === InviteResetScope.Server ? "Reset every invite" : "Reset invites of members who left",
+      message:
+        scope === InviteResetScope.Server
+          ? "This clears every inviter's tally and the join history for this server. It cannot be undone."
+          : "This clears the tally of every inviter who is no longer in the server.",
+      confirmText: "Reset",
+    });
+    if (!ok) return;
+    try {
+      const count = await inviteTrackingApi.reset($currentGuild.id, scope);
+      notify(`Reset invites for ${count} inviters.`, "success");
+      await loadLeaderboard();
+    } catch (err) {
+      fail(err, "Failed to reset invites");
+    }
+  }
+
+  function roleName(id: string): string {
+    return roles.find((r) => r.id === id)?.name ?? id;
+  }
+
+  /** Loading orchestration */
+  let loadedFor = $state("");
+
+  async function loadAll() {
+    if (!$currentGuild?.id) return;
+    const key = `${$currentGuild.id}:${$currentInstance?.port ?? ""}`;
+    if (loadedFor === key) return;
+    loadedFor = key;
+    await Promise.all([loadGuildLists(), loadOverview(), loadLeaderboard(), loadInvited(), loadCodes(), loadSettings()]);
   }
 
   onMount(async () => {
-    // Check if guild is available after initialization
     if (!$currentGuild) {
       await goto("/dashboard");
       return;
     }
-
-    // Continue with normal initialization
-    await Promise.all([
-      fetchInviteSettings(),
-      fetchLeaderboard(),
-      fetchGuildMembers(),
-      calculateStats()
-    ]);
+    await loadAll();
   });
 
-
   $effect(() => {
-        if ($currentInstance) {
-            Promise.all([
-                fetchInviteSettings(),
-                fetchLeaderboard(),
-                fetchGuildMembers(),
-              calculateStats()
-            ]);
-        }
-    });
-  // Reactive declarations for guild changes
-  $effect(() => {
-        if ($currentGuild) {
-            fetchInviteSettings();
-            fetchLeaderboard();
-            fetchGuildMembers();
-            calculateStats();
-        }
-    });
-  // Reactive declarations for instance changes
-  $effect(() => {
-        if ($currentInstance) {
-            fetchInviteSettings();
-            fetchLeaderboard();
-            fetchGuildMembers();
-            calculateStats();
-        }
-    });
-  // Reactive declarations for user selection changes
-  $effect(() => {
-        if (selectedUserId && activeTab === "inviter") {
-            lookupInviter();
-        }
-    });
-  $effect(() => {
-        if (selectedUserId && activeTab === "invited") {
-            lookupInvitedUsers();
-        }
-    });
+    if ($currentGuild && $currentInstance) untrack(() => loadAll());
+  });
 </script>
 
-{#snippet statusMessageContent()}
-  {#if showNotification}
-    <div class="fixed top-4 right-4 z-50" transition:fade>
-      <Notification message={notificationMessage} type={notificationType} />
-    </div>
-  {/if}
-{/snippet}
-
 <DashboardPageLayout
-  statusMessages={statusMessageContent}
-  subtitle="Monitor and manage server invites and user referrals"
+  title="Invite Tracking"
+  subtitle="Who brings people in, how they arrive, and whether they stay"
   icon="fa-user-plus"
   guildName={$currentGuild?.name || "Dashboard"}
-  tabs={tabs}
+  {tabs}
   bind:activeTab
-  title="Invite Tracking"
+  bind:notificationMessage
+  {notificationType}
 >
-  {#if activeTab === 'settings'}
-    <!-- Settings Panel -->
+  {#if activeTab === "overview"}
     <section>
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                   color: {$colorStore.primary};"
-          >
-            <i class="fa-utility-duo fa-regular fa-gear"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
-          </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Tracking Settings</h2>
-        </div>
+      <SectionHeader icon="fa-chart-pie" title="Growth" subtitle="Joins, leaves and where members come from">
+        {#snippet actions()}
+          <WindowPicker bind:value={overviewRange} options={rangeOptions} onchange={() => loadOverview()} />
+        {/snippet}
+      </SectionHeader>
 
-        {#if loading.settings}
-          <div class="flex justify-center items-center min-h-[200px]">
-            <div
-              class="w-12 h-12 border-4 rounded-full animate-spin"
-              style="border-color: {$colorStore.primary}20;
-                     border-top-color: {$colorStore.primary};"
-              aria-label="Loading"
-            >
-            </div>
-          </div>
-        {:else if error.settings}
-          <div
-            class="rounded-xl p-4 flex items-center gap-3"
-            style="background: {$colorStore.accent}10;"
-            role="alert"
-          >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-               aria-hidden="true"></i>
-            <p style="color: {$colorStore.accent}">{error.settings}</p>
-          </div>
-        {:else}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Enable Invite Tracking -->
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.primary}10;"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-utility-duo fa-regular fa-gear"
-                     style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"
-                     aria-hidden="true"></i>
-                  <h3 class="font-semibold" style="color: {$colorStore.text}">Enable Invite Tracking</h3>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    bind:checked={inviteSettingsEnabled}
-                    class="sr-only peer"
-                    onchange={() => markAsChanged("inviteSettings")}
-                    aria-label="Enable or disable invite tracking"
-                  >
-                  <span
-                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
-                    style="background-color: {$colorStore.accent}30;
-                           peer-checked:background-color: {$colorStore.accent};"
-                    aria-hidden="true"
-                  ></span>
-                </label>
-              </div>
-              <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-                Track who invited users to your server and how many invites each user has.
-              </p>
-            </div>
-
-            <!-- Remove Invite On Leave -->
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.secondary}10;"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-utility-duo fa-regular fa-gear"
-                     style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-                     aria-hidden="true"></i>
-                  <h3 class="font-semibold" style="color: {$colorStore.text}">Remove Invite On Leave</h3>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    bind:checked={inviteSettingsRemoveOnLeave}
-                    class="sr-only peer"
-                    onchange={() => markAsChanged("inviteSettings")}
-                    aria-label="Remove invite count when a user leaves"
-                  >
-                  <span
-                    class="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all block"
-                    style="background-color: {$colorStore.accent}30;
-                           peer-checked:background-color: {$colorStore.accent};"
-                    aria-hidden="true"
-                  ></span>
-                </label>
-              </div>
-              <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-                When enabled, invite counts will be reduced if the invited user leaves the server.
-              </p>
-            </div>
-
-            <!-- Minimum Account Age -->
-            <div
-              class="col-span-1 md:col-span-2 rounded-xl p-4"
-              style="background: {$colorStore.primary}10;"
-            >
-              <div class="flex items-center gap-2 mb-3">
-                <i class="fa-utility-duo fa-regular fa-clock"
-                   style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-                   aria-hidden="true"></i>
-                <h3 class="font-semibold" style="color: {$colorStore.text}">Minimum Account Age</h3>
-              </div>
-              <div class="grid grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm mb-1" style="color: {$colorStore.muted}" for="min-age-days">Days</label>
-                  <input
-                    id="min-age-days"
-                    type="number"
-                    bind:value={minAgeDays}
-                    oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg border transition-all duration-200"
-                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
-                           color: {$colorStore.text};"
-                    min="0"
-                    aria-label="Minimum account age in days"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm mb-1" style="color: {$colorStore.muted}" for="min-age-hours">Hours</label>
-                  <input
-                    id="min-age-hours"
-                    type="number"
-                    bind:value={minAgeHours}
-                    oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg border transition-all duration-200"
-                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
-                           color: {$colorStore.text};"
-                    min="0"
-                    max="23"
-                    aria-label="Minimum account age in hours"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm mb-1" style="color: {$colorStore.muted}"
-                         for="min-age-minutes">Minutes</label>
-                  <input
-                    id="min-age-minutes"
-                    type="number"
-                    bind:value={minAgeMinutes}
-                    oninput={() => markAsChanged("inviteSettings")}
-                    class="w-full p-3 rounded-lg border transition-all duration-200"
-                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30;
-                           color: {$colorStore.text};"
-                    min="0"
-                    max="59"
-                    aria-label="Minimum account age in minutes"
-                  >
-                </div>
-              </div>
-              <p class="mt-2 text-sm" style="color: {$colorStore.muted}">
-                Discord accounts must be at least this old to be counted toward invite totals. This helps prevent alt
-                account abuse.
-              </p>
-            </div>
-
-            <!-- Save Button -->
-            <div class="col-span-1 md:col-span-2 flex justify-end mt-4">
-              <button
-                class="px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                disabled={!changedSettings.has("inviteSettings")}
-                onclick={updateInviteSettings}
-                style="background: linear-gradient(to right, {$colorStore.primary}, {$colorStore.secondary});
-                       color: {$colorStore.text};"
-                aria-label="Save invite settings"
-              >
-                Save Settings
-              </button>
-            </div>
-          </div>
-        {/if}
-    </section>
-  {/if}
-
-  {#if activeTab === 'stats'}
-    <!-- Stats Panel -->
-    <section>
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                   color: {$colorStore.primary};"
-          >
-            <i class="fa-utility-duo fa-regular fa-chart-simple"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
-          </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Statistics</h2>
-        </div>
-
-        {#if loading.stats}
-          <div class="flex justify-center items-center min-h-[200px]">
-            <div
-              class="w-12 h-12 border-4 rounded-full animate-spin"
-              style="border-color: {$colorStore.primary}20;
-                     border-top-color: {$colorStore.primary};"
-              aria-label="Loading"
-            >
-            </div>
-          </div>
-        {:else if error.stats}
-          <div
-            class="rounded-xl p-4 flex items-center gap-3"
-            style="background: {$colorStore.accent}10;"
-            role="alert"
-          >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-               aria-hidden="true"></i>
-            <p style="color: {$colorStore.accent}">{error.stats}</p>
-          </div>
-        {:else}
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Total Invites -->
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.primary}10;"
-            >
-              <div class="flex flex-col">
-                <span class="text-sm" style="color: {$colorStore.muted}">Total Invites</span>
-                <span class="text-3xl font-bold"
-                      style="color: {$colorStore.text}">{formatNumber(userStats.totalInvites)}</span>
-                <span class="text-xs mt-1" style="color: {$colorStore.muted}">Total invites across all members</span>
-              </div>
-            </div>
-
-            <!-- Average Invites -->
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.secondary}10;"
-            >
-              <div class="flex flex-col">
-                <span class="text-sm" style="color: {$colorStore.muted}">Average Per Member</span>
-                <span class="text-3xl font-bold"
-                      style="color: {$colorStore.text}">{userStats.avgInvitesPerUser.toFixed(1)}</span>
-                <span class="text-xs mt-1" style="color: {$colorStore.muted}">Average invites per member</span>
-              </div>
-            </div>
-
-            <!-- Top Inviter -->
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.accent}10;"
-            >
-              <div class="flex flex-col">
-                <span class="text-sm" style="color: {$colorStore.muted}">Top Inviter</span>
-                <span class="text-xl font-bold truncate"
-                      style="color: {$colorStore.text}">{userStats.topInviter.username}</span>
-                <span class="text-sm" style="color: {$colorStore.secondary}">{userStats.topInviter.inviteCount}
-                  invites</span>
-              </div>
-            </div>
+      <AsyncState loading={overviewLoading} error={overviewError} empty={!analytics} emptyMessage="No joins recorded yet">
+        {#if analytics}
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            <StatTile label="Joins" value={formatNumber(analytics.joins)} />
+            <StatTile label="Leaves" value={formatNumber(analytics.leaves)} />
+            <StatTile label="Net growth" value={formatSigned(analytics.netGrowth)} tone={analytics.netGrowth >= 0 ? "ok" : "crit"} />
+            <StatTile label="Retention" value={formatPercent(analytics.retention ?? null)} sub={`${formatNumber(analytics.stayed)} stayed`} />
+            <StatTile label="Fake joins" value={formatNumber(analytics.fakeJoins)} tone={analytics.fakeJoins > 0 ? "warn" : null} />
+            <StatTile label="Via invites" value={formatNumber(analytics.sources.invite)} sub={`${analytics.sources.vanity} vanity · ${analytics.sources.bot} bots · ${analytics.sources.unknown} unknown`} />
           </div>
 
-          <!-- Settings State -->
-          <div
-            class="rounded-xl p-4 mb-6"
-            style="background: {$colorStore.primary}15;"
-          >
-            <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Current Settings</h3>
-            <ul class="space-y-2">
-              <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-                <span style="color: {$colorStore.muted}">Invite Tracking</span>
-                <span style="color: {$colorStore.text}">{inviteSettingsEnabled ? 'Enabled' : 'Disabled'}</span>
-              </li>
-              <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-                <span style="color: {$colorStore.muted}">Remove on Leave</span>
-                <span
-                  style="color: {$colorStore.text}">{inviteSettingsRemoveOnLeave ? 'Enabled' : 'Disabled'}</span>
-              </li>
-              <li class="flex justify-between p-3 rounded-lg" style="background: {$colorStore.primary}10;">
-                <span style="color: {$colorStore.muted}">Min Account Age</span>
-                <span style="color: {$colorStore.text}">
-                  {minAgeDays}d {minAgeHours}h {minAgeMinutes}m
-                </span>
-              </li>
-            </ul>
-          </div>
-        {/if}
-    </section>
-  {/if}
+          <Card title="Joins and leaves" class="mb-6">
+            <SimpleLineChart labels={growthLabels} series={growthSeries} height={220} beginAtZero empty="No joins in this window" />
+          </Card>
 
-  {#if activeTab === 'leaderboard'}
-    <!-- Leaderboard Panel -->
-    <section>
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                   color: {$colorStore.primary};"
-          >
-            <i class="fa-utility-duo fa-regular fa-trophy"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
-          </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Invite Leaderboard</h2>
-        </div>
-
-        {#if loading.leaderboard}
-          <div class="flex justify-center items-center min-h-[200px]">
-            <div
-              class="w-12 h-12 border-4 rounded-full animate-spin"
-              style="border-color: {$colorStore.primary}20;
-                     border-top-color: {$colorStore.primary};"
-              aria-label="Loading"
-            >
-            </div>
-          </div>
-        {:else if error.leaderboard}
-          <div
-            class="rounded-xl p-4 flex items-center gap-3"
-            style="background: {$colorStore.accent}10;"
-            role="alert"
-          >
-            <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-               style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-               aria-hidden="true"></i>
-            <p style="color: {$colorStore.accent}">{error.leaderboard}</p>
-          </div>
-        {:else}
-          {#if leaderboard.length === 0}
-            <div
-              class="text-center py-12"
-              transition:fade
-            >
-              <i class="fa-utility-duo fa-regular fa-users"
-                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 16px;"
-                 aria-hidden="true"></i>
-              <p style="color: {$colorStore.muted}">No invite data available</p>
-            </div>
-          {:else}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {#each leaderboard as user, i}
-                <div
-                  class="rounded-xl p-4 border transition-all duration-200"
-                  style="background: {$colorStore.primary}10;
-                         border-color: {$colorStore.primary}20;
-                         hover:border-color: {$colorStore.primary}30;"
-                >
-                  <div class="flex items-center gap-4">
-                    <div
-                      class="w-10 h-10 flex items-center justify-center rounded-full text-lg font-bold"
-                      style="background: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary}20;
-                             color: {i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : $colorStore.primary};"
-                    >
-                      #{i + 1 + ((leaderboardPage - 1) * leaderboardPageSize)}
-                    </div>
-                      <div class="grow min-w-0">
-                      <p class="font-medium truncate" style="color: {$colorStore.text}">{user.username}</p>
-                      <div class="flex items-center text-sm" style="color: {$colorStore.muted}">
-                        <span class="font-medium" style="color: {$colorStore.secondary}">{user.inviteCount}</span>
-                        <span class="ml-1">invites</span>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card title="Top inviters">
+              {#if analytics.topInviters.length === 0}
+                <p class="text-sm" style="color: {$colorStore.muted}">Nobody has invited anyone in this window.</p>
+              {:else}
+                <RankList
+                  rows={analytics.topInviters.map((x, i) => ({
+                    rank: i + 1,
+                    id: x.userId.toString(),
+                    name: x.username,
+                    value: formatNumber(x.total),
+                    detail: `${x.regular} regular · ${x.left} left · ${x.fake} fake`,
+                  }))}
+                  onselect={(row) => { openDetail(row.id); activeTab = "leaderboard"; }}
+                />
+              {/if}
+            </Card>
+            <Card title="Top invite codes">
+              {#if analytics.topCodes.length === 0}
+                <p class="text-sm" style="color: {$colorStore.muted}">No invite codes were used in this window.</p>
+              {:else}
+                <ul class="space-y-2">
+                  {#each analytics.topCodes as code (code.code)}
+                    <li class="flex items-center justify-between gap-3 rounded-lg p-3" style="background: {$colorStore.primary}08;">
+                      <div class="min-w-0">
+                        <p class="font-mono text-sm truncate" style="color: {$colorStore.text}">{code.code}</p>
+                        {#if code.label}
+                          <p class="text-xs truncate" style="color: {$colorStore.muted}">{code.label}</p>
+                        {/if}
                       </div>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-
-            <!-- Pagination -->
-            <div class="flex justify-center mt-6 space-x-2">
-              <button
-                class="px-4 py-2 rounded-lg transition-all duration-200"
-                style="background: {$colorStore.primary}20;
-                       color: {$colorStore.text};
-                       opacity: {leaderboardPage <= 1 ? '0.5' : '1'};"
-                onclick={() => goToPage(leaderboardPage - 1)}
-                disabled={leaderboardPage <= 1}
-                aria-label="Previous page"
-              >
-                Previous
-              </button>
-              <div
-                class="px-4 py-2 rounded-lg"
-                style="background: {$colorStore.primary}30;
-                       color: {$colorStore.text};"
-                aria-current="page"
-              >
-                Page {leaderboardPage}
-              </div>
-              <button
-                class="px-4 py-2 rounded-lg transition-all duration-200"
-                style="background: {$colorStore.primary}20;
-                       color: {$colorStore.text};"
-                onclick={() => goToPage(leaderboardPage + 1)}
-                aria-label="Next page"
-              >
-                Next
-              </button>
-            </div>
-          {/if}
+                      <span class="font-semibold tabular-nums" style="color: {$colorStore.secondary}">{formatNumber(code.joins)}</span>
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+            </Card>
+          </div>
         {/if}
+      </AsyncState>
     </section>
   {/if}
 
-  {#if activeTab === 'inviter'}
-    <!-- Inviter Panel -->
+  {#if activeTab === "leaderboard"}
     <section>
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                   color: {$colorStore.primary};"
-          >
-            <i class="fa-utility-duo fa-regular fa-user"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
+      <SectionHeader icon="fa-trophy" title="Invite Leaderboard" subtitle="Net total is regular minus left minus fake, plus bonus">
+        {#snippet actions()}
+          <WindowPicker bind:value={boardRange} options={rangeOptions} onchange={() => { boardPage = 1; loadLeaderboard(); }} />
+          <div class="w-48">
+            <DiscordSelector type="role" options={roles} bind:selected={boardRole} placeholder="Any role" onchange={() => { boardPage = 1; loadLeaderboard(); }} />
           </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Who Invited a User</h2>
+          <button
+            type="button"
+            class="px-3 min-h-[36px] rounded-lg text-sm font-medium"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+            onclick={exportLeaderboard}
+          >
+            <i class="fa-solid fa-download mr-1" aria-hidden="true"></i> CSV
+          </button>
+        {/snippet}
+      </SectionHeader>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2">
+          <AsyncState loading={boardLoading} error={boardError} empty={leaderboard.length === 0} emptyMessage="No invites recorded for this window" emptyIcon="fa-users">
+            <RankList rows={boardRows} onselect={(row) => openDetail(row.id)} />
+            <div class="flex justify-center items-center gap-2 mt-6">
+              <button
+                type="button"
+                class="px-4 min-h-[40px] rounded-lg"
+                style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {boardPage <= 1 ? 0.5 : 1};"
+                disabled={boardPage <= 1}
+                onclick={() => { boardPage -= 1; loadLeaderboard(); }}
+              >Previous</button>
+              <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">Page {boardPage}</span>
+              <button
+                type="button"
+                class="px-4 min-h-[40px] rounded-lg"
+                style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {leaderboard.length < boardPageSize ? 0.5 : 1};"
+                disabled={leaderboard.length < boardPageSize}
+                onclick={() => { boardPage += 1; loadLeaderboard(); }}
+              >Next</button>
+            </div>
+          </AsyncState>
         </div>
 
-        <div class="space-y-6">
-          <!-- User Selection -->
-          <div
-            class="rounded-xl p-4"
-            style="background: {$colorStore.primary}10;"
-          >
-            <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Select User</h3>
-            <div class="flex flex-col md:flex-row gap-3">
+        <div>
+          <Card title="Member">
+            <div class="mb-3">
               <DiscordSelector
                 type="custom"
-                options={guildMembers.map(member => ({
-                  id: member.id,
-                  name: member.username,
-                  avatarUrl: member.avatarUrl
-                }))}
+                options={members}
                 customIcon="fa-user"
-                placeholder="Select a User"
-                selected={selectedUserId}
-                onchange={(detail) => {
-                  selectedUserId = detail.selected && typeof detail.selected === 'string' ? detail.selected : '';
-                }}
+                placeholder="Pick a member"
+                selected={detailUserId}
+                onchange={(e) => { if (typeof e.selected === "string") openDetail(e.selected); }}
               />
-              <button
-                aria-label="Find inviter"
-                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                disabled={!selectedUserId}
-                onclick={lookupInviter}
-                style="background: {$colorStore.primary}20;
-                       color: {$colorStore.text};"
-              >
-                Find Inviter
-              </button>
             </div>
-          </div>
+            {#if detailLoading}
+              <p class="text-sm" style="color: {$colorStore.muted}">Loading…</p>
+            {:else if detail && detailUserId}
+              <div class="grid grid-cols-2 gap-2 mb-4">
+                <StatTile label="Total" value={formatNumber(detail.total)} sub={detail.rank ? `Rank #${detail.rank}` : "Unranked"} />
+                <StatTile label="Regular" value={formatNumber(detail.regular)} />
+                <StatTile label="Left" value={formatNumber(detail.left)} />
+                <StatTile label="Fake" value={formatNumber(detail.fake)} tone={detail.fake > 0 ? "warn" : null} />
+                <StatTile label="Bonus" value={formatNumber(detail.bonus)} />
+                <StatTile
+                  label="Invited by"
+                  value={detailInviter?.inviter?.username ?? (detailInviter ? detailInviter.joinType : "Unknown")}
+                  sub={detailInviter?.inviteCode ? `code ${detailInviter.inviteCode}` : undefined}
+                />
+              </div>
 
-          <!-- Inviter Results -->
-          {#if inviterLoading}
-            <div class="flex justify-center items-center py-6">
-              <div
-                class="w-8 h-8 border-3 rounded-full animate-spin"
-                style="border-color: {$colorStore.primary}20;
-                       border-top-color: {$colorStore.primary};"
-                aria-label="Loading"
-              >
+              <h4 class="text-sm font-medium mb-2" style="color: {$colorStore.text}">Adjust</h4>
+              <div class="grid grid-cols-3 gap-2 mb-2">
+                <SettingField label="Regular" hint="Positive adds, negative removes" id="adjust-regular">
+                  <input id="adjust-regular" type="number" bind:value={adjustRegular} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                </SettingField>
+                <SettingField label="Bonus" hint="Positive adds, negative removes" id="adjust-bonus">
+                  <input id="adjust-bonus" type="number" bind:value={adjustBonus} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                </SettingField>
+                <SettingField label="Fake" hint="Positive flags, negative clears" id="adjust-fake">
+                  <input id="adjust-fake" type="number" bind:value={adjustFake} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                </SettingField>
               </div>
-            </div>
-          {:else if inviterError}
-            <div
-              class="rounded-xl p-4 flex items-center gap-3"
-              style="background: {$colorStore.accent}10;"
-              role="alert"
-            >
-              <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-                 aria-hidden="true"></i>
-              <p style="color: {$colorStore.accent}">{inviterError}</p>
-            </div>
-          {:else if inviterInfo && selectedUserId}
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.secondary}10;"
-            >
-              <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Inviter Information</h3>
-              <div class="flex items-center gap-4 p-4 rounded-lg" style="background: {$colorStore.secondary}15;">
-                <img
-                  src={inviterInfo.avatarUrl}
-                  alt=""
-                  class="w-16 h-16 rounded-full border-2"
-                  style="border-color: {$colorStore.primary}30;"
-                >
-                <div>
-                  <p class="font-medium text-lg" style="color: {$colorStore.text}">{inviterInfo.username}</p>
-                  <p class="text-sm" style="color: {$colorStore.muted}">
-                    Invited <span
-                    style="color: {$colorStore.secondary}">{guildMembers.find(m => m.id === selectedUserId)?.username || 'Selected User'}</span>
-                    to the server
-                  </p>
-                </div>
+              <div class="flex gap-2">
+                <button type="button" class="flex-1 min-h-[44px] rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={applyAdjust}>Apply</button>
+                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={resetMember}>Reset</button>
               </div>
-            </div>
-          {/if}
+            {:else}
+              <p class="text-sm" style="color: {$colorStore.muted}">Pick a member, or click a leaderboard row, to see their breakdown and adjust it.</p>
+            {/if}
+          </Card>
         </div>
+      </div>
     </section>
   {/if}
 
-  {#if activeTab === 'invited'}
-    <!-- Invited Users Panel -->
+  {#if activeTab === "members"}
     <section>
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="p-3 rounded-xl"
-            style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);
-                   color: {$colorStore.primary};"
+      <SectionHeader icon="fa-user-plus" title="Invited Members" subtitle="Every witnessed join, filtered by inviter, code or label">
+        {#snippet actions()}
+          <button
+            type="button"
+            class="px-3 min-h-[36px] rounded-lg text-sm font-medium"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+            onclick={exportInvited}
           >
-            <i class="fa-utility-duo fa-regular fa-user-plus"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
-          </div>
-          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Find Users Invited By</h2>
-        </div>
+            <i class="fa-solid fa-download mr-1" aria-hidden="true"></i> CSV
+          </button>
+        {/snippet}
+      </SectionHeader>
 
-        <div class="space-y-6">
-          <!-- User Selection -->
-          <div
-            class="rounded-xl p-4"
-            style="background: {$colorStore.primary}10;"
-          >
-            <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">Select Inviter</h3>
-            <div class="flex flex-col md:flex-row gap-3">
-              <DiscordSelector
-                type="custom"
-                options={guildMembers.map(member => ({
-                  id: member.id,
-                  name: member.username,
-                  avatarUrl: member.avatarUrl
-                }))}
-                customIcon="fa-user-plus"
-                placeholder="Select a User"
-                selected={selectedUserId}
-                onchange={(detail) => {
-                  selectedUserId = detail.selected && typeof detail.selected === 'string' ? detail.selected : '';
-                }}
-              />
-              <button
-                aria-label="Find invited users"
-                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
-                disabled={!selectedUserId}
-                onclick={lookupInvitedUsers}
-                style="background: {$colorStore.primary}20;
-                       color: {$colorStore.text};"
-              >
-                Find Invited Users
-              </button>
-            </div>
-          </div>
-
-          <!-- Invited Users Results -->
-          {#if invitedLoading}
-            <div class="flex justify-center items-center py-6">
-              <div
-                class="w-8 h-8 border-3 rounded-full animate-spin"
-                style="border-color: {$colorStore.primary}20;
-                       border-top-color: {$colorStore.primary};"
-                aria-label="Loading"
-              >
-              </div>
-            </div>
-          {:else if invitedError}
-            <div
-              class="rounded-xl p-4 flex items-center gap-3"
-              style="background: {$colorStore.accent}10;"
-              role="alert"
-            >
-              <i class="fa-utility-duo fa-regular fa-circle-exclamation"
-                 style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"
-                 aria-hidden="true"></i>
-              <p style="color: {$colorStore.accent}">{invitedError}</p>
-            </div>
-          {:else if invitedUsers.length > 0 && selectedUserId}
-            <div
-              class="rounded-xl p-4"
-              style="background: {$colorStore.secondary}10;"
-            >
-              <h3 class="font-semibold mb-3" style="color: {$colorStore.text}">
-                {guildMembers.find(m => m.id === selectedUserId)?.username || 'Selected User'} has
-                invited {invitedUsers.length} user{invitedUsers.length !== 1 ? 's' : ''}
-              </h3>
-              <div class="space-y-3">
-                {#each invitedUsers as user}
-                  <div
-                    class="flex items-center gap-3 p-3 rounded-lg"
-                    style="background: {$colorStore.secondary}15;"
-                  >
-                    <img
-                      src={user.avatarUrl}
-                      alt=""
-                      class="w-10 h-10 rounded-full border-2"
-                      style="border-color: {$colorStore.primary}30;"
-                    >
-                    <div>
-                      <p class="font-medium" style="color: {$colorStore.text}">{user.username}</p>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {:else if selectedUserId && !invitedLoading}
-            <div class="text-center py-8">
-              <i class="fa-utility-duo fa-regular fa-user-plus"
-                 style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted}; font-size: 48px; opacity: 0.5; display: block; margin: 0 auto 12px;"
-                 aria-hidden="true"></i>
-              <p style="color: {$colorStore.muted}">
-                {guildMembers.find(m => m.id === selectedUserId)?.username || 'This user'} hasn't invited anyone yet
-              </p>
-            </div>
-          {/if}
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+        <div>
+          <DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Inviter" bind:selected={memberFilterInviter} onchange={() => { memberPage = 1; loadInvited(); }} />
         </div>
-    </section>
-  {/if}
-
-  {#if activeTab === 'flow'}
-    <section class="space-y-6" in:fade={{ duration: 200 }}>
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="p-3 rounded-xl"
-               style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}20);">
-            <i class="fa-utility-duo fa-regular fa-arrow-right-arrow-left"
-               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 24px;"
-               aria-hidden="true"></i>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Member Flow</h2>
-            <p class="text-sm" style="color: {$colorStore.muted}">Joins and leaves over the last month</p>
-          </div>
-        </div>
-        <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
-                style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
-                disabled={flowLoading}
-                onclick={() => loadMemberFlow(true)}>
-          <i class="fa-solid fa-arrows-rotate {flowLoading ? 'fa-spin' : ''}"></i>
-          Refresh
-        </button>
+        <input
+          type="text"
+          placeholder="Invite code"
+          bind:value={memberFilterCode}
+          onchange={() => { memberPage = 1; loadInvited(); }}
+          class="rounded-lg p-2 min-h-[44px]"
+          style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+          aria-label="Filter by invite code"
+        />
+        <input
+          type="text"
+          placeholder="Label"
+          bind:value={memberFilterLabel}
+          onchange={() => { memberPage = 1; loadInvited(); }}
+          class="rounded-lg p-2 min-h-[44px]"
+          style="background: {$colorStore.primary}10; color: {$colorStore.text};"
+          aria-label="Filter by label"
+        />
+        <SettingToggle id="include-left" label="Include members who left" hint="Show joins whose member has since left" checked={memberIncludeLeft} onchange={(v) => { memberIncludeLeft = v; memberPage = 1; loadInvited(); }} />
       </div>
 
-      {#if flowLoading && !flowLoaded}
-        <div class="flex justify-center items-center min-h-[200px]">
-          <div class="w-12 h-12 border-4 rounded-full animate-spin"
-               style="border-color: {$colorStore.primary}20; border-top-color: {$colorStore.primary};"
-               aria-label="Loading"></div>
-        </div>
-      {:else if flowError}
-        <div class="rounded-xl p-4 flex items-center gap-3" style="background: {$colorStore.accent}10;" role="alert">
-          <i class="fa-solid fa-circle-exclamation" style="color: {$colorStore.accent};"></i>
-          <p style="color: {$colorStore.accent}">{flowError}</p>
-        </div>
-      {:else}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {#each [
-            { label: "Joins (30d)", value: Number(joinStats?.summary?.total ?? 0), sub: `avg ${Number(joinStats?.summary?.average ?? 0).toFixed(1)}/day`, color: joinColor },
-            { label: "Peak join day", value: Number(joinStats?.summary?.peakCount ?? 0), sub: joinStats?.summary?.peakDate ? new Date(joinStats.summary.peakDate).toLocaleDateString() : "n/a", color: joinColor },
-            { label: "Leaves (30d)", value: Number(leaveStats?.summary?.total ?? 0), sub: `avg ${Number(leaveStats?.summary?.average ?? 0).toFixed(1)}/day`, color: leaveColor },
-            { label: "Net change", value: Number(joinStats?.summary?.total ?? 0) - Number(leaveStats?.summary?.total ?? 0), sub: "joins minus leaves", color: $colorStore.primary }
-          ] as stat}
-            <div class="rounded-xl border p-4" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
-              <div class="text-xs mb-1" style="color: {$colorStore.muted}">{stat.label}</div>
-              <div class="text-2xl font-bold" style="color: {stat.color}">{stat.value}</div>
-              <div class="text-xs" style="color: {$colorStore.muted}">{stat.sub}</div>
-            </div>
-          {/each}
-        </div>
+      <AsyncState loading={membersLoading} error={membersError} empty={!invitedPage || invitedPage.items.length === 0} emptyMessage="No joins match these filters" emptyIcon="fa-users">
+        {#if invitedPage}
+          <div class="overflow-x-auto rounded-xl border" style="border-color: {$colorStore.primary}20;">
+            <table class="w-full text-sm">
+              <thead>
+                <tr style="background: {$colorStore.primary}10; color: {$colorStore.muted};">
+                  <th class="text-left p-3">Member</th>
+                  <th class="text-left p-3">Inviter</th>
+                  <th class="text-left p-3">Code</th>
+                  <th class="text-left p-3">How</th>
+                  <th class="text-left p-3">Joined</th>
+                  <th class="text-left p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each invitedPage.items as item (item.userId.toString() + (item.joinedAt ?? ""))}
+                  <tr style="border-top: 1px solid {$colorStore.primary}10; color: {$colorStore.text};">
+                    <td class="p-3">
+                      <div class="flex items-center gap-2 min-w-0">
+                        {#if item.avatarUrl}<img src={item.avatarUrl} alt="" class="w-7 h-7 rounded-full" loading="lazy" />{/if}
+                        <span class="truncate">{item.username ?? item.userId.toString()}</span>
+                      </div>
+                    </td>
+                    <td class="p-3">{item.inviterId && item.inviterId !== 0n ? memberName(item.inviterId) : "-"}</td>
+                    <td class="p-3 font-mono">{item.inviteCode ?? "-"}</td>
+                    <td class="p-3">{item.joinType}</td>
+                    <td class="p-3" title={item.joinedAt ?? ""}>{formatAgo(item.joinedAt)}</td>
+                    <td class="p-3">
+                      {#if item.isFake}
+                        <Pill tone="warn" text={`fake: ${item.fakeReason}`} />
+                      {:else if item.leftAt}
+                        <Pill tone="muted" text="left" />
+                      {:else}
+                        <Pill tone="ok" text="present" />
+                      {/if}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          <div class="flex justify-center items-center gap-2 mt-6">
+            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage <= 1 ? 0.5 : 1};" disabled={memberPage <= 1} onclick={() => { memberPage -= 1; loadInvited(); }}>Previous</button>
+            <span class="px-4 min-h-[40px] flex items-center rounded-lg" style="background: {$colorStore.primary}30; color: {$colorStore.text};">Page {memberPage} of {memberPages} · {formatNumber(invitedPage.total)} joins</span>
+            <button type="button" class="px-4 min-h-[40px] rounded-lg" style="background: {$colorStore.primary}20; color: {$colorStore.text}; opacity: {memberPage >= memberPages ? 0.5 : 1};" disabled={memberPage >= memberPages} onclick={() => { memberPage += 1; loadInvited(); }}>Next</button>
+          </div>
+        {/if}
+      </AsyncState>
+    </section>
+  {/if}
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {#each [{ title: "Joins", img: joinGraph, stats: joinStats, color: joinColor }, { title: "Leaves", img: leaveGraph, stats: leaveStats, color: leaveColor }] as graph}
-            <div class="rounded-2xl border p-4 md:p-6"
-                 style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
-              <h3 class="font-semibold mb-3 flex items-center gap-2" style="color: {$colorStore.text}">
-                <span class="w-3 h-3 rounded-full inline-block" style="background: {graph.color};"></span>
-                {graph.title}
-              </h3>
-              {#if graph.img}
-                <img src={graph.img} alt={`${graph.title} over time`} class="w-full rounded-xl" style="max-width: 100%;">
-              {:else if graph.stats?.dailyStats?.length}
-                {@const max = Math.max(1, ...graph.stats.dailyStats.map(d => d.count))}
-                <div class="flex items-end gap-[2px] h-40 overflow-x-auto" role="img" aria-label={`${graph.title} per day`}>
-                  {#each graph.stats.dailyStats as day}
-                    <div class="flex-1 min-w-[6px] rounded-t-sm" title={`${new Date(day.date).toLocaleDateString()}: ${day.count}`}
-                         style="height: {Math.max(2, (day.count / max) * 100)}%; background: {graph.color};"></div>
-                  {/each}
+  {#if activeTab === "codes"}
+    <section>
+      <SectionHeader icon="fa-link" title="Invite Codes & Labels" subtitle="Name codes so they show up in stats, and grant a role to everyone who joins through one" />
+
+      <AsyncState loading={codesLoading} error={codesError} empty={codes.length === 0} emptyMessage="This server has no invite codes" emptyIcon="fa-link">
+        <div class="space-y-3">
+          {#each codes as code (code.code)}
+            <div class="rounded-xl p-4 border" style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div class="min-w-0">
+                  <p class="font-mono font-semibold" style="color: {$colorStore.text}">{code.code}</p>
+                  <p class="text-xs" style="color: {$colorStore.muted}">
+                    {code.inviterName ?? (code.ownerUserId ? memberName(code.ownerUserId) : "unknown")} · #{channels.find((c) => c.id === code.channelId.toString())?.name ?? code.channelId.toString()}
+                    · {formatNumber(code.uses)} uses{code.maxUses ? ` of ${code.maxUses}` : ""}{code.maxAge ? " · expires" : ""}{code.isTemporary ? " · temporary" : ""}
+                  </p>
                 </div>
-              {:else}
-                <p class="text-sm py-8 text-center" style="color: {$colorStore.muted}">No data yet</p>
+                <div class="flex items-center gap-2">
+                  {#if code.ownerUserId}<Pill tone="ok" text={`credits ${memberName(code.ownerUserId)}`} />{/if}
+                  <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => deleteCode(code.code)}>Delete</button>
+                </div>
+              </div>
+              {#if labelDrafts[code.code]}
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                  <SettingField label="Label" hint="Shown in stats, exports and greet placeholders" id={`label-${code.code}`}>
+                    <input id={`label-${code.code}`} type="text" maxlength="64" placeholder="e.g. Twitter campaign" bind:value={labelDrafts[code.code].label} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                  </SettingField>
+                  <SettingField label="Role on join" hint="Granted to everyone who joins through this code" id={`role-${code.code}`}>
+                    <DiscordSelector id={`role-${code.code}`} type="role" options={roles} bind:selected={labelDrafts[code.code].roleId} placeholder="No role" />
+                  </SettingField>
+                  <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={() => saveLabel(code.code)}>Save</button>
+                </div>
               {/if}
             </div>
           {/each}
         </div>
 
-        <div class="rounded-2xl border p-4 md:p-6"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15); border-color: {$colorStore.primary}30;">
-          <h3 class="font-semibold mb-1" style="color: {$colorStore.text}">Graph colors</h3>
-          <p class="text-sm mb-4" style="color: {$colorStore.muted}">Used when the bot renders join and leave graphs in Discord.</p>
-          <div class="flex flex-wrap items-end gap-4">
-            <div>
-              <label for="join-color" class="block text-xs mb-1" style="color: {$colorStore.muted}">Join color</label>
-              <input id="join-color" type="color" bind:value={joinColor} class="w-16 h-11 rounded-lg border cursor-pointer" style="border-color: {$colorStore.primary}30; background: transparent;">
-            </div>
-            <div>
-              <label for="leave-color" class="block text-xs mb-1" style="color: {$colorStore.muted}">Leave color</label>
-              <input id="leave-color" type="color" bind:value={leaveColor} class="w-16 h-11 rounded-lg border cursor-pointer" style="border-color: {$colorStore.primary}30; background: transparent;">
-            </div>
-            <button class="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02] flex items-center gap-2 min-h-[44px] disabled:opacity-50"
-                    style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}; border: 1px solid {$colorStore.secondary}30;"
-                    disabled={colorSaving}
-                    onclick={saveGraphColors}>
-              {#if colorSaving}<i class="fa-solid fa-spinner fa-spin"></i>{:else}<i class="fa-solid fa-floppy-disk"></i>{/if}
-              Save colors
-            </button>
+        {#if labels.some((l) => !codes.find((c) => c.code === l.inviteCode))}
+          <h3 class="font-semibold mt-8 mb-2" style="color: {$colorStore.text}">Labels for codes that no longer exist</h3>
+          <ul class="space-y-2">
+            {#each labels.filter((l) => !codes.find((c) => c.code === l.inviteCode)) as label (label.id)}
+              <li class="flex items-center justify-between rounded-lg p-3" style="background: {$colorStore.primary}08;">
+                <span style="color: {$colorStore.text}"><span class="font-mono">{label.inviteCode}</span> · {label.label}</span>
+                <button type="button" class="min-h-[36px] px-3 rounded-lg text-sm" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => inviteTrackingApi.removeLabel($currentGuild!.id, label.inviteCode).then(loadCodes).catch((e) => fail(e, "Failed to remove the label"))}>Remove</button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </AsyncState>
+    </section>
+  {/if}
+
+  {#if activeTab === "settings"}
+    <section>
+      <SectionHeader icon="fa-gear" title="Invite Tracking Settings" />
+
+      <AsyncState loading={settingsLoading} error={settingsError} empty={!settings}>
+        {#if settings}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+            <SettingToggle id="tracking" label="Track invites" hint="Attribute every join to an invite, the vanity URL or an app" checked={settings.isEnabled} onchange={(v) => saveSetting(() => inviteTrackingApi.toggleInviteTracking($currentGuild!.id, v), "Failed to update tracking")} />
+            <SettingToggle id="remove-on-leave" label="Remove credit when members leave" hint="The inviter's left count goes up and their total goes down" checked={settings.removeInviteOnLeave} onchange={(v) => saveSetting(() => inviteTrackingApi.setRemoveOnLeave($currentGuild!.id, v), "Failed to update the setting")} />
+            <SettingToggle id="count-rejoins" label="Count rejoins" hint="Off flags members who have joined before as fake invites" checked={settings.countRejoins} onchange={(v) => saveSetting(() => inviteTrackingApi.setCountRejoins($currentGuild!.id, v), "Failed to update the setting")} />
+            <SettingToggle id="fake-no-avatar" label="Flag members without an avatar" hint="Joins from accounts with no avatar count as fake" checked={settings.fakeOnNoAvatar} onchange={(v) => saveSetting(() => inviteTrackingApi.setFakeOnNoAvatar($currentGuild!.id, v), "Failed to update the setting")} />
           </div>
-        </div>
-      {/if}
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <SettingField label="Minimum account age (days)" hint="Accounts younger than this are flagged as fake. 0 disables the check." id="min-age">
+              <div class="flex gap-2">
+                <input id="min-age" type="number" min="0" max="300" bind:value={minAgeDays} class="w-full rounded-lg p-2 min-h-[44px]" style="background: {$colorStore.primary}10; color: {$colorStore.text};" />
+                <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}; color: #fff;" onclick={saveMinAge}>Save</button>
+              </div>
+            </SettingField>
+            <SettingField label="Personal link channel" hint="Where links from the invitelink command point. Empty uses the system channel." id="link-channel">
+              <DiscordSelector id="link-channel" type="channel" options={channels} selected={settings.linkChannelId ? settings.linkChannelId.toString() : null} placeholder="System channel" onchange={(e) => saveSetting(() => inviteTrackingApi.setLinkChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null), "Failed to update the channel")} />
+            </SettingField>
+            <SettingField label="Join and leave log channel" hint="Posts who invited whom and how, on every join and leave" id="log-channel">
+              <DiscordSelector id="log-channel" type="channel" options={channels} selected={settings.logChannelId ? settings.logChannelId.toString() : null} placeholder="Disabled" onchange={(e) => saveSetting(() => inviteTrackingApi.setLogChannel($currentGuild!.id, typeof e.selected === "string" && e.selected ? BigInt(e.selected) : null), "Failed to update the channel")} />
+            </SettingField>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <Card title="Blacklisted inviters" note="Never earn invite credit">
+              <div class="flex gap-2 mb-3">
+                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Add a member" bind:selected={exclusionUser} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedUser, exclusionUser)}>Add</button>
+              </div>
+              <ul class="space-y-1">
+                {#each blacklistedUsers as id (id)}
+                  <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
+                    <span class="truncate">{memberName(id)}</span>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedUser, id)} aria-label="Remove">✕</button>
+                  </li>
+                {/each}
+              </ul>
+            </Card>
+            <Card title="Blacklisted roles" note="Holders never earn invite credit">
+              <div class="flex gap-2 mb-3">
+                <div class="grow"><DiscordSelector type="role" options={roles} placeholder="Add a role" bind:selected={exclusionRole} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.BlacklistedRole, exclusionRole)}>Add</button>
+              </div>
+              <ul class="space-y-1">
+                {#each blacklistedRoles as id (id)}
+                  <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
+                    <span class="truncate">@{roleName(id)}</span>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.BlacklistedRole, id)} aria-label="Remove">✕</button>
+                  </li>
+                {/each}
+              </ul>
+            </Card>
+            <Card title="Hidden from leaderboard" note="Still tracked, never shown">
+              <div class="flex gap-2 mb-3">
+                <div class="grow"><DiscordSelector type="custom" options={members} customIcon="fa-user" placeholder="Add a member" bind:selected={hiddenUser} /></div>
+                <button type="button" class="min-h-[44px] px-3 rounded-lg" style="background: {$colorStore.primary}; color: #fff;" onclick={() => addExclusion(InviteExclusionKind.HiddenUser, hiddenUser)}>Add</button>
+              </div>
+              <ul class="space-y-1">
+                {#each hiddenUsers as id (id)}
+                  <li class="flex items-center justify-between rounded-lg p-2" style="background: {$colorStore.primary}08; color: {$colorStore.text};">
+                    <span class="truncate">{memberName(id)}</span>
+                    <button type="button" class="text-sm px-2 min-h-[32px]" style="color: {$colorStore.accent};" onclick={() => removeExclusion(InviteExclusionKind.HiddenUser, id)} aria-label="Remove">✕</button>
+                  </li>
+                {/each}
+              </ul>
+            </Card>
+          </div>
+
+          <Card title="Maintenance" note="Bulk operations on the tallies">
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.primary}20; color: {$colorStore.primary};" onclick={syncInvites}>Import uses from Discord</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}20; color: {$colorStore.accent};" onclick={() => resetAll(InviteResetScope.LeftMembers)}>Reset inviters who left</button>
+              <button type="button" class="min-h-[44px] px-4 rounded-lg font-medium" style="background: {$colorStore.accent}; color: #fff;" onclick={() => resetAll(InviteResetScope.Server)}>Reset everything</button>
+            </div>
+            <p class="text-xs mt-3" style="color: {$colorStore.muted}">Importing raises each inviter's regular total to the sum of uses across their codes and never lowers it, so it is safe to run again.</p>
+          </Card>
+        {/if}
+      </AsyncState>
     </section>
   {/if}
 </DashboardPageLayout>
-
-<style lang="postcss">
-    /* Custom styling for options */
-
-    :global(.input-field) {
-        transition: all 0.2s ease;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    :global(.input-field):focus {
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
-    }
-
-    /* Prevent stretch in Safari */
-
-    /* Improve touchable area on mobile */
-    @media (max-width: 768px) {
-        button, input[type="checkbox"] {
-            min-height: 44px;
-            min-width: 44px;
-        }
-    }
-</style>

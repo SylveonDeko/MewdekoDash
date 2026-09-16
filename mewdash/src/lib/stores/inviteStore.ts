@@ -40,18 +40,24 @@ function createInviteStore() {
 
     try {
       const [leaderboard, averageJoins, settings] = await Promise.all([
-        inviteTrackingApi.getInviteLeaderboard(guildId, 1, 5),
+        inviteTrackingApi.getInviteLeaderboard(guildId, 0, 1, 5),
         joinLeaveApi.getAverageJoins(guildId),
         inviteTrackingApi.getInviteSettings(guildId),
       ]);
+
+      const topInviters = leaderboard.map((entry) => ({
+        userId: entry.userId.toString(),
+        username: entry.username,
+        inviteCount: entry.total
+      }));
 
       update(state => ({
         ...state,
         loading: false,
         error: null,
         stats: {
-          totalInvites: leaderboard.reduce((sum, entry) => sum + entry.inviteCount, 0),
-          topInviters: leaderboard,
+          totalInvites: topInviters.reduce((sum, entry) => sum + entry.inviteCount, 0),
+          topInviters,
           averageJoins
         },
         settings: {

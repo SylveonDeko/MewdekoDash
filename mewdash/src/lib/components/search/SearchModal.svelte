@@ -2,6 +2,7 @@
 <script lang="ts">
 
   import {onDestroy, onMount} from "svelte";
+  import { safeLocalStorage } from "$lib/safeStorage";
     import {fade, fly} from "svelte/transition";
     import {browser} from "$app/environment";
     import {goto} from "$app/navigation";
@@ -78,7 +79,7 @@
     if (!recentSearches.includes(item.title)) {
       recentSearches = [item.title, ...recentSearches.slice(0, 4)];
       if (browser) {
-        localStorage.setItem('dashboard-recent-searches', JSON.stringify(recentSearches));
+        safeLocalStorage.setItem('dashboard-recent-searches', JSON.stringify(recentSearches));
       }
     }
 
@@ -131,7 +132,7 @@
   // Load recent searches
   onMount(() => {
     if (browser) {
-      const saved = localStorage.getItem('dashboard-recent-searches');
+      const saved = safeLocalStorage.getItem('dashboard-recent-searches');
       if (saved) {
         try {
           recentSearches = JSON.parse(saved);

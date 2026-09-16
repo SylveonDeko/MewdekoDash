@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { logger } from "$lib/logger";
+import { safeLocalStorage } from "$lib/safeStorage";
 // @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
 
@@ -679,7 +680,7 @@ function createColorStore() {
       // Check for debug mode from localStorage or URL params
       if (typeof globalThis.window !== "undefined") {
         // Check localStorage for debug flag
-        if (localStorage.getItem("mewdeko-halloween-debug") === "true") {
+        if (safeLocalStorage.getItem("mewdeko-halloween-debug") === "true") {
           return true;
         }
 
@@ -696,17 +697,13 @@ function createColorStore() {
 
     // Enable Halloween debug mode (for testing)
     enableHalloweenDebug(): void {
-      if (typeof globalThis.window !== "undefined" && globalThis.localStorage) {
-        localStorage.setItem("mewdeko-halloween-debug", "true");
-      }
+      safeLocalStorage.setItem("mewdeko-halloween-debug", "true");
     },
 
     // Disable Halloween debug mode
     disableHalloweenDebug(): void {
       if (typeof globalThis.window !== "undefined") {
-        if (globalThis.localStorage) {
-          localStorage.removeItem("mewdeko-halloween-debug");
-        }
+        safeLocalStorage.removeItem("mewdeko-halloween-debug");
         if (globalThis.sessionStorage) {
           sessionStorage.removeItem("mewdeko-halloween-active");
         }

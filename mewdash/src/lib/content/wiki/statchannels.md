@@ -109,6 +109,18 @@ These read from the Twitch channel linked through the Twitch module.
 | `TotalGuildXp` | XP | All XP earned in the server | `Total XP: %count%` | |
 | `TotalCurrency` | Currency | Currency held by members | `In Circulation: %count%` | |
 | `ActivePolls` | Polls | Polls accepting votes | `Polls: %count%` | |
+| `Clock` | Server | The date and time in the server's timezone | `%time% %tz%` | `%time%`, `%date%`, `%datetime%`, `%weekday%`, `%tz%` |
+| `MessagesToday`, `MessagesWeek` | Activity | Messages in the last 24 hours or 7 days | `Today: %count%` | |
+| `VoiceHoursToday`, `VoiceHoursWeek` | Activity | Voice hours across all members in the last 24 hours or 7 days | `Today: %count%h` | |
+| `TopChatter` | Activity | The most active chatter of the last 7 days | `Chatter: %member.name%` | `%member.name%`, `%member.id%`, `%member.messages%` |
+| `TopVoiceMember` | Activity | The member with the most voice time in the last 7 days | `Voice: %member.name%` | `%member.name%`, `%member.id%`, `%member.hours%` |
+| `TopGame` | Activity | The most played game of the last 7 days (needs game tracking) | `%game%` | `%game%`, `%hours%`, `%players%` |
+| `PlayingNow` | Activity | Members currently in a tracked game (needs game tracking) | `Playing: %count%` | |
+| `RoleMembersOnline` | Members | Members with a role who are not offline | `%role.name%: %count%` | `%role.name%`, `%role.id%`, `%role.total%` |
+| `TopInviter` | Invite Tracking | The member with the most invites | `Inviter: %member.name%` | `%member.name%`, `%member.id%`, `%member.invites%` |
+| `InvitesWeek` | Invite Tracking | Joins credited to inviters in the last 7 days | `This Week: %count%` | |
+| `MembersLeftToday`, `MembersLeftWeek` | Members | Members who left in the last 24 hours or 7 days | `Left Today: %count%` | |
+| `NetGrowthWeek` | Members | Joins minus leaves over the last 7 days | `Growth: %count%` | `%joins%`, `%leaves%` |
 
 ### Placeholders available to every type
 
@@ -198,7 +210,7 @@ Run these with your server's prefix (`.` unless you changed it). Types, styles a
 | --- | --- | --- | --- |
 | `statchannelcreate <type> [template]` | `scnew` | Manage Channels | Create a new locked voice channel showing that counter |
 | `statchanneladd #voice <type> [template]` | `sca` | Manage Channels | Turn an existing voice channel into a stat channel |
-| `statchannelrole #voice @role [template]` | `scr` | Manage Channels | Add a role member counter |
+| `statchannelrole #voice @role [true] [template]` | `scr` | Manage Channels | Add a role member counter; `true` counts only members who are not offline |
 | `statchannelcountdown #voice <date> [template]` | `scc` | Manage Channels | Add a countdown to a date |
 | `statchannelgoal #voice <number> [template]` | `scg` | Manage Channels | Add a member goal counter |
 | `statchanneltwitchcounter #voice <counter> [template]` | | Manage Channels | Mirror a named Twitch chat counter |

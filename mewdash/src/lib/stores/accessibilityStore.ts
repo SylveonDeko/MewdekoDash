@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
+import { safeLocalStorage } from "$lib/safeStorage";
 
 const STORAGE_KEY = "mewdeko-dyslexic-font";
 
@@ -13,7 +14,7 @@ function createDyslexicFontStore() {
 
   function init() {
     if (!browser) return;
-    const enabled = localStorage.getItem(STORAGE_KEY) === "true";
+    const enabled = safeLocalStorage.getItem(STORAGE_KEY) === "true";
     store.set(enabled);
     applyClass(enabled);
   }
@@ -22,13 +23,13 @@ function createDyslexicFontStore() {
     store.set(enabled);
     applyClass(enabled);
     if (browser) {
-      localStorage.setItem(STORAGE_KEY, String(enabled));
+      safeLocalStorage.setItem(STORAGE_KEY, String(enabled));
     }
   }
 
   function toggle() {
     if (!browser) return;
-    set(!(localStorage.getItem(STORAGE_KEY) === "true"));
+    set(!(safeLocalStorage.getItem(STORAGE_KEY) === "true"));
   }
 
   return {

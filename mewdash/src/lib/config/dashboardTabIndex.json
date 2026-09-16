@@ -386,34 +386,29 @@
   "/dashboard/invites": {
     "tabs": [
       {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-gear"
-      },
-      {
-        "id": "stats",
-        "label": "Statistics",
-        "icon": "fa-file-spreadsheet"
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-chart-line"
       },
       {
         "id": "leaderboard",
         "label": "Leaderboard",
-        "icon": "fa-award"
+        "icon": "fa-trophy"
       },
       {
-        "id": "inviter",
-        "label": "Find Inviter",
-        "icon": "fa-user"
-      },
-      {
-        "id": "invited",
-        "label": "Invited Users",
+        "id": "members",
+        "label": "Members",
         "icon": "fa-user-plus"
       },
       {
-        "id": "flow",
-        "label": "Member Flow",
-        "icon": "fa-arrow-right-arrow-left"
+        "id": "codes",
+        "label": "Codes & Labels",
+        "icon": "fa-link"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-gear"
       }
     ]
   },
@@ -428,6 +423,20 @@
         "id": "settings",
         "label": "Settings",
         "icon": "fa-cog"
+      }
+    ]
+  },
+  "/dashboard/liveboards": {
+    "tabs": [
+      {
+        "id": "boards",
+        "label": "Live Boards",
+        "icon": "fa-thumbtack"
+      },
+      {
+        "id": "reports",
+        "label": "Server Reports",
+        "icon": "fa-newspaper"
       }
     ]
   },
@@ -677,6 +686,30 @@
       }
     ]
   },
+  "/dashboard/serverstats": {
+    "tabs": [
+      {
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-chart-line"
+      },
+      {
+        "id": "top",
+        "label": "Rankings",
+        "icon": "fa-trophy"
+      },
+      {
+        "id": "lookup",
+        "label": "Member & Channel",
+        "icon": "fa-user"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-gear"
+      }
+    ]
+  },
   "/dashboard/statchannels": {
     "tabs": [
       {
@@ -693,6 +726,20 @@
         "id": "settings",
         "label": "Defaults",
         "icon": "fa-sliders"
+      }
+    ]
+  },
+  "/dashboard/statroles": {
+    "tabs": [
+      {
+        "id": "roles",
+        "label": "Stat Roles",
+        "icon": "fa-trophy"
+      },
+      {
+        "id": "editor",
+        "label": "Create / Edit",
+        "icon": "fa-pen"
       }
     ]
   },

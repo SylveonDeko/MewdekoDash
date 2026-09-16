@@ -135,22 +135,3 @@ export function searchWiki(query: string): WikiArticleMeta[] {
     return terms.every((t) => haystack.includes(t));
   });
 }
-
-/** Distinct categories in display order, following the dashboard's ordering. */
-export const wikiCategoryOrder = ["Community", "Entertainment", "Actions", "Security", "Analytics", "Settings", "General"];
-
-export function getWikiCategories(): { category: string; articles: WikiArticleMeta[] }[] {
-  const index = getWikiIndex();
-  const groups = new Map<string, WikiArticleMeta[]>();
-  for (const a of index) {
-    if (!groups.has(a.category)) groups.set(a.category, []);
-    groups.get(a.category)!.push(a);
-  }
-  return [...groups.entries()]
-    .sort(([a], [b]) => {
-      const ia = wikiCategoryOrder.indexOf(a);
-      const ib = wikiCategoryOrder.indexOf(b);
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-    })
-    .map(([category, list]) => ({ category, articles: list }));
-}

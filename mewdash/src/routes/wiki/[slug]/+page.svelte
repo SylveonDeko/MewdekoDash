@@ -1,7 +1,7 @@
 <!-- routes/wiki/[slug]/+page.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import WikiArticle from "$lib/components/wiki/WikiArticle.svelte";
@@ -11,11 +11,6 @@
 
   let mounted = $state(false);
   let activeHeading = $state("");
-  let sidebarQuery = $state("");
-
-  let sidebarArticles = $derived(
-    data.all.filter((a) => !sidebarQuery.trim() || a.title.toLowerCase().includes(sidebarQuery.toLowerCase()))
-  );
 
   let dashboardLink = $derived(
     data.article.dashboardHref
@@ -27,6 +22,13 @@
 
   onMount(() => {
     mounted = true;
+  });
+
+  // Re-attach whenever the sidebar swaps the article in, since the page component is reused.
+  $effect(() => {
+    const headings = data.article.headings;
+    if (!mounted) return;
+    activeHeading = "";
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -38,7 +40,7 @@
     );
 
     const attach = () => {
-      for (const h of data.article.headings) {
+      for (const h of headings) {
         const el = document.getElementById(h.id);
         if (el) observer.observe(el);
       }
@@ -60,15 +62,8 @@
 </svelte:head>
 
 {#if mounted}
-  <main
-    class="min-h-screen"
-    style="background: radial-gradient(circle at top,
-             {$colorStore.gradientStart}15 0%,
-             {$colorStore.gradientMid}10 50%,
-             {$colorStore.gradientEnd}05 100%);"
-    in:fade
-  >
-    <div class="w-full px-4 md:px-6 xl:px-10 py-8 lg:py-10">
+  {#key data.article.slug}
+    <div in:fly={{ y: 16, duration: 300 }}>
       <nav class="text-sm mb-6 flex items-center gap-2 flex-wrap" aria-label="Breadcrumb" style="color: {$colorStore.muted}">
         <a href="/wiki" class="hover:underline" style="color: {$colorStore.primary}">Wiki</a>
         <i class="fa-solid fa-chevron-right text-xs"></i>
@@ -77,36 +72,8 @@
         <span style="color: {$colorStore.text}">{data.article.title}</span>
       </nav>
 
-      <div class="grid gap-8 lg:grid-cols-[minmax(200px,16%)_minmax(0,1fr)] xl:grid-cols-[minmax(200px,14%)_minmax(0,1fr)_minmax(180px,12%)]">
-        <aside class="hidden lg:block">
-          <div class="sticky top-24 space-y-3">
-            <input
-              type="search"
-              placeholder="Filter articles"
-              bind:value={sidebarQuery}
-              class="w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2"
-              style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}25; color: {$colorStore.text};"
-            />
-            <ul class="space-y-0.5 max-h-[calc(100vh-10rem)] overflow-y-auto pr-1 scrollbar-thin">
-              {#each sidebarArticles as a (a.slug)}
-                <li>
-                  <a
-                    href="/wiki/{a.slug}"
-                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
-                    style="background: {a.slug === data.article.slug ? $colorStore.primary + '20' : 'transparent'};
-                           color: {a.slug === data.article.slug ? $colorStore.primary : $colorStore.muted};"
-                  >
-                    <i class="{wikiIconClass(a.icon)} w-4 text-center"
-                       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                    <span class="truncate">{a.title}</span>
-                  </a>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        </aside>
-
-        <div class="min-w-0" in:fly={{ y: 16, duration: 300 }}>
+      <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(180px,14%)]">
+        <div class="min-w-0">
           <header
             class="rounded-2xl p-6 sm:p-8 mb-8"
             style="background: linear-gradient(135deg, {$colorStore.gradientStart}18, {$colorStore.gradientEnd}10);
@@ -233,5 +200,5 @@
         </aside>
       </div>
     </div>
-  </main>
+  {/key}
 {/if}

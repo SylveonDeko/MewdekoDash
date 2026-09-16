@@ -10,6 +10,7 @@ import {
   type WizardFeature,
 } from "$lib/types/wizard";
 import { browser } from '$app/environment';
+import { safeLocalStorage } from '$lib/safeStorage';
 
 // Core wizard progress store
 export const wizardProgress: Writable<WizardProgress | null> = writable(null);
@@ -101,7 +102,7 @@ export const wizardActions = {
     // Save to localStorage for persistence
     if (browser) {
       try {
-        localStorage.setItem(`wizard_progress_${guildId}`, JSON.stringify(progress));
+        safeLocalStorage.setItem(`wizard_progress_${guildId}`, JSON.stringify(progress));
       } catch (err) {
         logger.warn('Failed to save wizard progress to localStorage:', err);
       }
@@ -129,7 +130,7 @@ export const wizardActions = {
       // Save to localStorage
       if (browser) {
         try {
-          localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
+          safeLocalStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
         } catch (err) {
           logger.warn('Failed to save wizard progress:', err);
         }
@@ -158,7 +159,7 @@ export const wizardActions = {
       // Save to localStorage
       if (browser) {
         try {
-          localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
+          safeLocalStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
         } catch (err) {
           logger.warn('Failed to save wizard progress:', err);
         }
@@ -190,7 +191,7 @@ export const wizardActions = {
         // Save to localStorage
         if (browser) {
           try {
-            localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
+            safeLocalStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
           } catch (err) {
             logger.warn('Failed to save wizard progress:', err);
           }
@@ -225,7 +226,7 @@ export const wizardActions = {
         // Save to localStorage
         if (browser) {
           try {
-            localStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
+            safeLocalStorage.setItem(`wizard_progress_${progress.guildId}`, JSON.stringify(newProgress));
           } catch (err) {
             logger.warn('Failed to save wizard progress:', err);
           }
@@ -304,7 +305,7 @@ export const wizardActions = {
     if (!browser) return false;
 
     try {
-      const stored = localStorage.getItem(`wizard_progress_${guildId}`);
+      const stored = safeLocalStorage.getItem(`wizard_progress_${guildId}`);
       if (!stored) return false;
 
       const progress: WizardProgress = JSON.parse(stored);
@@ -317,7 +318,7 @@ export const wizardActions = {
       const isStale = Date.now() - lastUpdated.getTime() > 60 * 60 * 1000;
       
       if (isStale) {
-        localStorage.removeItem(`wizard_progress_${guildId}`);
+        safeLocalStorage.removeItem(`wizard_progress_${guildId}`);
         return false;
       }
 
@@ -342,7 +343,7 @@ export const wizardActions = {
     if (!browser) return;
     
     try {
-      localStorage.removeItem(`wizard_progress_${guildId}`);
+      safeLocalStorage.removeItem(`wizard_progress_${guildId}`);
     } catch (err) {
       logger.warn('Failed to clear stored wizard progress:', err);
     }

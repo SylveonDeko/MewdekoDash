@@ -17,6 +17,7 @@
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { openProductUpdates, unreadUpdateCount } from "$lib/stores/productUpdateStore";
   import { matchesSearchTerms, openSearch } from "$lib/stores/searchStore";
+  import { safeLocalStorage } from "$lib/safeStorage";
 
   interface Props {
     collapsed?: boolean;
@@ -110,7 +111,7 @@
   function toggleSidebar() {
     collapsed = !collapsed;
     if (browser) {
-      localStorage.setItem("sidebar-collapsed", collapsed.toString());
+      safeLocalStorage.setItem("sidebar-collapsed", collapsed.toString());
       window.dispatchEvent(new CustomEvent("sidebar-toggle", { detail: collapsed }));
     }
     isToggling = true;
@@ -146,7 +147,7 @@
 
     if (browser) {
       try {
-        localStorage.setItem("lastSelectedGuild", JSON.stringify({
+        safeLocalStorage.setItem("lastSelectedGuild", JSON.stringify({
           id: guild.id.toString(),
           name: guild.name,
           icon: guild.icon,
@@ -298,13 +299,13 @@
     currentGuild.set(null);
     if (browser) {
       if ($currentInstance) {
-        localStorage.removeItem(`lastSelectedGuild_${$currentInstance.botId}`);
+        safeLocalStorage.removeItem(`lastSelectedGuild_${$currentInstance.botId}`);
       }
-      localStorage.removeItem("lastSelectedGuild");
+      safeLocalStorage.removeItem("lastSelectedGuild");
     }
     currentInstance.set(instance);
     if (browser) {
-      localStorage.setItem("selectedInstance", JSON.stringify(instance));
+      safeLocalStorage.setItem("selectedInstance", JSON.stringify(instance));
     }
     showInstancePicker = false;
   }
@@ -315,10 +316,10 @@
 
   onMount(() => {
     if (browser) {
-      collapsed = localStorage.getItem("sidebar-collapsed") === "true";
+      collapsed = safeLocalStorage.getItem("sidebar-collapsed") === "true";
 
       // Left over from when the sidebar grouped features into collapsible categories.
-      localStorage.removeItem("sidebar-collapsed-categories");
+      safeLocalStorage.removeItem("sidebar-collapsed-categories");
 
       window.addEventListener("keydown", handleGlobalKeydown);
       window.addEventListener("resize", handleWindowResize);

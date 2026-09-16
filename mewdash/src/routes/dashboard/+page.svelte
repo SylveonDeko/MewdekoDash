@@ -1,6 +1,7 @@
 <script lang="ts">
 
     import { onDestroy, onMount } from "svelte";
+    import { safeLocalStorage, safeSessionStorage } from "$lib/safeStorage";
     import {
         botStatusApi,
         type BotStatus,
@@ -368,7 +369,7 @@
 
       // Mark as triggered in session
       if (browser) {
-        sessionStorage.setItem("mewdeko-halloween-triggered", "true");
+        safeSessionStorage.setItem("mewdeko-halloween-triggered", "true");
       }
     }
 
@@ -442,13 +443,13 @@
         // Check for previously selected server
         if (browser) {
           // Clean up Halloween state if it's after Halloween
-          if (!colorStore.isHalloween() && sessionStorage.getItem("mewdeko-halloween-active") === "true") {
-            sessionStorage.removeItem("mewdeko-halloween-active");
-            sessionStorage.removeItem("mewdeko-halloween-triggered");
+          if (!colorStore.isHalloween() && safeSessionStorage.getItem("mewdeko-halloween-active") === "true") {
+            safeSessionStorage.removeItem("mewdeko-halloween-active");
+            safeSessionStorage.removeItem("mewdeko-halloween-triggered");
           }
 
           // Check if Halloween was already triggered this session
-          if (sessionStorage.getItem("mewdeko-halloween-triggered") === "true") {
+          if (safeSessionStorage.getItem("mewdeko-halloween-triggered") === "true") {
             halloweenTriggered = true;
           }
 
@@ -510,7 +511,7 @@
                   halloweenTriggered = false;
                   colorStore.reset();
                   colorStore.disableHalloweenDebug();
-                  sessionStorage.removeItem("mewdeko-halloween-triggered");
+                  safeSessionStorage.removeItem("mewdeko-halloween-triggered");
                 }
               };
             }
@@ -569,7 +570,7 @@
     $effect(() => {
         if (browser && $adminGuildsLoaded && $userAdminGuilds) {
             try {
-                const savedGuild = localStorage.getItem("lastSelectedGuild");
+                const savedGuild = safeLocalStorage.getItem("lastSelectedGuild");
                 if (savedGuild) {
                     const guildData = JSON.parse(savedGuild);
                     const restoredGuild = {
@@ -583,12 +584,12 @@
                         currentGuild.set(restoredGuild);
                     } else {
                         // Guild no longer available, clear saved data
-                        localStorage.removeItem("lastSelectedGuild");
+                        safeLocalStorage.removeItem("lastSelectedGuild");
                     }
                 }
             } catch (err) {
                 logger.error("Failed to restore saved guild after admin guilds loaded:", err);
-                localStorage.removeItem("lastSelectedGuild");
+                safeLocalStorage.removeItem("lastSelectedGuild");
             }
         }
     });

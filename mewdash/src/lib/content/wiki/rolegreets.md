@@ -55,7 +55,7 @@ Role greets support the user, server and bot placeholder groups. Channel placeho
 | `%server.time%`, `%time.day%` | Server time and weekday |
 | `%bot.name%`, `%bot.avatar%`, `%bot.id%` | The bot's name, avatar and ID |
 
-When invite tracking is enabled on the server, `%inviter.username%`, `%inviter.avatar%` and `%inviter.count%` are also filled in from the member's inviter. `%inviter.id%` and `%inviter.mention%` currently resolve to the greeted member rather than the inviter. If no inviter is known these read `Unknown`.
+When invite tracking is enabled on the server, the inviter and invite placeholders from Multi Greets (`%inviter.username%`, `%inviter.mention%`, `%inviter.count%`, `%invite.code%`, `%invite.label%` and the rest) are also filled in from the member's inviter. If no inviter is known these read `Unknown`.
 
 > [!EXAMPLE]
 > `Welcome to the team, %user.mention%! You are member number %server.members%. Check the pins in this channel first.`
