@@ -229,6 +229,25 @@ export interface FeatureUse {
   errors: number;
 }
 
+export interface GuildShape {
+  memberCount: number;
+  humans: number;
+  bots: number;
+  online: number;
+  boosts: number;
+  boostTier: number;
+  channels: number;
+  roles: number;
+  ownerId: string;
+  createdAt: string;
+}
+
+export interface CommandUse {
+  command: string;
+  count: number;
+  failures: number;
+}
+
 export interface GuildCard {
   guildId: string;
   name: string | null;
@@ -239,6 +258,24 @@ export interface GuildCard {
   commands: number;
   events: number;
   features: FeatureUse[];
+  shape: GuildShape | null;
+  configuredFeatures: string[];
+  enabledFeatures: string[];
+  topCommands: CommandUse[];
+}
+
+export interface GuildOverviewRow {
+  guildId: string;
+  name: string;
+  shard: number;
+  shape: GuildShape;
+  joinedAt: string | null;
+  commands: number;
+  events: number;
+  featuresUsed: number;
+  featuresConfigured: number;
+  featuresEnabled: number;
+  features: string[];
 }
 
 export interface FeatureAdoptionRow {

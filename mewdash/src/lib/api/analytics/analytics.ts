@@ -34,6 +34,7 @@ import type {
   GuildCard,
   GuildEventQuery,
   GuildEventRow,
+  GuildOverviewRow,
   GuildTimeline,
   InvocationPage,
   InvocationQuery,
@@ -153,6 +154,9 @@ export const analyticsApi = {
 
   serverSnapshots: (days = 30, bot?: string) =>
     apiRequest<SnapshotRow[]>(path("servers/snapshots", { days, bot })),
+
+  serverOverview: (q: TimeParams & { bot?: string; search?: string }) =>
+    apiRequest<GuildOverviewRow[]>(path("servers/overview", { ...q })),
 
   growthChurn: (q: FilterParams) =>
     apiRequest<ChurnSummary>(path("growth/churn", { ...q })),

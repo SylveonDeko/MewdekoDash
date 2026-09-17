@@ -23,6 +23,8 @@
   let featureRows = $derived((card?.features ?? []).map((f) => ({ name: f.feature, value: f.count })));
   let featureErrors = $derived((card?.features ?? []).reduce((a, f) => a + f.errors, 0));
   let featureUses = $derived((card?.features ?? []).reduce((a, f) => a + f.count, 0));
+  let enabledSet = $derived(new Set(card?.enabledFeatures ?? []));
+  let commandRows = $derived((card?.topCommands ?? []).map((c) => ({ name: c.command, value: c.count })));
 
   async function load() {
     const my = ++seq;
@@ -82,11 +84,60 @@
         <p class="tabular-nums" style="color: {$colorStore.text}">{n(card.events)}</p>
       </div>
     </div>
+    {#if card.shape}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Humans / bots</p>
+          <p class="tabular-nums" style="color: {$colorStore.text}">
+            {n(card.shape.humans)} / {n(card.shape.bots)}
+            <span class="text-xs" style="color: {$colorStore.muted}">({pct(card.shape.memberCount ? (card.shape.bots / card.shape.memberCount) * 100 : 0, 0)} bots)</span>
+          </p>
+        </div>
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Online</p>
+          <p class="tabular-nums" style="color: {$colorStore.text}">{n(card.shape.online)}</p>
+        </div>
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Boosts</p>
+          <p class="tabular-nums" style="color: {$colorStore.text}">{n(card.shape.boosts)} · tier {card.shape.boostTier}</p>
+        </div>
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Channels / roles</p>
+          <p class="tabular-nums" style="color: {$colorStore.text}">{n(card.shape.channels)} / {n(card.shape.roles)}</p>
+        </div>
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Owner</p>
+          <p class="font-mono text-xs" style="color: {$colorStore.text}">{card.shape.ownerId}</p>
+        </div>
+        <div>
+          <p class="text-xs" style="color: {$colorStore.muted}">Created</p>
+          <p style="color: {$colorStore.text}" title={stamp(card.shape.createdAt)}>{ago(card.shape.createdAt)}</p>
+        </div>
+      </div>
+    {/if}
+    <div>
+      <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">
+        Features configured · {card.configuredFeatures.length} · {card.enabledFeatures.length} enabled
+      </p>
+      {#if card.configuredFeatures.length === 0}
+        <p class="text-xs" style="color: {$colorStore.muted}">Nothing configured</p>
+      {:else}
+        <div class="flex flex-wrap gap-1">
+          {#each card.configuredFeatures as feature}
+            <Pill tone={enabledSet.has(feature) ? "ok" : "muted"} text={feature} />
+          {/each}
+        </div>
+      {/if}
+    </div>
     <div>
       <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">
         Features used · {n(featureUses)} uses · {pct(featureUses ? (featureErrors / featureUses) * 100 : 0)} err
       </p>
       <BreakdownBar rows={featureRows} max={12} empty="No feature use in range" />
+    </div>
+    <div>
+      <p class="text-xs uppercase tracking-wide mb-1" style="color: {$colorStore.muted}">Top commands in range</p>
+      <BreakdownBar rows={commandRows} max={10} empty="No commands in range" />
     </div>
   </div>
 {/if}

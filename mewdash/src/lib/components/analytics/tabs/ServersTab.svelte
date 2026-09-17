@@ -3,9 +3,9 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger";
   import { analyticsApi } from "$lib/api/analytics/analytics";
-  import type { BouncedGuildRow, ChurnSummary, RetentionPoint, SilentGuildRow, SnapshotRow } from "$lib/api/analytics/models";
+  import type { BouncedGuildRow, ChurnSummary, GuildOverviewRow, RetentionPoint, SilentGuildRow, SnapshotRow } from "$lib/api/analytics/models";
   import { analyticsFilters, analyticsRefreshTick, queryParams, timeParams } from "$lib/stores/analyticsFilters";
-  import { ago, dayLabel, duration, n, pct, stamp, utcParse } from "../format";
+  import { ago, compact, dayLabel, duration, n, pct, stamp, utcParse } from "../format";
   import { CRIT, GOOD } from "../palette";
   import AnalyticsTile from "../AnalyticsTile.svelte";
   import AnalyticsChart from "../AnalyticsChart.svelte";
@@ -27,9 +27,49 @@
   let bouncedLoading = $state(true);
   let silent = $state<SilentGuildRow[]>([]);
   let silentLoading = $state(true);
+  let overview = $state<GuildOverviewRow[]>([]);
+  let overviewLoading = $state(true);
+  let overviewSearch = $state("");
   let drillGuild = $state("");
   let drillOpen = $state(false);
   let seq = 0;
+  let overviewSeq = 0;
+
+  let overviewRows = $derived.by(() => {
+    const q = overviewSearch.trim().toLowerCase();
+    if (!q) return overview;
+    return overview.filter((r) => r.name.toLowerCase().includes(q) || r.guildId.includes(q));
+  });
+  let overviewTotals = $derived.by(() => {
+    let humans = 0;
+    let bots = 0;
+    let configured = 0;
+    for (const r of overview) {
+      humans += r.shape.humans;
+      bots += r.shape.bots;
+      if (r.featuresConfigured > 0) configured++;
+    }
+    return { humans, bots, configured };
+  });
+
+  function botTone(r: GuildOverviewRow): "ok" | "warn" | "crit" | "muted" | null {
+    const ratio = r.shape.memberCount ? r.shape.bots / r.shape.memberCount : 0;
+    return ratio >= 0.5 ? "crit" : ratio >= 0.25 ? "warn" : null;
+  }
+
+  const overviewColumns: Column<GuildOverviewRow>[] = [
+    { key: "name", label: "Server", format: (r) => r.name, title: (r) => r.guildId },
+    { key: "memberCount", label: "Members", num: true, format: (r) => n(r.shape.memberCount), sortValue: (r) => r.shape.memberCount },
+    { key: "humans", label: "Humans", num: true, format: (r) => n(r.shape.humans), sortValue: (r) => r.shape.humans },
+    { key: "bots", label: "Bots", num: true, format: (r) => `${n(r.shape.bots)} · ${pct(r.shape.memberCount ? (r.shape.bots / r.shape.memberCount) * 100 : 0, 0)}`, sortValue: (r) => r.shape.bots, tone: botTone },
+    { key: "online", label: "Online", num: true, format: (r) => n(r.shape.online), sortValue: (r) => r.shape.online },
+    { key: "boosts", label: "Boosts", num: true, format: (r) => (r.shape.boosts ? `${n(r.shape.boosts)} · T${r.shape.boostTier}` : "—"), sortValue: (r) => r.shape.boosts },
+    { key: "commands", label: "Commands", num: true, format: (r) => compact(r.commands) },
+    { key: "events", label: "Events", num: true, format: (r) => compact(r.events) },
+    { key: "featuresUsed", label: "Features", num: true, format: (r) => `${r.featuresUsed} used · ${r.featuresEnabled}/${r.featuresConfigured} on`, title: (r) => r.features.join(", ") || "none used in range" },
+    { key: "shard", label: "Shard", num: true, muted: true },
+    { key: "joinedAt", label: "Joined", muted: true, format: (r) => (r.joinedAt ? ago(r.joinedAt) : "—"), sortValue: (r) => (r.joinedAt ? utcParse(r.joinedAt) : null) },
+  ];
 
   let byDay = $derived.by(() => {
     const map = new Map<string, { guilds: number; users: number }>();
@@ -91,6 +131,23 @@
     snapshotsLoading = churnLoading = retentionLoading = bouncedLoading = silentLoading = false;
   }
 
+  async function loadOverview() {
+    const my = ++overviewSeq;
+    const f = $analyticsFilters;
+    overviewLoading = true;
+    try {
+      const rows = await analyticsApi.serverOverview({ ...timeParams(f), bot: f.bot || undefined });
+      if (my !== overviewSeq) return;
+      overview = rows ?? [];
+    } catch (err) {
+      if (my !== overviewSeq) return;
+      logger.warn("Server overview failed", err);
+      overview = [];
+    } finally {
+      if (my === overviewSeq) overviewLoading = false;
+    }
+  }
+
   function drill(guildId: string) {
     drillGuild = guildId;
     drillOpen = true;
@@ -99,6 +156,7 @@
   $effect(() => {
     void [$analyticsFilters, $analyticsRefreshTick];
     void load();
+    void loadOverview();
   });
 </script>
 
@@ -155,6 +213,20 @@
       <AnalyticsChart metric="guild.join" agg="sum" groupBy="size" filters={["bot", "shard"]} type="bar" stack unit="guilds" height={200} />
     </Card>
   </div>
+
+  <Card title="Server overview" note="{n(overviewRows.length)} of {n(overview.length)} · {compact(overviewTotals.humans)} humans · {compact(overviewTotals.bots)} bots · {n(overviewTotals.configured)} configured · row → card">
+    {#snippet actions()}
+      <input
+        type="search"
+        class="min-h-[36px] rounded-lg border px-2 text-xs"
+        style="background: {$colorStore.primary}08; color: {$colorStore.text}; border-color: {$colorStore.primary}20;"
+        placeholder="name or id"
+        bind:value={overviewSearch}
+        aria-label="Search servers"
+      />
+    {/snippet}
+    <AnalyticsTable columns={overviewColumns} rows={overviewRows} loading={overviewLoading} empty="No servers" sortKey="memberCount" pageSize={25} onRowClick={(r) => drill(r.guildId)} />
+  </Card>
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
     <Card title="Bounced guilds" note="row → card">
