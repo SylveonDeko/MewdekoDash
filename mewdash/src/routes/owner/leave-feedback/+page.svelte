@@ -285,6 +285,7 @@
   icon="fa-comments"
   subtitle="Why servers removed the bot, straight from their owners"
   title="Leave Feedback"
+  basePath="/owner/leave-feedback"
   {tabs}
   bind:activeTab
 >

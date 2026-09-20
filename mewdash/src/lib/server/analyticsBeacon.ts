@@ -10,7 +10,7 @@ const FLUSH_MS = 10_000;
 const FLUSH_AT_ROWS = 200;
 const MAX_BUFFER = 2_000;
 
-const SKIP_PREFIXES = ["/api/", "/cdn/", "/_app/", "/dashboard/analytics"];
+const SKIP_PREFIXES = ["/api/", "/cdn/", "/_app/", "/owner/analytics"];
 const STATIC_FILE = /\.(?:js|mjs|css|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|txt|xml|json|webmanifest)$/i;
 
 let buffer: PageViewSample[] = [];

@@ -4,7 +4,7 @@ slug: process-logs
 summary: A bot owner only dashboard page that lists the processes pm2 runs on the bot's host and lets you read, follow, filter and download their console logs.
 icon: fa-rectangle-code
 category: Analytics
-dashboard: /dashboard/process-logs
+dashboard: /owner/process-logs
 tags: [pm2, logs, console, stdout, stderr, tail, process, crash, stack trace, owner]
 related: [performance, analytics, leave-feedback]
 ---

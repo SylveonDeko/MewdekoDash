@@ -16,7 +16,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const pagesDir = path.join(root, "src/routes/dashboard");
+/** The route groups holding pages, keyed by the URL prefix their folders sit under. */
+const pageRoots = {
+  "/dashboard": path.join(root, "src/routes/dashboard"),
+  "/owner": path.join(root, "src/routes/owner"),
+};
 const outFile = path.join(root, "src/lib/config/dashboardTabIndex.json");
 
 /**
@@ -117,19 +121,23 @@ function extractCollection(source, name) {
 function build() {
   const index = {};
 
-  for (const dir of fs.readdirSync(pagesDir, { withFileTypes: true })) {
-    if (!dir.isDirectory()) continue;
+  for (const [prefix, pagesDir] of Object.entries(pageRoots)) {
+    if (!fs.existsSync(pagesDir)) continue;
 
-    const pageFile = path.join(pagesDir, dir.name, "+page.svelte");
-    if (!fs.existsSync(pageFile)) continue;
+    for (const dir of fs.readdirSync(pagesDir, { withFileTypes: true })) {
+      if (!dir.isDirectory()) continue;
 
-    const source = fs.readFileSync(pageFile, "utf8");
-    const tabs = extractCollection(source, "tabs");
-    const subTabs = extractCollection(source, "subTabs");
+      const pageFile = path.join(pagesDir, dir.name, "+page.svelte");
+      if (!fs.existsSync(pageFile)) continue;
 
-    if (!tabs.length && !subTabs.length) continue;
+      const source = fs.readFileSync(pageFile, "utf8");
+      const tabs = extractCollection(source, "tabs");
+      const subTabs = extractCollection(source, "subTabs");
 
-    index[`/dashboard/${dir.name}`] = subTabs.length ? { tabs, subTabs } : { tabs };
+      if (!tabs.length && !subTabs.length) continue;
+
+      index[`${prefix}/${dir.name}`] = subTabs.length ? { tabs, subTabs } : { tabs };
+    }
   }
 
   return index;

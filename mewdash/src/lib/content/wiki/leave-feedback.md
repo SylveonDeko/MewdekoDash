@@ -4,7 +4,7 @@ slug: leave-feedback
 summary: When a server removes the bot, its owner gets a DM asking why. The answers are collected on an owner-only dashboard page.
 icon: fa-comments
 category: Analytics
-dashboard: /dashboard/leave-feedback
+dashboard: /owner/leave-feedback
 tags: [leave feedback, kick feedback, why removed, churn, exit survey, owner only, bot owner]
 related: [invites]
 ---

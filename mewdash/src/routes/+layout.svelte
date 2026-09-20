@@ -30,7 +30,7 @@
       }
 
       // Skip color extraction on dashboard pages as they use server icons
-    if (page.url.pathname.startsWith("/dashboard")) {
+    if (page.url.pathname.startsWith("/dashboard") || page.url.pathname.startsWith("/owner")) {
       return;
     }
 

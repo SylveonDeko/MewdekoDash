@@ -42,6 +42,7 @@
   subtitle="Monitor system resources, method performance, event processing, and module metrics"
   title="Performance"
   guildName="Bot Performance Dashboard"
+  basePath="/owner/performance"
   tabs={tabs}
   bind:activeTab
 >

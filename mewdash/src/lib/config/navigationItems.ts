@@ -9,6 +9,10 @@ export interface NavigationItem {
    * features alphabetically and does not group by this.
    */
   category: string;
+  /**
+   * Bot owner tools. These live under /owner rather than /dashboard, and the sidebar shows a
+   * single Owner Panel link instead of listing them.
+   */
   ownerOnly?: boolean;
   description?: string;
   /**
@@ -276,48 +280,12 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["patreon", "supporters", "donations", "premium"],
   },
   {
-    label: "Leave Feedback",
-    icon: "fa-utility-duo fa-regular fa-comments",
-    href: "/dashboard/leave-feedback",
-    category: "Analytics",
-    description: "Why servers removed the bot, answered by their owners",
-    ownerOnly: true,
-    keywords: ["leave feedback", "kick feedback", "why removed", "churn", "exit survey"],
-  },
-  {
     label: "Feature Requests",
     icon: "fa-utility-duo fa-regular fa-lightbulb",
     href: "/dashboard/feature-requests",
     category: "Community",
     description: "Suggest features, report bugs, and upvote what others asked for",
     keywords: ["feature request", "suggest", "suggestion", "idea", "bug report", "feedback", "roadmap", "upvote"],
-  },
-  {
-    label: "Analytics",
-    icon: "fa-utility-duo fa-regular fa-chart-simple",
-    href: "/dashboard/analytics",
-    category: "Analytics",
-    description: "Fleet telemetry, commands, events, errors, growth and alerts",
-    ownerOnly: true,
-    keywords: ["analytics", "telemetry", "metrics", "commands", "events", "errors", "growth", "alerts", "shards", "latency"],
-  },
-  {
-    label: "Performance",
-    icon: "fa-utility-duo fa-regular fa-clock",
-    href: "/dashboard/performance",
-    category: "Analytics",
-    description: "Bot performance metrics",
-    ownerOnly: true,
-    keywords: ["performance", "metrics", "cpu", "memory", "latency", "monitoring"],
-  },
-  {
-    label: "Process Logs",
-    icon: "fa-utility-duo fa-regular fa-rectangle-code",
-    href: "/dashboard/process-logs",
-    category: "Analytics",
-    description: "Read and follow the pm2 logs on the bot's host",
-    ownerOnly: true,
-    keywords: ["pm2", "logs", "console", "stdout", "stderr", "tail", "process", "crash", "stack trace"],
   },
   {
     label: "Repeaters",
@@ -470,3 +438,56 @@ export const categoryOrder = [
   "Analytics",
   "Settings",
 ];
+
+/**
+ * Bot owner tools, which live under /owner with their own sidebar rather than being mixed into the
+ * per-server feature list. Every entry is owner only; the flag is set once below so search and the
+ * access page keep treating them that way.
+ */
+export const ownerFeatures: NavigationItem[] = [
+  {
+    label: "Docker",
+    icon: "fa-utility-duo fa-regular fa-box",
+    href: "/owner/docker",
+    category: "Analytics",
+    description: "Containers and compose projects on the bot's host",
+    keywords: ["docker", "containers", "compose", "images", "restart", "stop", "start", "selfhost", "fleet"],
+  },
+  {
+    label: "Leave Feedback",
+    icon: "fa-utility-duo fa-regular fa-comments",
+    href: "/owner/leave-feedback",
+    category: "Analytics",
+    description: "Why servers removed the bot, answered by their owners",
+    keywords: ["leave feedback", "kick feedback", "why removed", "churn", "exit survey"],
+  },
+  {
+    label: "Analytics",
+    icon: "fa-utility-duo fa-regular fa-chart-simple",
+    href: "/owner/analytics",
+    category: "Analytics",
+    description: "Fleet telemetry, commands, events, errors, growth and alerts",
+    keywords: ["analytics", "telemetry", "metrics", "commands", "events", "errors", "growth", "alerts", "shards", "latency"],
+  },
+  {
+    label: "Performance",
+    icon: "fa-utility-duo fa-regular fa-clock",
+    href: "/owner/performance",
+    category: "Analytics",
+    description: "Bot performance metrics",
+    keywords: ["performance", "metrics", "cpu", "memory", "latency", "monitoring"],
+  },
+  {
+    label: "Process Logs",
+    icon: "fa-utility-duo fa-regular fa-rectangle-code",
+    href: "/owner/process-logs",
+    category: "Analytics",
+    description: "Read and follow the pm2 logs on the bot's host",
+    keywords: ["pm2", "logs", "console", "stdout", "stderr", "tail", "process", "crash", "stack trace"],
+  },
+].map(item => ({ ...item, ownerOnly: true }));
+
+/**
+ * Both lists together, for lookups by href that do not care which area a page lives in.
+ */
+export const allFeatures: NavigationItem[] = [...allDashboardFeatures, ...ownerFeatures];

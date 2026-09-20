@@ -68,8 +68,9 @@
    * alphabetical in several places as features were appended next to related ones.
    */
   let filteredFeatures = $derived.by(() => {
-    // Dashboard Access is pinned above this list alongside the Dashboard Home link.
-    let features = allDashboardFeatures.filter(item => (!item.ownerOnly || isOwner) && item.href !== "/dashboard/access");
+    // Dashboard Access is pinned above this list alongside the Dashboard Home link. Owner tools
+    // are not in this list at all: they live under /owner behind the Owner Panel link below.
+    let features = allDashboardFeatures.filter(item => item.href !== "/dashboard/access");
 
     if (searchTerm.trim()) {
       features = features.filter(f =>
@@ -675,6 +676,27 @@
             <span class="text-[15px] font-medium">Dashboard Access</span>
           {/if}
         </a>
+
+        {#if isOwner}
+          <a
+            href="/owner"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+            style="background: transparent; color: {$colorStore.muted}; border: 1px solid transparent;"
+            onmouseenter={(e) => showTooltip(e, 'Owner Panel')}
+            onmouseleave={hideTooltip}
+          >
+            <i class="fa-utility-duo fa-regular fa-crown text-base shrink-0"
+               style="--fa-primary-color: {$colorStore.accent};
+                      --fa-secondary-color: {$colorStore.accent};
+                      --fa-secondary-opacity: 0.4;
+                      width: 20px; text-align: center;"
+               aria-hidden="true"></i>
+            {#if !collapsed}
+              <span class="text-[15px] font-medium flex-1">Owner Panel</span>
+              <i class="fa-solid fa-arrow-right text-[10px]" style="color: {$colorStore.muted};" aria-hidden="true"></i>
+            {/if}
+          </a>
+        {/if}
 
         <button
           type="button"

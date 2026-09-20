@@ -1,6 +1,6 @@
 // lib/stores/searchStore.ts
 import { writable } from 'svelte/store';
-import { allDashboardFeatures, type NavigationItem } from '$lib/config/navigationItems';
+import { allFeatures, type NavigationItem } from '$lib/config/navigationItems';
 import dashboardTabIndex from '$lib/config/dashboardTabIndex.json';
 
 export interface SearchableItem {
@@ -117,7 +117,7 @@ const tabForCategory: Record<string, string> = {
  * single source of truth so a feature added to the nav is findable immediately.
  */
 function toSearchableItem(item: NavigationItem): SearchableItem {
-  const slug = item.href.replace(/^\/dashboard\/?/, '') || 'home';
+  const slug = item.href.replace(/^\/(?:dashboard|owner)\/?/, '') || 'home';
 
   return {
     id: `feature-${slug}`,
@@ -133,7 +133,7 @@ function toSearchableItem(item: NavigationItem): SearchableItem {
   };
 }
 
-const featureSearchItems: SearchableItem[] = allDashboardFeatures.map(toSearchableItem);
+const featureSearchItems: SearchableItem[] = allFeatures.map(toSearchableItem);
 
 interface IndexedTab {
   id: string;
@@ -149,7 +149,7 @@ interface IndexedTab {
 const pageTabSearchItems: SearchableItem[] = Object.entries(
   dashboardTabIndex as Record<string, { tabs: IndexedTab[]; subTabs?: IndexedTab[] }>
 ).flatMap(([basePath, entry]) => {
-  const feature = allDashboardFeatures.find(item => item.href === basePath);
+  const feature = allFeatures.find(item => item.href === basePath);
   if (!feature) return [];
 
   return [...entry.tabs, ...(entry.subTabs ?? [])].map(tab => ({
@@ -189,7 +189,7 @@ export function registerTabFeatures(
   category: string = 'Settings'
 ) {
   const features: SearchableItem[] = [];
-  const ownerOnly = allDashboardFeatures.find(f => f.href === basePath)?.ownerOnly;
+  const ownerOnly = allFeatures.find(f => f.href === basePath)?.ownerOnly;
 
   // Register main tabs as features
   tabs.forEach(tab => {

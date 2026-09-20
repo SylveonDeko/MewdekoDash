@@ -4,7 +4,7 @@ slug: analytics
 summary: A bot owner only dashboard page with stored history of commands, gateway events, latency, errors, server growth, feature adoption, AI and music use, website traffic, and webhook alert rules.
 icon: fa-chart-simple
 category: Analytics
-dashboard: /dashboard/analytics
+dashboard: /owner/analytics
 tags: [analytics, metrics, telemetry, commands, events, latency, errors, growth, alerts, shards, owner]
 related: [performance, leave-feedback, administration]
 ---

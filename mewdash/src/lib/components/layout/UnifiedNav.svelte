@@ -125,8 +125,10 @@ A unified navigation component that provides responsive navigation with server a
   }>>({});
 
   // Computed - only access page in browser
-  let isDashboard = $derived(browser ? page.url.pathname.startsWith("/dashboard") : false);
   let current = $derived(browser ? page.url.pathname : "");
+  /** The owner area is a sidebar layout like the dashboard, so the nav treats both the same. */
+  let isDashboard = $derived(current.startsWith("/dashboard") || current.startsWith("/owner"));
+  let isOwnerArea = $derived(current.startsWith("/owner"));
   let isMinimalMode = $derived(isDashboard); // Use minimal mode for dashboard pages
   let musicStatus = $derived($musicStore.status);
   let showMiniPlayer = $derived(isMinimalMode && musicStatus?.CurrentTrack && current !== "/dashboard/music");
@@ -681,7 +683,7 @@ A unified navigation component that provides responsive navigation with server a
              class:lg:hidden={isDashboard}>
         <a
                 class="flex items-center py-1 justify-start"
-          href={isDashboard ? "/dashboard" : "/"}
+          href={isOwnerArea ? "/owner" : isDashboard ? "/dashboard" : "/"}
           title="Mewdeko"
         >
           <img

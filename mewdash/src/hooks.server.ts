@@ -17,6 +17,16 @@ Sentry.init({
 
 logBackendJwtInit();
 
+/**
+ * Dashboard paths the bot owner tools lived under before they moved to /owner.
+ */
+const LEGACY_OWNER_PATHS = [
+  "/dashboard/analytics",
+  "/dashboard/performance",
+  "/dashboard/process-logs",
+  "/dashboard/leave-feedback",
+];
+
 const appHandle: Handle = async ({ event, resolve }) => {
   try {
     // Skip authentication for auth-related endpoints to prevent interference
@@ -30,6 +40,16 @@ const appHandle: Handle = async ({ event, resolve }) => {
       pathname.startsWith("/cdn/")
     ) {
       return resolve(event);
+    }
+
+    // Owner tools moved from /dashboard to /owner. Bookmarks and Discord embeds still carry the
+    // old paths, so send them on rather than 404.
+    const legacyOwnerPath = LEGACY_OWNER_PATHS.find(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
+    if (legacyOwnerPath) {
+      const target = `/owner${pathname.slice("/dashboard".length)}${event.url.search}`;
+      return new Response(null, { status: 301, headers: { Location: target } });
     }
 
     // Get user authentication

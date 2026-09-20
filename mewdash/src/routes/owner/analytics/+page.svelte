@@ -73,6 +73,7 @@
   subtitle="Fleet telemetry, commands, events, errors, growth and alerts"
   guildName="Owner analytics"
   category="Analytics"
+  basePath="/owner/analytics"
   {tabs}
   bind:activeTab
   ontabChange={onTabChange}

@@ -4,7 +4,7 @@ slug: performance
 summary: A bot owner only dashboard page showing CPU, memory, uptime, the slowest methods, and how many Discord events each module is processing and failing.
 icon: fa-clock
 category: Analytics
-dashboard: /dashboard/performance
+dashboard: /owner/performance
 tags: [performance, metrics, cpu, memory, latency, monitoring, uptime, events, modules, owner]
 related: [analytics, leave-feedback, administration]
 ---

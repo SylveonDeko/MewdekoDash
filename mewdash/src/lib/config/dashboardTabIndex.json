@@ -47,70 +47,6 @@
       }
     ]
   },
-  "/dashboard/analytics": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-gauge-high"
-      },
-      {
-        "id": "commands",
-        "label": "Commands",
-        "icon": "fa-terminal"
-      },
-      {
-        "id": "events",
-        "label": "Events",
-        "icon": "fa-bolt"
-      },
-      {
-        "id": "latency",
-        "label": "Latency",
-        "icon": "fa-stopwatch"
-      },
-      {
-        "id": "servers",
-        "label": "Servers",
-        "icon": "fa-server"
-      },
-      {
-        "id": "guilds",
-        "label": "Guilds",
-        "icon": "fa-people-group"
-      },
-      {
-        "id": "features",
-        "label": "Features",
-        "icon": "fa-puzzle-piece"
-      },
-      {
-        "id": "ai",
-        "label": "AI",
-        "icon": "fa-robot"
-      },
-      {
-        "id": "music",
-        "label": "Music",
-        "icon": "fa-music"
-      },
-      {
-        "id": "website",
-        "label": "Website",
-        "icon": "fa-globe"
-      },
-      {
-        "id": "alerts",
-        "label": "Alerts",
-        "icon": "fa-bell"
-      },
-      {
-        "id": "pipeline",
-        "label": "Pipeline",
-        "icon": "fa-diagram-project"
-      }
-    ]
-  },
   "/dashboard/birthday": {
     "tabs": [
       {
@@ -412,20 +348,6 @@
       }
     ]
   },
-  "/dashboard/leave-feedback": {
-    "tabs": [
-      {
-        "id": "responses",
-        "label": "Responses",
-        "icon": "fa-comments"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
-        "icon": "fa-cog"
-      }
-    ]
-  },
   "/dashboard/liveboards": {
     "tabs": [
       {
@@ -568,30 +490,6 @@
         "id": "settings",
         "label": "Configuration",
         "icon": "fa-gear"
-      }
-    ]
-  },
-  "/dashboard/performance": {
-    "tabs": [
-      {
-        "id": "overview",
-        "label": "Overview",
-        "icon": "fa-chart-bar"
-      },
-      {
-        "id": "methods",
-        "label": "Methods",
-        "icon": "fa-clock"
-      },
-      {
-        "id": "events",
-        "label": "Events",
-        "icon": "fa-bell"
-      },
-      {
-        "id": "modules",
-        "label": "Modules",
-        "icon": "fa-square"
       }
     ]
   },
@@ -1011,6 +909,108 @@
         "id": "exclusions",
         "label": "Exclusions",
         "icon": "fa-bell"
+      }
+    ]
+  },
+  "/owner/analytics": {
+    "tabs": [
+      {
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-gauge-high"
+      },
+      {
+        "id": "commands",
+        "label": "Commands",
+        "icon": "fa-terminal"
+      },
+      {
+        "id": "events",
+        "label": "Events",
+        "icon": "fa-bolt"
+      },
+      {
+        "id": "latency",
+        "label": "Latency",
+        "icon": "fa-stopwatch"
+      },
+      {
+        "id": "servers",
+        "label": "Servers",
+        "icon": "fa-server"
+      },
+      {
+        "id": "guilds",
+        "label": "Guilds",
+        "icon": "fa-people-group"
+      },
+      {
+        "id": "features",
+        "label": "Features",
+        "icon": "fa-puzzle-piece"
+      },
+      {
+        "id": "ai",
+        "label": "AI",
+        "icon": "fa-robot"
+      },
+      {
+        "id": "music",
+        "label": "Music",
+        "icon": "fa-music"
+      },
+      {
+        "id": "website",
+        "label": "Website",
+        "icon": "fa-globe"
+      },
+      {
+        "id": "alerts",
+        "label": "Alerts",
+        "icon": "fa-bell"
+      },
+      {
+        "id": "pipeline",
+        "label": "Pipeline",
+        "icon": "fa-diagram-project"
+      }
+    ]
+  },
+  "/owner/leave-feedback": {
+    "tabs": [
+      {
+        "id": "responses",
+        "label": "Responses",
+        "icon": "fa-comments"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-cog"
+      }
+    ]
+  },
+  "/owner/performance": {
+    "tabs": [
+      {
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-chart-bar"
+      },
+      {
+        "id": "methods",
+        "label": "Methods",
+        "icon": "fa-clock"
+      },
+      {
+        "id": "events",
+        "label": "Events",
+        "icon": "fa-bell"
+      },
+      {
+        "id": "modules",
+        "label": "Modules",
+        "icon": "fa-square"
       }
     ]
   }
