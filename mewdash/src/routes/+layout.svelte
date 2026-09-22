@@ -96,7 +96,7 @@
         if (!browser) return;
 
     const currentPathname = page.url.pathname;
-    const isOnDashboard = currentPathname.startsWith("/dashboard");
+    const isOnDashboard = currentPathname.startsWith("/dashboard") || currentPathname.startsWith("/owner");
 
     // Detect transition from dashboard to non-dashboard
     const transitionedFromDashboard = wasOnDashboard && !isOnDashboard;
@@ -173,7 +173,7 @@
   <meta content="index, follow" name="robots" />
 </svelte:head>
 
-{#if !page.url.pathname.startsWith("/dashboard")}
+{#if !page.url.pathname.startsWith("/dashboard") && !page.url.pathname.startsWith("/owner")}
   <UnifiedNav data={data} items={navItems} />
 {:else}
   <div class="lg:hidden">

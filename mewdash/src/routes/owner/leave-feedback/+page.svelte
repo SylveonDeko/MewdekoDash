@@ -497,11 +497,11 @@
   {:else}
     <!-- Desktop table -->
     <div
-      class="hidden md:block rounded-2xl border overflow-hidden"
+      class="hidden md:block rounded-2xl border overflow-x-auto"
       style="border-color: {$colorStore.primary}30;"
       in:fade={{ duration: 200 }}
     >
-      <table class="w-full text-sm">
+      <table class="w-full min-w-[640px] text-sm">
         <thead>
           <tr style="background: {$colorStore.primary}15;">
             <th class="text-left font-semibold px-4 py-3" style="color: {$colorStore.text}">Left</th>
