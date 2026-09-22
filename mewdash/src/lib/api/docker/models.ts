@@ -19,8 +19,8 @@ export type DockerJobStatus = (typeof DockerJobStatus)[keyof typeof DockerJobSta
 /** A container state change the daemon can be asked for. */
 export type DockerContainerAction = "start" | "stop" | "restart";
 
-/** A compose operation the bot can run on a project. */
-export type DockerComposeOperation = "pull" | "up" | "update" | "build";
+/** A compose operation the bot can run on a project: fetch newer images, bring up, or both. */
+export type DockerComposeOperation = "pull" | "up" | "update";
 
 /** One container as the daemon lists it. */
 export interface DockerContainerInfo {
@@ -106,10 +106,43 @@ export interface DockerActionResult {
   message?: string;
 }
 
-/** A compose operation running in the background on the bot's host. */
+/** The newest image published for the bot, as Docker Hub reports it. */
+export interface DockerPublishedImage {
+  repository: string;
+  tag: string;
+  /** The commit the tag points at, when a sha tag shares its digest. */
+  gitSha?: string;
+  digest?: string;
+  publishedAt?: string;
+  checkedAt: string;
+  /** Why the registry could not be queried, or absent when it answered. */
+  error?: string;
+}
+
+/** What one bot instance runs and whether a newer image is published. */
+export interface DockerSelfInfo {
+  botVersion: string;
+  gitSha?: string;
+  buildDate?: string;
+  startedAt: string;
+  /** The container the instance runs in, or absent when it runs directly on the host. */
+  container?: DockerContainerInfo;
+  project?: DockerComposeProject;
+  published?: DockerPublishedImage;
+  /** True when a newer commit is published, false when current, absent when either side is unknown. */
+  updateAvailable?: boolean;
+  canUpdate: boolean;
+  updateBlockedReason?: string;
+}
+
+/** A compose operation running in a helper container on the bot's host. */
 export interface DockerJob {
+  /** The helper container's id, also the id to poll with. */
   id: string;
+  name: string;
   project: string;
+  /** The services the job was limited to, empty for the whole project. */
+  services: string[];
   operation: string;
   command: string;
   status: DockerJobStatus;

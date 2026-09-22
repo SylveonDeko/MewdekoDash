@@ -70,6 +70,7 @@ export { utilityApi } from "./utility/utility";
 export { analyticsApi } from "./analytics/analytics";
 export { pm2Api } from "./pm2/pm2";
 export { dockerApi } from "./docker/docker";
+export { botHellApi } from "./bothell/bothell";
 
 // Re-export all models
 export * from "./client/models";
@@ -138,3 +139,4 @@ export * from "./dashboardaccess/models";
 export * from "./analytics/models";
 export * from "./pm2/models";
 export * from "./docker/models";
+export * from "./bothell/models";

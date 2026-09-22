@@ -454,6 +454,14 @@ export const ownerFeatures: NavigationItem[] = [
     keywords: ["docker", "containers", "compose", "images", "restart", "stop", "start", "selfhost", "fleet"],
   },
   {
+    label: "Bot Hells",
+    icon: "fa-utility-duo fa-regular fa-robot",
+    href: "/owner/bot-hells",
+    category: "Analytics",
+    description: "Servers littered with bots, with bulk leave",
+    keywords: ["bot hell", "bot farm", "bots", "bot ratio", "leave", "bulk leave", "spam servers"],
+  },
+  {
     label: "Leave Feedback",
     icon: "fa-utility-duo fa-regular fa-comments",
     href: "/owner/leave-feedback",

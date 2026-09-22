@@ -3,7 +3,7 @@
   import { onMount, tick } from "svelte";
   import { goto } from "$app/navigation";
   import { slide } from "svelte/transition";
-  import { dockerApi, ownershipApi } from "$lib/api/index.ts";
+  import { type BotInstance, dockerApi, instanceManagementApi, ownershipApi } from "$lib/api/index.ts";
   import { ApiError } from "$lib/api/core";
   import {
     DockerAvailability,
@@ -16,6 +16,7 @@
     type DockerJob,
     type DockerLogLine,
     type DockerOverview,
+    type DockerSelfInfo,
   } from "$lib/api/docker/models";
   import { currentInstance } from "$lib/stores/instanceStore.ts";
   import { colorStore } from "$lib/stores/colorStore";
@@ -50,6 +51,14 @@
     containers: DockerContainerInfo[];
   }
 
+  /** One registered bot instance and what it reported about its own build. */
+  interface FleetEntry {
+    instance: BotInstance;
+    info: DockerSelfInfo | null;
+    error: string | null;
+    loading: boolean;
+  }
+
   const OVERVIEW_REFRESH_MS = 10000;
   const LOG_POLL_MS = 2000;
   const JOB_POLL_MS = 1500;
@@ -80,6 +89,17 @@
   let activeJob = $state<DockerJob | null>(null);
   let jobPanel = $state<HTMLDivElement | null>(null);
   let startingJob = $state<string | null>(null);
+
+  let fleet = $state<FleetEntry[]>([]);
+  let fleetLoading = $state(true);
+  let fleetChecking = $state(false);
+  let fleetError = $state<string | null>(null);
+  let updatingPorts = $state<Record<number, boolean>>({});
+  let updatingAll = $state(false);
+
+  let jobRunning = $derived(activeJob?.status === DockerJobStatus.Running);
+  let fleetUpdatesAvailable = $derived(fleet.filter((e) => e.info?.updateAvailable).length);
+  let fleetCanUpdateAll = $derived(fleet.some((e) => e.info?.canUpdate && e.instance.port === $currentInstance?.port));
 
   let selectedId = $state<string | null>(null);
   let lineCount = $state(300);
@@ -280,14 +300,133 @@
     }
   }
 
+  /**
+   * Asks every registered instance what it runs. Each bot answers for itself through the proxy
+   * with its own port header, so bots on other hosts are covered too, though only containers on
+   * the selected instance's host can be opened in the log viewer below.
+   */
+  async function loadFleet(refresh = false) {
+    try {
+      if (fleet.length === 0) fleetLoading = true;
+      fleetChecking = true;
+      fleetError = null;
+      const instances = (await instanceManagementApi.getBotInstances()) || [];
+      const byPort = new Map(fleet.map((e) => [e.instance.port, e]));
+      fleet = instances.map((instance) => ({
+        instance,
+        info: byPort.get(instance.port)?.info ?? null,
+        error: null,
+        loading: true,
+      }));
+
+      await Promise.all(
+        fleet.map(async (entry) => {
+          try {
+            const info = await dockerApi.getSelf(entry.instance.port, refresh);
+            fleet = fleet.map((e) => (e.instance.port === entry.instance.port ? { ...e, info, error: null, loading: false } : e));
+          } catch (err) {
+            logger.debug("Fleet probe failed for", entry.instance.botName, err);
+            const error = describeError(err, "Did not answer");
+            fleet = fleet.map((e) => (e.instance.port === entry.instance.port ? { ...e, error, loading: false } : e));
+          }
+        }),
+      );
+    } catch (err) {
+      logger.error("Failed to load the instance list:", err);
+      fleetError = describeError(err, "Failed to load the instance list");
+    } finally {
+      fleetLoading = false;
+      fleetChecking = false;
+    }
+  }
+
+  function versionLabel(info: DockerSelfInfo): string {
+    return info.gitSha ? info.gitSha.slice(0, 7) : `v${info.botVersion}`;
+  }
+
+  function updateTone(info: DockerSelfInfo): PillTone {
+    if (info.updateAvailable === true) return "warn";
+    if (info.updateAvailable === false) return "ok";
+    return "muted";
+  }
+
+  function updateLabel(info: DockerSelfInfo): string {
+    if (info.updateAvailable === true) return `update to ${info.published?.gitSha ?? "newer"}`;
+    if (info.updateAvailable === false) return "up to date";
+    if (info.published?.error) return "registry unreachable";
+    return "unknown";
+  }
+
+  async function updateBot(entry: FleetEntry) {
+    if (updatingPorts[entry.instance.port] || jobRunning) return;
+    const name = entry.instance.botName;
+    const target = entry.info?.published?.gitSha ?? "the newest image";
+    const confirmed = await requestConfirmation({
+      title: `Update ${name}?`,
+      message: `Pull ${target} and recreate ${name}'s container. The bot goes offline for the restart, usually a minute or two.`,
+      confirmText: "Update",
+      variant: "warning",
+    });
+    if (!confirmed) return;
+
+    updatingPorts = { ...updatingPorts, [entry.instance.port]: true };
+    try {
+      const job = await dockerApi.updateSelf(entry.instance.port);
+      activeJob = job;
+      jobs = [job, ...jobs.filter((j) => j.id !== job.id)];
+      actionNotice = { text: `${name}: update started`, ok: true };
+    } catch (err) {
+      logger.error("Failed to start update:", err);
+      actionNotice = { text: `${name}: ${describeError(err, "Could not start the update")}`, ok: false };
+    } finally {
+      const { [entry.instance.port]: _, ...rest } = updatingPorts;
+      updatingPorts = rest;
+    }
+  }
+
+  async function updateEverything() {
+    if (updatingAll || jobRunning) return;
+    const names = fleet.filter((e) => e.info?.canUpdate).map((e) => e.instance.botName);
+    const confirmed = await requestConfirmation({
+      title: "Update every bot?",
+      message: `Pull the newest image once and recreate every container in the fleet whose image changed${names.length ? ` (${names.join(", ")})` : ""}. Each bot restarts in turn, including the one you are looking at, so this page loses contact for a moment.`,
+      confirmText: "Update all",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    updatingAll = true;
+    try {
+      const job = await dockerApi.updateAll();
+      activeJob = job;
+      jobs = [job, ...jobs.filter((j) => j.id !== job.id)];
+      actionNotice = { text: "Fleet update started", ok: true };
+    } catch (err) {
+      logger.error("Failed to start fleet update:", err);
+      actionNotice = { text: describeError(err, "Could not start the fleet update"), ok: false };
+    } finally {
+      updatingAll = false;
+    }
+  }
+
+  /** Opens a fleet bot's container in the log viewer when it lives on the selected instance's host. */
+  async function showFleetLogs(entry: FleetEntry) {
+    const id = entry.info?.container?.id;
+    const container = id ? overview?.containers.find((c) => c.id === id) : null;
+    if (!container) {
+      actionNotice = { text: `${entry.instance.botName} runs on another host; select that instance to read its logs`, ok: false };
+      return;
+    }
+    await selectContainer(container);
+  }
+
   async function startCompose(project: DockerComposeProject, operation: DockerComposeOperation) {
     if (startingJob) return;
 
     const descriptions: Record<DockerComposeOperation, string> = {
-      pull: `Pull the latest images for ${project.name}. Nothing restarts until you run Up.`,
+      pull: `Fetch the latest images for ${project.name} and rebuild anything built locally. Nothing restarts until you run Up.`,
       up: `Bring ${project.name} up. Containers whose image or config changed are recreated; the rest are left alone.`,
-      update: `Pull the latest images for ${project.name}, then bring it up so changed containers are recreated.`,
-      build: `Rebuild ${project.name} from its Dockerfiles with fresh base images, then bring it up.`,
+      update: `Fetch the latest images for ${project.name}, then bring it up so changed containers are recreated.`,
     };
     const confirmed = await requestConfirmation({
       title: `Compose ${operation} on ${project.name}?`,
@@ -318,8 +457,13 @@
       jobs = jobs.map((j) => (j.id === latest.id ? latest : j));
       await tick();
       if (jobPanel) jobPanel.scrollTop = jobPanel.scrollHeight;
-      if (latest.status !== DockerJobStatus.Running) await loadOverview();
+      if (latest.status !== DockerJobStatus.Running) {
+        await loadOverview();
+        await loadFleet();
+      }
     } catch (err) {
+      // An update that recreates the selected bot's own container drops the connection for a
+      // moment; the next tick picks the job back up from the helper container once the bot is back.
       logger.debug("Job poll failed:", err);
     }
   }
@@ -456,8 +600,10 @@
     expanded = {};
     activeJob = null;
     jobs = [];
+    fleet = [];
     loadOverview(true);
     loadJobs();
+    loadFleet();
   });
 
   onMount(async () => {
@@ -481,7 +627,7 @@
     }
 
     allowed = true;
-    await Promise.all([loadOverview(true), loadJobs()]);
+    await Promise.all([loadOverview(true), loadJobs(), loadFleet()]);
   });
 </script>
 
@@ -554,6 +700,114 @@
       </div>
     {/if}
 
+    <section class="mb-6">
+      <SectionHeader
+        icon="fa-layer-group"
+        title="Bots"
+        subtitle={fleetUpdatesAvailable > 0
+          ? `${formatNumber(fleetUpdatesAvailable)} of ${formatNumber(fleet.length)} instances have a newer build published`
+          : "Every registered instance, the commit it runs, and whether a newer image is published"}
+      >
+        {#snippet actions()}
+          <button
+            type="button"
+            class="px-3 min-h-[36px] rounded-lg text-sm font-medium flex items-center gap-2"
+            style="background: {$colorStore.primary}15; color: {$colorStore.text};"
+            disabled={fleetChecking}
+            onclick={() => loadFleet(true)}
+          >
+            <i class="fa-solid {fleetChecking ? 'fa-spinner fa-spin' : 'fa-rotate'}" aria-hidden="true"></i>
+            Check for updates
+          </button>
+          <button
+            type="button"
+            class="px-3 min-h-[36px] rounded-lg text-sm font-medium flex items-center gap-2"
+            style="background: {fleetUpdatesAvailable > 0 ? '#fdac41' : `${$colorStore.secondary}20`}; color: {fleetUpdatesAvailable > 0 ? '#1a1a1a' : $colorStore.text};"
+            disabled={!fleetCanUpdateAll || updatingAll || jobRunning}
+            title={fleetCanUpdateAll ? "Pull the newest image and recreate every changed container in the fleet" : "The selected instance is not part of a compose fleet"}
+            onclick={updateEverything}
+          >
+            <i class="fa-solid {updatingAll ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'}" aria-hidden="true"></i>
+            Update all
+          </button>
+        {/snippet}
+      </SectionHeader>
+
+      <AsyncState loading={fleetLoading} error={fleetError} empty={fleet.length === 0} emptyMessage="No instances are registered" emptyIcon="fa-layer-group">
+        <div class="rounded-xl border overflow-hidden" style="border-color: {$colorStore.primary}20; background: {$colorStore.primary}05;">
+          {#each fleet as entry (entry.instance.port)}
+            {@const info = entry.info}
+            {@const isCurrent = entry.instance.port === $currentInstance?.port}
+            {@const busy = !!updatingPorts[entry.instance.port]}
+            <div
+              class="flex flex-wrap items-center gap-3 px-4 py-3 border-b last:border-b-0"
+              style="border-color: {$colorStore.primary}10; background: {isCurrent ? `${$colorStore.primary}08` : 'transparent'};"
+            >
+              <img src={entry.instance.botAvatar} alt="" class="w-9 h-9 rounded-full shrink-0" loading="lazy">
+
+              <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-medium" style="color: {$colorStore.text};">{entry.instance.botName}</span>
+                  <span class="text-xs font-mono" style="color: {$colorStore.muted};">:{entry.instance.port}</span>
+                  {#if isCurrent}
+                    <Pill tone="ok" text="selected" icon="fa-star" />
+                  {/if}
+                  {#if entry.loading}
+                    <Pill tone="muted" text="asking..." />
+                  {:else if entry.error}
+                    <Pill tone="crit" text={entry.error} icon="fa-circle-exclamation" />
+                  {:else if info}
+                    <Pill tone={updateTone(info)} text={updateLabel(info)} icon={info.updateAvailable ? "fa-arrow-up" : undefined} />
+                  {/if}
+                </div>
+                {#if info}
+                  <div class="text-xs mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5" style="color: {$colorStore.muted};">
+                    <span class="font-mono" title={info.gitSha ?? "commit unknown"}>{versionLabel(info)}</span>
+                    {#if info.buildDate}<span>built {formatAgo(info.buildDate)}</span>{/if}
+                    <span>up {formatAgo(info.startedAt)}</span>
+                    {#if info.container}
+                      <span class="font-mono">{info.container.name}</span>
+                      <span>{info.container.status}</span>
+                    {:else}
+                      <span>not in a container</span>
+                    {/if}
+                    {#if info.published?.gitSha && info.updateAvailable}
+                      <span>newest {info.published.gitSha}{#if info.published.publishedAt} pushed {formatAgo(info.published.publishedAt)}{/if}</span>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
+                  style="background: {$colorStore.primary}15; color: {$colorStore.text};"
+                  disabled={!info?.container}
+                  title={info?.container ? "Open this bot's container log" : "This bot is not running in a container"}
+                  onclick={() => showFleetLogs(entry)}
+                >
+                  <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
+                  Logs
+                </button>
+                <button
+                  type="button"
+                  class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
+                  style="background: {info?.updateAvailable ? '#fdac4125' : `${$colorStore.secondary}20`}; color: {info?.updateAvailable ? '#fdac41' : $colorStore.text};"
+                  disabled={!info?.canUpdate || busy || jobRunning}
+                  title={info?.canUpdate ? "Pull the newest image and recreate this bot's container" : info?.updateBlockedReason ?? "Waiting for the bot to answer"}
+                  onclick={() => updateBot(entry)}
+                >
+                  <i class="fa-solid {busy ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-down'}" aria-hidden="true"></i>
+                  Update
+                </button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      </AsyncState>
+    </section>
+
     {#if available && overview}
       <section class="mb-6">
         <SectionHeader icon="fa-server" title="Containers" subtitle="Grouped by compose project. Expand a project to sample its resource use." />
@@ -596,13 +850,12 @@
                         { op: "pull", icon: "fa-cloud-arrow-down", label: "Pull" },
                         { op: "up", icon: "fa-arrow-up", label: "Up" },
                         { op: "update", icon: "fa-arrows-rotate", label: "Update" },
-                        { op: "build", icon: "fa-hammer", label: "Build" },
                       ] as button (button.op)}
                         <button
                           type="button"
                           class="px-2.5 min-h-[36px] rounded-lg text-xs font-medium flex items-center gap-1.5"
                           style="background: {$colorStore.secondary}20; color: {$colorStore.text};"
-                          disabled={startingJob !== null || activeJob?.status === DockerJobStatus.Running}
+                          disabled={startingJob !== null || jobRunning}
                           title="docker compose {button.op}"
                           onclick={() => startCompose(group.project!, button.op as DockerComposeOperation)}
                         >
@@ -734,7 +987,7 @@
                       style="background: {activeJob?.id === job.id ? $colorStore.primary : `${$colorStore.primary}15`}; color: {activeJob?.id === job.id ? '#fff' : $colorStore.text};"
                       onclick={() => (activeJob = job)}
                     >
-                      {job.project} {job.operation}
+                      {job.project} {job.operation}{#if job.services.length} ({job.services.join(", ")}){/if}
                     </button>
                   {/each}
                 </div>
@@ -750,7 +1003,7 @@
               >
                 <div class="flex items-center gap-2 flex-wrap">
                   <span style="color: {$colorStore.text};">{activeJob.project}</span>
-                  <span>{activeJob.operation}</span>
+                  <span>{activeJob.operation}{#if activeJob.services.length} ({activeJob.services.join(", ")}){/if}</span>
                   <Pill tone={jobTone(activeJob)} text={jobLabel(activeJob)} />
                   {#if activeJob.exitCode !== undefined && activeJob.exitCode !== null}
                     <span>exit {activeJob.exitCode}</span>
