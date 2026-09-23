@@ -29,6 +29,10 @@ Examples:
 - `wotdmonth october spooky halloween` themes all of October.
 - `wotdschedule` shows every rule and which filters are in effect today.
 
+## Discussion thread
+
+When turned on, the bot creates a public thread under each daily post and drops a starter prompt inviting people to use the word in a sentence. The thread's name comes from a template (default `Word of the day: %wotd.word%`) that supports `%wotd.word%`, `%wotd.date%`, `%wotd.pos%`, and the usual server placeholders. `wotdthread` toggles it on or off, `wotdthreadname` sets, shows, or clears the name template, and `wotdthreadarchive` sets how long the thread stays open before auto-archiving (1 hour, 1 day, 3 days, or 1 week).
+
 ## Commands
 
 | Command | What it does |
@@ -43,6 +47,9 @@ Examples:
 | `wotdmode mixed` | Chooses dictionary, custom, or mixed. |
 | `wotdadd word [definition]` | Adds a custom word. |
 | `wotdmessage` | Sets a custom message template with placeholders or embed JSON. |
+| `wotdthread` | Toggles the discussion thread under each post. |
+| `wotdthreadname [template\|clear]` | Sets, shows, or clears the thread name template. |
+| `wotdthreadarchive 1h\|24h\|3d\|7d` | Sets how long the thread stays open before auto-archiving. |
 | `wotdpost` | Posts a new word right now. |
 
 ## Message placeholders

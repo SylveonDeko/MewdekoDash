@@ -70,6 +70,15 @@ export interface WordOfTheDayConfig {
 
   /** Number of words in the custom pool */
   customWordCount: number;
+
+  /** Whether a public discussion thread is created under each post */
+  createThread: boolean;
+
+  /** Thread name template, or null for the default */
+  threadName: string | null;
+
+  /** Auto-archive duration in minutes: 60, 1440, 4320, or 10080 */
+  threadAutoArchiveMinutes: number;
 }
 
 /**
@@ -106,6 +115,15 @@ export interface WordOfTheDayConfigRequest {
 
   /** Word source */
   sourceMode?: WordSourceMode | null;
+
+  /** Whether a public discussion thread is created under each post */
+  createThread?: boolean | null;
+
+  /** Thread name template. Empty string clears it to the default. */
+  threadName?: string | null;
+
+  /** Auto-archive duration in minutes: 60, 1440, 4320, or 10080 */
+  threadAutoArchiveMinutes?: number | null;
 }
 
 /**

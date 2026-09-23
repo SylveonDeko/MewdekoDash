@@ -64,6 +64,15 @@
     { id: WordDifficulty.Rare.toString(), name: "Rare" }
   ];
 
+  const THREAD_ARCHIVE_OPTIONS = [
+    { id: "60", name: "1 hour" },
+    { id: "1440", name: "1 day" },
+    { id: "4320", name: "3 days" },
+    { id: "10080", name: "1 week" }
+  ];
+
+  const DEFAULT_THREAD_NAME = "Word of the day: %wotd.word%";
+
   const RULE_POS_OPTIONS = [{ id: "0", name: "Inherit" }, ...POS_OPTIONS.slice(1)];
   const RULE_DIFFICULTY_OPTIONS = [{ id: "0", name: "Inherit" }, ...DIFFICULTY_OPTIONS.slice(1)];
 
@@ -114,7 +123,10 @@
     topic: "",
     partOfSpeech: WordPartOfSpeech.Any as number,
     difficulty: WordDifficulty.Any as number,
-    sourceMode: WordSourceMode.Dictionary as number
+    sourceMode: WordSourceMode.Dictionary as number,
+    createThread: false,
+    threadName: "",
+    threadAutoArchiveMinutes: 1440
   });
 
   let dayDrafts: RuleDraft[] = $state([]);
@@ -151,7 +163,10 @@
       topic: config.topic ?? "",
       partOfSpeech: config.partOfSpeech,
       difficulty: config.difficulty,
-      sourceMode: config.sourceMode
+      sourceMode: config.sourceMode,
+      createThread: config.createThread,
+      threadName: config.threadName ?? "",
+      threadAutoArchiveMinutes: config.threadAutoArchiveMinutes || 1440
     };
   });
 
@@ -232,7 +247,10 @@
         topic: form.topic.trim(),
         partOfSpeech: form.partOfSpeech,
         difficulty: form.difficulty,
-        sourceMode: form.sourceMode
+        sourceMode: form.sourceMode,
+        createThread: form.createThread,
+        threadName: form.threadName.trim(),
+        threadAutoArchiveMinutes: form.threadAutoArchiveMinutes
       });
       config = await wordOfTheDayApi.getConfig($currentGuild.id);
     } catch (err) {
@@ -645,6 +663,64 @@
         </p>
       </div>
 
+      <!-- Discussion thread -->
+      <div class="relative z-[15] rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
+           style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15, {$colorStore.gradientEnd}10);
+                  border-color: {$colorStore.primary}30;">
+        <div class="flex items-center gap-3 mb-6">
+          <i class="fa-utility-duo fa-regular fa-comments"
+             style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+          <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Discussion thread</h2>
+        </div>
+
+        <ToggleRow
+          checked={form.createThread}
+          title="Create a thread under each post"
+          subtitle="Invites people to use the word in a sentence"
+          colors={$colorStore}
+          onchange={(checked) => { form.createThread = checked; }}
+        />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
+          <div>
+            <label for="wotd-thread-name" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <i class="fa-solid fa-input-text" style="font-size: 14px;"></i>
+              Thread name
+            </label>
+            <input id="wotd-thread-name"
+                   type="text"
+                   bind:value={form.threadName}
+                   placeholder={DEFAULT_THREAD_NAME}
+                   maxlength="100"
+                   disabled={!form.createThread}
+                   class="w-full p-3 rounded-xl border transition-all min-h-[44px] text-base disabled:opacity-50"
+                   style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+            >
+            <p class="text-xs mt-2" style="color: {$colorStore.muted}">
+              Leave empty to use the default, "{DEFAULT_THREAD_NAME}". Supports %wotd.word%, %wotd.date%, %wotd.pos%, and server placeholders.
+            </p>
+          </div>
+
+          <div>
+            <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">
+              <i class="fa-solid fa-box-archive" style="font-size: 14px;"></i>
+              Auto-archive after
+            </span>
+            <div class="min-h-[44px]">
+              <DiscordSelector
+                type="custom"
+                options={THREAD_ARCHIVE_OPTIONS}
+                selected={form.threadAutoArchiveMinutes.toString()}
+                placeholder="Auto-archive"
+                searchable={false}
+                disabled={!form.createThread}
+                onchange={(detail) => { form.threadAutoArchiveMinutes = selectedNumber(detail, 1440); }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Message template -->
       <div class="relative z-10 rounded-2xl border p-6 md:p-8 shadow-2xl transition-all"
            style="background: linear-gradient(135deg, {$colorStore.gradientStart}15, {$colorStore.gradientMid}20, {$colorStore.gradientEnd}15);
@@ -736,6 +812,14 @@
           <div class="flex justify-between items-center">
             <span style="color: {$colorStore.muted}">Schedule rules:</span>
             <span style="color: {$colorStore.text}">{ruleCount}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span style="color: {$colorStore.muted}">Discussion thread:</span>
+            <span style="color: {config?.createThread ? '#10b981' : $colorStore.text}">
+              {config?.createThread
+                ? `On, ${optionName(THREAD_ARCHIVE_OPTIONS, config?.threadAutoArchiveMinutes ?? 1440)}, "${config?.threadName || DEFAULT_THREAD_NAME}"`
+                : "Off"}
+            </span>
           </div>
           <div class="flex justify-between items-center">
             <span style="color: {$colorStore.muted}">Last posted:</span>
