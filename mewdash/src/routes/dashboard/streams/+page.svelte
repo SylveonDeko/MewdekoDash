@@ -5,7 +5,14 @@
   import { fade, fly } from "svelte/transition";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
-  import { clientApi, type FollowedStream, streamNotificationsApi, StreamType } from "$lib/api/index.ts";
+  import {
+    clientApi,
+    type FollowedStream,
+    streamNotificationsApi,
+    StreamType,
+    type StreamStats,
+    type UniqueStreamer
+  } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
   import StatCard from "$lib/components/monitoring/StatCard.svelte";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
@@ -30,8 +37,8 @@
   // Data state
   let streams: FollowedStream[] = $state([]);
   let offlineNotifications: boolean = $state(false);
-  let stats: any | null = $state(null);
-  let streamers: any[] = $state([]);
+  let stats: StreamStats | null = $state(null);
+  let streamers: UniqueStreamer[] = $state([]);
   let guildChannels: Array<{ id: string; name: string; }> = $state([]);
 
   // Form data
@@ -50,12 +57,31 @@
   // UI state
   let activeTab = $state("list");
 
+  /**
+   * Fallback platform metadata keyed by the numeric StreamType. Used only when
+   * the API response has no typeName (older bot instances).
+   */
   const platformTypes: Record<number, { name: string; color: string; faIcon: string; faClass: string }> = {
     [StreamType.Twitch]: { name: "Twitch", color: "#9146FF", faIcon: "fa-twitch", faClass: "fa-brands" },
     [StreamType.YouTube]: { name: "YouTube", color: "#FF0000", faIcon: "fa-youtube", faClass: "fa-brands" },
+    [StreamType.Facebook]: { name: "Facebook", color: "#1877F2", faIcon: "fa-facebook", faClass: "fa-brands" },
     [StreamType.Trovo]: { name: "Trovo", color: "#1DB954", faIcon: "fa-video", faClass: "fa-solid" },
     [StreamType.Picarto]: { name: "Picarto", color: "#1DA362", faIcon: "fa-palette", faClass: "fa-solid" },
     [StreamType.Kick]: { name: "Kick", color: "#53FC18", faIcon: "fa-video", faClass: "fa-solid" }
+  };
+
+  /**
+   * Platform metadata keyed by lowercase server typeName. Preferred over the
+   * numeric `platformTypes` lookup whenever the API response includes a
+   * typeName, per the bot's typeName contract.
+   */
+  const platformTypesByName: Record<string, { name: string; color: string; faIcon: string; faClass: string }> = {
+    twitch: platformTypes[StreamType.Twitch],
+    youtube: platformTypes[StreamType.YouTube],
+    facebook: platformTypes[StreamType.Facebook],
+    trovo: platformTypes[StreamType.Trovo],
+    picarto: platformTypes[StreamType.Picarto],
+    kick: platformTypes[StreamType.Kick]
   };
 
   // Stream-specific placeholders (from backend CreateStreamReplacer)
@@ -253,9 +279,14 @@
     return new Date(dateString).toLocaleDateString();
   }
 
-  function getPlatformInfo(type: StreamType) {
-    return platformTypes[type] || {
-      name: "Unknown",
+  /**
+   * Resolves platform display metadata for a stream, preferring the server's
+   * typeName over the locally-derived numeric type when present.
+   */
+  function getPlatformInfo(type: StreamType, typeName?: string | null) {
+    const byName = typeName ? platformTypesByName[typeName.toLowerCase()] : undefined;
+    return byName || platformTypes[type] || {
+      name: typeName || "Unknown",
       color: $colorStore.muted,
       faIcon: "fa-circle-question",
       faClass: "fa-solid"
@@ -381,7 +412,7 @@
             </div>
           {:else}
             {#each streams as stream}
-              {@const platform = getPlatformInfo(stream.type)}
+              {@const platform = getPlatformInfo(stream.type, stream.typeName)}
               <div class="rounded-xl border p-4 transition-all"
                    style="background: {$colorStore.primary}08; border-color: {$colorStore.primary}20;">
                 <div class="flex items-start justify-between mb-3">
@@ -693,7 +724,7 @@
           <StatCard
             icon="fa-square"
             label="Channels"
-            value={Object.keys(stats.streamsByChannel || {}).length}
+            value={(stats.streamsByChannel || []).length}
             subtitle="with notifications"
             iconColor="accent"
             animationDelay={200}
@@ -702,14 +733,14 @@
           <StatCard
             icon="fa-globe"
             label="Platforms"
-            value={Object.keys(stats.streamsByType || {}).length}
+            value={(stats.streamsByType || []).length}
             subtitle="in use"
             iconColor="primary"
             animationDelay={300}
           />
         </div>
 
-        {#if stats.streamsByType && Object.keys(stats.streamsByType).length > 0}
+        {#if stats.streamsByType && stats.streamsByType.length > 0}
           <div class="mt-6 rounded-2xl border p-6 shadow-2xl"
                style="background: linear-gradient(135deg, {$colorStore.gradientStart}10, {$colorStore.gradientMid}15);
                                 border-color: {$colorStore.primary}30;">
@@ -720,9 +751,8 @@
             </div>
 
             <div class="space-y-2">
-              {#each Object.entries(stats.streamsByType) as [type, count]}
-                {@const platform = getPlatformInfo(parseInt(type))}
-                {@const streamCount = typeof count === 'number' ? count : parseInt(String(count)) || 0}
+              {#each stats.streamsByType as entry}
+                {@const platform = getPlatformInfo(entry.type, entry.typeName)}
                 <div class="flex items-center justify-between p-3 rounded-lg"
                      style="background: {$colorStore.primary}08;">
                   <div class="flex items-center gap-2">
@@ -731,7 +761,7 @@
                     <span style="color: {$colorStore.text}">{platform.name}</span>
                   </div>
                   <span class="font-semibold" style="color: {platform.color}">
-                                        {streamCount} stream{streamCount !== 1 ? 's' : ''}
+                                        {entry.count} stream{entry.count !== 1 ? 's' : ''}
                                     </span>
                 </div>
               {/each}

@@ -81,6 +81,11 @@ export interface UpdateRepeaterRequest {
   message?: string | null;
   channelId?: bigint | null;
   interval?: string | null;
+  /**
+   * New start time of day in UTC (e.g. "09:00"). An empty string "" clears it.
+   * Leaving it out, or sending null, keeps the current value.
+   */
+  startTimeOfDay?: string | null;
   allowMentions?: boolean | null;
   triggerMode?: StickyTriggerMode | null;
   activityThreshold?: number | null;
@@ -91,9 +96,25 @@ export interface UpdateRepeaterRequest {
   queuePosition?: number | null;
   noRedundant?: boolean | null;
   isEnabled?: boolean | null;
+  /**
+   * Time schedule preset to apply: "business", "evening", "weekend", "none" (clears the
+   * schedule) or "custom" (uses timeConditions). Takes precedence over timeConditions.
+   * Leaving it out keeps the current schedule.
+   */
+  timeSchedulePreset?: string | null;
   timeConditions?: string | null;
   maxAge?: string | null;
   maxTriggers?: number | null;
+  /**
+   * When true, removes the max age limit so the repeater never expires by age.
+   * Takes precedence over maxAge in the same request.
+   */
+  clearMaxAge?: boolean | null;
+  /**
+   * When true, removes the max triggers limit so the repeater never expires by display count.
+   * Takes precedence over maxTriggers in the same request.
+   */
+  clearMaxTriggers?: boolean | null;
   threadAutoSticky?: boolean | null;
   threadOnlyMode?: boolean | null;
   suppressNotifications?: boolean | null;
@@ -153,10 +174,10 @@ export interface MessageCountingStatus {
 
 // Time schedule presets for UI
 export const TIME_SCHEDULE_PRESETS = [
-  { value: "WEEKDAYS", label: "Weekdays Only" },
-  { value: "WEEKENDS", label: "Weekends Only" },
-  { value: "BUSINESS_HOURS", label: "Business Hours (9-5)" },
-  { value: "CUSTOM", label: "Custom Schedule" },
+  { value: "business", label: "Business Hours (9-5)" },
+  { value: "evening", label: "Evening Hours" },
+  { value: "weekend", label: "Weekends Only" },
+  { value: "custom", label: "Custom Schedule" },
 ] as const;
 
 // Helper functions for repeaters

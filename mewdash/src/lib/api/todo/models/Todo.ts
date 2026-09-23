@@ -39,9 +39,13 @@ export interface AddTodoItemRequest {
 }
 
 export interface UpdateTodoItemRequest {
+  /** The acting user, checked against the list's edit permissions. */
+  userId: bigint;
   title?: string;
   description?: string | null;
   priority?: number;
+  /** Due date as an ISO string, or null to leave it unchanged. */
+  dueDate?: string | null;
   isCompleted?: boolean;
 }
 

@@ -406,6 +406,7 @@
     editError = "";
     try {
       await todoApi.updateTodoItem($currentGuild.id, editingItem.id, {
+        userId: BigInt($userStore.id),
         title: editForm.title.trim(),
         description: editForm.description.trim() || null,
         priority: editForm.priority

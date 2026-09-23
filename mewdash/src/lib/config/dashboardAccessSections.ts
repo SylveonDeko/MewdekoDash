@@ -14,6 +14,7 @@ const sectionsByHref: Record<string, string[]> = {
   "/dashboard/afk": ["Afk"],
   "/dashboard/auditlog": ["AuditLog"],
   "/dashboard/birthday": ["Birthday"],
+  "/dashboard/wordoftheday": ["WordOfTheDay"],
   "/dashboard/chatsaver": ["Chat"],
   "/dashboard/confessions": ["Confessions"],
   "/dashboard/counting": ["Counting"],

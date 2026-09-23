@@ -129,13 +129,9 @@
     quickEditSaving = true;
     try {
       if (field === "interval") await updateRepeaterInterval(repeater.id, quickEditForm.interval.trim());
-      else if (field === "startTime") await updateRepeaterStartTime(repeater.id, quickEditForm.startTime.trim() || null);
+      else if (field === "startTime") await updateRepeaterStartTime(repeater.id, quickEditForm.startTime.trim());
       else if (field === "threshold") await updateRepeaterConversationThreshold(repeater.id, quickEditForm.threshold);
-      else await updateRepeaterExpiry(
-        repeater.id,
-        quickEditForm.maxAge.trim() || undefined,
-        quickEditForm.maxTriggers.trim() ? parseInt(quickEditForm.maxTriggers) : undefined
-      );
+      else await updateRepeaterExpiry(repeater.id, quickEditForm.maxAge.trim(), quickEditForm.maxTriggers.trim());
       closeQuickEdit();
     } finally {
       quickEditSaving = false;
@@ -402,6 +398,11 @@
         request.interval = formData.interval;
       }
 
+      /** Start time of day changes: an empty value explicitly clears it. */
+      if (formData.startTimeOfDay !== originalFormData.startTimeOfDay) {
+        request.startTimeOfDay = formData.startTimeOfDay || "";
+      }
+
       // Check trigger mode changes
       if (formData.triggerMode !== originalFormData.triggerMode) {
         request.triggerMode = formData.triggerMode;
@@ -438,19 +439,34 @@
         request.noRedundant = formData.noRedundant;
       }
 
-      // Check time conditions changes
+      /** Time schedule preset changes: applies the preset, or clears the schedule with "none". */
+      if (formData.timeSchedulePreset !== originalFormData.timeSchedulePreset) {
+        request.timeSchedulePreset = formData.timeSchedulePreset;
+      }
+
+      /** Time conditions changes. */
       const timeConditions = formData.timeSchedulePreset === "custom" ? formData.timeConditions : null;
       const originalTimeConditions = originalFormData.timeSchedulePreset === "custom" ? originalFormData.timeConditions : null;
       if (timeConditions !== originalTimeConditions) {
         request.timeConditions = timeConditions;
       }
 
-      // Check max age/triggers changes
+      /** Max age changes: a blank value clears it via clearMaxAge, since maxAge: null is a no-op. */
       if (formData.maxAge !== originalFormData.maxAge) {
-        request.maxAge = formData.maxAge || null;
+        if (formData.maxAge) {
+          request.maxAge = formData.maxAge;
+        } else {
+          request.clearMaxAge = true;
+        }
       }
+
+      /** Max triggers changes: a blank value clears it via clearMaxTriggers, since null cannot be told apart from a missing field. */
       if (formData.maxTriggers !== originalFormData.maxTriggers) {
-        request.maxTriggers = formData.maxTriggers;
+        if (formData.maxTriggers) {
+          request.maxTriggers = formData.maxTriggers;
+        } else {
+          request.clearMaxTriggers = true;
+        }
       }
 
       // Check thread settings changes
@@ -780,12 +796,16 @@
     }
   }
 
-  async function updateRepeaterStartTime(repeaterId: number, startTime: string | null) {
+  /**
+   * Updates a repeater's start time of day.
+   * @param repeaterId The repeater ID
+   * @param startTime The new start time (HH:mm, UTC), or "" to explicitly clear it
+   */
+  async function updateRepeaterStartTime(repeaterId: number, startTime: string) {
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { startTimeOfDay: startTime } as any);
-      showMessage("Start time updated successfully", "success");
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, { startTimeOfDay: startTime });
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update start time:", err);
@@ -806,15 +826,29 @@
     }
   }
 
-  async function updateRepeaterExpiry(repeaterId: number, maxAge?: string, maxTriggers?: number) {
+  /**
+   * Updates a repeater's expiry settings, clearing either limit when its value is blank.
+   * @param repeaterId The repeater ID
+   * @param maxAge The new max age (e.g. "7.00:00:00"), or "" to clear it
+   * @param maxTriggers The new max triggers, or "" to clear it
+   */
+  async function updateRepeaterExpiry(repeaterId: number, maxAge: string, maxTriggers: string) {
     if (!$currentGuild?.id) return;
 
     try {
-      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, {
-        maxAge: maxAge || null,
-        maxTriggers: maxTriggers || null
-      });
-      showMessage("Expiry settings updated successfully", "success");
+      const request: UpdateRepeaterRequest = {};
+      if (maxAge) {
+        request.maxAge = maxAge;
+      } else {
+        request.clearMaxAge = true;
+      }
+      if (maxTriggers) {
+        request.maxTriggers = Number.parseInt(maxTriggers, 10);
+      } else {
+        request.clearMaxTriggers = true;
+      }
+
+      await repeatersApi.updateRepeater($currentGuild.id, repeaterId, request);
       await loadAllData();
     } catch (err) {
       logger.error("Failed to update expiry settings:", err);

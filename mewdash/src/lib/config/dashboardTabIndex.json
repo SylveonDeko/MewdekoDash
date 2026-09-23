@@ -878,6 +878,30 @@
       }
     ]
   },
+  "/dashboard/wordoftheday": {
+    "tabs": [
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-gear"
+      },
+      {
+        "id": "schedule",
+        "label": "Schedule",
+        "icon": "fa-calendar"
+      },
+      {
+        "id": "words",
+        "label": "Custom Words",
+        "icon": "fa-list"
+      },
+      {
+        "id": "history",
+        "label": "History",
+        "icon": "fa-clock-rotate-left"
+      }
+    ]
+  },
   "/dashboard/xp": {
     "tabs": [
       {
@@ -973,6 +997,20 @@
         "id": "pipeline",
         "label": "Pipeline",
         "icon": "fa-diagram-project"
+      }
+    ]
+  },
+  "/owner/bot-hells": {
+    "tabs": [
+      {
+        "id": "servers",
+        "label": "Servers",
+        "icon": "fa-robot"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-cog"
       }
     ]
   },

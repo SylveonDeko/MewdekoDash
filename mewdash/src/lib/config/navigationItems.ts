@@ -72,6 +72,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["birthday", "birthdays", "celebrate", "anniversary"],
   },
   {
+    label: "Word of the Day",
+    icon: "fa-utility-duo fa-regular fa-book-open",
+    href: "/dashboard/wordoftheday",
+    category: "Community",
+    description: "Daily vocabulary word with topics, filters, and custom lists",
+    keywords: ["word of the day", "wotd", "vocabulary", "dictionary", "definition", "daily word", "datamuse"],
+  },
+  {
     label: "Chat Saver",
     icon: "fa-utility-duo fa-regular fa-folder",
     href: "/dashboard/chatsaver",

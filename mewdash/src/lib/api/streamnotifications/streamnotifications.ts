@@ -1,6 +1,11 @@
 // lib/api/streamnotifications/streamnotifications.ts
 import { apiRequest } from "../core";
-import type { FollowedStream, FollowStreamRequest } from "./models";
+import type {
+  FollowedStream,
+  FollowStreamRequest,
+  StreamStats,
+  UniqueStreamer,
+} from "./models";
 
 export const streamNotificationsApi = {
   getFollowedStreams: (guildId: bigint) =>
@@ -64,8 +69,8 @@ export const streamNotificationsApi = {
     ),
 
   getStreamStats: (guildId: bigint) =>
-    apiRequest<any>(`StreamNotifications/${guildId}/stats`),
+    apiRequest<StreamStats>(`StreamNotifications/${guildId}/stats`),
 
   getUniqueStreamers: (guildId: bigint) =>
-    apiRequest<any[]>(`StreamNotifications/${guildId}/streamers`),
+    apiRequest<UniqueStreamer[]>(`StreamNotifications/${guildId}/streamers`),
 };
