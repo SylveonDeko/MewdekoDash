@@ -565,6 +565,20 @@
       }
     ]
   },
+  "/dashboard/role-menus": {
+    "tabs": [
+      {
+        "id": "menus",
+        "label": "Menus",
+        "icon": "fa-list-check"
+      },
+      {
+        "id": "move",
+        "label": "Move older setups",
+        "icon": "fa-arrow-right-arrow-left"
+      }
+    ]
+  },
   "/dashboard/rolestates": {
     "tabs": [
       {

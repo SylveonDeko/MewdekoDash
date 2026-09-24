@@ -43,6 +43,7 @@ const sectionsByHref: Record<string, string[]> = {
   "/dashboard/repeaters": ["Repeaters"],
   "/dashboard/reputation": ["Reputation"],
   "/dashboard/rolegreets": ["RoleGreet"],
+  "/dashboard/role-menus": ["RoleMenus"],
   "/dashboard/rolestates": ["RoleStates"],
   "/dashboard/settings": ["Guild"],
   "/dashboard/starboard": ["Starboard"],

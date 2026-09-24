@@ -320,6 +320,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["role greets", "welcome", "roles", "messages"],
   },
   {
+    label: "Role Menus",
+    icon: "fa-utility-duo fa-regular fa-list-ul",
+    href: "/dashboard/role-menus",
+    category: "Actions",
+    description: "Dropdowns and buttons that let members pick their own roles",
+    keywords: ["role menus", "self roles", "self assign", "pick roles", "dropdown", "buttons", "pronouns", "color roles", "reaction roles"],
+  },
+  {
     label: "Role States",
     icon: "fa-utility-duo fa-regular fa-tag",
     href: "/dashboard/rolestates",

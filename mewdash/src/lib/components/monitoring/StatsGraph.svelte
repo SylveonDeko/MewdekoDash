@@ -28,7 +28,7 @@
   }: Props = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
-  let chart: Chart | null = null;
+  let chart: Chart<"line", number[], string> | null = null;
 
   function formatAverage(average: string | number): string {
     const numValue = typeof average === "string" ? parseFloat(average) : average;

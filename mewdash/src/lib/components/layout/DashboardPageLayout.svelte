@@ -311,22 +311,27 @@
     </div>
 
     {#if actionButtons.length > 0 || wikiArticle}
-      <div class="flex flex-wrap items-center justify-center gap-3 w-full lg:w-auto lg:shrink-0">
+      <!--
+        On phones the row keeps one line: the wiki button collapses to its icon,
+        and the action buttons share the remaining width without wrapping their
+        labels. From the sm breakpoint up every button shows its full label.
+      -->
+      <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto lg:shrink-0">
         {#if wikiArticle}
           <button
-            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] min-w-[44px] shrink-0 sm:flex-initial font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             style="background: {$colorStore.primary}10; color: {$colorStore.primary}; border: 1px dashed {$colorStore.primary}40;"
             onclick={() => (wikiOpen = true)}
             aria-label="How {title} works"
             title="Read the wiki page for this feature"
           >
             <i class="fa-solid fa-circle-question" style="font-size: 18px;" aria-hidden="true"></i>
-            <span class="text-sm sm:text-base">How it works</span>
+            <span class="hidden sm:inline text-sm sm:text-base">How it works</span>
           </button>
         {/if}
         {#each actionButtons as button}
           <button
-            class="flex items-center justify-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-[120px] font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
+            class="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all hover:scale-[1.02] min-h-[44px] sm:min-h-[52px] flex-1 sm:flex-initial min-w-0 whitespace-nowrap font-medium focus:outline-hidden focus:ring-2 focus:ring-offset-2"
             disabled={button.loading || button.disabled}
             onclick={button.action}
             style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30; focus:ring-color: {$colorStore.primary};"

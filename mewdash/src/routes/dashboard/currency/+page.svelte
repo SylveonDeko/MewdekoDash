@@ -60,7 +60,7 @@
   let adjustReason = $state("");
 
   let supplyCanvas = $state<HTMLCanvasElement | null>(null);
-  let supplyChart: Chart | null = null;
+  let supplyChart: Chart<"line", number[], string> | null = null;
 
   const itemTypeOptions = [
     { id: ShopItemType.Role.toString(), name: "Role", label: "Role (grants a Discord role)" },

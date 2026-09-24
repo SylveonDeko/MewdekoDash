@@ -125,8 +125,8 @@
     let snapshots: MinecraftSnapshot[] = $state<MinecraftSnapshot[]>([]);
     let playersCanvas: HTMLCanvasElement | undefined = $state();
     let latencyCanvas: HTMLCanvasElement | undefined = $state();
-    let playersChart: Chart | null = null;
-    let latencyChart: Chart | null = null;
+    let playersChart: Chart<"line", number[], string> | null = null;
+    let latencyChart: Chart<"line", number[], string> | null = null;
 
     let rconServer: string | null = $state(null);
     let rconCommand = $state("");

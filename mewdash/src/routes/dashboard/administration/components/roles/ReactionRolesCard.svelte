@@ -70,6 +70,16 @@
     <h2 class="text-xl font-bold" style="color: {$colorStore.text}">Reaction Roles</h2>
   </div>
 
+  <div class="mb-6 p-4 rounded-xl flex items-start gap-3"
+       style="background: {$colorStore.primary}20; border: 1px solid {$colorStore.primary}30;">
+    <i class="fa-utility-duo fa-regular fa-circle-info mt-0.5"
+       style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary}; font-size: 20px;"></i>
+    <p class="text-sm" style="color: {$colorStore.text}">
+      <a href="/dashboard/role-menus" class="font-semibold underline" style="color: {$colorStore.primary}">Role Menus</a>
+      does this with a dropdown or buttons. Open Role Menus and use Move older setups to bring these over.
+    </p>
+  </div>
+
   <div class="space-y-4">
     <p class="text-sm" style="color: {$colorStore.muted}">
       Allow users to get roles by reacting to messages with specific emojis
