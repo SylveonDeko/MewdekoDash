@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # svelte-kit sync types $env/static/private from the .env files it finds,
+      # so without one every variable is string | undefined and the type check
+      # fails on each use. The example file lists every variable the code reads.
+      - name: Provide env for type generation
+        run: cp .env.example .env
+
       - name: Type check
         run: npm run check
 
