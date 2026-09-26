@@ -31,7 +31,15 @@ function errorMessageFrom(parsed: any, responseText: string, status: number): st
   if (typeof error === "string" && error.trim()) return error;
   if (typeof error?.message === "string" && error.message.trim()) return error.message;
   if (typeof parsed?.message === "string" && parsed.message.trim()) return parsed.message;
-  if (responseText.trim()) return responseText.trim().slice(0, 500);
+
+  const text = responseText.trim();
+  if (/^\s*<!doctype html|^\s*<html/i.test(text)) {
+    const title = text.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim();
+    return title
+      ? `The bot did not respond (${title}).`
+      : `The bot did not respond (status ${status}).`;
+  }
+  if (text) return text.slice(0, 500);
 
   return `Request failed with status ${status}`;
 }

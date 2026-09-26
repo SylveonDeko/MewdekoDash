@@ -1,11 +1,11 @@
 // lib/api/wordoftheday/wordoftheday.ts
 import { apiRequest } from "../core";
 import type {
-  WordEntry,
   WordOfTheDayAddWordRequest,
   WordOfTheDayConfig,
   WordOfTheDayConfigRequest,
   WordOfTheDayHistoryEntry,
+  WordOfTheDayPostResult,
   WordOfTheDaySchedule,
   WordOfTheDayScheduleRequest,
   WordOfTheDayWord,
@@ -41,10 +41,10 @@ export const wordOfTheDayApi = {
   /**
    * Posts a word immediately
    * @param guildId The guild ID
-   * @returns The posted word
+   * @returns The posted word and whether the template fell back to the default embed
    */
   postNow: (guildId: bigint) =>
-    apiRequest<WordEntry>(`wordoftheday/${guildId}/post`, "POST"),
+    apiRequest<WordOfTheDayPostResult>(`wordoftheday/${guildId}/post`, "POST"),
 
   /**
    * Lists the custom word pool

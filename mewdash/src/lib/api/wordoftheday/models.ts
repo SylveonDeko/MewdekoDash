@@ -207,3 +207,12 @@ export interface WordEntry {
   phonetic: string | null;
   isCustom: boolean;
 }
+
+/** Result of the post-now endpoint, including whether the template was ignored. */
+export interface WordOfTheDayPostResult {
+  entry: WordEntry;
+  /** True when the custom template rendered an empty message and the default embed was sent */
+  usedFallback: boolean;
+  /** Explanation to show the user when usedFallback is true */
+  warning: string | null;
+}

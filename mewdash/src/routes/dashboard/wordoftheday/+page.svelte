@@ -105,6 +105,8 @@
   let addingWord = $state(false);
   let message = $state("");
   let messageType: "success" | "error" | "info" = $state("info");
+  /** Shown after a post when the custom template was ignored in favour of the default embed */
+  let templateWarning = $state("");
 
   let config: WordOfTheDayConfig | null = $state(null);
   let words: WordOfTheDayWord[] = $state([]);
@@ -287,8 +289,11 @@
     if (!$currentGuild?.id) return;
     posting = true;
     try {
-      const entry = await wordOfTheDayApi.postNow($currentGuild.id);
-      showMessage(`Posted "${entry.word}" to the channel`, "success");
+      const result = await wordOfTheDayApi.postNow($currentGuild.id);
+      templateWarning = result.usedFallback
+        ? result.warning || "Your custom template rendered an empty message, so the default embed was posted instead."
+        : "";
+      showMessage(`Posted "${result.entry.word}" to the channel`, "success");
       history = await wordOfTheDayApi.getHistory($currentGuild.id, 30).catch(() => history);
       config = await wordOfTheDayApi.getConfig($currentGuild.id).catch(() => config);
     } catch (err: any) {
@@ -456,6 +461,25 @@
            style="--fa-primary-color: {messageType === 'error' ? '#ef4444' : $colorStore.primary}; --fa-secondary-color: {messageType === 'error' ? '#dc2626' : $colorStore.secondary}; font-size: 20px;"></i>
       {/if}
       <span style="color: {messageType === 'success' ? '#10b981' : messageType === 'error' ? '#ef4444' : $colorStore.primary}">{message}</span>
+    </div>
+  {/if}
+
+  {#if templateWarning}
+    <div class="mb-6 p-4 rounded-xl flex items-start gap-3"
+         style="background: {$colorStore.accent}20; border: 1px solid {$colorStore.accent}30;"
+         in:fly={{ x: -20, duration: 300 }}>
+      <i class="fa-utility-duo fa-regular fa-circle-exclamation mt-0.5"
+         style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary}; font-size: 20px;"></i>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium" style="color: {$colorStore.text}">Posted with the default embed</p>
+        <p class="text-sm" style="color: {$colorStore.muted}">{templateWarning}</p>
+      </div>
+      <button type="button" class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+              style="color: {$colorStore.muted}" aria-label="Dismiss"
+              onclick={() => (templateWarning = "")}>
+        <i class="fa-utility-duo fa-regular fa-xmark"
+           style="--fa-primary-color: {$colorStore.muted}; --fa-secondary-color: {$colorStore.muted};"></i>
+      </button>
     </div>
   {/if}
 
