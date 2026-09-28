@@ -7,6 +7,7 @@
   import ComponentEditor from "./ComponentEditor.svelte";
   import ValidationCard from "./ValidationCard.svelte";
   import Notification from "$lib/components/ui/Notification.svelte";
+  import PlaceholderPicker from "$lib/components/forms/PlaceholderPicker.svelte";
   import { fade, slide } from "svelte/transition";
   import { chatTriggersApi, embedsApi } from "$lib/api/index.ts";
   import type { ChatTrigger } from "$lib/api/chattriggers/models/ChatTrigger";
@@ -144,7 +145,30 @@
   let activeTab = $state("editor");
   let embeds: Embed[] = $state([]);
   let content = $state("");
+  let showContentPlaceholders = $state(false);
+  let contentPlaceholderSearch = $state("");
+  let contentTextarea: HTMLTextAreaElement | null = $state(null);
   let componentRows: ComponentRow[] = $state([]);
+
+  /**
+   * Inserts a placeholder token into the message content at the caret,
+   * mirroring the percent button every embed field already has.
+   */
+  function insertContentPlaceholder(placeholder: { name: string }) {
+    const element = contentTextarea;
+    const start = element?.selectionStart ?? content.length;
+    const end = element?.selectionEnd ?? content.length;
+    content = content.substring(0, start) + placeholder.name + content.substring(end);
+    showContentPlaceholders = false;
+    contentPlaceholderSearch = "";
+    if (element) {
+      const caret = start + placeholder.name.length;
+      requestAnimationFrame(() => {
+        element.focus();
+        element.setSelectionRange(caret, caret);
+      });
+    }
+  }
   let chatTriggers: ChatTrigger[] = $state([]);
   let validationErrors: any[] = $state([]);
   let validationWarnings: any[] = $state([]);
@@ -1313,14 +1337,36 @@
                            style="color: {$colorStore.text};">
                       Message Content <span class="text-xs">(optional)</span>
                     </label>
-                    <textarea
-                      id="message-content"
-                      rows="3"
-                      class="w-full px-3 py-2 rounded-lg border resize-y"
-                      style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
-                      placeholder="Optional message content that appears above the embed..."
-                      bind:value={content}
-                    ></textarea>
+                    <div class="relative">
+                      <textarea
+                        id="message-content"
+                        rows="3"
+                        class="w-full px-3 py-2 pr-10 rounded-lg border resize-y"
+                        style="background: {$colorStore.primary}10; border-color: {$colorStore.primary}30; color: {$colorStore.text};"
+                        placeholder="Optional message content that appears above the embed. Use % to mention the user or insert other placeholders."
+                        bind:value={content}
+                        bind:this={contentTextarea}
+                      ></textarea>
+                      <button
+                        class="absolute right-2 top-2 p-1 rounded-sm hover:bg-black/10"
+                        style="color: {$colorStore.muted};"
+                        onclick={() => { showContentPlaceholders = !showContentPlaceholders; contentPlaceholderSearch = ""; }}
+                        title="Insert placeholder"
+                        type="button"
+                      >
+                        %
+                      </button>
+                      <PlaceholderPicker
+                        visible={showContentPlaceholders}
+                        placeholders={allPlaceholders}
+                        searchTerm={contentPlaceholderSearch}
+                        inline={true}
+                        inputElement={contentTextarea}
+                        onselect={(detail) => insertContentPlaceholder(detail.placeholder)}
+                        onclose={() => showContentPlaceholders = false}
+                        onsearch={(detail) => contentPlaceholderSearch = detail.term}
+                      />
+                    </div>
                   </div>
                 {/if}
 

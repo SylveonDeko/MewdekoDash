@@ -435,9 +435,17 @@
     }
   }
 
-  function serializeTicketOpenMessage(value: unknown): string | null {
-    if (value === null || value === undefined || value === "") return null;
-    return typeof value === "string" ? value : JSON.stringify(value);
+  /**
+   * Serialises the open message editor's value for the API. A cleared editor
+   * (null, an empty string, or an object with nothing in it) becomes an empty
+   * string rather than null, because the bot's settings endpoint ignores null
+   * fields; the bot stores an empty string as "use the default message".
+   */
+  function serializeTicketOpenMessage(value: unknown): string {
+    if (value === null || value === undefined || value === "") return "";
+    if (typeof value === "string") return value.trim() === "{}" ? "" : value;
+    if (typeof value === "object" && Object.keys(value as object).length === 0) return "";
+    return JSON.stringify(value);
   }
 
   async function addButton() {

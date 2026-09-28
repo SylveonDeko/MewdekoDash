@@ -543,7 +543,7 @@
             Our Top Servers
           </h2>
           <p class="text-sm lg:text-base" style="color: {$colorStore.muted}">
-            Join thousands of communities already using Mewdeko
+            A few of the servers running Mewdeko right now
           </p>
         </div>
         {#if guilds.length > 0}
@@ -746,57 +746,29 @@
         <div class="w-24 h-1 mx-auto rounded-full mb-6"
              style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});"></div>
         <p class="text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed" style="color: {$colorStore.muted}">
-          Premium bots give you just enough. We give you everything. Then we kept going.
+          A tour of what the bot does, taken from the dashboard as it is today.
         </p>
       </div>
 
-      <!-- Premium Comparison -->
+      <!-- By the numbers -->
       <div class="mb-16 px-4">
         <div class="rounded-2xl border p-6 sm:p-8 max-w-4xl mx-auto"
              style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                    border-color: {$colorStore.accent}30;">
-          <div class="text-center mb-6">
-            <div class="inline-block px-4 py-2 rounded-full mb-4"
-                 style="background: {$colorStore.accent}15; border: 1px solid {$colorStore.accent}30;">
-              <span class="text-sm font-semibold" style="color: {$colorStore.accent}">The Math</span>
-            </div>
-            <h3 class="text-2xl sm:text-3xl font-bold mb-2" style="color: {$colorStore.text}">
-              Premium bots: <span style="color: {$colorStore.muted}">~100 commands</span> for <span
-              style="color: {$colorStore.accent}">$12/month</span>
-            </h3>
-            <h3 class="text-2xl sm:text-3xl font-bold" style="color: {$colorStore.text}">
-              Mewdeko: <span style="color: {$colorStore.secondary}">1,082 commands</span> for <span
-              class="text-green-400">$0/month</span>
-            </h3>
-          </div>
-
-          <!-- Visual comparison bars -->
-          <div class="space-y-4 mb-6">
+                    border-color: {$colorStore.primary}30;">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
-              <div class="flex justify-between text-sm mb-2" style="color: {$colorStore.muted}">
-                <span>Premium Bots</span>
-                <span>~100 commands</span>
-              </div>
-              <div class="h-3 rounded-full overflow-hidden" style="background: {$colorStore.primary}20;">
-                <div class="h-full rounded-full" style="width: 9%; background: {$colorStore.accent};"></div>
-              </div>
+              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.primary}">1,082</div>
+              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Commands, each documented with examples</div>
             </div>
             <div>
-              <div class="flex justify-between text-sm mb-2" style="color: {$colorStore.muted}">
-                <span>Mewdeko</span>
-                <span>1,082 commands</span>
-              </div>
-              <div class="h-3 rounded-full overflow-hidden" style="background: {$colorStore.primary}20;">
-                <div class="h-full rounded-full"
-                     style="width: 100%; background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary});"></div>
-              </div>
+              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.secondary}">2020</div>
+              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Open source since, with 14 contributors</div>
+            </div>
+            <div>
+              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.accent}">Free</div>
+              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Every feature, for every server, no tiers</div>
             </div>
           </div>
-
-          <p class="text-center text-base sm:text-lg" style="color: {$colorStore.muted}">
-            Most bots stop at good enough. <span class="font-bold"
-                                                 style="color: {$colorStore.text}">We kept going.</span>
-          </p>
         </div>
       </div>
 
@@ -814,13 +786,13 @@
               <div class="p-6 sm:p-8 flex flex-col justify-center order-2 lg:order-1">
                 <div class="inline-block px-3 py-1 rounded-full mb-3 self-start"
                      style="background: {$colorStore.primary}15; border: 1px solid {$colorStore.primary}30;">
-                  <span class="text-xs font-semibold" style="color: {$colorStore.primary}">Genuinely Unique</span>
+                  <span class="text-xs font-semibold" style="color: {$colorStore.primary}">Forms</span>
                 </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-                  Visual Form Builder
+                  Form Builder
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  Build applications, ban appeals, and join forms. No code required.
+                  Applications, ban appeals, and join forms, built in the dashboard and filled in from Discord.
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
@@ -888,10 +860,10 @@
                   <span class="text-xs font-semibold" style="color: {$colorStore.secondary}">Engagement</span>
                 </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-                  XP & Leveling That Actually Works
+                  XP and Leveling
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  Beautiful leaderboards, voice XP tracking, and competition modes.
+                  Leaderboards, voice XP, and competition modes, with per-server templates for the rank card.
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
@@ -930,10 +902,10 @@
                   <span class="text-xs font-semibold" style="color: {$colorStore.accent}">Per-Server</span>
                 </div>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-                  Customize The Bot Itself
+                  Per-Server Bot Profile
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  Change the bot's avatar, banner, and bio in every server. Make it yours.
+                  The bot's avatar, banner, and bio can be different in each server it is in.
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
@@ -989,11 +961,11 @@
                 1,082
               </div>
               <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style="color: {$colorStore.text}">
-                Commands. Seriously.
+                Command Reference
               </h3>
               <p class="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed"
                  style="color: {$colorStore.muted}">
-                Most bots stop at 50. We kept going. And going. And going.
+                Every command is listed with usage examples and the permissions it needs, searchable by module.
               </p>
             </div>
 
@@ -1037,10 +1009,10 @@
         <div class="max-w-6xl mx-auto">
           <div class="text-center mb-8">
             <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style="color: {$colorStore.text}">
-              Everything Else
+              All Modules
             </h3>
             <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">
-              Because why stop at the basics?
+              Grouped by what they do. Each one has a wiki page and a dashboard section.
             </p>
           </div>
 
@@ -1322,10 +1294,10 @@
                 <span class="text-sm font-semibold" style="color: {$colorStore.secondary}">We Use Our Own Tools</span>
               </div>
               <h3 class="text-2xl sm:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-                Want a Feature? Tell Us.
+                Feature Requests
               </h3>
               <p class="text-base sm:text-lg leading-relaxed" style="color: {$colorStore.muted}">
-                Built with our own forms system. Because why not?
+                Requests go through the bot's own forms system, the same one you can use in your server.
               </p>
             </div>
 

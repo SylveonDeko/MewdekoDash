@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { logger } from "$lib/logger";
 import { safeLocalStorage } from "$lib/safeStorage";
+import { themeStore } from "$lib/stores/themeStore";
 // @ts-ignore - ColorThief doesn't have proper types
 import ColorThief from "colorthief";
 
@@ -99,7 +100,22 @@ function createColorStore() {
     }
   }
 
-  const store = writable<ColorPalette>(initialPalette);
+  /**
+   * Palette as extracted from the image, before any theme re-tinting. The
+   * store always holds the themed version so consumers never have to care.
+   */
+  let basePalette = initialPalette;
+  const store = writable<ColorPalette>(themePalette(initialPalette));
+
+  /** Stores a new base palette and publishes its themed version. */
+  function commit(palette: ColorPalette) {
+    basePalette = palette;
+    store.set(themePalette(palette));
+  }
+
+  themeStore.subscribe(() => {
+    store.set(themePalette(basePalette));
+  });
 
   // Update current palette and persist when store changes
   store.subscribe((value) => {
@@ -599,7 +615,38 @@ function createColorStore() {
     }
   }
 
-  // Halloween state management
+  /** Parses an `hsl(h, s%, l%)` string, or returns null for anything else. */
+  function parseHsl(value: string): HSL | null {
+    const match = /^hsl\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)$/i.exec(value.trim());
+    if (!match) return null;
+    return [Number(match[1]), Number(match[2]), Number(match[3])];
+  }
+
+  /** Softens a gradient stop into the pastel, glossy range the aero skin uses. */
+  function aeroGradientStop(value: string): string {
+    const hsl = parseHsl(value);
+    if (!hsl) return value;
+    return hslToString(hsl[0], 85, 62);
+  }
+
+  /**
+   * Applies the active theme to an extracted palette. The default theme
+   * returns the palette untouched; the aero theme keeps the guild accents,
+   * shifts text and background to the night glass tones, and softens the
+   * gradient stops. The transform is idempotent for cached palettes.
+   */
+  function themePalette(palette: ColorPalette): ColorPalette {
+    if (themeStore.current !== "aero") return palette;
+    return {
+      ...palette,
+      text: "#f3f9ff",
+      muted: "#c9deef",
+      background: "#0a2544",
+      gradientStart: aeroGradientStop(palette.gradientStart),
+      gradientMid: aeroGradientStop(palette.gradientMid),
+      gradientEnd: aeroGradientStop(palette.gradientEnd),
+    };
+  }
 
   return {
     subscribe: store.subscribe,
@@ -650,7 +697,7 @@ function createColorStore() {
         gradientEnd: current.gradientStart,
       };
 
-      store.set(newPalette);
+      commit(newPalette);
       // Mark that Halloween swap is active (to persist across server switches)
       if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
         sessionStorage.setItem("mewdeko-halloween-active", "true");
@@ -712,7 +759,7 @@ function createColorStore() {
 
     // Reset to default palette
     reset(): void {
-      store.set(DEFAULT_PALETTE);
+      commit(DEFAULT_PALETTE);
       // Also clear session storage
       if (typeof globalThis.window !== "undefined" && globalThis.sessionStorage) {
         try {
@@ -726,20 +773,20 @@ function createColorStore() {
     // Extract colors from image (server icon or fallback to bot avatar)
     async extractFromImage(imageUrl: string): Promise<void> {
       if (!imageUrl) {
-        store.set(DEFAULT_PALETTE);
+        commit(DEFAULT_PALETTE);
         return;
       }
 
       try {
         const palette = await extractColors(imageUrl);
-        store.set(palette);
+        commit(palette);
 
         // If Halloween is active, swap the colors after extraction
         if (this.isHalloweenActive()) {
           this.applyHalloweenSwap();
         }
       } catch (err) {
-        store.set(DEFAULT_PALETTE);
+        commit(DEFAULT_PALETTE);
       }
     },
 
@@ -748,20 +795,20 @@ function createColorStore() {
       iconUrl: string | null | undefined,
     ): Promise<void> {
       if (!iconUrl) {
-        store.set(DEFAULT_PALETTE);
+        commit(DEFAULT_PALETTE);
         return;
       }
 
       try {
         const palette = await extractColors(iconUrl);
-        store.set(palette);
+        commit(palette);
 
         // If Halloween is active, swap the colors after extraction
         if (this.isHalloweenActive()) {
           this.applyHalloweenSwap();
         }
       } catch (err) {
-        store.set(DEFAULT_PALETTE);
+        commit(DEFAULT_PALETTE);
       }
     },
 
@@ -779,7 +826,7 @@ function createColorStore() {
         gradientEnd: current.gradientStart,
       };
 
-      store.set(newPalette);    },
+      commit(newPalette);    },
   };
 }
 

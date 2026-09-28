@@ -180,7 +180,7 @@
 >
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <!-- Header Section -->
-    <div class="py-4 backdrop-blur-lg border-b shadow-lg mb-8"
+    <div class="py-4 backdrop-blur-lg border rounded-2xl shadow-lg mb-8"
          style="background: linear-gradient(135deg, {$colorStore.gradientStart}15 0%, {$colorStore.gradientEnd}10 100%); border-color: {$colorStore.primary}30;">
       <div class="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
         <div class="text-center">

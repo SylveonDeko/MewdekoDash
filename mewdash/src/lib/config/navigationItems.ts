@@ -471,7 +471,7 @@ export const ownerFeatures: NavigationItem[] = [
   },
   {
     label: "Bot Hells",
-    icon: "fa-utility-duo fa-regular fa-robot",
+    icon: "fa-utility-duo fa-regular fa-microchip",
     href: "/owner/bot-hells",
     category: "Analytics",
     description: "Servers littered with bots, with bulk leave",

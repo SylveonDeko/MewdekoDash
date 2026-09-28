@@ -4,7 +4,7 @@
   import { Chart, LinearScale, LogarithmicScale, PointElement, ScatterController, Tooltip } from "chart.js";
   import { colorStore } from "$lib/stores/colorStore";
   import { compact } from "./format";
-  import { GRID, SURFACE, TEXT, TEXT_STRONG } from "./palette";
+  import { GRID, TEXT } from "./palette";
 
   Chart.register(ScatterController, PointElement, LinearScale, LogarithmicScale, Tooltip);
 
@@ -54,10 +54,6 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: SURFACE,
-            titleColor: TEXT_STRONG,
-            bodyColor: TEXT_STRONG,
-            borderColor: GRID,
             borderWidth: 1,
             callbacks: {
               label: (item) => {

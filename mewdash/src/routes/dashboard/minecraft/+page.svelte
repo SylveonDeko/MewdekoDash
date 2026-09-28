@@ -441,13 +441,7 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    backgroundColor: "#1a1a2e",
-                    titleColor: "#fff",
-                    bodyColor: "#fff",
-                    borderColor: primary + "40",
-                    borderWidth: 1,
-                }
+                tooltip: {}
             },
             scales: {
                 x: {

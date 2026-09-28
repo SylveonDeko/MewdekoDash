@@ -338,13 +338,11 @@
 </script>
 
 <div bind:this={tabContainerElement} class="w-full">
-  <div class="sticky top-0 z-40 backdrop-blur-lg border-b mb-6"
-       style="background: linear-gradient(135deg, {$colorStore.gradientStart}90, {$colorStore.gradientMid}90);
-              border-color: {$colorStore.primary}30;">
+  <div class="sticky top-0 z-40 mb-6 pointer-events-none">
     <div class="w-full px-4 md:px-6">
 
         <div class="hidden md:flex items-center justify-center py-3">
-            <div class="relative flex items-center p-1.5 rounded-2xl"
+            <div class="relative flex items-center p-1.5 rounded-2xl pointer-events-auto backdrop-blur-lg shadow-lg"
                  style="background: {$colorStore.primary}08; border: 1px solid {$colorStore.primary}15;">
 
                 {#if activeTab && tabElements.length > 0}
@@ -398,7 +396,7 @@
             </div>
         </div>
 
-        <div class="md:hidden py-2">
+        <div class="md:hidden py-2 pointer-events-auto">
             <div class="relative">
                 {#if showBounceStart}
                     <div class="absolute left-0 top-0 bottom-0 w-2 z-20 rounded-r-full animate-bounce-left"
@@ -421,6 +419,7 @@
                         <button
                                 class="shrink-0 relative flex items-center gap-2 px-4 py-2.5 rounded-full tab-press min-w-fit"
                                 class:scale-105={isActive}
+                                aria-pressed={isActive}
                                 style="background: {isActive
                        ? `linear-gradient(135deg, ${$colorStore.primary}25, ${$colorStore.secondary}20)`
                        : $colorStore.primary + '08'};

@@ -42,6 +42,7 @@
   import {
     formatDate,
     formatDateTime,
+    formatHour,
     formatDuration,
     formatHours,
     formatNumber,
@@ -155,13 +156,22 @@
     }
   }
 
+  /**
+   * Axis labels: hour only inside a single day, date and time for a couple of
+   * days, date alone beyond that. Long labels collide on a 24 hour axis.
+   */
   function bucketLabel(iso: string): string {
-    return lookback === 1 || lookback === 2 ? formatDateTime(iso) : formatDate(iso);
+    if (lookback === 1) return formatHour(iso);
+    return lookback === 2 ? formatDateTime(iso) : formatDate(iso);
   }
 
   let messageLabels = $derived(messageSeries.map((p) => bucketLabel(p.bucket)));
   let voiceLabels = $derived(voiceSeries.map((p) => bucketLabel(p.bucket)));
-  let snapshotLabels = $derived(snapshots.map((s) => (snapshots.length > 48 ? formatDate(s.timestamp) : formatDateTime(s.timestamp))));
+  let snapshotLabels = $derived(
+    snapshots.map((s) =>
+      snapshots.length > 48 ? formatDate(s.timestamp) : lookback === 1 ? formatHour(s.timestamp) : formatDateTime(s.timestamp)
+    )
+  );
   let joinLabels = $derived(joinLeave?.joins.map((p) => formatDate(p.bucket)) ?? []);
 
   /** Rankings */

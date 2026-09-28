@@ -45,4 +45,4 @@ jobs:
 
       # Fails on utility duo icons that are not in the font and would render blank.
       - name: Font Awesome icons are valid
-        run: node fa-icon-search.js --validate
+        run: npm run check-fa-icons

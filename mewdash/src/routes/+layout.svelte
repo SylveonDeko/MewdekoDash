@@ -13,6 +13,8 @@
   import { userStore } from "$lib/stores/userStore.ts";
   import { initAuthRefresh } from "$lib/authRefresh";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import { themeStore } from "$lib/stores/themeStore.ts";
+  import { initChartTheme } from "$lib/chartTheme";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
   import { pendingConfirmation, resolveConfirmation } from "$lib/stores/confirmationStore";
 
@@ -55,6 +57,8 @@
       // Initialize auth refresh system
       initAuthRefresh();
       dyslexicFontStore.init();
+      themeStore.init();
+      initChartTheme();
 
         // Initial color extraction is handled by the reactive statement
         // to avoid duplicate extraction
@@ -161,7 +165,7 @@
 </script>
 
 <svelte:head>
-  <meta content="#3b82f6" name="theme-color" />
+  <meta content={$themeStore === "aero" ? "#04122b" : "#3b82f6"} name="theme-color" />
   <meta content="website" property="og:type" />
   <meta content="https://mewdeko.tech/img/hero-dashboard.png" property="og:image" />
   <meta content="Mewdeko" property="og:site_name" />

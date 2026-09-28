@@ -6,6 +6,7 @@
     import {logger} from "$lib/logger";
     import type {MusicStatus} from "$lib/types/music";
     import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
+    import { musicSkinStore } from "$lib/stores/musicSkinStore";
 
     interface Props {
     musicStatus?: MusicStatus | null;
@@ -13,6 +14,14 @@
   }
 
   let { musicStatus = null, isVisible = false }: Props = $props();
+
+  /** Windowshade title line: "Artist - Title", the way the shaded 2.x window scrolled it. */
+  let shadeTitle = $derived(
+    musicStatus?.CurrentTrack?.Track
+      ? `${musicStatus.CurrentTrack.Track.Author} - ${musicStatus.CurrentTrack.Track.Title}`
+      : "*** nothing playing ***"
+  );
+  const shadeBars = [0, 1, 2, 3, 4, 5, 6, 7];
 
   // Derived state
   let currentTrack = $derived(musicStatus?.CurrentTrack);
@@ -73,6 +82,32 @@
 </script>
 
 {#if isVisible && (hasTrack || botInChannel)}
+  {#if $musicSkinStore === "classic"}
+    <!-- Windowshade: the collapsed one-line form of the classic main window -->
+    <div
+      class="wa-shade"
+      class:wa-shade-playing={isPlaying}
+      in:fly={{ x: 20, duration: 400, delay: 0 }}
+      out:fly={{ x: 20, duration: 300 }}
+    >
+      <span class="wa-shade-lines" aria-hidden="true"></span>
+      <div class="wa-shade-analyser" aria-hidden="true">
+        {#each shadeBars as bar}
+          <span class="wa-shade-bar" style="--i: {bar};"></span>
+        {/each}
+      </div>
+      <button type="button" class="wa-shade-marquee" onclick={openMusicDashboard} title="Open the music dashboard">
+        <span class="wa-shade-text" class:wa-shade-scroll={shadeTitle.length > 26}>{shadeTitle}{shadeTitle.length > 26 ? "   ***   " + shadeTitle : ""}</span>
+      </button>
+      {#if hasTrack}
+        <div class="wa-shade-buttons">
+          <button type="button" class="wa-shade-btn" onclick={previousTrack} aria-label="Previous" title="Previous">⏮</button>
+          <button type="button" class="wa-shade-btn" onclick={togglePlayPause} aria-label={isPlaying ? "Pause" : "Play"} title={isPlaying ? "Pause" : "Play"}>{isPlaying ? "❚❚" : "▶"}</button>
+          <button type="button" class="wa-shade-btn" onclick={skipTrack} aria-label="Next" title="Next">⏭</button>
+        </div>
+      {/if}
+    </div>
+  {:else}
   <div
     class="flex items-center gap-2 p-2 rounded-xl  shadow-lg transition-all duration-300 hover:shadow-xl border"
           style="background: linear-gradient(135deg, {colors.gradientStart}, {colors.gradientEnd});
@@ -211,9 +246,132 @@
     </div>
       {/if}
   </div>
+  {/if}
 {/if}
 
 <style>
+    /* Windowshade chrome, sharing the classic player's tokens. */
+    .wa-shade {
+        --wa-lcd: color-mix(in oklch, var(--color-primary, #37ff37) 45%, #5cff5c);
+        --wa-lcd-dim: color-mix(in srgb, var(--wa-lcd) 35%, #000000);
+        --wa-face: #2b2b36;
+        --wa-face-hi: #4a4a5c;
+        --wa-face-lo: #15151c;
+        --wa-title: color-mix(in oklch, var(--color-primary, #4c6fd1) 35%, #26264a);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 28px;
+        max-width: 320px;
+        padding: 0 6px;
+        background: linear-gradient(180deg, var(--wa-title), color-mix(in srgb, var(--wa-title) 60%, #000));
+        border: 1px solid var(--wa-face-lo);
+        box-shadow: inset 1px 1px 0 var(--wa-face-hi), inset -1px -1px 0 var(--wa-face-lo), 0 6px 18px rgba(0, 0, 0, 0.55);
+        font-family: "Lucida Console", "Monaco", "DejaVu Sans Mono", "Courier New", monospace;
+        font-size: 10px;
+        color: var(--wa-lcd);
+        text-shadow: none;
+        user-select: none;
+    }
+
+    .wa-shade-lines {
+        width: 18px;
+        height: 8px;
+        background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px 3px);
+    }
+
+    .wa-shade-analyser {
+        display: flex;
+        align-items: flex-end;
+        gap: 1px;
+        width: 30px;
+        height: 14px;
+        padding: 1px;
+        background: #000;
+        border: 1px solid var(--wa-face-lo);
+    }
+
+    .wa-shade-bar {
+        flex: 1;
+        height: 10%;
+        background: linear-gradient(180deg, #ff4040, #ffd040 40%, var(--wa-lcd) 100%);
+        transition: height 320ms ease-out;
+    }
+
+    .wa-shade-playing .wa-shade-bar {
+        animation: wa-shade-bounce 700ms ease-in-out infinite alternate;
+        animation-delay: calc(var(--i) * -90ms);
+    }
+
+    @keyframes wa-shade-bounce {
+        0% { height: 15%; }
+        40% { height: 70%; }
+        70% { height: 35%; }
+        100% { height: 95%; }
+    }
+
+    .wa-shade-marquee {
+        flex: 1;
+        min-width: 0;
+        height: 16px;
+        padding: 2px 4px;
+        background: #000;
+        border: 1px solid var(--wa-face-lo);
+        color: var(--wa-lcd);
+        font: inherit;
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+        text-shadow: 0 0 4px var(--wa-lcd);
+        cursor: pointer;
+    }
+
+    .wa-shade-text {
+        display: inline-block;
+    }
+
+    .wa-shade-scroll {
+        animation: wa-shade-marquee 16s linear infinite;
+    }
+
+    @keyframes wa-shade-marquee {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+    }
+
+    .wa-shade-buttons {
+        display: flex;
+        gap: 1px;
+    }
+
+    .wa-shade-btn {
+        width: 20px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(180deg, var(--wa-face-hi), var(--wa-face));
+        border: 1px solid var(--wa-face-lo);
+        box-shadow: inset 1px 1px 0 #fff2, inset -1px -1px 0 #0006;
+        color: #e6e6f0;
+        font-size: 8px;
+        cursor: pointer;
+    }
+
+    .wa-shade-btn:active {
+        box-shadow: inset -1px -1px 0 #fff2, inset 1px 1px 0 #0006;
+        transform: translateY(1px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wa-shade-playing .wa-shade-bar {
+            animation: none;
+            height: 45%;
+        }
+        .wa-shade-scroll {
+            animation: none;
+        }
+    }
+
     /* Add subtle animation for playing indicator */
     @keyframes pulse {
         0%, 100% {

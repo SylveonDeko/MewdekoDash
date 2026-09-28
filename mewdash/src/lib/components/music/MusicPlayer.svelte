@@ -24,6 +24,8 @@ A comprehensive music player component for Discord bot music functionality.
     import type {QueueTrack} from "$lib/api/music/models/Music";
     import {musicPlayerColors} from "$lib/stores/musicPlayerColorStore";
     import MusicSearch from "$lib/components/music/MusicSearch.svelte";
+    import ClassicMusicPlayer from "$lib/components/music/ClassicMusicPlayer.svelte";
+    import { musicSkinStore } from "$lib/stores/musicSkinStore";
 
     interface Props {
     musicStatus: MusicStatus;
@@ -736,6 +738,54 @@ A comprehensive music player component for Discord bot music functionality.
     isSearchModalOpen = true;
   }
 
+  /** Seeks to an absolute position; used by the classic skin's seek bar. */
+  async function seekToSeconds(seconds: number) {
+    if (!$currentGuild?.id) return;
+    try {
+      await musicApi.seek($currentGuild.id, { Position: seconds });
+      currentProgress = seconds;
+    } catch (err) {
+      logger.error("Failed to seek:", err);
+    }
+  }
+
+  /** Sets the volume from a 0 to 100 percentage. */
+  async function setVolumePercent(percent: number) {
+    if (!$currentGuild?.id) return;
+    try {
+      await musicApi.setVolume($currentGuild.id, Math.max(0, Math.min(100, Math.round(percent))));
+    } catch (err) {
+      logger.error("Failed to update volume:", err);
+    }
+  }
+
+  /** There is no stop endpoint, so stop pauses whatever is playing. */
+  async function stopPlayback() {
+    if (musicStatus?.State === 2) await togglePlayPause();
+  }
+
+  /** Steps repeat through off, track, queue. */
+  async function cycleRepeat() {
+    if (!$currentGuild?.id) return;
+    const next = ((musicStatus?.RepeatMode ?? 0) + 1) % 3;
+    try {
+      await musicApi.setRepeatMode($currentGuild.id, String(next));
+      announceToScreenReader(["Repeat off", "Repeat track", "Repeat queue"][next]);
+    } catch (err) {
+      logger.error("Failed to set repeat mode:", err);
+    }
+  }
+
+  async function shuffleQueue() {
+    if (!$currentGuild?.id) return;
+    try {
+      await musicApi.shuffleQueue($currentGuild.id);
+      announceToScreenReader("Queue shuffled");
+    } catch (err) {
+      logger.error("Failed to shuffle queue:", err);
+    }
+  }
+
   // Function to handle when a track is added through the search modal
   function handleTrackAdded(event: any) {
     isSearchModalOpen = false;
@@ -796,7 +846,7 @@ A comprehensive music player component for Discord bot music functionality.
 </script>
 
 <div
-  class="w-full  rounded-2xl border p-4 md:p-6 shadow-2xl overflow-hidden transition-all duration-500"
+  class="w-full relative rounded-2xl border p-4 md:p-6 shadow-2xl overflow-hidden transition-all duration-500"
   aria-label="Music Player"
   class:State-2={musicStatus?.State === 2}
   role="region"
@@ -814,6 +864,35 @@ A comprehensive music player component for Discord bot music functionality.
   <div aria-live="polite" class="sr-only">
     {screenReaderAnnouncement}
   </div>
+
+  {#if $musicSkinStore === "classic"}
+    <ClassicMusicPlayer
+      {musicStatus}
+      {currentProgress}
+      onPlayPause={togglePlayPause}
+      onStop={stopPlayback}
+      onPrevious={previousTrack}
+      onNext={skipTrack}
+      onSeek={seekToSeconds}
+      onVolume={setVolumePercent}
+      onPlayIndex={playQueueItem}
+      onRemove={removeFromQueue}
+      onOpenSearch={openSearchModal}
+      onShuffle={shuffleQueue}
+      onRepeat={cycleRepeat}
+      onSwitchSkin={() => musicSkinStore.toggle()}
+    />
+  {:else}
+  <!-- Skin switch: the classic window has its own in the title bar -->
+  <button
+    type="button"
+    class="absolute top-3 right-3 z-20 px-2 py-1 rounded-md text-[10px] font-semibold tracking-wider uppercase transition-opacity opacity-60 hover:opacity-100 focus:opacity-100 focus:outline-hidden"
+    style="background: var(--music-foreground)25; color: var(--music-text); border: 1px solid var(--music-foreground)40;"
+    onclick={() => musicSkinStore.toggle()}
+    title="Switch to the classic Winamp-style player"
+  >
+    Classic
+  </button>
 
   <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
     <!-- Album Art -->
@@ -1383,6 +1462,7 @@ A comprehensive music player component for Discord bot music functionality.
       </div>
     </details>
   </div>
+  {/if}
 
   <!-- Context Menu -->
   {#if contextMenuVisible}

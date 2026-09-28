@@ -22,7 +22,7 @@
   import type { AlertBand, AnalyticsAgg, SeriesResult } from "$lib/api/analytics/models";
   import { analyticsFilters, analyticsRefreshTick, queryParams, rangeSeconds } from "$lib/stores/analyticsFilters";
   import { bucketLabel, bytes, compact } from "./format";
-  import { GRID, PALETTE, SURFACE, TEXT, TEXT_STRONG, seriesColor, severityColor } from "./palette";
+  import { GRID, PALETTE, TEXT, seriesColor, severityColor } from "./palette";
 
   Chart.register(LineController, BarController, LineElement, BarElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend);
 
@@ -241,10 +241,6 @@
             labels: { color: TEXT, boxWidth: 10, boxHeight: 10, font: { size: 11 }, usePointStyle: false },
           },
           tooltip: {
-            backgroundColor: SURFACE,
-            titleColor: TEXT_STRONG,
-            bodyColor: TEXT_STRONG,
-            borderColor: GRID,
             borderWidth: 1,
             callbacks: {
               label: (item) => `${item.dataset.label ?? ""}: ${tipValue(item.parsed.y as number | null)}`,

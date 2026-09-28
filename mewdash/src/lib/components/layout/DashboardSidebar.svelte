@@ -15,6 +15,7 @@
   import { musicStore } from "$lib/stores/musicStore";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import { themeStore } from "$lib/stores/themeStore.ts";
   import { openProductUpdates, unreadUpdateCount } from "$lib/stores/productUpdateStore";
   import { matchesSearchTerms, openSearch } from "$lib/stores/searchStore";
   import { safeLocalStorage } from "$lib/safeStorage";
@@ -859,6 +860,25 @@
             <span
               class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform block"
               class:translate-x-4={$dyslexicFontStore}>
+            </span>
+          </span>
+        </button>
+
+        <!-- Frutiger Aero theme -->
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 px-3 py-2 max-lg:py-2.5 rounded-xl transition-[color,background-color,border-color,transform] duration-200 hover:scale-[1.01] group"
+          style="color: {$colorStore.text};"
+          onclick={() => themeStore.toggleAero()}
+          aria-pressed={$themeStore === "aero"}
+        >
+          <i class="fa-solid fa-palette text-sm shrink-0" style="color: {$colorStore.primary}; width: 20px; text-align: center;" aria-hidden="true"></i>
+          <span class="text-sm flex-1 text-left">Frutiger Aero Theme</span>
+          <span class="w-9 h-5 rounded-full transition-colors relative shadow-inner block shrink-0"
+                style="background: {$themeStore === 'aero' ? $colorStore.primary : '#374151'};">
+            <span
+              class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform block"
+              class:translate-x-4={$themeStore === "aero"}>
             </span>
           </span>
         </button>

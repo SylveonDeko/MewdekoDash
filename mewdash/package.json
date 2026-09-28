@@ -13,7 +13,8 @@
     "format": "prettier --write --plugin-search-dir . .",
     "generate-sitemap": "node generate-sitemap.js",
     "generate-tab-index": "node generate-tab-index.js",
-    "check-tab-index": "node generate-tab-index.js --check"
+    "check-tab-index": "node generate-tab-index.js --check",
+    "check-fa-icons": "node validate-fa-icons.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

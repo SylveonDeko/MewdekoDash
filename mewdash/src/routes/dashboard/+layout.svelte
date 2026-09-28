@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
+  import { afterNavigate } from "$app/navigation";
   import { currentInstance } from "$lib/stores/instanceStore";
   import { safeLocalStorage } from "$lib/safeStorage";
   import InstanceSelector from "$lib/components/layout/InstanceSelector.svelte";
@@ -40,6 +41,14 @@
   let contentEl = $state<HTMLElement>();
   let prevCollapsed = untrack(() => sidebarCollapsed);
   let slideCleanup: (() => void) | null = null;
+
+  /**
+   * On large screens the content pane is the scroll container rather than
+   * the document, so SvelteKit's own scroll reset never reaches it.
+   */
+  afterNavigate(() => {
+    contentEl?.scrollTo({ top: 0 });
+  });
 
   $effect(() => {
     const now = sidebarCollapsed;
@@ -318,12 +327,12 @@
   });
 </script>
 
-<div class="flex w-full overflow-x-hidden">
+<div class="flex w-full overflow-x-hidden lg:h-dvh lg:overflow-hidden">
   {#if $currentInstance}
     <DashboardSidebar bind:collapsed={sidebarCollapsed} bind:mobileOpen={mobileSidebarOpen} />
   {/if}
 
-  <div bind:this={contentEl} class="flex-1 w-full min-w-0"
+  <div bind:this={contentEl} class="flex-1 w-full min-w-0 lg:h-dvh lg:overflow-y-auto lg:overflow-x-hidden"
        class:lg:ml-[280px]={$currentInstance && !sidebarCollapsed}
        class:lg:ml-[68px]={$currentInstance && sidebarCollapsed}>
     {#if !$currentInstance}

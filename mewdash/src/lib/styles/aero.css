@@ -1,0 +1,883 @@
+/*
+  Frutiger Aero theme.
+
+  Activated by `html.theme-aero` (see themeStore). Every rule here is unlayered
+  on purpose: Tailwind utilities live in @layer utilities, and unlayered CSS
+  wins over layered CSS regardless of specificity, so these overrides beat the
+  dark utility classes without needing !important. Inline palette styles are
+  handled by colorStore, which softens the guild gradients for the glass.
+*/
+
+/* Deep night sky, smoked glass, glossy edges, all tinted by the guild palette.
+
+   The root layout mirrors colorStore onto --color-primary, --color-secondary
+   and --color-accent on the html element. Every hue below is mixed from those
+   with color-mix, so the sky, ground glow, glass edges, rings and glows follow
+   the guild icon. The hex fallbacks give the navy look until the palette
+   lands, and the mix ratios are tuned so pale or greyish palettes still land
+   in the dark range: the base stays around 5-15% lightness. */
+html.theme-aero {
+    --aero-p: var(--color-primary, #3b82f6);
+    --aero-s: var(--color-secondary, #8b5cf6);
+    --aero-a: var(--color-accent, #ec4899);
+    --aero-night: #03101f;
+
+    /* Tinted light for edges, sheens and glows: the palette pushed toward white. */
+    --aero-p-light: color-mix(in oklch, var(--aero-p) 45%, #ffffff);
+    --aero-s-light: color-mix(in oklch, var(--aero-s) 45%, #ffffff);
+    --aero-a-light: color-mix(in oklch, var(--aero-a) 45%, #ffffff);
+
+    /* Tinted dark for bodies: the palette sunk into the night base. */
+    --aero-p-deep: color-mix(in oklch, var(--aero-p) 28%, var(--aero-night));
+    --aero-s-deep: color-mix(in oklch, var(--aero-s) 24%, var(--aero-night));
+    --aero-a-deep: color-mix(in oklch, var(--aero-a) 34%, var(--aero-night));
+
+    --aero-ink: #f3f9ff;
+    --aero-ink-soft: #c9deef;
+    --aero-sky-top: color-mix(in oklch, var(--aero-p) 12%, var(--aero-night));
+    --aero-sky-mid: var(--aero-p-deep);
+    --aero-sky-bottom: var(--aero-a-deep);
+    --aero-glass: color-mix(in srgb, var(--aero-p-deep) 42%, transparent);
+    --aero-glass-strong: color-mix(in srgb, var(--aero-p-deep) 65%, transparent);
+    --aero-glass-edge: color-mix(in srgb, var(--aero-p-light) 38%, transparent);
+    --aero-glass-shadow: 0 10px 30px rgba(0, 8, 24, 0.55), inset 0 1px 0 color-mix(in srgb, var(--aero-p-light) 38%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--aero-p-light) 10%, transparent);
+    /* Button gloss, ported from makeaero.com (MIT, Visnalize/makeaero).
+       --aero-gloss is the top highlight strip that sits over content in
+       ::after; --aero-shine is the diagonal glass sweep plus bottom glow
+       that sits under content in ::before. */
+    /* The site's "sheen" toggle is the diagonal glare sweep, and that is the
+       layer left off here. The top highlight strip (::after, geometry set in
+       the gloss rules below) and the bottom glow (::before) stay on. */
+    --aero-gloss: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.06));
+    --aero-shine: radial-gradient(farthest-corner at bottom center, color-mix(in srgb, var(--aero-p-light) 55%, transparent), transparent 70%);
+    /* Orb sphere and specular for icon chips, same source. */
+    --aero-orb: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.55), color-mix(in oklch, var(--aero-p) 60%, #ffffff) 22%, var(--aero-p) 52%, var(--aero-p-deep) 100%);
+    --aero-orb-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 6px 16px rgba(0, 4, 16, 0.5);
+    --aero-orb-specular: radial-gradient(ellipse, rgba(255, 255, 255, 0.75), transparent 70%);
+    --aero-sky: radial-gradient(ellipse 55% 40% at 80% 0%, color-mix(in srgb, var(--aero-s-light) 32%, transparent) 0%, color-mix(in srgb, var(--aero-s) 15%, transparent) 40%, transparent 70%) fixed,
+        radial-gradient(ellipse 80% 50% at 15% 100%, color-mix(in srgb, var(--aero-a-light) 30%, transparent) 0%, transparent 65%) fixed,
+        linear-gradient(180deg, var(--aero-sky-top) 0%, color-mix(in oklch, var(--aero-p) 18%, var(--aero-night)) 30%, var(--aero-sky-mid) 60%, var(--aero-sky-bottom) 100%) fixed;
+    --aero-ground: radial-gradient(ellipse at 50% 125%, color-mix(in srgb, var(--aero-a-light) 50%, transparent) 0%, color-mix(in srgb, var(--aero-a) 22%, transparent) 40%, transparent 70%),
+        radial-gradient(ellipse at 85% 0%, color-mix(in srgb, var(--aero-s-light) 12%, transparent) 0%, transparent 55%);
+    --aero-bubble-opacity: 0.7;
+    --aero-dim-light: color-mix(in srgb, var(--aero-night) 35%, transparent);
+    --aero-dim-mid: color-mix(in srgb, var(--aero-night) 60%, transparent);
+    --aero-dim-heavy: color-mix(in srgb, var(--aero-night) 75%, transparent);
+    --aero-hover: color-mix(in srgb, var(--aero-p-light) 14%, transparent);
+    --aero-chrome: inset 0 0 0 100vmax color-mix(in srgb, var(--aero-p-deep) 65%, transparent), 0 4px 24px rgba(0, 8, 24, 0.5);
+    --aero-pane: linear-gradient(180deg, color-mix(in srgb, var(--aero-p-light) 20%, transparent) 0%, color-mix(in srgb, var(--aero-p-light) 9%, transparent) 46%, color-mix(in srgb, var(--aero-p-deep) 45%, transparent) 50%, color-mix(in srgb, var(--aero-s-deep) 62%, transparent) 100%),
+        radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--aero-p-light) 28%, transparent) 0%, transparent 55%);
+    --aero-pane-edge: inset 0 1px 0 color-mix(in srgb, var(--aero-p-light) 50%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--aero-s-light) 15%, transparent);
+    --aero-pane-shadow: 0 1px 0 color-mix(in srgb, var(--aero-p-light) 15%, transparent), 0 10px 26px rgba(0, 8, 24, 0.5);
+    --aero-pill-ring: inset 0 0 0 1px color-mix(in srgb, var(--aero-p-light) 42%, transparent), 0 2px 8px rgba(0, 8, 24, 0.45);
+    --aero-text-glow: 0 0 8px color-mix(in srgb, var(--aero-p-light) 38%, transparent);
+    --aero-modal: linear-gradient(180deg, color-mix(in srgb, var(--aero-p-deep) 97%, transparent), color-mix(in srgb, var(--aero-sky-top) 96%, transparent));
+    --aero-modal-shadow: 0 24px 60px rgba(0, 4, 16, 0.7), inset 0 1px 0 color-mix(in srgb, var(--aero-p-light) 42%, transparent);
+    --aero-overlay: color-mix(in srgb, var(--aero-night) 60%, transparent);
+    --aero-scroll-track: color-mix(in srgb, var(--aero-night) 45%, transparent);
+    --aero-scroll-thumb: linear-gradient(180deg, var(--aero-p-light), var(--aero-p));
+    --aero-scroll-thumb-hover: linear-gradient(180deg, color-mix(in oklch, var(--aero-p) 30%, #ffffff), var(--aero-p-light));
+    --aero-link: var(--aero-p-light);
+    --aero-green: #4ee0a0;
+    --aero-input-shadow: inset 0 1px 3px rgba(0, 8, 24, 0.5), 0 1px 0 color-mix(in srgb, var(--aero-p-light) 15%, transparent);
+    --aero-avatar-ring: 0 0 0 2px color-mix(in srgb, var(--aero-p-light) 55%, transparent), 0 4px 12px rgba(0, 8, 24, 0.5);
+    color-scheme: dark;
+}
+
+html.theme-aero body {
+    font-family: "Frutiger", "Segoe UI", "Myriad Pro", "Helvetica Neue", Arial, sans-serif !important;
+    color: var(--aero-ink);
+    /* A soft dark drop under all text lifts light type off the sheen bands
+       without touching the inline palette colours. Pills override this with
+       their own glow. */
+    text-shadow: 0 1px 2px rgba(0, 12, 32, 0.55);
+    background: var(--aero-sky);
+    background-color: var(--aero-sky-mid);
+}
+
+/* Floating soap bubbles behind everything, after the makeaero.com soap
+   bubble orb: a thin tinted fill, a rim-lit edge in a palette hue, and a
+   specular spot up and to the left. Each bubble is three stacked layers
+   sharing one size and position; the rim hue alternates through the palette
+   so the field reads as iridescent rather than plain white. */
+html.theme-aero {
+    /* closest-side sizing keeps every stop inside the inscribed circle; the
+       default farthest-corner sizing would push the rim out to the box edges
+       and draw squares. */
+    --aero-bubble-fill: radial-gradient(circle closest-side at 50% 50%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03) 70%, transparent 100%);
+    --aero-bubble-spec: radial-gradient(circle closest-side at 30% 25%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.25) 45%, transparent 100%);
+    --aero-bubble-rim-p: radial-gradient(circle closest-side at 50% 50%, transparent 82%, color-mix(in srgb, var(--aero-p-light) 70%, transparent) 87%, color-mix(in srgb, var(--aero-p-light) 55%, transparent) 97%, transparent 100%);
+    --aero-bubble-rim-s: radial-gradient(circle closest-side at 50% 50%, transparent 82%, color-mix(in srgb, var(--aero-s-light) 70%, transparent) 87%, color-mix(in srgb, var(--aero-s-light) 55%, transparent) 97%, transparent 100%);
+    --aero-bubble-rim-a: radial-gradient(circle closest-side at 50% 50%, transparent 82%, color-mix(in srgb, var(--aero-a-light) 70%, transparent) 87%, color-mix(in srgb, var(--aero-a-light) 55%, transparent) 97%, transparent 100%);
+}
+
+html.theme-aero body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+        var(--aero-bubble-spec), var(--aero-bubble-rim-p), var(--aero-bubble-fill),
+        var(--aero-bubble-spec), var(--aero-bubble-rim-s), var(--aero-bubble-fill),
+        var(--aero-bubble-spec), var(--aero-bubble-rim-a), var(--aero-bubble-fill),
+        var(--aero-bubble-spec), var(--aero-bubble-rim-s), var(--aero-bubble-fill),
+        var(--aero-bubble-spec), var(--aero-bubble-rim-p), var(--aero-bubble-fill);
+    background-repeat: no-repeat;
+    background-size:
+        220px 220px, 220px 220px, 220px 220px,
+        140px 140px, 140px 140px, 140px 140px,
+        90px 90px, 90px 90px, 90px 90px,
+        300px 300px, 300px 300px, 300px 300px,
+        60px 60px, 60px 60px, 60px 60px;
+    background-position:
+        8% 78%, 8% 78%, 8% 78%,
+        82% 18%, 82% 18%, 82% 18%,
+        62% 88%, 62% 88%, 62% 88%,
+        92% 74%, 92% 74%, 92% 74%,
+        22% 12%, 22% 12%, 22% 12%;
+    opacity: var(--aero-bubble-opacity);
+    animation: aero-bubbles-drift 26s ease-in-out infinite alternate;
+}
+
+/* Grass and sun glow that anchors the bottom of the viewport. */
+html.theme-aero body::after {
+    content: "";
+    position: fixed;
+    inset: auto 0 0 0;
+    height: 38vh;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--aero-ground);
+}
+
+@keyframes aero-bubbles-drift {
+    from {
+        background-position:
+            8% 78%, 8% 78%, 8% 78%,
+            82% 18%, 82% 18%, 82% 18%,
+            62% 88%, 62% 88%, 62% 88%,
+            92% 74%, 92% 74%, 92% 74%,
+            22% 12%, 22% 12%, 22% 12%;
+    }
+    to {
+        background-position:
+            12% 62%, 12% 62%, 12% 62%,
+            78% 30%, 78% 30%, 78% 30%,
+            58% 70%, 58% 70%, 58% 70%,
+            88% 56%, 88% 56%, 88% 56%,
+            28% 24%, 28% 24%, 28% 24%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.theme-aero body::before {
+        animation: none;
+    }
+}
+
+/* Phones: the bubbles are sized in pixels, so at phone width they cover
+   most of the content. Shrink them and fade them back. */
+@media (max-width: 640px) {
+    html.theme-aero body::before {
+        background-size:
+            110px 110px, 110px 110px, 110px 110px,
+            70px 70px, 70px 70px, 70px 70px,
+            48px 48px, 48px 48px, 48px 48px,
+            150px 150px, 150px 150px, 150px 150px,
+            36px 36px, 36px 36px, 36px 36px;
+        opacity: 0.4;
+    }
+}
+
+/* Page shell and dark surface utilities become glass panes. */
+/* The page shell must never become glass. A backdrop-filter on main would
+   make it the containing block for the fixed sidebar and drawers, which then
+   get clipped by the layout wrapper and slide out of view on mobile. */
+html.theme-aero main.bg-mewd-dark-grey {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+html.theme-aero .bg-mewd-dark-grey,
+html.theme-aero .bg-mewd-light-grey,
+html.theme-aero .bg-gray-900,
+html.theme-aero .bg-gray-800,
+html.theme-aero .bg-gray-700,
+html.theme-aero .bg-gray-600,
+html.theme-aero .bg-\[\#2F3136\],
+html.theme-aero .bg-\[\#36393f\],
+html.theme-aero .bg-\[\#3a3d44\],
+html.theme-aero .bg-\[\#4F545C\],
+html.theme-aero .bg-\[\#5D6269\] {
+    background-color: var(--aero-glass);
+    border-color: var(--aero-glass-edge);
+    box-shadow: var(--aero-glass-shadow);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* Only the outermost glass may blur. An element with backdrop-filter becomes
+   the backdrop root for its descendants, so a nested blur can only sample the
+   parent's own paint and reads as plain transparency. Nested glass instead
+   gets a denser solid tint so it still separates from what is behind it. */
+html.theme-aero :is(.bg-mewd-dark-grey, .bg-mewd-light-grey, .bg-gray-900, .bg-gray-800, .bg-gray-700, .bg-gray-600, .bg-black\/50, .bg-black\/60, .bg-black\/70, .bg-black\/80, [class*="backdrop-blur"], aside[aria-label="Dashboard sidebar navigation"], nav[aria-label="Main navigation"], .fixed.inset-0)
+    :is(.bg-mewd-dark-grey, .bg-mewd-light-grey, .bg-gray-900, .bg-gray-800, .bg-gray-700, .bg-gray-600, .bg-black\/50, .bg-black\/60, .bg-black\/70, .bg-black\/80, [class*="backdrop-blur"]) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: var(--aero-glass-strong);
+}
+
+html.theme-aero .bg-black\/5,
+html.theme-aero .bg-black\/10,
+html.theme-aero .bg-black\/20 {
+    background-color: var(--aero-dim-light);
+}
+
+html.theme-aero .bg-black\/50,
+html.theme-aero .bg-black\/60,
+html.theme-aero .bg-black\/70 {
+    background-color: var(--aero-dim-mid);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+html.theme-aero .bg-black\/80 {
+    background-color: var(--aero-dim-heavy);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+html.theme-aero .bg-white\/10,
+html.theme-aero .hover\:bg-white\/5:hover,
+html.theme-aero .hover\:bg-white\/10:hover {
+    background-color: var(--aero-hover);
+}
+
+html.theme-aero .border-white\/20 {
+    border-color: var(--aero-glass-edge);
+}
+
+/* Hardcoded light text flips to ink. */
+html.theme-aero .text-white,
+html.theme-aero .text-gray-100,
+html.theme-aero .text-gray-300,
+html.theme-aero .text-mewd-white,
+html.theme-aero .text-mewd-offwhite {
+    color: var(--aero-ink);
+}
+
+html.theme-aero .text-gray-400,
+html.theme-aero .text-gray-500 {
+    color: var(--aero-ink-soft);
+}
+
+html.theme-aero .text-mewd-green {
+    color: var(--aero-green);
+}
+
+/* Existing blurred panels get the stronger glass and a glossy top edge. */
+html.theme-aero .backdrop-blur-sm,
+html.theme-aero .backdrop-blur-md,
+html.theme-aero .backdrop-blur-lg {
+    box-shadow: var(--aero-glass-shadow);
+    border-color: var(--aero-glass-edge);
+}
+
+/* Sidebar and top nav are inline palette tints too; give them a glass body. */
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"],
+html.theme-aero nav[aria-label="Main navigation"] {
+    box-shadow: var(--aero-chrome);
+    /* No backdrop-filter here on purpose. Both shells contain fixed children
+       (the mobile menu drawer, the collapsed sidebar tooltip), and a filter
+       would turn the shell into their containing block and trap them. The
+       chrome inset is opaque enough to carry the body on its own. */
+}
+
+/* Sidebar sheen: a bright band across the top of the aside and glossy pills
+   for the active row. Rows carry their border inline, so it gets forced. */
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--aero-p-light) 22%, transparent) 0%, color-mix(in srgb, var(--aero-p-light) 8%, transparent) 18%, rgba(0, 0, 0, 0) 32%),
+        radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--aero-s-light) 25%, transparent) 0%, transparent 50%);
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] > * {
+    position: relative;
+    z-index: 1;
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] a[aria-current="page"] {
+    position: relative;
+    isolation: isolate;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pill-ring);
+    text-shadow: var(--aero-text-glow);
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--aero-gloss);
+    pointer-events: none;
+    z-index: 1;
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] a[class*="rounded"]:hover {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--aero-p-light) 22%, transparent);
+}
+
+/* Tab strips: the tablist becomes a glass pane and the selected tab a glossy
+   pill. Tabs carry their border inline, so it gets forced. */
+html.theme-aero [role="tablist"] {
+    position: relative;
+    isolation: isolate;
+    box-shadow: var(--aero-pane-shadow), inset 0 0 0 1px var(--aero-glass-edge);
+}
+
+html.theme-aero [role="tablist"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+/* Links and buttons that carry their border inline (style="border: 1px
+   solid ...") rather than as a border class. Same treatment as bordered
+   buttons: pane and glow under the content, highlight strip over it. */
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item) {
+    position: relative;
+    isolation: isolate;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pane-shadow);
+    text-shadow: var(--aero-text-glow);
+}
+
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item)::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-shine), var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item)::after {
+    content: "";
+    position: absolute;
+    top: 4%;
+    left: 0.75em;
+    width: calc(100% - 1.5em);
+    height: 40%;
+    border-radius: inherit;
+    background: var(--aero-gloss);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Mobile overview tabs are borderless pills with inline tints. Every pill
+   gets the pane; the pressed one picks up the ring and gloss through the
+   generic aria-pressed rules. */
+html.theme-aero button.tab-press.rounded-full {
+    isolation: isolate;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pane-shadow);
+}
+
+html.theme-aero button.tab-press.rounded-full::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+/* Segmented controls (window pickers, edit/preview switches) are a rounded
+   group with padding holding aria-pressed buttons. Same treatment as tabs. */
+html.theme-aero [role="group"].rounded-lg,
+html.theme-aero [role="radiogroup"].rounded-lg,
+html.theme-aero .flex.rounded-lg.p-1,
+html.theme-aero .flex.rounded-lg.p-0\.5,
+html.theme-aero .inline-flex.rounded-lg.p-1,
+html.theme-aero .flex.rounded-2xl.p-1\.5 {
+    position: relative;
+    isolation: isolate;
+    box-shadow: var(--aero-pane-shadow), inset 0 0 0 1px var(--aero-glass-edge);
+}
+
+html.theme-aero [role="group"].rounded-lg::before,
+html.theme-aero [role="radiogroup"].rounded-lg::before,
+html.theme-aero .flex.rounded-lg.p-1::before,
+html.theme-aero .flex.rounded-lg.p-0\.5::before,
+html.theme-aero .inline-flex.rounded-lg.p-1::before,
+html.theme-aero .flex.rounded-2xl.p-1\.5::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+/* Segment pickers paint a solid primary fill inline on the pressed segment.
+   Match the tab pills instead: a translucent primary tint with ink text. */
+html.theme-aero [role="group"] button[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--color-primary, #3b82f6) 22%, transparent) !important;
+    color: var(--aero-ink) !important;
+}
+
+/* The overview tab strip highlights its active tab with a sliding indicator
+   div rather than a state attribute, so the indicator is the pill. */
+html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-none {
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pill-ring) !important;
+    isolation: isolate;
+}
+
+html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-none::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--aero-gloss);
+    pointer-events: none;
+}
+
+html.theme-aero button[aria-pressed="true"],
+html.theme-aero [role="radio"][aria-checked="true"],
+html.theme-aero [role="tab"][aria-selected="true"] {
+    position: relative;
+    isolation: isolate;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pill-ring);
+    text-shadow: var(--aero-text-glow);
+}
+
+html.theme-aero button[aria-pressed="true"]::after,
+html.theme-aero [role="radio"][aria-checked="true"]::after,
+html.theme-aero [role="tab"][aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--aero-gloss);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Cards and panels are inline 5-20% palette tints with no body of their own.
+   An inset box-shadow paints a glass layer between the inline background and
+   the content, which lets the rule win without touching the inline style. */
+html.theme-aero .rounded-2xl.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]),
+html.theme-aero .rounded-xl.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]),
+html.theme-aero .rounded-lg.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]),
+html.theme-aero a.group.rounded-2xl.overflow-hidden,
+html.theme-aero a.group.rounded-xl.overflow-hidden,
+html.theme-aero nav[aria-label="Main navigation"] a.rounded-md,
+html.theme-aero nav[aria-label="Main navigation"] button.rounded-md {
+    position: relative;
+    isolation: isolate;
+    border-color: var(--aero-glass-edge);
+    box-shadow: var(--aero-pane-shadow);
+}
+
+/* Hero tiles carry their border and shadow inline, so those get forced. */
+html.theme-aero a.group.rounded-2xl.overflow-hidden,
+html.theme-aero a.group.rounded-xl.overflow-hidden {
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pane-shadow) !important;
+}
+
+/* Nav pills have no border, so a one-pixel inset ring plays the chrome edge. */
+html.theme-aero nav[aria-label="Main navigation"] a.rounded-md,
+html.theme-aero nav[aria-label="Main navigation"] button.rounded-md {
+    box-shadow: var(--aero-pill-ring);
+    text-shadow: var(--aero-text-glow);
+}
+
+/* The glossy pane itself: bright sheen on the top half, a crisp horizon line,
+   then a cool translucent body. Sits under the content, over the inline tint. */
+html.theme-aero .rounded-2xl.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+html.theme-aero .rounded-xl.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+html.theme-aero .rounded-lg.border:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+html.theme-aero a.group.rounded-2xl.overflow-hidden::before,
+html.theme-aero a.group.rounded-xl.overflow-hidden::before,
+html.theme-aero nav[aria-label="Main navigation"] a.rounded-md::before,
+html.theme-aero nav[aria-label="Main navigation"] button.rounded-md::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+/* Glossy highlight on real (bordered) buttons and link pills, the signature
+   aero look. Borderless links such as sidebar rows are left flat. Positioned
+   elements are skipped so absolutely placed controls keep working. */
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]),
+html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]) {
+    position: relative;
+    isolation: isolate;
+    text-shadow: var(--aero-text-glow);
+}
+
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
+html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--aero-gloss);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Diagonal glass sweep and bottom glow under the content of every glossy
+   pill. Bordered buttons already carry the pane in ::before, so for those
+   the sweep is stacked on top of the pane in the same layer. */
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-shine), var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+html.theme-aero button[aria-pressed="true"]::before,
+html.theme-aero [role="radio"][aria-checked="true"]::before,
+html.theme-aero [role="tab"][aria-selected="true"]::before,
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] a[aria-current="page"]::before,
+html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-none::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--aero-shine);
+    pointer-events: none;
+}
+
+/* Top highlight strip geometry from makeaero: a short inset band across the
+   top 40% rather than a full-face overlay, so it never sits on the label. */
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
+html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
+html.theme-aero button[aria-pressed="true"]::after,
+html.theme-aero [role="radio"][aria-checked="true"]::after,
+html.theme-aero [role="tab"][aria-selected="true"]::after,
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] a[aria-current="page"]::after,
+html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-none::after {
+    inset: auto;
+    top: 4%;
+    left: 0.75em;
+    width: calc(100% - 1.5em);
+    height: 40%;
+}
+
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):hover,
+html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):hover {
+    box-shadow: 0 6px 10px rgba(0, 4, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):active {
+    box-shadow: 0 2px 4px rgba(0, 4, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(1px);
+}
+
+/* Modal panels are inline 10-15% tints that borrow their body from the dark
+   overlay behind them. On the light theme that leaves ink text floating on a
+   dim blur, so panels inside a fixed overlay get an opaque glass body.
+   !important is required because the tint is an inline background. */
+html.theme-aero .fixed.inset-0 > .shadow-2xl,
+html.theme-aero .fixed.inset-0 > * > .shadow-2xl,
+html.theme-aero .fixed.inset-0 > .rounded-2xl.border,
+html.theme-aero .fixed.inset-0 > .rounded-xl.border,
+html.theme-aero .fixed.inset-0 > .bg-gray-900\/90 {
+    background: var(--aero-modal) !important;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-modal-shadow);
+}
+
+html.theme-aero .fixed.inset-0.backdrop-blur-md {
+    background: var(--aero-overlay) !important;
+}
+
+/* Popovers such as DiscordSelector menus and nav dropdowns are absolutely
+   positioned, carry their own blur, and paint an inline near-black gradient.
+   Inside blurred cards that blur is dead, and the inline paint beats any
+   stylesheet color, so they read as flat holes. Force an opaque smoked-glass
+   body with a cyan edge instead; nothing behind a menu needs to show through.
+   Full-bleed inset-0 overlays are excluded because those are dims, not menus. */
+html.theme-aero .absolute[class*="backdrop-blur"]:not(.inset-0),
+html.theme-aero .absolute.shadow-2xl:not(.inset-0),
+html.theme-aero .absolute.shadow-lg.border:not(.inset-0) {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--aero-p-light) 16%, transparent) 0%, color-mix(in srgb, var(--aero-p-light) 6%, transparent) 46%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0) 100%),
+        linear-gradient(180deg, color-mix(in srgb, var(--aero-p-deep) 97%, transparent), color-mix(in srgb, var(--aero-sky-top) 98%, transparent)) !important;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-modal-shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Candy glyphs. Every Font Awesome icon is filled with a vertical gradient
+   built from its own colour (currentColor resolves to the inline palette
+   value, so guild hues survive) fading to white at the top, then lifted with
+   a drop shadow. Duo fonts paint their layers in ::before and ::after, so the
+   gradient goes on the pseudo-elements; single-layer fonts take it directly.
+   text-fill-color beats an inline color, which is what lets this apply
+   without touching the components. */
+html.theme-aero {
+    --aero-glyph: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, currentColor 55%, #ffffff) 28%, currentColor 58%, color-mix(in srgb, currentColor 72%, #04122b) 100%);
+    --aero-glyph-shadow: drop-shadow(0 1px 1px rgba(0, 10, 30, 0.6)) drop-shadow(0 0 4px color-mix(in srgb, var(--aero-p-light) 25%, transparent));
+}
+
+html.theme-aero .fa-utility-duo::before,
+html.theme-aero .fa-utility-duo::after,
+html.theme-aero .fa-jelly-duo::before,
+html.theme-aero .fa-jelly-duo::after,
+html.theme-aero .fa-sharp-duotone::before,
+html.theme-aero .fa-sharp-duotone::after,
+html.theme-aero .fa-duotone::before,
+html.theme-aero .fa-duotone::after {
+    background-image: var(--aero-glyph);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    /* background-clip: text only paints inside the line box, and FA icons
+       sit at line-height 1, so glyphs that overhang it lose their edges.
+       Pad the paint box outward and pull it back with a matching margin.
+       Vertical only: a horizontal shorthand would clobber the mr-1 / ml-1
+       spacing utilities on inline icons and crowd them into the text. */
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+}
+
+html.theme-aero .fa-utility-duo,
+html.theme-aero .fa-jelly-duo,
+html.theme-aero .fa-sharp-duotone,
+html.theme-aero .fa-duotone {
+    filter: var(--aero-glyph-shadow);
+    text-shadow: none;
+}
+
+html.theme-aero i[class*="fa-"]:not(.fa-utility-duo):not(.fa-jelly-duo):not(.fa-sharp-duotone):not(.fa-duotone) {
+    background-image: var(--aero-glyph);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: var(--aero-glyph-shadow);
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+}
+
+/* Spinners and progress rings are borders, not glyphs. Leave them alone. */
+html.theme-aero i.fa-spin,
+html.theme-aero i.fa-spin-pulse,
+html.theme-aero i.animate-spin {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    filter: none;
+}
+
+/* Icon badges: a padded rounded box whose only child is an icon becomes a
+   glossy orb, after the makeaero.com orb: an off-centre sphere gradient in
+   the guild primary, depth shadows, and an elliptical specular up and to the
+   left. The inline tint is replaced, since a sphere needs a full fill. */
+html.theme-aero [class*="rounded"]:has(> i[class*="fa-"]:only-child):is([class*="w-"][class*="h-"], [class*="justify-center"], .p-2, .p-2\.5, .p-3, .p-4):not(button):not(a):not(label):not([class*="absolute"]):not([class*="fixed"]) {
+    position: relative;
+    isolation: isolate;
+    background: var(--aero-orb) !important;
+    box-shadow: var(--aero-orb-shadow);
+}
+
+html.theme-aero [class*="rounded"]:has(> i[class*="fa-"]:only-child):is([class*="w-"][class*="h-"], [class*="justify-center"], .p-2, .p-2\.5, .p-3, .p-4):not(button):not(a):not(label):not([class*="absolute"]):not([class*="fixed"])::after {
+    content: "";
+    position: absolute;
+    top: 8%;
+    left: 18%;
+    width: 45%;
+    height: 35%;
+    border-radius: 50%;
+    background: var(--aero-orb-specular);
+    transform: rotate(-20deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* The glyph inside an orb sits on a mid-tone sphere, so it goes white-hot
+   with its own colour kept only as a rim, which is how the era drew them. */
+html.theme-aero [class*="rounded"]:has(> i[class*="fa-"]:only-child):is([class*="w-"][class*="h-"], [class*="justify-center"], .p-2, .p-2\.5, .p-3, .p-4):not(button):not(a):not(label):not([class*="absolute"]):not([class*="fixed"]) > i {
+    --aero-glyph: linear-gradient(180deg, #ffffff 0%, #ffffff 55%, color-mix(in srgb, currentColor 40%, #ffffff) 100%);
+}
+
+/* Code blocks and keycaps are text surfaces, not panels. The pane sheen turns
+   a one-line usage example into something that reads as a slider, so they get
+   a flat smoked fill instead. */
+html.theme-aero :is(code, pre, kbd)[class*="rounded"] {
+    box-shadow: none;
+    background: color-mix(in srgb, var(--aero-p-deep) 60%, transparent) !important;
+    border-color: var(--aero-glass-edge) !important;
+}
+
+html.theme-aero :is(code, pre, kbd)[class*="rounded"]::before {
+    content: none;
+}
+
+/* Rows inside a popover menu are plain list items. Without this every option
+   in a DiscordSelector becomes a glossy pill with its own ring. */
+html.theme-aero :is(.absolute[class*="backdrop-blur"]:not(.inset-0), .absolute.shadow-2xl:not(.inset-0)) :is(button, a)::before,
+html.theme-aero :is(.absolute[class*="backdrop-blur"]:not(.inset-0), .absolute.shadow-2xl:not(.inset-0)) :is(button, a)::after {
+    content: none;
+}
+
+html.theme-aero :is(.absolute[class*="backdrop-blur"]:not(.inset-0), .absolute.shadow-2xl:not(.inset-0)) :is(button, a) {
+    box-shadow: none;
+    text-shadow: none;
+}
+
+/* Selector triggers are fields, not buttons: they take the smoked field fill
+   in place of the pane sheen so they sit level with the inputs beside them. */
+html.theme-aero button[aria-haspopup="listbox"]::before,
+html.theme-aero button[aria-expanded][class*="rounded"].border::before {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.04)), color-mix(in srgb, var(--aero-p-deep) 62%, transparent);
+    box-shadow: none;
+}
+
+/* Form controls become smoked glass with a soft inner shadow. Inputs cannot
+   carry pseudo-elements, so unlike cards they get their body directly, and
+   the inline 8% tint is replaced because it vanishes against the sky. */
+html.theme-aero select,
+html.theme-aero input,
+html.theme-aero textarea {
+    color-scheme: dark;
+    box-shadow: var(--aero-input-shadow);
+}
+
+html.theme-aero input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+html.theme-aero textarea,
+html.theme-aero select {
+    background-color: color-mix(in srgb, var(--aero-p-deep) 62%, transparent) !important;
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.04)) !important;
+    border-color: var(--aero-glass-edge) !important;
+}
+
+html.theme-aero input:focus-visible,
+html.theme-aero textarea:focus-visible,
+html.theme-aero select:focus-visible {
+    outline: none;
+    box-shadow: var(--aero-input-shadow), 0 0 0 2px color-mix(in srgb, var(--aero-p-light) 45%, transparent);
+}
+
+/* Sidebar server picker: the guild banner sits under a black gradient and
+   the picker and View Server buttons carry inline borders, so none of the
+   pane rules match. Tint the banner toward the palette and give both buttons
+   the pane and ring. */
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] .absolute.inset-0.bg-gradient-to-b {
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--aero-sky-top) 55%, transparent), color-mix(in srgb, var(--aero-p-deep) 85%, transparent));
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] .relative.z-10 > button.rounded-xl,
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] .relative.z-10 .mt-2 > button.rounded-lg {
+    position: relative;
+    isolation: isolate;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-pill-ring);
+    text-shadow: var(--aero-text-glow);
+}
+
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] .relative.z-10 > button.rounded-xl::before,
+html.theme-aero aside[aria-label="Dashboard sidebar navigation"] .relative.z-10 .mt-2 > button.rounded-lg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: var(--aero-shine), var(--aero-pane);
+    box-shadow: var(--aero-pane-edge);
+}
+
+html.theme-aero input,
+html.theme-aero textarea,
+html.theme-aero select,
+html.theme-aero code,
+html.theme-aero pre {
+    text-shadow: none;
+}
+
+html.theme-aero input::placeholder,
+html.theme-aero textarea::placeholder {
+    color: var(--aero-ink-soft);
+    opacity: 0.8;
+}
+
+/* Scrollbars in sky blue. */
+html.theme-aero *::-webkit-scrollbar-track {
+    background: var(--aero-scroll-track);
+}
+
+html.theme-aero *::-webkit-scrollbar-thumb {
+    background: var(--aero-scroll-thumb);
+    border: 1px solid var(--aero-glass-edge);
+}
+
+html.theme-aero *::-webkit-scrollbar-thumb:hover {
+    background: var(--aero-scroll-thumb-hover);
+}
+
+html.theme-aero .scrollbar-thumb-white\/20 {
+    scrollbar-color: rgba(74, 169, 238, 0.7) transparent;
+}
+
+/* Images and avatars get the classic glossy ring. */
+html.theme-aero img.rounded-full {
+    box-shadow: var(--aero-avatar-ring);
+}
+
+/* Prose content inherits ink instead of the dark-theme white. */
+html.theme-aero .prose,
+html.theme-aero .prose-invert {
+    color: var(--aero-ink);
+    --tw-prose-body: var(--aero-ink);
+    --tw-prose-headings: var(--aero-ink);
+    --tw-prose-bold: var(--aero-ink);
+    --tw-prose-links: var(--aero-link);
+    --tw-prose-code: var(--aero-ink);
+    --tw-prose-quotes: var(--aero-ink-soft);
+    --tw-prose-captions: var(--aero-ink-soft);
+}
+
+/* Smooth the switch between themes. */
+html.theme-aero body,
+html.theme-aero main {
+    transition: background-color 0.5s ease, color 0.5s ease;
+}

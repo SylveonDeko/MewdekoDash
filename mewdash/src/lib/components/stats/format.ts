@@ -48,6 +48,16 @@ export function formatDate(iso: string | null | undefined): string {
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+/**
+ * Formats an ISO timestamp as a compact local hour such as "2 PM" or "14:00",
+ * for axes over windows short enough that the day is already known.
+ */
+export function formatHour(iso: string | null | undefined): string {
+  if (!iso) return "-";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleTimeString(undefined, { hour: "numeric" });
+}
+
 /** Formats an ISO timestamp as a short local date and time. */
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "-";

@@ -48,6 +48,7 @@ A unified navigation component that provides responsive navigation with server a
   import { musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
+  import { themeStore } from "$lib/stores/themeStore.ts";
 
   // Types
   type NavItem = {
@@ -678,8 +679,8 @@ A unified navigation component that provides responsive navigation with server a
 >
     <div class="flex items-center mx-auto px-4 lg:px-8 xl:px-12 max-w-[1920px]">
     <!-- Left section - Logo (hidden on dashboard lg+ since sidebar has branding) -->
-        <div class="w-[140px] lg:w-[180px] xl:w-[200px] shrink-0"
-             class:md:w-[180px]={isDashboard}
+        <div class="w-[140px] lg:w-[220px] xl:w-[240px] shrink-0"
+             class:md:w-[220px]={isDashboard}
              class:lg:hidden={isDashboard}>
         <a
                 class="flex items-center py-1 justify-start"
@@ -907,8 +908,8 @@ A unified navigation component that provides responsive navigation with server a
     {/if}
 
     <!-- Right section -->
-        <div class="flex items-center gap-2 w-[140px] lg:w-[180px] xl:w-[200px] justify-end"
-             class:md:w-[180px]={isDashboard}>
+        <div class="flex items-center gap-2 w-[140px] lg:w-[220px] xl:w-[240px] justify-end"
+             class:md:w-[220px]={isDashboard}>
       <!-- Dyslexia-friendly font toggle - always visible, no login required -->
       <button
         type="button"
@@ -922,6 +923,20 @@ A unified navigation component that provides responsive navigation with server a
         title="Toggle dyslexia-friendly font"
       >
         <i class="fa-solid fa-universal-access text-sm"></i>
+      </button>
+      <!-- Frutiger Aero theme toggle - always visible, no login required -->
+      <button
+        type="button"
+        class="hidden md:flex relative z-30 items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 ease-in-out hover:scale-[1.05] border shrink-0"
+        style="background: {$themeStore === 'aero' ? `${$colorStore.primary}30` : 'transparent'};
+               border-color: {$colorStore.primary}40;
+               color: {$colorStore.text};"
+        onclick={() => themeStore.toggleAero()}
+        aria-pressed={$themeStore === "aero"}
+        aria-label="Toggle Frutiger Aero theme"
+        title="Toggle Frutiger Aero theme"
+      >
+        <i class="fa-solid fa-palette text-sm"></i>
       </button>
       {#if !currentUser}
         <a href="/api/discord/login"
@@ -1376,6 +1391,30 @@ A unified navigation component that provides responsive navigation with server a
               <span
                 class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
                 class:translate-x-5={$dyslexicFontStore}>
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <!-- Frutiger Aero theme toggle -->
+        <div class="px-4 py-3 border-b border-opacity-30 flex items-center justify-between"
+             style="border-color: {$colorStore.primary};">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-palette" style="color: {$colorStore.primary}; font-size: 16px;"></i>
+            <span class="font-medium" style="color: {$colorStore.text};">Frutiger Aero theme</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={$themeStore === "aero"}
+              onchange={() => themeStore.toggleAero()}
+              class="sr-only"
+            >
+            <span class="w-11 h-6 rounded-full transition-all relative shadow-inner block"
+                  style="background: {$themeStore === 'aero' ? $colorStore.primary : '#374151'};">
+              <span
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform block"
+                class:translate-x-5={$themeStore === "aero"}>
               </span>
             </span>
           </label>

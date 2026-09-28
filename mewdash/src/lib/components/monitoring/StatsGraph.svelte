@@ -79,11 +79,6 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "#1a1a2e",
-            titleColor: "#fff",
-            bodyColor: "#fff",
-            borderColor: primary + "40",
-            borderWidth: 1,
             callbacks: {
               title: (items) => items[0]?.label || "",
               label: (item) => `${valueLabel || defaultValueLabel()}: ${item.raw}`,

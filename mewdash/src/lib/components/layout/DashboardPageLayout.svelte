@@ -364,7 +364,7 @@
 
   <!-- Main Tab Navigation -->
   {#if tabs.length > 0}
-    <nav class="mb-6" aria-label="Main navigation">
+    <nav class="mb-6" aria-label="Page tabs">
       <div class="flex items-center justify-center gap-2 max-w-[98%] sm:max-w-[90%] lg:max-w-[80%] mx-auto">
         <!-- Left scroll button -->
         {#if tabsOverflow}

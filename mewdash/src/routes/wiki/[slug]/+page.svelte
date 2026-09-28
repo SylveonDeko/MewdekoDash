@@ -109,8 +109,8 @@
                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all hover:scale-[1.02]"
                   style="background: {$colorStore.primary}; color: #0f172a;"
                 >
-                  <i class="fa-solid fa-sliders"></i>
-                  {$currentGuild ? `Open in ${$currentGuild.name}` : "Open in dashboard"}
+                  <i class="fa-solid fa-sliders shrink-0"></i>
+                  <span class="truncate max-w-[18rem]">{$currentGuild ? `Open in ${$currentGuild.name}` : "Open in dashboard"}</span>
                 </a>
               {/if}
               {#if data.article.module}

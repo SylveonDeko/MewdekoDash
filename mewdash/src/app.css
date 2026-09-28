@@ -4,6 +4,7 @@
 @import '@fontsource/opendyslexic/400-italic.css';
 @import '@fontsource/opendyslexic/700.css';
 @import '@fontsource/opendyslexic/700-italic.css';
+@import './lib/styles/aero.css';
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,

@@ -293,7 +293,7 @@
 <DashboardPageLayout
   category="Analytics"
   guildName="Bot Owner Tools"
-  icon="fa-robot"
+  icon="fa-microchip"
   subtitle="Servers littered with bots, and a way out of them"
   title="Bot Hells"
   basePath="/owner/bot-hells"
