@@ -26,9 +26,10 @@ function createMusicStore() {
 
   let pollInterval: NodeJS.Timeout | null = null;
   let currentPollDelay = BASE_DELAY;
-  let webSocket: WebSocket | null = null;
+  /** Live status stream (Server-Sent Events through the dashboard); null when polling. */
+  let statusStream: EventSource | null = null;
   let reconnectTimeout: NodeJS.Timeout | null = null;
-  let useWebSocket = true; // Try WebSocket first, fallback to polling
+  let useWebSocket = true; // Try the live stream first, fall back to polling
   let activeUserId: bigint | null = null;
   let lastKnownGuildId: bigint | undefined = undefined;
   let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -95,12 +96,7 @@ function createMusicStore() {
   function fallbackToPolling(userId: bigint) {
     useWebSocket = false;
     stopHeartbeat();
-    if (webSocket) {
-      webSocket.onclose = null;
-      webSocket.onerror = null;
-      try { webSocket.close(); } catch { /* already closed */ }
-      webSocket = null;
-    }
+    closeStream();
     if (pollInterval) {
       clearInterval(pollInterval);
       pollInterval = null;
@@ -112,9 +108,25 @@ function createMusicStore() {
     pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
   }
 
-  function connectWebSocket(userId: bigint) {
+  /** Closes the live status stream without triggering its error handler. */
+  function closeStream() {
+    if (!statusStream) return;
+    statusStream.onerror = null;
+    statusStream.onopen = null;
+    try { statusStream.close(); } catch { /* already closed */ }
+    statusStream = null;
+  }
+
+  /**
+   * Opens the live status stream. The browser subscribes to the dashboard's
+   * /api/music/stream route with EventSource; the dashboard opens the bot's
+   * events endpoint server side with the credentials the bot's access filter
+   * checks and pipes the frames through. Status is receive only; controls go
+   * through the REST proxy.
+   */
+  function connectStatusStream(userId: bigint) {
     if (!useWebSocket) {
-      return; // Skip if WebSockets are disabled
+      return; // Live stream disabled for this session, polling is active
     }
 
     const guildId = get(currentGuild)?.id;
@@ -125,52 +137,77 @@ function createMusicStore() {
       return;
     }
 
-    if (!instancePort) {
-      fallbackToPolling(userId);
-      return;
-    }
-
     try {
-      // Close any existing connection
-      if (webSocket) {
-        webSocket.close();
-        webSocket = null;
-      }
+      closeStream();
 
-      /*
-       * Direct socket to the bot. In production the reverse proxy routes
-       * /ws/instance/<port>/ to that instance; on localhost the bot's API is
-       * plain HTTP on 127.0.0.1, so the dev server must not be served over
-       * HTTPS or the browser will refuse the insecure socket.
-       */
-      const wsProtocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsHost = globalThis.location.host;
+      const params = new URLSearchParams({ guildId: guildId.toString() });
+      if (instancePort) params.set("instance", String(instancePort));
 
-      const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1")
-        ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}`
-        : `ws://127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
+      const stream = new EventSource(`/api/music/stream?${params.toString()}`);
+      statusStream = stream;
+      let opened = false;
 
-      webSocket = new WebSocket(wsUrl);
-
-      webSocket.onopen = () => {
+      stream.onopen = () => {
+        opened = true;
         update(state => ({
           ...state,
           isPolling: true,
           failedFetchCount: 0,
           error: null
         }));
-
-        // Start heartbeat monitoring
         startHeartbeat();
-
       };
 
-      webSocket.onmessage = (event) => {
-        // Update last message time for heartbeat
+      stream.addEventListener("status", (event) => {
         lastMessageTime = Date.now();
+        handleStatusFrame((event as MessageEvent).data);
+      });
 
+      stream.addEventListener("heartbeat", () => {
+        lastMessageTime = Date.now();
+      });
+
+      stream.onerror = () => {
+        if (!opened) {
+          // Never connected: not signed in, no instance, or the bot refused. Poll instead.
+          logger.warn("Music status stream unavailable, falling back to polling");
+          fallbackToPolling(userId);
+          return;
+        }
+
+        // While CONNECTING the browser is retrying on its own; only act once it gives up.
+        if (stream.readyState !== EventSource.CLOSED) return;
+
+        stopHeartbeat();
+        const currentState = get({ subscribe });
+
+        // If we had a player when the stream closed, treat it as destroyed
+        if (currentState.playerExists) {
+          wasExplicitlyDisconnected = true;
+          update(state => ({
+            ...state,
+            status: null,
+            playerExists: false,
+            error: null
+          }));
+          emitPlayerEvent("playerDestroyed");
+        }
+
+        // Reconnect while this session is still live so a rejoin is picked up
+        if (useWebSocket && get({ subscribe }).isPolling && activeUserId) {
+          scheduleReconnect(userId);
+        }
+      };
+    } catch (err) {
+      logger.warn("Music status stream setup failed, falling back to polling", err);
+      fallbackToPolling(userId);
+    }
+  }
+
+  /** Applies one status frame from the live stream to the store. */
+  function handleStatusFrame(raw: string) {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse(raw);
 
           // Get current state before any updates
           const currentState = get({ subscribe });
@@ -192,7 +229,7 @@ function createMusicStore() {
 
             emitPlayerEvent("playerDestroyed");
 
-            // Keep the WebSocket connection alive to detect when bot rejoins
+            // Keep the stream alive to detect when bot rejoins
             lastMessageTime = Date.now(); // Reset heartbeat to keep connection alive
             return; // Return here since Disconnected is a special signal with no other data
           }
@@ -239,62 +276,8 @@ function createMusicStore() {
             musicPlayerColors.updateFromArtwork(data.CurrentTrack.Track.ArtworkUri);
           }
         } catch (err) {
-          logger.error("Error processing WebSocket music message", err);
+          logger.error("Error processing music status frame", err);
         }
-      };
-
-      webSocket.onerror = () => {
-
-        // Track connection errors
-        update(state => ({
-          ...state,
-          error: "WebSocket connection error"
-        }));
-
-        // If this is our first attempt, try again with polling
-        if (useWebSocket) {
-          fallbackToPolling(userId);
-        }
-      };
-
-      webSocket.onclose = (event) => {
-
-        // Stop heartbeat monitoring
-        stopHeartbeat();
-
-        const currentState = get({ subscribe });
-
-        // If we had a player when the connection closed, it means the player was destroyed
-        if (currentState.playerExists) {
-
-          // Mark as explicitly disconnected since backend closed the connection
-          wasExplicitlyDisconnected = true;
-
-          // Clear the music status and mark player as destroyed
-          update(state => ({
-            ...state,
-            status: null,
-            playerExists: false,
-            error: null
-          }));
-
-          emitPlayerEvent("playerDestroyed");
-        }
-
-        // Always try to reconnect if we're still in polling mode
-        // This allows us to detect when the bot rejoins after the player was destroyed
-        const isStillPolling = get({ subscribe }).isPolling;
-        if (useWebSocket && isStillPolling && activeUserId) {
-          // Schedule reconnection to detect when bot rejoins
-          scheduleReconnect(userId);
-        } else {
-          // We stopped polling entirely
-        }
-      };
-    } catch (err) {
-      logger.warn("Music WebSocket setup failed, falling back to polling", err);
-      fallbackToPolling(userId);
-    }
   }
 
   function startHeartbeat() {
@@ -320,15 +303,13 @@ function createMusicStore() {
           // Mark as potentially dead
           wasDestroyedDueToSilence = true;
 
-          // Close the WebSocket to force reconnection
-          if (webSocket?.readyState === WebSocket.OPEN) {
-            webSocket.close(1000, "Heartbeat timeout");
-          }
+          // Close the stream to force reconnection
+          closeStream();
 
           // Schedule reconnect attempt
           setTimeout(() => {
             if (activeUserId && useWebSocket) {
-              connectWebSocket(activeUserId);
+              connectStatusStream(activeUserId);
             }
           }, 2000);
         }
@@ -367,13 +348,13 @@ function createMusicStore() {
 
         emitPlayerEvent("playerCreated");
 
-        // If we don't have an active WebSocket, try to reconnect
-        if (webSocket?.readyState !== WebSocket.OPEN) {
+        // If we don't have an open stream, try to reconnect
+        if (statusStream?.readyState !== EventSource.OPEN) {
           if (activeUserId) {
             // Small delay to ensure bot is fully connected
             const userIdForReconnect = activeUserId;
             setTimeout(() => {
-              connectWebSocket(userIdForReconnect);
+              connectStatusStream(userIdForReconnect);
             }, 500);
           }
         }
@@ -390,10 +371,8 @@ function createMusicStore() {
 
         emitPlayerEvent("playerDestroyed");
 
-        // Close WebSocket if it's still open
-        if (webSocket?.readyState === WebSocket.OPEN) {
-          webSocket.close(1000, "Player destroyed");
-        }
+        // Close the stream if it's still open
+        closeStream();
       }
     });
   }
@@ -416,7 +395,7 @@ function createMusicStore() {
 
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;
-      connectWebSocket(userId);
+      connectStatusStream(userId);
     }, reconnectDelay) as unknown as NodeJS.Timeout;
   }
 
@@ -563,7 +542,7 @@ function createMusicStore() {
 
       // Try WebSocket connection first
       if (useWebSocket) {
-        connectWebSocket(userId);
+        connectStatusStream(userId);
       } else {
         // Fall back to traditional polling
         currentPollDelay = BASE_DELAY;
@@ -583,16 +562,8 @@ function createMusicStore() {
     // Stop SSE connection
     stopEventSource();
 
-    // Clean up WebSocket
-    if (webSocket) {
-      if (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING) {
-        // Remove event listeners to prevent onclose from triggering reconnection logic
-        webSocket.onclose = null;
-        webSocket.onerror = null;
-        webSocket.close(1000, "Client initiated stop");
-      }
-      webSocket = null;
-    }
+    // Clean up the live status stream without triggering its error handler
+    closeStream();
 
     // Clean up reconnection timer
     if (reconnectTimeout) {
@@ -636,8 +607,8 @@ function createMusicStore() {
     const state = get({ subscribe });
     return {
       state,
-      isPolling: !!pollInterval || (webSocket && webSocket.readyState === WebSocket.OPEN),
-      webSocketState: webSocket ? webSocket.readyState : "none",
+      isPolling: !!pollInterval || (statusStream !== null && statusStream.readyState === EventSource.OPEN),
+      streamState: statusStream ? statusStream.readyState : "none",
       currentDelay: currentPollDelay,
       guildId: get(currentGuild)?.id
     };
