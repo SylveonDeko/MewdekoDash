@@ -359,7 +359,7 @@ html.theme-aero [role="tablist"]::before {
 /* Links and buttons that carry their border inline (style="border: 1px
    solid ...") rather than as a border class. Same treatment as bordered
    buttons: pane and glow under the content, highlight strip over it. */
-html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item) {
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item):not(aside[aria-label="Dashboard sidebar navigation"] *) {
     position: relative;
     isolation: isolate;
     border-color: var(--aero-glass-edge) !important;
@@ -367,7 +367,7 @@ html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid
     text-shadow: var(--aero-text-glow);
 }
 
-html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item)::before {
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item):not(aside[aria-label="Dashboard sidebar navigation"] *)::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -378,7 +378,7 @@ html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid
     box-shadow: var(--aero-pane-edge);
 }
 
-html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item)::after {
+html.theme-aero :is(a[href], button)[class*="rounded"][style*="border: 1px solid"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.tab-press):not(.option-item):not(aside[aria-label="Dashboard sidebar navigation"] *)::after {
     content: "";
     position: absolute;
     top: 4%;
@@ -538,14 +538,14 @@ html.theme-aero nav[aria-label="Main navigation"] button.rounded-md::before {
 /* Glossy highlight on real (bordered) buttons and link pills, the signature
    aero look. Borderless links such as sidebar rows are left flat. Positioned
    elements are skipped so absolutely placed controls keep working. */
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]),
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"]),
 html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]) {
     position: relative;
     isolation: isolate;
     text-shadow: var(--aero-text-glow);
 }
 
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"])::after,
 html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after {
     content: "";
     position: absolute;
@@ -559,7 +559,7 @@ html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([c
 /* Diagonal glass sweep and bottom glow under the content of every glossy
    pill. Bordered buttons already carry the pane in ::before, so for those
    the sweep is stacked on top of the pane in the same layer. */
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before,
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"])::before,
 html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::before {
     content: "";
     position: absolute;
@@ -587,7 +587,7 @@ html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-n
 
 /* Top highlight strip geometry from makeaero: a short inset band across the
    top 40% rather than a full-face overlay, so it never sits on the label. */
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"])::after,
 html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"])::after,
 html.theme-aero button[aria-pressed="true"]::after,
 html.theme-aero [role="radio"][aria-checked="true"]::after,
@@ -601,12 +601,12 @@ html.theme-aero .flex.rounded-2xl.p-1\.5 > .absolute.rounded-xl.pointer-events-n
     height: 40%;
 }
 
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):hover,
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"]):hover,
 html.theme-aero a[href].border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):hover {
     box-shadow: 0 6px 10px rgba(0, 4, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):active {
+html.theme-aero button.border[class*="rounded"]:not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not(.option-item):not([aria-haspopup="listbox"]):active {
     box-shadow: 0 2px 4px rgba(0, 4, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     transform: translateY(1px);
 }
@@ -764,12 +764,30 @@ html.theme-aero :is(.absolute[class*="backdrop-blur"]:not(.inset-0), .absolute.s
     text-shadow: none;
 }
 
-/* Selector triggers are fields, not buttons: they take the smoked field fill
-   in place of the pane sheen so they sit level with the inputs beside them. */
+/* Selector triggers are fields, not buttons. They get the same smoked fill
+   and rim as text inputs, no pane, no glow, no highlight strip. */
+html.theme-aero button[aria-haspopup="listbox"] {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.04)), color-mix(in srgb, var(--aero-p-deep) 62%, transparent) !important;
+    border-color: var(--aero-glass-edge) !important;
+    box-shadow: var(--aero-input-shadow);
+    text-shadow: none;
+}
+
 html.theme-aero button[aria-haspopup="listbox"]::before,
-html.theme-aero button[aria-expanded][class*="rounded"].border::before {
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.04)), color-mix(in srgb, var(--aero-p-deep) 62%, transparent);
+html.theme-aero button[aria-haspopup="listbox"]::after {
+    content: none;
+}
+
+/* Option rows inside a selector menu: flat, with the row's own hover and
+   selection tint doing the work. */
+html.theme-aero .option-item {
     box-shadow: none;
+    text-shadow: none;
+}
+
+html.theme-aero .option-item::before,
+html.theme-aero .option-item::after {
+    content: none;
 }
 
 /* Form controls become smoked glass with a soft inner shadow. Inputs cannot
