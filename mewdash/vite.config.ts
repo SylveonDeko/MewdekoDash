@@ -3,7 +3,6 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import type { Plugin, ViteDevServer } from "vite";
 import { defineConfig } from "vite";
-import mkcert from "vite-plugin-mkcert";
 
 const mobileMusicWsPlugin: Plugin = {
   name: "mobile-music-ws",
@@ -32,7 +31,7 @@ function attachUpgradeHandler(server: ViteDevServer) {
   });
 }
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   plugins: [
     sentrySvelteKit({
       autoUploadSourceMaps: Boolean(process.env.SENTRY_AUTH_TOKEN),
@@ -44,8 +43,9 @@ export default defineConfig(({ command }) => ({
     }),
     tailwindcss(),
     sveltekit(),
+    /* No mkcert: an HTTPS dev origin makes the browser refuse the plain ws://
+       socket to the bot on 127.0.0.1, which the web music player relies on. */
     mobileMusicWsPlugin,
-    ...(command === "serve" ? [mkcert()] : []),
   ],
   esbuild: {
     supported: {

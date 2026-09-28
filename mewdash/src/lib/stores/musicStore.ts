@@ -86,6 +86,32 @@ function createMusicStore() {
 
 
   // WebSocket Connection
+  /**
+   * Switches this session to HTTP polling. Unlike startPolling this bypasses
+   * the idempotency check, which is what the old fallback tripped over: the
+   * session was already marked as polling by the socket attempt, so the
+   * fallback call returned early and nothing ever fetched a status.
+   */
+  function fallbackToPolling(userId: bigint) {
+    useWebSocket = false;
+    stopHeartbeat();
+    if (webSocket) {
+      webSocket.onclose = null;
+      webSocket.onerror = null;
+      try { webSocket.close(); } catch { /* already closed */ }
+      webSocket = null;
+    }
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    if (!userId) return;
+    currentPollDelay = BASE_DELAY;
+    update(s => ({ ...s, isPolling: true, failedFetchCount: 0, error: null, userId }));
+    fetchStatus(userId);
+    pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
+  }
+
   function connectWebSocket(userId: bigint) {
     if (!useWebSocket) {
       return; // Skip if WebSockets are disabled
@@ -95,14 +121,12 @@ function createMusicStore() {
     const instancePort = get(currentInstance)?.port;
 
     if (!guildId || !userId) {
-      useWebSocket = false;
-      startPolling(userId);
+      fallbackToPolling(userId);
       return;
     }
 
     if (!instancePort) {
-      useWebSocket = false;
-      startPolling(userId);
+      fallbackToPolling(userId);
       return;
     }
 
@@ -113,10 +137,18 @@ function createMusicStore() {
         webSocket = null;
       }
 
+      /*
+       * Direct socket to the bot. In production the reverse proxy routes
+       * /ws/instance/<port>/ to that instance; on localhost the bot's API is
+       * plain HTTP on 127.0.0.1, so the dev server must not be served over
+       * HTTPS or the browser will refuse the insecure socket.
+       */
       const wsProtocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsHost = globalThis.location.host; // Will be "mewdeko.tech" in production (if its the main bot)
+      const wsHost = globalThis.location.host;
 
-      const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1") ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}` : `${wsProtocol}//127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
+      const wsUrl = !wsHost.includes("localhost") && !wsHost.includes("127.0.0.1")
+        ? `${wsProtocol}//${wsHost}/ws/instance/${instancePort}/music/${guildId}/events?userId=${userId}`
+        : `ws://127.0.0.1:${instancePort}/botapi/music/${guildId}/events?userId=${userId}`;
 
       webSocket = new WebSocket(wsUrl);
 
@@ -221,8 +253,7 @@ function createMusicStore() {
 
         // If this is our first attempt, try again with polling
         if (useWebSocket) {
-          useWebSocket = false;
-          startPolling(userId);
+          fallbackToPolling(userId);
         }
       };
 
@@ -261,8 +292,8 @@ function createMusicStore() {
         }
       };
     } catch (err) {
-      useWebSocket = false;
-      startPolling(userId);
+      logger.warn("Music WebSocket setup failed, falling back to polling", err);
+      fallbackToPolling(userId);
     }
   }
 
