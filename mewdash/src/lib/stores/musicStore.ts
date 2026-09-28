@@ -2,6 +2,7 @@
 import { get, writable } from "svelte/store";
 import { logger } from "$lib/logger";
 import { musicApi } from "$lib/api/index.ts";
+import { ApiError } from "$lib/api/core";
 import { currentGuild } from "$lib/stores/currentGuild";
 import { musicPlayerColors } from "$lib/stores/musicPlayerColorStore";
 import { currentInstance } from "$lib/stores/instanceStore.ts";
@@ -464,6 +465,20 @@ function createMusicStore() {
         }
       }
     } catch (err) {
+      // 404 is the bot's answer when it is not in a voice channel: a valid
+      // "no player" state, not a failed request. Record it and keep polling
+      // at the idle rate instead of backing off toward giving up.
+      if (err instanceof ApiError && err.status === 404) {
+        const state = get({ subscribe });
+        if (state.playerExists) emitPlayerEvent("playerDestroyed");
+        update(s => ({ ...s, status: null, lastTrackId: null, failedFetchCount: 0, error: null, playerExists: false }));
+        if (pollInterval && currentPollDelay !== PAUSED_DELAY) {
+          currentPollDelay = PAUSED_DELAY;
+          clearInterval(pollInterval);
+          pollInterval = setInterval(() => fetchStatus(userId), currentPollDelay);
+        }
+        return;
+      }
 
       update(state => {
         const newCount = state.failedFetchCount + 1;
