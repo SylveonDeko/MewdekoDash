@@ -446,6 +446,13 @@
   }
 
   function save() {
+    validateEmbeds();
+    validateComponents();
+    if (validationErrors.length > 0) {
+      showNotificationMessage(`Fix ${validationErrors.length} problem${validationErrors.length === 1 ? "" : "s"} before saving`, "error");
+      return;
+    }
+
     const outputData = cleanOutput();
     value = outputData;
     onchange?.(outputData);
@@ -1056,10 +1063,36 @@
 
   // Validation
   function validateEmbeds() {
-    validationErrors = [];
+    validationErrors = validationErrors.filter(err => err.id.startsWith("component-"));
     validationWarnings = [];
 
     embeds.forEach((embed, index) => {
+      if (!embed.author?.name?.trim() && (embed.author?.url?.trim() || embed.author?.icon_url?.trim())) {
+        validationErrors.push({
+          id: `embed-${index}-author`,
+          message: `Embed ${index + 1} author needs a name when it has an icon or link`,
+          field: `embeds[${index}].author.name`
+        });
+      }
+
+      if (!embed.footer?.text?.trim() && embed.footer?.icon_url?.trim()) {
+        validationErrors.push({
+          id: `embed-${index}-footer`,
+          message: `Embed ${index + 1} footer needs text when it has an icon`,
+          field: `embeds[${index}].footer.text`
+        });
+      }
+
+      embed.fields?.forEach((field, fieldIndex) => {
+        if (!field.name?.trim() || !field.value?.trim()) {
+          validationErrors.push({
+            id: `embed-${index}-field-${fieldIndex}`,
+            message: `Embed ${index + 1} field ${fieldIndex + 1} needs both a name and a value`,
+            field: `embeds[${index}].fields[${fieldIndex}]`
+          });
+        }
+      });
+
       if (embed.title && embed.title.length > 256) {
         validationErrors.push({
           id: `embed-${index}-title`,
@@ -1099,8 +1132,40 @@
           });
         }
 
+        if (!component.isSelect && !component.displayName?.trim()) {
+          validationErrors.push({
+            id: `component-${component.componentKey}-label`,
+            message: "A button needs a label",
+            field: `components[${index}]`
+          });
+        }
+
+        if (!component.isSelect && component.style === 5 && !component.url?.trim()) {
+          validationErrors.push({
+            id: `component-${component.componentKey}-url`,
+            message: `Link button "${component.displayName}" needs a URL`,
+            field: `components[${index}].url`
+          });
+        }
+
+        if (component.isSelect && component.options.length === 0) {
+          validationErrors.push({
+            id: `component-${component.componentKey}-options`,
+            message: `Select menu "${component.displayName}" needs at least one option`,
+            field: `components[${index}].options`
+          });
+        }
+
         if (component.isSelect) {
           component.options.forEach((option, optIndex) => {
+            if (!option.name?.trim()) {
+              validationErrors.push({
+                id: `component-${component.componentKey}-option-${optIndex}-name`,
+                message: `Option ${optIndex + 1} of "${component.displayName}" needs a name`,
+                field: `components[${index}].options[${optIndex}].name`
+              });
+            }
+
             if (!option.id) {
               validationErrors.push({
                 id: `component-${component.componentKey}-option-${optIndex}-trigger`,
