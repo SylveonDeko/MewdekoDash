@@ -1,4 +1,38 @@
 {
+  "/dashboard/achievements": {
+    "tabs": [
+      {
+        "id": "overview",
+        "label": "Overview",
+        "icon": "fa-gauge"
+      },
+      {
+        "id": "library",
+        "label": "Achievements",
+        "icon": "fa-crown"
+      },
+      {
+        "id": "categories",
+        "label": "Categories",
+        "icon": "fa-layer-group"
+      },
+      {
+        "id": "announcements",
+        "label": "Announcements",
+        "icon": "fa-bullhorn"
+      },
+      {
+        "id": "members",
+        "label": "Members",
+        "icon": "fa-users"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "icon": "fa-sliders"
+      }
+    ]
+  },
   "/dashboard/administration": {
     "tabs": [
       {

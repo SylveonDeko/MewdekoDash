@@ -11,6 +11,7 @@
   import { requestConfirmation } from "$lib/stores/confirmationStore";
   import DiscordSelector from "$lib/components/forms/DiscordSelector.svelte";
   import { TIMEZONE_OPTIONS } from "$lib/config/timezones";
+  import MyAchievements from "./MyAchievements.svelte";
 
   /** Zodiac sign options for the profile editor */
   const zodiacOptions = [
@@ -1358,6 +1359,10 @@
               <div class="text-xs" style="color: {$colorStore.muted}">{serverData.invites.inviteCount || 0} invites</div>
             </div>
           </div>
+
+          {#key selectedGuild.id}
+            <MyAchievements guildId={selectedGuild.id} {userId} onerror={(text) => showMessage(text, "error")} />
+          {/key}
 
           <!-- Settings & Activity Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

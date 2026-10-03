@@ -12,6 +12,7 @@ import { allDashboardFeatures, type NavigationItem } from "./navigationItems";
 const sectionsByHref: Record<string, string[]> = {
   "/dashboard/administration": ["Administration", "Protection"],
   "/dashboard/afk": ["Afk"],
+  "/dashboard/achievements": ["Achievements"],
   "/dashboard/auditlog": ["AuditLog"],
   "/dashboard/birthday": ["Birthday"],
   "/dashboard/wordoftheday": ["WordOfTheDay"],

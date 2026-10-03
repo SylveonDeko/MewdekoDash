@@ -304,6 +304,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     keywords: ["repeaters", "recurring", "scheduled", "messages"],
   },
   {
+    label: "Achievements",
+    icon: "fa-utility-duo fa-regular fa-crown",
+    href: "/dashboard/achievements",
+    category: "Community",
+    description: "Milestones, badges, ranks, and custom achievements for members",
+    keywords: ["achievements", "badges", "milestones", "ranks", "tiers", "prestige", "trophies", "unlocks", "goals", "profile card"],
+  },
+  {
     label: "Reputation",
     icon: "fa-utility-duo fa-regular fa-trophy",
     href: "/dashboard/reputation",

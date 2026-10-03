@@ -462,9 +462,7 @@
 
   // Clean output for export
   function cleanOutput() {
-    const cleanedEmbeds = embeds
-      .map(cleanEmbed)
-      .filter(cleaned => Object.keys(cleaned).length > 0); // Filter AFTER cleaning to remove truly empty embeds
+    const cleanedEmbeds = embeds.map(cleanEmbed).filter(hasVisibleContent);
 
     const exportData: any = {};
 
@@ -551,6 +549,16 @@
       historyIndex = nextHistory.length - 1;
     }, 350);
   });
+
+  /**
+   * Whether a cleaned embed shows anything. Discord rejects the whole message when one embed has only a color or
+   * a link, so those are left out of the output.
+   * @param cleaned An embed from cleanEmbed
+   */
+  function hasVisibleContent(cleaned: any): boolean {
+    return !!(cleaned.title || cleaned.description || cleaned.fields?.length || cleaned.image || cleaned.thumbnail ||
+      cleaned.author?.name || cleaned.footer?.text);
+  }
 
   function cleanEmbed(embed: Embed) {
     const cleaned: any = {};
@@ -1109,10 +1117,10 @@
         });
       }
 
-      if (!embed.title && !embed.description && embed.fields.length === 0) {
+      if (!hasVisibleContent(cleanEmbed(embed))) {
         validationWarnings.push({
           id: `embed-${index}-empty`,
-          message: `Embed ${index + 1} is empty`,
+          message: `Embed ${index + 1} is empty and won't be sent`,
           field: `embeds[${index}]`
         });
       }

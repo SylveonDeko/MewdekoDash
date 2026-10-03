@@ -7,7 +7,7 @@ category: Community
 dashboard: /dashboard/xp
 module: Xp
 tags: [xp, experience, levels, level up, rank, rank card, leaderboard, role rewards, voice xp, xp boost, competition, xp curve]
-related: [currency, administration, utility]
+related: [currency, achievements, administration, utility]
 ---
 
 ## What it does
@@ -126,6 +126,10 @@ Rewards are applied when a level changes. Use `syncmyxproles`, `syncuserxproles`
 ## Currency rewards
 
 `currencyreward <level> <amount>` pays server currency from the currency module when a member reaches that level. Passing 0 removes the reward. If a member's level drops, for example after `setxp` or decay, the currency for the levels they lost is taken back.
+
+## Achievements
+
+[Achievements](/wiki/achievements) are a separate system with their own points and ranks, so an achievement rank is not an XP level. The two meet in two places: reaching XP levels unlocks achievements in the Community category, and achievements can give XP back through a per achievement XP reward or **XP per point** on the achievements Settings tab. Both are off until you set them.
 
 ## Boost events
 

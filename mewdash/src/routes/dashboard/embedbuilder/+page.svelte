@@ -274,8 +274,9 @@
   // Builds the export payload shared by JSON copy/preview and saved-embed persistence
   function buildExportData() {
     const cleanedEmbeds = embeds
-      .filter(embed => embed.title || embed.description || embed.fields.length > 0)
-      .map(cleanEmbed);
+      .map(cleanEmbed)
+      .filter((cleaned: any) => !!(cleaned.title || cleaned.description || cleaned.fields?.length || cleaned.image ||
+        cleaned.thumbnail || cleaned.author?.name || cleaned.footer?.text));
 
     const exportData: any = {};
 

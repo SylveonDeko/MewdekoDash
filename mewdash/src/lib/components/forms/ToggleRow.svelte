@@ -15,13 +15,15 @@
     id?: string;
     disabled?: boolean;
     onchange?: (checked: boolean) => void;
+    /** Extra classes on the row, such as h-full to match siblings in a grid. */
+    class?: string;
   }
 
-  let { checked, title, colors, subtitle, id, disabled = false, onchange }: Props = $props();
+  let { checked, title, colors, subtitle, id, disabled = false, onchange, class: extra = "" }: Props = $props();
 </script>
 
 <label
-  class="flex items-start gap-3 p-3 rounded-lg min-h-[44px] cursor-pointer"
+  class="flex items-start gap-3 p-3 rounded-lg min-h-[44px] cursor-pointer {extra}"
   class:opacity-50={disabled}
   style="background: {colors.primary}08;"
 >

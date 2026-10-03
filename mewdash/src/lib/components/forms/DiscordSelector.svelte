@@ -349,7 +349,7 @@
   <button aria-label="Button action"
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          class="group w-full p-2.5 rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
+          class="group w-full px-3 h-[44px] rounded-xl border transition-all duration-200 text-left flex items-center backdrop-blur-md relative overflow-hidden"
           onmouseleave={() => handleButtonMouseLeave('selector-main')}
           onmousemove={(e) => handleButtonMouseMove(e, 'selector-main')}
     class:cursor-not-allowed={disabled}

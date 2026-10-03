@@ -11,6 +11,20 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "achievements",
+    label: "New page",
+    title: "Achievements For Everything Your Members Do",
+    summary: "Members unlock achievements for chatting, voice, reactions, invites, levels and time in the server, climb ranks from Bronze to Champion, and show off badges on their profile.",
+    details: [
+      "Achievement ranks sit beside XP levels rather than replacing them. Reaching XP levels unlocks achievements, and if you want unlocks to pay XP back, set XP per point or give single achievements an XP reward.",
+      "Turn it on and history counts straight away: members unlock what their existing messages, voice time and levels already earned, quietly and without a flood of announcements.",
+      "Make your own achievements and categories, with your own emoji, Font Awesome icon or uploaded image, choose the grade and points, hide secret ones, and reorder categories by dragging.",
+      "Announce unlocks in a channel or by DM with an image card in your server colors, delete the message after a set time if you like, and design your own cards in the card designer, per category or per achievement. Members can browse and manage theirs in the iOS and Android apps too."
+    ],
+    href: "/dashboard/achievements",
+    action: "Set up achievements"
+  },
+  {
     id: "activity-stats",
     label: "New page",
     title: "Activity Stats For The Whole Server",
