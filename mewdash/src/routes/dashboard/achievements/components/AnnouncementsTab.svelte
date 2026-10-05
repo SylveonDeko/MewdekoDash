@@ -37,6 +37,8 @@
   let mentionUsers = $state(untrack(() => settings.mentionUsers));
   let unlockImage = $state(untrack(() => settings.unlockImage));
   let deleteAfter = $state(untrack(() => settings.deleteAfter ?? 0));
+  let quietChannels = $state<string[]>(untrack(() => (settings.quietChannelIds ?? []).map((id) => id.toString())));
+  let requireSendPermission = $state(untrack(() => settings.requireSendPermission ?? true));
   let message = $state<any>(untrack(() => parseMessageSource(settings.unlockMessage)));
   let saving = $state(false);
 
@@ -46,12 +48,16 @@
   let channelOptions = $derived(
     (lookups?.channels ?? []).filter((c) => c.type === 0).map((c) => ({ id: c.id.toString(), name: c.name, type: 0 }))
   );
+  let quietOptions = $derived(
+    (lookups?.channels ?? []).filter((c) => c.id.toString() !== logChannelId).map((c) => ({ id: c.id.toString(), name: c.name, type: c.type }))
+  );
   let logChannelProblem = $derived(
     logChannelId && lookups ? !(lookups.channels.find((c) => c.id.toString() === logChannelId)?.canSend ?? false) : false
   );
   /** How long unlock messages stay, from never to a day. */
   const deleteOptions = [
     { id: "0", name: "Never" },
+    { id: "5", name: "After 5 seconds" },
     { id: "15", name: "After 15 seconds" },
     { id: "30", name: "After 30 seconds" },
     { id: "60", name: "After 1 minute" },
@@ -65,7 +71,8 @@
 
   /** The form state as text, for change tracking. */
   function snapshot(): string {
-    return JSON.stringify([mode, logChannelId, dmByDefault, mentionUsers, unlockImage, deleteAfter, serializeMessage(message)]);
+    return JSON.stringify([mode, logChannelId, dmByDefault, mentionUsers, unlockImage, deleteAfter, [...quietChannels].sort(),
+      requireSendPermission, serializeMessage(message)]);
   }
 
   /** Saves the announcement settings. */
@@ -80,6 +87,8 @@
         mentionUsers,
         unlockImage,
         deleteAfter,
+        quietChannelIds: quietChannels.filter((id) => id !== logChannelId),
+        requireSendPermission,
         unlockMessage: serializeMessage(message)
       });
       onsaved(saved);
@@ -100,6 +109,8 @@
     mentionUsers = settings.mentionUsers;
     unlockImage = settings.unlockImage;
     deleteAfter = settings.deleteAfter ?? 0;
+    quietChannels = (settings.quietChannelIds ?? []).map((id) => id.toString());
+    requireSendPermission = settings.requireSendPermission ?? true;
     message = parseMessageSource(settings.unlockMessage);
     baseline = snapshot();
   }
@@ -159,6 +170,24 @@
     </div>
 
     <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+      <span id="ach-quiet-label" class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Keep unlocks out of some channels</span>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 items-start">
+        <div>
+          <DiscordSelector type="channel" multiple={true} options={quietOptions} selected={quietChannels}
+                           placeholder="No quiet channels" ariaLabelledby="ach-quiet-label"
+                           onchange={(d) => { quietChannels = Array.isArray(d.selected) ? d.selected : []; }} />
+          <p class="text-xs mt-2" style="color: {$colorStore.muted}">
+            Members still earn achievements in these channels. The unlock is posted in the log channel instead, or not at all
+            when there isn't one.
+          </p>
+        </div>
+        <ToggleRow checked={requireSendPermission} title="Only post where the member can talk"
+                   subtitle="Skips channels the member can't send messages in, such as a read only channel they reacted in. The log channel is never skipped."
+                   colors={$colorStore} onchange={(v) => { requireSendPermission = v; }} />
+      </div>
+    </div>
+
+    <div class="mt-6 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
       <span class="block text-sm font-medium mb-2" style="color: {$colorStore.text}">Delivery</span>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <ToggleRow checked={dmByDefault} title="DM members by default" class="h-full"
@@ -181,7 +210,8 @@
                          onchange={(d) => { deleteAfter = typeof d.selected === "string" ? Number(d.selected) : 0; }} />
       </div>
       <p class="text-xs mt-2" style="color: {$colorStore.muted}">
-        Removes announcements from channels after a while to keep busy channels clean. DMs are never deleted.
+        Removes announcements from channels after a while to keep busy channels clean. 5 seconds unless you change it. DMs are
+        never deleted.
       </p>
     </div>
   </div>

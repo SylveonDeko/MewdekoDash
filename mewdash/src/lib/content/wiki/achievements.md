@@ -84,7 +84,16 @@ Each one gets a name, description, grade, icon (an emoji, a server emoji, a Font
 | DM only | The member's DMs |
 | Silent | Nowhere |
 
-Several unlocks at once share one message. Announcements carry an image card in your server's colors, and you can delete them from channels after a set time. DMs are never deleted. Members can turn unlock DMs, server messages and mentions off for themselves.
+Several unlocks at once share one message. Announcements carry an image card in your server's colors. In channels they delete themselves after 5 seconds unless you pick a longer time or Never. DMs are never deleted. Members can turn unlock DMs, server messages and mentions off for themselves.
+
+Two rules keep unlocks out of channels where they don't belong:
+
+| Rule | What it does |
+| --- | --- |
+| Quiet channels | Channels you pick, such as an announcements channel. Members still earn achievements there, but the unlock is never posted there |
+| Only post where the member can talk | On by default. An unlock is not posted in a channel the member can't send messages in, such as a read only channel they reacted in |
+
+When either rule stops a post, the unlock goes to the log channel if you set one, and is skipped otherwise. The log channel itself is never skipped. To stop a channel counting at all, use the excluded channels on the Settings tab instead.
 
 ## Cards
 

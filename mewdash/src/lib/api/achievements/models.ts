@@ -257,6 +257,10 @@ export interface AchievementSettings {
   categoryOrder: string[];
   excludedRoleIds: bigint[];
   excludedChannelIds: bigint[];
+  /** Channels where achievements are earned but unlocks are never announced */
+  quietChannelIds: bigint[];
+  /** Unlocks stay out of channels the member can't send messages in */
+  requireSendPermission: boolean;
   backfilledAt?: string | null;
 }
 
@@ -276,6 +280,8 @@ export interface AchievementSettingsRequest {
   deleteAfter?: number;
   excludedRoleIds?: string[];
   excludedChannelIds?: string[];
+  quietChannelIds?: string[];
+  requireSendPermission?: boolean;
 }
 
 /** A recent unlock. */
