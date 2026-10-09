@@ -211,7 +211,8 @@
    * Works out how far the visitor has scrolled through the parts, which turns the tails by exactly that much,
    * fractions included, and which part is nearest. The page only settles on resting points while the
    * visitor is strictly between the first and last of them. On those two it scrolls freely, so the visitor can
-   * always leave the section in either direction.
+   * always leave the section in either direction. The points never force a stop, so a long scroll carries
+   * through several parts and settles on whichever it ends nearest.
    */
   function track() {
     if (!section) return;
@@ -226,7 +227,11 @@
     const first = STEP_PX / 2;
     const last = (features.length - 0.5) * STEP_PX;
     const between = offset > first + 8 && offset < last - 8;
-    document.documentElement.style.scrollSnapType = between ? "y proximity" : "";
+    const root = document.documentElement;
+    if (root.classList.contains("snap-y") !== between) {
+      root.classList.toggle("snap-y", between);
+      root.classList.toggle("snap-proximity", between);
+    }
   }
 
   /**
@@ -246,14 +251,13 @@
     const query = window.matchMedia("(min-width: 1024px)");
     const size = () => { wide = query.matches; };
     const root = document.documentElement;
-    const before = root.style.scrollSnapType;
     size();
     track();
     query.addEventListener("change", size);
     window.addEventListener("scroll", track, { passive: true });
     window.addEventListener("resize", track);
     return () => {
-      root.style.scrollSnapType = before;
+      root.classList.remove("snap-y", "snap-proximity");
       query.removeEventListener("change", size);
       window.removeEventListener("scroll", track);
       window.removeEventListener("resize", track);
@@ -289,7 +293,7 @@
 <section bind:this={section} aria-labelledby="tails-heading" class="relative"
          style="height: calc({features.length * STEP_PX}px + 100vh);">
   {#each features as item, index (item.tool)}
-    <div class="rest absolute left-0 w-px h-px pointer-events-none" aria-hidden="true"
+    <div class="snap-start absolute left-0 w-px h-px pointer-events-none" aria-hidden="true"
          style="top: {(index + 0.5) * STEP_PX}px;"></div>
   {/each}
   <div class="sticky top-0 h-[100svh] flex flex-col justify-center px-4 py-3 overflow-hidden">
@@ -372,11 +376,6 @@
 </section>
 
 <style>
-  .rest {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-
   .stage {
     container-type: inline-size;
   }
