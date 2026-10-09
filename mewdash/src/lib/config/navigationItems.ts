@@ -431,6 +431,14 @@ export const allDashboardFeatures: NavigationItem[] = [
     description: "Leveling and XP system",
     keywords: ["xp", "experience", "levels", "ranking", "leaderboard"],
   },
+  {
+    label: "Import",
+    icon: "fa-utility-duo fa-regular fa-arrow-right-to-bracket",
+    href: "/dashboard/import",
+    category: "Community",
+    description: "Bring XP, levels and balances over from other bots",
+    keywords: ["import", "mee6", "lurkr", "polaris", "arcane", "amari", "tatsu", "unbelievaboat", "migrate", "transfer"],
+  },
 ];
 
 // Group features by category

@@ -11,6 +11,20 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "import-from-other-bots",
+    label: "New page",
+    title: "Bring Your Levels Over From Other Bots",
+    summary: "Moving to Mewdeko no longer means starting everyone at level zero. Import XP, levels, level roles and balances from the bot you used before.",
+    details: [
+      "Works with MEE6, Lurkr, Polaris, Arcane, Amari, Tatsu and UnbelievaBoat, plus any JSON or CSV file with a user ID and XP or levels.",
+      "MEE6 needs nothing but a public leaderboard. Switch to the MEE6, Lurkr or Amari curve and every member keeps the exact same level, or keep your own curve and they keep their level and progress.",
+      "MEE6 settings come over too. Run the export from your bookmarks bar on MEE6's dashboard, upload the file, and pick which parts to bring: welcome messages, level settings, custom commands, reaction roles, filters, Twitch alerts and the shop.",
+      "You see the top members and level roles before anything is written, and an import can be undone for 24 hours. It's also a step in the setup wizard and on /import in Discord."
+    ],
+    href: "/dashboard/import",
+    action: "Import your data"
+  },
+  {
     id: "nine-tailed-cat",
     label: "New look",
     title: "Meet The Nine-Tailed Cat",

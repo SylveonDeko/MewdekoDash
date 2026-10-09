@@ -62,12 +62,144 @@
   position = untrack(() => turn);
   let tails = $derived(variant === "full" ? buildTails(position, toolSet) : []);
 
-  /** The drawing's bounds, which the pixel filter has to cover in full. */
+  /** The drawing's bounds, which the pixel grid covers in full. */
   const BOX = { full: [-160, -175, 810, 635], head: [100, 18, 280, 250] } as const;
   const box = $derived(BOX[variant]);
-  /** Colors snap to this many steps per channel in pixel mode. */
+
+  /** Colors snap to this many steps per channel in pixel mode, so neighboring cells share a path. */
   const LEVELS = 32;
-  const levelTable = Array.from({ length: LEVELS }, (_, i) => (i / (LEVELS - 1)).toFixed(3)).join(" ");
+  /** Each cell is drawn this many canvas pixels wide when sampling, and takes the color at its center. */
+  const SAMPLE = 5;
+
+  /** The largest a pixel-art cell gets on screen, in CSS pixels, so a big cat gets a finer grid rather than bigger blocks. */
+  const MAX_CELL_CSS = 2.25;
+
+  /** The smooth drawing, kept unrendered in pixel mode as the picture the grid samples. */
+  let sourceEl = $state<SVGSVGElement | null>(null);
+  /** The visible cat, measured to size its grid. */
+  let svgEl = $state<SVGSVGElement | null>(null);
+  /** The cat's width on screen in CSS pixels, or zero before it is measured. */
+  let hostWidth = $state(0);
+  /** One path per color, each a set of whole cells, once the drawing has been sampled. */
+  let pixelPaths = $state<{ fill: string; d: string }[]>([]);
+
+  /**
+   * One cell in drawing units: the requested size, made finer when the cat is drawn large, and rounded to a
+   * quarter unit so small resizes do not resample.
+   */
+  let cell = $derived(
+    pixel > 0 && hostWidth > 0
+      ? Math.max(1, Math.round(Math.min(pixel, (MAX_CELL_CSS * box[2]) / hostWidth) * 4) / 4)
+      : pixel
+  );
+
+  $effect(() => {
+    if (pixel <= 0 || !svgEl) return;
+    const element = svgEl;
+    const measure = () => {
+      hostWidth = element.getBoundingClientRect().width;
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  });
+
+  $effect(() => {
+    if (pixel <= 0 || !sourceEl || hostWidth <= 0) return;
+    const source = sourceEl;
+    const size = cell;
+    const columns = Math.ceil(box[2] / size);
+    const rows = Math.ceil(box[3] / size);
+    const [left, top] = box;
+    const canvas = document.createElement("canvas");
+    canvas.width = columns * SAMPLE;
+    canvas.height = rows * SAMPLE;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return;
+
+    let frame = 0;
+    let busy = false;
+    let dirty = false;
+    let stopped = false;
+
+    const sample = async () => {
+      if (busy) {
+        dirty = true;
+        return;
+      }
+      busy = true;
+      dirty = false;
+      try {
+        const markup = new XMLSerializer().serializeToString(source)
+          .replace("<svg", `<svg width="${canvas.width}" height="${canvas.height}"`);
+        const url = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml" }));
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        URL.revokeObjectURL(url);
+        if (stopped) return;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        const step = 255 / (LEVELS - 1);
+        const snap = (value: number) => Math.round(Math.round(value / step) * step);
+        const paths = new Map<string, string[]>();
+
+        for (let row = 0; row < rows; row++) {
+          let runColor = "";
+          let runStart = 0;
+          const flush = (end: number) => {
+            if (!runColor) return;
+            const parts = paths.get(runColor) ?? [];
+            const x = +(left + runStart * size).toFixed(2);
+            const y = +(top + row * size).toFixed(2);
+            const width = +((end - runStart) * size).toFixed(2);
+            parts.push(`M${x} ${y}h${width}v${size}h-${width}z`);
+            paths.set(runColor, parts);
+          };
+          for (let column = 0; column < columns; column++) {
+            const middle = (SAMPLE - 1) / 2;
+            const at = ((row * SAMPLE + middle) * canvas.width + column * SAMPLE + middle) * 4;
+            const color = data[at + 3] < 128
+              ? ""
+              : `rgb(${snap(data[at])},${snap(data[at + 1])},${snap(data[at + 2])})`;
+            if (color !== runColor) {
+              flush(column);
+              runColor = color;
+              runStart = column;
+            }
+          }
+          flush(columns);
+        }
+
+        pixelPaths = [...paths].map(([fill, parts]) => ({ fill, d: parts.join("") }));
+      } catch {
+        pixelPaths = [];
+      } finally {
+        busy = false;
+        if (dirty && !stopped) schedule();
+      }
+    };
+
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        void sample();
+      });
+    };
+
+    schedule();
+    const observer = new MutationObserver(schedule);
+    observer.observe(source, { subtree: true, attributes: true, childList: true, characterData: true });
+    return () => {
+      stopped = true;
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  });
 
   /**
    * Line width for the face and whiskers. Pixel mode samples one point per cell, so thin lines would break
@@ -76,7 +208,7 @@
    * @param cells The least width in pixel mode, counted in cells
    */
   function line(width: number, cells = 2) {
-    return pixel > 0 ? Math.max(width, pixel * cells) : width;
+    return pixel > 0 ? Math.max(width, cell * cells) : width;
   }
 
   /** An eye as the face defines it, before blinking or closing. */
@@ -390,33 +522,27 @@
 </script>
 
 <svg xmlns="http://www.w3.org/2000/svg"
+     bind:this={svgEl}
      viewBox={box.join(" ")}
      class="mascot {className}"
      class:swaying={variant === "head" && face === "vibing" && !changing}
      role={label ? "img" : undefined}
      aria-label={label ?? undefined}
      aria-hidden={label ? undefined : "true"}>
-  <defs>
-    {#if pixel > 0}
-      <filter id="{uid}-pixel" x={box[0]} y={box[1]} width={box[2]} height={box[3]}
-              filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-        <feFlood x={box[0] + pixel / 2 - 0.5} y={box[1] + pixel / 2 - 0.5} width="1" height="1" flood-color="#000" result="dot" />
-        <feComposite in="dot" in2="dot" x={box[0]} y={box[1]} width={pixel} height={pixel} result="cell" />
-        <feTile in="cell" result="grid" />
-        <feComposite in="SourceGraphic" in2="grid" operator="in" result="sampled" />
-        <feMorphology in="sampled" operator="dilate" radius={pixel / 2} result="blocks" />
-        <feComponentTransfer in="blocks">
-          <feFuncR type="discrete" tableValues={levelTable} />
-          <feFuncG type="discrete" tableValues={levelTable} />
-          <feFuncB type="discrete" tableValues={levelTable} />
-          <feFuncA type="discrete" tableValues="0 0 1 1" />
-        </feComponentTransfer>
-      </filter>
-    {/if}
-  </defs>
-  <g filter={pixel > 0 ? `url(#${uid}-pixel)` : undefined}>
-    {@render drawing(pixel <= 0)}
-  </g>
+  {#if pixel > 0}
+    <defs>
+      <svg xmlns="http://www.w3.org/2000/svg" bind:this={sourceEl} viewBox={box.join(" ")}>
+        {@render drawing(false)}
+      </svg>
+    </defs>
+    <g class="pixel-art" class:ready={pixelPaths.length > 0} shape-rendering="crispEdges">
+      {#each pixelPaths as path (path.fill)}
+        <path fill={path.fill} d={path.d} />
+      {/each}
+    </g>
+  {:else}
+    {@render drawing(true)}
+  {/if}
 </svg>
 
 {#snippet drawing(rough: boolean)}
@@ -522,6 +648,15 @@
   .mascot {
     display: block;
     overflow: visible;
+  }
+
+  .pixel-art {
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+  }
+
+  .pixel-art.ready {
+    opacity: 1;
   }
 
   .swaying {

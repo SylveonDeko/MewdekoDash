@@ -17,6 +17,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   // Components
   import WizardProgress from "./components/WizardProgress.svelte";
   import WizardStep from "./components/WizardStep.svelte";
+  import ImportFlow from "$lib/components/dashboard/import/ImportFlow.svelte";
   import FeatureSetupCard from "./components/FeatureSetupCard.svelte";
   import PermissionCheck from "./components/PermissionCheck.svelte";
   import ProgressiveFeatureConfig from "./components/ProgressiveFeatureConfig.svelte";
@@ -262,13 +263,14 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
   /** 1-based step numbers for the fixed screens at the front of the wizard. */
   let permissionsStep = $derived(2);
   let basicsStep = $derived(hasPermissionStep ? 3 : 2);
-  let featureSelectionStep = $derived(basicsStep + 1);
+  let importStep = $derived(basicsStep + 1);
+  let featureSelectionStep = $derived(importStep + 1);
 
   /** The step index of the bulk quick-enable screen, when there is one. */
   let quickSetupStep = $derived(featureSelectionStep + fullSetupFeatures.length + 1);
 
   let totalSteps = $derived.by(() => {
-    const baseSteps = featureSelectionStep; // Welcome + (Permissions) + Basics + Features
+    const baseSteps = featureSelectionStep; // Welcome + (Permissions) + Basics + Import + Features
     const configSteps = fullSetupFeatures.length; // One step per full setup feature
     const bulkStep = quickEnableFeatures.length > 0 ? 1 : 0; // One bulk config step
     return baseSteps + configSteps + bulkStep + 1; // +1 for completion
@@ -279,6 +281,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
       "Welcome",
       ...(hasPermissionStep ? ["Permissions"] : []),
       "Server Basics",
+      "Bring Your Data",
       "Select Features",
       ...fullSetupFeatures.map(id => allFeatures.find(f => f.id === id)?.title || id),
       ...(quickEnableFeatures.length > 0 ? ["Quick Setup"] : []),
@@ -1647,6 +1650,7 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
     currentStep === 1 ||
     (hasPermissionStep && currentStep === permissionsStep && permissionData?.canFunction) ||
     currentStep === basicsStep ||
+    currentStep === importStep ||
     (currentStep === featureSelectionStep && allEnabledFeatures.length > 0) ||
     currentStep === totalSteps
   );
@@ -2004,6 +2008,40 @@ Multi-Channel Intelligence, Bulk Configuration, and Three-State Feature Selectio
             {wizardLoading ? 'Saving...' : 'Continue'}
             <i class="fa-solid {wizardLoading ? 'fa-arrows-rotate fa-spin' : 'fa-arrow-right'}"
                style="font-size: 16px;"></i>
+          </button>
+        </div>
+      </div>
+    </WizardStep>
+
+    <!-- Bring Your Data -->
+    <WizardStep
+      title="Coming From Another Bot?"
+      subtitle="Bring your members' XP, levels, level roles and balances with you. Skip this if you're starting fresh."
+      stepNumber={importStep}
+      isActive={currentStep === importStep}
+      icon="fa-solid fa-arrow-right-to-bracket"
+      maxWidth="max-w-3xl"
+    >
+      <div class="space-y-6">
+        <ImportFlow guildId={BigInt(data.guildId)} compact />
+
+        <div class="flex items-center justify-between gap-3 pt-6 border-t" style="border-color: {$colorStore.primary}20;">
+          <button
+            class="px-4 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            style="background: {$colorStore.muted}20; color: {$colorStore.muted}; border: 1px solid {$colorStore.muted}30;"
+            onclick={previousStep}
+          >
+            <i class="fa-solid fa-arrow-left" style="font-size: 16px;"></i>
+            Back
+          </button>
+
+          <button
+            class="px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02] focus:outline-hidden focus:ring-2 focus:ring-offset-2 flex items-center gap-2 min-h-[44px]"
+            style="background: {$colorStore.primary}20; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;"
+            onclick={nextStep}
+          >
+            Continue
+            <i class="fa-solid fa-arrow-right" style="font-size: 16px;"></i>
           </button>
         </div>
       </div>

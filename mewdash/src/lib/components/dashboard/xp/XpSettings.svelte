@@ -81,7 +81,10 @@
     { id: "1", name: "Linear" },
     { id: "2", name: "Quadratic" },
     { id: "3", name: "Exponential" },
-    { id: "5", name: "Legacy" }
+    { id: "5", name: "Legacy" },
+    { id: "6", name: "MEE6" },
+    { id: "7", name: "Lurkr" },
+    { id: "8", name: "Amari" }
   ];
 </script>
 
