@@ -46,6 +46,26 @@ export interface AntiImageHashConfig {
 }
 
 /**
+ * Settings for anti-external-app protection, which watches messages members send through apps they added to their
+ * own account. A threshold or limit of 0 turns that check off.
+ */
+export interface AntiExternalAppConfig {
+  enabled: boolean;
+  action: number;
+  punishDuration: number;
+  roleId?: bigint | null;
+  /** How many users and roles one app message may mention. A ping of everyone or here always counts. */
+  mentionThreshold: number;
+  /** Treat Discord invite links in app messages as violations. */
+  blockInvites: boolean;
+  /** How many app messages one member may trigger within the time window. */
+  maxMessages: number;
+  timeWindowSeconds: number;
+  deleteMessages: boolean;
+  notifyUser: boolean;
+}
+
+/**
  * A blocked image. `action` is null when the image uses the guild default action. `variants` holds the
  * mirrored and border-stripped hashes; it is null for entries added from a bare hash, which therefore
  * only match the exact image.

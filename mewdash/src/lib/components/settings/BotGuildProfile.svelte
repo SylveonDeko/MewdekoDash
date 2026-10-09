@@ -6,6 +6,29 @@
   import { currentGuild } from "$lib/stores/currentGuild";
   import { guildApi } from "$lib/api/index.ts";
   import { logger } from "$lib/logger";
+  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+
+  type ResetPart = "avatar" | "banner" | "bio" | "all";
+
+  /** Copy for the confirmation shown before each kind of reset. */
+  const RESET_COPY: Record<ResetPart, { title: string; message: string }> = {
+    avatar: {
+      title: "Reset the avatar?",
+      message: "The bot goes back to its normal avatar in this server."
+    },
+    banner: {
+      title: "Reset the banner?",
+      message: "The bot goes back to its normal banner in this server."
+    },
+    bio: {
+      title: "Reset the bio?",
+      message: "The bot goes back to its normal bio in this server."
+    },
+    all: {
+      title: "Reset the whole profile?",
+      message: "The avatar, banner and bio in this server all go back to the bot's normal profile."
+    }
+  };
 
   // State
   let profile = $state({
@@ -35,6 +58,49 @@
   // File input refs
   let avatarFileInput: HTMLInputElement | undefined = $state();
   let bannerFileInput: HTMLInputElement | undefined = $state();
+
+  /** The reset waiting on confirmation, if any. */
+  let pendingReset = $state<ResetPart | null>(null);
+  let hasCustomProfile = $derived(!!(profile.avatarUrl || profile.bannerUrl || profile.bio));
+
+  /**
+   * Resets the chosen part of the profile. The fields are cleared here, without refetching, since the bot's
+   * cached member can still carry the old avatar for a moment after Discord applies the change.
+   * @param part What to reset
+   */
+  async function resetProfile(part: ResetPart) {
+    if (!$currentGuild?.id) return;
+
+    const parts = part === "all"
+      ? { avatar: true, banner: true, bio: true }
+      : { [part]: true };
+
+    try {
+      saving = true;
+      error = null;
+      await guildApi.resetBotGuildProfile($currentGuild.id, parts);
+      if (parts.avatar) {
+        profile.avatar = null;
+        profile.avatarUrl = null;
+        editingAvatar = false;
+      }
+      if (parts.banner) {
+        profile.banner = null;
+        profile.bannerUrl = null;
+        editingBanner = false;
+      }
+      if (parts.bio) {
+        profile.bio = null;
+        bioInput = "";
+        editingBio = false;
+      }
+    } catch (err: any) {
+      logger.error("Failed to reset bot guild profile:", err);
+      error = "Failed to reset the profile";
+    } finally {
+      saving = false;
+    }
+  }
 
   function handleAvatarFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -218,6 +284,19 @@
       <h2 class="text-lg font-bold" style="color: {$colorStore.text}">Bot Guild Profile</h2>
       <p class="text-xs md:text-sm" style="color: {$colorStore.muted}">Customize bot appearance in this server</p>
     </div>
+    {#if !loading && hasCustomProfile}
+      <button
+        class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+        style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+        disabled={saving}
+        onclick={() => pendingReset = "all"}>
+        <span class="flex items-center gap-1.5">
+          <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
+             style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+          <span class="hidden md:inline">Reset all</span>
+        </span>
+      </button>
+    {/if}
   </div>
 
   <!-- Status Messages -->
@@ -292,6 +371,19 @@
                   <span class="hidden md:inline">URL</span>
                 </span>
               </button>
+              {#if profile.avatarUrl}
+                <button
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                  disabled={saving}
+                  onclick={() => pendingReset = "avatar"}>
+                  <span class="flex items-center gap-1.5">
+                    <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
+                       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+                    <span class="hidden md:inline">Reset</span>
+                  </span>
+                </button>
+              {/if}
             </div>
           {/if}
         </div>
@@ -362,6 +454,19 @@
                     <span class="hidden md:inline">URL</span>
                   </span>
                 </button>
+                {#if profile.bannerUrl}
+                  <button
+                    class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                    style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                    disabled={saving}
+                    onclick={() => pendingReset = "banner"}>
+                    <span class="flex items-center gap-1.5">
+                      <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
+                         style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+                      <span class="hidden md:inline">Reset</span>
+                    </span>
+                  </button>
+                {/if}
               </div>
             {/if}
           </div>
@@ -419,12 +524,27 @@
             <p class="text-xs" style="color: {$colorStore.muted}">Custom bio for this server</p>
           </div>
           {#if !editingBio}
-            <button
-              class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
-              style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
-              onclick={() => editingBio = true}>
-              Edit
-            </button>
+            <div class="flex gap-2">
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02]"
+                style="background: {$colorStore.primary}20; color: {$colorStore.primary};"
+                onclick={() => editingBio = true}>
+                Edit
+              </button>
+              {#if profile.bio}
+                <button
+                  class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+                  style="background: {$colorStore.accent}20; color: {$colorStore.accent};"
+                  disabled={saving}
+                  onclick={() => pendingReset = "bio"}>
+                  <span class="flex items-center gap-1.5">
+                    <i class="fa-utility-duo fa-regular fa-arrow-rotate-left"
+                       style="--fa-primary-color: {$colorStore.accent}; --fa-secondary-color: {$colorStore.primary};"></i>
+                    <span class="hidden md:inline">Reset</span>
+                  </span>
+                </button>
+              {/if}
+            </div>
           {/if}
         </div>
 
@@ -468,3 +588,17 @@
     </div>
   {/if}
 </div>
+
+<ConfirmationModal
+  isOpen={pendingReset !== null}
+  title={pendingReset ? RESET_COPY[pendingReset].title : ""}
+  message={pendingReset ? RESET_COPY[pendingReset].message : ""}
+  confirmText="Reset"
+  variant="warning"
+  onconfirm={() => {
+    const part = pendingReset;
+    pendingReset = null;
+    if (part) resetProfile(part);
+  }}
+  oncancel={() => (pendingReset = null)}
+/>

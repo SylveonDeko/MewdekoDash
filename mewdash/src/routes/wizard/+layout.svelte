@@ -6,6 +6,7 @@ Wizard layout - minimal layout for focused setup experience
 
 
   import { colorStore } from "$lib/stores/colorStore";
+  import Mascot from "$lib/components/brand/Mascot.svelte";
   import { userStore } from "$lib/stores/userStore";
   import { currentGuild } from "$lib/stores/currentGuild";
   import { goto } from "$app/navigation";
@@ -62,7 +63,7 @@ Wizard layout - minimal layout for focused setup experience
           style="border-color: {$colorStore.primary}30; background: {$colorStore.primary}05; backdrop-filter: blur(10px);">
     <div class="flex items-center justify-center max-w-6xl mx-auto">
       <div class="flex items-center gap-2 sm:gap-3">
-        <img alt="Mewdeko" class="h-8 w-8 sm:h-10 sm:w-10" src="/img/Mewdeko.png">
+        <Mascot variant="head" label={null} class="h-8 w-8 sm:h-10 sm:w-10 shrink-0" />
         <div>
           <h1 class="text-lg sm:text-xl font-bold" style="color: {$colorStore.text};">Setup Wizard</h1>
           <p class="text-xs sm:text-sm hidden sm:block" style="color: {$colorStore.muted};">Get your server configured in minutes</p>

@@ -22,6 +22,7 @@ A unified navigation component that provides responsive navigation with server a
   import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import Mascot from "$lib/components/brand/Mascot.svelte";
   import { safeLocalStorage } from "$lib/safeStorage";
   import { clickOutside } from "$lib/clickOutside.ts";
   import { browser } from "$app/environment";
@@ -45,7 +46,7 @@ A unified navigation component that provides responsive navigation with server a
   import { goto } from "$app/navigation";
   import { colorStore } from "$lib/stores/colorStore.ts";
   import { userStore } from "$lib/stores/userStore.ts";
-  import { musicStore } from "$lib/stores/musicStore.ts";
+  import { musicPlaying, musicStore } from "$lib/stores/musicStore.ts";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { themeStore } from "$lib/stores/themeStore.ts";
@@ -680,6 +681,7 @@ A unified navigation component that provides responsive navigation with server a
     <div class="flex items-center mx-auto px-4 lg:px-8 xl:px-12 max-w-[1920px]">
     <!-- Left section - Logo (hidden on dashboard lg+ since sidebar has branding) -->
         <div class="w-[140px] lg:w-[220px] xl:w-[240px] shrink-0"
+             class:md:w-[56px]={!isDashboard}
              class:md:w-[220px]={isDashboard}
              class:lg:hidden={isDashboard}>
         <a
@@ -687,14 +689,8 @@ A unified navigation component that provides responsive navigation with server a
           href={isOwnerArea ? "/owner" : isDashboard ? "/dashboard" : "/"}
           title="Mewdeko"
         >
-          <img
-            alt="Mewdeko's Avatar"
-            class="h-10 w-10 object-contain mr-3"
-            height="1024"
-            src="/img/Mewdeko.png"
-            width="1024"
-          >
-            <span class="hidden xs:block self-center text-lg font-semibold whitespace-nowrap text-mewd-white">
+          <Mascot variant="head" label={null} expression={$musicPlaying ? "vibing" : "neutral"} class="h-10 w-10 mr-3 shrink-0" />
+            <span class="hidden xs:block md:hidden lg:block self-center text-lg font-semibold whitespace-nowrap text-mewd-white">
             Mewdeko
           </span>
         </a>
@@ -738,14 +734,14 @@ A unified navigation component that provides responsive navigation with server a
           </div>
         {/if}
         <div
-          class="hidden md:flex flex-row p-2 space-x-2 lg:space-x-4 text-[15px] font-medium relative z-10"
+          class="hidden md:flex flex-row p-2 space-x-1 xl:space-x-4 text-[15px] font-medium relative z-10"
           role="navigation"
         >
           {#each computedItems as item, i}
             {#if item.wrapped}
               <div class="relative group" in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}>
                 <button
-                  class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
+                  class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 xl:px-3 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
                   style="color: {$colorStore.text};"
                   aria-expanded="false"
                   aria-haspopup="true"
@@ -840,15 +836,18 @@ A unified navigation component that provides responsive navigation with server a
             {:else}
               <a
                 href={item.href || '#'}
-                data-sveltekit-preload-data="hover"
+                target={item.href?.startsWith("http") ? "_blank" : undefined}
+                rel={item.href?.startsWith("http") ? "noreferrer" : undefined}
+                data-sveltekit-preload-data={item.href?.startsWith("http") ? "off" : "hover"}
                 data-sveltekit-noscroll
-                class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 lg:px-3 lg:py-1.5 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
+                class="relative overflow-hidden flex items-center space-x-2 px-2 py-1.5 xl:px-3 rounded-md transition-all duration-200 ease-out min-h-[36px] hover:scale-[1.02]"
                 in:slide|local={{ duration: 300, delay: i * 50, axis: 'x' }}
                 style="background: {current === item.href ? `${$colorStore.primary}25` : 'transparent'};
                        z-index: 10;"
                 onmousemove={(e) => handleNavMouseMove(e, `nav-${i}`)}
                 onmouseleave={() => handleNavMouseLeave(`nav-${i}`)}
                 onclick={(e) => {
+        if (item.href?.startsWith("http")) return;
         e.preventDefault();
         if ($currentGuild) {
           if (browser) {
@@ -908,8 +907,13 @@ A unified navigation component that provides responsive navigation with server a
     {/if}
 
     <!-- Right section -->
-        <div class="flex items-center gap-2 w-[140px] lg:w-[220px] xl:w-[240px] justify-end"
+        <div class="flex items-center gap-2 min-w-[140px] md:w-[140px] lg:w-[220px] xl:w-[240px] justify-end"
              class:md:w-[220px]={isDashboard}>
+      <a href="https://ko-fi.com/mewdeko" target="_blank" rel="noreferrer"
+         class="md:hidden rounded-lg px-3 py-1.5 text-sm font-medium border inline-block shrink-0"
+         style="background: {$colorStore.primary}15; border-color: {$colorStore.primary}40; color: {$colorStore.text};">
+        Donate
+      </a>
       <!-- Dyslexia-friendly font toggle - always visible, no login required -->
       <button
         type="button"
@@ -1448,6 +1452,8 @@ A unified navigation component that provides responsive navigation with server a
               {:else}
                 <a
                   href={item.href || '#'}
+                  target={item.href?.startsWith("http") ? "_blank" : undefined}
+                  rel={item.href?.startsWith("http") ? "noreferrer" : undefined}
                   class=" flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out min-h-[44px] border hover:bg-white/5"
                   style="color: {$colorStore.text};
                          background: {current === item.href ? `${$colorStore.primary}20` : 'transparent'};

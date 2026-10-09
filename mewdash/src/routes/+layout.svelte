@@ -44,8 +44,7 @@
 
           await colorStore.extractFromImage(avatarUrl);
       } else if (!user) {
-          // Only fallback to default image if there's no user at all
-        await colorStore.extractFromImage("/img/Mewdeko.png");
+        colorStore.reset();
       }
     } catch (err) {
       colorStore.reset(); // Reset to default colors
@@ -87,7 +86,8 @@
         { title: "Terms", href: "/terms" }
       ]
     },
-    { title: "Reviews", elements: [{ href: "/reviews" }] }
+    { title: "Reviews", elements: [{ href: "/reviews" }] },
+    { title: "Donate", elements: [{ href: "https://ko-fi.com/mewdeko" }] }
   ];
 
     // Keep user store in sync with server data and handle color extraction

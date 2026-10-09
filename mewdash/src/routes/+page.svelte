@@ -6,9 +6,9 @@
   import { colorStore } from "$lib/stores/colorStore";
   import { logger } from "$lib/logger.ts";
   import LatestProductUpdate from "$lib/components/home/LatestProductUpdate.svelte";
+  import HomeHero from "$lib/components/home/HomeHero.svelte";
+  import HomeTails from "$lib/components/home/HomeTails.svelte";
   import { productUpdates } from "$lib/content/productUpdates";
-
-  let {data} = $props();
 
   let guilds: RedisGuild[] = $state([]);
   let fetched = $state(false);
@@ -21,8 +21,6 @@
     let githubForks = $state(10);
     let githubContributors = $state(14);
 
-  // Mouse tracking for desktop button effects
-  let buttonMousePositions = $state<{ [key: string]: { x: number, y: number } }>({});
   
   // Feature expansion state
   let showAllFeatures = $state(false);
@@ -82,18 +80,6 @@
     return str.length <= num ? str : str.slice(0, num) + "...";
   }
 
-  function handleButtonMouseMove(e: MouseEvent, buttonId: string) {
-      const target = e.currentTarget as HTMLElement;
-      const rect = target.getBoundingClientRect();
-      buttonMousePositions[buttonId] = {
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-      };
-  }
-
-  function handleButtonMouseLeave(buttonId: string) {
-      delete buttonMousePositions[buttonId];
-  }
 </script>
 
 <svelte:head>
@@ -190,344 +176,7 @@
       {$colorStore.gradientEnd}05 100%
     );"
   >
-    <!-- Desktop: Split layout container -->
-    <div class="w-full max-w-[1600px] mx-auto lg:flex lg:gap-20 xl:gap-32 lg:items-center lg:mb-12">
-      <!-- Left side: Text + Buttons -->
-      <div class="lg:w-[45%] xl:w-[40%] lg:flex-shrink-0">
-        <div class="text-center lg:text-left mb-6 sm:mb-8">
-          <h1
-            class="font-extrabold max-w-4xl lg:max-w-none mx-auto lg:mx-0 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-tight mb-3 sm:mb-4 animate-pulse-subtle"
-            style="color: {$colorStore.text}"
-          >
-            Mewdeko
-          </h1>
-          <p
-            class="font-bold text-lg sm:text-xl lg:text-2xl max-w-3xl lg:max-w-none mx-auto lg:mx-0 px-4 lg:px-0 leading-relaxed"
-            style="color: {$colorStore.text}">
-            We Don't Do Half Measures
-          </p>
-          <p class="text-base sm:text-lg lg:text-xl max-w-3xl lg:max-w-none mx-auto lg:mx-0 px-4 lg:px-0 mt-2"
-             style="color: {$colorStore.muted}">
-            Free. Open Source. Ridiculously Over-Engineered.
-          </p>
-          <div class="mt-4 flex items-center justify-center lg:justify-start gap-2 text-sm px-4 lg:px-0"
-               style="color: {$colorStore.muted}">
-            <span class="inline-flex items-center gap-1">
-              <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Online & Ready
-            </span>
-            <span>•</span>
-            <span>11,400+ servers</span>
-          </div>
-        </div>
-
-      <!-- Mobile-first button layout -->
-        <div class="w-full max-w-2xl mx-auto lg:mx-0">
-        <!-- Mobile card layout -->
-          <div class="flex flex-col sm:hidden gap-3 px-4">
-          <!-- Dashboard Card -->
-          <a
-                  aria-label="Open Mewdeko Dashboard"
-                  class="group relative p-4 rounded-xl transition-all duration-300 active:scale-[0.98] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
-                  href="/dashboard"
-                  in:fly={{ y: 20, duration: 400, delay: 100 }}
-                  style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10);
-                 border: 1px solid {$colorStore.primary}30;
-                 box-shadow: 0 4px 20px {$colorStore.primary}10;
-                 background-size: {data.user ? '200% 200%' : '100% 100%'};"
-          >
-              <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-500"
-                   style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
-
-              <div class="relative">
-                <div class="flex items-start justify-between mb-2">
-                  <i class="fa-utility-duo fa-regular fa-house text-2xl"
-                         style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                      <span class="text-xs px-2 py-1 rounded-full"
-                            style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-                Manage
-              </span>
-                  </div>
-                <h3 class="font-bold text-base mb-0.5" style="color: {$colorStore.text}">Dashboard</h3>
-                <p class="text-xs" style="color: {$colorStore.muted}">Configure bot settings</p>
-              </div>
-          </a>
-
-          <!-- Invite Bot Card -->
-          <a
-                  aria-label="Invite Mewdeko to your server"
-                  class="group relative p-4 rounded-xl transition-all duration-300 active:scale-[0.98] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
-                  href="https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot"
-                  in:fly={{ y: 20, duration: 400, delay: 200 }}
-                  rel="noreferrer"
-                  style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);
-                 border: 1px solid {$colorStore.secondary}30;
-                 box-shadow: 0 4px 20px {$colorStore.secondary}10;
-                 background-size: {data.user ? '200% 200%' : '100% 100%'};"
-                  target="_blank"
-          >
-              <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-500"
-                   style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.primary}15);"></div>
-
-              <div class="relative">
-                <div class="flex items-start justify-between mb-2">
-                  <i class="fa-utility-duo fa-regular fa-user-plus text-2xl"
-                         style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-                      <span class="text-xs px-2 py-1 rounded-full"
-                            style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                Free
-              </span>
-                  </div>
-                <h3 class="font-bold text-base mb-0.5" style="color: {$colorStore.text}">Add to Server</h3>
-                <p class="text-xs" style="color: {$colorStore.muted}">Invite to your Discord</p>
-              </div>
-          </a>
-
-          <!-- Secondary Actions Row -->
-            <div class="grid grid-cols-2 gap-2">
-              <!-- Discord Card -->
-              <a
-                      aria-label="Join the Mewdeko Discord Server"
-                      class="group relative p-3 rounded-lg transition-all duration-300 active:scale-[0.98] overflow-hidden"
-                      href="https://discord.gg/twQw45rBjN"
-                      in:fly={{ y: 20, duration: 400, delay: 300 }}
-                      rel="noreferrer"
-                      style="background: {$colorStore.primary}08;
-                   border: 1px solid {$colorStore.primary}20;
-                   box-shadow: 0 2px 12px {$colorStore.primary}05;"
-                      target="_blank"
-              >
-                  <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-300"
-                       style="background: {$colorStore.primary}12;"></div>
-
-                <div class="relative text-center">
-                  <i class="fa-brands fa-discord text-xl mb-1" style="color: {$colorStore.text}"></i>
-                  <p class="font-semibold text-xs" style="color: {$colorStore.text}">Discord</p>
-                  </div>
-              </a>
-
-              <!-- Support Card -->
-              <a
-                      aria-label="Support Mewdeko on Ko-fi"
-                      class="group relative p-3 rounded-lg transition-all duration-300 active:scale-[0.98] overflow-hidden"
-                      href="https://ko-fi.com/mewdeko"
-                      in:fly={{ y: 20, duration: 400, delay: 400 }}
-                      rel="noreferrer"
-                      style="background: {$colorStore.secondary}08;
-                   border: 1px solid {$colorStore.secondary}20;
-                   box-shadow: 0 2px 12px {$colorStore.secondary}05;"
-                      target="_blank"
-              >
-                  <div class="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-300"
-                       style="background: {$colorStore.secondary}12;"></div>
-
-                <div class="relative text-center">
-                  <i class="fa-solid fa-heart text-xl mb-1" style="color: {$colorStore.text}"></i>
-                  <p class="font-semibold text-xs" style="color: {$colorStore.text}">Support</p>
-                  </div>
-              </a>
-          </div>
-
-            <!-- Mobile Dashboard Preview (shown right after buttons on mobile) -->
-            <div class="mt-4" in:fly={{ y: 20, duration: 500, delay: 500 }}>
-              <div class="relative rounded-xl overflow-hidden border shadow-xl"
-                   style="border-color: {$colorStore.primary}30; box-shadow: 0 12px 40px {$colorStore.primary}15;">
-                <img
-                  alt="Mewdeko Mobile Dashboard Preview"
-                  class="w-full h-auto"
-                  loading="eager"
-                  src="/img/hero-dashboard-mobile.png"
-                />
-                <!-- Glow effect overlay -->
-                <div class="absolute inset-0 opacity-15 pointer-events-none"
-                     style="background: radial-gradient(circle at center, {$colorStore.primary}40, transparent 70%);"></div>
-              </div>
-            </div>
-      </div>
-
-        <!-- Desktop buttons - New Layout -->
-        <div class="hidden sm:block mt-8 max-w-3xl mx-auto">
-            <div class="grid grid-cols-2 gap-4 px-4">
-                <!-- Primary CTAs - Top Row -->
-                <a
-                        aria-label="Open Mewdeko Dashboard"
-                        class="group relative p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
-                        href="/dashboard"
-                        in:fly={{ y: 20, duration: 400, delay: 100 }}
-                        onmouseleave={() => handleButtonMouseLeave('dashboard')}
-                        onmousemove={(e) => handleButtonMouseMove(e, 'dashboard')}
-                        style="background: linear-gradient(135deg, {$colorStore.primary}15, {$colorStore.secondary}10);
-                   border: 1px solid {$colorStore.primary}30;
-                   box-shadow: 0 4px 20px {$colorStore.primary}10;
-                   background-size: {data.user ? '200% 200%' : '100% 100%'};"
-                >
-                    <!-- Mouse spotlight inside button -->
-                    {#if buttonMousePositions['dashboard']}
-                        <div
-                                class="pointer-events-none absolute w-32 h-32 rounded-full opacity-30 transition-all duration-100 ease-out"
-                                style="background: radial-gradient(circle at center, {$colorStore.primary}60, transparent 70%);
-                       left: {buttonMousePositions['dashboard'].x}px;
-                       top: {buttonMousePositions['dashboard'].y}px;
-                       transform: translate(-50%, -50%);
-                       filter: blur(20px);"
-                        ></div>
-                    {/if}
-
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                         style="background: linear-gradient(135deg, {$colorStore.primary}20, {$colorStore.secondary}15);"></div>
-
-                    <div class="relative z-10">
-                        <div class="flex items-center justify-between mb-3">
-                            <i class="fa-utility-duo fa-regular fa-house text-3xl"
-                               style="--fa-primary-color: {$colorStore.primary}; --fa-secondary-color: {$colorStore.secondary};"></i>
-                            <span class="text-xs px-2 py-1 rounded-full"
-                                  style="background: {$colorStore.primary}20; color: {$colorStore.primary}">
-                  Manage
-                </span>
-                        </div>
-                        <h3 class="font-bold text-xl mb-1" style="color: {$colorStore.text}">Dashboard</h3>
-                        <p class="text-sm" style="color: {$colorStore.muted}">Configure your bot settings</p>
-                    </div>
-                </a>
-
-                <a
-                        aria-label="Invite Mewdeko to your server"
-                        class="group relative p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden {data.user ? 'animate-gradient-bg' : ''}"
-                        href="https://discord.com/oauth2/authorize?client_id=752236274261426212&permissions=66186303&response_type=code&redirect_uri=https%3A%2F%2Fmewdeko.tech%2Fapi%2Fdiscord%2Fcallback&integration_type=0&scope=identify+guilds+bot"
-                        in:fly={{ y: 20, duration: 400, delay: 200 }}
-                        onmouseleave={() => handleButtonMouseLeave('invite')}
-                        onmousemove={(e) => handleButtonMouseMove(e, 'invite')}
-                        rel="noreferrer"
-                        style="background: linear-gradient(135deg, {$colorStore.secondary}15, {$colorStore.primary}10);
-                   border: 1px solid {$colorStore.secondary}30;
-                   box-shadow: 0 4px 20px {$colorStore.secondary}10;
-                   background-size: {data.user ? '200% 200%' : '100% 100%'};"
-                        target="_blank"
-                >
-                    <!-- Mouse spotlight inside button -->
-                    {#if buttonMousePositions['invite']}
-                        <div
-                                class="pointer-events-none absolute w-32 h-32 rounded-full opacity-30 transition-all duration-100 ease-out"
-                                style="background: radial-gradient(circle at center, {$colorStore.secondary}60, transparent 70%);
-                       left: {buttonMousePositions['invite'].x}px;
-                       top: {buttonMousePositions['invite'].y}px;
-                       transform: translate(-50%, -50%);
-                       filter: blur(20px);"
-                        ></div>
-                    {/if}
-
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                         style="background: linear-gradient(135deg, {$colorStore.secondary}20, {$colorStore.primary}15);"></div>
-
-                    <div class="relative z-10">
-                        <div class="flex items-center justify-between mb-3">
-                            <i class="fa-utility-duo fa-regular fa-user-plus text-3xl"
-                               style="--fa-primary-color: {$colorStore.secondary}; --fa-secondary-color: {$colorStore.accent};"></i>
-                            <span class="text-xs px-2 py-1 rounded-full"
-                                  style="background: {$colorStore.secondary}20; color: {$colorStore.secondary}">
-                  Free
-                </span>
-                        </div>
-                        <h3 class="font-bold text-xl mb-1" style="color: {$colorStore.text}">Add to Server</h3>
-                        <p class="text-sm" style="color: {$colorStore.muted}">Invite Mewdeko to your Discord</p>
-                    </div>
-                </a>
-
-                <!-- Secondary CTAs - Bottom Row -->
-                <a
-                        aria-label="Join the Mewdeko Discord Server"
-                        class="group relative p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
-                        href="https://discord.gg/twQw45rBjN"
-                        in:fly={{ y: 20, duration: 400, delay: 300 }}
-                        onmouseleave={() => handleButtonMouseLeave('discord')}
-                        onmousemove={(e) => handleButtonMouseMove(e, 'discord')}
-                        rel="noreferrer"
-                        style="background: {$colorStore.primary}08;
-                   border: 1px solid {$colorStore.primary}20;
-                   box-shadow: 0 2px 12px {$colorStore.primary}05;"
-                        target="_blank"
-                >
-                    <!-- Mouse spotlight inside button -->
-                    {#if buttonMousePositions['discord']}
-                        <div
-                                class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
-                                style="background: radial-gradient(circle at center, {$colorStore.primary}50, transparent 70%);
-                       left: {buttonMousePositions['discord'].x}px;
-                       top: {buttonMousePositions['discord'].y}px;
-                       transform: translate(-50%, -50%);
-                       filter: blur(15px);"
-                        ></div>
-                    {/if}
-
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                         style="background: {$colorStore.primary}12;"></div>
-
-                    <div class="relative z-10 flex items-center gap-3">
-                        <i class="fa-brands fa-discord text-2xl flex-shrink-0" style="color: {$colorStore.text}"></i>
-                        <div>
-                            <p class="font-semibold" style="color: {$colorStore.text}">Join Community</p>
-                            <p class="text-xs" style="color: {$colorStore.muted}">Get help & chat</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a
-                        aria-label="Support Mewdeko on Ko-fi"
-                        class="group relative p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
-                        href="https://ko-fi.com/mewdeko"
-                        in:fly={{ y: 20, duration: 400, delay: 400 }}
-                        onmouseleave={() => handleButtonMouseLeave('donate')}
-                        onmousemove={(e) => handleButtonMouseMove(e, 'donate')}
-                        rel="noreferrer"
-                        style="background: {$colorStore.secondary}08;
-                   border: 1px solid {$colorStore.secondary}20;
-                   box-shadow: 0 2px 12px {$colorStore.secondary}05;"
-                        target="_blank"
-                >
-                    <!-- Mouse spotlight inside button -->
-                    {#if buttonMousePositions['donate']}
-                        <div
-                                class="pointer-events-none absolute w-24 h-24 rounded-full opacity-25 transition-all duration-100 ease-out"
-                                style="background: radial-gradient(circle at center, {$colorStore.secondary}50, transparent 70%);
-                       left: {buttonMousePositions['donate'].x}px;
-                       top: {buttonMousePositions['donate'].y}px;
-                       transform: translate(-50%, -50%);
-                       filter: blur(15px);"
-                        ></div>
-                    {/if}
-
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                         style="background: {$colorStore.secondary}12;"></div>
-
-                    <div class="relative z-10 flex items-center gap-3">
-                        <i class="fa-solid fa-heart text-2xl flex-shrink-0" style="color: {$colorStore.text}"></i>
-                        <div>
-                            <p class="font-semibold" style="color: {$colorStore.text}">Support Us</p>
-                            <p class="text-xs" style="color: {$colorStore.muted}">Buy us a coffee</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        </div>
-      </div>
-
-      <!-- Right side: Hero Image (Desktop Only) -->
-      <div class="hidden lg:block lg:flex-1 lg:w-[55%] xl:w-[60%]" in:fly={{ x: 50, duration: 600, delay: 200 }}>
-        <div class="relative rounded-2xl overflow-hidden border-2 shadow-2xl"
-             style="border-color: {$colorStore.primary}30; box-shadow: 0 20px 60px {$colorStore.primary}20;">
-          <img
-            alt="Mewdeko Dashboard Preview"
-            class="w-full h-auto"
-            loading="eager"
-            src="/img/hero-dashboard.png"
-          />
-          <!-- Glow effect overlay -->
-          <div class="absolute inset-0 opacity-20 pointer-events-none"
-               style="background: radial-gradient(circle at center, {$colorStore.primary}40, transparent 70%);"></div>
-        </div>
-      </div>
-    </div>
+    <HomeHero />
 
       {#if fetched}
       <section
@@ -603,7 +252,7 @@
                 {#if guilds.length > 8}
                     <div class="text-center mt-6">
                         <p class="text-sm" style="color: {$colorStore.muted}">
-                            And {guilds.length - 8} more amazing communities...
+                            And {guilds.length - 8} more.
                         </p>
                     </div>
                 {/if}
@@ -637,14 +286,14 @@
               <div class="animate-spin w-8 h-8 border-2 border-dashed rounded-full mx-auto mb-4"
                    style="border-color: {$colorStore.primary}60;"></div>
               <p class="text-sm animate-pulse" style="color: {$colorStore.muted}">
-                Loading our amazing communities...
+                Loading servers...
               </p>
             </div>
           </div>
         {:else}
           <div class="text-center py-8">
             <p style="color: {$colorStore.muted}">
-              No communities to display right now.
+              No servers to show right now.
             </p>
           </div>
         {/if}
@@ -652,68 +301,7 @@
     {/if}
   </header>
 
-  <LatestProductUpdate updates={productUpdates} />
-
-  <!-- By The Numbers Section -->
-  <section
-    class="py-16 px-4 relative overflow-hidden"
-    in:fade={{ duration: 400 }}
-    style="background: radial-gradient(circle at center,
-      {$colorStore.gradientStart}15 0%,
-      {$colorStore.gradientEnd}10 50%,
-      {$colorStore.gradientEnd}05 100%
-    );"
-  >
-    <div class="container mx-auto max-w-6xl">
-      <div class="text-center mb-8">
-        <h2 class="text-2xl sm:text-3xl font-bold mb-3" style="color: {$colorStore.text}">
-          By The Numbers
-        </h2>
-        <p class="text-sm sm:text-base" style="color: {$colorStore.muted}">
-          We might have gone a little overboard
-        </p>
-      </div>
-
-      <!-- Stats Grid - Mobile: 2x2, Desktop: 4x1 -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <!-- 34 Modules -->
-        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
-             in:fly={{ y: 20, duration: 400, delay: 100 }}
-             style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
-                    border-color: {$colorStore.primary}30;">
-          <div class="text-4xl sm:text-5xl font-extrabold mb-2" style="color: {$colorStore.primary}">34</div>
-          <div class="text-sm sm:text-base font-medium" style="color: {$colorStore.text}">Modules</div>
-        </div>
-
-        <!-- 1,082 Commands -->
-        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
-             in:fly={{ y: 20, duration: 400, delay: 200 }}
-             style="background: linear-gradient(135deg, {$colorStore.secondary}10, {$colorStore.accent}10);
-                    border-color: {$colorStore.secondary}30;">
-          <div class="text-4xl sm:text-5xl font-extrabold mb-2" style="color: {$colorStore.secondary}">1,082</div>
-          <div class="text-sm sm:text-base font-medium" style="color: {$colorStore.text}">Commands</div>
-        </div>
-
-        <!-- 11,400+ Servers -->
-        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
-             in:fly={{ y: 20, duration: 400, delay: 300 }}
-             style="background: linear-gradient(135deg, {$colorStore.accent}10, {$colorStore.primary}10);
-                    border-color: {$colorStore.accent}30;">
-          <div class="text-4xl sm:text-5xl font-extrabold mb-2" style="color: {$colorStore.accent}">11,400+</div>
-          <div class="text-sm sm:text-base font-medium" style="color: {$colorStore.text}">Servers</div>
-        </div>
-
-        <!-- $0/month -->
-        <div class=" rounded-xl border p-6 text-center transition-all hover:scale-[1.02]"
-             in:fly={{ y: 20, duration: 400, delay: 400 }}
-             style="background: linear-gradient(135deg, {$colorStore.primary}10, {$colorStore.secondary}10);
-                    border-color: {$colorStore.primary}30;">
-          <div class="text-4xl sm:text-5xl font-extrabold mb-2 text-green-400">$0</div>
-          <div class="text-sm sm:text-base font-medium" style="color: {$colorStore.text}">Per Month</div>
-        </div>
-      </div>
-    </div>
-  </section>
+  <HomeTails />
 
   <section
     aria-labelledby="features-heading"
@@ -737,7 +325,7 @@
     <div class="container mx-auto px-4 max-w-7xl relative z-10">
       <div class="text-center mb-16">
         <h2
-          class="text-4xl lg:text-5xl font-extrabold mb-4 bg-gradient-to-r bg-clip-text text-transparent leading-tight"
+          class="text-4xl lg:text-5xl font-extrabold mb-4 bg-gradient-to-r bg-clip-text text-transparent leading-tight scroll-mt-28"
           id="features-heading"
           style="background-image: linear-gradient(135deg, {$colorStore.text}, {$colorStore.primary}, {$colorStore.secondary});"
         >
@@ -746,30 +334,8 @@
         <div class="w-24 h-1 mx-auto rounded-full mb-6"
              style="background: linear-gradient(90deg, {$colorStore.primary}, {$colorStore.secondary}, {$colorStore.accent});"></div>
         <p class="text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed" style="color: {$colorStore.muted}">
-          A tour of what the bot does, taken from the dashboard as it is today.
+          A few of the things it does.
         </p>
-      </div>
-
-      <!-- By the numbers -->
-      <div class="mb-16 px-4">
-        <div class="rounded-2xl border p-6 sm:p-8 max-w-4xl mx-auto"
-             style="background: linear-gradient(135deg, {$colorStore.gradientStart}08, {$colorStore.gradientMid}12);
-                    border-color: {$colorStore.primary}30;">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div>
-              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.primary}">1,082</div>
-              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Commands, each documented with examples</div>
-            </div>
-            <div>
-              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.secondary}">2020</div>
-              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Open source since, with 14 contributors</div>
-            </div>
-            <div>
-              <div class="text-3xl sm:text-4xl font-bold" style="color: {$colorStore.accent}">Free</div>
-              <div class="text-sm mt-1" style="color: {$colorStore.muted}">Every feature, for every server, no tiers</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Feature Showcases (Screenshot-based) -->
@@ -792,7 +358,7 @@
                   Form Builder
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  Applications, ban appeals, and join forms, built in the dashboard and filled in from Discord.
+                  Build a form on the dashboard and share the link for people to fill in.
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
@@ -805,11 +371,7 @@
                   </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
                     <span style="color: {$colorStore.primary}">•</span>
-                    <span>Approval workflows with status tracking</span>
-                  </li>
-                  <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.primary}">•</span>
-                    <span>Conditional logic, captcha, 8+ question types</span>
+                    <span>Captcha, and questions that depend on earlier answers</span>
                   </li>
                 </ul>
                 <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] self-start"
@@ -863,20 +425,16 @@
                   XP and Leveling
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  Leaderboards, voice XP, and competition modes, with per-server templates for the rank card.
+                  Levels for chatting and voice, with a rank card you can redesign.
                 </p>
                 <ul class="space-y-2 mb-6">
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
                     <span style="color: {$colorStore.secondary}">•</span>
-                    <span>Competition mode with rewards & countdowns</span>
+                    <span>Competitions with rewards and a countdown</span>
                   </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
                     <span style="color: {$colorStore.secondary}">•</span>
-                    <span>Voice channel XP alongside text XP</span>
-                  </li>
-                  <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.secondary}">•</span>
-                    <span>Role rewards, custom messages, exclusions</span>
+                    <span>Roles handed out when members reach a level</span>
                   </li>
                 </ul>
                 <a class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] self-start"
@@ -905,17 +463,9 @@
                   Per-Server Bot Profile
                 </h3>
                 <p class="text-base sm:text-lg mb-4 leading-relaxed" style="color: {$colorStore.muted}">
-                  The bot's avatar, banner, and bio can be different in each server it is in.
+                  Give the bot its own avatar, banner and bio in your server.
                 </p>
                 <ul class="space-y-2 mb-6">
-                  <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.accent}">•</span>
-                    <span>Different look for each server</span>
-                  </li>
-                  <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
-                    <span style="color: {$colorStore.accent}">•</span>
-                    <span>Custom avatar, banner, and bio</span>
-                  </li>
                   <li class="flex items-start gap-2 text-sm sm:text-base" style="color: {$colorStore.text}">
                     <span style="color: {$colorStore.accent}">•</span>
                     <span>Completely free (others charge for this)</span>
@@ -965,7 +515,7 @@
               </h3>
               <p class="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed"
                  style="color: {$colorStore.muted}">
-                Every command is listed with usage examples and the permissions it needs, searchable by module.
+                Every command, with examples and the permissions it needs.
               </p>
             </div>
 
@@ -1012,7 +562,7 @@
               All Modules
             </h3>
             <p class="text-base sm:text-lg" style="color: {$colorStore.muted}">
-              Grouped by what they do. Each one has a wiki page and a dashboard section.
+              Every module has its own wiki page.
             </p>
           </div>
 
@@ -1043,30 +593,30 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Chat Triggers</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Advanced auto-responses</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Custom replies and commands</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Embed Builder</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Visual embed creator</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Build embeds without writing JSON</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Support Tickets
                   </div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Help desk system</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Private channels for support</div>
                 </div>
 
                 <!-- Engagement Features -->
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Giveaways</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Contest management</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Timed, with random winners</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Voting System</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Advanced polls</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Polls with buttons</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
@@ -1076,7 +626,7 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Starboard</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Highlight messages</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Reposts the most starred messages</div>
                 </div>
 
                 <!-- Community Tools -->
@@ -1088,18 +638,18 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Role Greets</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Role-based welcomes</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">A message when someone gets a role</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Birthday Tracking
                   </div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Auto celebrations</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Announces members' birthdays</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Reputation</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">User rep tracking</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Members thank each other</div>
                 </div>
 
                 <!-- Automation -->
@@ -1111,7 +661,7 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">RSS Feeds</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">News integration</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Posts new items from a feed</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
@@ -1121,14 +671,14 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Status Roles</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Auto-assign by status</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Roles from custom statuses</div>
                 </div>
 
                 <!-- User Management -->
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Role States</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Role persistence</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Roles come back on rejoin</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
@@ -1139,19 +689,19 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">AFK System</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Away management</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Tells people you're away</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Highlights</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Word alerts</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">A DM when your word is said</div>
                 </div>
 
                 <!-- Content & Social -->
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Todo Lists</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Task permissions</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Shared and personal lists</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
@@ -1166,7 +716,7 @@
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Message Stats</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Activity analytics</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Who talks, and where</div>
                 </div>
 
                 <!-- Fun & Games -->
@@ -1184,19 +734,19 @@
                      style="background: {$colorStore.secondary}10; border: 1px solid {$colorStore.secondary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Counting Games
                   </div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Interactive counting</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Count up, one number each</div>
                 </div>
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.accent}10; border: 1px solid {$colorStore.accent}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Music Bot</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Lavalink-powered</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">YouTube, Spotify and SoundCloud</div>
                 </div>
 
                 <!-- Voice & Channels -->
                 <div class="p-3 sm:p-4 rounded-lg transition-all hover:scale-[1.02]"
                      style="background: {$colorStore.primary}10; border: 1px solid {$colorStore.primary}20;">
                   <div class="font-bold text-sm sm:text-base mb-1" style="color: {$colorStore.text}">Custom Voice</div>
-                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Voice automation</div>
+                  <div class="text-xs sm:text-sm" style="color: {$colorStore.muted}">Members get their own voice channel</div>
                 </div>
 
                 <!-- And More -->
@@ -1218,8 +768,20 @@
           {/if}
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Open Source Trust Section -->
+  <LatestProductUpdate updates={productUpdates} />
+
+  <section
+    class="py-16 relative overflow-hidden"
+    style="background: radial-gradient(circle at center,
+      {$colorStore.gradientStart}15 0%,
+      {$colorStore.gradientEnd}10 50%,
+      {$colorStore.gradientEnd}05 100%
+    );"
+  >
+    <div class="container mx-auto px-4 max-w-7xl relative z-10">
       <div class="mb-16 px-4">
         <div class="max-w-4xl mx-auto">
           <div class="rounded-2xl border p-6 sm:p-8"
@@ -1241,7 +803,7 @@
                   Fully Open Source Since 2020
                 </h3>
                 <p class="text-base sm:text-lg mb-4" style="color: {$colorStore.muted}">
-                  4+ years of active development. 14 contributors. Every line of code is public.
+                  You can read all of it on GitHub.
                 </p>
                 <div class="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start text-xs sm:text-sm"
                      style="color: {$colorStore.muted}">
@@ -1297,7 +859,7 @@
                 Feature Requests
               </h3>
               <p class="text-base sm:text-lg leading-relaxed" style="color: {$colorStore.muted}">
-                Requests go through the bot's own forms system, the same one you can use in your server.
+                Tell us what Mewdeko is missing.
               </p>
             </div>
 
@@ -1364,19 +926,6 @@
         }
         75% {
             transform: translate(-10px, 20px);
-        }
-    }
-
-    .animate-pulse-subtle {
-        animation: pulse-subtle 4s ease-in-out infinite;
-    }
-
-    @keyframes pulse-subtle {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.9;
         }
     }
 

@@ -21,16 +21,20 @@ interface ColorPalette {
   gradientEnd: string;
 }
 
+/**
+ * The mascot's natural colors: its amber skin, sky blue goggles and pink blush. Pages use these when there is
+ * no avatar or server icon to take colors from.
+ */
 const DEFAULT_PALETTE: ColorPalette = {
-  primary: "#3b82f6",
-  secondary: "#8b5cf6",
-  accent: "#ec4899",
+  primary: "#ffb020",
+  secondary: "#7fd4ff",
+  accent: "#ff8fb1",
   text: "#ffffff",
   muted: "#9ca3af",
   background: "#121828",
-  gradientStart: "#3a86ff",
-  gradientMid: "#8338ec",
-  gradientEnd: "#ff006e",
+  gradientStart: "#ffb020",
+  gradientMid: "#ff9b54",
+  gradientEnd: "#4d7cff",
 };
 
 // Dark UI constants - representing the background color of your UI

@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
+  import Mascot from "$lib/components/brand/Mascot.svelte";
   import { fade, slide } from "svelte/transition";
   import { ownerFeatures } from "$lib/config/navigationItems";
   import { type BotInstance, instanceManagementApi } from "$lib/api/index";
@@ -169,7 +170,7 @@
     <a href="/owner" class="flex items-center gap-3 overflow-hidden min-w-0"
        class:flex-1={!collapsed}
        class:justify-center={collapsed}>
-      <img src="/img/Mewdeko.png" alt="Mewdeko" class="w-9 h-9 object-contain shrink-0 rounded-lg">
+      <Mascot variant="head" label={null} class="w-9 h-9 shrink-0" />
       {#if !collapsed}
         <span class="min-w-0">
           <span class="block text-lg font-semibold leading-tight whitespace-nowrap" style="color: {$colorStore.text};">

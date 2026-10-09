@@ -1,5 +1,5 @@
 // stores/musicStore.ts
-import { get, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import { logger } from "$lib/logger";
 import { musicApi } from "$lib/api/index.ts";
 import { ApiError } from "$lib/api/core";
@@ -638,3 +638,6 @@ function createMusicStore() {
 }
 
 export const musicStore = createMusicStore();
+
+/** True while the selected server's player has a track and is playing it, not paused or stopped. */
+export const musicPlaying = derived(musicStore, (state) => state.status?.State === 2 && !!state.status?.CurrentTrack);

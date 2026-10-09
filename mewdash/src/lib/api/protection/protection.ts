@@ -4,6 +4,7 @@ import type {
   UpdateAntiPatternConfigRequest,
   AntiPatternPattern,
   AntiImageHashConfig,
+  AntiExternalAppConfig,
   AddBannedImageHashRequest,
   BannedImageHash,
   ImageHashPreview,
@@ -106,6 +107,13 @@ export const protectionApi = {
   configureAntiImageHash: (guildId: bigint, config: AntiImageHashConfig) =>
     apiRequest<{ success: boolean }>(
       `Protection/${guildId}/anti-image-hash`,
+      "PUT",
+      config,
+    ),
+
+  configureAntiExternalApp: (guildId: bigint, config: AntiExternalAppConfig) =>
+    apiRequest<{ success: boolean }>(
+      `Protection/${guildId}/anti-external-app`,
       "PUT",
       config,
     ),

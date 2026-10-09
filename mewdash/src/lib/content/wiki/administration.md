@@ -6,7 +6,7 @@ icon: fa-cog
 category: Security
 dashboard: /dashboard/administration
 module: Administration
-tags: [admin, anti-raid, anti-spam, anti-alt, anti-pattern, anti-mass-mention, anti-mass-post, honeypot, anti-image-hash, scam images, reaction roles, self-assignable roles, auto-assign roles, auto-ban roles, voice channel roles, permission overrides, dpo, mass ban, prune, server recovery, staff role, timezone, cooldowns]
+tags: [admin, anti-raid, anti-spam, anti-alt, anti-pattern, anti-mass-mention, anti-mass-post, honeypot, anti-image-hash, scam images, external apps, user apps, reaction roles, self-assignable roles, auto-assign roles, auto-ban roles, voice channel roles, permission overrides, dpo, mass ban, prune, server recovery, staff role, timezone, cooldowns]
 related: [moderation, permissions, logging, multigreets, settings, auditlog, rolestates]
 ---
 
@@ -128,6 +128,21 @@ To block your own image on the dashboard, drop or upload the file, or paste its 
 > [!TIP]
 > Turn on Anti-Post-Channel and the known scam image list first. Neither produces false positives in normal chat, and together they catch most automated scam activity.
 
+### Anti-External App
+
+Members can add apps to their own Discord account and use them in any server, even one the app was never added to. Messages from those apps post under the app's name, so the other protections, which look at who sent a message, never see the member behind them. Anti-External App reads which member ran the app and acts on them.
+
+A message counts as a violation when it:
+
+- mentions at least the **mention limit** of users and roles (default 5), or pings everyone or here,
+- contains a Discord invite link, while **remove invite links** is on,
+- or comes from a member who has run apps more than **app messages allowed** times within the window (default 5 in 10 seconds).
+
+Setting a limit to 0 turns that check off. When a message breaks a rule it is deleted, and the member who ran the app gets the punishment, a one hour timeout by default. **Delete only** removes the message without punishing anyone. Apps that were added to the server itself are left alone, and so are server administrators.
+
+> [!TIP]
+> Discord's **Use External Apps** permission is a good partner for this. Members without it can still use their apps, but only they see the replies. Deny it for `@everyone` and allow it for a trusted or levelled role, and new or throwaway accounts can't post through apps at all.
+
 ## Roles
 
 These cards are on the **Roles & Permissions** tab.
@@ -241,6 +256,7 @@ Run these with your server's prefix (`.` unless you changed it). Protection comm
 | `antipostchanneladd <#channel>` | | Administrator | Add a honeypot channel |
 | `antipostchannelremove <#channel>` | | Administrator | Remove a honeypot channel |
 | `antiimagehash [action] [tolerance] [duration]` | `aih` | Administrator | Configure or disable Anti-Image-Hash |
+| `antiexternalapp [action] [mentions] [messages] [duration]` | `aea`, `antiuserapp` | Administrator | Configure or disable Anti-External App |
 | `blockimage [action] [name]` | `banimage` | Administrator | Block the attached, replied to or linked image |
 | `unblockimage <id>` | `unbanimage` | Administrator | Remove a blocked image |
 | `blockedimages` | `blockedimagelist` | Administrator | List blocked images with hit counts |

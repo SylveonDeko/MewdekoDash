@@ -290,6 +290,21 @@ export interface ProtectionStatus {
     ignoredChannels: bigint[];
     counter: number;
   };
+  antiExternalApp: {
+    enabled: boolean;
+    action: number;
+    punishDuration: number;
+    roleId: bigint;
+    /** How many users and roles one app message may mention; 0 turns the check off. */
+    mentionThreshold: number;
+    blockInvites: boolean;
+    /** How many app messages one member may trigger within the window; 0 turns the check off. */
+    maxMessages: number;
+    timeWindowSeconds: number;
+    deleteMessages: boolean;
+    notifyUser: boolean;
+    counter: number;
+  };
 }
 
 /**

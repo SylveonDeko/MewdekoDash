@@ -45,6 +45,21 @@ export const guildApi = {
       request,
     ),
 
+  /**
+   * Resets parts of the bot's guild-specific profile so it shows its global profile in this guild again
+   * @param guildId The guild ID
+   * @param parts Which parts to reset; every part when left out
+   * @returns Success status
+   */
+  resetBotGuildProfile: (
+    guildId: bigint,
+    parts: { avatar?: boolean; banner?: boolean; bio?: boolean } = { avatar: true, banner: true, bio: true },
+  ) =>
+    apiRequest<{ success: boolean; message: string }>(
+      `guild/${guildId}/bot-profile?avatar=${!!parts.avatar}&banner=${!!parts.banner}&bio=${!!parts.bio}`,
+      "DELETE",
+    ),
+
   // ============================================
   // Guild Configuration (GuildConfigController)
   // ============================================

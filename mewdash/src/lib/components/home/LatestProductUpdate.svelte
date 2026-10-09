@@ -30,8 +30,12 @@
     return () => clearInterval(timer);
   });
 
-  function show(target: number) {
-    index = target;
+  /**
+   * Moves to the update before or after the one showing, wrapping at either end.
+   * @param delta -1 for the previous update, 1 for the next
+   */
+  function step(delta: number) {
+    index = (index + delta + updates.length) % updates.length;
   }
 </script>
 
@@ -40,7 +44,7 @@
     <div class="update-rule mb-5" style="background: {$colorStore.primary}45;"></div>
 
     <article
-      class="grid overflow-hidden border md:grid-cols-[11rem_minmax(0,1fr)]"
+      class="grid grid-cols-[minmax(0,1fr)] overflow-hidden border md:grid-cols-[11rem_minmax(0,1fr)]"
       style="background: linear-gradient(110deg, {$colorStore.gradientStart}0c, {$colorStore.gradientMid}08);
              border-color: {$colorStore.primary}35;"
       onmouseenter={() => (paused = true)}
@@ -63,7 +67,7 @@
         </div>
       </div>
 
-      <div class="p-6 sm:p-8 md:p-10">
+      <div class="min-w-0 p-6 sm:p-8 md:p-10">
         <p class="mb-3 text-xs font-semibold uppercase tracking-[0.14em]" style="color: {$colorStore.muted}">
           What Mewdeko has been working on
         </p>
@@ -76,7 +80,7 @@
               {update.summary}
             </p>
 
-            <ul class="mt-6 grid gap-3 text-sm sm:grid-cols-3" style="color: {$colorStore.text}">
+            <ul class="mt-6 grid max-w-2xl gap-3 text-sm" style="color: {$colorStore.text}">
               {#each update.details as detail}
                 <li class="border-l-2 pl-3 leading-relaxed" style="border-color: {$colorStore.secondary}75;">
                   {detail}
@@ -97,20 +101,29 @@
 
         {#if updates.length > 1}
           <div class="mt-8 flex items-center gap-3">
-            {#each updates as item, position (item.id)}
-              <button
-                class="h-11 px-1 focus:outline-hidden focus:ring-2 focus:ring-offset-4"
-                style="--tw-ring-color: {$colorStore.primary}; --tw-ring-offset-color: {$colorStore.gradientStart};"
-                aria-label={item.title}
-                aria-current={position === index}
-                onclick={() => show(position)}
-              >
-                <span
-                  class="block h-0.5 w-8 transition-opacity"
-                  style="background: {$colorStore.primary}; opacity: {position === index ? 1 : 0.28};"
-                ></span>
-              </button>
-            {/each}
+            <button
+              type="button"
+              class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
+              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
+                     --tw-ring-color: {$colorStore.primary};"
+              aria-label="Previous update"
+              onclick={() => step(-1)}
+            >
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <span class="min-w-[4.5rem] text-center text-sm tabular-nums" style="color: {$colorStore.muted}" aria-live="polite">
+              {index + 1} of {updates.length}
+            </span>
+            <button
+              type="button"
+              class="flex h-11 w-11 items-center justify-center rounded-xl focus:outline-hidden focus:ring-2"
+              style="background: {$colorStore.primary}15; color: {$colorStore.primary}; border: 1px solid {$colorStore.primary}30;
+                     --tw-ring-color: {$colorStore.primary};"
+              aria-label="Next update"
+              onclick={() => step(1)}
+            >
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
           </div>
         {/if}
       </div>

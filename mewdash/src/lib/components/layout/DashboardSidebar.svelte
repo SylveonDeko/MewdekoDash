@@ -2,6 +2,7 @@
   import { page } from "$app/state";
   import { fade, slide } from "svelte/transition";
   import { browser } from "$app/environment";
+  import Mascot from "$lib/components/brand/Mascot.svelte";
   import { onMount } from "svelte";
   import { colorStore } from "$lib/stores/colorStore";
   import { currentGuild } from "$lib/stores/currentGuild";
@@ -12,7 +13,7 @@
   import { switchingServer } from "$lib/stores/guildSwitchStore";
   import { userAdminGuilds } from "$lib/stores/adminGuildsStore";
   import { clickOutside } from "$lib/clickOutside";
-  import { musicStore } from "$lib/stores/musicStore";
+  import { musicPlaying, musicStore } from "$lib/stores/musicStore";
   import MiniMusicPlayer from "$lib/components/music/MiniMusicPlayer.svelte";
   import { dyslexicFontStore } from "$lib/stores/accessibilityStore.ts";
   import { themeStore } from "$lib/stores/themeStore.ts";
@@ -366,11 +367,7 @@
     <a href="/dashboard" class="flex items-center gap-3 overflow-hidden min-w-0"
        class:flex-1={!collapsed}
        class:justify-center={collapsed}>
-      <img
-        src="/img/Mewdeko.png"
-        alt="Mewdeko"
-        class="w-9 h-9 object-contain shrink-0 rounded-lg"
-      >
+      <Mascot variant="head" label={null} expression={$musicPlaying ? "vibing" : "neutral"} class="w-9 h-9 shrink-0" />
       {#if !collapsed}
         <span class="text-lg font-semibold whitespace-nowrap" style="color: {$colorStore.text};">
           Mewdeko

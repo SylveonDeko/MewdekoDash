@@ -11,15 +11,28 @@ export type ProductUpdate = {
 // Keep the newest public update first. The landing page intentionally features one item at a time.
 export const productUpdates: ProductUpdate[] = [
   {
+    id: "nine-tailed-cat",
+    label: "New look",
+    title: "Meet The Nine-Tailed Cat",
+    summary: "Mewdeko has its own mascot now, a cat in goggles with a tool on every tail, and the home page has been rebuilt around her.",
+    details: [
+      "She's the logo across the site, the dashboard and the setup wizard, and her fur takes on your server's colors.",
+      "Scroll through What each tail does on the home page for a tour of the bot, with the commands for each part and a link to its guide.",
+      "In the dashboard she blinks now and then, and closes her eyes and vibes along when your server is playing music."
+    ],
+    href: "/",
+    action: "See the home page"
+  },
+  {
     id: "achievements",
     label: "New page",
     title: "Achievements For Everything Your Members Do",
-    summary: "Members unlock achievements for chatting, voice, reactions, invites, levels and time in the server, climb ranks from Bronze to Champion, and show off badges on their profile.",
+    summary: "Members unlock achievements for things they already do in your server, and wear them as badges on their profile.",
     details: [
-      "Achievement ranks sit beside XP levels rather than replacing them. Reaching XP levels unlocks achievements, and if you want unlocks to pay XP back, set XP per point or give single achievements an XP reward.",
-      "Turn it on and history counts straight away: members unlock what their existing messages, voice time and levels already earned, quietly and without a flood of announcements.",
-      "Make your own achievements and categories, with your own emoji, Font Awesome icon or uploaded image, choose the grade and points, hide secret ones, and reorder categories by dragging.",
-      "Announce unlocks in a channel or by DM with an image card in your server colors, delete the message after a set time if you like, and design your own cards in the card designer, per category or per achievement. Members can browse and manage theirs in the iOS and Android apps too."
+      "Achievements have their own ranks and leave XP levels alone. If you want unlocks to give XP, there is a setting for it.",
+      "Turning it on counts the activity Mewdeko already tracked, without announcing any of it.",
+      "You can make your own achievements, with your own icons and rewards.",
+      "Unlocks come with an image card that you can redesign. Members can see theirs in the iOS and Android apps."
     ],
     href: "/dashboard/achievements",
     action: "Set up achievements"
